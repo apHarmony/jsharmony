@@ -1,0 +1,32 @@
+{
+  "name": "jsharmony",
+  "version": "0.0.1",
+  "description": "Rapid Application Development (RAD) Platform for Node.js Database Application Development",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --reporter spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/apHarmony/jsharmony"
+  },
+  "keywords": [
+    "RAD",
+    "Rapid",
+    "Application",
+    "Development",
+    "Database",
+    "TSQL",
+    "SQL",
+    "Server"
+  ],
+  "author": "apHarmony <contact@apharmony.com> (http://www.apharmony.com/)",
+  "license": "apHarmony",
+  "bugs": {
+    "url": "https://github.com/apHarmony/jsharmony/issues"
+  },
+  "homepage": "https://github.com/apHarmony/jsharmony",
+  "devDependencies": {
+    "mocha": "^2.2.5"
+  }
+}
