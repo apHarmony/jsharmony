@@ -11,7 +11,7 @@ npm install jsharmony --save
 ## Usage
 
 ```javascript
-var jsharmony = require('jsharmony');
+var jsHarmony = require('jsharmony');
 var pgsqlDBDriver = require('jsharmony-db-pgsql');
 global.dbconfig = { host: "server.domain.com", database: "DBNAME", user: "DBUSER", password: "DBPASS", _driver: new pgsqlDBDriver() };
 var app = jsHarmony.Run();
