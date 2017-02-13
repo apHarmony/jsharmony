@@ -1,0 +1,30 @@
+{
+"comment":"CL",
+    "layout":"grid", 
+	"title":"All Customers",
+	"table":"v_cl",
+	"access":"BI", 
+    "roles": {"BROWSE":"B"},
+	"caption":[0,"Customer","Customers"],
+	"sort":["^c_name"], 
+	"buttons":[{"link":"add:C"}],
+	"topmenu":"clients",
+    "grid_expand_filter": 1,
+    "grid_require_filter": 0,
+    "grid_rowcount":1,
+	"fields":[
+	  {"name":"c_id","type":"bigint","access":"FB","key":1,"link":"edit:C","caption": "ID","datalock":{"C_ID":"client_C_ID"}},
+	  {"name":"c_sts","type":"varchar","length":"8","caption":"Status","access":"B"},
+	  {"name":"c_name","type":"varchar","length":"50","caption":"Customer","caption_ext": "Customer Name","access":"B","link":"edit:C"},
+      {"name":"c_co_name","type":"varchar","length":"50","caption":"Company Name","access":"S"},
+      {"name":"c_fname","type":"varchar","length":"50","caption":"First Name","access":"S"},
+      {"name":"c_lname","type":"varchar","length":"50","caption":"Last Name","access":"S"},
+	  {"name":"ca_addr","type":"varchar","length":"102","caption":"Address","access":"B"},
+	  {"name":"ca_city","type":"varchar","length":"50","caption":"City","access":"B"},
+	  {"name":"ca_state","type":"varchar","length":"8","caption":"ST","access":"B"},
+	  {"name":"ca_zip","type":"varchar","length":"20","caption":"Zip","access":"B"},
+	  {"name":"c_phones","type":"varchar","caption":"Search Phones","access":"B","control":"hidden"},
+	  {"name":"c_phones_fmt","type":"varchar","caption":"Phones","access":"B","controlstyle": "width:140px;"},
+	  {"name":"c_email","type":"varchar","length":"255","caption":"EMail","access":""}
+	]
+}

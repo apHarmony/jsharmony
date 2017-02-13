@@ -1,0 +1,145 @@
+/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+window.xform_<%=model.id%> = undefined;
+<%
+var no_B = true;
+_.each(model.fields,function(field){ if(XExt.access(field.access,'B') && (field.control != 'html') && (field.control != 'subform') && (field.control != 'button')) no_B = false; });
+%>
+
+function XForm<%=model.id%>_Init(callback){
+  xform_<%=model.id%> = new XPost('<%=model.id%>','','');
+  xform_<%=model.id%>.Data = new XForm<%=model.id%>();
+
+  <% xejs.eachKey(model.fields,function(field){%>xform_<%=model.id%>.Data.<%=field['name']%> = XForms['<%=model.id%>'].<%=field['name']%>();<%}); %>
+	xform_<%=model.id%>.GetKeys = function(){
+	  var rslt = new Object();
+	  if(!is_add){
+	    _.each(XForms['<%=model.id%>']._bindings,function(binding){
+	      xform_<%=model.id%>.Data[binding] = XForms['<%=model.id%>'][binding]();
+	    });
+	    <% xejs.eachKey(model.fields,function(field){%>rslt.<%=field['name']%> = this.Data.<%=field['name']%>;<%}); %>
+	    }
+	  else {
+	    //Add parameters for breadcrumbs
+	    <% _.each(model.fields,function(field){ if(XExt.access(field.access,'C')) { %>rslt.<%=field['name']%> = LiteralOrCollection('<%=field['name']%>',[_GET,this.Data]);<% } }); %>
+	    }
+	  return rslt; 
+	};
+
+  //Pull keys from parent
+  //Get recordset
+
+  $('.xelem<%=model.id%>').keyup(function(){ if(is_add) return; if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this);; });
+  $('.xelem<%=model.id%>.dropdown').change(function(){ if(is_add) return; if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
+  $('.xelem<%=model.id%>.checkbox').change(function(){ if(is_add) return; if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
+
+  <% _.each(model.fields,function(field){ if(!('control' in field)) return; if(field.control=='date') {%>
+  $("#<%=field.name%>.xelem<%=model.id%>").datepicker({ changeMonth: true, changeYear: true, dateFormat: '<%=(field.controlparams?field.controlparams.dateformat:'')%>', onSelect: function(){ if(is_add) return; xform_<%=model.id%>.Data.OnControlUpdate(this); } });
+    <% } }); %>  
+    callback();
+}
+
+function XForm<%=model.id%>_RunReport(callback){
+  if(!xform_<%=model.id%>.Data.Commit()) return;
+  var modelid = '<%=model.id%>';
+  if(modelid.indexOf('_report_') < 0){ XExt.Alert('Model is not a report'); return; }
+  var reportid = modelid.substr(8);
+  var url = '';
+  url = _BASEURL + '_d/_report/'+reportid+'/';
+  url += '?'+ $.param(xform_<%=model.id%>.GetFieldParams('B'));
+  //Pull fields into URL
+  window.open(url,'_blank');
+}
+
+function XForm<%=model.id%>_TestQueue(callback){
+  if(!xform_<%=model.id%>.Data.Commit()) return;
+  var modelid = '<%=model.id%>';
+  if(modelid.indexOf('_report_') < 0){ XExt.Alert('Model is not a report'); return; }
+  var reportid = modelid.substr(8);
+  var url = '';
+  url = _BASEURL + '_d/_reportjob/'+reportid+'/';
+  url += '?_test=1&'+ $.param(xform_<%=model.id%>.GetFieldParams('B'));
+  window.open(url,'_blank');
+}
+
+function XForm<%=model.id%>_RunQueue(callback){
+  if(!xform_<%=model.id%>.Data.Commit()) return;
+  var modelid = '<%=model.id%>';
+  if(modelid.indexOf('_report_') < 0){ XExt.Alert('Model is not a report'); return; }
+  var reportid = modelid.substr(8);
+  //XPost to XGet -> ReportJob
+  var xpost = new XPost('_reportjob/'+reportid,'','');
+  xpost.Data = xform_<%=model.id%>.GetFieldParams('B');
+  xpost.Execute(function(rslt){ 
+    if('_success' in rslt){
+      XExt.Alert('Successfully queued '+rslt._success+' '+((rslt._success==1) ? 'report':'reports')+'.');
+    }
+  });
+  //Show message box with result
+}
+
+function XForm<%=model.id%>_RunDBFunc(cb,options){
+  if(typeof options == 'undefined') options = {};
+  var callback = cb;
+  if(cb && !_.isFunction(cb)){
+    var data_url = $(cb).attr('data-url');
+    if((typeof data_url !== undefined) && (data_url !== false)){
+      callback = function(){ XExt.navTo(data_url); };
+    }
+  }
+  if(!xform_<%=model.id%>.Data.Commit()) return;
+  var modelid = '<%=model.id%>';
+  //Execute DBFunc
+  var xpost = new XPost(modelid,'','');
+  xpost.GetUpdateParams = function(){ return xform_<%=model.id%>.GetFieldParams('U'); }
+  if(options.onBeforeUpdate) options.onBeforeUpdate();
+  xpost.Update(function(rslt){ 
+    if('_success' in rslt){
+      //Merge data back
+      if((modelid in rslt) && rslt[modelid]){
+        if(rslt[modelid].length > 0){
+          for(var k in rslt[modelid][0]){
+            if(k in xform_<%=model.id%>.Data){
+              xform_<%=model.id%>.Data[k] = rslt[modelid][0][k];
+            }
+          }
+        }
+      }
+      if(options.noMessage){
+        if(cb) callback(rslt);
+      }
+      else{
+        XExt.Alert('Operation completed successfully.',function(){
+          if(cb) callback(rslt);
+        });
+      }
+    }
+  },function(err){
+    if(options.onFail) options.onFail(err);
+  });
+}
+
+jsh_heap.push('XForm<%=model.id%>_Init');
+jsh_heap.push('XForm<%=model.id%>_RunReport');
+jsh_heap.push('XForm<%=model.id%>_TestQueue');
+jsh_heap.push('XForm<%=model.id%>_RunQueue');
+jsh_heap.push('XForm<%=model.id%>_RunDBFunc');
+
+<%-jshRenderEJS('jsh_exec.js.datamodel',ejsparams)%>

@@ -1,0 +1,163 @@
+/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+exports = module.exports = {};
+
+exports.phone = function(val){
+	if(!_.isString(val)) return val;
+  if (val.length < 10) return val;
+  if (val.length == 10) return '(' + val.substr(0, 3) + ') ' + val.substr(3, 3) + '-' + val.substr(6);
+  return '(' + val.substr(0, 3) + ') ' + val.substr(3, 3) + '-' + val.substr(6,4) + '  ' + val.substr(10);
+}
+
+exports.phone_decode = function(val){
+	var rslt = val.replace(/[^0-9]+/g,'');
+	if(rslt=='') return rslt;
+	if(rslt[0]=='1') return rslt.substr(1);
+	return rslt;
+}
+
+exports.date = function (format, val){
+  if (val == null) return val;
+  var rslt = moment(val.trim(), "YYYY-MM-DDTHH:mm:ss.SSS", true); //Strict parsing
+  if(!rslt.isValid()) rslt = moment(new Date(val));
+	if(rslt.isValid()) return rslt.format(format);
+	return '';
+}
+
+exports.date_decode = function (format, val){
+  if (val === '') return null;
+  if (val === null) return null;
+  var m = moment(val, format, true);
+  if (!m.isValid()) m = moment(new Date(val));
+  return m.format("YYYY-MM-DDTHH:mm:ss.SSS");
+  
+  
+  var dtstmp = Date.parse(val);
+	if(isNaN(dtstmp)){ return null; }
+	return moment(new Date(dtstmp)).format("YYYY-MM-DDTHH:mm:ss.SSS");
+	
+	var rslt = moment(new Date(val));
+	if(rslt.isValid()){
+//		return rslt.toDate();
+		var dstr = rslt.toISOString();
+		dstr = dstr.substr(0,dstr.length-1);
+		return dstr;
+	}
+	return null;
+}
+
+exports.tstmp = function(val){ return this.date('MM/DD/YY HH:mm',val); }
+exports.tstmp_decode = function(val){ return this.date_decode('MM/DD/YY HH:mm',val); }
+
+exports.MMDDYY = function(val){ return this.date('MM/DD/YY',val); }
+exports.MMDDYY_decode = function (val){ return this.date_decode('MM/DD/YY', val); }
+
+exports.decimal = function (numdigits, val) {
+  if (isNaN(val)) return val;
+  if (val === '') return val;
+  if (val === null) return val;
+  return parseFloat(val).toFixed(numdigits);
+}
+
+exports.decimal_decode = function (numdigits, val) {
+  if (isNaN(val)) return val;
+  if (val === '') return val;
+  if (val === null) return val;
+  return parseFloat(val).toFixed(numdigits); //Do not remove digits
+}
+
+function decimalPlaces(number) {
+  return ((+number).toFixed(20)).replace(/^-?\d*\.?|0+$/g, '').length
+}
+
+exports.decimalext = function (numdigits, val) {
+  if (isNaN(val)) return val;
+  if (val === '') return val;
+  if (val === null) return val;
+  var fval = parseFloat(val);
+  if (decimalPlaces(fval) > 2) return fval.toString();
+  return fval.toFixed(numdigits);
+}
+
+exports.decimalext_decode = function (numdigits, val) {
+  if (isNaN(val)) return val;
+  if (val === '') return val;
+  if (val === null) return val;
+  return parseFloat(val);
+}
+
+exports.ssn = function (val) {
+  if (!_.isString(val)) return val;
+  if (val.length != 9) return val;
+  return val.substr(0, 3) + '-' + val.substr(3, 2) + '-' + val.substr(5);
+}
+
+exports.ssn_decode = function (val) {
+  var rslt = val.replace(/[^0-9]+/g, '');
+  return rslt;
+}
+
+exports.time = function (format, val) {
+  if (val == null) return val;
+  if (val == "") return val;
+  if (val instanceof Date) return val;
+  
+  var d = moment(val.trim(), "YYYY-MM-DDTHH:mm:ss.SSS", true); //Strict parsing
+  if (!d.isValid()) d = moment(new Date(val));
+  if (!d.isValid()) d = moment(val.trim(), "hh:mm", true); //Strict parsing
+  if (!d.isValid()) d = moment(val.trim(), "hh:mm a");
+  if (d.isValid()) return d.format(format);
+  return '';
+}
+
+exports.time_decode = function (format, val) {
+  if (val === '') return null;
+  if (val === null) return null;
+  
+  if (val.trim() == parseInt(val.trim()).toString()) {
+    var vint = parseInt(val.trim());
+    if (vint <= 0) val = "0";
+    val = vint.toString() + ":00"
+  }
+  
+  var rslt = null;
+  if (val instanceof Date) rslt = moment(val);
+  else rslt = moment(new Date(val));
+  if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm", true); //Strict parsing
+  if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm a");
+  
+  return rslt.format("1970-01-01THH:mm:ss.SSS");
+  //return m.format("HH:mm:ss.SSS");
+}
+
+exports.Apply = function(format,val){
+	if(typeof val == 'undefined') return '###MISSING###';
+	if(typeof format != 'undefined'){
+		var format = format;
+		if(_.isString(format)) format = [format];
+		var fargs = [];
+		for(var i=1;i < format.length;i++) fargs.push(format[i]);
+		if(!(format[0] in this)){ return '###Invalid Format ' + format[0] + '###'; }
+		fargs.push(val);
+		val = this[format[0]].apply(this,fargs);
+	}
+	if(val == null) val = '';
+	return val;
+}

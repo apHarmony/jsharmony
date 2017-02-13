@@ -1,0 +1,815 @@
+/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+var is_add = (_GET['action'] == 'add');
+var ignore_changes = false;
+var init_complete = false;
+var delete_target = null;
+var xfileupload_ctrl = null;
+var _bcrumbs = {};
+var orig_title = '';
+var orig_bcrumbs = '';
+if (!XExt.isOnePage()) {
+  orig_title = RemoveEJSTags($('#xform_title'));
+  if (orig_title.indexOf('<#') > 0) document.title = XExt.StripTags($('#xform_title').html());
+  orig_bcrumbs = RemoveEJSTags($('div.bcrumbs'));
+}
+var jsproxy_hooks = {};
+var jsh_heap = [];
+var jsh_intervals = [];
+var cur_history_url = ''; //Last URL, to check if link is an anchor # or regular link
+
+function XForm_OnExit() {
+  if (!init_complete) return;
+
+  var foundchanges = XForm_GetChanges();
+
+  if (foundchanges.length > 0) {
+    var msg = 'You have unsaved changes to ';
+    for (var i = 0; i < foundchanges.length; i++) {
+      msg += foundchanges[i];
+      if (i < foundchanges.length - 2) msg += ', ';
+      else if (i == foundchanges.length - 2) msg += ' and ';
+    }
+    msg += ' data.';
+    return msg;
+  }
+}
+window.onbeforeunload = XForm_OnExit;
+window.jsh_cancelExit = false;
+
+function XForm_GetChanges() {  //Returns array of form names that have changed
+  var foundchanges = [];
+  _.each(XForms, function (xform) {
+    if (!XExt.HasAccess(xform._access, 'IUD')) return;
+    if (window['xform_' + xform._id].HasUpdates()) { foundchanges.push(xform._caption[1]); }
+    else if ((window['xform_' + xform._id].Data) && (window['xform_' + xform._id].Data._is_dirty)) { foundchanges.push(xform._caption[1]); }
+  });
+  return foundchanges;
+}
+
+function XForm_Save(options) {
+  if (!options) options = {};
+  if (!options.onFail) options.onFail = function () { };
+  var dbtasks = [];
+  var valid = true;
+  XFormTree(null, function (xform) {
+    if (!valid) return;
+    var xformid = xform._id;
+    if (XExt.HasAccess(xform._access, 'IU')) {
+      var access = 'U';
+      if (xform._layout == 'multisel') access = 'U';
+      else if (xform._layout == 'grid') access = 'IU';
+      else if (window['xform_' + xformid].Data._is_new) access = 'I';
+      if (XExt.HasAccess(xform._access, access)) {
+        var ftasks = window['XForm' + xformid + '_Save']();
+        if (typeof ftasks == 'undefined') { valid = false; return; }
+        dbtasks = _.union(dbtasks, ftasks);
+      }
+    }
+  });
+  if (!valid) return options.onFail('validation');
+  XFormAsyncTree(XForms_root, function (xform, done) {
+    if (!valid) return;
+    if (typeof xform._onvalidate != 'undefined') xform._onvalidate(xform, function (rslt) { valid = (rslt === true); done(); });
+    else done();
+  }, function () {
+    if (!valid) return options.onFail('form_validation');
+    XForm_Save_Operation(dbtasks,options);
+  }, { series: true });
+}
+function XForm_Save_Operation(dbtasks, options) {
+  if (!options) options = {};
+  if (!options.onFail) options.onFail = function () { };
+  //Handle async validation, if applicable
+  var rootxform = window['xform_' + XForms_root];
+  if (XForms[XForms_root]._layout == 'grid') rootxform = window['xform_post_' + XForms_root]
+  rootxform.ExecuteTrans(dbtasks, function (rslt) {
+    if (options.onComplete && (options.onComplete(rslt) === false)) return;
+    XForm_RefreshParent();
+    if (is_add) {
+      var url = window.location.href.toString().split(window.location.host)[1];
+      url = url.split('?')[0];
+      url = url.split('#')[0] + '?action=edit';
+      var urlkeys = {};
+      //Scan results for key
+      _.each(XForms[XForms_root]._keys, function (key) {
+        //Find keys in results
+        var foundkey = false;
+        _.each(rslt, function (mrslt, modelid) {
+          if (_.isObject(mrslt)) {
+            if (key in mrslt) {
+              var keyval = mrslt[key];
+              XForms[XForms_root][key] = function () { return keyval; }
+              rootxform.Data[key] = keyval;
+              urlkeys[key] = keyval;
+              foundkey = true;
+            }
+          }
+        });
+        if (!foundkey) urlkeys[key] = XForms[XForms_root][key]();
+      });
+      is_add = false;
+      if (!_.isEmpty(urlkeys)) url = url + '&' + $.param(urlkeys, false);
+      window.onbeforeunload = null;
+      window.jsh_cancelExit = true;
+      //Execute oninsert Handler
+      var bubble = true;
+      XFormTree(null, function (xform) {
+        if (!bubble) return;
+        if (typeof xform._oninsert != 'undefined') if (xform._oninsert(xform, urlkeys, url) === false) bubble = false;
+      });
+      if (!bubble) return;
+
+      XExt.navTo(url);
+      return;
+    }
+
+    //Execute onupdate Handler
+    var bubble = true;
+    XFormTree(null, function (xform) {
+      if (!bubble) return;
+      if (typeof xform._onupdate != 'undefined') if (xform._onupdate(xform) === false) bubble = false;
+    });
+    if (!bubble) return;
+
+    console.log('Save complete');
+    XForm_Select(function () {
+      console.log('Reselect complete');
+    });
+  }, options.onFail);
+}
+function XForm_SaveNew(add_url) {
+  XForm_Save({
+    onComplete: function () {
+      XForm_RefreshParent();
+      window.onbeforeunload = null;
+      window.jsh_cancelExit = true;
+      window.location.href = add_url;
+      return false;
+    }
+  });
+}
+
+function XForm_Delete() {
+  window['XForm' + delete_target + '_Delete'](function () {
+    XForm_RefreshParent();
+    window.onbeforeunload = null;
+    window.jsh_cancelExit = true;
+    if (is_popup) {
+      if (window.opener) {
+        window.close();
+      }
+      else {
+        //window.open('', '_parent', '');  //Possibly needed for firefox
+        window.close();
+      }
+    }
+    else {
+      var target = _BASEURL;
+      var bcrumbobj = $('div.bcrumbs');
+      if (bcrumbobj.size() > 0) {
+        target = bcrumbobj.children('a').last().prop('href');
+      }
+      XExt.navTo(target);
+    }
+  });
+}
+
+function topmost_jsh_ready() {
+  XForms_Hide();
+  if (!XForms[XForms_root]._access) { XExt.Alert('ERROR - No effective access to root form'); return; }
+
+  //  XFormTree(null,function(xform){ console.log(xform._id); },function(){ $('.xelemX').show(); });
+  //  XFormAsyncTree(XForms_root,function(xform,done){ done(); },function(){ $('.xelemX').show(); console.log('all done'); });
+  var enable_save = false;
+  var enable_delete = false;
+  XFormTree(null, function (xform) {
+    if ((xform._layout == 'form') || (xform._layout == 'multisel')) {
+      if (XExt.HasAccess(xform._access, 'IU')) enable_save = true;
+      if ((xform._id == XForms_root) || (xform._parent == XForms_root))
+        if (XExt.HasAccess(xform._access, 'D')) { enable_delete = true; delete_target = xform._id; }
+    }
+    else if ((xform._layout == 'grid') && (xform._commitlevel) && (xform._commitlevel != 'none')) {
+      if (XExt.HasAccess(xform._access, 'IUD')) enable_save = true;
+    }
+  });
+
+  XFormAsyncTree(XForms_root,
+    function (xform, done) {
+      window['XForm' + xform._id + '_Init'](done);
+    },
+    function () {
+      if ('state' in _GET) XForm_LoadState(JSON.parse(_GET.state));
+      $('.xform_button').each(function () {
+        var btnaccess = $(this).data('access');
+        if (is_add && !XExt.HasAccess(btnaccess, 'I')) $(this).hide();
+      })
+      XFormTree(null, function (xform) {
+        if (typeof xform._oninit != 'undefined') xform._oninit(xform);
+      });
+      XForm_Select(function () {
+        XForms_Show();
+        XWindowResize();
+        if (enable_save) $('.xactions.top .save').show();
+        if (enable_delete) $('.xactions.top .delete').show();
+        XFormTree(null, function (xform) {
+          if (!is_add && XExt.HasAccess(xform._access, 'I')) $('.xactions.xelem' + xform._id + ' .duplicate').show();
+        });
+        init_complete = true;
+        //Update Browser History with URL/state
+        if (XExt.isOnePage()) {
+          var new_url = jsh_state.fullpath + jsh_state.QS + jsh_state.hash;
+          XExt.ReplaceHistory(new_url, XForm_GetState(new_url));
+          if (jsh_state.hash) {
+            XExt.jumpAnchor(jsh_state.hash);
+          }
+        }
+        else XExt.ReplaceHistory(window.location.href.toString(), XForm_GetState());
+
+        //Select first Filter by default, if form is open
+        $('.xfilter_value:visible').first().select().focus();
+
+        console.log('Initialization Complete');
+      });
+    });
+}
+$(document).on('jsh_ready', topmost_jsh_ready);
+
+function XForm_Refresh(modelid) {
+  //Handle modelid
+  if (XForm_OnGridExit(null, function () { XForm_Refresh(modelid); })) return;
+  //Modify grid refresh to load multiple pages
+  var foundchanges = XForm_GetChanges();
+  if (foundchanges.length > 0) return;
+
+  XForm_Select(function () { console.log('Reselect complete'); }, modelid);
+}
+
+function XForm_RefreshParent(modelid) {
+  if (window.opener) {
+    if ('XForm_Refresh' in window.opener) window.opener.XForm_Refresh(modelid);
+  }
+}
+
+function XForm_Reload() {
+  XExt.navTo(window.location.href.toString() + '&tstmp=' + Date.now());
+}
+
+function XForm_PreDestroy() {
+  //Call OnDestroy Handlers
+  _.each(XForms, function (xform) {
+    if (typeof xform._ondestroy != 'undefined') xform._ondestroy(xform);
+  });
+  //Clear CKEDITORs
+  if ((typeof CKEDITOR != 'undefined') && (CKEDITOR.instances)) {
+    for (name in CKEDITOR.instances) {
+      CKEDITOR.instances[name].destroy()
+    }
+  }
+}
+
+function XForm_Destroy() {
+  $(document).off('jsh_ready');
+  for (var i = 0; i < jsh_heap.length; i++) {
+    if (window[jsh_heap[i]] instanceof XData) window[jsh_heap[i]].Destroy();
+    window[jsh_heap[i]] = undefined;
+    try { delete window[jsh_heap[i]]; } catch (e) { }
+  }
+  for (var i = 0; i < jsh_intervals.length; i++) {
+    try { window.clearInterval(jsh_intervals[i]); } catch (e) { }
+  }
+  jsh_heap = [];
+  jsh_intervals = [];
+  $(document).on('jsh_ready', topmost_jsh_ready);
+}
+
+function XForm_Select(callback, root) {
+  if (typeof root == 'undefined') root = XForms_root;
+  XFormAsyncTree(root,
+    function (xform, done) {
+      var onDone = function () {
+        if (typeof xform._onloadimmediate != 'undefined') xform._onloadimmediate(xform);
+        done();
+      };
+      if (is_add && (!XExt.HasAccess(xform._access, 'I')) && (xform._layout != 'multisel') && (xform._layout != 'exec')) { return done(); }
+      window['xform_' + xform._id].Select(onDone);
+    },
+    function () {
+      //Update title and other dynamic elements with in-place EJS
+      XFormsParseEJS(function () {
+        var bubble = true;
+        XFormTree(null, function (xform) {
+          if (!bubble) return;
+          if (typeof xform._onload != 'undefined') if (xform._onload(xform, callback) === false) bubble = false;
+        });
+        if (bubble && callback) callback();
+        if (XExt.isOnePage()) jshResetLinks();
+      });
+    });
+}
+
+function XFormsParseEJS(onComplete) {
+  //Get breadcrumbs
+  var root_data = window['xform_' + XForms_root];
+  if ('_bcrumbs' in root_data) _bcrumbs = root_data._bcrumbs;
+
+  //Update title
+  if (orig_title.indexOf('<#') >= 0) {
+    var new_title = ParseEJS(orig_title, XForms_root);
+    $('#xform_title').html(new_title);
+    document.title = XExt.StripTags(new_title);
+  }
+
+  //Update Breadcrumbs
+  if (orig_bcrumbs.indexOf('<#') >= 0) {
+    $('div.bcrumbs').html(ParseEJS(orig_bcrumbs, XForms_root));
+  }
+
+  XFormTree(null, function (xform) {
+    $(".xtitle.xelem" + xform._id).each(function () {
+      //Update each form title
+      var title_text = xform._title;
+      if (title_text.indexOf('<#') >= 0) {
+        $(this).html(ParseEJS(title_text, xform._id));
+      }
+    });
+    $(".xform_button.xelem" + xform._id).each(function () {
+      var href = $(this).attr('href');
+      //Store / retrieve original URL
+      if ($(this).data('orighref')) href = $(this).data('orighref');
+      else $(this).data('orighref', href);
+      //Parse URL EJS
+      if (href.indexOf('<#') >= 0) {
+        /* Resolve EJS */
+        $(this).attr('href', ParseEJS(href, xform._id));
+      }
+    });
+  }, onComplete);
+}
+
+function RemoveEJSTags(jobj) {
+  if (jobj.size() == 0) return '';
+  var rslt = getObjEJS(jobj);
+  if (rslt.indexOf('<#') >= 0) {
+    //jobj.html(rslt.replace(/<#(.*?)#>/g,''));
+    jobj.html('');
+  }
+  return rslt;
+}
+
+function getObjEJS(jobj) {
+  if (jobj.size() == 0) return '';
+  var rslt = jobj.html();
+  rslt = XExt.ReplaceAll(rslt, '&lt;#', '<#');
+  rslt = XExt.ReplaceAll(rslt, '#&gt;', '#>');
+  return rslt;
+}
+
+function XFormTree(parentid, callback, oncomplete) {
+  _.each(XForms, function (xform, xformid) {
+    if (xform._parent == parentid) {
+      callback(xform);
+      XFormTree(xform._id, callback);
+    }
+  });
+  if (typeof oncomplete != 'undefined') oncomplete();
+}
+
+function XFormAsyncTree(rootid, xformfunc, done, options) {
+  if (!options) options = { };
+  xformfunc(XForms[rootid], function () {
+    XFormAsyncTreeWorker(rootid, xformfunc, done, options);
+  });
+}
+
+function XFormAsyncTreeWorker(parentid, xformfunc, done, options) {
+  var childf = [];
+  _.each(XForms, function (xform, xformid) {
+    if (xform._parent == parentid) {
+      childf.push(function (cb) {
+        xformfunc(xform, function () { XFormAsyncTreeWorker(xform._id, xformfunc, cb, options); });
+      });
+    }
+  });
+
+  if (childf.length == 0) { return done(); }
+
+  if (options.series) async.series(childf, done);
+  else async.parallel(childf, done);
+}
+
+function LiteralOrCollection(str, col, funccol) {
+  //console.log("Evaluating: "+str);
+  var rslt = undefined;
+  if (!isNaN(str)) rslt = str;
+  else if ((str.length > 2) && (str[0] == "'") && (str[str.length - 1] == "'")) rslt = str.substr(1, str.length - 2);
+  else if ((typeof funccol !== 'undefined') && (str in funccol)) rslt = funccol[str]();
+  else {
+    //console.log('Array check'); console.log(col);
+    if (_.isArray(col)) {
+      for (var i = 0; i < col.length; i++) {
+        if (str in col[i]) return col[i][str];
+      }
+    }
+    else rslt = col[str];
+  }
+  //console.log('Result: '+rslt);
+  return rslt;
+}
+
+function XBCrumbs(){
+  var rslt = {};
+  for(var f in XForms){
+    var xform = window['xform_'+f];
+    if(xform && xform._bcrumbs) rslt = _.extend(rslt, xform._bcrumbs);
+  }
+  var root_data = window['xform_' + XForms_root];
+  rslt = _.extend(rslt, _bcrumbs);
+  return rslt;
+}
+
+function ParseEJS(_ejssrc, modelid) {
+  var ejssrc = _ejssrc;
+  var data = {};
+  if (!(modelid in XForms)) { XExt.Alert('Error: Model ' + modelid + ' not found.'); return; }
+  _.merge(data, forcequery, window['xform_' + modelid].Data);
+  //_.extend(data, forcequery, window['xform_' + modelid].Data);XXX
+  _.each(XForms[modelid]._bindings, function (binding) {
+    data[binding] = XForms[modelid][binding]();
+  });
+  ejssrc = ejssrc.replace(/<#/g, '<' + '%').replace(/#>/g, '%' + '>');
+
+  var ejsrslt = ejs.render(ejssrc, {
+    data: data,
+    LiteralOrCollection: LiteralOrCollection,
+    bcrumbs: XBCrumbs()
+  });
+  return ejsrslt;
+}
+
+function XForms_Hide() {
+  _.each(XForms, function (xform, xformid) {
+    if (xform._layout == 'grid') $('.xtbl.xelem' + xformid + ',.xbodyhead.xelem' + xformid).hide();
+    else {
+      //$('#xform'+xformid).hide(); 
+      //$('#xtabcontrol'+xformid).hide(); 
+    }
+  });
+}
+
+function XForms_Show() {
+  _.each(XForms, function (xform, xformid) {
+    if (xform._layout == 'grid') $('.xtbl.xelem' + xformid + ',.xbodyhead.xelem' + xformid).show();
+    else {
+      $('#xform' + xformid).show();
+      $('#xtabcontrol' + xformid).show();
+    }
+  });
+}
+
+function XForm_GetState(url) {
+  var rslt = {};
+  _.each(XForms, function (xform) {
+    if (!XExt.HasAccess(xform._access, 'B')) return;
+    if (xform._layout != 'grid') return;
+    rslt[xform._id] = window['XForm' + xform._id + '_GetState']();
+  });
+  if ((typeof url != 'undefined') && (url != '')) rslt['_url'] = url;
+  return rslt;
+}
+
+function XForm_AddHistory(new_jsh_state, use_cur_state) {
+  //Add Full URL to history (PATH+GET+HASH)
+  var url = '';
+  var state = undefined;
+  if ((typeof new_jsh_state != 'undefined') && new_jsh_state) {
+    url = new_jsh_state.fullpath + new_jsh_state.QS + new_jsh_state.hash;//$.param(JSON.parse(JSON.stringify(new_jsh_state.GET)));
+    cur_history_url = url;
+    if (use_cur_state) state = XForm_GetState(cur_history_url);
+  }
+  else {
+    url = window.location.href.toString().split(window.location.host)[1];
+    url = url.split('?')[0];
+    url = url.split('#')[0];
+    var nget = JSON.parse(JSON.stringify(_GET));
+
+    state = XForm_GetState(cur_history_url);
+    var nget_state = JSON.parse(JSON.stringify(state));
+    if ('_url' in nget_state) delete nget_state._url;
+
+    nget.state = JSON.stringify(nget_state);
+    if (!_.isEmpty(nget)) url += '?' + $.param(nget);
+  }
+  XExt.AddHistory(url, state);
+}
+
+function XForm_LoadState(state, addBackHistoryOnCancel) {
+  if (!_.isObject(state)) return;
+
+  if ('_url' in state) {
+    //Get Base URL (PATH+GET)
+    //var base_url = a.pathname + a.search;
+
+    if (state._url != cur_history_url) {
+      _GET.state = JSON.stringify(state);
+      var a = XExt.getURLObj(state._url);
+      var orig_a = XExt.getURLObj(cur_history_url);
+      var orig_url = orig_a.pathname + orig_a.search;
+      cur_history_url = state._url;
+      jshNavigate(a, false, orig_url, function () {
+        if (addBackHistoryOnCancel) {
+          XForm_AddHistory(jsh_state, true);
+        }
+      });
+      return false;
+    }
+  }
+  _.each(XForms, function (xform) {
+    if (!XExt.HasAccess(xform._access, 'B')) return;
+    if (xform._onloadstate) return xform._onloadstate(state[xform._id]);
+    if (xform._layout != 'grid') return;
+    if (xform._id in state) {
+      window['XForm' + xform._id + '_LoadState'](state[xform._id]);
+    }
+  });
+  if ('state' in _GET) delete _GET.state;
+  return true;
+}
+
+window.onpopstate = function (event) {
+  var state = event.state;
+  _GET = XExt.parseGET();
+
+  var f = function () {
+    if (!XForm_LoadState(state, true)) return;
+    XForm_Select(function () { });
+  };
+
+  if (_.isObject(state)) {
+    var drslt = XForm_OnExit();
+    if (drslt) {
+      XExt.Confirm(drslt + '  Leave page?', f, function () {
+        XForm_AddHistory();
+      });
+      return;
+    }
+  }
+  f();
+};
+
+function XFileDownload(model, field, title) {
+  var jctrl_token = $('.xelem' + model + ' #' + field + '_token');
+  var file_token = jctrl_token.val();
+  var url = '';
+  if (file_token) url = _BASEURL + '_dl/_temp/' + file_token;
+  else {
+    var keys = window['xform_' + model].GetKeys();
+    if (XForms[model]._keys.length != 1) { throw new Error('File models require one key.'); }
+    url = _BASEURL + '_dl/' + model + '/' + keys[XForms[model]._keys[0]] + '/' + field;
+  }
+  $('#xfileproxy').prop('src', url);
+  //window.open(url,'_blank'); 
+}
+function XFilePreview(model, field, title) {
+  var jctrl_token = $('.xelem' + model + ' #' + field + '_token');
+  var file_token = jctrl_token.val();
+  var url = '';
+  if (file_token) url = _BASEURL + '_dl/_temp/' + file_token + '?view=1';
+  else {
+    var keys = window['xform_' + model].GetKeys();
+    if (XForms[model]._keys.length != 1) { throw new Error('File models require one key.'); }
+    url = _BASEURL + '_dl/' + model + '/' + keys[XForms[model]._keys[0]] + '/' + field + '?view=1';
+    url += '&_=' + (new Date().getTime());
+  }
+  //$('#xfileproxy').prop('src', url);
+  window.open(url,'_blank',"height=600, width=800"); 
+}
+function XFileDelete(model, field, title) {
+  var jctrl_token = $('.xelem' + model + ' #' + field + '_token');
+  var jctrl_dbexists = $('.xelem' + model + ' #' + field + '_dbexists');
+  var jctrl_dbdelete = $('.xelem' + model + ' #' + field + '_dbdelete');
+  var jctrl = $('#' + field + '.xelem' + model);
+  if (jctrl_dbexists.val() == '1') jctrl_dbdelete.val('1');
+  jctrl_token.val('');
+  jctrl.addClass('nodocument');
+}
+function XFileUpload(model, field, title) {
+  //Get PrevToken, if Applicable
+  xfileupload_ctrl = $('#' + field + '.xelem' + model);
+  if (xfileupload_ctrl.size() != 1) return;
+  $.colorbox({
+    href: "#xfileuploader", inline: true, closeButton: false, arrowKey: false, preloading: false, overlayClose: false, title: title, fixed: true,
+    onOpen: function () {
+      $('#xfileuploader_prevtoken').val(xfileupload_ctrl.children('.xform_file_token').val());
+      $('#xfileuploader_form').attr('action', _BASEURL + '_ul/');
+      XExt.clearFileInput('xfileuploader_file');
+    },
+    onComplete: function () { /* Optionally set element focus */ }
+  });
+}
+function XUpload_submit() {
+  //Validate file selected
+  if (!$("#xfileuploader_file").val()) { XExt.Alert('Please select a file and then click Upload.'); return; }
+  xLoader.StartLoading(xfileuploadLoader)
+  //Submit form
+  $('#xfileuploader_form').submit();
+  //Associate file_token, prevtoken with single field
+  //Submit that field to the server on update/insert
+}
+function XUpload_complete(rslt) {
+  $.colorbox.close();
+  if (!('FILE_TOKEN' in rslt)) return;
+  xfileupload_ctrl.children('.xform_file_token').val(rslt.FILE_TOKEN);
+  xfileupload_ctrl.children('.xform_file_dbdelete').val('0');
+  xfileupload_ctrl.removeClass('nodocument');
+  //Rerender Control
+  var val = XExt.getFormField(XExt.getFormFromObject(xfileupload_ctrl), xfileupload_ctrl[0].id);
+  XExt.setFormControl(XExt.getFormFromObject(xfileupload_ctrl), xfileupload_ctrl[0].id, val);
+}
+function js_proxy_complete(id, data) {
+  var _this = this;
+  xLoader.StopLoading(xfileuploadLoader);
+  if (((typeof data) == 'object') && ('_error' in data)) {
+    if (DefaultErrorHandler(data._error.Number, data._error.Message)) { }
+    else if ((data._error.Number == -9) || (data._error.Number == -5)) { XExt.Alert(data._error.Message); }
+    else { XExt.Alert('Error #' + data._error.Number + ': ' + data._error.Message); }
+    return;
+  }
+  else if (((typeof data) == 'object') && ('_success' in data)) {
+    if (id == 'xfileuploader') XUpload_complete(data);
+    else if (id in jsproxy_hooks) { jsproxy_hooks[id](data); }
+    else XExt.Alert(JSON.stringify(data));
+  }
+  else {
+    XExt.Alert(JSON.stringify(data));
+  }
+}
+
+
+
+function XRunReport() {
+  var rpt = XForms[XForms_root];
+  if (!(rpt._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+  window['XForm' + rpt._id + '_RunReport']();
+}
+
+function XTestQueue() {
+  var rpt = XForms[XForms_root];
+  if (!(rpt._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+  window['XForm' + rpt._id + '_TestQueue']();
+}
+
+function XRunQueue() {
+  var rpt = XForms[XForms_root];
+  if (!(rpt._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+
+  XExt.Confirm("Are you sure you want to start the Report Job?", function () {
+    window['XForm' + rpt._id + '_RunQueue']();
+  });
+}
+
+function XRunDBFunc(cb) {
+  var xform = XForms[XForms_root];
+  if (!(xform._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+  window['XForm' + xform._id + '_RunDBFunc'](cb);
+}
+
+function XDisable(jctrl,show_lookup) {
+  jctrl.removeClass('editable');
+  jctrl.addClass('uneditable');
+
+  if (jctrl.hasClass('dropdown')) jctrl.prop('disabled', true);
+  else if (jctrl.hasClass('checkbox')) jctrl.prop('disabled', true);
+  else jctrl.prop('readonly', true);
+  if (!show_lookup && jctrl.next().hasClass('xlookup')) jctrl.next().hide();
+}
+
+function XEnable(jctrl) {
+  jctrl.removeClass('uneditable');
+  jctrl.addClass('editable');
+
+  if (jctrl.hasClass('dropdown')) jctrl.prop('disabled', false);
+  else if (jctrl.hasClass('checkbox')) jctrl.prop('disabled', false);
+  else jctrl.prop('readonly', false);
+  if (jctrl.next().hasClass('xlookup')) jctrl.next().show();
+}
+
+function XPrint() {
+  window.print();
+}
+
+//Clear Popups on Reset
+function XPopupCreate(onComplete) {
+  var popup_id = '';
+  do {
+    popup_id = 'P' + Math.floor(Math.random() * 100000);
+  } while (popup_id in XPopups);
+  XPopups[popup_id] = onComplete;
+  return popup_id;
+}
+
+function XPopupComplete(id, rslt) {
+  if (!(id in XPopups)) return;
+  XPopups[id](rslt);
+}
+
+function XForm_OnGridExit(obj, f) {
+  var has_changes = false;
+  XFormTree(null, function (xform) {
+    if (has_changes) return;
+    if ((xform._layout == 'grid') && (xform._commitlevel) && (xform._commitlevel != 'none')) {
+      if (xform._commitlevel == 'page') {
+        if (window['xform_post_' + xform._id].IsDirty) {
+          XExt.Alert('Please save changes before performing grid operations.');
+          has_changes = true;
+          return;
+        }
+      }
+      if (window['xgrid_' + xform._id].CurrentCell) {
+        window.jsh_qInputAction = new XExt.XInputAction(obj, f);
+        has_changes = true;
+        return;
+      }
+    }
+  });
+  return has_changes;
+}
+
+function XForm_OpenDataURL(win, modelid, url, options) {
+  var model = XForms[modelid];
+  if (!win) win = window.open('', '_blank', options);
+  if ((model._layout == 'form') || (model._layout == 'form-m') || (model._layout == 'exec')) {
+    url = XExt.ReplaceAll(url, 'data[j]', 'data');
+  }
+  url = ParseEJS(url, modelid);
+  win.location = url;
+  win.focus();
+}
+
+function XForm_Duplicate(modelid, link, link_options) {
+  var win = null;
+  window['XForm' + modelid + '_RunDBFunc'](function (rslt) {
+    //On success
+    XForm_OpenDataURL(win, modelid, link, link_options, rslt);
+    win.opener = window.opener;
+    XForm_RefreshParent();
+    $.colorbox.close();
+  }, {
+    onBeforeUpdate: function () {
+      win = window.open('', '_blank', link_options);
+    },
+    noMessage: true,
+    onFail: function (err) { win.close(); }
+  });
+}
+function XForm_HasUpdates() {
+  var rslt = false;
+  _.each(XForms, function (xform) {
+    if (!XExt.HasAccess(xform._access, 'IUD')) return;
+    if (window['xform_' + xform._id].HasUpdates()) { rslt = true; }
+  });
+  return rslt;
+}
+function XForm_ShortcutKeys(e) {
+  var handled = false;
+  if (window.XForm_CustomShortcutKeys && window.XForm_CustomShortcutKeys(e)) {
+    handled = true;
+  }
+  else if ((e.which == 83) && (e.altKey)) {//ALT+S = SAVE
+    $('.save:visible').first().trigger('click');
+    handled = true;
+  }
+  else if ((e.which == 78) && (e.altKey)) {//ALT+N = NEW
+    XExt.findClosest(e.target, '.xbuttonadd:visible').first().trigger('click');
+    handled = true;
+  }
+  else if ((e.which == 70) && (e.altKey)) {//ALT+F = FILTER
+    $('.xfilterbutton:visible').first().trigger('click');
+    handled = true;
+  }
+  else if ((e.which == 80) && (e.altKey)) {//ALT+P = PRINT
+    XPrint();
+    handled = true;
+  }
+  if (handled) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  }
+}

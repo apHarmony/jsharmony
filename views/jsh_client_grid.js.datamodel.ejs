@@ -1,0 +1,74 @@
+/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+//DataModel <%=model.id%>
+function XForm<%=model.id%>(){ 
+  this._jrow = undefined;
+  this._is_new = true;
+  this._is_dirty = true;
+  this._is_deleted = false;
+  this._orig = null;
+  this._modelid = '<%=model.id%>';
+  <% _.each(model.fields,function(field){%>this.<%=field.name%> = '';<%});%>
+}
+
+XForm<%=model.id%>.prototype.Fields = {
+  <% _.each(model.fields,function(field){ if(!('access' in field)) return; if(field.control=='subform') return; if(field.control=='html') return; %>
+    "<%=field.name%>":{"name":"<%=field.name%>",
+    "caption":<%-JSON.stringify(field.caption_ext||field.caption)%>,
+    <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
+    <%-xejs.iif('type' in field,'"type":'+JSON.stringify(field.type)+',') %>
+    <%-xejs.iif('access' in field,'"access":'+JSON.stringify(field.access)+',') %>
+    <%-xejs.iif('readonly' in field,'"readonly":'+JSON.stringify(field.readonly)+',') %>
+    <%-xejs.iif('control' in field,'"control":'+JSON.stringify(field.control)+',') %>
+    <%-xejs.iif('virtual' in field,'"virtual":'+JSON.stringify(field.virtual)+',') %>
+    <%-xejs.iif('static' in field,'"static":'+JSON.stringify(field.static)+',') %>
+    <%-xejs.iif('onchange' in field,'"onchange":'+JSON.stringify(field.onchange)+',') %>
+    <%-xejs.iif('search_sound' in field,'"search_sound":'+JSON.stringify(field.search_sound)+',') %>
+    <% if('controlparams' in field){ %>controlparams:{
+      <%-xejs.iif('thumbnail_width' in field.controlparams,'"thumbnail_width":'+JSON.stringify(field.controlparams.thumbnail_width)+',') %>
+      <%-xejs.iif('expand_all' in field.controlparams,'"expand_all":'+JSON.stringify(field.controlparams.expand_all)+',') %>
+      <%-xejs.iif('expand_to_selected' in field.controlparams,'"expand_to_selected":'+JSON.stringify(field.controlparams.expand_to_selected)+',') %>
+      <%-xejs.iif('value_true' in field.controlparams,'"value_true":'+JSON.stringify(field.controlparams.value_true)+',') %>
+      <%-xejs.iif('value_false' in field.controlparams,'"value_false":'+JSON.stringify(field.controlparams.value_false)+',') %>
+      <%-xejs.iif('value_hidden' in field.controlparams,'"value_hidden":'+JSON.stringify(field.controlparams.value_hidden)+',') %>
+      <%-xejs.iif('popup_copy_results' in field.controlparams,'"popup_copy_results":'+JSON.stringify(field.controlparams.popup_copy_results)+',') %>
+      <%-xejs.iif('base_readonly' in field.controlparams,'"base_readonly":'+JSON.stringify(field.controlparams.base_readonly)+',') %>
+      <%-xejs.iif('onpopup' in field.controlparams,'"onpopup":function(popupmodelid, parentmodelid, fieldid, onComplete){'+field.controlparams.onpopup+'},') %>
+      <%-xejs.iif('dateformat' in field.controlparams,'"dateformat":'+JSON.stringify(field.controlparams.dateformat)+',') %>
+    },<% }%>
+    <% if(('lov' in field) && ('parent' in field.lov)){ %>"lovparent":<%-JSON.stringify(field.lov.parent)%>, <% } %>
+    <% if(('lov' in field) && ('parents' in field.lov)){ %>"lovparents":<%-JSON.stringify(field.lov.parents)%>, <% } %>
+    <% if(('lov' in field) && ('blank' in field.lov)){ %>"lovblank":1, <% } %>
+    }, <%});%>
+};
+
+XForm<%=model.id%>.prototype.OnRender = XExt.XForm.OnRender('<%=model.id%>');
+XForm<%=model.id%>.prototype.GetValues = XExt.XForm.GetValues();
+XForm<%=model.id%>.prototype.GetValue = XExt.XForm.GetValue('<%=model.id%>');
+XForm<%=model.id%>.prototype.HasUpdates = XExt.XForm.HasUpdates();
+XForm<%=model.id%>.prototype.HasUpdate = XExt.XForm.HasUpdate();
+XForm<%=model.id%>.prototype.OnControlUpdate = XExt.XForm.OnControlUpdate();
+XForm<%=model.id%>.prototype.Commit = XExt.XForm.Commit('<%=model.id%>','xform_post_<%=model.id%>');
+XForm<%=model.id%>.prototype.BindLOV = XExt.XForm.BindLOV('<%=model.id%>');
+
+XForm<%=model.id%>.prototype.xvalidate = new XValidate();
+<% _.each(model.fields,function(field){ if(!('control' in field)) return; %>
+XForm<%=model.id%>.prototype.xvalidate.AddControlValidator('.<%=field.name%>.xelem<%=model.id%>','_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getaccess(model.access,"BIU"):field.access)%>',[<%-field.validate%>]);<%});%>
+
+jsh_heap.push('XForm<%=model.id%>');

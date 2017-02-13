@@ -1,0 +1,580 @@
+/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+<% if(model.sample_data) return; %>
+
+window.xform_<%=model.id%> = undefined;
+window.xform_post_<%=model.id%> = undefined;
+window.xgrid_<%=model.id%> = undefined;
+window.xfilter_<%=model.id%> = undefined;
+
+function XForm<%=model.id%>_Init(callback){
+  xfilter_<%=model.id%> = new XPost('','#xfilter_template_<%=model.id%>','#xfilter_<%=model.id%>');
+  xfilter_<%=model.id%>.Data = new XSearch.SearchQuery(new XForm<%=model.id%>());
+  xfilter_<%=model.id%>.Data.Items.unshift(new XSearch.SearchItem('ALL','','and','contains'));
+  xfilter_<%=model.id%>.OnAfterRender = function(){ $('#xfilter_<%=model.id%> input.xfilter_value').each(function(){ XBarcode.EnableScanner($(this)); }); };
+  xfilter_<%=model.id%>.Render();
+  <% if(model.grid_expand_filter){ %>XForm<%=model.id%>_FilterExpand(0);<% } %>
+
+  xform_post_<%=model.id%> = new XPost('<%=model.id%>','','');
+  xform_post_<%=model.id%>.Data = new XForm<%=model.id%>();
+  xform_post_<%=model.id%>.DataType = XForm<%=model.id%>;
+
+  var isInlinePopup = <%-xejs.iif(('inlinepopup' in model) && (model.inlinepopup),'true','false')%>;
+  var scrollControl = (isInlinePopup ? $('#xgrid_<%=model.id%>_placeholder').closest('.xpanel')[0] : window);
+  xform_<%=model.id%> = new XData('<%=model.id%>','#xgrid_<%=model.id%>_template','#xgrid_<%=model.id%>_placeholder',undefined,true,scrollControl);
+  xform_<%=model.id%>.NoResultsMessage = '<%-xejs.iif(('noresultsmessage' in model) && (model.noresultsmessage),model.noresultsmessage,'No results found %%%FORSEARCHPHRASE%%%')%>';
+  <% if(typeof model.sort != 'undefined'){ for(var i=0;i<model.sort.length;i++){ %> 
+  xform_<%=model.id%>.Sort.push('<%-model.sort[i]%>');
+    <% } } %>
+    xform_<%=model.id%>.HasUpdates = function(){ if(this.RowCount==0) return false; return xform_post_<%=model.id%>.HasUpdates(); };
+  xform_<%=model.id%>.Data = {};
+  //Extended xData
+  xform_<%=model.id%>.Prop.ReselectAfterEdit = <%-xejs.iif(('reselectafteredit' in model) && (model.reselectafteredit),'true','false')%>;
+  xform_<%=model.id%>.Prop.NewRowPosition = '<%-xejs.iif('newrowposition' in model,model.newrowposition,'last')%>';
+  xform_<%=model.id%>.Prop.ModifiedSinceLoad = false;
+  xform_<%=model.id%>.Prop.Enabled = (isInlinePopup ? false : true);
+  xform_<%=model.id%>.Prop.isInlinePopup = isInlinePopup;
+  xform_<%=model.id%>.RequireFilter = <%-xejs.iif(model.grid_require_filter,'true','false')%>;;
+  xform_<%=model.id%>.GetDBRowCount = <%-xejs.iif(('grid_rowcount' in model) && (model.grid_rowcount),'true','false')%>;
+
+  xgrid_<%=model.id%> = new XGrid('<%=model.id%>',XForms['<%=model.id%>']._commitlevel,'<%-xejs.iif('validationlevel' in model,model.validationlevel,'row')%>');
+  xgrid_<%=model.id%>.Debug = true;
+  xgrid_<%=model.id%>.OnRowEnter = function(rowid){ xform_post_<%=model.id%>.SetIndex(rowid,false); }
+  xgrid_<%=model.id%>.OnControlUpdate = function(obj,e){ xform_post_<%=model.id%>.Data.OnControlUpdate(obj,e); }
+  xgrid_<%=model.id%>.OnValidating = function(rowid,obj){ return xform_post_<%=model.id%>.CommitRow(); }
+  xgrid_<%=model.id%>.IsDirty = function(){ return xform_post_<%=model.id%>.IsDirty; }
+  xgrid_<%=model.id%>.OnCommit = XForm<%=model.id%>_OnCommit;
+  xgrid_<%=model.id%>.OnCancelEdit = function(rowid,obj){ XForm<%=model.id%>_ResetRow(rowid); }
+
+  xform_<%=model.id%>.OnRowBind = function(jobj,datarow){ xgrid_<%=model.id%>.BindRow(jobj); XForm<%=model.id%>.prototype.BindLOV(xform_post_<%=model.id%>,jobj); };
+  xform_<%=model.id%>.OnMetaData = function(data){ xform_post_<%=model.id%>._LOVs = this._LOVs; xform_post_<%=model.id%>._defaults = this._defaults; }
+  xform_<%=model.id%>.OnDBRowCount = function(data){ XForm<%=model.id%>_UpdateTitleCaption(); };
+  xform_<%=model.id%>.OnResetDataSet = function(data){ var xpost = xform_post_<%=model.id%>;
+    xpost.DataSet = []; xpost.ResetDirty();
+    if (data[this.q].length <= 0){ xpost.Index = -1; }
+    else{ xpost.Index = 0; }
+    this.Prop.ModifiedSinceLoad = false;
+  }
+  xform_<%=model.id%>.OnRender = function(ejssource,data){ var xpost = xform_post_<%=model.id%>;
+    xpost.DataSet = xpost.DataSet.concat(data[this.q]);
+    for (var i = 0; i < data[this.q].length; i++) {
+      var rowid = this.RowCount + i;
+      xpost.DataSet[rowid]['_is_new'] = false;
+      xpost.DataSet[rowid]['_is_dirty'] = false;
+      xpost.DataSet[rowid]['_is_deleted'] = false;
+      xpost.DataSet[rowid]['_orig'] = null;
+      var ejsrslt = ejs.render(ejssource, { rowid: rowid, data: [data[this.q][i]], xejs: XExt.xejs });
+      var jobj = $(ejsrslt).appendTo($(this.PlaceholderID));
+      xpost.NavTo(rowid, false);
+      this.OnRowBind(jobj);
+    }
+    $.colorbox.resize();
+    this.RowCount += data[this.q].length;
+  }
+  xform_<%=model.id%>.OnLoadMoreData = function(){
+    if(this.Prop.ModifiedSinceLoad){ this.Select(); return; }
+    this.Load(this.RowCount);
+  }
+
+  xform_post_<%=model.id%>.xData = xform_<%=model.id%>;
+  xform_<%=model.id%>.State.Search = xfilter_<%=model.id%>.Data.Items;
+  xform_<%=model.id%>.State.Sort = xform_<%=model.id%>.Sort;
+  <%=xejs.iif(('disableautoload' in model) && (model.disableautoload),'xform_'+model.id+'.AutoLoadMore = false;') %>
+  xform_<%=model.id%>.OnBeforeSelect = function(){
+    has_search_items = XForm<%=model.id%>_HasSearchItems(this.SearchJSON);
+    if(has_search_items){ 
+      $('#xfilterbutton<%=model.id%> span').html('Remove Filter');
+    }
+    else{
+      $('#xfilterbutton<%=model.id%> span').html('Filter');
+    }
+    XForm<%=model.id%>_UpdateTitleCaption();
+  };
+  xform_<%=model.id%>.Select = function(done){
+    //Get current number of pages
+    if(!xform_<%=model.id%>.Prop.Enabled){ if(done) done(); return;}
+    var loadobj = "XFORM<%=model.id%>";
+    var init_rowcount = xform_<%=model.id%>.RowCount;
+    var init_scroll = $(window).scrollTop();
+    window.xLoader.StartLoading(loadobj);
+    var load_complete = false;
+    //Load all pages
+    _.each(XForms['<%=model.id%>']._bindings,function(binding){
+      var bindval = XForms['<%=model.id%>'][binding]();
+      if(bindval=='') delete xform_<%=model.id%>.Data[binding];
+      else xform_<%=model.id%>.Data[binding] = bindval;
+    });
+
+    if(!is_add || isInlinePopup) delete xform_<%=model.id%>.Data._action;
+    else xform_<%=model.id%>.Data._action = 'add';
+
+    var check_load_complete = function(){
+      if(!xform_<%=model.id%>) return;
+      load_complete = (xform_<%=model.id%>.EOF || (xform_<%=model.id%>.RowCount >= init_rowcount));
+      if(load_complete){ 
+        //Move scrollbar
+        $(window).scrollTop(init_scroll);
+        //Remove loading animation
+        window.xLoader.StopLoading(loadobj); 
+        if(done) done(); 
+      }
+      else xform_<%=model.id%>.Load(xform_<%=model.id%>.RowCount,undefined,check_load_complete);
+    };
+    xform_<%=model.id%>.GetMeta = true;
+    xform_<%=model.id%>.Load(undefined,undefined,check_load_complete);
+  };
+
+  xform_post_<%=model.id%>.GetSelectParams = function(){
+    var rslt = new Object();
+    if(!is_add || isInlinePopup){
+      _.each(XForms['<%=model.id%>']._bindings,function(binding){
+        rslt[binding] = XForms['<%=model.id%>'][binding]();
+      });
+    }
+    else{
+      rslt._action = 'add';
+    }
+    return rslt; 
+  };
+  xform_post_<%=model.id%>.GetKeys = function(){
+    var rslt = new Object();
+    if(!is_add){
+      <% xejs.eachKey(model.fields,function(field){%>rslt.<%=field['name']%> = this.Data.<%=field['name']%>;<%}); %>
+    }
+    else{
+      _.each(XForms['<%=model.id%>']._bindings,function(binding){
+        rslt[binding] = '%%%'+binding+'%%%';
+      });
+    }
+    return rslt; 
+  };
+
+  callback();
+}
+
+function XForm<%=model.id%>_OnCommit(rowid,obj,onsuccess,oncancel){
+  var xpost = xform_post_<%=model.id%>;
+  var dbtasks = xpost.PrepSaveDataSet();
+  
+  xpost.ExecuteTrans(dbtasks,function(rslt){
+    //On Success
+    xform_<%=model.id%>.Prop.ModifiedSinceLoad = true;
+    //Merge back results
+    if('_success' in rslt){
+      var dbrsltsuffix = '_<%=model.id%>';
+      for(var dbrslt in rslt){
+        if(XExt.endsWith(dbrslt,dbrsltsuffix)){
+          var taskidx = dbrslt.substr(0,dbrslt.length - dbrsltsuffix.length);
+          var dbtaskid = 'insert_'+taskidx;
+          if(dbtaskid in xpost.DBTaskRows){
+            var dbrowid = xpost.DBTaskRows[dbtaskid];
+            xpost.DataSet[dbrowid] = _.extend(xpost.DataSet[xpost.Index], rslt[dbrslt]);
+            if(xpost.Index == dbrowid) xpost.Data = _.extend(xpost.Data, rslt[dbrslt]);
+          }
+        }
+      }
+    }
+
+    xpost.ResetDirty();
+
+    //Bind oncommit handler if defined
+    if(XForms['<%=model.id%>']._oncommit) onsuccess = function(){ XForms['<%=model.id%>']._oncommit(XForms['<%=model.id%>'], rowid); };
+    
+    if(xform_<%=model.id%>.Prop.ReselectAfterEdit) XForm<%=model.id%>_Reselect(rowid,onsuccess);
+    else if(onsuccess) onsuccess();
+
+  },function(data){
+    //On Fail
+    if(xpost.Data._jrow){
+      $(xpost.Data._jrow).find('.xform_ctrl').addClass(XForm<%=model.id%>.prototype.xvalidate.ErrorClass);
+    }
+    if(oncancel) oncancel(false);
+    if(data && ('responseText' in data)) XExt.Alert('An error has occurred: ' + data.responseText);
+    return true; //Error handled
+  });
+  return false;
+}
+
+function XForm<%=model.id%>_Reselect(rowid,oncomplete,onfail){
+  if(rowid < 0){ XExt.Alert('Invalid Reselect Row ID'); return; }
+  var _this = xform_post_<%=model.id%>;
+  
+  var xdata = xform_<%=model.id%>;
+  if(rowid != _this.Index) if(!_this.SetIndex(rowid,true)) return;
+  var reqdata = { rowstart: 0, rowcount: 1, d: JSON.stringify(_this.GetReselectParams()) };
+  _this.XExecute(_this.q,reqdata,function(rslt){
+    //Success
+    if('_success' in rslt){
+      if((_this.q in rslt) && (rslt[_this.q].length > 0)){
+        _this.DataSet[rowid] = _.extend(_this.DataSet[rowid],rslt[_this.q][0]);
+        _this.DataSet[rowid]['_is_new'] = false;
+        _this.DataSet[rowid]['_is_dirty'] = false;
+        _this.DataSet[rowid]['_orig'] = null;
+
+        var ejssource = $(xdata.TemplateID).html();
+        ejssource = ejssource.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
+        var ejsrslt = ejs.render(ejssource, { rowid: rowid, data: [_this.DataSet[rowid]], xejs: XExt.xejs });
+        var jobj = $(xdata.PlaceholderID).find("tr[data-id='" + rowid + "']");
+        jobj.replaceWith($(ejsrslt));
+        jobj = $(xdata.PlaceholderID).find("tr[data-id='" + rowid + "']");
+        _this.SetIndex(rowid,false);
+        _this.Render();
+        xdata.OnRowBind(jobj);
+      }
+      if(oncomplete) oncomplete();
+    }
+    else if(onfail) onfail(err);
+  },function(err){
+    //Fail
+    if(onfail) onfail(err);
+  });
+}
+
+
+
+function XForm<%=model.id%>_ResetRow(rowid){
+  var xpost = xform_post_<%=model.id%>;
+  var xdata = xform_<%=model.id%>;
+
+  var oldrowid = -1;
+  var oldobj = xgrid_<%=model.id%>.CurrentCell;
+  if(oldobj) oldrowid = XExt.XForm.GetRowID('<%=model.id%>',oldobj);
+
+  //Get Data, if data is new, delete row from both grid and ...
+  if(xpost.DataSet[rowid]._is_new) return XForm<%=model.id%>_DeleteRow(rowid);
+  //If HasChanges
+  if(oldrowid == rowid){ 
+    if(xpost.Data._orig != null)      xpost.Data = _.extend(xpost.Data, xpost.Data._orig);
+    xpost.Data._orig = null;
+    xpost.Data._is_dirty = false;
+    xpost.DataSet[rowid] = _.extend(xpost.DataSet[rowid], xpost.Data);
+    xpost.Render();
+  }
+  else{
+    if(xpost.DataSet[rowid]._orig != null){
+
+    }
+  }
+  xpost.RecheckDirty();
+
+  //Undo Changes
+  //
+}
+
+function XForm<%=model.id%>_AddRow(){
+  var xpost = xform_post_<%=model.id%>;
+  var xdata = xform_<%=model.id%>;
+  if(xgrid_<%=model.id%>.CurrentCell) if(!xpost.CommitRow()) return;
+  var newrow = xpost.NewRow();
+  
+  xdata.RowCount++;
+  var rowid = xdata.RowCount-1;
+  xform_<%=model.id%>.Prop.ModifiedSinceLoad = true;
+  
+  var ejssource = "";
+  if (xdata.TemplateHTMLFunc != null) ejssource = xdata.TemplateHTMLFunc(data, xdata.RowCount);
+  else ejssource = $(xdata.TemplateID).html();
+  ejssource = ejssource.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
+  var ejsrslt = ejs.render(ejssource, {
+    rowid: rowid,
+    data: [newrow],
+    xejs: XExt.xejs
+  });
+
+  var jobj;
+  if($(xdata.PlaceholderID).find('tr.xtbl_noresults').length){ $(xdata.PlaceholderID).find('tr.xtbl_noresults').remove(); }
+  if(xdata.Prop.NewRowPosition=='first'){
+    jobj = $(ejsrslt).prependTo($(xdata.PlaceholderID));
+  }
+  else if($(xdata.PlaceholderID).find('.xtbl_loadmore').length){
+    //Prepend
+    jobj = $(ejsrslt).insertBefore($(xdata.PlaceholderID).find('.xtbl_loadmore'));
+  }
+  else {
+    jobj = $(ejsrslt).appendTo($(xdata.PlaceholderID));
+  }
+
+  var oldindex = xpost.Index;
+  xpost.NavTo(rowid,false);
+  var newobj = $(jobj).find('.xform_ctrl.editable:visible').not('input[type=hidden]').first();
+  newobj.focus();
+  if(xdata.OnRowBind) xdata.OnRowBind(jobj);
+  xgrid_<%=model.id%>.CurrentCell = document.activeElement;
+  return rowid;
+}
+
+function XForm<%=model.id%>_DeleteRow(rowid){
+  XExt.Confirm("Are you sure you want to delete this <%=model.caption[1]%>?",function(){
+    var xpost = xform_post_<%=model.id%>;
+    var xdata = xform_<%=model.id%>;
+
+    var oldrowid = -1;
+    var oldobj = xgrid_<%=model.id%>.CurrentCell;
+    if(oldobj) oldrowid = XExt.XForm.GetRowID('<%=model.id%>',oldobj);
+
+    if(oldrowid != rowid) if(!xpost.CommitRow()) return;
+  
+    var exec_delete = function(){
+      xform_<%=model.id%>.Prop.ModifiedSinceLoad = true;
+      xpost.DataSet[rowid]._is_deleted = true;
+      xpost.DataSet[rowid]._is_new = false;
+      xpost.DataSet[rowid]._is_dirty = false;
+      xpost.DataSet[rowid]._orig = null;
+      $(xdata.PlaceholderID).find("tr[data-id='" + rowid + "']").remove();
+      xgrid_<%=model.id%>.CurrentCell = null;
+      if(xpost.Index==rowid){ 
+        xpost.Data._is_new = false;
+        xpost.Data._is_dirty = false;
+        xpost.Data._orig = null;
+        xpost.Index = -1;
+        for(var i=0;i<xpost.Count();i++){
+          if(!xpost.DataSet[i]._is_deleted){ 
+            xpost.SetIndex(i,false);
+            break;
+          }
+        }
+      }
+      xpost.RecheckDirty();
+    }
+
+    if(!(xpost.DataSet[rowid]._is_new)){
+      if(!(xpost.DataSet[rowid] in xpost.DeleteSet)) xpost.DeleteSet.push(xpost.DataSet[rowid]);
+
+      if(XForms['<%=model.id%>']._commitlevel == 'page'){
+        exec_delete();
+      }
+      else{
+        var dbtasks = xpost.PrepSaveDataSet(true);
+        xpost.ExecuteTrans(dbtasks,function(rslt){
+          //On Complete
+          exec_delete();
+          xpost.ResetDirty();
+		  if(XForms['<%=model.id%>']._oncommit) XForms['<%=model.id%>']._oncommit(XForms['<%=model.id%>'], -1);
+        },function(data){
+          //On Fail
+          _.remove(xpost.DeleteSet,xpost.DataSet[rowid]);
+          xpost.RecheckDirty();
+          if(data && ('responseText' in data)) XExt.Alert('An error has occurred: ' + data.responseText);
+          return true; //Error handled
+        });
+      }
+    }
+    else exec_delete();
+  });
+}
+
+function XForm<%=model.id%>_Save(){
+  if((XForms['<%=model.id%>']._commitlevel == 'cell') ||
+     (XForms['<%=model.id%>']._commitlevel == 'row') ||
+     (XForms['<%=model.id%>']._commitlevel == 'page'))
+    return xform_post_<%=model.id%>.PrepSaveDataSet();
+  return [];
+}
+
+function XForm<%=model.id%>_GetState(){
+  return xform_<%=model.id%>.State;
+}
+
+function XForm<%=model.id%>_LoadState(state){
+  if('Sort' in state){
+    xform_<%=model.id%>.State.Sort = state.Sort;
+    xform_<%=model.id%>.Sort = state.Sort;
+    xform_<%=model.id%>.ResetSortGlyphs($('#xform<%=model.id%>'));
+  }
+  if('Search' in state){
+    xform_<%=model.id%>.State.Search = state.Search;
+    xfilter_<%=model.id%>.Data.Items = state.Search;
+    xfilter_<%=model.id%>.Render();
+    xform_<%=model.id%>.SearchJSON = JSON.stringify(state.Search);
+  }
+}
+
+function XForm<%=model.id%>_Refresh(){
+  if(XForm_OnGridExit(null,function(){ XForm<%=model.id%>_Refresh(); })) return;
+  xform_<%=model.id%>.Load();
+}
+
+function XForm<%=model.id%>_Sort(obj,fieldname){
+  if(!xform_<%=model.id%>.Prop.isInlinePopup) if(XForm_OnGridExit(obj,function(){ XForm<%=model.id%>_Sort(obj,fieldname); })) return;
+  xform_<%=model.id%>.AddSort(obj,fieldname);
+  xform_<%=model.id%>.State.Sort = xform_<%=model.id%>.Sort;
+  XForm_AddHistory();
+  return false;
+}
+
+function XForm<%=model.id%>_HasSearchItems(val){
+  var rslt = false;
+  if(typeof val == 'undefined') val = xform_<%=model.id%>.SearchJSON;
+  if(val.trim() != ''){
+    var sjson = JSON.parse(val);
+    _.each(sjson,function(squery){
+      if(squery.Value.trim() != '') rslt = true;
+      if((squery.Comparison == 'null')||(squery.Comparison == 'notnull')) rslt = true; 
+    });
+  }
+  return rslt;
+}
+
+function XForm<%=model.id%>_FilterColumnChange(){
+  xfilter_<%=model.id%>.GetValues();
+  xfilter_<%=model.id%>.Render();
+}
+
+function XForm<%=model.id%>_FilterComparisonChange(){
+  xfilter_<%=model.id%>.GetValues();
+  xfilter_<%=model.id%>.Render();
+}
+
+function XForm<%=model.id%>_FilterJoinChange(){
+  xfilter_<%=model.id%>.GetValues();
+  var d = xfilter_<%=model.id%>.Data;
+  if(d.Items.length > 0){
+    var curjoin = d.Items[0].Join;
+    if(curjoin == 'and') curjoin = 'or';
+    else curjoin = 'and';
+    for(var i=0;i<d.Items.length;i++){
+      d.Items[i].Join = curjoin;
+    }
+    xfilter_<%=model.id%>.Render();
+  }
+}
+
+function XForm<%=model.id%>_FilterExpand(timeout){
+  if($('#xfilter_<%=model.id%>').is(':visible')) return;
+  if(xfilter_<%=model.id%>.Data.Items.length == 0){
+    XForm<%=model.id%>_FilterAdd();
+    $('#xfilter_<%=model.id%>').slideDown(timeout,function(){ $('#xfilter_<%=model.id%> .xfilter_value').first().select().focus(); });
+  }
+  else {
+    $('#xfilter_<%=model.id%>').slideDown(timeout,function(){ $('#xfilter_<%=model.id%> .xfilter_value').first().select().focus(); });
+  }
+}
+
+function XForm<%=model.id%>_FilterButton(){
+  if($('#xfilterbutton<%=model.id%> span').html()=='Remove Filter'){
+    xfilter_<%=model.id%>.Data.Items = [];
+    xfilter_<%=model.id%>.Render();
+    $('#xfilter_<%=model.id%>').hide();
+    XForm<%=model.id%>_FilterExpand(400);
+    XForm<%=model.id%>_FilterApply();
+  }
+  else{
+    if($('#xfilter_<%=model.id%>').is(':visible')) $('#xfilter_<%=model.id%>').slideUp();
+    else XForm<%=model.id%>_FilterExpand(400);
+  }
+}
+
+function XForm<%=model.id%>_FilterKeyUp(event){
+  if(event.keyCode==13) XForm<%=model.id%>_FilterApply();
+}
+
+function XForm<%=model.id%>_SetFilter(searchitems,hide){
+  if(hide) $('#xfilter_<%=model.id%>').hide();
+  xfilter_<%=model.id%>.Data.Items = searchitems;
+  xfilter_<%=model.id%>.Render();
+  xform_<%=model.id%>.State.Search = searchitems;
+  xform_<%=model.id%>.SearchJSON = JSON.stringify(searchitems);
+}
+
+function XForm<%=model.id%>_FilterApply(cb,ignore_changes){
+  if(!xform_<%=model.id%>.Prop.isInlinePopup) if(XForm_OnGridExit(null,function(){ XForm<%=model.id%>_FilterApply(); })) return;
+  xfilter_<%=model.id%>.GetValues();
+  var searchitems = JSON.parse(JSON.stringify(xfilter_<%=model.id%>.Data.Items));
+  var has_search_items = false;
+  _.each(searchitems,function(val){ 
+    if(val.Value.trim() != '') has_search_items = true; 
+    if((val.Comparison == 'null')||(val.Comparison == 'notnull')) has_search_items = true; 
+  });
+  //if (val.trim() != '') 
+  var sjson = '';
+  if(has_search_items){ 
+    sjson = JSON.stringify(searchitems);
+  }
+  xform_<%=model.id%>.State.Search = searchitems;
+  XForm_AddHistory();
+  xform_<%=model.id%>.NewSearchJSON(sjson, cb);
+}
+
+function XForm<%=model.id%>_FilterAdd(){
+  xfilter_<%=model.id%>.GetValues();
+  xfilter_<%=model.id%>.Data.Items.unshift(new XSearch.SearchItem('ALL','','and','contains'));
+  xfilter_<%=model.id%>.Render();
+}
+
+function XForm<%=model.id%>_FilterRemove(obj){
+  xfilter_<%=model.id%>.GetValues();
+  var idx = $(xfilter_<%=model.id%>.PlaceholderID).children().index($(obj).parent());
+  xfilter_<%=model.id%>.Data.Items.splice(idx,1);
+  xfilter_<%=model.id%>.Render();
+}
+
+function XForm<%=model.id%>_Export(){
+  if(!xform_<%=model.id%>.Prop.isInlinePopup) if(XForm_OnGridExit(null,function(){ XForm<%=model.id%>_Export(); })) return;
+  xform_<%=model.id%>.Load(0,0,function(url){
+    $('#xfileproxy').prop('src', url);
+  },true);
+}
+
+function XForm<%=model.id%>_UpdateTitleCaption(){
+  var has_search_items = XForm<%=model.id%>_HasSearchItems(this.SearchJSON);
+  var txt = '(';
+  if(has_search_items) txt += 'filtered';
+  if(xform_<%=model.id%>.DBRowCount >= 0) txt += ((txt=='(')?'':' - ') + xform_<%=model.id%>.DBRowCount.toLocaleString() + ' rows';
+  if(txt == '(') txt = '';
+  else txt += ')';
+  if(txt){
+    $('#xtitlecaption<%=model.id%>').show();
+  }
+  else {
+    $('#xtitlecaption<%=model.id%>').hide();
+  }
+  $('#xtitlecaption<%=model.id%> a').text(txt);
+}
+
+jsh_heap.push('xform_<%=model.id%>');
+jsh_heap.push('xform_post_<%=model.id%>');
+jsh_heap.push('xgrid_<%=model.id%>');
+jsh_heap.push('xfilter_<%=model.id%>');
+
+jsh_heap.push('XForm<%=model.id%>_OnCommit');
+jsh_heap.push('XForm<%=model.id%>_Reselect');
+jsh_heap.push('XForm<%=model.id%>_ResetRow');
+jsh_heap.push('XForm<%=model.id%>_AddRow');
+jsh_heap.push('XForm<%=model.id%>_DeleteRow');
+
+jsh_heap.push('XForm<%=model.id%>_Init');
+jsh_heap.push('XForm<%=model.id%>_Save');
+jsh_heap.push('XForm<%=model.id%>_GetState');
+jsh_heap.push('XForm<%=model.id%>_LoadState');
+jsh_heap.push('XForm<%=model.id%>_Refresh');
+jsh_heap.push('XForm<%=model.id%>_Sort');
+jsh_heap.push('XForm<%=model.id%>_HasSearchItems');
+jsh_heap.push('XForm<%=model.id%>_FilterKeyUp');
+jsh_heap.push('XForm<%=model.id%>_FilterColumnChange');
+jsh_heap.push('XForm<%=model.id%>_FilterComparisonChange');
+jsh_heap.push('XForm<%=model.id%>_FilterJoinChange');
+jsh_heap.push('XForm<%=model.id%>_FilterButton');
+jsh_heap.push('XForm<%=model.id%>_SetFilter');
+jsh_heap.push('XForm<%=model.id%>_FilterApply');
+jsh_heap.push('XForm<%=model.id%>_FilterAdd');
+jsh_heap.push('XForm<%=model.id%>_FilterRemove');
+jsh_heap.push('XForm<%=model.id%>_Export');
+jsh_heap.push('XForm<%=model.id%>_UpdateTitleCaption');
+
+<%-jshRenderEJS('jsh_grid.js.datamodel',ejsparams)%>

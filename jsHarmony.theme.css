@@ -1,0 +1,200 @@
+/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*
+=============
+MAIN ELEMENTS
+=============
+*/
+body { 
+	background-color: #fff; 
+	color: #000000;  /*202020*/
+	margin:0px;
+	padding:0px;
+	background-repeat:repeat-x;
+}
+body, p, ol, ul, td {
+  font-family: 'Droid Sans', arial, helvetica, sans-serif;
+  font-size:   13px;
+  line-height: 18px;
+}
+pre {
+  background-color: #eee;
+  padding: 10px;
+  font-size: 11px;
+}
+a,.link { color: #426cc2; text-decoration:none; }
+a:visited { color: #426cc2; }
+a:hover { text-decoration:underline;}
+h1{
+	font-family: 'PT Sans', arial, helvetica, sans-serif;
+	color:#252525;
+	font-size:24px;
+	margin:0;
+	padding:0 0 19px 0;
+	font-weight:normal;
+}
+h2{
+	font-family: 'PT Sans', arial, helvetica, sans-serif;
+	color:#252525;
+	font-size:19px;
+	margin:0px 0 0px 0;
+	padding:0 0 15px 0;
+	font-weight:bold;
+}
+p {
+	margin:0;
+  padding:0 0 22px 0;
+	line-height:1.4em;
+}
+input {
+  font-family: 'PT Sans', arial, helvetica, sans-serif;
+	padding-left:3px;
+}
+
+/*
+======================
+HEADER AND TOP BUTTONS
+======================
+*/
+#xmain{
+	width:100%;
+	min-width:1024px;
+	position:relative;
+}
+/*
+====
+BODY
+====
+*/
+#xbody {
+	padding-top:21px;
+	padding-left:29px;
+/*	min-height:300px;*/
+	padding-bottom:30px;
+}
+.bcrumbs { /* TODO */
+  color:#777;
+  font-size:12px;
+	margin-left:0px;
+	position:relative;
+	top:-8px;
+	padding-bottom:2px;
+}
+.bcrumbs a{ /* TODO */
+  color:#777;
+  font-size:12px;
+}
+.xtbl thead tr {
+	background-color:#333333;
+}
+.xtbl thead th {
+	text-align:left;
+	font-weight:normal;
+	color:#ffffff;
+	padding:2px 6px 1px 6px;
+	border-right:1px solid #333333;
+	border-left:1px solid #333333;
+}
+.xtbl thead th a {
+	color:#ffffff;
+	display:block;
+}
+.xtbl tbody tr.even {
+	background-color:#ecf0f9;
+}
+.xtbl tbody td {
+	border-left:1px solid #9f9f9f;
+	border-bottom:1px solid #9f9f9f;
+	border-right:1px solid #9f9f9f;
+	padding:3px 6px 3px 6px;
+	vertical-align:text-top;
+}
+.xtbl .xtbl_loadmore a {
+	display:block;
+	text-align:center;
+	padding:4px;
+	background-color:#f3f3f3;
+	border:1px solid #aaaaaa;
+}
+a.xtab{
+	background-color:#152142;
+	color:#ffffff;
+	padding:5px 15px;
+	margin-right:1px;
+	border-top:1px solid #333333;
+	border-left:1px solid #333333;
+	border-right:1px solid #333333;
+}
+a.xtab.selected{
+	background-color:#dedede;
+	color:#000000;
+}
+a.xtab.selected:hover{
+	text-decoration:none;
+}
+a.xtab.last{
+	margin-right:0;
+}
+a.xtab.disabled{
+	background-color:#eeeeee;
+	color:#cccccc;
+}
+a.xtab.disabled:hover{
+	text-decoration:none;
+}
+.xpanel {
+	border-top:2px solid #333333;
+	border-right:1px solid #333333;
+	border-left:1px solid #333333;
+	border-bottom:1px solid #333333;
+	padding:10px;
+	min-height:20px;
+}
+
+/***************************
+CUSTOM CONTROL STYLES
+***************************/
+#xmain .xtbl tbody tr.xgrid_row_highlight { background-color:#ffff66; }
+#xmain .xtbl tbody tr.xgrid_row_error { background-color:#ffb8b8; }
+#xmain .xtbl tbody tr.xgrid_row_disabled,#xmain .xtbl tbody tr.xgrid_row_disabled a { background-color:#ddd; color:#777; }
+#xmain .xtbl tbody tr.xgrid_row_PREF { background-color:#c6d3ff; }
+#xmain .xtbl tbody tr.xgrid_row_none { background-color:#ffffff; }
+
+#xmain .xtbl tbody tr.xgrid_row_green { background-color:#c2ffb8; }
+#xmain .xtbl tbody tr.xgrid_row_yellow { background-color:#fffeb8; }
+#xmain .xtbl tbody tr.xgrid_row_red { background-color:#ffb8b8; }
+#xmain .xtbl tbody tr.xgrid_row_gray { background-color:#cccccc; }
+
+.xform_button { border:1px solid #fff; }
+.xform_button.highlighted { background-color:yellow; border:1px dashed #666; }
+
+/*
+================
+PRINT STYLESHEET
+================
+*/
+@media print {
+  .xtbl thead th { 
+    color:#000000; 
+    border:1px solid #000000;
+  }
+  #xbody { padding:20px 0 0 15px; }
+  .xtbl thead th a { color:#000000; }
+}

@@ -1,0 +1,59 @@
+<div>
+<!-- ***JSHARMONY_LOGIN*** -->
+<div style="padding-bottom:10px;">Please sign in to the system with your email and password below.</div>
+<%-ejsext.DisplayErrors(verrors)%>
+<form method="post" id="mlogin">
+  <input type="hidden" name="source" value="<%=source%>" />
+  <table>
+    <tr>
+      <td align="right">Email Address:</td>
+      <td align="left"><input type="text" style="width:150px;" id="username" name="username" value="<%=username%>" /></td>
+    </tr>
+    <tr>
+      <td align="right">Password:</td>
+      <td align="left"><input type="password" style="width:150px;" id="password" name="password" /></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td align="left"><input type="checkbox" name="remember" <%-ejsext.ShowChecked(remember)%> /> Remember me?</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td align="left"><input type="submit" class="button" name="Login" value="Login" /></td>
+    </tr>
+    <% if(enable_password_reset){ %>
+    <tr>
+      <td colspan="2" align="center"><a href="login/forgot_password">Forgot password?</a></td>
+    </tr>
+    <tr>
+      <td colspan="2" align="center"><a href="#" onclick="XExt.Alert('Please contact us at <%=global.support_email%> for assistance in retrieving your email login.'); return false;">Forgot email address?</a></td>
+    </tr>
+    <% } %>
+  </table>
+</form>
+<script type="text/javascript">
+$(document).ready(function() {
+  if($("#username").val() != ''){
+    $("#password").focus().addClass('inputfocus');
+  }
+  else{
+    $("#username").focus().addClass('inputfocus');
+  }
+
+  jQuery('input')
+    .bind('focus', function() {
+      $(this).addClass('inputfocus');
+    }).bind('blur', function() {
+      $(this).removeClass('inputfocus');
+    });
+});
+</script>
+<style type="text/css">
+.inputfocus
+{
+    border-width: 2px;
+    border-color: Blue;
+    border-style: solid;
+}
+</style>
+</div>

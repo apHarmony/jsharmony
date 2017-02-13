@@ -1,0 +1,335 @@
+</div><!-- end xbody -->
+<div style="display:none;">
+<style type="text/css">
+#xmain {
+  min-width:400px;
+}
+</style>
+<script type="text/javascript">
+/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+var jsh_state = { GET:{},fullpath:'',path:'',modelid:'' };
+var jsh_global = {
+  max_filesize: <%-JSON.stringify(global.max_filesize)%>,
+  global_params: <%-(('globalparams' in req.jshconfig) ? JSON.stringify(_.mapValues(req.jshconfig.globalparams,function(val,key){ if(_.isFunction(val)) return val(req); return val; })) : '{}')%>,
+  baseurl:<%-JSON.stringify(req.baseurl)%>,
+};
+var jsh_onepage = true;
+var jsh_prev_title = '';
+var jsh_prev_title_src = '';
+var jsh_prev_bcrumbs = '';
+var jsh_prev_bcrumbs_src = '';
+var jsh_prev_state = null;
+var jsh_cancelExit = false;
+var jsh_focusHandler = [];
+var jsh_ignorefocusHandler = false;
+var jsh_qInputAction = null;
+var CODE_EJSPREPEND = '<!--'+'%%%EJSPREPEND%%%'+'-->';
+
+init_xfileupload();
+var jsh_title_html = '';
+var jsh_html_title = '<%=global.site_title%> - %%%PAGETITLE%%%';
+var jsh_frontsalt = '<%=global.frontsalt%>';
+var jsh_app_errors = [];
+<% if(global.debug_params.web_detailed_errors && global.app_errors){ %>
+jsh_app_errors = <%-JSON.stringify(global.app_errors)%>;
+  <% } %>
+
+  $(document).ready(function(){
+    jsh_title_html = "\r\n"+'<h1 style="display:inline-block;" id="xform_title">&nbsp;</h1>' + "\r\n";
+    jsh_state = jshGetState();
+    if(!jsh_state) return;
+    jshLoad(jsh_state);
+    if(jsh_app_errors.length){
+      XExt.Alert("The following jsHarmony errors have occurred:\r\n"+jsh_app_errors.join("\r\n"));
+    }
+  });
+
+$(document).focusin(function(){
+  if(window.xDialog.length){
+    var newobj = document.activeElement;
+    if(newobj && !($(newobj).closest(window.xDialog[0]).length)){
+      window.setTimeout(function(){ $(window.xDialog[0] + ' input').first().focus(); },1);
+    }
+    return;
+  }
+});
+
+$(document).focusout(function(){
+  if(window.jsh_ignorefocusHandler || window.xDialog.length) return;
+  window.setTimeout(function(){
+    if(window.jsh_ignorefocusHandler || window.xDialog.length) return;
+    for(var i=0;i<jsh_focusHandler.length;i++) jsh_focusHandler[i](document.activeElement);
+  },1);
+});
+
+function jshLoad(state,addHistory){
+  if(!state) return;
+
+  //Clear Previous Loaders
+  xLoader.ClearLoading();
+
+  //Get Model
+  jshGetModel(jsh_state.modelid,jsh_state.GET,function(rslt){//On Success
+    var model = rslt;
+
+    jsh_prev_title = $('#xform_title').html();
+    if(!jsh_prev_title) jsh_prev_title = '';
+    jsh_prev_bcrumbs = $('div.bcrumbs').html();
+    if(!jsh_prev_bcrumbs) jsh_prev_bcrumbs = '';
+
+    //XForm_AddHistory(jsh_prev_state);
+    if((typeof addHistory == 'undefined') || addHistory) XForm_AddHistory(state);
+
+    var ejsrslt = jshRender(model);
+    //console.log(ejsrslt); //Show Full Source
+    XForm_PreDestroy();
+    $('#xbody').html('');
+    XForm_Destroy();
+
+    //Initialize GET/forcequery
+    _GET = XExt.parseGET();
+    forcequery = rslt.forcequery;
+    _.extend(_GET, forcequery);
+
+    //Setup TopMost Variables
+    window.onbeforeunload = XForm_OnExit;
+    window.jsh_cancelExit = false;
+    window.jsh_focusHandler = [];
+    window.jsh_ignorefocusHandler = false;
+    window.jsh_qInputAction = null;
+    is_add =  (_GET['action']=='add');
+    ignore_changes = false;
+    init_complete = false;
+    delete_target = null;
+    _bcrumbs = {};
+
+    var ejsprepend = '';
+    if(rslt.breadcrumbs) ejsprepend += rslt.breadcrumbs;
+    //if(ejsrslt) ejsrslt = ejsrslt.trim();
+    ejsprepend += jsh_title_html;
+    if(ejsrslt.indexOf(CODE_EJSPREPEND)>=0) ejsrslt = ejsrslt.replace(CODE_EJSPREPEND,ejsprepend)
+    else ejsrslt = ejsprepend + ejsrslt;
+    //console.log(ejsrslt); //Debug EJS output
+    $('#xbody').html(ejsrslt);
+    var model_class = 'xbody_'+jsh_state.modelid;
+    if(model._basemodel) model_class += ' xbody_'+ model._basemodel;
+    $('#xbody').attr('class',model_class);
+    //Handle Title
+    if(!model.toptitle) model.toptitle = '';
+    orig_title = XExt.unescapeEJS(model.toptitle);
+    if (orig_title.indexOf('<#') < 0){
+      $('#xform_title').html(model.toptitle);
+      document.title = XExt.StripTags(jsh_html_title.replace('%%%PAGETITLE%%%',model.toptitle));
+    }
+    else if(jsh_prev_title_src == model.toptitle) $('#xform_title').html(jsh_prev_title);
+    else $('#xform_title').html('&nbsp;');
+    jsh_prev_title_src = model.toptitle;
+  
+    //Handle breadcrumbs
+    orig_bcrumbs = XExt.unescapeEJS($('div.bcrumbs').html());
+    if (orig_bcrumbs.indexOf('<#') < 0) $('div.bcrumbs').html(orig_bcrumbs);
+    else if(jsh_prev_bcrumbs_src == orig_bcrumbs) $('div.bcrumbs').html(jsh_prev_bcrumbs);
+    else $('div.bcrumbs').html('&nbsp;'); 
+    jsh_prev_bcrumbs_src = orig_bcrumbs;
+
+    $('#toplink_help').attr('href',model.helpurl);
+    $('#toplink_help').attr('onclick',model.helpurl_onclick);
+    if(model.topmenu){ SelectMenu(model.topmenu); }
+    jshResetLinks();
+    jsh_prev_state = state;
+    $(document).trigger('jsh_ready');
+  }, function(data){//On Fail
+    var closeIfPopup = function(){
+      if(history.length==1) window.close();
+    }
+    if(data.status == 404){ window.location.href = state.fullurl; return true; }
+    else if(data.status == 302){ window.location.href = state.fullurl; return true; }
+    else if(data.status == 301){ window.location.href = state.fullurl; return true; }
+    else if(data.responseText && data.responseText.indexOf('***ACCOUNT_UNPAID_BALANCE***')>=0){ window.location.href = _BASEURL+'C_PA_CC'; return true; }
+    else if(data.responseText && data.responseText.indexOf('***JSHARMONY_LOGIN***')>=0){ window.location.href = state.fullurl; return true; }
+    else if ((data instanceof Object) && ('Number' in data)){ 
+      if(data.Number == -11){ XExt.Alert('Invalid Model Access'); return true; }
+      else if(_.includes([-1,-2],data.Number)){ XExt.Alert(data.Message,null,{ onAcceptImmediate:closeIfPopup }); return true; }
+    }
+    var msg = 'Failed to load state';
+    <% if(req._web_detailed_errors){ %>msg += ': ' + JSON.stringify(data);<% } %>
+    XExt.Alert(msg);
+  });
+}
+
+function jshResetLinks(){
+  $('a').each(function(i,obj){
+    var jobj = $(obj);
+    if(jobj.attr('onclick')) return;
+    jobj.attr('onclick','return jshNavigate(this);');
+  });
+}
+
+function jshNavigate(a,addHistory,orig_url,onCancel){
+  var apath = a.pathname;
+  var aqs = a.search;
+  var ahash = a.hash;
+  var amodelid = '';
+
+  if(a.id != 'xmenu_more') $('#xmenuside').hide();
+  if(!$(a).hasClass('xsubmenu_more')) $('#xsubmenuside').hide();
+
+  if(apath.indexOf(_BASEURL)==0) apath = apath.substr(_BASEURL.length);
+  if(apath.indexOf('_report/')==0) amodelid = '_report_'+apath.substr(8);
+  else amodelid = apath;
+  if((amodelid.length > 0) && (amodelid[amodelid.length-1] == '/')) amodelid = amodelid.substr(0,amodelid.length-1);
+
+  if(window.location.host != a.host) return true;
+  
+  if(amodelid.indexOf('/') >= 0) return true;
+  var new_jsh_state = {
+    GET : XExt.parseGET(aqs),
+    fullpath : a.pathname,
+    path : apath,
+    modelid : amodelid,
+    QS : aqs,
+    hash: ahash,
+    fullurl : a.href
+  }
+  
+  //Check if this is an anchor link to the same page
+  if(!orig_url) orig_url = window.location.pathname+window.location.search;
+  var new_url = new_jsh_state.fullpath+new_jsh_state.QS;
+  if(orig_url == new_url){
+    if(new_jsh_state.hash){ 
+      if((typeof addHistory == 'undefined') || addHistory) XForm_AddHistory(new_jsh_state,true);
+      XExt.jumpAnchor(new_jsh_state.hash); 
+    }
+    return false;
+  }
+  
+  var exec_navigate = function(){
+    jsh_state = new_jsh_state;
+    jshLoad(jsh_state,addHistory);
+  }
+
+  //Try to exit, show message if changes on the page
+  if(!window.jsh_cancelExit){
+    var exit_rslt = XForm_OnExit();
+    if(exit_rslt){
+      XExt.Confirm(exit_rslt + "\n\nAre you sure you want to leave this page?",exec_navigate,function(){
+        if(typeof onCancel != 'undefined') onCancel();
+      });
+      return false;
+    }
+  }
+  exec_navigate();
+  return false;
+}
+
+function jshRender(model,parent){
+  if(_.isString(model)) return model;
+  if(!('layout' in model)) throw new Error("Model "+model.id+" layout not defined.");
+  var layout = model['layout'];
+  if(layout=='grid') return jshRenderGrid(model,parent);
+  else if(layout=='form') return jshRenderForm(model,parent);
+  else if(layout=='form-m') return jshRenderForm(model,parent);
+  else if (layout == 'multisel') return jshRenderMultisel(model,parent);
+  else if (layout == 'exec') return jshRenderForm(model,parent);
+  else throw new Error("Layout "+layout+" not defined");
+}
+
+function jshRenderGrid(model,parent){
+  return jshRenderBase(model,'jsh_grid',parent,{data:[]});
+}
+
+function jshRenderMultisel(model,parent){
+  return jshRenderBase(model,'jsh_multisel',parent,{data:[]});
+}
+
+function jshRenderForm(model,parent){
+  var rslt = jshRenderBase(model,'jsh_form',parent);
+  if('tabpos' in model){
+    var tabbody = jshRender(model.curtabmodel,model);
+    var tab_view = 'jsh_tabs_bottom';
+    if(model.tabpos == 'top') tab_view = 'jsh_tabs_top';
+    rslt = jshRenderBase(model,tab_view,parent,{
+      head:rslt, body:tabbody
+    });
+  }
+  return rslt;
+}
+
+function jshRenderBase(model,view,parent,params){
+  if (typeof params == 'undefined') params = {};
+  var ejsparams = _.extend({
+    model: model,
+    topmost: (('topmost' in model) && (model.topmost)),
+    parent: parent,
+    bindings: model.bindings,
+    ejs: ejs,
+    XExt: XExt,
+    xejs: XExt.xejs,
+    _: _,
+    jshRenderEJS:jshRenderEJS,
+    jshRender:jshRender,
+    jsh_global:jsh_global,
+    _GET: _GET
+  }, params);
+  ejsparams.ejsparams = ejsparams;
+  return ejs.render(jshGetEJS(view), ejsparams);
+}
+
+function jshRenderEJS(view,ejsparams){
+  return ejs.render(jshGetEJS(view),ejsparams);
+}
+
+function jshGetModel(modelid,d,onComplete,onFail){
+  XPost.prototype.XExecute('../_model/'+jsh_state.modelid,d, function (rslt) {
+    onComplete(rslt);
+  },onFail);
+}
+
+function jshGetEJS(view){
+  if(view in srcfiles) return srcfiles[view];
+  jshError(-99999,'View "'+view+'" not found.');
+}
+
+function jshGetState(){
+  var rslt = {};
+  rslt.GET = XExt.parseGET();
+  rslt.fullpath = window.location.pathname;
+  rslt.path = rslt.fullpath;
+  rslt.QS = window.location.search;
+  rslt.hash = window.location.hash;
+  if(rslt.path.indexOf(_BASEURL)==0) rslt.path = rslt.path.substr(_BASEURL.length);
+  if(rslt.path.indexOf('_report/')==0) rslt.modelid = '_report_'+rslt.path.substr(8);
+  else rslt.modelid = rslt.path;
+  if((rslt.modelid.length > 0) && (rslt.modelid[rslt.modelid.length-1] == '/')) rslt.modelid = rslt.modelid.substr(0,rslt.modelid.length-1);
+  
+  if(rslt.modelid.indexOf('/') >= 0){ jshError(-99999,'Invalid Model ID'); return; }
+  return rslt;
+}
+
+function jshError(num,txt){
+  console.log('Error #'+num+': '+txt);
+  $('#xbody').html('<h3>Error #'+num+': '+txt+'</h3>');
+}
+
+//Array of source HTML
+var jsh_popups = <%-JSON.stringify(popups)%>;
+var srcfiles = <%-ejsext.json_encode_ejs(srcfiles)%>;
+<%-srcfiles['jsh_topmost.js']%>
+</script>

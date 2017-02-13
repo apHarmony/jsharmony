@@ -1,0 +1,5 @@
+{
+  "Helper_SendTXTEmail": "select TXT_TVAL,TXT_VAL,TXT_BCC,TXT_TYPE from TXT where TXT_PROCESS='EMAIL' and TXT_ATTRIB=@TXT_ATTRIB",
+  "HelperRender_getTXT": "select TXT_VAL from TXT where TXT_PROCESS=@TXT_PROCESS and TXT_ATTRIB=@TXT_ATTRIB",
+  "SMS_SendTXTSMS": "select TXT_TVAL,TXT_VAL,TXT_BCC from TXT where TXT_PROCESS='SMS' and TXT_ATTRIB=@TXT_ATTRIB"
+}

@@ -1,0 +1,27 @@
+-1: Record not found
+-2: Parameter validation failed
+-3: No records affected
+-4: Invalid Parameters
+-5: Database Application Error (Show error directly from trigger)
+-9: Custom message
+-10: Invalid Login / Not Authenticated
+-11: Invalid Model Access
+-12: Invalid DataLock Access
+-13: Invalid file key
+-14: Breadcrumbs not found
+-15: Invalid System Access
+-16: Session has expired
+-20: Invalid forgot password reset access
+-21: Secure connection required
+-30: Invalid File Upload request
+-31: Upload file exceeded maximum file size
+-32: File extension is not supported
+-33: File not found
+-34: File path not supported
+-35: Error committing file update
+-36: User exceeded max temp folder size
+-37: File already exists
+-50: Encryption must be executed within a transaction
+-51: Encrypted fields require HTTPS connection
+-60: Batch Error, Check Log
+-99999: Unexpected system error

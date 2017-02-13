@@ -1,0 +1,33 @@
+﻿/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+//DataModel <%=model.id%>
+function XForm<%=model.id%>(){ }
+
+XForm<%=model.id%>.prototype.Fields = {
+  <% _.each(model.fields,function(field){ if(!('access' in field)) return; if(field.control=='subform') return; if(field.control=='html') return; %>
+    "<%=field.name%>":{"name":"<%=field.name%>",
+      "caption":<%-JSON.stringify(field.caption_ext||field.caption)%>,
+    <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
+    <%-xejs.iif('access' in field,'"access":'+JSON.stringify(field.access)+',') %>
+    <%-xejs.iif('static' in field,'"static":'+JSON.stringify(field.static)+',') %>
+    <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>
+    }, <%});%>
+};
+
+jsh_heap.push('XForm<%=model.id%>');

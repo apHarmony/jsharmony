@@ -1,0 +1,611 @@
+/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*
+=============
+MAIN ELEMENTS
+=============
+*/
+.hand { cursor:pointer; cursor:hand; }
+div.clear {
+	clear:both;
+}
+a img {	border: none; }
+img a {	border:0; }
+
+/*
+====
+BODY
+====
+*/
+#xbody {
+	position:relative;
+	display:inline-block;
+}
+.xactions {
+	float:left;
+	padding-bottom:15px;
+	padding-left:15px;
+	white-space: nowrap;
+	display:inline-block;
+
+}
+.xactions.top {
+/*	position:absolute;*/
+  position:relative;
+	padding-bottom:0px;
+	top:-5px;
+	right:0px;
+	float:right;
+/*	left:638px;*/
+}
+.xactions.auxtop {
+	position:relative;
+	top:-5px;
+	/*right:-15px;  Commented, did not look good on ECALW */ 
+	float:right;
+	padding-bottom:10px;
+}
+.xactions.secondarygrid {
+	float:right;
+	padding-right:10px;
+  min-height:16px;
+}
+.xactions.secondaryform {
+	float:right;
+	padding-right:10px;
+  min-height:16px;
+  padding-bottom:0px;
+  position:relative;
+  top:-5px;
+}
+.xactions a,.xactions a:visited {
+	display:inline-block;
+	color:#000000;
+	text-decoration:none;
+	margin-left:15px;
+}
+.xactions a.first,.xactions a.first:visited {
+  margin-left:0px;
+}
+.xactions a:hover {
+	text-decoration:underline;
+}
+.xactions a img {
+	position:relative;
+	top:5px;
+	padding-right:6px;
+}
+.xactions a.navbar {
+	margin-left:0;
+}
+.xactions .navtext {
+	display:inline-block;
+	padding-right:6px;
+}
+.xactions_spacer {
+  width:1px;
+  height:1px;
+  display:inline-block;
+}
+.xtbl {
+	border-spacing:0px;
+	position:relative;
+	border-collapse: collapse;
+	clear:both;
+}
+.xtbl th.sortAsc a {
+	padding-right:20px;
+	background-image:url('/images/arrow_up.png');
+	background-position:100% 6px;
+	background-repeat: no-repeat;
+}
+.xtbl th.sortAsc a:hover {
+/*	background-image:url('/images/arrow_up_over.png');*/
+}
+.xtbl th.sortDesc a {
+	padding-right:20px;
+	background-image:url('/images/arrow_down.png');
+	background-position:100% 6px;
+	background-repeat: no-repeat;
+}
+.xtbl th.sortDesc a:hover {
+/*	background-image:url('/images/arrow_down_over.png');*/
+}
+.xtbl td.xtbl_noresults {
+	padding-top:5px;
+	padding-bottom:5px;
+}
+.xtbl .xtbl_loadmore td {
+	border-bottom:none;
+	border-right:none;
+	border-left:none;
+	padding:4px 0 0 1px;
+}
+a.xtab{
+	display:inline-block;
+}
+.xtabcontrol {
+	display:block;
+}
+.xform_caption {
+  display:inline-block;
+	padding-left:0px;
+	padding-right:5px;
+}
+.xform_label {
+  display:inline-block;
+}
+.xtbl td .xform_label {
+  display:block;
+}
+.xform_file_upload {
+  display:inline-block;
+}
+.xform_file_upload .linkbutton img { padding-left:0px; }
+.xform_file_upload .xform_file_download { padding-right:25px; }
+.xform_file_upload .xform_file_preview { padding-right:25px; }
+.xform_file_upload .xform_file_upload { padding-right:25px; }
+.xform_file_upload .xform_file_thumbnail { display:block; padding-top:15px; padding-bottom:5px; }
+.xform_file_upload .xform_file_delete {  }
+.xform_file_upload.nodocument .xform_file_download { display:none; }
+.xform_file_upload.nodocument .xform_file_preview { display:none; }
+.xform_file_upload.nodocument .xform_file_delete { display:none; }
+.xform_file_upload.nodocument .xform_file_thumbnail { display:none; }
+.xform_file_upload.uneditable .xform_file_upload { display:none; }
+.xform_file_upload.uneditable .xform_file_delete { display:none; }
+.xform input,.xform select,.xform textarea {
+	margin:2px 10px 2px 0;
+}
+.xtbl td input {
+  margin:0;
+}
+.xtbl td.xcheckbox_column {
+  text-align:center;
+}
+.xpopuplov_column {
+  white-space:nowrap;
+}
+.xinputerror {
+	border: 2px solid red; !important;
+}
+.xnorecords {
+	text-align:center;
+	position:relative;
+	height:0px;
+}
+input.updated, select.updated, textarea.updated,
+input.uneditable.updated, select.uneditable.updated, textarea.uneditable.updated 
+{
+	background-color:#faf8c2;
+}
+.checkbox_container {
+  display:inline-block;
+  padding:4px;
+}
+.checkbox_container.updated {
+  padding:3px;
+  background-color:#faf8c2;
+  border:1px dashed #aaa;
+}
+input.uneditable,select.uneditable,textarea.uneditable {
+	background-color:#f0f0f0;
+	border:1px solid #aaa;
+	color:#000;
+}
+.xcrumbs {
+	font-size:12px;
+	color:#888888;
+	margin-bottom:12px;
+	margin-top:-8px;
+}
+.xcrumbs a {
+	color:#888888;
+}
+h1.xtitlefiltered {
+  padding-left:9px;
+  display:none;
+}
+.xtitlefiltered a{
+  color:#888;
+}
+.xtitlefiltered a:hover{
+  text-decoration:none;
+}
+.xfilter {
+  padding-bottom:11px;
+  font-size:13px;
+  display:none;
+  overflow:hidden;
+  white-space:nowrap;
+  min-width:500px;
+  clear:both;
+}
+.xfilter div {
+  padding-bottom:2px;
+}
+.xfilter a {
+  display:inline-block;
+  color:#000000;
+}
+.xfilter a img {
+  position:relative;
+  top:5px;
+  padding-left:8px;
+  padding-right:8px;
+}
+.xrowcount {
+  float:right;
+  clear:right;
+  display:none;
+}
+a.linkbutton {
+  display:inline-block;
+  color:#000000;
+}
+a.linkbutton img {
+  position:relative;
+  top:5px;
+  padding-left:5px;
+  padding-right:5px;
+}
+.colorbox_inline {
+	background-color:white;
+	width:400px;
+	padding-top:15px;
+	padding-bottom:15px;
+}
+.xform_ctrl.tree {
+  display:inline-block;
+  border:1px solid #aaa;
+  width:200px;
+  height:150px;
+  padding:4px 4px;
+  overflow:auto;
+  vertical-align:top;
+}
+.xform_ctrl.tree a.tree_item {
+  display:block;
+  color:#000;
+  border:1px solid #fff;
+  padding-left:4px;
+}
+.xform_ctrl.tree.uneditable a.tree_item:hover {
+  text-decoration:none;
+  cursor:default;
+}
+.xform_ctrl.tree.editable a.tree_item:hover {
+  background-color:#f5f5ff;
+  border:1px solid #ccccff;
+  text-decoration:none;
+}
+.xform_ctrl.tree .children {
+  padding-left:19px;
+  display:none;
+}
+.xform_ctrl.tree .children.expanded {
+  display:block;
+}
+.xform_ctrl.tree a.tree_item.nochildren {
+  padding-left:17px; /* Glyph + Standard Padding */
+}
+.xform_ctrl.tree a.tree_item.selected {
+  font-weight:bold;
+  background-color:#f5f5f5;
+  border:1px solid #ddd;
+}
+.xform_ctrl.tree .nochildren .glyph {
+  display:none;
+}
+.xform_ctrl.tree .glyph {
+  display:inline-block;
+  width:13px;
+  color:#aaa;
+  cursor:pointer;
+  cursor:hand;
+}
+.xform_ctrl.tree.editable a.tree_item:hover .glyph {
+  color:#aaccff;
+}
+.xform_ctrl.tree .icon {
+  position:relative;
+  top:4px;
+  padding-left:1px;
+  padding-right:5px;
+  border:0;
+}
+.xlookup.icon {
+  position:relative;
+  top:4px;
+  left:-3px;
+  margin-right:7px;
+}
+.xrow .xlookup.icon {
+  left:-1px;
+  margin-right:0px;
+  margin-left:7px;
+}
+.xpopup .xpanel {
+  overflow:auto;
+}
+.xcontext_menu {
+  display:none;
+  position:absolute;
+  top:0px;
+  left:0px;
+  border-bottom:1px solid #bababa;
+}
+.xcontext_menu a {
+  display:block;
+  border-top :1px solid #bababa;
+  border-right :1px solid #bababa;
+  border-left :1px solid #bababa;
+  background-color:#ffffff;
+  padding:5px 20px 4px 30px;
+  z-index:999;
+  color:#000;
+  position:relative;
+  cursor:pointer; cursor:hand;
+}
+.xcontext_menu img {
+  height:12px;
+  width:auto;
+  position:absolute;
+  top:7px;
+  left:9px;
+}
+.xcontext_menu a:hover 
+{
+  background-color:#ecf0f6;
+  text-decoration:none;
+}
+.tdhidden { display:none; }
+
+/*
+=================
+LOADING ANIMATION
+=================
+*/
+#xloadingblock {
+	display:none;
+	position:fixed;
+	top:122px;
+	width:100%;
+	bottom:0;
+	z-index:99999;
+	text-align:center;
+}
+#xloadingblock.popup { top:0px; }
+#xloadingblock div {
+	position:absolute;
+	top:50%;
+	left:50%;
+}
+#xloadingblock div #xloadingbox {
+	display:none;
+	background-color:white;
+	border:3px solid #aaa;
+	display:block;
+	text-align:center;
+	width:170px;
+	height:80px;
+	position:absolute;
+	top:-50px;
+	left:-100px;
+	padding-top:20px;
+	text-align:center;
+	font-size:15px;
+	font-weight:bold;
+/*	color:#34231f;*/
+	color:#454545;
+	opacity:0.8;
+	border-radius: 5px;
+	-moz-border-radius: 5px;
+}
+/*.uie8 #xloadingblock div #xloadingbox { font-family: 'Open Sans Bold', sans-serif; }*/
+#xloadingbox img {
+	padding-top:18px;
+}
+/*
+============
+DIALOG BOXES
+============
+*/
+#xdebugconsole {
+  display:none;
+  position:absolute;
+  top:0px;
+  left:0px;
+  color:#c2ffb8;
+  background-color:rgba(0,0,0,0.5);
+  z-index:200000;
+}
+#xdialogblock {
+	position:fixed;
+	top:0px;
+	width:100%;
+	bottom:0;
+  left:0px;
+	z-index:199999;
+	text-align:center;
+  background-color:rgba(0,0,0,0.1);
+  -webkit-transform-style: preserve-3d;
+  -moz-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+}
+#xdialogblock .xdialogbox {
+  display:none;
+	position:absolute;
+	top:50%;
+	left:50%;
+  /*transform: translate(-50%, -50%);*/
+	background-color:white;
+	border:3px solid #aaa;
+	font-size:15px;
+	font-weight:bold;
+	color:#505050;
+  padding:20px;
+	border-radius: 5px;
+	-moz-border-radius: 5px;
+}
+#xalertbox {
+	width:370px;
+	min-height:60px;
+	text-align:left;
+}
+#xconfirmbox {
+	width:370px;
+	min-height:60px;
+	text-align:center;
+}
+.xpromptbox {
+	width:310px;
+	min-height:60px;
+	text-align:left;
+}
+#xalertmessage,#xconfirmmessage,#xpromptmessage {
+  max-height: 400px;
+  overflow:auto;
+}
+#xalertbox input,
+#xconfirmbox input,
+.xpromptbox input.button_ok,
+.xpromptbox input.button_cancel {
+  margin: 20px 0 0px 0;
+  padding:4px 15px;
+}
+#xpromptfield {
+  margin: 20px 0 0px 0;
+  width:100%;
+}
+.xpromptbox h3 {
+  margin-top:5px;
+  margin-bottom:5px;
+}
+
+.xform_inputbutton { padding:3px 10px; }
+#xsubmenu_listing { padding-top:4px; }
+#xsubmenu_listing a {
+  display:inline-block;
+  padding-top:8px;
+  font-size:15px;
+}
+
+
+.formerror {
+	background-color: red;
+	color: white;
+}
+
+ 
+#validatorErrors {
+	width: 400px;
+	border: 2px solid red;
+	padding: 7px;
+	padding-bottom: 12px;
+ 	margin-bottom: 20px;
+	background-color: #f0f0f0;
+}
+
+#validatorErrors h2 {
+	text-align: left;
+	font-weight: bold;
+	padding: 5px 5px 5px 15px;
+	font-size: 12px;
+	margin: -7px;
+	background-color: #c00;
+	color: #fff;
+}
+
+#validatorErrors ul li {
+	font-size: 12px;
+	list-style: square;
+}
+
+ 
+
+#notification {
+
+  font-weight: bold;
+
+  color: green;
+
+}
+
+#page {
+	width: 600px;
+}
+
+#adminmenu {
+	border: 1px solid black;
+}
+
+/*
+==================
+NOTIFICATION BOXES
+==================
+*/
+.fieldWithErrors {
+  padding: 2px;
+  background-color: red;
+  /*display: table;*/
+}
+#errorExplanation {
+  width: 400px;
+  border: 2px solid red;
+  padding: 7px;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+  background-color: #f0f0f0;
+}
+#errorExplanation h2 {
+  text-align: left;
+  font-weight: bold;
+	text-decoration:none;
+  padding: 5px 5px 5px 15px;
+  font-size: 16px;
+  margin: -7px;
+  background-color: #c00;
+  color: #fff;
+}
+.uie8 #errorExplanation h2 { font-family: 'Open Sans Bold', sans-serif; }
+#errorExplanation p {
+	margin-top:10px;
+  color: #333;
+  margin-bottom: 0;
+  padding: 5px;
+}
+#errorExplanation ul li {
+  font-size: 12px;
+  list-style: square;
+}
+#notification {
+  font-weight: bold;
+  color: #55832C;
+}
+.uie8 #notification { font-family: 'Open Sans Bold', sans-serif; }
+
+/*
+================
+PRINT STYLESHEET
+================
+*/
+@media print {
+  .xactions { display:none !important; visibility:hidden !important; }
+}

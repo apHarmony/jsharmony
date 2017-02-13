@@ -1,0 +1,65 @@
+<script type="text/javascript">
+/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+<% if(model.topmost){ %>
+var XForms = {};
+var XBase = {};
+var XForms_root = '<%=model.id%>';
+var XPopups = {};
+var is_popup = <%=xejs.iif('popup' in model,'true','false')%>;
+<% } %>
+XForms['<%=model.id%>'] = {
+	_id:'<%=model.id%>',
+	_access:'<%=model.access%>',
+	_layout:'<%=model.layout%>',
+	_title: <%-xejs.iif(model.title,JSON.stringify(model.title),"''")%>,
+	_caption:<%-JSON.stringify(model.caption)%>,
+	_parent:<%-((typeof parent == 'undefined')?'null':"'"+parent.id+"'")%>,
+	_bindings:<%-((typeof model.bindings == 'undefined')?'null':JSON.stringify(_.keys(model.bindings)))%>,
+	_keys:[<% xejs.eachKey(model.fields,function(field){%>'<%=field.name%>',<%});%>],
+	_commitlevel:'<%=(model.commitlevel?model.commitlevel:'')%>',
+//  _is_new:(_GET['action']=='add'),
+  <% 
+	if(model.topmost) _.each(model.fields,function(field){ if(field.lovkey || field.key || (model.bindings && (field.name in model.bindings))) {%><%=field['name']%>: function(){return LiteralOrCollection(<%-JSON.stringify(field['name'])%>,_GET);},<%	}});
+	else if(typeof bindings != 'undefined') _.each(bindings,function(val,key){%><%=key%>: function(){return LiteralOrCollection(<%-JSON.stringify(val)%>,xform_<%=parent.id%>.Data,XForms['<%=parent.id%>']);},<%}); 
+	
+	if('oninit' in model){ %> _oninit:function(xform){<%-model.oninit%>}, <% }
+	if('onload' in model){ %> _onload:function(xform, callback){<%-model.onload%>}, <% }
+	if('onloadimmediate' in model){ %> _onloadimmediate:function(xform, callback){<%-model.onloadimmediate%>}, <% }
+  if('oninsert' in model){ %> _oninsert:function(xform,urlkeys,url){<%-model.oninsert%>}, <% }
+  if('onupdate' in model){ %> _onupdate:function(xform){<%-model.onupdate%>}, <% }
+  if('oncommit' in model){ %> _oncommit:function(xform){<%-model.oncommit%>}, <% }
+  if('onvalidate' in model){ %> _onvalidate:function(xform, callback){<%-model.onvalidate%>}, <% }
+  if('ondestroy' in model){ %> _ondestroy:function(xform){<%-model.ondestroy%>}, <% }
+  //onloadstate
+	%>
+};
+if(!('<%=model._basemodel%>' in XBase)) XBase['<%=model._basemodel%>'] = [];
+XBase['<%=model._basemodel%>'].push('<%=model.id%>');
+<% if('js' in model){ %><%-XExt.ReplaceAll(model.js,'<'+'%=model.id%'+'>',model.id)%><% } %>
+</script>
+<script type="text/javascript">
+<%-jshRenderEJS('jsh_'+xejs.case(
+  model.layout=='form','form',
+  model.layout=='form-m','form',
+  model.layout=='multisel','multisel',
+  model.layout=='exec','exec',
+  model.layout=='grid','grid'
+  )+'.js',ejsparams)%>
+</script>

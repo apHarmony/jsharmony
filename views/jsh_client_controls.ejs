@@ -1,0 +1,105 @@
+<% 
+/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+var dflt_captionstyle = "";
+for(var i=0;i<model.fields.length;i++){ 
+  var field = model.fields[i];
+  if(!('control' in field)) continue; if(!('virtual' in field && field.virtual) && (!('access' in field) || (field.access == ''))) continue;
+  if(('caption' in field) && (field.control!='subform') && 
+     ('captionstyle' in field) && (field.captionstyle != "") && (dflt_captionstyle == "")){
+    dflt_captionstyle = field.captionstyle;
+  }  
+  if('nl' in field){ %><br/><% }
+  if(('caption' in field) && (field.control!='subform') && (field.caption.length > 0)) { 
+    if(('nl' in field) && !('captionstyle' in field) && (dflt_captionstyle != "")){ 
+      %><div class="xform_caption <%=field.captionclass%>" style="<%=dflt_captionstyle%>"><%=field.caption+((field.caption != '')?': ':'')%></div><%
+	  }
+    else {
+      %><div class="xform_caption <%=field.captionclass%>" style="<%=field.captionstyle%>"><%=field.caption+((field.caption != '')?': ':'')%></div><%
+	  }  
+  }
+  var maxlength = XExt.getMaxLength(field);
+  if(field.control=='label'){ %><div id="<%=field.name%>" style="<%=field.controlstyle%>" class="xform_label xelem<%=model.id%> <%=field.controlclass%>" onclick="<%-field.onclick%>"><%=xejs.GetValue(field)%></div><% }
+  if(field.control=='html'){ 
+    if(('serverejs' in field) && field.serverejs){ %><%-ejs.render(field.value,ejsparams)%><% }
+    else { %><%-field.value%><% }
+  }
+  if(field.control=='textbox'){ %><input id="<%=field.name%>" type="<%=xejs.getInputType(field)%>" value="<%=xejs.GetValue(field)%>" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.id%> <%=field.controlclass%>" <%-xejs.iif(maxlength >= 0,'maxlength="'+maxlength+'"')%> /><% }
+  if(field.control=='password'){ %><input id="<%=field.name%>" type="password" value="<%=xejs.GetValue(field)%>" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.id%> <%=field.controlclass%>" /><% }
+  if(field.control=='dropdown'){ %><select id="<%=field.name%>" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.id%> dropdown <%=field.controlclass%>"><option><%=xejs.GetValue(field)%></option></select><% }
+  if(field.control=='date'){ %><input id="<%=field.name%>" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.id%> datepicker <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" maxlength="10" /><% }
+  if(field.control=='textarea'){ %><textarea id="<%=field.name%>" name="<%=field.name%>" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.id%> <%=field.controlclass%>"><%=xejs.GetValue(field)%></textarea><% }
+  if(field.control=='hidden'){ %><input id="<%=field.name%>" type="hidden" class="xform_ctrl xelem<%=model.id%> <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" /><% }
+  if(field.control=='file_upload'){ %>
+      <div id="<%=field.name%>" style="<%=field.controlstyle%>" class="xform_file_upload xelem<%=model.id%> <%=field.controlclass%>">
+        <% if(field.controlparams.download_button){ %><a id="<%=field.name%>_download" class="linkbutton xform_file_download" href="#" onclick="XFileDownload(<%=JSON.stringify(model.id)%>,<%=JSON.stringify(field.name)%>,<%=JSON.stringify(field.caption_ext||field.caption)%>);return false;"><img src="/images/icon_download.png" /><%=field.controlparams.download_button%></a><% } %>
+        <% if(field.controlparams.preview_button){ %><a id="<%=field.name%>_preview" class="linkbutton xform_file_preview" href="#" onclick="XFilePreview(<%=JSON.stringify(model.id)%>,<%=JSON.stringify(field.name)%>,<%=JSON.stringify(field.caption_ext||field.caption)%>);return false;"><img src="/images/icon_search.png" /><%=field.controlparams.preview_button%></a><% } %>
+        <a id="<%=field.name%>_upload" class="linkbutton xform_file_upload" href="#" onclick="XFileUpload(<%=JSON.stringify(model.id)%>,<%=JSON.stringify(field.name)%>,<%=JSON.stringify(field.caption_ext||field.caption)%>);return false;"><img src="/images/icon_upload.png" /><%=field.controlparams.upload_button%></a> 
+        <a id="<%=field.name%>_delete" class="linkbutton xform_file_delete" href="#" onclick="XFileDelete(<%=JSON.stringify(model.id)%>,<%=JSON.stringify(field.name)%>,<%=JSON.stringify(field.caption_ext||field.caption)%>);return false;"><img src="/images/icon_delete.png" /><%=field.controlparams.delete_button%></a>
+        <img id="<%=field.name%>_thumbnail" class="xform_file_thumbnail" />
+        <input id="<%=field.name%>_token" type="hidden" class="xform_file_token xform_ctrl xelem<%=model.id%> <%=field.controlclass%>" value="" />
+        <input id="<%=field.name%>_dbdelete" type="hidden" class="xform_file_dbdelete xform_ctrl xelem<%=model.id%> <%=field.controlclass%>" value="" />
+        <input id="<%=field.name%>_dbexists" type="hidden" class="xform_file_dbexists xform_ctrl xelem<%=model.id%> <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" />
+      </div>
+  <% }
+  if(field.control=='subform'){ if(('access' in field) && !xejs.getaccess(model.access,field.access)) continue; %>
+    <div class="xsubform <%=field.controlclass%>" id="<%=field.name%>" style="<%=field.controlstyle%>">
+      <% if(field.caption){ %><a class="xtab selected last"><%=field.caption%></a><% } %>
+      <div class="xpanel">
+	      <%-jshRender(field.model,model)%>
+      </div>
+    </div>
+  <% }
+  if(field.control=='button'){ 
+    if('link' in field){ %><input <%-xejs.showProp('id',field.name)%> type="button" class="xform_ctrl xelem<%=model.id%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%=field.value%>" data-url="<%=field.link%>" onclick="<%-field.onclick%>" /><% }
+    else{ %><input <%-xejs.showProp('id',field.name)%> type="button" data-model="<%=model.id%>" class="xform_ctrl xelem<%=model.id%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%=field.value%>" onclick="<%-field.onclick%>" /><% }
+  }
+  if(field.control=='linkbutton'){ 
+    if('link' in field){ %><a <%-xejs.showProp('id',field.name)%> href="#" data-url="<%-field.link%>" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.id%> <%=field.controlclass%> <%=xejs.iif(!field.value,'xform_label')%>" onclick="<%-field.onclick%>; return false;"><%=xejs.ifnull(field.value,'')%></a><% }
+    else { %><a <%-xejs.showProp('id',field.name)%> data-model="<%=model.id%>" href="#" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.id%> <%=field.controlclass%> <%=xejs.iif(!field.value,'xform_label')%>" onclick="<%-field.onclick%>; return false;"><%=xejs.ifnull(field.value,'')%></a><% }
+    }
+  if(field.control=='tree'){
+    %><div id="<%=field.name%>" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.id%> tree <%=field.controlclass%>"></div><%
+    if(('controlparams' in field) && ('item_context_menu' in field.controlparams)){
+      %><div id="_item_context_menu_<%=field.name%>" class="xform_context_menu xcontext_menu"><%
+      for(var j=0;j<field.controlparams.item_context_menu.length;j++){ var menu_item = field.controlparams.item_context_menu[j];
+        if(xejs.getaccess(model.access,field.access,menu_item.access)){ %><a href="#" onclick="$('.xcontext_menu').hide(); var context_item = window.xContextMenuItem; <%-menu_item.action%>; return false;"><img src="/images/icon_<%=menu_item.icon%>.png" /><%=menu_item.text%></a><% }
+      }
+      %></div><%
+    }
+  }
+  if(field.control=='checkbox'){ %><input id="<%=field.name%>" type="checkbox" style="<%=field.controlstyle%>" class="xform_ctrl checkbox xelem<%=model.id%> <%=field.controlclass%>" /><% }
+  if(field.popuplov){ %><a href="#" id="<%=field.name%>_xlookup" class="xform_ctrl xlookup icon" style="<%=field.controlparams.popupiconstyle%>" data-codeval="<%=field.controlparams.codeval%>" data-model="<%=model.id%>" onclick="XExt.popupShow('<%=field.model.id%>','<%=field.name%>','<%=field.caption_ext||field.caption%> Selection',undefined,this,{OnControlUpdate:function(obj,e){ xform_<%=model.id%>.Data.OnControlUpdate(obj,e); }})"><img src="/images/icon_search.png" /></a>
+    <% 
+    var popup_model = _.extend({},field.model);
+    popup_model.hide_system_buttons = _.union(popup_model.hide_system_buttons,['export']); 
+    popup_model.inlinepopup = 1;
+    %>
+    <div style="display:none;">
+      <div class="xsubform xpopup xelem<%=model.id%>" id="popup_<%=field.name%>">
+        <div class="xpanel" style="<%=field.controlparams.popupstyle%>">
+	        <%-jshRender(popup_model,model)%>
+        </div>
+      </div>
+    </div>
+    <%
+  }
+  if('eol' in field){ %><br/><% }
+} 
+%>
