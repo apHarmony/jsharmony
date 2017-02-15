@@ -24,7 +24,8 @@ exports = module.exports = {};
 
 exports = module.exports = function(req,res,basetemplate,params){
 	req.jshconfig.menu(req,res,this,params,function(){
-		res.render(HelperFS.getView(basetemplate),params);
+		if(req._override_title) params.title = req._override_title;
+		res.render(HelperFS.getView(req, basetemplate),params);
 	});
 };
 

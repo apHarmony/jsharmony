@@ -939,7 +939,7 @@ jsHarmony.prototype.GetValidatorFuncs = function (field) {
 };
 jsHarmony.Gen404 = function (req, res) {
   res.status(404);
-  if (req.accepts('html')) { res.render(HelperFS.getView('404'), { url: req.url }); return; }
+  if (req.accepts('html')) { res.render(HelperFS.getView(req, '404'), { url: req.url }); return; }
   if (req.accepts('json')) { res.send({ error: 'Not found' }); return; }
   res.type('txt').send('Not found');
 }
@@ -963,8 +963,12 @@ jsHarmony.prototype.RenderLoginForgotPassword = require('./render/RenderLoginFor
 jsHarmony.prototype.RenderLoginForgotPasswordReset = require('./render/RenderLoginForgotPasswordReset.js');
 jsHarmony.prototype.RenderLogout = require('./render/RenderLogout.js');
 jsHarmony.prototype.RenderTemplate = require('./render/RenderTemplate.js');
-jsHarmony.prototype.Init = Init;
+jsHarmony.Init = Init;
 jsHarmony.App = Init.App;
 jsHarmony.Run = Init.Run;
+jsHarmony.lib = {};
+jsHarmony.lib.Helper = Helper;
+jsHarmony.lib.HelperFS = HelperFS;
+jsHarmony.typename = 'jsHarmony';
 
 module.exports = jsHarmony;

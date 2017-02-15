@@ -21,58 +21,60 @@ var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var async = require('async');
 var HelperFS = require('./lib/HelperFS.js');
+var Helper = require('./lib/Helper.js');
 var path = require('path');
 var fs = require('fs');
 var jsh_logger = require('./lib/Logger.js');
 var jsh_routes = require('./routes.js');
 var http = require('http');
 var https = require('https');
+var _ = require('lodash');
 exports = module.exports = {};
 
 exports.validateGlobals = function(){
   if(!global.dbconfig || !global.dbconfig._driver || !global.dbconfig._driver.name) { console.error("*** Fatal error: global.dbconfig missing or invalid _driver"); process.exit(8); }
   if(!global.support_email) global.support_email = 'donotreply@jsharmony.com';
   if(!global.mailer_email) global.mailer_email = 'DO NOT REPLY <donotreply@jsharmony.com>';
-  if(notset(global.default_rowlimit)) global.default_rowlimit = 50;
-  if(notset(global.export_rowlimit)) global.export_rowlimit = 5000;
-  if(notset(global.max_filesize)){ global.max_filesize = 50000000; }
-  if(notset(global.max_user_temp_foldersize)) global.max_user_temp_foldersize = 50000000;//50000000;
-  if(notset(global.public_temp_expiration)) global.public_temp_expiration = 5 * 60; //Clear 5 min of public temp files
-  if(notset(global.user_temp_expiration)) global.user_temp_expiration = 6 * 60 * 60; //Clear 6 hours of user temp files
+  if(Helper.notset(global.default_rowlimit)) global.default_rowlimit = 50;
+  if(Helper.notset(global.export_rowlimit)) global.export_rowlimit = 5000;
+  if(Helper.notset(global.max_filesize)){ global.max_filesize = 50000000; }
+  if(Helper.notset(global.max_user_temp_foldersize)) global.max_user_temp_foldersize = 50000000;//50000000;
+  if(Helper.notset(global.public_temp_expiration)) global.public_temp_expiration = 5 * 60; //Clear 5 min of public temp files
+  if(Helper.notset(global.user_temp_expiration)) global.user_temp_expiration = 6 * 60 * 60; //Clear 6 hours of user temp files
   if(!global.valid_extensions) global.valid_extensions = [".jpg", ".jpeg", ".pdf", ".png", ".gif", ".txt", ".xlsm", ".xls", ".xlsx", ".bak", ".zip", ".csv"];
   if(!global.debug_params) global.debug_params = {  };
-  if(notset(global.debug_params.jsh_error_level)) global.debug_params.jsh_error_level = 1; //1 = ERROR, 2 = WARNING, 4 = INFO  :: Messages generated while parsing jsHarmony configs
-  if(notset(global.debug_params.pipe_log)) global.debug_params.pipe_log = true;
-  if(notset(global.site_title)) global.site_title = 'jsHarmony';
+  if(Helper.notset(global.debug_params.jsh_error_level)) global.debug_params.jsh_error_level = 1; //1 = ERROR, 2 = WARNING, 4 = INFO  :: Messages generated while parsing jsHarmony configs
+  if(Helper.notset(global.debug_params.pipe_log)) global.debug_params.pipe_log = true;
+  if(Helper.notset(global.LogSleepDelay)){ global.LogSleepDelay = 1000; }
+  if(Helper.notset(global.site_title)) global.site_title = 'jsHarmony';
   if(!global.public_apps) global.public_apps = [];
   if(!global.private_apps) global.private_apps = [];
 
   if(!global.appbasepath) global.appbasepath = path.dirname(require.main.filename);
   if(!global.datadir) global.datadir = global.appbasepath + '/data/';
   if(!global.logdir) global.logdir = global.datadir + 'log/';
-  if (!global.localmodeldir) global.localmodeldir = global.appbasepath + '/models/';
-  if (!global['modeldir']) global.modeldir = [global.localmodeldir];
-
-  if(!global.views){
-    HelperFS.loadViews(path.join(__dirname, 'views'), '')
-    HelperFS.loadViews(global.appbasepath + '/views', '');
+  if (!global.modeldir) global.modeldir = [];
+  if (!_.isArray(global.modeldir)) global.modeldir = [global.modeldir];
+  if (!global.localmodeldir){
+    global.localmodeldir = global.appbasepath + '/models/';
+    global.modeldir.push(global.localmodeldir);
   }
+  else if(global.modeldir.count==0) global.modeldir.push(global.localmodeldir);
+  
+
+  HelperFS.loadViews(path.join(__dirname, 'views'), '', true);
+  HelperFS.loadViews(global.appbasepath + '/views', '');
 
   requireFolder(global.datadir,'Data folder');
+  HelperFS.createFolderIfNotExistsSync(global.localmodeldir);
+  HelperFS.createFolderIfNotExistsSync(global.localmodeldir + 'reports');
   async.waterfall([
     async.apply(HelperFS.createFolderIfNotExists, global.logdir),
     async.apply(HelperFS.createFolderIfNotExists, global.datadir + 'temp'),
     async.apply(HelperFS.createFolderIfNotExists, global.datadir + 'temp/public'),
     async.apply(HelperFS.createFolderIfNotExists, global.datadir + 'temp/cmsfiles'),
     async.apply(HelperFS.createFolderIfNotExists, global.datadir + 'temp/report'),
-    async.apply(HelperFS.createFolderIfNotExists, global.localmodeldir),
-    async.apply(HelperFS.createFolderIfNotExists, global.localmodeldir + 'reports'),
   ], function (err, rslt) { if (err) global.log(err); });
-}
-
-function notset(val){
-  if(typeof val === 'undefined') return true;
-  return false;
 }
 
 exports.ValidateConfig = function(jsh){
@@ -110,39 +112,10 @@ exports.ValidateConfig = function(jsh){
   //if (!jsh.Config.ui_field_mapping) throw 'ui_field_mapping required in _config.json';
 }
 
-exports.ValidateSystemConfig = function(jshconfig){
-  if(notset(jshconfig.basetemplate)) jshconfig.basetemplate = 'index';
-  if(notset(jshconfig.baseurl)) jshconfig.baseurl = '/';
-  if(notset(jshconfig.show_system_errors)) jshconfig.show_system_errors = true;
-  if(!jshconfig.menu) jshconfig.menu = function(req,res,jsh,params,onComplete){ params.ShowListing = true; onComplete(); }
-  if(!jshconfig.globalparams) jshconfig.globalparams = {};
-  if(!jshconfig.sqlparams) jshconfig.sqlparams = {};
-  if(!jshconfig.public_apps) jshconfig.public_apps = [];
-  if(!jshconfig.private_apps) jshconfig.private_apps = [];
-
-  if(jshconfig.auth){
-    if(notset(jshconfig.auth.on_login)) jshconfig.auth.on_login = function(req, jsh, params, cb){ //cb(err, rslt)
-      jsh.AppSrv.ExecRecordset('login', req.jshconfig.auth.sql_login, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
-    };
-    if(notset(jshconfig.auth.on_superlogin)) jshconfig.auth.on_superlogin = function(req, jsh, params, cb){ //cb(err, rslt)
-      jsh.AppSrv.ExecRecordset('login', req.jshconfig.auth.sql_superlogin, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
-    };
-    if(notset(jshconfig.auth.on_loginsuccess)) jshconfig.auth.on_loginsuccess = function(req, jsh, params, cb){ //cb(err, rslt)
-      jsh.AppSrv.ExecRow(params[jsh.map.user_id], req.jshconfig.auth.sql_loginsuccess, [jsh.AppSrv.DB.types.VarChar(255), jsh.AppSrv.DB.types.BigInt, jsh.AppSrv.DB.types.DateTime(7)], params, cb);
-    };
-    if(notset(jshconfig.auth.on_passwordreset)) jshconfig.auth.on_passwordreset = function(req, jsh, params, cb){ //cb(err, rslt)
-      jsh.AppSrv.ExecRow(params[jsh.map.user_id], req.jshconfig.auth.sql_passwordreset, [jsh.AppSrv.DB.types.VarBinary(200), jsh.AppSrv.DB.types.VarChar(255), jsh.AppSrv.DB.types.BigInt, jsh.AppSrv.DB.types.DateTime(7)], params, cb);
-    };
-    if(notset(jshconfig.auth.on_auth)) jshconfig.auth.on_auth = function(req, jsh, params, cb){ //cb(err, rslt)
-      jsh.AppSrv.ExecMultiRecordset('login', req.jshconfig.auth.sql_auth, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
-    };
-  }
-}
-
-exports.addDefaultRoutes = function (jsh, app) {
+exports.addDefaultRoutes = function (app) {
   // catch 404 and forward to error handler
   app.use(function (req, res, next) {
-    HelperFS.gen404(res);
+    HelperFS.gen404(req, res);
     return;
   });
 
@@ -153,7 +126,7 @@ exports.addDefaultRoutes = function (jsh, app) {
     global.log(err);
     global.log(err.stack);
     res.status(err.status || 500);
-    res.render(HelperFS.getView(errorpage), {
+    res.render(HelperFS.getView(req, errorpage), {
       message: err.message,
       error: err
     });
@@ -161,6 +134,7 @@ exports.addDefaultRoutes = function (jsh, app) {
 }
 
 exports.App = function(jshconfig, jsh){
+  if(this.typename != 'jsHarmony') throw new Error('Use syntax jsHarmony.App(...).  Do not call from a different base class thisArg.');
   if(!jsh) jsh = new this();
 
   var app = express();
@@ -176,18 +150,15 @@ exports.App = function(jshconfig, jsh){
   app.use(global.log.express);
   app.set('view engine', 'ejs');
 
-  var routes = jsh_routes(jsh, jshconfig);
-  jshconfig = routes.jshconfig;
-  //Set up cookies
-  if(jshconfig.cookiesalt) app.use('/', cookieParser(jshconfig.cookiesalt, { path: jshconfig.baseurl }));
-  else app.use('/', cookieParser({ path: jshconfig.baseurl }));
-  app.use('/', routes);
-  exports.addDefaultRoutes(jsh, app);
-
-  var orig_listen = app.listen;
-  app.listen = function(){
-    orig_listen.apply(this,arguments);
-    if(arguments.length) console.log('Listening on port '+arguments[0]);
+  if(jshconfig && jshconfig.noroutes){}
+  else {
+    var routes = jsh_routes(jsh, jshconfig);
+    jshconfig = routes.jshconfig;
+    //Set up cookies
+    if(jshconfig.cookiesalt) app.use('/', cookieParser(jshconfig.cookiesalt, { path: jshconfig.baseurl }));
+    else app.use('/', cookieParser({ path: jshconfig.baseurl }));
+    app.use('/', routes);
+    exports.addDefaultRoutes(app);
   }
 
   return app;
@@ -216,7 +187,8 @@ function ListenPort(server, firstPort, ip, onSuccess, onError, params){
   server.listen(params.currentPort, ip);
 }
 
-exports.Run = function(jshconfig, jsh, cb){
+exports.Run = function(jshconfig, jsh, app, cb){
+  if(this.typename != 'jsHarmony') throw new Error('Use syntax jsHarmony.Run(...).  Do not call from a different base class thisArg.');
   /* - jshconfig
   server:{
     http_port: '0.0.0.0',
@@ -251,7 +223,7 @@ exports.Run = function(jshconfig, jsh, cb){
   }
 
   if(!jsh) jsh = new this();
-  var app = exports.App(jshconfig, jsh);
+  if(!app) app = this.App(jshconfig, jsh);
 
   if(http_server){
     var server = http.createServer(app);

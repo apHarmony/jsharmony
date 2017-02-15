@@ -24,7 +24,7 @@ global.appbasepath = __dirname;
 
 describe('Basic HTTP',function(){
   it('Basic', function (done) {
-    jsHarmony.Run(undefined,undefined,function(servers){
+    jsHarmony.Run(undefined,undefined,undefined,function(servers){
       for(var i=0;i<servers.length;i++) servers[i].close();
       done();
     });
@@ -34,7 +34,7 @@ describe('Basic HTTP',function(){
         https_port:0,
         https_cert: '/path/to/cert.pem',
         https_key: '/path/to/key.pem',
-      } },undefined,function(servers){
+      } },undefined,undefined,function(servers){
       for(var i=0;i<servers.length;i++) servers[i].close();
       done();
     });
@@ -45,7 +45,7 @@ describe('Basic HTTP',function(){
         https_port:0,
         https_cert: '/path/to/cert.pem',
         https_key: '/path/to/key.pem',
-      } },undefined,function(servers){
+      } },undefined,undefined,function(servers){
       for(var i=0;i<servers.length;i++) servers[i].close();
       done();
     });
@@ -56,7 +56,7 @@ describe('Basic HTTP',function(){
         {user_id: 1, user_name: 'Andrew', user_email: 'andrew@domain.com', password: 'SAMPLE_PASSWORD', _roles: ['SYSADMIN']},
         {user_id: 2, user_name: 'Steve', user_email: 'steve@domain.com', password: 'SAMPLE_PASSWORD', _roles: ['BROWSE']},
       ])
-    },undefined,function(servers){
+    },undefined,undefined,function(servers){
       for(var i=0;i<servers.length;i++) servers[i].close();
       done();
     });

@@ -1,6 +1,6 @@
 {
   "name": "jsharmony",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Rapid Application Development (RAD) Platform for Node.js Database Application Development",
   "main": "index.js",
   "scripts": {
@@ -18,7 +18,10 @@
     "Database",
     "TSQL",
     "SQL",
-    "Server"
+    "Server",
+    "PostgreSQL",
+    "Postgres",
+    "jsHarmony"
   ],
   "author": "apHarmony <contact@apharmony.com> (http://www.apharmony.com/)",
   "license": "LGPL-3.0",
@@ -28,7 +31,7 @@
   "homepage": "https://github.com/apHarmony/jsharmony",
   "devDependencies": {
     "mocha": "^2.2.5",
-    "jsharmony-db-pgsql": "^1.0.0"
+    "jsharmony-db-pgsql": "^1.0.1"
   },
   "dependencies": {
     "async": "^2.1.4",
@@ -39,7 +42,7 @@
     "ejs": "^2.5.5",
     "express": "^4.14.1",
     "gm": "^1.23.0",
-    "jsharmony-db": "^1.0.4",
+    "jsharmony-db": "^1.0.5",
     "jsharmony-validate": "^1.0.2",
     "jsonlint": "^1.6.2",
     "lodash": "^4.14.0",
@@ -47,7 +50,7 @@
     "moment": "^2.17.1",
     "multiparty": "^4.1.3",
     "phantom": "^4.0.0",
-    "phantomjs": "^2.1.7",
+    "phantomjs-prebuilt": "^2.1.14",
     "tmp": "0.0.31"
   }
 }
