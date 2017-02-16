@@ -955,6 +955,7 @@ jsHarmony.prototype.getBaseJS = function (req, jsh) {
   }
   return rslt;
 }
+jsHarmony.prototype.SetJobProc = function(JobProc){ this.AppSrv.jobproc = new JobProc(this.AppSrv); }
 jsHarmony.prototype.Auth = require('./lib/Auth.js');
 jsHarmony.Auth = jsHarmony.prototype.Auth;
 jsHarmony.prototype.Redirect302 = Helper.Redirect302;

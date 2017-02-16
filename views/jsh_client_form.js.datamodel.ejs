@@ -21,7 +21,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 function XForm<%=model.id%>(){
   this._is_new = true;
   this._modelid = '<%=model.id%>';
-  <% _.each(model.fields,function(field){%>this.<%=field.name%> = '';<%});%>
+  <% _.each(model.fields,function(field){ if(!field.name) return; %>this.<%=field.name%> = '';<%});%>
 }
 
 XForm<%=model.id%>.prototype.Fields = {
@@ -62,7 +62,7 @@ XForm<%=model.id%>.prototype.BindLOV = XExt.XForm.BindLOV('<%=model.id%>');
 $(document).on('jsh_ready', function(){ XForm<%=model.id%>.prototype.BindLOV(xform_<%=model.id%>); });
 
 XForm<%=model.id%>.prototype.xvalidate = new XValidate();
-<% _.each(model.fields,function(field){ if(!('control' in field)) return; %>
+<% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; %>
 XForm<%=model.id%>.prototype.xvalidate.AddControlValidator('#<%=field.name%>.xelem<%=model.id%>','_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getaccess(model.access,"BIU"):field.access)%>',[<%-field.validate%>]);<%});%>
 
 jsh_heap.push('XForm<%=model.id%>');

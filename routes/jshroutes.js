@@ -296,9 +296,9 @@ var Routes = function (jsh, jshconfig) {
       else return f();
     }
     else {
-      HelperFS.gen404(req, res);
-      return;
-      //return next();
+      //HelperFS.gen404(req, res);
+      //return;
+      return next();
     }
   });
   

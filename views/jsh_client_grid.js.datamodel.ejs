@@ -24,11 +24,11 @@ function XForm<%=model.id%>(){
   this._is_deleted = false;
   this._orig = null;
   this._modelid = '<%=model.id%>';
-  <% _.each(model.fields,function(field){%>this.<%=field.name%> = '';<%});%>
+  <% _.each(model.fields,function(field){ if(!field.name) return; %>this.<%=field.name%> = '';<%});%>
 }
 
 XForm<%=model.id%>.prototype.Fields = {
-  <% _.each(model.fields,function(field){ if(!('access' in field)) return; if(field.control=='subform') return; if(field.control=='html') return; %>
+  <% _.each(model.fields,function(field){ if(!('access' in field)) return; if(field.control=='subform') return; if(field.control=='html') return; if(!field.name) return; %>
     "<%=field.name%>":{"name":"<%=field.name%>",
     "caption":<%-JSON.stringify(field.caption_ext||field.caption)%>,
     <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
@@ -68,7 +68,7 @@ XForm<%=model.id%>.prototype.Commit = XExt.XForm.Commit('<%=model.id%>','xform_p
 XForm<%=model.id%>.prototype.BindLOV = XExt.XForm.BindLOV('<%=model.id%>');
 
 XForm<%=model.id%>.prototype.xvalidate = new XValidate();
-<% _.each(model.fields,function(field){ if(!('control' in field)) return; %>
+<% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; %>
 XForm<%=model.id%>.prototype.xvalidate.AddControlValidator('.<%=field.name%>.xelem<%=model.id%>','_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getaccess(model.access,"BIU"):field.access)%>',[<%-field.validate%>]);<%});%>
 
 jsh_heap.push('XForm<%=model.id%>');

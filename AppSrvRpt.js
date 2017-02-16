@@ -18,7 +18,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var _ = require('lodash');
-var phantomjs = require('phantomjs');
+var phantomjs = require('phantomjs-prebuilt');
 var phantom = require('phantom');
 var path = require('path');
 var fs = require('fs');

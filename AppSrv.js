@@ -28,7 +28,6 @@ var HelperFS = require('./lib/HelperFS.js');
 var crypto = require('crypto');
 var AppSrvRpt = require('./AppSrvRpt.js');
 var AppSrvModel = require('./AppSrvModel.js');
-var AppSrvJobProc = global.JobProc;
 var fs = require('fs');
 var csv = require('csv');
 var moment = require('moment');
@@ -42,7 +41,7 @@ function AppSrv(_jsh) {
   this.db = new DB();
   this.db.parseSQL = function (sql) { return _this.getSQL(sql); };
   this.rptsrv = new AppSrvRpt(this);
-  if(AppSrvJobProc) this.jobproc = new AppSrvJobProc(this);
+  this.jobproc = null;
   this.modelsrv = new AppSrvModel(this);
   this.QueueSubscriptions = []; // { id: "xxx", req: req, res: res }
 }
