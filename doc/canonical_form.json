@@ -59,7 +59,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   //onupdate (FORM ONLY)
   //ondestroy
   //oncommit (GRID ONLY)
-  //onroute (req, res, callback) - Server-side reroute to different page if necessary, called before any ent data loaded - TOW
+  //onroute (routetype ('jsh','base'), req, res, f, require, jsh, modelid) - Server-side reroute to different page if necessary, called before any ent data loaded - TOW
   "nokey": 1, //No primary key - only browse
   "unbound": 1, //Disable any AppSrv operations
   "tabs": {
