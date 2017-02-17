@@ -27,18 +27,18 @@ function XForm<%=model.id%>_Init(callback){
   xform_<%=model.id%> = new XPost('<%=model.id%>','','');
   xform_<%=model.id%>.Data = new XForm<%=model.id%>();
 
-  <% xejs.eachKey(model.fields,function(field){%>xform_<%=model.id%>.Data.<%=field['name']%> = XForms['<%=model.id%>'].<%=field['name']%>();<%}); %>
+  <% xejs.eachKey(model.fields,function(field){ if(!field.name) return; %>xform_<%=model.id%>.Data.<%=field['name']%> = XForms['<%=model.id%>'].<%=field['name']%>();<%}); %>
 	xform_<%=model.id%>.GetKeys = function(){
 	  var rslt = new Object();
 	  if(!is_add){
 	    _.each(XForms['<%=model.id%>']._bindings,function(binding){
 	      xform_<%=model.id%>.Data[binding] = XForms['<%=model.id%>'][binding]();
 	    });
-	    <% xejs.eachKey(model.fields,function(field){%>rslt.<%=field['name']%> = this.Data.<%=field['name']%>;<%}); %>
+	    <% xejs.eachKey(model.fields,function(field){ if(!field.name) return; %>rslt.<%=field['name']%> = this.Data.<%=field['name']%>;<%}); %>
 	    }
 	  else {
 	    //Add parameters for breadcrumbs
-	    <% _.each(model.fields,function(field){ if(XExt.access(field.access,'C')) { %>rslt.<%=field['name']%> = LiteralOrCollection('<%=field['name']%>',[_GET,this.Data]);<% } }); %>
+	    <% _.each(model.fields,function(field){  if(!field.name) return; if(XExt.access(field.access,'C')) { %>rslt.<%=field['name']%> = LiteralOrCollection('<%=field['name']%>',[_GET,this.Data]);<% } }); %>
 	    }
 	  return rslt; 
 	};

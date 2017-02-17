@@ -155,7 +155,7 @@ function XForm<%=model.id%>_Init(callback){
   xform_post_<%=model.id%>.GetKeys = function(){
     var rslt = new Object();
     if(!is_add){
-      <% xejs.eachKey(model.fields,function(field){%>rslt.<%=field['name']%> = this.Data.<%=field['name']%>;<%}); %>
+      <% xejs.eachKey(model.fields,function(field){ if(!field.name) return; %>rslt.<%=field['name']%> = this.Data.<%=field['name']%>;<%}); %>
     }
     else{
       _.each(XForms['<%=model.id%>']._bindings,function(binding){

@@ -25,7 +25,7 @@ function XForm<%=model.id%>(){
 }
 
 XForm<%=model.id%>.prototype.Fields = {
-  <% _.each(model.fields,function(field){ if(!('access' in field)) return; if(('unbound' in field) && field.unbound) return; if(field.control=='subform') return; if(field.control=='html') return; if(field.control=='button') return; %>
+  <% _.each(model.fields,function(field){ if(!('access' in field)) return; if(('unbound' in field) && field.unbound) return; if(field.control=='subform') return; if(field.control=='html') return; if(field.control=='button') return;  if(!field.name) return; %>
     "<%=field.name%>":{"name":"<%=field.name%>",
     <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
     <%-xejs.iif('access' in field,'"access":'+JSON.stringify(field.access)+',') %>
