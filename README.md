@@ -31,6 +31,7 @@ var app = jsHarmony.Run({server:{
   'https_port': 0,
   'https_cert': 'c:/wk/bk/cert/localhost-cert.pem',
   'https_key': 'c:/wk/bk/cert/localhost-key.pem',
+  'https_ca': 'c:/wk/bk/cert/localhost-ca.pem',
 }});
 ```
 

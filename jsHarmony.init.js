@@ -196,6 +196,7 @@ exports.Run = function(jshconfig, jsh, app, cb){
     https_port: '0.0.0.0',
     https_key: 'path/to/file',
     https_cert 'path/to/file',
+    https_ca 'path/to/file',
     https_ip: 0
   }
   */
@@ -209,12 +210,13 @@ exports.Run = function(jshconfig, jsh, app, cb){
   if(('http_port' in jshconfig.server) && !('http_ip' in jshconfig.server)) jshconfig.server.http_ip = '0.0.0.0';
   if(('https_ip' in jshconfig.server) && !('https_port' in jshconfig.server)) jshconfig.server.https_port = 0;
   if(('https_port' in jshconfig.server) && !('https_ip' in jshconfig.server)) jshconfig.server.https_ip = '0.0.0.0';
-  var f_cert = null,f_key = null;
+  var f_cert = null,f_key = null,f_ca = null;
   if('https_port' in jshconfig.server){
     if(!('https_cert' in jshconfig.server)) throw new Error('HTTPS requires a certificate - https_cert (containing all bundled CAs)');
     if(!('https_key' in jshconfig.server)) throw new Error('HTTPS requires a key file - https_key');
     f_cert = fs.readFileSync(jshconfig.server.https_cert);
     f_key = fs.readFileSync(jshconfig.server.https_key);
+    if(jshconfig.server.https_ca) f_ca = fs.readFileSync(jshconfig.server.https_ca);
   }
   if('https_port' in jshconfig.server) https_server = true;
   if('http_port' in jshconfig.server){
@@ -239,10 +241,12 @@ exports.Run = function(jshconfig, jsh, app, cb){
   }
 
   if(https_server){
-    var server = https.createServer({
+    var https_options = {
       key: f_key,
       cert: f_cert
-    }, app);
+    };
+    if(f_ca) serveropt.ca = f_ca;
+    var server = https.createServer(https_options, app);
     var new_http_port = 0;
     var new_https_port = 0; 
 
