@@ -57,7 +57,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
         <% if('html' in field){ %>
           <%-field.html%>
         <% } else { %>
-          <#=XFormat.Apply(<%-format%>,data[j][<%=xejs.iif(field.name==lovfield,'window.jshuimap.codetxt',"'"+field.name+"'")%>])#>
+          <#=XFormat.Apply(<%-format%>,data[j][<%-xejs.iif(field.name==lovfield,'window.jshuimap.codetxt',"'"+xejs.escapeJS(field.name)+"'")%>])#>
         <% } %>
         <% if('link' in field){ %></a><% } %>
       </div></td>

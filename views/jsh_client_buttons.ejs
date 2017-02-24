@@ -2,6 +2,6 @@
 if('buttons' in model) for(var i=0;i<model.buttons.length;i++){ 
   var button = model.buttons[i];
   if(button.nl){ %><br/><% }
-  %><a href="<%-button.url%>" onclick="<%-button.onclick%>" data-access="<%-button.access%>" style="<%-xejs.visible(XExt.access(button.access,'BIUD'))%><%-button.style%>" data-model="<%=model.id%>" class="xform_button xelem<%=model.id%> xbutton_<%=xejs.onlyAlphaNum(button.text)%> <%=button.class%> <%-xejs.iif(button.nl,'first')%>"><img src="/images/icon_<%=button.icon%>.png" alt="<%=button.text%>" title="<%=button.text%>" /><span><%=button.text%></span></a><%
+  %><a href="<%-button.url%>" onclick="<%-button.onclick%>" data-access="<%-button.access%>" style="<%-xejs.visible(XExt.access(button.access,'BIUD'))%><%-button.style%>" data-model="<%=model.id%>" class="xform_button xelem<%=model.id%> xbutton_<%=xejs.onlyAlphaNum(button.text)%> <%=button.class%> <%-xejs.iif(button.nl,'first')%>"><img src="/images/icon_<%=button.icon%>.png" alt="<%=button.text%>" title="<%=button.text%>" /><span><%-xejs.escapeHTMLN(button.text)%></span></a><%
 }
 %>

@@ -1515,6 +1515,17 @@ exports.hideTab = function (modelid, tabname) {
   });
 }
 
+exports.escapeJS = function (q) {
+  return q.replace(/[\\'"]/g, "\\$&");
+}
+
+exports.escapeHTMLN = function (val) {
+  var rslt = exports.escapeHTML(val);
+  return String(val).replace(/&amp;([\w]+);/g, function (s,p1) {
+    return '&'+p1+';';
+  });
+}
+
 exports.escapeHTML = function (val) {
   var entityMap = {
     "&": "&amp;",
@@ -1543,6 +1554,8 @@ exports.pad = function (val, padding, length) {
   return rslt;
 }
 exports.xejs = {
+  'escapeJS': function(val){ return exports.escapeJS(val); },
+  'escapeHTMLN': function(val){ return exports.escapeHTMLN(val); },
   'iif': function (cond, tval, fval) {
     if (cond) return tval;
     if (fval !== undefined) return fval;
