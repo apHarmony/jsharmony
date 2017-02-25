@@ -192,10 +192,17 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
           var page = null;
           try {
             ph.createPage().then(function (_page) {
+              var model = _this.AppSrv.jsh.Models[modelid];
               page = _page;
               
+              var zoom = undefined;
+              if(model.zoom) zoom = model.zoom;
+              //Base pixel width = 740
+              //Take border into account, 96dpi
+              var zoomcss = '<style type="text/css">body{zoom:'+(zoom||0.75)+';}</style>';
               var onLoadFinished = function (val) { //  /dev/stdout     path.dirname(module.filename)+'/out.pdf'
                 var tmppdfpath = tmppath + '.pdf';
+                page.evaluate(function(zoom){ if(!zoom) zoom = 740/document.width; document.body.style.zoom=zoom; },zoom);
                 page.render(tmppdfpath).then(function () {
                   var dispose = function (disposedone) {
                     page.close().then(function () {
@@ -212,7 +219,6 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
               }
               
               var ejsname = 'reports/' + reportid;
-              var model = _this.AppSrv.jsh.Models[modelid];
               var ejsbody = _this.AppSrv.jsh.getEJS(ejsname);
               for (var i = model._inherits.length - 1; i >= 0; i--) {
                 if (ejsbody != null) break;
@@ -261,7 +267,7 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
               if ('pageheader' in model) {
                 var pageheader = model.pageheader;
                 if (_.isArray(pageheader)) pageheader = pageheader.join('');
-                var headcontent = "function (pageNum, numPages) { var txt = " +
+                var headcontent = "function (pageNum, numPages) { var txt = " + JSON.stringify(zoomcss) + ' + ' +
                   JSON.stringify(_this.RenderEJS(pageheader, { model: model, moment: moment, data: data, pageNum: '{{pageNum}}', numPages: '{{numPages}}' })) +
                   "; txt = txt.replace(/{{pageNum}}/g,pageNum); txt = txt.replace(/{{numPages}}/g,numPages); return txt; }";
                 pagesettings.header = {
@@ -272,7 +278,7 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
               if ('pagefooter' in model) {
                 var pagefooter = model.pagefooter;
                 if (_.isArray(pagefooter)) pagefooter = pagefooter.join('');
-                var footcontent = "function (pageNum, numPages) { var txt = " +
+                var footcontent = "function (pageNum, numPages) { var txt = " + JSON.stringify(zoomcss) + ' + ' +
                   JSON.stringify(_this.RenderEJS(pagefooter, { model: model, moment: moment, data: data, pageNum: '{{pageNum}}', numPages: '{{numPages}}' })) +
                   "; txt = txt.replace(/{{pageNum}}/g,pageNum); txt = txt.replace(/{{numPages}}/g,numPages); return txt; }";
                 pagesettings.footer = {

@@ -530,7 +530,7 @@ jsHarmony.prototype.ParseEntities = function () {
     var _v_model = [
       'comment', 'layout', 'title', 'table', 'access', 'roles', 'caption', 'sort',
       'samplerepeat', 'topmenu', 'id', 'idmd5', 'access_models', '_inherits', 'helpid', 'querystring', 'buttons', 'xvalidate',
-      'pagesettings', 'pageheader', 'headerheight', 'pagefooter', 'reportdata', 'description', 'template', 'fields', 'jobqueue',
+      'pagesettings', 'pageheader', 'headerheight', 'pagefooter', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue',
       'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'nogridadd', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_filter', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'ondestroy',

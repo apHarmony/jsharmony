@@ -28,6 +28,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "description": "Report Description",
   "template": "canonical_report.ejs", //Report source HTML/EJS template
   "pagesettings":  {"orientation": "portrait"}, //Any custom pagesettings
+  "zoom": "0.75", //Zoom applied to Header, Body, and Footer - Default 0.75
   "fields": [
     {"name":"C_ID","type":"bigint","datalock":{"C_ID":"client_C_C_ID"},"nl":1,
 	      "control":"dropdown_L","access": "B",
