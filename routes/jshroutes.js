@@ -178,13 +178,13 @@ var Routes = function (jsh, jshconfig) {
       if ('post' in action) post = querystring.parse(action.post);
       //Queue up dbtasks
       var actionprocessed = function (err, curdbtasks) {
-        if (typeof curdbtasks == 'undefined') { callback(new Error('Error occurred while processing DB action')); /*Error has occurred*/ }
-        if (_.isEmpty(curdbtasks)) { callback(null); /*Nothing to execute*/ }
+        if (typeof curdbtasks == 'undefined') { return callback(new Error('Error occurred while processing DB action')); /*Error has occurred*/ }
+        if (_.isEmpty(curdbtasks)) { return callback(null); /*Nothing to execute*/ }
         
         for (var model in curdbtasks) {
           dbtasks[i + '_' + model] = curdbtasks[model];
         }
-        callback(null);
+        return callback(null);
       };
       if (method == 'get') actionprocessed(null, jsh.AppSrv.getModel(req, res, modelid, true, query, post));
       else if (method == 'put') jsh.AppSrv.putModel(req, res, modelid, true, query, post, actionprocessed);
