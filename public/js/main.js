@@ -14470,7 +14470,7 @@ global.init_dialogs = function () {
     <div id="xpromptbox" class="xdialogbox xpromptbox"><div id="xpromptmessage"></div><div align="right"><input id="xpromptfield" type="text"><br/><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
     </div>\
     <div id="xdebugconsole"></div>\
-    <div id="xloadingblock"><div><div id="xloadingbox">Loading<br/><img src="/images/loading.gif" alt="Loading" title="Loading" /></div></div></div>\
+    <div id="xloadingblock" style="display:none;"><div><div id="xloadingbox">Loading<br/><img src="/images/loading.gif" alt="Loading" title="Loading" /></div></div></div>\
   '));
 };
 global.XWindowResize = function (source) {

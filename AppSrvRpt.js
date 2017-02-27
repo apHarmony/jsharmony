@@ -195,29 +195,6 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
               var model = _this.AppSrv.jsh.Models[modelid];
               page = _page;
               
-              var zoom = undefined;
-              if(model.zoom) zoom = model.zoom;
-              //Base pixel width = 740
-              //Take border into account, 96dpi
-              var zoomcss = '<style type="text/css">body{zoom:'+(zoom||0.75)+';}</style>';
-              var onLoadFinished = function (val) { //  /dev/stdout     path.dirname(module.filename)+'/out.pdf'
-                var tmppdfpath = tmppath + '.pdf';
-                page.evaluate(function(zoom){ if(!zoom) zoom = 740/document.width; document.body.style.zoom=zoom; },zoom);
-                page.render(tmppdfpath).then(function () {
-                  var dispose = function (disposedone) {
-                    page.close().then(function () {
-                      page = null;
-                      fs.close(tmpfd, function () {
-                        fs.unlink(tmppath, function (err) {
-                          if (typeof disposedone != 'undefined') disposedone();
-                        });
-                      });
-                    }).catch(function (err) { global.log(err); });;
-                  };
-                  done(null, tmppdfpath, dispose);
-                }).catch(function (err) { global.log(err); });
-              }
-              
               var ejsname = 'reports/' + reportid;
               var ejsbody = _this.AppSrv.jsh.getEJS(ejsname);
               for (var i = model._inherits.length - 1; i >= 0; i--) {
@@ -250,8 +227,6 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
               //page.set('viewportSize',{width:700,height:800},function(){
               
               var dpi = 1.3 * 72;
-              var default_width = Math.floor(8.5 * dpi) + 'px';
-              var default_height = Math.floor(11 * dpi) + ' px';
               var default_border = '1cm';//Math.floor(0.5 * dpi) + 'px';
               var default_header = '1cm';//Math.floor(0.4 * dpi) + 'px';
               
@@ -260,6 +235,7 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
                 orientation: 'portrait',
                 border: default_border,
               };
+              var headerzoomcss = '<style type="text/css">body{zoom:0.75;}</style>';
               var headerheight = default_header;
               var footerheight = default_header;
               if ('headerheight' in model) headerheight = model.headerheight;
@@ -267,7 +243,7 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
               if ('pageheader' in model) {
                 var pageheader = model.pageheader;
                 if (_.isArray(pageheader)) pageheader = pageheader.join('');
-                var headcontent = "function (pageNum, numPages) { var txt = " + JSON.stringify(zoomcss) + ' + ' +
+                var headcontent = "function (pageNum, numPages) { var txt = " + JSON.stringify(headerzoomcss) + ' + ' +
                   JSON.stringify(_this.RenderEJS(pageheader, { model: model, moment: moment, data: data, pageNum: '{{pageNum}}', numPages: '{{numPages}}' })) +
                   "; txt = txt.replace(/{{pageNum}}/g,pageNum); txt = txt.replace(/{{numPages}}/g,numPages); return txt; }";
                 pagesettings.header = {
@@ -278,7 +254,7 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
               if ('pagefooter' in model) {
                 var pagefooter = model.pagefooter;
                 if (_.isArray(pagefooter)) pagefooter = pagefooter.join('');
-                var footcontent = "function (pageNum, numPages) { var txt = " + JSON.stringify(zoomcss) + ' + ' +
+                var footcontent = "function (pageNum, numPages) { var txt = " + JSON.stringify(headerzoomcss) + ' + ' +
                   JSON.stringify(_this.RenderEJS(pagefooter, { model: model, moment: moment, data: data, pageNum: '{{pageNum}}', numPages: '{{numPages}}' })) +
                   "; txt = txt.replace(/{{pageNum}}/g,pageNum); txt = txt.replace(/{{numPages}}/g,numPages); return txt; }";
                 pagesettings.footer = {
@@ -287,16 +263,82 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
                 };
               }
               if ('pagesettings' in model) pagesettings = _.merge(pagesettings, model.pagesettings);
-              /*
-              if (pagesettings.orientation == 'portrait') {
-                if (!('height' in pagesettings)) pagesettings.height = default_height;
-                if (!('width' in pagesettings)) pagesettings.width = default_width;
+
+              //Calculate page width
+              var zoom = undefined;
+              if(model.zoom) zoom = model.zoom;
+
+              var borderLeft = 0;
+              var borderRight = 0;
+              var borderTop = 0;
+              var borderBottom = 0;
+              var pageWidth = 1; //px
+              var pageHeight = 1; //px
+              var headerHeightPx = 0;
+              var footerHeightPx = 0;
+              var dpi = 96;
+              if(pagesettings.border || pagesettings.margin){
+                var basemargin = pagesettings.margin;
+                if(!basemargin) basemargin = pagesettings.border;
+                if(_.isString(basemargin)) basemargin = parseUnitsPx(basemargin,dpi);
+                if(_.isNumber(basemargin)){
+                  borderLeft = basemargin;
+                  borderRight = basemargin;
+                  borderTop = basemargin;
+                  borderBottm = basemargin;
+                }
+                else {
+                  if(basemargin.left) borderLeft = parseUnitsPx(basemargin.left,dpi);
+                  if(basemargin.right) borderRight = parseUnitsPx(basemargin.right,dpi);
+                  if(basemargin.top) borderTop = parseUnitsPx(basemargin.top,dpi);
+                  if(basemargin.bottom) borderBottom = parseUnitsPx(basemargin.bottom,dpi);
+                }
               }
-              else if (pagesettings.orientation == 'landscape') {
-                if (!('height' in pagesettings)) pagesettings.height = default_width;
-                if (!('width' in pagesettings)) pagesettings.width = default_height;
+              if(pagesettings.format){
+                var fmt = pagesettings.format.toLowerCase();
+                var w = 1;
+                var h = 1;
+                if(fmt=='a3'){ w = 297; h=420; }
+                else if(fmt=='a4'){ w=210; h=297; }
+                else if(fmt=='a5'){ w=148; h=210; }
+                else if(fmt=='legal'){ w=215.9; h=355.6; }
+                else if(fmt=='letter'){ w=215.9; h=279.4; }
+                else if(fmt=='tabloid'){ w=279.4; h=431.8; }
+                if(pagesettings.orientation == 'landscape'){
+                  _w = w;
+                  w = h;
+                  h = _w;
+                }
+                pageWidth = (w / (25.4)) * dpi;
+                pageHeight = (w / (25.4)) * dpi;
               }
-              */
+              if(pagesettings.width) pageWidth = parseUnitsPx(pagesettings.width,dpi);
+              if(pagesettings.height) pageHeight = parseUnitsPx(pagesettings.height,dpi);
+              if(pagesettings.header && pagesettings.header.height) headerHeightPx = parseUnitsPx(pagesettings.header.height,dpi);
+              if(pagesettings.footer && pagesettings.footer.height) footerHeightPx = parseUnitsPx(pagesettings.footer.height,dpi);
+              
+              var contentWidth = pageWidth - borderLeft - borderRight;
+              var contentHeight = pageHeight - borderTop - borderBottom - headerHeightPx - footerHeightPx;
+              if (global.debug_params.report_debug) { console.log('Calculated Page Size: '+contentHeight + 'x'+contentWidth); }
+              
+              var onLoadFinished = function (val) { //  /dev/stdout     path.dirname(module.filename)+'/out.pdf'
+                var tmppdfpath = tmppath + '.pdf';
+                page.evaluate(function(zoom,contentWidth){ if(!zoom) zoom = contentWidth/document.width; document.body.style.zoom=zoom; },zoom,contentWidth);
+                page.render(tmppdfpath).then(function () {
+                  var dispose = function (disposedone) {
+                    page.close().then(function () {
+                      page = null;
+                      fs.close(tmpfd, function () {
+                        fs.unlink(tmppath, function (err) {
+                          if (typeof disposedone != 'undefined') disposedone();
+                        });
+                      });
+                    }).catch(function (err) { global.log(err); });;
+                  };
+                  done(null, tmppdfpath, dispose);
+                }).catch(function (err) { global.log(err); });
+              }
+
               page.property('paperSize', pagesettings).then(function () {
                 page.on('onLoadFinished', onLoadFinished).then(function () {
                   page.property('content', body).then(function () { /* Report Generation Complete */ }).catch(function (err) { global.log(err); });;
@@ -313,6 +355,19 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
     });
   });
 };
+
+function parseUnitsPx(val,dpi){
+  //mm,cm,in,px or no units = px
+  if(!val) return 0;
+  val = val.toLowerCase();
+  //Get value in px
+  if(val.indexOf('mm') >= 0){ val = Helper.ReplaceAll(val,'mm','').trim(); val = parseFloat(val) * dpi / 25.4; }
+  else if(val.indexOf('cm') >= 0){ val = Helper.ReplaceAll(val,'cm','').trim(); val = parseFloat(val) * dpi / 2.54; }
+  else if(val.indexOf('in') >= 0){ val = Helper.ReplaceAll(val,'in','').trim(); val = parseFloat(val) * dpi; }
+  else if(val.indexOf('px') >= 0){ val = Helper.ReplaceAll(val,'px','').trim(); val = parseFloat(val); }
+  if(isNaN(val)) return 0;
+  return Math.floor(val);
+}
 
 AppSrvRpt.prototype.RenderEJS = function (ejssrc, ejsdata) {
   return ejs.render(ejssrc, _.extend(ejsdata, { _: _, ejsext: ejsext }));
