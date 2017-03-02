@@ -217,7 +217,13 @@ exports.Run = function(jshconfig, jsh, app, cb){
     if(!('https_key' in jshconfig.server)) throw new Error('HTTPS requires a key file - https_key');
     f_cert = fs.readFileSync(jshconfig.server.https_cert);
     f_key = fs.readFileSync(jshconfig.server.https_key);
-    if(jshconfig.server.https_ca) f_ca = fs.readFileSync(jshconfig.server.https_ca);
+    if(jshconfig.server.https_ca){
+      if(_.isArray(jshconfig.server.https_ca)){
+        f_ca = [];
+        _.each(jshconfig.server.https_ca,function(ca){ f_ca[] = fs.readFileSync(ca) });
+      }
+      else f_ca = fs.readFileSync(jshconfig.server.https_ca);
+    }
   }
   if('https_port' in jshconfig.server) https_server = true;
   if('http_port' in jshconfig.server){
@@ -246,7 +252,7 @@ exports.Run = function(jshconfig, jsh, app, cb){
       key: f_key,
       cert: f_cert
     };
-    if(f_ca) serveropt.ca = f_ca;
+    if(f_ca) https_options.ca = f_ca;
     var server = https.createServer(https_options, app);
     var new_http_port = 0;
     var new_https_port = 0; 
