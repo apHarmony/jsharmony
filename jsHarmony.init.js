@@ -220,7 +220,7 @@ exports.Run = function(jshconfig, jsh, app, cb){
     if(jshconfig.server.https_ca){
       if(_.isArray(jshconfig.server.https_ca)){
         f_ca = [];
-        _.each(jshconfig.server.https_ca,function(ca){ f_ca[] = fs.readFileSync(ca) });
+        _.each(jshconfig.server.https_ca,function(ca){ f_ca.push(fs.readFileSync(ca)); });
       }
       else f_ca = fs.readFileSync(jshconfig.server.https_ca);
     }
