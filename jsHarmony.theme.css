@@ -182,7 +182,7 @@ CUSTOM CONTROL STYLES
 #xmain .xtbl tbody tr.xgrid_row_red { background-color:#ffb8b8; }
 #xmain .xtbl tbody tr.xgrid_row_gray { background-color:#cccccc; }
 
-.xform_button { border:1px solid #fff; }
+.xform_button { border:1px solid transparent; }
 .xform_button.highlighted { background-color:yellow; border:1px dashed #666; }
 
 /*

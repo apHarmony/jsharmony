@@ -182,6 +182,7 @@ function ListenPort(server, firstPort, ip, onSuccess, onError, params){
       }
       onError(err);
     });
+    server.on('connection',function(socket){ socket.setTimeout(0); });
   }
   if(!params.currentPort){ params.currentPort = 8080; params.tryNextPort = true;  }
   server.listen(params.currentPort, ip);

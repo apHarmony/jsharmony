@@ -1578,10 +1578,10 @@ AppSrv.prototype.AppDBError = function (req, res, err) {
   }
   //Not necessary because sql is printed out in node debug in global.log below
   //if ('sql' in err) { if (global.debug_params.appsrv_logsql) err.message += ' SQL: ' + err.sql; }
-  if ('number' in err) return Helper.GenError(req, res, err.number, err.message);
-  if (err.message == 'INVALID ACCESS') return Helper.GenError(req, res, -12, "Invalid DataLock Access");
+  if ((err.message) && (err.message == 'INVALID ACCESS')) return Helper.GenError(req, res, -12, "Invalid DataLock Access");
   if (global.debug_params.appsrv_requests) global.log(err);
-  if (err.message.indexOf('Application Error - ') == 0) return Helper.GenError(req, res, -5, err.message);
+  if ((err.message) && (err.message.indexOf('Application Error - ') == 0)) return Helper.GenError(req, res, -5, err.message);
+  if ('number' in err) return Helper.GenError(req, res, err.number, err.message);
   return Helper.GenError(req, res, -99999, err.message);
 }
 AppSrv.prototype.ParamCheck = function (desc, col, params, show_errors) {
@@ -1620,6 +1620,7 @@ AppSrv.prototype.DeformatParam = function (field, val, verrors) {
     if (has_timezone) mtstmp = moment.parseZone(val);
     else mtstmp = moment(val);
     if (!mtstmp.isValid()) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
+    if (mtstmp.year()>9999) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
     //Remove timezone
     return moment(mtstmp.format("YYYY-MM-DDTHH:mm:ss.SSS")).toDate();
     //return mtstmp.toDate();

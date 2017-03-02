@@ -98,7 +98,6 @@ AppSrvModel.prototype.GetModel = function (req, res, modelid) {
     req.curtabs = jsh.getTabs(req, modelid);
     req.TopModel = modelid;
     var rslt = _this.genClientModel(req, res, modelid, true);
-    //console.log(rslt);
     res.end(JSON.stringify(rslt));
   });
 };

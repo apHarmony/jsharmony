@@ -1519,6 +1519,10 @@ exports.escapeJS = function (q) {
   return q.replace(/[\\'"]/g, "\\$&");
 }
 
+exports.escapeHTMLQ = function (q) {
+  return q.replace(/["]/g, "&quot;");
+}
+
 exports.escapeHTMLN = function (val) {
   var rslt = exports.escapeHTML(val);
   return String(val).replace(/&amp;([\w]+);/g, function (s,p1) {

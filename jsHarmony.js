@@ -523,8 +523,19 @@ jsHarmony.prototype.ParseEntities = function () {
     else if (model.fields && model.breadcrumbs && model.breadcrumbs.sql_params) _.each(model.breadcrumbs.sql_params, function (sql_param) {
       var sql_param_field = AppSrv.prototype.getFieldByName(model.fields, sql_param);
       if (!sql_param_field) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': Breadcrumb sql param "' + sql_param + '" is not defined as a field');
-      else if (!sql_param_field.key && !Helper.access(sql_param_field.access, 'C')) { if (!sql_param_field.access) sql_param_field_access = ''; sql_param_field.access += 'C'; }
+      else if (!Helper.access(sql_param_field.access, 'C')) { if (!sql_param_field.access) sql_param_field_access = ''; sql_param_field.access += 'C'; }
     });
+
+    //Automatically add C based on default fields
+    if(model.fields){
+      var default_params = [];
+      _.each(model.fields,function(field){ if(field.default && field.default.sql_params) default_params = _.union(default_params,field.default.sql_params); });
+      _.each(default_params,function(sql_param){
+        var sql_param_field = AppSrv.prototype.getFieldByName(model.fields, sql_param);
+        if (!sql_param_field) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': Default sql param "' + sql_param + '" is not defined as a field');
+        else if (!Helper.access(sql_param_field.access, 'C')) { if (!sql_param_field.access) sql_param_field_access = ''; sql_param_field.access += 'C'; }
+      });
+    }
     
     //Validate Model and Field Parameters
     var _v_model = [
