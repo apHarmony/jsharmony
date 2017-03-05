@@ -182,7 +182,7 @@ function ListenPort(server, firstPort, ip, onSuccess, onError, params){
       }
       onError(err);
     });
-    server.on('connection',function(socket){ socket.setTimeout(0); });
+    //server.on('connection',function(socket){ socket.setTimeout(0); });
   }
   if(!params.currentPort){ params.currentPort = 8080; params.tryNextPort = true;  }
   server.listen(params.currentPort, ip);
@@ -207,6 +207,7 @@ exports.Run = function(jshconfig, jsh, app, cb){
 
   if(!jshconfig) jshconfig = {};
   if(!jshconfig.server) jshconfig.server = { http_port:0 };
+  if(typeof jshconfig.server.request_timeout === 'undefined') jshconfig.server.request_timeout = 2*60*1000;
   if(('http_ip' in jshconfig.server) && !('http_port' in jshconfig.server)) jshconfig.server.http_port = 0;
   if(('http_port' in jshconfig.server) && !('http_ip' in jshconfig.server)) jshconfig.server.http_ip = '0.0.0.0';
   if(('https_ip' in jshconfig.server) && !('https_port' in jshconfig.server)) jshconfig.server.https_port = 0;
@@ -236,6 +237,7 @@ exports.Run = function(jshconfig, jsh, app, cb){
 
   if(http_server){
     var server = http.createServer(app);
+    server.timeout = jshconfig.server.request_timeout;
     ListenPort(server, jshconfig.server.http_port, jshconfig.server.http_ip, function(){
       global.log('Listening on HTTP port ' + server.address().port);
       if (global.onServerStart) global.onServerStart();
@@ -254,6 +256,7 @@ exports.Run = function(jshconfig, jsh, app, cb){
     };
     if(f_ca) https_options.ca = f_ca;
     var server = https.createServer(https_options, app);
+    server.timeout = jshconfig.server.request_timeout;
     var new_http_port = 0;
     var new_https_port = 0; 
 
@@ -285,6 +288,7 @@ exports.Run = function(jshconfig, jsh, app, cb){
         res.redirect('https://' + hostname + ':' + new_https_port + req.url);
       })
       var redirect_server = http.createServer(redirect_app);
+      redirect_server.timeout = jshconfig.server.request_timeout;
       ListenPort(redirect_server, jshconfig.server.http_port, jshconfig.server.http_ip, function(){
         new_http_port = redirect_server.address().port;
         start_https_server(cb,[redirect_server]);
