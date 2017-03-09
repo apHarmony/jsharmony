@@ -30,6 +30,7 @@ var Helper = require('./lib/Helper.js');
 var ejs = require('ejs');
 var ejsext = require('./lib/ejsext.js');
 var moment = require('moment');
+var querystring = require('querystring');
 
 function AppSrvRpt(appsrv) {
   this.AppSrv = appsrv;
