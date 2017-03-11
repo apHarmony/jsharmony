@@ -551,7 +551,7 @@ jsHarmony.prototype.ParseEntities = function () {
       'subheader', 'footerheight', 'headeradd',
     ];
     var _v_field = [
-      'name', 'type', 'access', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'serverejs',
+      'name', 'type', 'access', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'serverejs','roles','static','cellclass',
       'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'cellstyle', 'captionclass',
       'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'precision', 'password', 'hash', 'salt', 'unbound',
       'sqlselect', 'sqlupdate', 'sql_sort', 'sqlwhere', 'sql_search_sound', 'sql_search', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVEFIELD__'
