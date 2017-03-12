@@ -559,7 +559,7 @@ jsHarmony.prototype.ParseEntities = function () {
     var _v_controlparams = [
       'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'dateformat', 'base_readonly',
       'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'sqlparams',
-      'image', 'thumbnails'
+      'image', 'thumbnails', 'expand_all', 'item_context_menu'
     ];
     var _v_popuplov = ['target', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
     //lov
@@ -950,7 +950,7 @@ jsHarmony.prototype.GetValidatorFuncs = function (field) {
 };
 jsHarmony.Gen404 = function (req, res) {
   res.status(404);
-  if (req.accepts('html')) { res.render(HelperFS.getView(req, '404'), { url: req.url }); return; }
+  if (req.accepts('html')) { res.render(HelperFS.getView(req, '404', { disable_override: true }), { url: req.url }); return; }
   if (req.accepts('json')) { res.send({ error: 'Not found' }); return; }
   res.type('txt').send('Not found');
 }

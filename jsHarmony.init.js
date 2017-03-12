@@ -126,9 +126,9 @@ exports.addDefaultRoutes = function (app) {
     global.log(err);
     global.log(err.stack);
     res.status(err.status || 500);
-    res.render(HelperFS.getView(req, errorpage), {
+    res.render(HelperFS.getView(req, errorpage, { disable_override: true }), {
       message: err.message,
-      error: err
+      error: err,
     });
   });
 }
