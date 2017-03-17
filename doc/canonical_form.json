@@ -207,6 +207,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "html": "<a href='/<#=data[j]['C_ID']#>'><#=data[j]['C_Name']#></a>" //**Deprecated**, used "control":"html"
       "serverejs": 1, //Evaluate EJS server-side (for HTML)
       "disable_sort": 1, //Only applies to grid
+      "disable_search": 1, //Only applies to grid, do not display as a filter column
+      "disable_search_all": 1, //Only applies to grid, do not query in "Any" filter search
       "sql_sort": "(case when X then 1 else 0 end)", //Only applies to grid
       "sql_search": "(case when X then 1 else 0 end)", //Only applies to grid
       "sql_search_sound": "C_ID in (select C_ID from SDX where SDX_COL='CN' and SDX_VAL=SOUNDEX(%%%FIELD%%%))",

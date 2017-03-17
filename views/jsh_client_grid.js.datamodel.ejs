@@ -39,6 +39,7 @@ XForm<%=model.id%>.prototype.Fields = {
     <%-xejs.iif('virtual' in field,'"virtual":'+JSON.stringify(field.virtual)+',') %>
     <%-xejs.iif('static' in field,'"static":'+JSON.stringify(field.static)+',') %>
     <%-xejs.iif('onchange' in field,'"onchange":'+JSON.stringify(field.onchange)+',') %>
+    <%-xejs.iif('disable_search' in field,'"disable_search":'+JSON.stringify(field.disable_search)+',') %>
     <%-xejs.iif('search_sound' in field,'"search_sound":'+JSON.stringify(field.search_sound)+',') %>
     <% if('controlparams' in field){ %>controlparams:{
       <%-xejs.iif('thumbnail_width' in field.controlparams,'"thumbnail_width":'+JSON.stringify(field.controlparams.thumbnail_width)+',') %>

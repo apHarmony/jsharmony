@@ -75,7 +75,7 @@ AppSrv.prototype.getModelRecordset = function (req, res, modelid, Q, P, rowlimit
   if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
   var _this = this;
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
-  var searchlist = this.getFieldNames(req, model.fields, 'BS');
+  var searchlist = this.getFieldNames(req, model.fields, 'BS', function(field){ if(field.disable_search){ return false; } return true; });
   var keylist = this.getKeyNames(model.fields);
   var allfieldslist = _.union(keylist, fieldlist);
   var filterlist = this.getFieldNames(req, model.fields, 'F');
@@ -163,6 +163,7 @@ AppSrv.prototype.getModelRecordset = function (req, res, modelid, Q, P, rowlimit
           var firstSearchItem = true;
           var searchlistfields = this.getFieldsByName(model.fields, searchlist);
           _.each(searchlistfields, function (field) {
+            if(field.disable_search_all) return;
             var searchtermsql = _this.addSearchTerm(field, i, search_value, search_comparison, sql_ptypes, sql_params, verrors);
             if (searchtermsql) {
               if (searchall.length) searchall.push('or');
@@ -1621,6 +1622,7 @@ AppSrv.prototype.DeformatParam = function (field, val, verrors) {
     else mtstmp = moment(val);
     if (!mtstmp.isValid()) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
     if (mtstmp.year()>9999) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
+    if (mtstmp.year()<1753) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
     //Remove timezone
     return moment(mtstmp.format("YYYY-MM-DDTHH:mm:ss.SSS")).toDate();
     //return mtstmp.toDate();
@@ -2095,16 +2097,17 @@ AppSrv.prototype.ProcessFileOperationsDone = function (fileops, callback) {
   }, function (err) { callback(null, null); });
 };
 
-AppSrv.prototype.getFieldNames = function (req, fields, perm) {
-  return _.map(AppSrv.prototype.getFields(req, fields, perm), 'name');
+AppSrv.prototype.getFieldNames = function (req, fields, perm, fcond) {
+  return _.map(AppSrv.prototype.getFields(req, fields, perm, fcond), 'name');
 }
 
-AppSrv.prototype.getFields = function (req, fields, perm) {
+AppSrv.prototype.getFields = function (req, fields, perm, fcond) {
   var rslt = [];
   _.each(fields, function (field) {
     if (ejsext.accessField(req, field, perm)) {
       if (('type' in field) && (field.type == 'file')) return;
       if (!('type' in field)) return;
+      if(fcond && (!fcond(field))) return;
       rslt.push(field);
     }
   });

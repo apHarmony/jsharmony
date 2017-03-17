@@ -3935,7 +3935,7 @@ function SearchQuery(model) {
   if (typeof model !== 'undefined') {
     var _this = this;
     _.each(model.Fields, function (field) {
-      if (XExt.HasAccess(field.access, 'BS')) {
+      if (XExt.HasAccess(field.access, 'BS') && !field.disable_search) {
         var comparison_type = 'none';
         if ('lov' in field) comparison_type = 'lov';
         else if ('type' in field) {
