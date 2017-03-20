@@ -149,8 +149,8 @@ function jshLoad(state,addHistory){
     else $('div.bcrumbs').html('&nbsp;'); 
     jsh_prev_bcrumbs_src = orig_bcrumbs;
 
-    $('#toplink_help').attr('href',model.helpurl);
-    $('#toplink_help').attr('onclick',model.helpurl_onclick);
+    $('#toplink_help').not('.static').attr('href',model.helpurl);
+    $('#toplink_help').not('.static').attr('onclick',model.helpurl_onclick);
     if(model.topmenu){ SelectMenu(model.topmenu); }
     jshResetLinks();
     jsh_prev_state = state;

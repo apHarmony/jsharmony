@@ -138,7 +138,7 @@ jsHarmony.prototype.LoadModels = function (modeldir, prefix, dbtype) {
       for (var r in model) this.Routes[r] = model[r];
     }
     else {
-      if (!('layout' in model)) {
+      if (!('layout' in model) && !('inherits' in model)) {
         //Parse file as multiple-model file
         _.each(model, function (submodel, submodelname) {
           LogEntityError(_INFO, 'Loading sub-model ' + submodelname);

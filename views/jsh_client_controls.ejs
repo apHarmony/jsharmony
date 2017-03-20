@@ -67,8 +67,8 @@ for(var i=0;i<model.fields.length;i++){
     </div>
   <% }
   if(field.control=='button'){ 
-    if('link' in field){ %><input <%-xejs.showProp('id',field.name)%> type="button" class="xform_ctrl xelem<%=model.id%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%=field.value%>" data-url="<%=field.link%>" onclick="<%-field.onclick%>" /><% }
-    else{ %><input <%-xejs.showProp('id',field.name)%> type="button" data-model="<%=model.id%>" class="xform_ctrl xelem<%=model.id%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%=field.value%>" onclick="<%-field.onclick%>" /><% }
+    if('link' in field){ %><input <%-xejs.showProp('id',field.name)%> type="button" class="xform_ctrl xelem<%=model.id%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%-xejs.escapeHTMLN(field.value)%>" data-url="<%=field.link%>" onclick="<%-field.onclick%>" /><% }
+    else{ %><input <%-xejs.showProp('id',field.name)%> type="button" data-model="<%=model.id%>" class="xform_ctrl xelem<%=model.id%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%-xejs.escapeHTMLN(field.value)%>" onclick="<%-field.onclick%>" /><% }
   }
   if(field.control=='linkbutton'){ 
     if('link' in field){ %><a <%-xejs.showProp('id',field.name)%> href="#" data-url="<%-field.link%>" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.id%> <%=field.controlclass%> <%=xejs.iif(!field.value,'xform_label')%>" onclick="<%-field.onclick%>; return false;"><%=xejs.ifnull(field.value,'')%></a><% }
