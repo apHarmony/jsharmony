@@ -299,7 +299,7 @@ exports.xejs = {
   },
   'eachKey': function (fields, func) {
     for (var i = 0; i < fields.length; i++) {
-      if ('key' in fields[i])
+      if (fields[i].key)
         func(fields[i]);
     }
   },

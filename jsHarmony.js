@@ -396,7 +396,7 @@ jsHarmony.prototype.ParseEntities = function () {
         if (_.includes(fieldnames, field.name)) { LogEntityError(_ERROR, "Duplicate field " + field.name + " in model " + model.id + "."); }
         fieldnames.push(field.name);
       }
-      if ('key' in field) { field.access += 'K'; foundkey = true; }
+      if (field.key) { field.access += 'K'; foundkey = true; }
       if (field.controlparams) {
         if (field.controlparams.CODEVal) { field.controlparams.codeval = field.controlparams.CODEVal; delete field.controlparams.CODEVal; }
         if ('codeval' in field.controlparams) LogDeprecated(model.id + ' > ' + field.name + ': The controlparams codeval attribute has been deprecated - use "popuplov":{...}');
@@ -758,14 +758,19 @@ jsHarmony.prototype.getAuxFields = function (req, res, model) {
   if (typeof model.fields == 'undefined') return rslt;
   for (var i = 0; i < model.fields.length; i++) {
     rslt.push({});
-    if (('link' in model.fields[i]) && (model.fields[i].link) && (model.fields[i].link != 'select') && (model.fields[i].link.substr(0, 3) != 'js:')) {
+    if (('link' in model.fields[i]) && (model.fields[i].link) && 
+        (model.fields[i].link != 'select') && 
+        (model.fields[i].link.substr(0, 3) != 'js:')) {
       var link = model.fields[i]['link'];
       var ptarget = this.parseLink(link);
       if (!(ptarget.modelid in this.Models)) throw new Error("Link Model " + ptarget.modelid + " not found.");
       if (!Helper.HasModelAccess(req, this.Models[ptarget.modelid], 'BIU')) { rslt[i]['link_onclick'] = "XExt.Alert('You do not have access to this form.');return false;"; }
       else {
         var link_model = this.Models[ptarget.modelid];
-        if ('popup' in link_model) {
+        if(ptarget.action=='download'){
+          rslt[i]['link_onclick'] = "var url = $(this).attr('href') + '?format=js'; $('#xfileproxy').prop('src', url); return false;";
+        }
+        else if ('popup' in link_model) {
           rslt[i]['link_onclick'] = "window.open($(this).attr('href'),'_blank','width=" + link_model['popup'][0] + ",height=" + link_model['popup'][1] + ",resizable=1,scrollbars=1');return false;";
         }
       }
@@ -783,6 +788,7 @@ jsHarmony.prototype.parseLink = function (target) {
   if (typeof target != 'undefined') {
     if (target.indexOf('edit:') == 0) { action = 'edit'; modelid = target.substring(5); }
     else if (target.indexOf('add:') == 0) { action = 'add'; modelid = target.substring(4); }
+    else if (target.indexOf('download:') == 0) { action = 'download'; modelid = target.substring(9); }
     else if (target.indexOf('savenew:') == 0) { action = 'add'; modelid = target.substring(8); }
     else if (target.indexOf('select:') == 0) { action = 'select'; modelid = target.substring(7); }
     else modelid = target;
@@ -798,7 +804,10 @@ jsHarmony.prototype.parseLink = function (target) {
           _.each(prekeys, function (val) {
             var keydata = val.split('=');
             if (keydata.length > 1) keys[keydata[0]] = keydata[1];
-            else keys[keydata[0]] = keydata[0];
+            else{ 
+              if(action == 'download') keys[keydata[0]] = '';
+              else keys[keydata[0]] = keydata[0];
+            }
           });
         }
       }
@@ -814,6 +823,7 @@ jsHarmony.prototype.getURL = function (req, target, tabs, fields, bindings, keys
   if (modelid == '') modelid = req.TopModel;
   if (!(modelid in this.Models)) throw new Error('Model ' + modelid + ' not found');
   if (!Helper.HasModelAccess(req, this.Models[modelid], 'BIU')) return "";
+  var tmodel = this.Models[modelid];
   tabs = typeof tabs !== 'undefined' ? tabs : new Object();
   var rslt = req.baseurl + modelid;
   for (var xmodelid in this.Models) {
@@ -839,6 +849,38 @@ jsHarmony.prototype.getURL = function (req, target, tabs, fields, bindings, keys
   var rsltparams = '';
   var rsltoverride = '';
   if (!_.isEmpty(q)) rsltparams += querystring.stringify(q, '&amp;')
+
+  //Handle download action
+  if(action=='download'){
+    var keyfield = '';
+    var fieldname = '';
+    if (typeof fields !== 'undefined') {
+      if (_.size(ptarget.keys) > 0) {
+        //Set keyfield, fieldname based on link parameters
+        var ptargetkeys = _.keys(ptarget.keys);
+        if(ptargetkeys.length > 1) throw new Error('Error parsing link target "' + target + '".  Multiple keys not currently supported for file downloads.');
+        fieldname = ptargetkeys[0];
+        keyfield = ptarget.keys[fieldname];
+      }
+      //Otherwise, auto-generate keyfield, fieldname based on model
+      _.each(tmodel.fields,function(f){
+        if(f.key && !keyfield){
+          var found_field = false;
+          _.each(fields,function(fsrc){ if(fsrc.name==f.name) found_field = true; });
+          if(!found_field) throw new Error('Error parsing link target "' + target + '".  Target key field '+f.name+' not found in source data.');
+          keyfield = f.name;
+        }
+        if((f.type=='file') && !fieldname){
+          fieldname = f.name;
+        }
+      });
+    }
+    if(!keyfield) throw new Error('Error parsing link target "' + target + '".  Download key id not defined.');
+    if(!fieldname) throw new Error('Error parsing link target "' + target + '".  Download field name not defined.');
+    rslt = req.baseurl + '_dl/' + modelid + '/<#=data[j][\'' + keyfield + '\']#>/' + fieldname;
+    return rslt;
+  }
+
   //Add keys
   if ((action == 'edit') || (action == 'add') || (action == 'select')) {
     if (action == 'select') { rsltoverride = '#select'; }
@@ -860,7 +902,7 @@ jsHarmony.prototype.getURL = function (req, target, tabs, fields, bindings, keys
       }
       else {
         _.each(fields, function (field) {
-          if ('key' in field) {
+          if (field.key) {
             rsltparams += '&amp;' + field['name'] + '=<#=data[j][\'' + field['name'] + '\']#>';
           }
         });

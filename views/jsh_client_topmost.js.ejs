@@ -646,20 +646,22 @@ function XUpload_complete(rslt) {
 function js_proxy_complete(id, data) {
   var _this = this;
   xLoader.StopLoading(xfileuploadLoader);
-  if (((typeof data) == 'object') && ('_error' in data)) {
-    if (DefaultErrorHandler(data._error.Number, data._error.Message)) { }
-    else if ((data._error.Number == -9) || (data._error.Number == -5)) { XExt.Alert(data._error.Message); }
-    else { XExt.Alert('Error #' + data._error.Number + ': ' + data._error.Message); }
-    return;
+  if ((typeof data) == 'object'){
+    if ('_error' in data) {
+      if (id in jsproxy_hooks) { jsproxy_hooks[id](data._error,null); }
+      else if (DefaultErrorHandler(data._error.Number, data._error.Message)) { }
+      else if ((data._error.Number == -9) || (data._error.Number == -5)) { XExt.Alert(data._error.Message); }
+      else { XExt.Alert('Error #' + data._error.Number + ': ' + data._error.Message); }
+      return;
+    }
+    else if ('_success' in data) {
+      if (id == 'xfileuploader') XUpload_complete(data);
+      else if (id in jsproxy_hooks) { jsproxy_hooks[id](null,data); }
+      else XExt.Alert(JSON.stringify(data));
+      return;
+    }
   }
-  else if (((typeof data) == 'object') && ('_success' in data)) {
-    if (id == 'xfileuploader') XUpload_complete(data);
-    else if (id in jsproxy_hooks) { jsproxy_hooks[id](data); }
-    else XExt.Alert(JSON.stringify(data));
-  }
-  else {
-    XExt.Alert(JSON.stringify(data));
-  }
+  XExt.Alert(JSON.stringify(data));
 }
 
 

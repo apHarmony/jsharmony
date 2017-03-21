@@ -1393,6 +1393,7 @@ AppSrv.prototype.Download = function (req, res, modelid, keyid, fieldid, options
   if (!options) options = {};
   if (!('_DBContext' in req) || (req._DBContext == '') || (req._DBContext == null)) { return Helper.GenError(req, res, -10, 'Invalid Login / Not Authenticated'); }
   if (!keyid) return Helper.GenError(req, res, -33, 'Download file not found.');
+  if (req.query && (req.query.format=='js')) req.jsproxyid = 'xfiledownloader';
   var _this = this;
   
   var serveFile = function (req, res, fpath, fname, fext) {
@@ -2149,7 +2150,7 @@ AppSrv.prototype.getKeyNames = function (fields) {
 
 AppSrv.prototype.getKeys = function (fields) {
   return _.filter(fields, function (field) {
-    if ('key' in field) return true;
+    if (field.key) return true;
     return false;
   });
 }
@@ -2204,7 +2205,7 @@ AppSrv.prototype.getDataLockSQL = function (req, fields, sql_ptypes, sql_params,
           }
         }
       }
-      else if ('key' in field) throw new Error('Missing DataLock for key.');
+      else if (field.key) throw new Error('Missing DataLock for key.');
       else if (('access' in field) && (Helper.access(field.access, 'F'))) throw new Error('Missing DataLock for foreign key ' + field.name);
       else if (('access' in field) && (Helper.access(field.access, 'C'))) throw new Error('Missing DataLock for breadcrumb key ' + field.name);
     }
