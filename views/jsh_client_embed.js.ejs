@@ -47,6 +47,8 @@ XForms['<%=model.id%>'] = {
   if('oncommit' in model){ %> _oncommit:function(xform){<%-model.oncommit%>}, <% }
   if('onvalidate' in model){ %> _onvalidate:function(xform, callback){<%-model.onvalidate%>}, <% }
   if('ondestroy' in model){ %> _ondestroy:function(xform){<%-model.ondestroy%>}, <% }
+	if('onloadstate' in model){ %> _onloadstate:function(xform, state){<%-model.onloadstate%>}, <% }
+	if('onrowbind' in model){ %> _onrowbind:function(xform, jobj, datarow){<%-model.onrowbind%>}, <% }
   //onloadstate
 	%>
 };

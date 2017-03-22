@@ -544,7 +544,7 @@ jsHarmony.prototype.ParseEntities = function () {
       'pagesettings', 'pageheader', 'headerheight', 'pagefooter', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue',
       'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'nogridadd', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_filter', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
-      'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'ondestroy',
+      'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
       'js', 'ejs', 'dberrors', 'tablestyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'unbound', 'duplicate', 'sqlselect', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage',
       //Report Parameters
@@ -564,7 +564,7 @@ jsHarmony.prototype.ParseEntities = function () {
     var _v_popuplov = ['target', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
     //lov
     var existing_targets = [];
-    for (var f in model) { if (f.substr(0, 7) == 'comment') continue; if (!_.includes(_v_model, f)) LogEntityError(_ERROR, model.id + ': Invalid field: ' + f); }
+    for (var f in model) { if (f.substr(0, 7) == 'comment') continue; if (!_.includes(_v_model, f)) LogEntityError(_ERROR, model.id + ': Invalid model property: ' + f); }
     var no_B = true;
     var no_key = true;
     if (model.fields) _.each(model.fields, function (field) {

@@ -47,7 +47,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "tabpos": "top", //top,bottm
   //"curtab":1, //VIRTUAL PROPERTY, DO NOT OVERWRITE
   //sqlselect, sqldownloadselect, sqlinsertencrypt, sqlupdate, sqldelete, sqlrowcount
-  "sqlinsert":"insert into %%%TABLE%%%(%%%FIELDS%%%) values(%%%VALUES%%%);select scope_identity() as CHG_ID;"
+  "sqlinsert":"insert into %%%TABLE%%%(%%%FIELDS%%%) values(%%%VALUES%%%);select scope_identity() as CHG_ID;",
   "sqlexec": "exec dbo.PLE_NOTIF @C_ID,@MDate", //Used by EXEC.  Be sure to add %%%DATALOCKS%%% if applicable
   "sqltype": "multirecordset", //recordset, multirecordset  Used by EXEC.
   "sqlwhere": "C_STS='ACTIVE'", //Additional filter for grid
@@ -59,6 +59,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   //onupdate (FORM ONLY)
   //ondestroy
   //oncommit (GRID ONLY)
+  //onloadstate(xform, state)
+  //onrowbind(xform,jobj,datarow) (GRID ONLY)
   //onroute (routetype ('jsh','base'), req, res, f, require, jsh, modelid) - Server-side reroute to different page if necessary, called before any ent data loaded - TOW
   "nokey": 1, //No primary key - only browse
   "unbound": 1, //Disable any AppSrv operations
@@ -80,8 +82,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //"link":"js:XExt.popupReport('I',{ C_ID: 97 },{ width:900, height:500 });"
   ],
   "hide_system_buttons" : ["print","export","help","filter"], //Current only on Grid
-  "rowstyle": "<#=xejs.iif(1==1,'color:red;','color:yellow;')#>" //Used in grid to style rows dynamically
-  "rowclass": "<#-xejs.case(datarow['PLE_SEL_NOTIF'],'xgrid_row_highlight',!datarow['PLE_SEL_NOTIF_OK'],'xgrid_row_disabled')#>" //Used in grid to style rows dynamically
+  "rowstyle": "<#=xejs.iif(1==1,'color:red;','color:yellow;')#>", //Used in grid to style rows dynamically
+  "rowclass": "<#-xejs.case(datarow['PLE_SEL_NOTIF'],'xgrid_row_highlight',!datarow['PLE_SEL_NOTIF_OK'],'xgrid_row_disabled')#>", //Used in grid to style rows dynamically
     //xejs.iif(condition,true,[false])  [false] result is optional
     //xejs.case(condition1,result1,condition2,result2,[catchall_result])
   "reselectafteredit": "row",    "comment1":"row, or blank",
@@ -99,7 +101,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "name": "E_Name",
       "type": "varchar", //bigint, varchar, date, decimal, int, datetime, char, smallint, file, hash, encascii, time, bit
       "length": "255",
-      "precision": [12,6] //For decimal, default is 10,4 if omitted
+      "precision": [12,6], //For decimal, default is 10,4 if omitted
       "key": 1, //If key exists, then this is a key field
       "lovkey": 1, //Used by Multisel to enable additional foreign key in LOV expression, without being a required parameter
       "virtual": 1, //Field is not bound on I/U, can be B, but will not pull updates or respond to HasUpdates

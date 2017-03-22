@@ -541,7 +541,7 @@ function XForm_LoadState(state, addBackHistoryOnCancel) {
   }
   _.each(XForms, function (xform) {
     if (!XExt.HasAccess(xform._access, 'B')) return;
-    if (xform._onloadstate) return xform._onloadstate(state[xform._id]);
+    if (xform._onloadstate) return xform._onloadstate(xform, state[xform._id]);
     if (xform._layout != 'grid') return;
     if (xform._id in state) {
       window['XForm' + xform._id + '_LoadState'](state[xform._id]);

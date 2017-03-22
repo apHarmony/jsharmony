@@ -62,7 +62,12 @@ function XForm<%=model.id%>_Init(callback){
   xgrid_<%=model.id%>.OnCommit = XForm<%=model.id%>_OnCommit;
   xgrid_<%=model.id%>.OnCancelEdit = function(rowid,obj){ XForm<%=model.id%>_ResetRow(rowid); }
 
-  xform_<%=model.id%>.OnRowBind = function(jobj,datarow){ xgrid_<%=model.id%>.BindRow(jobj); XForm<%=model.id%>.prototype.BindLOV(xform_post_<%=model.id%>,jobj); };
+  xform_<%=model.id%>.OnRowBind = function(jobj,datarow){
+    xgrid_<%=model.id%>.BindRow(jobj);
+    XForm<%=model.id%>.prototype.BindLOV(xform_post_<%=model.id%>,jobj);
+    var xform = XForms['<%=model.id%>'];
+    if(xform._onrowbind) xform._onrowbind(xform,jobj,datarow);
+  };
   xform_<%=model.id%>.OnMetaData = function(data){ xform_post_<%=model.id%>._LOVs = this._LOVs; xform_post_<%=model.id%>._defaults = this._defaults; }
   xform_<%=model.id%>.OnDBRowCount = function(data){ XForm<%=model.id%>_UpdateTitleCaption(); };
   xform_<%=model.id%>.OnResetDataSet = function(data){ var xpost = xform_post_<%=model.id%>;
