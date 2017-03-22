@@ -132,7 +132,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
                 <% } else { %>
                   <#=XFormat.Apply(<%-format%>,data[j]['<%=field.name%>'])#>
                 <% } %>
-                <% if('link' in field){ %></a><% if(field.name && (field.control != 'html')){ %><# } #><% }  } %>
+                <% if('link' in field){ %></a><% if(!(XExt.beginsWith(field.link,'#select')) && field.name && (field.control != 'html')){ %><# } #><% }  } %>
               </div><%
                 }
         else if(field.control=='textbox'){ %><input type="<%=xejs.getInputType(field)%>" data-id="<%=field.name%>" value="<%=xejs.GetValue(field)%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.id%> <%=field.controlclass%>" <%-xejs.iif(maxlength >= 0,'maxlength="'+maxlength+'"')%> /><% }

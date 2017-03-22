@@ -1740,6 +1740,22 @@ exports.StripTags = function (val, ignore) {
     return ignore.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : ''
   })
 }
+exports.readCookie = function(id){
+  var rslt = [];
+  var cookies = document.cookie.split(';');
+  var rx=RegExp("^\\s*"+id+"=\\s*(.*?)\\s*$");
+  for(var i=0;i<cookies.length;i++){
+    var m = cookies[i].match(rx);
+    if(m) rslt.push(m[1]);
+  }
+  return rslt;
+}
+exports.currentURL = function(){
+  var rslt = window.location.href.toString().split(window.location.host)[1];
+  rslt = rslt.split('?')[0];
+  rslt = rslt.split('#')[0];
+  return rslt;
+}
 
 
 /******************
@@ -2847,7 +2863,7 @@ XGrid.prototype.BindRow = function (jobj) {
   jobj.find('.xelem' + this.modelid + '.datepicker').each(function () {
     if (!$(this).hasClass('editable')) return;
     var ctrl = this;
-    var dateformat = '';
+    var dateformat = JSH_DEFAULT_DATEFORMAT;
     var fname = $(this).data('id');
     var xfield = xfields[fname];
     if (xfield && xfield.controlparams) dateformat = xfield.controlparams.dateformat;
@@ -14407,6 +14423,7 @@ global.mouseX = 0;
 global.mouseY = 0;
 global.mouseDown = false;
 global.curSubMenu = '';
+global.JSH_DEFAULT_DATEFORMAT = 'mm/dd/yy';
 
 global.DefaultErrorHandler = function(num,txt){
 	if(num == -9) { 

@@ -451,6 +451,22 @@ exports.StripTags = function (val, ignore) {
     return ignore.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : ''
   })
 }
+exports.readCookie = function(id){
+  var rslt = [];
+  var cookies = document.cookie.split(';');
+  var rx=RegExp("^\\s*"+id+"=\\s*(.*?)\\s*$");
+  for(var i=0;i<cookies.length;i++){
+    var m = cookies[i].match(rx);
+    if(m) rslt.push(m[1]);
+  }
+  return rslt;
+}
+exports.currentURL = function(){
+  var rslt = window.location.href.toString().split(window.location.host)[1];
+  rslt = rslt.split('?')[0];
+  rslt = rslt.split('#')[0];
+  return rslt;
+}
 
 
 /******************

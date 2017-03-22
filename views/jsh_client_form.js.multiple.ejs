@@ -54,7 +54,7 @@ function XForm<%=model.id%>_Init(callback){
   $('.xelem<%=model.id%>.checkbox').change(function(){ if(is_add) return; if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
 
   <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if(field.control=='date') {%>
-  $("#<%=field.name%>.xelem<%=model.id%>").datepicker({ changeMonth: true, changeYear: true, dateFormat: '<%=(field.controlparams?field.controlparams.dateformat:'')%>', onSelect: function(){ if(is_add) return; xform_<%=model.id%>.Data.OnControlUpdate(this); } });
+  $("#<%=field.name%>.xelem<%=model.id%>").datepicker({ changeMonth: true, changeYear: true, dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||JSH_DEFAULT_DATEFORMAT), onSelect: function(){ if(is_add) return; xform_<%=model.id%>.Data.OnControlUpdate(this); } });
   <% } }); %>  
   callback();
 }

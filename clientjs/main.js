@@ -47,6 +47,7 @@ global.mouseX = 0;
 global.mouseY = 0;
 global.mouseDown = false;
 global.curSubMenu = '';
+global.JSH_DEFAULT_DATEFORMAT = 'mm/dd/yy';
 
 global.DefaultErrorHandler = function(num,txt){
 	if(num == -9) { 

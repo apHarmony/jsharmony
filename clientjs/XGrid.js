@@ -292,7 +292,7 @@ XGrid.prototype.BindRow = function (jobj) {
   jobj.find('.xelem' + this.modelid + '.datepicker').each(function () {
     if (!$(this).hasClass('editable')) return;
     var ctrl = this;
-    var dateformat = '';
+    var dateformat = JSH_DEFAULT_DATEFORMAT;
     var fname = $(this).data('id');
     var xfield = xfields[fname];
     if (xfield && xfield.controlparams) dateformat = xfield.controlparams.dateformat;
