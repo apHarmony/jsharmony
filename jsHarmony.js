@@ -934,7 +934,10 @@ jsHarmony.prototype.getURL_onclick = function (req, field, model) {
       seturl += "url=XExt.ReplaceAll(url,'data[j]','data'); url = ParseEJS(url,'" + model.id + "'); ";
     }
     var link_model = this.Models[ptarget.modelid];
-    if ('popup' in link_model) {
+    if(ptarget.action=='download'){
+      rslt = "url += '?format=js'; console.log(url); $('#xfileproxy').prop('src', url); return false;";
+    }
+    else if ('popup' in link_model) {
       rslt = "window.open(url,'_blank','width=" + link_model.popup[0] + ",height=" + link_model.popup[1] + ",resizable=1,scrollbars=1');return false;";
     }
   }

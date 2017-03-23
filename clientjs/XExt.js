@@ -263,6 +263,9 @@ exports.escapeBRSpace = function (val) {
   if (!val) return val;
   return XExt.ReplaceAll(XExt.ReplaceAll(val, '\n', ' '), '\r', '');
 }
+exports.escapeRegEx = function (q) {
+  return q.replace(/[-[\]{}()*+?.,\\/^$|#\s]/g, "\\$&");
+}
 exports.pad = function (val, padding, length) {
   var rslt = val.toString();
   while (rslt.length < length) rslt = padding + rslt;
@@ -454,7 +457,7 @@ exports.StripTags = function (val, ignore) {
 exports.readCookie = function(id){
   var rslt = [];
   var cookies = document.cookie.split(';');
-  var rx=RegExp("^\\s*"+id+"=\\s*(.*?)\\s*$");
+  var rx=RegExp("^\\s*"+exports.escapeRegEx(id)+"=\\s*(.*?)\\s*$");
   for(var i=0;i<cookies.length;i++){
     var m = cookies[i].match(rx);
     if(m) rslt.push(m[1]);

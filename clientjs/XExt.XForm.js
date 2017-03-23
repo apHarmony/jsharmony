@@ -178,7 +178,13 @@ exports.RenderField = function (_this, parentobj, modelid, field, val){
     if (checkhidden) jctrl.css('visibility', 'hidden');
     else if (checkhidden) jctrl.css('visibility', 'visible');
   }
-  else if ((jctrl.size() > 0) && jctrl.hasClass('xform_label')) { jctrl.text(val); }
+  else if ((jctrl.size() > 0) && jctrl.hasClass('xform_label')) { 
+    if(jctrl.hasClass('xform_label_static')){
+      if(val) jctrl.show();
+      else jctrl.hide();
+    }
+    else{ jctrl.text(val); }
+  }
   else if ((jctrl.size() > 0) && (String(jctrl.prop('nodeName')).toUpperCase() == 'SELECT')) {
     //Check if SELECT has value.  If not, add it as an additional option at the end
     var lov_matches = jctrl.children('option').filter(function () { return String($(this).val()).toUpperCase() == String(val).toUpperCase(); }).length;
