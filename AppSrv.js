@@ -1595,7 +1595,7 @@ AppSrv.prototype.ParamCheck = function (desc, col, params, show_errors) {
       var param = params[i].substr(1);
       var req = (params[i][0] == '&');
       if (req && !(param in col)) {
-        if (show_errors) global.log(desc + ': Missing Parameter ' + param);
+        if (show_errors) global.log(desc + ': Invalid Parameters - Missing ' + param);
         return false;
       }
       parsed.push(param);
@@ -1603,7 +1603,7 @@ AppSrv.prototype.ParamCheck = function (desc, col, params, show_errors) {
   }
   for (var i in col) {
     if (!_.includes(parsed, i)) {
-      if (show_errors) global.log(desc + ': Extra Parameter ' + i);
+      if (show_errors) global.log(desc + ': Invalid Parameters - Extra Parameter ' + i);
       return false;
     }
   }
@@ -1693,6 +1693,7 @@ AppSrv.prototype.addSearchTerm = function (field, search_i, in_search_value, com
         if (isNaN(in_search_value)) return '';
         break;
       case 'decimal':
+        console.log(field);
         if (isNaN(in_search_value)) return '';
         break;
       case 'varchar':
@@ -2237,7 +2238,7 @@ AppSrv.prototype.getDBType = function (field) {
   }
   else if (ftype == 'date') return DB.types.Date;
   else if (ftype == 'decimal') {
-    var prec_h = 10;
+    var prec_h = 22;
     var prec_l = 4;
     if ('precision' in field) {
       prec_h = field.precision[0];
