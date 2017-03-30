@@ -1498,7 +1498,7 @@ AppSrv.prototype.PopQueue = function (req, res, queueid) {
   if (!this.jsh.Config.queues) { next(); return; }
   if (!(queueid in this.jsh.Config.queues)) { return Helper.GenError(req, res, -1, 'Queue not found'); }
   if (global.debug_params.appsrv_requests) global.log('Result for queue ' + queueid);
-  if (!thisapp.jobproc) throw new Error('Job Processor not configured');
+  if (!this.jobproc) throw new Error('Job Processor not configured');
   var queue = this.jsh.Config.queues[queueid];
   
   //Verify parameters

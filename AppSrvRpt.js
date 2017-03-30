@@ -338,7 +338,7 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
                   };
                   done(null, tmppdfpath, dispose);
                 }).catch(function (err) { global.log(err); });
-              }
+              };
 
               page.property('paperSize', pagesettings).then(function () {
                 page.on('onLoadFinished', onLoadFinished).then(function () {
