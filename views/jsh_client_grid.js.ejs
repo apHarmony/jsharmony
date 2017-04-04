@@ -61,6 +61,7 @@ function XForm<%=model.id%>_Init(callback){
   xgrid_<%=model.id%>.IsDirty = function(){ return xform_post_<%=model.id%>.IsDirty; }
   xgrid_<%=model.id%>.OnCommit = XForm<%=model.id%>_OnCommit;
   xgrid_<%=model.id%>.OnCancelEdit = function(rowid,obj){ XForm<%=model.id%>_ResetRow(rowid); }
+  xgrid_<%=model.id%>.SaveBeforeUpdate = <%=(model.grid_save_before_update?'true':'false')%>;
 
   xform_<%=model.id%>.OnRowBind = function(jobj,datarow){
     xgrid_<%=model.id%>.BindRow(jobj);
@@ -199,7 +200,8 @@ function XForm<%=model.id%>_OnCommit(rowid,obj,onsuccess,oncancel){
     xpost.ResetDirty();
 
     //Bind oncommit handler if defined
-    if(XForms['<%=model.id%>']._oncommit) onsuccess = function(){ XForms['<%=model.id%>']._oncommit(XForms['<%=model.id%>'], rowid); };
+    var orig_onsuccess = onsuccess;
+    if(XForms['<%=model.id%>']._oncommit) onsuccess = function(){ XForms['<%=model.id%>']._oncommit(XForms['<%=model.id%>'], rowid, orig_onsuccess); };
     
     if(xform_<%=model.id%>.Prop.ReselectAfterEdit) XForm<%=model.id%>_Reselect(rowid,onsuccess);
     else if(onsuccess) onsuccess();
@@ -286,6 +288,11 @@ function XForm<%=model.id%>_AddRow(){
   var xpost = xform_post_<%=model.id%>;
   var xdata = xform_<%=model.id%>;
   if(xgrid_<%=model.id%>.CurrentCell) if(!xpost.CommitRow()) return;
+  //Save parent and other items before adding, if commitlevel is row or cell
+  if(xgrid_<%=model.id%>.SaveBeforeUpdate && ((XForms['<%=model.id%>']._commitlevel == 'row') || (XForms['<%=model.id%>']._commitlevel == 'cell'))){
+    if (XForm_GetChanges().length > 0) { return XExt.Alert('Please save all changes before adding a row.'); }
+  }
+  
   var newrow = xpost.NewRow();
   
   xdata.RowCount++;
@@ -370,7 +377,7 @@ function XForm<%=model.id%>_DeleteRow(rowid){
           //On Complete
           exec_delete();
           xpost.ResetDirty();
-		  if(XForms['<%=model.id%>']._oncommit) XForms['<%=model.id%>']._oncommit(XForms['<%=model.id%>'], -1);
+		  if(XForms['<%=model.id%>']._oncommit) XForms['<%=model.id%>']._oncommit(XForms['<%=model.id%>'], -1, function(){});
         },function(data){
           //On Fail
           _.remove(xpost.DeleteSet,xpost.DataSet[rowid]);

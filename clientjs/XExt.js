@@ -832,6 +832,34 @@ exports.CustomPrompt = function (id, html, onInit, onAccept, onCancel, onClosed)
   $('#' + id + ' .default_focus').focus();
 }
 
+exports.ZoomEdit = function (val, caption, options, onAccept, onCancel) {
+  if(!options) options = {};
+  if(!val) val = '';
+  val = val.toString();
+  window.xDialog.unshift('#xtextzoombox');
+  $('#xdialogblock #xtextzoombox').zIndex(window.xDialog.length);
+  
+  var oldactive = document.activeElement;
+  if (oldactive) $(oldactive).blur();
+  $('#xtextzoommessage').html(caption);
+  $('#xtextzoombox input').off('click');
+  $('#xtextzoombox input').off('keydown');
+  $('#xtextzoomfield').val(val);
+  
+  $('#xtextzoomfield').prop('readonly', (options.readonly?true:false));
+  if(options.readonly) $('#xtextzoomfield').removeClass('editable').addClass('uneditable');
+  else $('#xtextzoomfield').removeClass('uneditable').addClass('editable');
+
+  var cancelfunc = exports.dialogButtonFunc('#xtextzoombox', oldactive, function () { if (onCancel) onCancel(); });
+  var acceptfunc = exports.dialogButtonFunc('#xtextzoombox', oldactive, function () { if (onAccept) onAccept($('#xtextzoomfield').val()); });
+  $('#xtextzoombox input.button_ok').on('click', acceptfunc);
+  $('#xtextzoombox input.button_cancel').on('click', cancelfunc);
+  $('#xtextzoombox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+  $('#xdialogblock,#xtextzoombox').show();
+  window.XWindowResize();
+  $('#xtextzoomfield').focus();
+}
+
 var popupData = {};
 
 exports.popupShow = function (modelid, fieldid, title, parentobj, obj, options) {

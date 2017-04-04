@@ -35,6 +35,7 @@ function XGrid(_modelid, _CommitLevel, _ValidationLevel) {
   this.OnCommit = null; //(rowid,obj,onsuccess,oncancel) return true (if no commit required, or immediate result)/false (if delay commit)    newobj,oldobj,onsuccess,oncancel,oldrowid
   this.IsDirty = null; //return true/false
   this.OnCancelEdit = null; //(rowid,obj)
+  this.SaveBeforeUpdate = false;
   this.Init();
 }
 XGrid.prototype.CellEnter = function (obj, e) {
@@ -230,7 +231,7 @@ XGrid.prototype.CellLeaving = function (oldobj, newobj, e, onsuccess, oncancel) 
   var newrowid = -1;
   if (oldobj) oldrowid = XExt.XForm.GetRowID(this.modelid, oldobj);
   if (newobj) newrowid = XExt.XForm.GetRowID(this.modelid, newobj);
-  
+
   var rowchange = (oldrowid != newrowid);
   
   if ((this.ValidationLevel == 'cell') || (this.CommitLevel == 'cell')) {
@@ -244,6 +245,17 @@ XGrid.prototype.CellLeaving = function (oldobj, newobj, e, onsuccess, oncancel) 
     //Validate Row, if applicable
     if (this.OnValidating && !this.OnValidating(oldrowid, oldobj)) {
       if (oncancel) oncancel(true);
+      return true;
+    }
+  }
+
+  
+  if(this.SaveBeforeUpdate && ((this.CommitLevel == 'row') || (this.CommitLevel == 'cell')) && !oldobj && rowchange && (!this.IsDirty || !this.IsDirty())){
+    if (XForm_GetChanges().length > 0) {
+      XExt.Alert('Please save all changes before updating the grid.',function(){
+        $(document.activeElement).blur();
+      });
+      if(oncancel) oncancel(true);
       return true;
     }
   }

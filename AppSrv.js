@@ -1693,7 +1693,6 @@ AppSrv.prototype.addSearchTerm = function (field, search_i, in_search_value, com
         if (isNaN(in_search_value)) return '';
         break;
       case 'decimal':
-        console.log(field);
         if (isNaN(in_search_value)) return '';
         break;
       case 'varchar':

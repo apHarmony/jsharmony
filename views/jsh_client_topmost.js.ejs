@@ -256,7 +256,7 @@ function XForm_Refresh(modelid) {
   //Modify grid refresh to load multiple pages
   var foundchanges = XForm_GetChanges();
   if (foundchanges.length > 0) return;
-
+  
   XForm_Select(function () { console.log('Reselect complete'); }, modelid);
 }
 

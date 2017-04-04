@@ -349,7 +349,7 @@ function LogDeprecated(msg) {
 }
 jsHarmony.prototype.ParseEntities = function () {
   var _this = this;
-  var base_controls = ["label", "html", "textbox", "dropdown", "date", "textarea", "hidden", "subform", "html", "password", "file_upload", "file_download", "button", "linkbutton", "tree", "checkbox"];
+  var base_controls = ["label", "html", "textbox", "textzoom", "dropdown", "date", "textarea", "hidden", "subform", "html", "password", "file_upload", "file_download", "button", "linkbutton", "tree", "checkbox"];
   _.forOwn(this.Models, function (model) {
     model.xvalidate = new XValidate();
     if (!('table' in model)) LogEntityError(_WARNING, 'Model ' + model.id + ' missing table');
@@ -543,7 +543,7 @@ jsHarmony.prototype.ParseEntities = function () {
       'samplerepeat', 'topmenu', 'id', 'idmd5', 'access_models', '_inherits', 'helpid', 'querystring', 'buttons', 'xvalidate',
       'pagesettings', 'pageheader', 'headerheight', 'pagefooter', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue',
       'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'nogridadd', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
-      'grid_require_filter', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
+      'grid_require_filter', 'grid_save_before_update', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
       'js', 'ejs', 'dberrors', 'tablestyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'unbound', 'duplicate', 'sqlselect', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage',

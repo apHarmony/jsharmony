@@ -179,6 +179,12 @@ a.xtab{
 .xtbl td.xcheckbox_column {
   text-align:center;
 }
+.xform_ctrl_textzoom {
+  height:18px;
+  display:inline-block;
+  vertical-align:top;
+  resize: none;
+}
 .xpopuplov_column {
   white-space:nowrap;
 }
@@ -330,13 +336,13 @@ a.linkbutton img {
   padding-right:5px;
   border:0;
 }
-.xlookup.icon {
+.xlookup.icon, .xtextzoom.icon {
   position:relative;
   top:4px;
   left:-3px;
   margin-right:7px;
 }
-.xrow .xlookup.icon {
+.xrow .xlookup.icon,.xrow .xtextzoom.icon {
   left:-1px;
   margin-right:0px;
   margin-left:7px;
@@ -391,7 +397,7 @@ LOADING ANIMATION
 	z-index:99999;
 	text-align:center;
 }
-#xloadingblock.popup { top:0px; }
+body.popup #xloadingblock { top:0px; }
 #xloadingblock div {
 	position:absolute;
 	top:50%;
@@ -479,14 +485,19 @@ DIALOG BOXES
 	min-height:60px;
 	text-align:left;
 }
+.xtextzoombox {
+	width:510px;
+	min-height:60px;
+	text-align:left;
+}
 #xalertmessage,#xconfirmmessage,#xpromptmessage {
   max-height: 400px;
   overflow:auto;
 }
 #xalertbox input,
 #xconfirmbox input,
-.xpromptbox input.button_ok,
-.xpromptbox input.button_cancel {
+.xdialogbox input.button_ok,
+.xdialogbox input.button_cancel {
   margin: 20px 0 0px 0;
   padding:4px 15px;
 }
@@ -494,7 +505,12 @@ DIALOG BOXES
   margin: 20px 0 0px 0;
   width:100%;
 }
-.xpromptbox h3 {
+#xtextzoomfield {
+  margin: 20px 0 0px 0;
+  width:100%;
+  height:300px;
+}
+.xdialogbox h3 {
   margin-top:5px;
   margin-bottom:5px;
 }

@@ -58,7 +58,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   //onvalidate(xform, callback) - Must return callback(true) if validation succeeded and handle errors
   //onupdate (FORM ONLY)
   //ondestroy
-  //oncommit (GRID ONLY)
+  //oncommit(xform, rowid, callback) (GRID ONLY) - Executes after db Update / Insert / Delete.
   //onloadstate(xform, state)
   //onrowbind(xform,jobj,datarow) (GRID ONLY)
   //onroute (routetype ('jsh','base'), req, res, f, require, jsh, modelid) - Server-side reroute to different page if necessary, called before any ent data loaded - TOW
@@ -95,6 +95,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "grid_expand_filter": 1,
   "grid_rowcount":  1,
   "grid_require_filter": 1, //Do not initially load results
+  "grid_save_before_update": 1,
   "duplicate": {"target": "E_DUPLICATE", "bindings": {"E_ID":"E_ID", "C_ID": "C_ID"},"link":"edit:EW&E_ID=NEW_E_ID","link_text": "Duplicate Item"},
   "fields": [
     {
@@ -117,7 +118,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "hidden": 1, //**Deprecated**, use "control":"hidden"
       "access": "B", //BIUD, or F for foreign key, S for Grid Filter/Search in addition to any B.  html and button controls auto-add "B" rights. **C - crumbparameter deprecated**
       "datalock": { "C_ID": "client_C_ID" }, //Link DataLock ID to query in _config.datalocks.
-      "control": "label", //label,html(value),textbox,dropdown,date,textarea,subform,html,hidden,password,file_upload,button,linkbutton,tree,checkbox
+      "control": "label", //label,html(value),textbox,textzoom,dropdown,date,textarea,subform,html,hidden,password,file_upload,button,linkbutton,tree,checkbox
       "controlparams": { "dateformat": "mm/dd/y" }, //DatePicker Params - dateformat is parameter to jQuery datepicker control for date display
                        {"sqlparams": {"FILE_SIZE": "D_SIZE",  //file_upload params - File Size
                              "FILE_EXT": "D_EXT", //File Extension

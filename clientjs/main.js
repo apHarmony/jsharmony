@@ -113,6 +113,7 @@ global.init_dialogs = function () {
     <div id="xalertbox" class="xdialogbox"><div id="xalertmessage"></div><div align="center"><input type="button" value="OK" /></div></div>\
     <div id="xconfirmbox" class="xdialogbox"><div id="xconfirmmessage"></div><div align="center"><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
     <div id="xpromptbox" class="xdialogbox xpromptbox"><div id="xpromptmessage"></div><div align="right"><input id="xpromptfield" type="text"><br/><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
+    <div id="xtextzoombox" class="xdialogbox xtextzoombox"><div id="xtextzoommessage"></div><div align="right"><textarea id="xtextzoomfield"></textarea><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
     </div>\
     <div id="xdebugconsole"></div>\
     <div id="xloadingblock" style="display:none;"><div><div id="xloadingbox">Loading<br/><img src="/images/loading.gif" alt="Loading" title="Loading" /></div></div></div>\

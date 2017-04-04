@@ -44,7 +44,7 @@ XForms['<%=model.id%>'] = {
 	if('onloadimmediate' in model){ %> _onloadimmediate:function(xform, callback){<%-model.onloadimmediate%>}, <% }
   if('oninsert' in model){ %> _oninsert:function(xform,urlkeys,url){<%-model.oninsert%>}, <% }
   if('onupdate' in model){ %> _onupdate:function(xform){<%-model.onupdate%>}, <% }
-  if('oncommit' in model){ %> _oncommit:function(xform){<%-model.oncommit%>}, <% }
+  if('oncommit' in model){ %> _oncommit:function(xform,rowid,callback){<%-model.oncommit%>}, <% }
   if('onvalidate' in model){ %> _onvalidate:function(xform, callback){<%-model.onvalidate%>}, <% }
   if('ondestroy' in model){ %> _ondestroy:function(xform){<%-model.ondestroy%>}, <% }
 	if('onloadstate' in model){ %> _onloadstate:function(xform, state){<%-model.onloadstate%>}, <% }

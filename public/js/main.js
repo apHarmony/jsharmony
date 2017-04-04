@@ -2127,6 +2127,34 @@ exports.CustomPrompt = function (id, html, onInit, onAccept, onCancel, onClosed)
   $('#' + id + ' .default_focus').focus();
 }
 
+exports.ZoomEdit = function (val, caption, options, onAccept, onCancel) {
+  if(!options) options = {};
+  if(!val) val = '';
+  val = val.toString();
+  window.xDialog.unshift('#xtextzoombox');
+  $('#xdialogblock #xtextzoombox').zIndex(window.xDialog.length);
+  
+  var oldactive = document.activeElement;
+  if (oldactive) $(oldactive).blur();
+  $('#xtextzoommessage').html(caption);
+  $('#xtextzoombox input').off('click');
+  $('#xtextzoombox input').off('keydown');
+  $('#xtextzoomfield').val(val);
+  
+  $('#xtextzoomfield').prop('readonly', (options.readonly?true:false));
+  if(options.readonly) $('#xtextzoomfield').removeClass('editable').addClass('uneditable');
+  else $('#xtextzoomfield').removeClass('uneditable').addClass('editable');
+
+  var cancelfunc = exports.dialogButtonFunc('#xtextzoombox', oldactive, function () { if (onCancel) onCancel(); });
+  var acceptfunc = exports.dialogButtonFunc('#xtextzoombox', oldactive, function () { if (onAccept) onAccept($('#xtextzoomfield').val()); });
+  $('#xtextzoombox input.button_ok').on('click', acceptfunc);
+  $('#xtextzoombox input.button_cancel').on('click', cancelfunc);
+  $('#xtextzoombox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+  $('#xdialogblock,#xtextzoombox').show();
+  window.XWindowResize();
+  $('#xtextzoomfield').focus();
+}
+
 var popupData = {};
 
 exports.popupShow = function (modelid, fieldid, title, parentobj, obj, options) {
@@ -2615,6 +2643,7 @@ function XGrid(_modelid, _CommitLevel, _ValidationLevel) {
   this.OnCommit = null; //(rowid,obj,onsuccess,oncancel) return true (if no commit required, or immediate result)/false (if delay commit)    newobj,oldobj,onsuccess,oncancel,oldrowid
   this.IsDirty = null; //return true/false
   this.OnCancelEdit = null; //(rowid,obj)
+  this.SaveBeforeUpdate = false;
   this.Init();
 }
 XGrid.prototype.CellEnter = function (obj, e) {
@@ -2810,7 +2839,7 @@ XGrid.prototype.CellLeaving = function (oldobj, newobj, e, onsuccess, oncancel) 
   var newrowid = -1;
   if (oldobj) oldrowid = XExt.XForm.GetRowID(this.modelid, oldobj);
   if (newobj) newrowid = XExt.XForm.GetRowID(this.modelid, newobj);
-  
+
   var rowchange = (oldrowid != newrowid);
   
   if ((this.ValidationLevel == 'cell') || (this.CommitLevel == 'cell')) {
@@ -2824,6 +2853,17 @@ XGrid.prototype.CellLeaving = function (oldobj, newobj, e, onsuccess, oncancel) 
     //Validate Row, if applicable
     if (this.OnValidating && !this.OnValidating(oldrowid, oldobj)) {
       if (oncancel) oncancel(true);
+      return true;
+    }
+  }
+
+  
+  if(this.SaveBeforeUpdate && ((this.CommitLevel == 'row') || (this.CommitLevel == 'cell')) && !oldobj && rowchange && (!this.IsDirty || !this.IsDirty())){
+    if (XForm_GetChanges().length > 0) {
+      XExt.Alert('Please save all changes before updating the grid.',function(){
+        $(document.activeElement).blur();
+      });
+      if(oncancel) oncancel(true);
       return true;
     }
   }
@@ -14498,6 +14538,7 @@ global.init_dialogs = function () {
     <div id="xalertbox" class="xdialogbox"><div id="xalertmessage"></div><div align="center"><input type="button" value="OK" /></div></div>\
     <div id="xconfirmbox" class="xdialogbox"><div id="xconfirmmessage"></div><div align="center"><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
     <div id="xpromptbox" class="xdialogbox xpromptbox"><div id="xpromptmessage"></div><div align="right"><input id="xpromptfield" type="text"><br/><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
+    <div id="xtextzoombox" class="xdialogbox xtextzoombox"><div id="xtextzoommessage"></div><div align="right"><textarea id="xtextzoomfield"></textarea><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
     </div>\
     <div id="xdebugconsole"></div>\
     <div id="xloadingblock" style="display:none;"><div><div id="xloadingbox">Loading<br/><img src="/images/loading.gif" alt="Loading" title="Loading" /></div></div></div>\
