@@ -318,8 +318,8 @@ XGrid.prototype.BindRow = function (jobj) {
     });
   });
   jobj.find('.xelem' + this.modelid).not('.xelem' + this.modelid + '.checkbox').focus(function (e) { if (window.xDialog.length) return; if (!$(this).hasClass('editable')) return; return _this.ControlEnter(this, e); });
-  jobj.find('.xelem' + this.modelid + ', .xlookup').keydown(function (e) { return _this.ControlKeyDown(this, e) })
-  jobj.find('.xlookup').focus(function (e) { var ctrl = $(this).prev()[0]; if (window.xDialog.length) return; if (!$(ctrl).hasClass('editable')) return; return _this.ControlEnter(ctrl, e); });
+  jobj.find('.xelem' + this.modelid + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e) })
+  jobj.find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; if (window.xDialog.length) return; if (!$(ctrl).hasClass('editable')) return; return _this.ControlEnter(ctrl, e); });
 }
 
 exports = module.exports = XGrid;
