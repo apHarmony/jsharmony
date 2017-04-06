@@ -28,6 +28,7 @@ div.clear {
 }
 a img {	border: none; }
 img a {	border:0; }
+div.nobr { white-space:nowrap; display:inline-block; }
 
 /*
 ====
@@ -173,7 +174,7 @@ a.xtab{
 .xform input,.xform select,.xform textarea {
 	margin:2px 10px 2px 0;
 }
-.xtbl td input {
+.xtbl td input,.xtbl td textarea {
   margin:0;
 }
 .xtbl td.xcheckbox_column {
@@ -184,6 +185,8 @@ a.xtab{
   display:inline-block;
   vertical-align:top;
   resize: none;
+  padding-top:1px;
+  padding-bottom:1px;
 }
 .xpopuplov_column {
   white-space:nowrap;
