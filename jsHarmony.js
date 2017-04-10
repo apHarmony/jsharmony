@@ -666,9 +666,9 @@ function AddValidation(field, validator) {
 /************************
 |    MANAGE EJS FILES   |
 ************************/
-jsHarmony.prototype.getEJS = function (f) {
-  if (!(f in this.EJS)) this.EJS[f] = this.LoadEJS(f);
-  this.EJS[f] = this.LoadEJS(f); //Disable caching
+jsHarmony.prototype.getEJS = function (f, onError) {
+  if (!(f in this.EJS)) this.EJS[f] = this.LoadEJS(f, onError);
+  this.EJS[f] = this.LoadEJS(f, onError); //Disable caching
   return this.EJS[f];
 }
 
@@ -694,9 +694,14 @@ jsHarmony.prototype.getEJSFilename = function (f) {
   return fpath;
 }
 
-jsHarmony.prototype.LoadEJS = function (f) {
+jsHarmony.prototype.LoadEJS = function (f, onError) {
   var fpath = this.getEJSFilename(f);
-  if (!fs.existsSync(fpath)) { LogEntityError(_ERROR, "EJS path not found: " + f + " at " + fpath); return null; }
+  if (!fs.existsSync(fpath)) { 
+    var errmsg = "EJS path not found: " + f + " at " + fpath;
+    if(onError) onError(errmsg);
+    else LogEntityError(_ERROR, errmsg);
+    return null; 
+  }
   return fs.readFileSync(fpath, 'utf8')
 }
 

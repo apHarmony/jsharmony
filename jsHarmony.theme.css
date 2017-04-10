@@ -117,7 +117,7 @@ BODY
 	display:block;
 }
 .xtbl tbody tr.even {
-	background-color:#ecf0f9;
+	background-color:#f7f7f7;
 }
 .xtbl tbody td {
 	border-left:1px solid #9f9f9f;

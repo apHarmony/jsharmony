@@ -183,7 +183,7 @@ exports.RenderField = function (_this, parentobj, modelid, field, val){
       if(val) jctrl.show();
       else jctrl.hide();
     }
-    else{ jctrl.text(val); }
+    else{ jctrl.html(XExt.escapeHTMLBR(val)); }
   }
   else if ((jctrl.size() > 0) && (String(jctrl.prop('nodeName')).toUpperCase() == 'SELECT')) {
     //Check if SELECT has value.  If not, add it as an additional option at the end

@@ -192,7 +192,7 @@ a.xtab{
   white-space:nowrap;
 }
 .xinputerror {
-	border: 2px solid red; !important;
+	border: 2px solid red !important;
 }
 .xnorecords {
 	text-align:center;
@@ -627,4 +627,6 @@ PRINT STYLESHEET
 */
 @media print {
   .xactions { display:none !important; visibility:hidden !important; }
+  #xhead { display:none; }
+  #xbody,#xmain { display:block !important; }
 }

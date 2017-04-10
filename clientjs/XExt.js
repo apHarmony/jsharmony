@@ -274,6 +274,7 @@ exports.pad = function (val, padding, length) {
 exports.xejs = {
   'escapeJS': function(val){ return exports.escapeJS(val); },
   'escapeHTMLN': function(val){ return exports.escapeHTMLN(val); },
+  'escapeHTMLBR': function(val){ return exports.escapeHTMLBR(val); },
   'iif': function (cond, tval, fval) {
     if (cond) return tval;
     if (fval !== undefined) return fval;

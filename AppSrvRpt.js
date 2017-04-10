@@ -197,13 +197,13 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
               page = _page;
               
               var ejsname = 'reports/' + reportid;
-              var ejsbody = _this.AppSrv.jsh.getEJS(ejsname);
+              var ejsbody = _this.AppSrv.jsh.getEJS(ejsname,function(){});
               for (var i = model._inherits.length - 1; i >= 0; i--) {
                 if (ejsbody != null) break;
                 var ejsid = model._inherits[i];
                 if (ejsid.substr(0, 8) == '_report_') {
                   ejsid = ejsid.substr(8);
-                  ejsbody = _this.AppSrv.jsh.getEJS('reports/' + ejsid);
+                  ejsbody = _this.AppSrv.jsh.getEJS('reports/' + ejsid,function(){});
                 }
               }
               if (ejsbody == null) ejsbody = 'REPORT BODY NOT FOUND';

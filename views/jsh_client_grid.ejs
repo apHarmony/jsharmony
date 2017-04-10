@@ -105,8 +105,8 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
     </thead>
     <tbody id="xgrid_<%=model.id%>_placeholder"></tbody>
     <script id="xgrid_<%=model.id%>_template" type="text/x-ejs-template">
-      <# for(var j=0;j<data.length;j++){ var datarow=data[j]; #>
-      <tr class="<#=(j%2==1?'even':'odd')#> <%-model.rowclass%> xrow_<%=model.id%> xrow" style="<%-model.rowstyle%>" data-id="<#=rowid#>">
+      <# for(var j=0;j<data.length;j++){ var datarow=data[j]; if(!rowid) rowid = j; #>
+      <tr class="<#=(rowid%2==1?'even':'odd')#> <%-model.rowclass%> xrow_<%=model.id%> xrow" style="<%-model.rowstyle%>" data-id="<#=rowid#>">
         <% if(model.inlinepopup){ %><td align="center"><a href="#" onclick="XExt.popupSelect('<%=model.id%>',this); return false;">Select</a></td><% } %>
         <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
           if(!('caption' in field)) continue;
@@ -129,6 +129,8 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
                   <%-field.html%>
                 <% } else if('value' in field){ %>
                   <%-field.value%>
+                <% } else if(field.control=='html'){ %>
+                  <#-data[j]['<%=field.name%>']#>
                 <% } else { %>
                   <#=XFormat.Apply(<%-format%>,data[j]['<%=field.name%>'])#>
                 <% } %>
