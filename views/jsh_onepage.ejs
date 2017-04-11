@@ -122,6 +122,7 @@ function jshLoad(state,addHistory){
     init_complete = false;
     delete_target = null;
     _bcrumbs = {};
+    window.xPopupStack = [];
 
     var ejsprepend = '';
     if(rslt.breadcrumbs) ejsprepend += rslt.breadcrumbs;

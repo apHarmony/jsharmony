@@ -100,6 +100,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           %>
         <th nowrap class="<%=field.sortclass%> thead<%=field.name%> <%=field.captionclass%> <%=fieldclass%>" style="<%=field.captionstyle%>"><% if(field.disable_sort){ %><%=field.caption%><% } else { %><a href="#" onClick="return XForm<%=model.id%>_Sort(this,'<%=field.name%>')"><%=field.caption%></a><% } %></th>
         <% } %>
+        <%-xejs.iif(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.access,'I'),'<th></th>')%>
         <%-xejs.iif(model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.access,'D'),'<th></th>')%>
       </tr>
     </thead>
@@ -146,7 +147,8 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           if(field.popuplov){ %><a href="#" data-id="<%=field.name%>_xlookup" class="xform_ctrl xlookup icon <%=field.name%>_xlookup" data-codeval="<%=field.controlparams.codeval%>" data-model="<%=model.id%>" onclick="XExt.popupShow('<%=field.model.id%>','<%=field.name%>','<%=field.caption_ext||field.caption%> Selection',$(this).prev('.<%=field.name%>'),this,{OnControlUpdate:function(obj,e){ xgrid_<%=model.id%>.ControlUpdate(obj,e); }})"><img src="/images/icon_search.png" height="14" style="position:relative;top:-1px;" /></a><% }
             %></td>
           <% } %>
-        <% if(model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.access,'D')){%><td><a href="#" onclick="XForm<%=model.id%>_DeleteRow(<#=rowid#>); return false;" style="<%-xejs.visible(XExt.access(model.access,'D'))%>"><img src="/images/icon_delete2.png" height="14" alt="Delete" title="Delete" /></a></td><%}%>
+        <% if(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.access,'I')){ %><td align="center"><a href="#" data-model="<%=model.id%>" data-access="I" class="row_independent" onclick="XForm<%=model.id%>_DuplicateRow('<%=model.duplicate.model.id%>',<#=rowid#>, this, <%=(model.duplicate.bindings?JSON.stringify(model.duplicate.bindings):'{}')%>); return false;" style="<%-xejs.visible(XExt.access(model.access,'I'))%>"><img src="/images/icon_copy.png" height="14" alt="Duplicate" title="Duplicate" /></a></td><%}%>
+        <% if(model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.access,'D')){%><td align="center"><a href="#" onclick="XForm<%=model.id%>_DeleteRow(<#=rowid#>); return false;" style="<%-xejs.visible(XExt.access(model.access,'D'))%>"><img src="/images/icon_delete2.png" height="14" alt="Delete" title="Delete" /></a></td><%}%>
       </tr>
       <# } #>
     </script>
@@ -169,4 +171,21 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           }
   }
 %>
+<% if(model.duplicate){
+  var popup_model = _.extend({},model.duplicate.model);
+  popup_model.hide_system_buttons = _.union(popup_model.hide_system_buttons,['export']); 
+  popup_model.inlinepopup = 1;
+  %>
+  <div style="display:none;">
+    <div class="xsubform xpopup xelem<%=model.id%>" class="colorbox_inline" id="popup_<%=model.id%>_duplicate">
+      <div class="xpanel" style="<%=model.duplicate.popupstyle%>">
+        <%-jshRender(popup_model,model)%>
+        <div style="text-align:center;padding-top:8px;">
+          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.id%> style="padding:3px 8px;" value="Duplicate" onclick="XForm_Duplicate('<%=popup_model.id%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link||''))%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link_options||''))%>'); return false;" />
+          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.id%> style="padding:3px 8px;" value="Cancel" onclick="$.colorbox.close(); return false;" />
+        </div>
+      </div>
+    </div>
+  </div>
+<% } %>
 <%-model.ejs%>

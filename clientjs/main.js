@@ -102,6 +102,7 @@ $(document).ready(function(){
 });
 
 global.xDialog = [];
+global.xPopupStack = [];
 global.debugConsole = function (txt,clear) {
   $('#xdebugconsole').show();
   if(clear) $('#xdebugconsole').empty();

@@ -773,16 +773,19 @@ function XForm_Duplicate(modelid, link, link_options) {
   var win = null;
   window['XForm' + modelid + '_RunDBFunc'](function (rslt) {
     //On success
-    XForm_OpenDataURL(win, modelid, link, link_options, rslt);
-    win.opener = window.opener;
+    if(link){
+      XForm_OpenDataURL(win, modelid, link, link_options, rslt);
+      win.opener = window.opener;
+    }
     XForm_RefreshParent();
     $.colorbox.close();
+    XForm_Refresh();
   }, {
     onBeforeUpdate: function () {
-      win = window.open('', '_blank', link_options);
+      if(link) win = window.open('', '_blank', link_options);
     },
     noMessage: true,
-    onFail: function (err) { win.close(); }
+    onFail: function (err) { if(win) win.close(); }
   });
 }
 function XForm_HasUpdates() {

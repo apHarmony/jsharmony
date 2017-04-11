@@ -331,6 +331,20 @@ function XForm<%=model.id%>_AddRow(){
   return rowid;
 }
 
+function XForm<%=model.id%>_DuplicateRow(dmodelid, rowid, obj, bindings){
+  var modelid = '<%=model.id%>';
+  var xpost = xform_post_<%=model.id%>;
+  if(XForm_HasUpdates()){ XExt.Alert('Please save changes before duplicating.'); return false; }
+  var rowdata = xpost.DataSet[rowid];
+  for(var binding in bindings){
+    if(binding in rowdata){
+      XForms[dmodelid][binding] = function(){ return rowdata[binding]; };
+    }
+  }
+  XExt.popupShow(dmodelid,'<%=model.id%>_duplicate','Duplicate <%=model.caption[1]%>',undefined,obj);
+  return false;
+}
+
 function XForm<%=model.id%>_DeleteRow(rowid){
   XExt.Confirm("Are you sure you want to delete this <%=model.caption[1]%>?",function(){
     var xpost = xform_post_<%=model.id%>;

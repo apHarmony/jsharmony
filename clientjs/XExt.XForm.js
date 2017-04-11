@@ -20,7 +20,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 exports = module.exports = {};
 
 exports.GetRowID = function (modelid,obj){
-  var cur_row = $(obj).closest('.xrow_'+modelid);
+  var jobj = $(obj);
+  if(jobj.hasClass('row_independent')) return -1;
+  var cur_row = jobj.closest('.xrow_'+modelid);
   if (cur_row.length) {
     return cur_row.data('id');
   }

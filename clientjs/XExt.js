@@ -869,6 +869,7 @@ exports.popupShow = function (modelid, fieldid, title, parentobj, obj, options) 
   var parentfield = null;
   if (parentmodelid) parentfield = window['XForm' + parentmodelid].prototype.Fields[fieldid];
   if (!parentobj) parentobj = $('#' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelid);
+  var numOpens = 0;
   
   popupData[modelid] = {};
   exports.execif(parentfield && parentfield.controlparams && parentfield.controlparams.onpopup,
@@ -882,17 +883,30 @@ exports.popupShow = function (modelid, fieldid, title, parentobj, obj, options) 
     $(xdata.PlaceholderID).html('');
     var orig_jsh_ignorefocusHandler = window.jsh_ignorefocusHandler;
     window.jsh_ignorefocusHandler = true;
-    $.colorbox({
+    var popup_options = {};
+    popup_options = {
+      modelid: modelid,
       href: "#popup_" + fieldid + '.xelem' + parentmodelid, inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, title: title, fixed: true,
+      fadeOut:0,
       onOpen: function () {
-        xdata.Select();
+        //When nested popUps are called, onOpen is not called
       },
       onComplete: function () {
+        numOpens++;
+        if(numOpens==1) xdata.Select();
         if ($('#popup_' + fieldid + '.xelem' + parentmodelid + ' .xfilter_value').first().is(':visible')) $('#popup_' + fieldid + ' .xfilter_value').first().focus();
         else if ($('#popup_' + fieldid + '.xelem' + parentmodelid).find('td a').length) $('#popup_' + fieldid).find('td a').first().focus();
           //else $('#popup_' + fieldid + '.xelem' + parentmodelid).find('input,select,textarea').first().focus();
       },
       onClosed: function () {
+        var found_popup = false;
+        for(var i=window.xPopupStack.length-1;i>=0;i--){
+          if(window.xPopupStack[i].modelid==modelid){ window.xPopupStack.splice(i,1); found_popup = true; break; }
+        }
+        if(!found_popup) { alert('ERROR - Invalid Popup Stack'); console.log(modelid); console.log(window.xPopupStack); };
+
+        if(window.xPopupStack.length) $.colorbox(window.xPopupStack[window.xPopupStack.length-1]);
+
         if (typeof popupData[modelid].result !== 'undefined') {
           parentobj.val(popupData[modelid].result);
           if (popupData[modelid].resultrow && parentfield && parentfield.controlparams && parentfield.controlparams.popup_copy_results) {
@@ -905,7 +919,9 @@ exports.popupShow = function (modelid, fieldid, title, parentobj, obj, options) 
         parentobj.focus();
         window.jsh_ignorefocusHandler = orig_jsh_ignorefocusHandler;
       }
-    });
+    };
+    xPopupStack.push(popup_options);
+    $.colorbox(popup_options);
   });
 }
 
