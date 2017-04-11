@@ -202,6 +202,11 @@ var Routes = function (jsh, jshconfig) {
     if (typeof modelid === 'undefined') { next(); return; }
     jsh.AppSrv.getReport(req, res, modelid);
   });
+  router.get('/_d/_report_html/:reportid/', function (req, res, next) {
+    var modelid = '_report_' + req.params.reportid;
+    if (typeof modelid === 'undefined') { next(); return; }
+    jsh.AppSrv.getReportHTML(req, res, modelid);
+  });
   router.get('/_d/_reportjob/:reportid/', function (req, res, next) {
     var modelid = '_report_' + req.params.reportid;
     if (typeof modelid === 'undefined') { next(); return; }

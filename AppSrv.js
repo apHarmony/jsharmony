@@ -1258,7 +1258,30 @@ AppSrv.prototype.getReport = function (req, res, modelid, Q, P, callback) {
     });
   }
   
-  this.rptsrv.queueReport(req, res, modelid, Q, P, callback);
+  this.rptsrv.queueReport(req, res, modelid, Q, P, {}, callback);
+}
+AppSrv.prototype.getReportHTML = function (req, res, modelid, Q, P, callback) {
+  if (!(modelid in this.jsh.Models)) throw new Error("Error: Report " + modelid + " not found in collection.");
+  var _this = this;
+  if (typeof Q == 'undefined') Q = req.query;
+  if (typeof P == 'undefined') P = req.body;
+  if (typeof callback == 'undefined') callback = function (err, rslt) {
+    /* Report Done */ 
+    if(!rslt) rslt.end();
+    var idx = rslt.indexOf('</head');
+    if(idx < 0) idx = 0;
+    rslt = rslt.substr(0,idx) + '<style type="text/css">body { border:2px solid #ccc; }</style>' + rslt.substr(idx,rslt.length);
+    rslt = rslt.replace(/(file:\/\/[^"'>]*)/gi,function(match,p1){ 
+      p1 = p1.replace(global.datadir,'');
+      if(Helper.endsWith(p1,'/node_modules/jsharmony/public/js/main.js')) return '/js/main.js';
+      if(p1.lastIndexOf('/public/') >= 0) return p1.substr(p1.lastIndexOf('/public/')+7);
+      return ''; 
+    });
+    res.send(rslt);
+    res.end();
+  }
+  
+  this.rptsrv.queueReport(req, res, modelid, Q, P, {output:'html'}, callback);
 }
 AppSrv.prototype.getReportJob = function (req, res, modelid, Q, P, callback) {
   if (!(modelid in this.jsh.Models)) throw new Error("Error: Report " + modelid + " not found in collection.");

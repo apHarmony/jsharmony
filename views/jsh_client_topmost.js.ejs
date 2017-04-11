@@ -670,6 +670,12 @@ function XRunReport() {
   window['XForm' + rpt._id + '_RunReport']();
 }
 
+function XRunReportHTML() {
+  var rpt = XForms[XForms_root];
+  if (!(rpt._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+  window['XForm' + rpt._id + '_RunReport'](undefined,{output:'html'});
+}
+
 function XTestQueue() {
   var rpt = XForms[XForms_root];
   if (!(rpt._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }

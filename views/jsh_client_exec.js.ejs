@@ -56,13 +56,16 @@ function XForm<%=model.id%>_Init(callback){
     callback();
 }
 
-function XForm<%=model.id%>_RunReport(callback){
+function XForm<%=model.id%>_RunReport(callback, params){
+  if(!params) params = {};
   if(!xform_<%=model.id%>.Data.Commit()) return;
   var modelid = '<%=model.id%>';
   if(modelid.indexOf('_report_') < 0){ XExt.Alert('Model is not a report'); return; }
   var reportid = modelid.substr(8);
   var url = '';
-  url = _BASEURL + '_d/_report/'+reportid+'/';
+  if(params.output=='html') url = _BASEURL + '_d/_report_html/';
+  else url = _BASEURL + '_d/_report/';
+  url += reportid+'/';
   url += '?'+ $.param(xform_<%=model.id%>.GetFieldParams('B'));
   //Pull fields into URL
   window.open(url,'_blank');
