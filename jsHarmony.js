@@ -936,7 +936,7 @@ jsHarmony.prototype.getURL_onclick = function (req, field, model) {
     if (!(ptarget.modelid in this.Models)) throw new Error("Link Model " + ptarget.modelid + " not found.");
     if (!Helper.HasModelAccess(req, this.Models[ptarget.modelid], 'BIU')) return "XExt.Alert('You do not have access to this form.');return false;";
     if ((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec')) {
-      seturl += "url=XExt.ReplaceAll(url,'data[j]','data'); url = ParseEJS(url,'" + model.id + "'); ";
+      seturl += "url=XExt.ReplaceAll(url,'data[j]','data'); var xform = window['xform_" + model.id + "']; if(xform && xform.Data && !xform.Data.Commit()) return false; url = ParseEJS(url,'" + model.id + "'); ";
     }
     var link_model = this.Models[ptarget.modelid];
     if(ptarget.action=='download'){

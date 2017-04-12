@@ -190,26 +190,6 @@ XGrid.prototype.ControlLeaving = function (obj, e, onsuccess, oncancel) {
   if (rslt === true) return true;
   else if (rslt === false) return true;
   return false;
-  //XXX Remove this code
-  var rslt = $('#allow_leave').is(':checked');
-  var rslt_timeout = $('#commit_timeout').is(':checked');
-  var validate_timeout = 500;
-  
-  //Immediate Result
-  if (!rslt_timeout) {
-    if (rslt) onsuccess(true);
-    else {
-      if (this.CurrentCell) window.setTimeout(function () { $(this.CurrentCell).focus(); }, 1);
-      oncancel(true);
-    }
-    return true;
-  }
-  
-  //Perform timeout
-  window.xLoader.StartLoading(_this);
-  if (rslt) window.setTimeout(function () { window.xLoader.StopLoading(_this); onsuccess(false); }, validate_timeout);
-  else window.setTimeout(function () { window.xLoader.StopLoading(_this); if (_this.CurrentCell) window.setTimeout(function () { $(_this.CurrentCell).focus(); }, 1); oncancel(false); }, validate_timeout);
-  return false;
 }
 XGrid.prototype.ControlUpdate = function (obj, e) {
   this.DebugLog('Update ' + $(obj).data('id'));

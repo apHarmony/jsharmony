@@ -448,7 +448,7 @@ function ParseEJS(_ejssrc, modelid) {
   var data = {};
   if (!(modelid in XForms)) { XExt.Alert('Error: Model ' + modelid + ' not found.'); return; }
   _.merge(data, forcequery, window['xform_' + modelid].Data);
-  //_.extend(data, forcequery, window['xform_' + modelid].Data);XXX
+  //_.extend(data, forcequery, window['xform_' + modelid].Data); //Previously
   _.each(XForms[modelid]._bindings, function (binding) {
     data[binding] = XForms[modelid][binding]();
   });
