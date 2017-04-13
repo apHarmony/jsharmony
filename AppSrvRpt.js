@@ -18,7 +18,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var _ = require('lodash');
-var phantomjs = require('phantomjs-prebuilt');
+var phantomjs = require('phantomjs'); //was phantomjs-prebuilt
 var phantom = require('phantom');
 var path = require('path');
 var fs = require('fs');
@@ -31,6 +31,10 @@ var ejs = require('ejs');
 var ejsext = require('./lib/ejsext.js');
 var moment = require('moment');
 var querystring = require('querystring');
+//var _PHANTOM_ZOOM = true;
+//var _PHANTOM_PATH_OVERRIDE = '';
+var _PHANTOM_ZOOM = false;
+var _PHANTOM_PATH_OVERRIDE = path.dirname(require.resolve('phantomjs'))+'\\phantom\\phantomjs.exe';
 
 function AppSrvRpt(appsrv) {
   this.AppSrv = appsrv;
@@ -68,7 +72,7 @@ AppSrvRpt.prototype.queueReport = function (req, res, modelid, Q, P, params, onC
   var verrors = {};
   
   var fields = thisapp.getFieldsByName(model.fields, fieldlist);
-  if (fields.length == 0) return onComplete(null, null);
+  //if (fields.length == 0) return onComplete(null, null); //Commented to enable reports with no parameters
   _.each(fields, function (field) {
     var fname = field.name;
     if (fname in Q) {
@@ -92,7 +96,9 @@ AppSrvRpt.prototype.queueReport = function (req, res, modelid, Q, P, params, onC
     if(params.output=='html'){
       return onComplete(null,_this.genReportContent(modelid, sql_params, rslt));
     }
-    _this.phqueue.push({ req: req, res: res, modelid: modelid, params: sql_params, data: rslt }, onComplete);
+    else{
+      _this.phqueue.push({ req: req, res: res, modelid: modelid, params: sql_params, data: rslt }, onComplete);
+    }
   });
 };
 
@@ -184,29 +190,53 @@ function stringToAscii(s) {
 }
 
 AppSrvRpt.prototype.genReportContent = function(modelid, params, data){
+  var rslt = { header: '', body: '', footer: '' };
   var _this = this;
   if (modelid.indexOf('_report_') != 0) throw new Error('Model '+modelid+' is not a report');
   var reportid = modelid.substr(8);
   var model = _this.AppSrv.jsh.Models[modelid];
   var ejsname = 'reports/' + reportid;
   var ejsbody = _this.AppSrv.jsh.getEJS(ejsname,function(){});
+  var ejsbody_header = _this.AppSrv.jsh.getEJS(ejsname+'.header',function(){});
+  var ejsbody_footer = _this.AppSrv.jsh.getEJS(ejsname+'.footer',function(){});
   for (var i = model._inherits.length - 1; i >= 0; i--) {
-    if (ejsbody != null) break;
     var ejsid = model._inherits[i];
     if (ejsid.substr(0, 8) == '_report_') {
       ejsid = ejsid.substr(8);
-      ejsbody = _this.AppSrv.jsh.getEJS('reports/' + ejsid,function(){});
+      if (ejsbody == null) ejsbody = _this.AppSrv.jsh.getEJS('reports/' + ejsid,function(){});
+      if (ejsbody_header == null) ejsbody_header = _this.AppSrv.jsh.getEJS('reports/' + ejsid + '.header',function(){});
+      if (ejsbody_footer == null) ejsbody_footer = _this.AppSrv.jsh.getEJS('reports/' + ejsid + '.footer',function(){});
     }
   }
+
+  if(model.pageheader){
+    var pageheader = model.pageheader;
+    if (_.isArray(pageheader)) pageheader = pageheader.join('');
+    ejsbody_header = pageheader+(ejsbody_header||'');
+  }
+  if(!ejsbody_header) ejsbody_header = '';
+  if(model.pagefooter){
+    var pagefooter = model.pagefooter;
+    if (_.isArray(pagefooter)) pagefooter = pagefooter.join('');
+    ejsbody_footer = pagefooter+(ejsbody_footer||'');
+  }
+  if(!ejsbody_footer) ejsbody_footer = '';
+
   if (ejsbody == null) ejsbody = 'REPORT BODY NOT FOUND';
   if (global.debug_params.report_debug) {
     ejsbody = ejsbody.replace(/{{(.*?)}}/g, '<%=ejsext.null_log($1,\'$1\')%>');
+    ejsbody_header = ejsbody_header.replace(/{{(.*?)}}/g, '<%=ejsext.null_log($1,\'$1\')%>');
+    ejsbody_footer = ejsbody_footer.replace(/{{(.*?)}}/g, '<%=ejsext.null_log($1,\'$1\')%>');
   }
   else {
     ejsbody = ejsbody.replace(/{{/g, '<%=(');
     ejsbody = ejsbody.replace(/}}/g, '||\'\')%>');
+    ejsbody_header = ejsbody_header.replace(/{{/g, '<%=(');
+    ejsbody_header = ejsbody_header.replace(/}}/g, '||\'\')%>');
+    ejsbody_footer = ejsbody_footer.replace(/{{/g, '<%=(');
+    ejsbody_footer = ejsbody_footer.replace(/}}/g, '||\'\')%>');
   }
-  var body = ejs.render(ejsbody, {
+  rslt.body = ejs.render(ejsbody, {
     model: model,
     moment: moment,
     _this: _this,
@@ -216,7 +246,36 @@ AppSrvRpt.prototype.genReportContent = function(modelid, params, data){
     _: _,
     filename: _this.AppSrv.jsh.getEJSFilename(ejsname)
   });
-  return body;
+
+  if(ejsbody_header){
+    rslt.header = _this.RenderEJS(ejsbody_header, { 
+      model: model, 
+      moment: moment, 
+      _this: _this,
+      ejsext: ejsext,
+      data: data,
+      params: params,
+      _: _,
+      pageNum: '{{pageNum}}', 
+      numPages: '{{numPages}}' 
+    });
+  }
+
+  if(ejsbody_footer){
+    rslt.footer = _this.RenderEJS(ejsbody_footer, { 
+      model: model, 
+      moment: moment, 
+      _this: _this,
+      ejsext: ejsext,
+      data: data,
+      params: params,
+      _: _,
+      pageNum: '{{pageNum}}', 
+      numPages: '{{numPages}}' 
+    });
+  }
+
+  return rslt;
 }
 
 AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
@@ -237,7 +296,7 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
             ph.createPage().then(function (_page) {            
               page = _page;
 
-              var body = _this.genReportContent(modelid, params, data);
+              var rptcontent = _this.genReportContent(modelid, params, data);
 
               //page.set('viewportSize',{width:700,height:800},function(){
               
@@ -250,28 +309,33 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
                 orientation: 'portrait',
                 border: default_border,
               };
-              var headerzoomcss = '<style type="text/css">body{zoom:0.75;}</style>';
+              var headerzoomcss = '';
+              if(_PHANTOM_ZOOM) headerzoomcss += '<style type="text/css">body{zoom:0.75;}</style>';
               var headerheight = default_header;
               var footerheight = default_header;
               if ('headerheight' in model) headerheight = model.headerheight;
               if ('footerheight' in model) footerheight = model.footerheight;
-              if ('pageheader' in model) {
-                var pageheader = model.pageheader;
-                if (_.isArray(pageheader)) pageheader = pageheader.join('');
+              if (rptcontent.header) {
+                var pageheaderjs = model.pageheaderjs;
+                if (_.isArray(pageheaderjs)) pageheaderjs = pageheaderjs.join('');
+                if(!pageheaderjs) pageheaderjs = 'return txt;';
+
                 var headcontent = "function (pageNum, numPages) { var txt = " + JSON.stringify(headerzoomcss) + ' + ' +
-                  JSON.stringify(_this.RenderEJS(pageheader, { model: model, moment: moment, data: data, pageNum: '{{pageNum}}', numPages: '{{numPages}}' })) +
-                  "; txt = txt.replace(/{{pageNum}}/g,pageNum); txt = txt.replace(/{{numPages}}/g,numPages); return txt; }";
+                  JSON.stringify(rptcontent.header) +
+                  "; txt = txt.replace(/{{pageNum}}/g,pageNum); txt = txt.replace(/{{numPages}}/g,numPages); var postproc = function(pageNum, numPages, txt){"+pageheaderjs+"}; txt = postproc(pageNum, numPages, txt); return txt; }";
                 pagesettings.header = {
                   height: headerheight,
                   contents: ph.callback(headcontent)
                 };
               }
-              if ('pagefooter' in model) {
-                var pagefooter = model.pagefooter;
-                if (_.isArray(pagefooter)) pagefooter = pagefooter.join('');
+              if (rptcontent.footer) {
+                var pagefooterjs = model.pagefooterjs;
+                if (_.isArray(pagefooterjs)) pagefooterjs = pagefooterjs.join('');
+                if(!pagefooterjs) pagefooterjs = 'return txt;';
+
                 var footcontent = "function (pageNum, numPages) { var txt = " + JSON.stringify(headerzoomcss) + ' + ' +
-                  JSON.stringify(_this.RenderEJS(pagefooter, { model: model, moment: moment, data: data, pageNum: '{{pageNum}}', numPages: '{{numPages}}' })) +
-                  "; txt = txt.replace(/{{pageNum}}/g,pageNum); txt = txt.replace(/{{numPages}}/g,numPages); return txt; }";
+                  JSON.stringify(rptcontent.footer) +
+                  "; txt = txt.replace(/{{pageNum}}/g,pageNum); txt = txt.replace(/{{numPages}}/g,numPages); var postproc = function(pageNum, numPages, txt){"+pagefooterjs+"}; txt = postproc(pageNum, numPages, txt); return txt; }";
                 pagesettings.footer = {
                   height: footerheight,
                   contents: ph.callback(footcontent)
@@ -335,10 +399,13 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
               var contentWidth = pageWidth - borderLeft - borderRight;
               var contentHeight = pageHeight - borderTop - borderBottom - headerHeightPx - footerHeightPx;
               if (global.debug_params.report_debug) { console.log('Calculated Page Size: '+contentHeight + 'x'+contentWidth); }
-              
+
+              contentWidth *= 0.998;
+              contentHeight *= 0.998;
+
               var onLoadFinished = function (val) { //  /dev/stdout     path.dirname(module.filename)+'/out.pdf'
                 var tmppdfpath = tmppath + '.pdf';
-                page.evaluate(function(zoom,contentWidth){ if(!zoom) zoom = contentWidth/document.width; document.body.style.zoom=zoom; },zoom,contentWidth);
+                if(_PHANTOM_ZOOM) page.evaluate(function(zoom,contentWidth){ if(!zoom) zoom = contentWidth/document.width; document.body.style.zoom=zoom; },zoom,contentWidth);
                 page.render(tmppdfpath).then(function () {
                   var dispose = function (disposedone) {
                     page.close().then(function () {
@@ -356,7 +423,7 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
 
               page.property('paperSize', pagesettings).then(function () {
                 page.on('onLoadFinished', onLoadFinished).then(function () {
-                  page.property('content', body).then(function () { /* Report Generation Complete */ }).catch(function (err) { global.log(err); });;
+                  page.property('content', rptcontent.body).then(function () { /* Report Generation Complete */ }).catch(function (err) { global.log(err); });;
                 });
               }).catch(function (err) { global.log(err); });
               //page.set('viewportSize',{width:3700,height:3800});
@@ -406,18 +473,20 @@ AppSrvRpt.prototype.getPhantom = function (callback) {
     if (!logtxt || (logtxt.indexOf('NOOP command') >= 0)) return;
     global.log(logtxt);
   };
-  phantom.create(['--web-security=no'], {
-    //Fault tolerance to generate new phantom if process crashes
+  var phantomConfig = {
     onExit: function (code, signal) {
       if (code != 0) _this.phsession = null;
     },
+    //Fault tolerance to generate new phantom if process crashes
     /*logger: {
       info: rptlogger,
       debug: rptlogger,
       warn: rptlogger,
       error: rptlogger
     }*/
-  }).then(function (_phsession) {
+  };
+  if(_PHANTOM_PATH_OVERRIDE) phantomConfig.phantomPath = _PHANTOM_PATH_OVERRIDE;
+  phantom.create(['--web-security=no'], phantomConfig).then(function (_phsession) {
     _this.phsession = _phsession;
     _this.phreqcount = 0;
     return callback(_this.phsession);

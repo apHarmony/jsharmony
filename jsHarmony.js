@@ -59,7 +59,7 @@ function jsHarmony() {
   for (var i = 0; i < global.modeldir.length; i++) {
     this.LoadModels(global.modeldir[i], '', global.dbconfig._driver.name);
     this.LoadModels(global.modeldir[i] + 'reports/', '_report_', global.dbconfig._driver.name);
-    this.ParseRoutes(global.modeldir[i]);
+    this.ParseRoutes(global.modeldir[i],'');
     if (fs.existsSync(global.modeldir[i] + 'js/')) this.Cache['system.js'] += '\r\n' + this.MergeFolder(global.modeldir[i] + 'js/');
     if (fs.existsSync(global.modeldir[i] + 'style/')) this.Cache['system.css'] += '\r\n' + this.MergeFolder(global.modeldir[i] + 'style/');
     this.LoadSQL(global.modeldir[i] + 'sql/', global.dbconfig._driver.name);
@@ -141,11 +141,12 @@ jsHarmony.prototype.LoadModels = function (modeldir, prefix, dbtype) {
       if (!('layout' in model) && !('inherits' in model)) {
         //Parse file as multiple-model file
         _.each(model, function (submodel, submodelname) {
+          submodelname = prefix + submodelname;
           LogEntityError(_INFO, 'Loading sub-model ' + submodelname);
-          _this.AddModel(modeldir, submodelname, submodel);
+          _this.AddModel(modeldir, submodelname, submodel, prefix);
         });
       }
-      else this.AddModel(modeldir, modelname, model);
+      else this.AddModel(modeldir, modelname, model, prefix);
     }
   }
 }
@@ -225,12 +226,14 @@ jsHarmony.prototype.LoadSQL = function (dir, type) {
     }
   }
 }
-jsHarmony.prototype.AddModel = function (modeldir, modelname, model) {
+jsHarmony.prototype.AddModel = function (modeldir, modelname, model, prefix) {
+  if(!prefix) prefix = '';
   model['id'] = modelname;
   model['idmd5'] = crypto.createHash('md5').update(global.frontsalt + model.id).digest('hex');
   model['access_models'] = {};
   model['_inherits'] = [];
   if ('access' in model) model['access_models'][modelname] = model.access;
+  if (('inherits' in model) && (model.inherits.indexOf(prefix)!=0)) model.inherits = prefix + model.inherits;
   //if (modelname in this.Models) throw new Error('Cannot add ' + modelname + '.  The model already exists.')
   //Load JS
   var jsfname = (modeldir + modelname + '.js');
@@ -541,7 +544,7 @@ jsHarmony.prototype.ParseEntities = function () {
     var _v_model = [
       'comment', 'layout', 'title', 'table', 'access', 'roles', 'caption', 'sort',
       'samplerepeat', 'topmenu', 'id', 'idmd5', 'access_models', '_inherits', 'helpid', 'querystring', 'buttons', 'xvalidate',
-      'pagesettings', 'pageheader', 'headerheight', 'pagefooter', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue',
+      'pagesettings', 'pageheader', 'pageheaderjs', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue',
       'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'nogridadd', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_filter', 'grid_save_before_update', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
@@ -639,11 +642,11 @@ function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
     }
   });
 };
-jsHarmony.prototype.ParseRoutes = function (modeldir) {
+jsHarmony.prototype.ParseRoutes = function (modeldir, prefix) {
   var _this = this;
   _.each(_this.Routes, function (route, routename) {
     LogEntityError(_INFO, 'Loading route ' + routename);
-    _this.AddModel(modeldir, routename, route);
+    _this.AddModel(modeldir, routename, route, prefix);
   });
 };
 jsHarmony.prototype.ParsePopups = function () {

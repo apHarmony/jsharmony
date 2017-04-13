@@ -55,6 +55,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "pageheader" : "<h3 style=\"font-size:20px;font-family:'Droid Sans';\"><center><%=data.GPP[0].GPP_NAME%><img width='200' style='position:fixed;right:-0px;top:-12px;' src='file:<%='/'+'/'+'/'%><%=global.datadir%>../public/images/logo.png' align='right' /></center></h3>",
   //Page footer is similar to the page header.  Refer to page numbers with <%=pageNum%> of <%=numPages%> max pages.
   "pagefooter" : "<p align='center' style=\"font-family:'Droid Sans';\">Page Footer <%=pageNum%> / <%=numPages%></p>",
+  "pageheaderjs" : "return txt;", //function(pageNum, numPages, txt){ ... }
+  "pagefooterjs" : "return txt;", //function(pageNum, numPages, txt){ ... }
   //Data used by the report
   "reportdata" : {
     //Simple non-joined header data.  Datalock ignore is turned on since we are accessing global data

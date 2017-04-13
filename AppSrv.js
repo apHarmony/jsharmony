@@ -1265,12 +1265,25 @@ AppSrv.prototype.getReportHTML = function (req, res, modelid, Q, P, callback) {
   var _this = this;
   if (typeof Q == 'undefined') Q = req.query;
   if (typeof P == 'undefined') P = req.body;
-  if (typeof callback == 'undefined') callback = function (err, rslt) {
+  if (typeof callback == 'undefined') callback = function (err, rptcontent) {
     /* Report Done */ 
-    if(!rslt) rslt.end();
+    if(!rptcontent.body && !rptcontent.header && !rptcontent.footer) return res.end();
+    var rslt = rptcontent.body;
+    //Add Border
     var idx = rslt.indexOf('</head');
     if(idx < 0) idx = 0;
-    rslt = rslt.substr(0,idx) + '<style type="text/css">body { border:2px solid #ccc; }</style>' + rslt.substr(idx,rslt.length);
+    rslt = rslt.substr(0,idx) + '<style type="text/css">body { border:2px solid #ccc; zoom:1 !important; }</style>' + rslt.substr(idx,rslt.length);
+    //Add Header
+    idx = rslt.indexOf('<body');
+    if(idx < 0) idx = 0;
+    else idx = rslt.indexOf('>',idx)+1;
+    rslt = rslt.substr(0,idx) + rptcontent.header + rslt.substr(idx,rslt.length);
+    //Add footer
+    idx = rslt.indexOf('</body');
+    if(idx < 0) idx = rslt.length;
+    rslt = rslt.substr(0,idx) + rptcontent.footer + rslt.substr(idx,rslt.length);
+
+
     rslt = rslt.replace(/(file:\/\/[^"'>]*)/gi,function(match,p1){ 
       p1 = p1.replace(global.datadir,'');
       if(Helper.endsWith(p1,'/node_modules/jsharmony/public/js/main.js')) return '/js/main.js';

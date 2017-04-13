@@ -200,16 +200,19 @@ var Routes = function (jsh, jshconfig) {
   router.get('/_d/_report/:reportid/', function (req, res, next) {
     var modelid = '_report_' + req.params.reportid;
     if (typeof modelid === 'undefined') { next(); return; }
+    processModelQuerystring(jsh, req, modelid);
     jsh.AppSrv.getReport(req, res, modelid);
   });
   router.get('/_d/_report_html/:reportid/', function (req, res, next) {
     var modelid = '_report_' + req.params.reportid;
     if (typeof modelid === 'undefined') { next(); return; }
+    processModelQuerystring(jsh, req, modelid);
     jsh.AppSrv.getReportHTML(req, res, modelid);
   });
   router.get('/_d/_reportjob/:reportid/', function (req, res, next) {
     var modelid = '_report_' + req.params.reportid;
     if (typeof modelid === 'undefined') { next(); return; }
+    processModelQuerystring(jsh, req, modelid);
     jsh.AppSrv.getReportJob(req, res, modelid);
   });
   router.get('/_csv/:modelid/', function (req, res, next) {
@@ -271,6 +274,7 @@ var Routes = function (jsh, jshconfig) {
   router.get('/_report/:reportid/:reportkey?', function (req, res, next) {
     var modelid = '_report_' + req.params.reportid;
     if (!(modelid in jsh.Models)) return next();
+    processModelQuerystring(jsh, req, modelid);
     genOnePage(jsh, req, res, modelid);
   });
   router.get('/_model/:modelid', function (req, res, next) {
