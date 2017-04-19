@@ -27,7 +27,7 @@ var HelperFS = require('../lib/HelperFS.js');
 // RenderLogin
 exports = module.exports = function (req, res, onComplete) {
   var jsh = this;
-  if (!(req.secure) && !(req.jshconfig.auth.allow_insecure_http)) { Helper.GenError(req, res, -21, 'Secure connection required for login'); return; }
+  if (!(req.secure) && !(req.jshconfig.auth.allow_insecure_http_logins)) { Helper.GenError(req, res, -21, 'Secure connection required for login'); return; }
   var source = (('source' in req.query) ? req.query.source : req.baseurl);
   var account = {
     username: '',

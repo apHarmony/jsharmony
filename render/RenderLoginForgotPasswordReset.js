@@ -26,7 +26,7 @@ var _ = require('lodash');
 
 // RenderLoginForgotPassword
 exports = module.exports = function (req, res, onComplete) {
-  if (!(req.secure) && !(req.jshconfig.auth.allow_insecure_http)) { Helper.GenError(req, res, -21, 'Secure connection required'); return; }
+  if (!(req.secure) && !(req.jshconfig.auth.allow_insecure_http_logins)) { Helper.GenError(req, res, -21, 'Secure connection required'); return; }
   if(!req.jshconfig.auth.on_passwordreset) { return Helper.GenError(req, res, -9, 'Password reset not enabled'); return; }
   //Get PE_ID from URL
   //If no PE_ID, redirect to regular forgot_password

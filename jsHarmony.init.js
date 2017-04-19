@@ -33,8 +33,8 @@ exports = module.exports = {};
 
 exports.validateGlobals = function(){
   if(!global.dbconfig || !global.dbconfig._driver || !global.dbconfig._driver.name) { console.error("*** Fatal error: global.dbconfig missing or invalid _driver"); process.exit(8); }
-  if(!global.support_email) global.support_email = 'donotreply@jsharmony.com';
-  if(!global.mailer_email) global.mailer_email = 'DO NOT REPLY <donotreply@jsharmony.com>';
+  if(!global.support_email) global.support_email = 'donotreply@company.com';
+  if(!global.mailer_email) global.mailer_email = 'DO NOT REPLY <donotreply@company.com>';
   if(Helper.notset(global.default_rowlimit)) global.default_rowlimit = 50;
   if(Helper.notset(global.export_rowlimit)) global.export_rowlimit = 5000;
   if(Helper.notset(global.max_filesize)){ global.max_filesize = 50000000; }
@@ -192,13 +192,13 @@ exports.Run = function(jshconfig, jsh, app, cb){
   if(this.typename != 'jsHarmony') throw new Error('Use syntax jsHarmony.Run(...).  Do not call from a different base class thisArg.');
   /* - jshconfig
   server:{
-    http_port: '0.0.0.0',
-    http_ip: 0,
-    https_port: '0.0.0.0',
+    http_port: 0,
+    http_ip: '0.0.0.0',
+    https_port: 0,
+    https_ip: '0.0.0.0',
     https_key: 'path/to/file',
-    https_cert 'path/to/file',
-    https_ca 'path/to/file',
-    https_ip: 0
+    https_cert: 'path/to/file',
+    https_ca: 'path/to/file'
   }
   */
   var http_redirect = false;
