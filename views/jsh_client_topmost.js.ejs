@@ -215,10 +215,34 @@ function topmost_jsh_ready() {
     },
     function () {
       if ('state' in _GET) XForm_LoadState(JSON.parse(_GET.state));
+      var button_groups = {};
       $('.xform_button').each(function () {
-        var btnaccess = $(this).data('access');
-        if (is_add && !XExt.HasAccess(btnaccess, 'I')) $(this).hide();
-      })
+        var jbtn = $(this);
+        var btnaccess = jbtn.data('access');
+        if (is_add && !XExt.HasAccess(btnaccess, 'I')) jbtn.hide();
+        else {
+          if(jbtn.is(':visible') && jbtn.hasClass('grouped')){
+            var modelid = jbtn.data('model');
+            var group = jbtn.data('group');
+            var button_group_name = modelid+'_'+group;
+            if(!(button_group_name in button_groups)) button_groups[button_group_name] = {
+              modelid: modelid,
+              group: group,
+              jbutton: []
+            };
+            console.log(button_groups);
+            button_groups[button_group_name].jbutton.push(jbtn);
+          }
+        }
+      });
+      for(var button_group_name in button_groups){
+        var button_group = button_groups[button_group_name];
+        $('#xbody').append('<div class="xactions_group xcontext_menu xelem'+button_group.modelid+'" data-group="'+button_group.group+'" style="display:none;"></div>');
+        var jgroup = $('.xactions_group.xelem'+button_group.modelid+'[data-group="'+button_group.group+'"]');
+        _.each(button_group.jbutton,function(jbutton){
+          jgroup.append(jbutton);
+        });
+      }
       XFormTree(null, function (xform) {
         if (typeof xform._oninit != 'undefined') xform._oninit(xform);
       });
@@ -821,4 +845,23 @@ function XForm_ShortcutKeys(e) {
     e.preventDefault();
     e.stopImmediatePropagation();
   }
+}
+function XForm_ShowButtonGroup(e,obj){
+  var jobj = $(obj);
+  var modelid = $(jobj).data('model');
+  var group = $(jobj).data('group');
+  var jgroup = $('.xactions_group.xelem'+modelid+'[data-group="'+group+'"]');
+  
+  $('.xcontext_menu').hide();
+  jgroup.css('visibility', 'hidden');
+  jgroup.show();
+  var xtop = jobj.offset().top + jobj.outerHeight(); var xleft = jobj.offset().left;
+  var offset = jgroup.offsetParent().offset();
+  xtop -= offset.top + 1;
+  xleft -= offset.left;
+  jgroup.css({ 'top': xtop, 'left': xleft });
+  jgroup.css('visibility', 'visible');
+  window.xContextMenuVisible = true;
+  window.xContextMenuItem = modelid;
+  XExt.CancelBubble(e);
 }

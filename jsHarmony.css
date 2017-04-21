@@ -85,6 +85,24 @@ BODY
 .xactions a.first,.xactions a.first:visited {
   margin-left:0px;
 }
+.xactions .xactions_dropdown {
+  border:1px solid #bababa;
+  display:inline-block;
+  padding:5px 10px 4px 14px;
+}
+.xactions .xactions_dropdown .down_arrow {
+  vertical-align:top;
+  position:relative;
+  top:2px;
+  padding-left:9px;
+  padding-right:0px;
+  font-size:14px;
+  color:#333;
+}
+.xactions .xactions_dropdown:hover {
+  border:1px solid #bababa;
+  text-decoration:none;
+}
 .xactions a:hover {
 	text-decoration:underline;
 }
@@ -360,7 +378,7 @@ a.linkbutton img {
   left:0px;
   border-bottom:1px solid #bababa;
 }
-.xcontext_menu a {
+.xcontext_menu a,.xcontext_menu a:visited {
   display:block;
   border-top :1px solid #bababa;
   border-right :1px solid #bababa;

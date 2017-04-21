@@ -28,6 +28,7 @@ var jsh_logger = require('./lib/Logger.js');
 var jsh_routes = require('./routes.js');
 var http = require('http');
 var https = require('https');
+var os = require('os');
 var _ = require('lodash');
 exports = module.exports = {};
 
@@ -240,6 +241,11 @@ exports.Run = function(jshconfig, jsh, app, cb){
     server.timeout = jshconfig.server.request_timeout;
     ListenPort(server, jshconfig.server.http_port, jshconfig.server.http_ip, function(){
       global.log('Listening on HTTP port ' + server.address().port);
+      if(!jshconfig.server.http_port){
+        var server_txt = jshconfig.server.http_ip;
+        if(server_txt == '0.0.0.0') server_txt = os.hostname().toLowerCase();
+        global.log('Log in at http://'+server_txt+':'+server.address().port);
+      }
       if (global.onServerStart) global.onServerStart();
       if(cb) cb([server]);
     }, function(err){
@@ -269,6 +275,11 @@ exports.Run = function(jshconfig, jsh, app, cb){
         }
         else {
           global.log('Listening on HTTP/HTTPS ports ' + new_http_port + '/' + new_https_port);
+        }
+        if(!jshconfig.server.https_port){
+          var server_txt = jshconfig.server.https_ip;
+          if(server_txt == '0.0.0.0') server_txt = os.hostname().toLowerCase();
+          global.log('Log in at https://'+server_txt+':'+new_https_port);
         }
         if (global.onServerStart) global.onServerStart();
         if(servers.push(server));

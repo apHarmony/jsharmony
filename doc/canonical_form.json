@@ -65,7 +65,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "nokey": 1, //No primary key - only browse
   "unbound": 1, //Disable any AppSrv operations
   "tabs": {
-    "General": { "caption":"General Info", "target": "C", "bindings": { "C_ID": "C_ID" }, "showcode": ["VIEW","EDIT"] },
+    "General": { "caption":"General Info", "target": "C", "bindings": { "C_ID": "C_ID" }, "showcode": ["VIEW","EDIT"] }
   },
   "tabcode": "A_TYPE", //The column used as a basis for "showcode" - hiding or showing tabs.  Must be defined as a parameter
   "bindings": {"J_ID":"J_ID"}, //Additional bindings for top-level forms
@@ -78,6 +78,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     { "link": "add:H", "icon": "add", "text": "Add %%%CAPTION%%%", "access": "I", "bindings": { "N_SCOPE_ID": "N_SCOPE_ID", "N_SCOPE": "'C'", "C_ID":  "N_SCOPE_ID", "N_TYPE":  "'C'" }, "style": "", "class": "", "roles": { "CLIENT": "*", "C_ADMIN": "B" }, "nl": 1 }, //or just put the link for add
     {"link":"js:C_LOVBAR_Add(this,xformid);", "icon": "add", "text": "Add Customer", "access": "B" },
     {"link": "savenew:", "icon": "add", "text": "Save and New", "access": "IU" }
+    {"link": "savenew:", "icon": "add", "text": "Save and New", "access": "IU", "group":"Actions" }
     //Buttons without I access will not show up on Insert
     //"link":"js:XExt.popupReport('I',{ C_ID: 97 },{ width:900, height:500 });"
   ],

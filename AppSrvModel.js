@@ -135,16 +135,17 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost) {
       var buttons = jsh.parseButtons(model.buttons);
       if (typeof buttons != 'undefined') for (var i = 0; i < buttons.length; i++) {
         var button = buttons[i];
-        link_target = button['link'];
-        link_bindings = button['bindings'];
-        link_access = button['access'];
-        link_text = button['text'] || '';
+        var link_target = button['link'];
+        var link_bindings = button['bindings'];
+        var link_access = button['access'];
+        var link_text = button['text'] || '';
         link_text = link_text.replace(new RegExp('%%%CAPTION%%%', 'g'), model.caption[1]);
         link_text = link_text.replace(new RegExp('%%%CAPTIONS%%%', 'g'), model.caption[2]);
-        link_icon = button['icon'];
-        link_style = button['style'];
-        link_class = button['class'];
-        link_newline = button['nl'] ? 1 : 0;
+        var link_icon = button['icon'];
+        var link_style = button['style'];
+        var link_class = button['class'];
+        var link_newline = button['nl'] ? 1 : 0;
+        var link_group = button['group'] || '';
         if (!ejsext.access(req, model, link_access)) continue;
         if('roles' in button) if (!ejsext.access(req, button, link_access)) continue;
         var link_url = '';
@@ -166,7 +167,8 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost) {
           'text': link_text,
           'style': link_style,
           'class': link_class,
-          'nl' : link_newline
+          'nl' : link_newline,
+          'group': link_group,
         };
         rsltbuttons.push(rsltbutton);
       }

@@ -1,10 +1,10 @@
 {
   "name": "jsharmony",
-  "version": "1.0.39",
+  "version": "1.0.40",
   "description": "Rapid Application Development (RAD) Platform for Node.js Database Application Development",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --reporter spec"
+    "test": "mocha test/index.js --reporter spec"
   },
   "repository": {
     "type": "git",
