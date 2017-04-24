@@ -89,7 +89,7 @@ function removeEmptyBytes(str){
 AppSrvModel.prototype.GetModel = function (req, res, modelid) {
   var _this = this;
   var jsh = this.AppSrv.jsh;
-  var model = jsh.Models[modelid];
+  var model = jsh.getModel(req, modelid);
   if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
 
   Helper.execif(model.tabcode, function (f) {
@@ -105,8 +105,8 @@ AppSrvModel.prototype.GetModel = function (req, res, modelid) {
 AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost) {
   var _this = this;
   var jsh = this.AppSrv.jsh;
-  if (!(modelid in jsh.Models)) throw new Error('Model ID not found: ' + modelid);
-  var model = jsh.Models[modelid];
+  if (!jsh.hasModel(req, modelid)) throw new Error('Model ID not found: ' + modelid);
+  var model = jsh.getModel(req, modelid);
   
   var targetperm = 'B';
   if ('action' in req.query) {
@@ -209,7 +209,10 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost) {
       }
       
       //Override Help URL to that of first tab
-      if (req.curtabs[model.id] in jsh.Models) rslt.helpurl = ejsext.getHelpURL(req, jsh, jsh.Models[req.curtabs[model.id]].helpid);
+      if (jsh.hasModel(req, req.curtabs[model.id])){
+        var firsttabmodel = jsh.getModel(req, req.curtabs[model.id]);
+        rslt.helpurl = ejsext.getHelpURL(req, jsh, firsttabmodel.helpid);
+      }
 
       var i = 0;
       var rslttabs = [];
@@ -247,8 +250,8 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost) {
   //Duplicate Model
   if (model.duplicate && ejsext.access(req, model, 'I')) {
     var dmodelid = model.duplicate.target;
-    if (!(dmodelid in jsh.Models)) { throw new Error('Duplicate Model ID not found: ' + dmodelid); }
-    var dmodel = jsh.Models[dmodelid];
+    if (!jsh.hasModel(req, dmodelid)) { throw new Error('Duplicate Model ID not found: ' + dmodelid); }
+    var dmodel = jsh.getModel(req, dmodelid);
     var dclientmodel = this.genClientModel(req, res, dmodelid, false);
     if (!_.isString(dclientmodel)) {
       rslt.duplicate = {};
@@ -271,8 +274,8 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost) {
         rslt.duplicate.link = jsh.getURL(req, model.duplicate.link, undefined, dmodel.fields);
         rslt.duplicate.link_options = "resizable=1,scrollbars=1";
         var ptarget = jsh.parseLink(model.duplicate.link);
-        if (!(ptarget.modelid in jsh.Models)) throw new Error("Link Model " + ptarget.modelid + " not found.");
-        var link_model = jsh.Models[ptarget.modelid];
+        if (!jsh.hasModel(req, ptarget.modelid)) throw new Error("Link Model " + ptarget.modelid + " not found.");
+        var link_model = jsh.getModel(req, ptarget.modelid);
         if ('popup' in link_model) {
           rslt.duplicate.link_options += ',width=' + link_model.popup[0] + ',height=' + link_model.popup[1];
         }

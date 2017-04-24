@@ -42,7 +42,7 @@ function jsHarmony() {
   this.EJS = [];
   this.EJSGrid = '';
   this.EJSForm = '';
-  this.Models = {};
+  this.Models = {}; //Do not access this directly - use getModel, hasModel
   this.CustomControls = [];
   this.Config = {};
   this.Routes = {};
@@ -256,7 +256,7 @@ jsHarmony.prototype.AddModel = function (modeldir, modelname, model, prefix) {
     if ('onroute' in model) newjs += "\r\n" + model.onroute;
     model['onroute'] = newjs;
   }
-  if ('onroute' in model) model.onroute = (new Function('routetype', 'req', 'res', 'callback', 'require', 'jsh', 'modelid', model.onroute));
+  if ('onroute' in model) model.onroute = (new Function('routetype', 'req', 'res', 'callback', 'require', 'jsh', 'modelid', 'params', model.onroute));
   this.Models[modelname] = model;
 }
 jsHarmony.prototype.ParseInheritance = function () {
@@ -503,7 +503,7 @@ jsHarmony.prototype.ParseEntities = function () {
     multi_to_single(model, ['js', 'sqlselect', 'sqldownloadselect', 'sqlinsert', 'sqlinsertencrypt', 'sqlupdate', 'sqldelete', 'sqlexec', 'sqlwhere', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onvalidate', 'onupdate', 'ondestroy', 'oncommit']);
     if (model.breadcrumbs) multi_to_single(model.breadcrumbs, ['sql']);
     if (model.fields) _.each(model.fields, function (field) {
-      multi_to_single(field, ['onchange', 'sqlselect', 'sqlupdate', 'sqlwhere', 'sql_sort', 'sql_search', 'sql_search_sound']);
+      multi_to_single(field, ['onchange', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlwhere', 'sql_sort', 'sql_search', 'sql_search_sound']);
       if (field.lov) multi_to_single(field.lov, ['sql', 'sql2', 'sqlmp', 'sqlselect']);
       if (field.controlparams) multi_to_single(field.controlparams, ['onpopup']);
     });
@@ -549,7 +549,7 @@ jsHarmony.prototype.ParseEntities = function () {
       'grid_require_filter', 'grid_save_before_update', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
       'js', 'ejs', 'dberrors', 'tablestyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
-      'nokey', 'unbound', 'duplicate', 'sqlselect', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage',
+      'nokey', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
       //Report Parameters
       'subheader', 'footerheight', 'headeradd',
     ];
@@ -557,7 +557,7 @@ jsHarmony.prototype.ParseEntities = function () {
       'name', 'type', 'access', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'serverejs','roles','static','cellclass',
       'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
       'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'precision', 'password', 'hash', 'salt', 'unbound',
-      'sqlselect', 'sqlupdate', 'sql_sort', 'sqlwhere', 'sql_search_sound', 'sql_search', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVEFIELD__'
+      'sqlselect', 'sqlupdate', 'sqlinsert','sql_sort', 'sqlwhere', 'sql_search_sound', 'sql_search', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVEFIELD__'
     ];
     var _v_controlparams = [
       'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'dateformat', 'base_readonly',
@@ -729,8 +729,8 @@ jsHarmony.prototype.RenderListing = function () {
 
 jsHarmony.prototype.getModelLinkOnClick = function (tgtmodelid, req, link_target) {
   if (!tgtmodelid) tgtmodelid = req.TopModel;
-  if (!(tgtmodelid in this.Models)) return '';
-  var model = this.Models[tgtmodelid];
+  if (!this.hasModel(req, tgtmodelid)) return '';
+  var model = this.getModel(req, tgtmodelid);
   //ParseEJS if necessary
   if (link_target && (link_target.substr(0, 8) == 'savenew:')) {
     return "XForm_SaveNew(href);return false;";
@@ -771,10 +771,10 @@ jsHarmony.prototype.getAuxFields = function (req, res, model) {
         (model.fields[i].link.substr(0, 3) != 'js:')) {
       var link = model.fields[i]['link'];
       var ptarget = this.parseLink(link);
-      if (!(ptarget.modelid in this.Models)) throw new Error("Link Model " + ptarget.modelid + " not found.");
-      if (!Helper.HasModelAccess(req, this.Models[ptarget.modelid], 'BIU')) { rslt[i]['link_onclick'] = "XExt.Alert('You do not have access to this form.');return false;"; }
+      if (!this.hasModel(req, ptarget.modelid)) throw new Error("Link Model " + ptarget.modelid + " not found.");
+      var link_model = this.getModel(req, ptarget.modelid);
+      if (!Helper.HasModelAccess(req, link_model, 'BIU')) { rslt[i]['link_onclick'] = "XExt.Alert('You do not have access to this form.');return false;"; }
       else {
-        var link_model = this.Models[ptarget.modelid];
         if(ptarget.action=='download'){
           rslt[i]['link_onclick'] = "var url = $(this).attr('href') + '?format=js'; $('#xfileproxy').prop('src', url); return false;";
         }
@@ -829,14 +829,15 @@ jsHarmony.prototype.getURL = function (req, target, tabs, fields, bindings, keys
   var modelid = ptarget.modelid;
   var action = ptarget.action;
   if (modelid == '') modelid = req.TopModel;
-  if (!(modelid in this.Models)) throw new Error('Model ' + modelid + ' not found');
-  if (!Helper.HasModelAccess(req, this.Models[modelid], 'BIU')) return "";
-  var tmodel = this.Models[modelid];
+  if (!this.hasModel(req, modelid)) throw new Error('Model ' + modelid + ' not found');
+  var tmodel = this.getModel(req, modelid);
+  if (!Helper.HasModelAccess(req, tmodel, 'BIU')) return "";
   tabs = typeof tabs !== 'undefined' ? tabs : new Object();
   var rslt = req.baseurl + modelid;
-  for (var xmodelid in this.Models) {
-    var xmodel = this.Models[xmodelid];
-    if (!(xmodelid in tabs) && ('curtabs' in req) && (xmodelid in req.curtabs)) { tabs[xmodelid] = req.curtabs[xmodelid]; }
+  if(req.curtabs) for(var xmodelid in req.curtabs){
+    if(this.hasModel(req, xmodelid)){
+      if(!(xmodelid in tabs)) { tabs[xmodelid] = req.curtabs[xmodelid]; }
+    }
   }
   var q = {};
   if (typeof fields == 'undefined') {
@@ -936,12 +937,12 @@ jsHarmony.prototype.getURL_onclick = function (req, field, model) {
   if ('link' in field) {
     var link = field.link;
     var ptarget = this.parseLink(link);
-    if (!(ptarget.modelid in this.Models)) throw new Error("Link Model " + ptarget.modelid + " not found.");
-    if (!Helper.HasModelAccess(req, this.Models[ptarget.modelid], 'BIU')) return "XExt.Alert('You do not have access to this form.');return false;";
+    if (!this.hasModel(req, ptarget.modelid)) throw new Error("Link Model " + ptarget.modelid + " not found.");
+    if (!Helper.HasModelAccess(req, this.getModel(req, ptarget.modelid), 'BIU')) return "XExt.Alert('You do not have access to this form.');return false;";
     if ((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec')) {
       seturl += "url=XExt.ReplaceAll(url,'data[j]','data'); var xform = window['xform_" + model.id + "']; if(xform && xform.Data && !xform.Data.Commit()) return false; url = ParseEJS(url,'" + model.id + "'); ";
     }
-    var link_model = this.Models[ptarget.modelid];
+    var link_model = this.getModel(req, ptarget.modelid);
     if(ptarget.action=='download'){
       rslt = "url += '?format=js'; console.log(url); $('#xfileproxy').prop('src', url); return false;";
     }
@@ -965,12 +966,32 @@ jsHarmony.prototype.getModelID = function (req) {
   }
   return modelid;
 };
+jsHarmony.prototype.getModelClone = function(req, modelid, options){
+  if(!options) options = {};
+  var model;
+  if(options.cloneLocal) model = this.getModel(req, modelid);
+  else model = this.getModel(undefined, modelid);
+
+  if(!model) return model;
+  //return JSON.parse(JSON.stringify(model));
+  return _.cloneDeep(model);
+}
+jsHarmony.prototype.getModel = function(req, modelid) {
+  if(req){
+    if(req.jshlocal && (modelid in req.jshlocal.Models)) return req.jshlocal.Models[modelid];
+  }
+  return this.Models[modelid];
+}
+jsHarmony.prototype.hasModel = function(req, modelid){
+  //if(!req){ }
+  return (modelid in this.Models);
+}
 jsHarmony.prototype.getTabs = function (req) {
   var curtabs = {};
   if (typeof req.query['tabs'] != 'undefined') {
     var tabs = JSON.parse(req.query['tabs']);
     for (var xmodelid in tabs) {
-      if (xmodelid in this.Models) {
+      if (this.hasModel(req, xmodelid)) {
         curtabs[xmodelid] = tabs[xmodelid];
       }
     }

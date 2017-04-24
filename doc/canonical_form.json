@@ -61,7 +61,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   //oncommit(xform, rowid, callback) (GRID ONLY) - Executes after db Update / Insert / Delete.
   //onloadstate(xform, state)
   //onrowbind(xform,jobj,datarow) (GRID ONLY)
-  //onroute (routetype ('jsh','base'), req, res, f, require, jsh, modelid) - Server-side reroute to different page if necessary, called before any ent data loaded - TOW
+  //onroute (routetype ('onepage'), req, res, f, require, jsh, modelid, params) - Server-side reroute to different page if necessary, called before any ent data loaded - TOW
+  //    routetypes: onepage, model, d, d_transaction, csv, report, d_report, d_report_html, d_reportjob
+  //    params = { query: {...}, post: {...} }
   "nokey": 1, //No primary key - only browse
   "unbound": 1, //Disable any AppSrv operations
   "tabs": {

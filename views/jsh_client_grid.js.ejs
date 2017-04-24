@@ -158,6 +158,23 @@ function XForm<%=model.id%>_Init(callback){
     }
     return rslt; 
   };
+  xform_post_<%=model.id%>.GetReselectParams = function(){
+    var rslt = this.GetKeys();
+    //Add bindings for GCOD
+    _.each(XForms['<%=model.id%>']._bindings,function(binding){
+      rslt[binding] = XForms['<%=model.id%>'][binding]();
+    });
+    return rslt;
+  };
+  xform_post_<%=model.id%>.GetDeleteParams = function(){
+    var rslt = _.extend(this.GetFieldParams('D'), this.GetKeys());
+    //Add bindings for GCOD
+    _.each(XForms['<%=model.id%>']._bindings,function(binding){
+      if(binding in rslt) rslt[binding] = XForms['<%=model.id%>'][binding]();
+    });
+    return rslt;
+  };
+  //    return _.extend(this.GetFieldParams('D'), this.GetKeys()); 
   xform_post_<%=model.id%>.GetKeys = function(){
     var rslt = new Object();
     if(!is_add){

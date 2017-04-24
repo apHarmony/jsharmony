@@ -48,7 +48,7 @@ function AppSrvRpt(appsrv) {
 AppSrvRpt.prototype.InitReportQueue = function () {
   var _this = this;
   this.phqueue = async.queue(function (task, done) {
-    _this.genReport(task.modelid, task.params, task.data, done);
+    _this.genReport(task.req, task.res, task.modelid, task.params, task.data, done);
   }, 1);
 }
 
@@ -57,7 +57,7 @@ AppSrvRpt.prototype.queueReport = function (req, res, modelid, Q, P, params, onC
   var thisapp = this.AppSrv;
   var jsh = thisapp.jsh;
   var _this = this;
-  var model = thisapp.jsh.Models[modelid];
+  var model = thisapp.jsh.getModel(req, modelid);
   if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
   //Validate Parameters
   var fieldlist = thisapp.getFieldNames(req, model.fields, 'B');
@@ -94,7 +94,7 @@ AppSrvRpt.prototype.queueReport = function (req, res, modelid, Q, P, params, onC
     if (rslt == null) rslt = {};
     _this.MergeReportData(rslt, model.reportdata, null);
     if(params.output=='html'){
-      return onComplete(null,_this.genReportContent(modelid, sql_params, rslt));
+      return onComplete(null,_this.genReportContent(req, res, modelid, sql_params, rslt));
     }
     else{
       _this.phqueue.push({ req: req, res: res, modelid: modelid, params: sql_params, data: rslt }, onComplete);
@@ -189,12 +189,12 @@ function stringToAscii(s) {
   return (ascii);
 }
 
-AppSrvRpt.prototype.genReportContent = function(modelid, params, data){
+AppSrvRpt.prototype.genReportContent = function(req, res, modelid, params, data){
   var rslt = { header: '', body: '', footer: '' };
   var _this = this;
   if (modelid.indexOf('_report_') != 0) throw new Error('Model '+modelid+' is not a report');
   var reportid = modelid.substr(8);
-  var model = _this.AppSrv.jsh.Models[modelid];
+  var model = _this.AppSrv.jsh.getModel(req, modelid);
   var ejsname = 'reports/' + reportid;
   var ejsbody = _this.AppSrv.jsh.getEJS(ejsname,function(){});
   var ejsbody_header = _this.AppSrv.jsh.getEJS(ejsname+'.header',function(){});
@@ -278,12 +278,12 @@ AppSrvRpt.prototype.genReportContent = function(modelid, params, data){
   return rslt;
 }
 
-AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
+AppSrvRpt.prototype.genReport = function (req, res, modelid, params, data, done) {
   var report_folder = global.datadir + 'temp/report/';
   var _this = this;
   if (modelid.indexOf('_report_') != 0) throw new Error('Model is not a report');
   var reportid = modelid.substr(8);
-  var model = _this.AppSrv.jsh.Models[modelid];
+  var model = _this.AppSrv.jsh.getModel(req, modelid);
 
   HelperFS.createFolderIfNotExists(report_folder, function (err) {
     if (err) throw err;
@@ -296,7 +296,7 @@ AppSrvRpt.prototype.genReport = function (modelid, params, data, done) {
             ph.createPage().then(function (_page) {            
               page = _page;
 
-              var rptcontent = _this.genReportContent(modelid, params, data);
+              var rptcontent = _this.genReportContent(req, res, modelid, params, data);
 
               //page.set('viewportSize',{width:700,height:800},function(){
               
@@ -496,7 +496,7 @@ AppSrvRpt.prototype.getPhantom = function (callback) {
 AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete) {
   var thisapp = this.AppSrv;
   var _this = this;
-  var model = thisapp.jsh.Models[modelid];
+  var model = thisapp.jsh.getModel(req, modelid);
   if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
   if (!('jobqueue' in model)) throw new Error(modelid + ' job queue not enabled');
   if (!thisapp.jobproc) throw new Error('Job Processor not configured');

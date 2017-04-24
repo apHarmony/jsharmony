@@ -430,6 +430,340 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+module.exports = require('./jsharmony-validate.js');
+},{"./jsharmony-validate.js":5}],5:[function(require,module,exports){
+/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+exports = module.exports = {};
+
+function XValidate() {
+  this.Validators = new Array();
+  this.Errors = new Array();
+  this.FocusOnError = true;
+  this.ErrorClass = 'xinputerror';
+}
+XValidate.prototype.AddValidator = function (_field, _caption, _access, _funcs, _roles) {
+  this.Validators.push(new XValidator(_field, _caption, _access, _funcs, undefined, _roles));
+};
+XValidate.prototype.AddControlValidator = function (_control, _field, _caption, _access, _funcs) {
+  this.Validators.push(new XValidator(_field, _caption, _access, _funcs, _control));
+};
+XValidate.prototype.ResetValidation = function (field, parentobj) {
+  if (!parentobj) parentobj = $(document);
+  this.Errors.length = 0;
+  field = field || '';
+  for (var i = 0; i < this.Validators.length; i++) {
+    var v = this.Validators[i];
+    if (field && (field != v.Field)) continue;
+    
+    if ((this.ErrorClass != '') && (v.Control != '')) {
+      parentobj.find(v.Control).removeClass(this.ErrorClass);
+    }
+  }
+}
+XValidate.prototype.ValidateControls = function (perms, _obj, field, parentobj) {
+  field = field || '';
+  var firstErrorControl = '';
+  if (!parentobj) parentobj = $(document);
+  this.ResetValidation(field, parentobj);
+  var verrors = this.Validate(perms, _obj, field);
+  if (!_.isEmpty(verrors)) {
+    var errstr = 'The following errors have occurred:\n\n';
+    for (var ctrl in verrors) {
+      errstr += verrors[ctrl].join('\n') + '\n';
+      if (ctrl != '') {
+        if (this.FocusOnError && (firstErrorControl == '')) {
+          firstErrorControl = ctrl;
+        }
+        if (this.ErrorClass != '') {
+          parentobj.find(ctrl).addClass(this.ErrorClass);
+        }
+      }
+    }
+    errstr = errstr.substr(0, errstr.length - 1);
+    
+    XExt.Alert(errstr, function () {
+      if (firstErrorControl != '') {
+        window.ent_ignorefocusHandler = true;
+        window.setTimeout(function () {
+          $(document.activeElement).blur();
+          parentobj.find(firstErrorControl).focus();
+          parentobj.find(firstErrorControl).select();
+          window.setTimeout(function () { window.ent_ignorefocusHandler = false; }, 1);
+        }, 1);
+      }
+    });
+    return false;
+  }
+  return true;
+}
+XValidate.prototype.Validate = function (perms, _obj, field, ignore, roles) {
+  field = field || '';
+  if (typeof ignore == 'undefined') ignore = [];
+  var rslt = {};
+  
+  for (var i = 0; i < this.Validators.length; i++) {
+    var v = this.Validators[i];
+    if (field && (field != v.Field)) continue;
+    var ignorefield = false;
+    for (var j = 0; j < ignore.length; j++) { if (ignore[j] == v.Field) { ignorefield = true; break; } }
+    if (ignorefield) continue;
+    /*
+    if (accessfields && v.Field) {
+      //Check if field is in fields
+      var has_access = false;
+      for (var k = 0; k < accessfields.length; k++) {
+        var accessfield = accessfields[k];
+        if (('_obj.' + accessfield) == v.Field) { has_access = true; }
+      }
+      if (!has_access) continue;
+    }*/
+		if (!HasAccess(v.Access, perms)) continue;
+    eval('var val = ' + v.Field);
+    if ((typeof val === 'undefined') && v.Roles && roles && !('SYSADMIN' in roles) && HasAccess("BIUD", perms)) {
+      var has_role_access = false;
+      for (role in v.Roles) {
+        if (role in roles) {
+          var rAccess = v.Roles[role];
+          if ((rAccess == '*') || HasAccess(rAccess, perms)) has_role_access = true;
+        }
+      }
+      if (!has_role_access) { continue; }
+    }
+    for (var j = 0; j < v.Funcs.length; j++) {
+      var vrslt = v.Funcs[j](v.Caption, val);
+      if (vrslt) {
+        this.Errors.push(vrslt);
+        if (!(v.Control in rslt)) rslt[v.Control] = [];
+        rslt[v.Control].push(vrslt);
+      }
+    }
+  }
+  return rslt;
+}
+function HasAccess(access, perm) {
+  if (access === undefined) return false;
+  if (perm == '*') return true;
+  for (var i = 0; i < perm.length; i++) {
+    if (access.indexOf(perm[i]) > -1) return true;
+  }
+  return false;
+}
+
+function XValidator(_field, _caption, _access, _funcs, _control, _roles) {
+  this.Field = _field;
+  this.Caption = _caption;
+  this.Access = _access;
+  this.Funcs = _funcs;
+  this.Control = _control || '';
+  this.Roles = _roles;
+}
+
+XValidate.Vex = function (validator, val) {
+  return (validator()('', val) != '');
+};
+
+XValidate._v_MaxLength = function (_max) {
+  return (new Function('_caption', '_val', '\
+    if(!_val) return "";\
+    if(_val.length > ' + _max + ') return _caption+" is too long (limit ' + _max + ' characters).";\
+    return "";'));
+}
+
+XValidate._v_MinLength = function (_min) {
+  return (new Function('_caption', '_val', '\
+    if(!_val) return "";\
+    if(_val=="") return "";\
+    if(_val.length < ' + _min + ') return _caption+" is too short (minimum ' + _min + ' characters).";\
+    return "";'));
+}
+
+XValidate._v_Required = function (_null) {
+  if (_null) {
+    return (new Function('_caption', '_val', '\
+      if(typeof _val === "undefined") return _caption+" is required.";\
+      if(_val === null) return _caption + " is required.";\
+      return "";'));
+  }
+  else {
+    return (new Function('_caption', '_val', '\
+      if(!_val) return _caption+" is required.";\
+      return "";'));
+  }
+}
+
+XValidate._v_IsNumeric = function (_nonneg) {
+  if (typeof (_nonneg) === 'undefined') _nonneg = false;
+  return (new Function('_caption', '_val', '\
+	  if(!_val) return "";\
+    if((typeof _val === "string") || (_val instanceof String)) _val = _val.replace(/^0*/, "");\
+    if(!_val) return "";\
+		if(String(parseInt(_val)) != _val) return _caption+" must be a whole number.";\
+		' + (_nonneg ? 'if(parseInt(_val) < 0) return _caption+" must be a positive number.";' : '') + '\
+    return "";'));
+}
+
+XValidate._v_IsDecimal = function (_maxplaces) {
+  if (typeof (_maxplaces) === 'undefined') _maxplaces = 0;
+  var places_qty = ((_maxplaces > 0) ? '{1,' + _maxplaces + '}' : '+');
+  return (new Function('_caption', '_val', '\
+	  if(!_val) return "";\
+    if(_val == null) return "";\
+    if(_val == "") return "";\
+		var dec = String(_val).match(/^-?[0-9]*.?[0-9]' + places_qty + '$/);\
+		if(dec === null){ \
+      if(' + _maxplaces + ' == 0) return _caption + " must be a valid decimal number.";\
+      else return _caption + " must be a number with max ' + _maxplaces + ' places after the decimal point.";\
+    } \
+    return "";'));
+}
+
+XValidate._v_MaxValue = function (_max) {
+  return (new Function('_caption', '_val', '\
+    if(!_val) return "";\
+		var fval = parseFloat(_val);\
+		if(isNaN(fval)) return "";\
+    if(fval > ' + _max + ') return _caption+" must be less than or equal to ' + _max + '.";\
+    return "";'));
+}
+
+XValidate._v_MinValue = function (_min) {
+  return (new Function('_caption', '_val', '\
+    if(!_val) return "";\
+		var fval = parseFloat(_val);\
+		if(isNaN(fval)) return "";\
+    if(fval < ' + _min + ') return _caption+" must be greater than or equal to ' + _min + '.";\
+    return "";'));
+}
+
+XValidate._v_RegEx = function (_re, _msg) {
+  return (new Function('_caption', '_val', '\
+	  if(!_val) return "";\
+		var re = ' + _re + '; \
+		if(!re.test(_val)) return _caption+" must ' + _msg + '"; \
+    return "";'));
+}
+
+XValidate._v_IsEmail = function () {
+  return XValidate._v_RegEx(
+    '/^(([^<>()[\\]\\\\.,;:\\s@\\"]+(\\.[^<>()[\\]\\\\.,;:\\s@\\"]+)*)|(\\".+\\"))@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$/',
+		'be an email address');
+}
+
+XValidate._v_IsSSN = function () {
+  return (new Function('_caption', '_val', '\
+	  if(!_val) return "";\
+    var rslt = _val;\
+    //var rslt = String(_val).replace(/-/g,"");\
+    if(!rslt.match(/^\\d{9}$/)) return _caption+" must be in the format 999-99-9999";\
+    return "";'));
+}
+
+XValidate._v_IsDate = function () {
+  return (new Function('_caption', '_val', '\
+	  if(!_val) return "";\
+		var rslt = Date.parse(_val);\
+		if(isNaN(rslt)==false) return "";\
+		return _caption+" must be a valid date.";'));
+
+/*	return XValidate._v_RegEx(
+//	  '/^\d\d\d\d\-\d\d\-\d\d$/',
+	  '/^\\d{4}-\\d{2}-\\d{2}$/',
+		'be a valid date in format YYYY-MM-DD.');*/
+}
+
+XValidate._v_IsValidDOB = function () {
+  return (new Function('_caption', '_val', '\
+    if (!_val) return "";\
+    var rslt = Date.parse(_val);\
+    if (isNaN(rslt) == false) {\
+      if (rslt < new Date("1900-01-01")) return _caption+" must be a valid date of birth.";\
+    }\
+    return "";'));
+}
+
+XValidate._v_MinDOB = function (_minyear) {
+  return (new Function('_caption', '_val', '\
+    if (!_val) return "";\
+    var rslt = Date.parse(_val);\
+    if (isNaN(rslt) == false) {\
+      rslt = new Date(rslt);\
+      var minbday = new Date(rslt.getFullYear()+' + _minyear + ',rslt.getMonth(),rslt.getDate());\
+      if (minbday > (new Date())) return _caption+" must be at least ' + _minyear + ' years old.";\
+    }\
+    return "";'));
+}
+
+XValidate._v_IsPhone = function () {
+  return XValidate._v_RegEx(
+    '/^\\d{10,20}$/',
+		'be a valid phone number');
+}
+
+XValidate._v_IsTime = function () {
+  return (new Function('_caption', '_val', '\
+	  if(!_val) return "";\
+    if(_val instanceof Date) return "";\
+    var d = moment(_val, "hh:mm a");\
+    if(!d.isValid()) return _caption+" must be a valid time in format HH:MM.";\
+    return "";'));
+}
+
+XValidate._v_Luhn = function () {
+  return (new Function('_caption', '_val', '\
+	  if(!_val) return "";\
+    var luhnChk = function (a) { return function (c) { for (var l = c.length, b = 1, s = 0, v; l;) v = parseInt(c.charAt(--l), 10), s += (b ^= 1)?a[v]:v; return s && 0 === s % 10 } }([0, 2, 4, 6, 8, 1, 3, 5, 7, 9]); \
+    if(luhnChk(_val.toString())) return "";\
+		return _caption+" must be a valid credit card number.";'));
+}
+
+XValidate._v_InArray = function (_arr) {
+  if (typeof (_arr) === 'undefined') _arr = [];
+  return (new Function('_caption', '_val', '\
+	  if(!_val) return "";\
+    var _arr = ' + JSON.stringify(_arr) + ';\
+    for(var i=0;i<_arr.length;i++){ if(_arr[i]==_val) return ""; }\
+		return _caption+" must be one of the following values: "+_arr.join(",");'));
+}
+
+module.exports = XValidate;// JavaScript Document
+},{}],6:[function(require,module,exports){
+/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 function XBarcode(_Template, _Params) {
   this.Template = _Template;
   this.Server = jsh_global.global_params.barcode_server;
@@ -501,7 +835,7 @@ XBarcode.EnableScanner = function (jobj, onSuccess){
 }
 
 exports = module.exports = XBarcode;
-},{}],5:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 (function (global){
 /*
 Copyright 2017 apHarmony
@@ -851,7 +1185,7 @@ XData.prototype.Destroy = function (){
 
 module.exports = XData;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],6:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -1293,7 +1627,7 @@ exports.BindLOV = function (modelid) {
     });
   };
 }
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 (function (global){
 /*
 Copyright 2017 apHarmony
@@ -2459,7 +2793,7 @@ exports.renderCanvasCheckboxes = function () {
   });
 }
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./XExt.XForm.js":6}],8:[function(require,module,exports){
+},{"./XExt.XForm.js":8}],10:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -2624,7 +2958,7 @@ exports.Apply = function(format,val){
 	return val;
 }
 
-},{}],9:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -2930,7 +3264,7 @@ XGrid.prototype.BindRow = function (jobj) {
 }
 
 exports = module.exports = XGrid;
-},{}],10:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -3011,7 +3345,7 @@ function XImageLoader () {
 }
 
 exports = module.exports = XImageLoader;
-},{}],11:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -3079,7 +3413,7 @@ function GetOpacity(elem) {
 }
 
 exports = module.exports = XLoader;
-},{}],12:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 (function (global){
 /*
 Copyright 2017 apHarmony
@@ -3273,7 +3607,7 @@ function XSubMenuResize() {
   }
 }
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],13:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -3378,7 +3712,7 @@ XPayment.prototype.Result = function() {
 }
 
 exports = module.exports = XPayment;
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 (function (global){
 /*
 Copyright 2017 apHarmony
@@ -3880,7 +4214,7 @@ XPost.prototype.XExecutePost = function (q, d, onComplete, onFail){
 
 module.exports = XPost;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],15:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -3968,7 +4302,7 @@ XScanner.prototype.Scan = function (_Params, onComplete, onFail) {
 }
 
 exports = module.exports = XScanner;
-},{}],16:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -4053,7 +4387,7 @@ function SearchItem(_Column, _Value, _Join, _Comparison) {
 
 exports.SearchQuery = SearchQuery;
 exports.SearchItem = SearchItem;
-},{}],17:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 /*
  * Crypto-JS v2.5.3
  * http://code.google.com/p/crypto-js/
@@ -4072,7 +4406,7 @@ d=k(d,e,c,a,b[f+6],23,76029189),a=k(a,d,e,c,b[f+9],4,-640364487),c=k(c,a,d,e,b[f
 e=l(e,c,a,d,b[f+6],15,-1560198380),d=l(d,e,c,a,b[f+13],21,1309151649),a=l(a,d,e,c,b[f+4],6,-145523070),c=l(c,a,d,e,b[f+11],10,-1120210379),e=l(e,c,a,d,b[f+2],15,718787259),d=l(d,e,c,a,b[f+9],21,-343485551),a=a+m>>>0,d=d+n>>>0,e=e+p>>>0,c=c+q>>>0;return o.endian([a,d,e,c])};i._ff=function(a,b,g,d,e,c,f){a=a+(b&g|~b&d)+(e>>>0)+f;return(a<<c|a>>>32-c)+b};i._gg=function(a,b,g,d,e,c,f){a=a+(b&d|g&~d)+(e>>>0)+f;return(a<<c|a>>>32-c)+b};i._hh=function(a,b,g,d,e,c,f){a=a+(b^g^d)+(e>>>0)+f;return(a<<c|a>>>
 32-c)+b};i._ii=function(a,b,g,d,e,c,f){a=a+(g^(b|~d))+(e>>>0)+f;return(a<<c|a>>>32-c)+b};i._blocksize=16;i._digestsize=16})();
 
-},{}],18:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v1.11.2
  * http://jquery.com/
@@ -14420,7 +14754,7 @@ return jQuery;
 
 }));
 
-},{}],19:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 (function (global){
 /*
 Copyright 2017 apHarmony
@@ -14645,7 +14979,7 @@ global.SelectMenu = function (menuid) {
   XMenu.XSubMenuInit(menuid);
 };
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./XBarcode.js":4,"./XData.js":5,"./XExt.js":7,"./XFormat.js":8,"./XGrid.js":9,"./XImageLoader.js":10,"./XLoader.js":11,"./XMenu.js":12,"./XPayment.js":13,"./XPost.js":14,"./XScanner.js":15,"./XSearch.js":16,"./crypto-md5-2.5.3.js":17,"./jquery-1.11.2":18,"./polyfill.js":20,"async":21,"ejs":22,"jsharmony-validate":25,"lodash":27,"moment":28}],20:[function(require,module,exports){
+},{"./XBarcode.js":6,"./XData.js":7,"./XExt.js":9,"./XFormat.js":10,"./XGrid.js":11,"./XImageLoader.js":12,"./XLoader.js":13,"./XMenu.js":14,"./XPayment.js":15,"./XPost.js":16,"./XScanner.js":17,"./XSearch.js":18,"./crypto-md5-2.5.3.js":19,"./jquery-1.11.2":20,"./polyfill.js":22,"async":23,"ejs":24,"jsharmony-validate":4,"lodash":27,"moment":28}],22:[function(require,module,exports){
 if (!String.prototype.trim) {
   (function () {
     // Make sure we trim BOM and NBSP
@@ -14655,7 +14989,7 @@ if (!String.prototype.trim) {
     };
   })();
 }
-},{}],21:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 (function (process,global){
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -20135,7 +20469,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 })));
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":3}],22:[function(require,module,exports){
+},{"_process":3}],24:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -20978,7 +21312,7 @@ if (typeof window != 'undefined') {
   window.ejs = exports;
 }
 
-},{"../package.json":24,"./utils":23,"fs":1,"path":2}],23:[function(require,module,exports){
+},{"../package.json":26,"./utils":25,"fs":1,"path":2}],25:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -21144,7 +21478,7 @@ exports.cache = {
   }
 };
 
-},{}],24:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 module.exports={
   "_args": [
     [
@@ -21260,326 +21594,6 @@ module.exports={
   "version": "2.5.6"
 }
 
-},{}],25:[function(require,module,exports){
-/*
-Copyright 2017 apHarmony
-
-This file is part of jsHarmony.
-
-jsHarmony is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-jsHarmony is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License
-along with this package.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-module.exports = require('./jsharmony-validate.js');
-},{"./jsharmony-validate.js":26}],26:[function(require,module,exports){
-/*
-Copyright 2017 apHarmony
-
-This file is part of jsHarmony.
-
-jsHarmony is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-jsHarmony is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License
-along with this package.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-exports = module.exports = {};
-
-function XValidate() {
-  this._this = this;
-  this.Validators = new Array();
-  this.Errors = new Array();
-  this.FocusOnError = true;
-  this.ErrorClass = 'xinputerror';
-}
-XValidate.prototype.AddValidator = function (_field, _caption, _access, _funcs, _roles) {
-  this.Validators.push(new XValidator(_field, _caption, _access, _funcs, undefined, _roles));
-};
-XValidate.prototype.AddControlValidator = function (_control, _field, _caption, _access, _funcs) {
-  this.Validators.push(new XValidator(_field, _caption, _access, _funcs, _control));
-};
-XValidate.prototype.ResetValidation = function (field, parentobj) {
-  if (!parentobj) parentobj = $(document);
-  this.Errors.length = 0;
-  field = field || '';
-  for (var i = 0; i < this.Validators.length; i++) {
-    var v = this.Validators[i];
-    if (field && (field != v.Field)) continue;
-    
-    if ((this.ErrorClass != '') && (v.Control != '')) {
-      parentobj.find(v.Control).removeClass(this.ErrorClass);
-    }
-  }
-}
-XValidate.prototype.ValidateControls = function (perms, _obj, field, parentobj) {
-  field = field || '';
-  var firstErrorControl = '';
-  if (!parentobj) parentobj = $(document);
-  this.ResetValidation(field, parentobj);
-  var verrors = this.Validate(perms, _obj, field);
-  if (!_.isEmpty(verrors)) {
-    var errstr = 'The following errors have occurred:\n\n';
-    for (var ctrl in verrors) {
-      errstr += verrors[ctrl].join('\n') + '\n';
-      if (ctrl != '') {
-        if (this.FocusOnError && (firstErrorControl == '')) {
-          firstErrorControl = ctrl;
-        }
-        if (this.ErrorClass != '') {
-          parentobj.find(ctrl).addClass(this.ErrorClass);
-        }
-      }
-    }
-    errstr = errstr.substr(0, errstr.length - 1);
-    
-    XExt.Alert(errstr, function () {
-      if (firstErrorControl != '') {
-        window.ent_ignorefocusHandler = true;
-        window.setTimeout(function () {
-          $(document.activeElement).blur();
-          parentobj.find(firstErrorControl).focus();
-          parentobj.find(firstErrorControl).select();
-          window.setTimeout(function () { window.ent_ignorefocusHandler = false; }, 1);
-        }, 1);
-      }
-    });
-    return false;
-  }
-  return true;
-}
-XValidate.prototype.Validate = function (perms, _obj, field, ignore, roles) {
-  field = field || '';
-  if (typeof ignore == 'undefined') ignore = [];
-  var rslt = {};
-  
-  for (var i = 0; i < this.Validators.length; i++) {
-    var v = this.Validators[i];
-    if (field && (field != v.Field)) continue;
-    var ignorefield = false;
-    for (var j = 0; j < ignore.length; j++) { if (ignore[j] == v.Field) { ignorefield = true; break; } }
-    if (ignorefield) continue;
-    /*
-    if (accessfields && v.Field) {
-      //Check if field is in fields
-      var has_access = false;
-      for (var k = 0; k < accessfields.length; k++) {
-        var accessfield = accessfields[k];
-        if (('_obj.' + accessfield) == v.Field) { has_access = true; }
-      }
-      if (!has_access) continue;
-    }*/
-		if (!HasAccess(v.Access, perms)) continue;
-    eval('var val = ' + v.Field);
-    if ((typeof val === 'undefined') && v.Roles && roles && !('SYSADMIN' in roles) && HasAccess("BIUD", perms)) {
-      var has_role_access = false;
-      for (role in v.Roles) {
-        if (role in roles) {
-          var rAccess = v.Roles[role];
-          if ((rAccess == '*') || HasAccess(rAccess, perms)) has_role_access = true;
-        }
-      }
-      if (!has_role_access) { continue; }
-    }
-    for (var j = 0; j < v.Funcs.length; j++) {
-      var vrslt = v.Funcs[j](v.Caption, val);
-      if (vrslt) {
-        this.Errors.push(vrslt);
-        if (!(v.Control in rslt)) rslt[v.Control] = [];
-        rslt[v.Control].push(vrslt);
-      }
-    }
-  }
-  return rslt;
-}
-function HasAccess(access, perm) {
-  if (access === undefined) return false;
-  if (perm == '*') return true;
-  for (var i = 0; i < perm.length; i++) {
-    if (access.indexOf(perm[i]) > -1) return true;
-  }
-  return false;
-}
-
-function XValidator(_field, _caption, _access, _funcs, _control, _roles) {
-  this.Field = _field;
-  this.Caption = _caption;
-  this.Access = _access;
-  this.Funcs = _funcs;
-  this.Control = _control || '';
-  this.Roles = _roles;
-}
-
-XValidate.Vex = function (validator, val) {
-  return (validator()('', val) != '');
-};
-
-XValidate._v_MaxLength = function (_max) {
-  return (new Function('_caption', '_val', '\
-    if(!_val) return "";\
-    if(_val.length > ' + _max + ') return _caption+" is too long (limit ' + _max + ' characters).";\
-    return "";'));
-}
-
-XValidate._v_MinLength = function (_min) {
-  return (new Function('_caption', '_val', '\
-    if(!_val) return "";\    if(_val=="") return "";\
-    if(_val.length < ' + _min + ') return _caption+" is too short (minimum ' + _min + ' characters).";\
-    return "";'));
-}
-
-XValidate._v_Required = function (_null) {
-  if (_null) {
-    return (new Function('_caption', '_val', '\
-      if(typeof _val === "undefined") return _caption+" is required.";\
-      if(_val === null) return _caption + " is required.";\
-      return "";'));
-  }
-  else {
-    return (new Function('_caption', '_val', '\
-      if(!_val) return _caption+" is required.";\
-      return "";'));
-  }
-}
-
-XValidate._v_IsNumeric = function (_nonneg) {
-  if (typeof (_nonneg) === 'undefined') _nonneg = false;
-  return (new Function('_caption', '_val', '\
-	  if(!_val) return "";\    if((typeof _val === "string") || (_val instanceof String)) _val = _val.replace(/^0*/, "");\    if(!_val) return "";\
-		if(String(parseInt(_val)) != _val) return _caption+" must be a whole number.";\
-		' + (_nonneg ? 'if(parseInt(_val) < 0) return _caption+" must be a positive number.";' : '') + '\
-    return "";'));
-}
-
-XValidate._v_IsDecimal = function (_maxplaces) {
-  if (typeof (_maxplaces) === 'undefined') _maxplaces = 0;
-  var places_qty = ((_maxplaces > 0) ? '{1,' + _maxplaces + '}' : '+');
-  return (new Function('_caption', '_val', '\
-	  if(!_val) return "";\    if(_val == null) return "";\    if(_val == "") return "";\
-		var dec = String(_val).match(/^-?[0-9]*.?[0-9]' + places_qty + '$/);\
-		if(dec === null){ \
-      if(' + _maxplaces + ' == 0) return _caption + " must be a valid decimal number.";\
-      else return _caption + " must be a number with max ' + _maxplaces + ' places after the decimal point.";\
-    } \
-    return "";'));
-}
-
-XValidate._v_MaxValue = function (_max) {
-  return (new Function('_caption', '_val', '\
-    if(!_val) return "";\
-		var fval = parseFloat(_val);\
-		if(isNaN(fval)) return "";\
-    if(fval > ' + _max + ') return _caption+" must be less than or equal to ' + _max + '.";\
-    return "";'));
-}
-
-XValidate._v_MinValue = function (_min) {
-  return (new Function('_caption', '_val', '\
-    if(!_val) return "";\
-		var fval = parseFloat(_val);\
-		if(isNaN(fval)) return "";\
-    if(fval < ' + _min + ') return _caption+" must be greater than or equal to ' + _min + '.";\
-    return "";'));
-}
-
-XValidate._v_RegEx = function (_re, _msg) {
-  return (new Function('_caption', '_val', '\
-	  if(!_val) return "";\
-		var re = ' + _re + '; \
-		if(!re.test(_val)) return _caption+" must ' + _msg + '"; \
-    return "";'));
-}
-
-XValidate._v_IsEmail = function () {
-  return XValidate._v_RegEx(
-    '/^(([^<>()[\\]\\\\.,;:\\s@\\"]+(\\.[^<>()[\\]\\\\.,;:\\s@\\"]+)*)|(\\".+\\"))@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$/',
-		'be an email address');
-}
-
-XValidate._v_IsSSN = function () {
-  return (new Function('_caption', '_val', '\
-	  if(!_val) return "";\    var rslt = _val;\    //var rslt = String(_val).replace(/-/g,"");\
-    if(!rslt.match(/^\\d{9}$/)) return _caption+" must be in the format 999-99-9999";\
-    return "";'));
-}
-
-XValidate._v_IsDate = function () {
-  return (new Function('_caption', '_val', '\
-	  if(!_val) return "";\
-		var rslt = Date.parse(_val);\
-		if(isNaN(rslt)==false) return "";\
-		return _caption+" must be a valid date.";'));
-
-/*	return XValidate._v_RegEx(
-//	  '/^\d\d\d\d\-\d\d\-\d\d$/',
-	  '/^\\d{4}-\\d{2}-\\d{2}$/',
-		'be a valid date in format YYYY-MM-DD.');*/
-}
-
-XValidate._v_IsValidDOB = function () {
-  return (new Function('_caption', '_val', '\
-    if (!_val) return "";\
-    var rslt = Date.parse(_val);\
-    if (isNaN(rslt) == false) {\
-      if (rslt < new Date("1900-01-01")) return _caption+" must be a valid date of birth.";\
-    }\
-    return "";'));
-}
-
-XValidate._v_MinDOB = function (_minyear) {
-  return (new Function('_caption', '_val', '\
-    if (!_val) return "";\
-    var rslt = Date.parse(_val);\
-    if (isNaN(rslt) == false) {\      rslt = new Date(rslt);\      var minbday = new Date(rslt.getFullYear()+' + _minyear + ',rslt.getMonth(),rslt.getDate());\
-      if (minbday > (new Date())) return _caption+" must be at least ' + _minyear + ' years old.";\
-    }\
-    return "";'));
-}
-
-XValidate._v_IsPhone = function () {
-  return XValidate._v_RegEx(
-    '/^\\d{10,20}$/',
-		'be a valid phone number');
-}
-
-XValidate._v_IsTime = function () {
-  return (new Function('_caption', '_val', '\
-	  if(!_val) return "";\    if(_val instanceof Date) return "";\    var d = moment(_val, "hh:mm a");\
-    if(!d.isValid()) return _caption+" must be a valid time in format HH:MM.";\
-    return "";'));
-}
-
-XValidate._v_Luhn = function () {
-  return (new Function('_caption', '_val', '\
-	  if(!_val) return "";\    var luhnChk = function (a) { return function (c) { for (var l = c.length, b = 1, s = 0, v; l;) v = parseInt(c.charAt(--l), 10), s += (b ^= 1)?a[v]:v; return s && 0 === s % 10 } }([0, 2, 4, 6, 8, 1, 3, 5, 7, 9]); \    if(luhnChk(_val.toString())) return "";\
-		return _caption+" must be a valid credit card number.";'));
-}
-
-XValidate._v_InArray = function (_arr) {
-  if (typeof (_arr) === 'undefined') _arr = [];
-  return (new Function('_caption', '_val', '\
-	  if(!_val) return "";\    var _arr = ' + JSON.stringify(_arr) + ';\    for(var i=0;i<_arr.length;i++){ if(_arr[i]==_val) return ""; }\
-		return _caption+" must be one of the following values: "+_arr.join(",");'));
-}
-
-module.exports = XValidate;// JavaScript Document
 },{}],27:[function(require,module,exports){
 (function (global){
 /**
@@ -43133,4 +43147,4 @@ return hooks;
 
 })));
 
-},{}]},{},[19]);
+},{}]},{},[21]);

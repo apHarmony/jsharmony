@@ -50,8 +50,8 @@ function AppSrv(_jsh) {
 GET OPERATION / SELECT
 *********************/
 AppSrv.prototype.getModel = function (req, res, modelid, noexecute, Q, P) {
-  if (!(modelid in this.jsh.Models)) throw new Error("Error: Model " + modelid + " not found in collection.");
-  var model = this.jsh.Models[modelid];
+  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
+  var model = this.jsh.getModel(req, modelid);
   if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   if (typeof Q == 'undefined') Q = req.query;
   if (typeof P == 'undefined') P = req.body;
@@ -71,7 +71,7 @@ AppSrv.prototype.getModel = function (req, res, modelid, noexecute, Q, P) {
 
 AppSrv.prototype.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options) {
   if (!options) options = {};
-  var model = this.jsh.Models[modelid];
+  var model = this.jsh.getModel(req, modelid);
   if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
   var _this = this;
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
@@ -266,7 +266,7 @@ AppSrv.prototype.getModelRecordset = function (req, res, modelid, Q, P, rowlimit
 }
 
 AppSrv.prototype.getModelForm = function (req, res, modelid, Q, P, form_m) {
-  var model = this.jsh.Models[modelid];
+  var model = this.jsh.getModel(req, modelid);
   if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
   if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   var _this = this;
@@ -441,7 +441,7 @@ AppSrv.prototype.getModelForm = function (req, res, modelid, Q, P, form_m) {
 }
 
 AppSrv.prototype.getModelMultisel = function (req, res, modelid, Q, P) {
-  var model = this.jsh.Models[modelid];
+  var model = this.jsh.getModel(req, modelid);
   if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
   var _this = this;
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
@@ -541,7 +541,7 @@ AppSrv.prototype.getModelMultisel = function (req, res, modelid, Q, P) {
 };
 
 AppSrv.prototype.getModelExec = function (req, res, modelid, Q, P, form_m) {
-  var model = this.jsh.Models[modelid];
+  var model = this.jsh.getModel(req, modelid);
   if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
   var _this = this;
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
@@ -571,8 +571,8 @@ AppSrv.prototype.getModelExec = function (req, res, modelid, Q, P, form_m) {
 }
 
 AppSrv.prototype.getTabCode = function (req, res, modelid, onComplete) {
-  if (!(modelid in this.jsh.Models)) throw new Error("Error: Model " + modelid + " not found in collection.");
-  var model = this.jsh.Models[modelid];
+  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
+  var model = this.jsh.getModel(req, modelid);
   if (!(model.tabcode)) throw new Error("Error: Tabcode required for " + modelid + " tabcode lookup.");
   var Q = req.query;
   if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
@@ -626,8 +626,8 @@ AppSrv.prototype.getTabCode = function (req, res, modelid, onComplete) {
 PUT OPERATION / INSERT
 *********************/
 AppSrv.prototype.putModel = function (req, res, modelid, noexecute, Q, P, onComplete) {
-  if (!(modelid in this.jsh.Models)) throw new Error("Error: Model " + modelid + " not found in collection.");
-  var model = this.jsh.Models[modelid];
+  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
+  var model = this.jsh.getModel(req, modelid);
   if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   var _this = this;
   if (typeof Q == 'undefined') Q = req.query;
@@ -651,7 +651,7 @@ AppSrv.prototype.putModel = function (req, res, modelid, noexecute, Q, P, onComp
 
 AppSrv.prototype.putModelForm = function (req, res, modelid, Q, P, onComplete) {
   var _this = this;
-  var model = this.jsh.Models[modelid];
+  var model = this.jsh.getModel(req, modelid);
   if (!Helper.HasModelAccess(req, model, 'I')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
   var fieldlist = this.getFieldNames(req, model.fields, 'I');
   var filelist = this.getFileFieldNames(req, model.fields, 'I');
@@ -747,7 +747,7 @@ AppSrv.prototype.putModelForm = function (req, res, modelid, Q, P, onComplete) {
     verrors = _.merge(verrors, model.xvalidate.Validate('I', _.merge(vfiles, enc_sql_params, sql_params)));
     if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
     
-    var dbsql = _this.db.sql.putModelForm(_this.jsh, model, fieldlist, keys, sql_extfields, sql_extvalues, encryptedfields, enc_datalockqueries, param_datalocks);
+    var dbsql = _this.db.sql.putModelForm(_this.jsh, model, fields, keys, sql_extfields, sql_extvalues, encryptedfields, enc_datalockqueries, param_datalocks);
     
     _.each(subs, function (fname) { sql_params[fname] = '%%%' + fname + '%%%'; });
     var dbtasks = {};
@@ -811,8 +811,8 @@ AppSrv.prototype.putModelForm = function (req, res, modelid, Q, P, onComplete) {
 POST OPERATION / UPDATE
 **********************/
 AppSrv.prototype.postModel = function (req, res, modelid, noexecute, Q, P, onComplete) {
-  if (!(modelid in this.jsh.Models)) throw new Error("Error: Model " + modelid + " not found in collection.");
-  var model = this.jsh.Models[modelid];
+  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
+  var model = this.jsh.getModel(req, modelid);
   if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   var _this = this;
   if (typeof Q == 'undefined') Q = req.query;
@@ -837,8 +837,8 @@ AppSrv.prototype.postModel = function (req, res, modelid, noexecute, Q, P, onCom
 
 AppSrv.prototype.postModelForm = function (req, res, modelid, Q, P, onComplete) {
   var _this = this;
-  if (!(modelid in this.jsh.Models)) throw new Error("Error: Model " + modelid + " not found in collection.");
-  var model = this.jsh.Models[modelid];
+  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
+  var model = this.jsh.getModel(req, modelid);
   if (!Helper.HasModelAccess(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
   
   var fieldlist = this.getFieldNames(req, model.fields, 'U');
@@ -897,6 +897,7 @@ AppSrv.prototype.postModelForm = function (req, res, modelid, Q, P, onComplete) 
     if (fields.length == 0) return onComplete(null, {});
     _.each(fields, function (field) {
       var fname = field.name;
+      if(field.sqlupdate==='') return;
       if (fname in P) {
         var dbtype = AppSrv.prototype.getDBType(field);
         sql_ptypes.push(dbtype);
@@ -977,9 +978,9 @@ AppSrv.prototype.postModelForm = function (req, res, modelid, Q, P, onComplete) 
 }
 
 AppSrv.prototype.postModelMultisel = function (req, res, modelid, Q, P, onComplete) {
-  if (!(modelid in this.jsh.Models)) throw new Error("Error: Model " + modelid + " not found in collection.");
+  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
   var _this = this;
-  var model = this.jsh.Models[modelid];
+  var model = this.jsh.getModel(req, modelid);
   if (!Helper.HasModelAccess(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
   
   var lovfield = null;
@@ -1084,8 +1085,8 @@ AppSrv.prototype.postModelMultisel = function (req, res, modelid, Q, P, onComple
 
 AppSrv.prototype.postModelExec = function (req, res, modelid, Q, P, onComplete) {
   var _this = this;
-  if (!(modelid in this.jsh.Models)) throw new Error("Error: Model " + modelid + " not found in collection.");
-  var model = this.jsh.Models[modelid];
+  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
+  var model = this.jsh.getModel(req, modelid);
   if (!Helper.HasModelAccess(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
   
   var fieldlist = this.getFieldNames(req, model.fields, 'U');
@@ -1146,8 +1147,8 @@ AppSrv.prototype.postModelExec = function (req, res, modelid, Q, P, onComplete) 
 DELETE OPERATION / DELETE
 ************************/
 AppSrv.prototype.deleteModel = function (req, res, modelid, noexecute, Q, P, onComplete) {
-  if (!(modelid in this.jsh.Models)) throw new Error("Error: Model " + modelid + " not found in collection.");
-  var model = this.jsh.Models[modelid];
+  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
+  var model = this.jsh.getModel(req, modelid);
   if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   var _this = this;
   if (typeof Q == 'undefined') Q = req.query;
@@ -1169,14 +1170,18 @@ AppSrv.prototype.deleteModel = function (req, res, modelid, noexecute, Q, P, onC
 }
 
 AppSrv.prototype.deleteModelForm = function (req, res, modelid, Q, P, onComplete) {
-  if (!(modelid in this.jsh.Models)) throw new Error("Error: Model " + modelid + " not found in collection.");
+  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
   var _this = this;
-  var model = this.jsh.Models[modelid];
+  var model = this.jsh.getModel(req, modelid);
   if (!Helper.HasModelAccess(req, model, 'D')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
   var keylist = this.getKeyNames(model.fields);
+  var fieldlist = this.getFieldNames(req, model.fields, 'D');
   var filelist = this.getFileFieldNames(req, model.fields, '*');
   
-  if (!_this.ParamCheck('Q', Q, _.map(keylist, function (key) { return '&' + key; }))) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
+  var Qcheck = _.map(keylist, function (key) { return '&' + key; });
+  Qcheck = Qcheck.concat(_.map(fieldlist, function (field) { return '|' + field; }));
+
+  if (!_this.ParamCheck('Q', Q, Qcheck)) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   if (!_this.ParamCheck('P', P, [])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   
   var sql_ptypes = [];
@@ -1238,7 +1243,7 @@ AppSrv.prototype.deleteModelForm = function (req, res, modelid, Q, P, onComplete
  REPORTS
 ********/
 AppSrv.prototype.getReport = function (req, res, modelid, Q, P, callback) {
-  if (!(modelid in this.jsh.Models)) throw new Error("Error: Report " + modelid + " not found in collection.");
+  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Report " + modelid + " not found in collection.");
   var _this = this;
   if (typeof Q == 'undefined') Q = req.query;
   if (typeof P == 'undefined') P = req.body;
@@ -1261,7 +1266,7 @@ AppSrv.prototype.getReport = function (req, res, modelid, Q, P, callback) {
   this.rptsrv.queueReport(req, res, modelid, Q, P, {}, callback);
 }
 AppSrv.prototype.getReportHTML = function (req, res, modelid, Q, P, callback) {
-  if (!(modelid in this.jsh.Models)) throw new Error("Error: Report " + modelid + " not found in collection.");
+  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Report " + modelid + " not found in collection.");
   var _this = this;
   if (typeof Q == 'undefined') Q = req.query;
   if (typeof P == 'undefined') P = req.body;
@@ -1297,7 +1302,7 @@ AppSrv.prototype.getReportHTML = function (req, res, modelid, Q, P, callback) {
   this.rptsrv.queueReport(req, res, modelid, Q, P, {output:'html'}, callback);
 }
 AppSrv.prototype.getReportJob = function (req, res, modelid, Q, P, callback) {
-  if (!(modelid in this.jsh.Models)) throw new Error("Error: Report " + modelid + " not found in collection.");
+  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Report " + modelid + " not found in collection.");
   var _this = this;
   if (typeof Q == 'undefined') Q = req.query;
   if (typeof P == 'undefined') P = req.body;
@@ -1452,8 +1457,8 @@ AppSrv.prototype.Download = function (req, res, modelid, keyid, fieldid, options
     serveFile(req, res, fpath, fname, fname);
   }
   else {
-    if (!(modelid in this.jsh.Models)) throw new Error("Error: Model " + modelid + " not found in collection.");
-    var model = this.jsh.Models[modelid];
+    if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
+    var model = this.jsh.getModel(req, modelid);
     //Verify model access
     if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
     if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
@@ -2293,8 +2298,8 @@ AppSrv.prototype.getDBType = function (field) {
 AppSrv.prototype.exportCSV = function (req, res, dbtasks, modelid) {
   var _this = this;
   var jsh = _this.jsh;
-  if (!(modelid in jsh.Models)) throw new Error('Model not found');
-  var model = jsh.Models[modelid];
+  if (!jsh.hasModel(req, modelid)) throw new Error('Model not found');
+  var model = jsh.getModel(req, modelid);
   dbtasks = _.reduce(dbtasks, function (rslt, dbtask, key) { rslt[key] = async.apply(dbtask, undefined); return rslt; }, {});
   _this.db.ExecTasks(dbtasks, function (err, rslt) {
     if (err != null) { _this.AppDBError(req, res, err); return; }
