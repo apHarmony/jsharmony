@@ -32,7 +32,7 @@ var fs = require('fs');
 var csv = require('csv');
 var moment = require('moment');
 var ejsext = require('./lib/ejsext.js');
-var imagick = require('gm').subClass({ imageMagick: true });;
+var imagick = require('gm').subClass({ imageMagick: true });
 
 function AppSrv(_jsh) {
   var _this = this;

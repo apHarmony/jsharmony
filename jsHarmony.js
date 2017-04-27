@@ -49,6 +49,7 @@ function jsHarmony() {
   this.Popups = {};
   this.Cache = {};
   this.SQL = {};
+  this._IMAGEMAGICK_FIELDS = [];
   //Constructor
   Init.validateGlobals();
   console.log('Loading models...');
@@ -350,6 +351,15 @@ function LogDeprecated(msg) {
   if (global.debug_params.hide_deprecated) return;
   console.log('**DEPRECATED** ' + msg);
 }
+jsHarmony.prototype.TestImageMagick  = function(strField){
+  var _this = this;
+  _this._IMAGEMAGICK_FIELDS.push(strField); 
+  if(_this._IMAGEMAGICK_FIELDS.length > 1) return;
+  var imagick = require('gm').subClass({ imageMagick: true });
+  imagick(100,100,'white').setFormat('PNG').toBuffer(function(err,b){
+    if(err) LogEntityError(_ERROR, 'Please install ImageMagick.  Used by: ' + _.uniq(_this._IMAGEMAGICK_FIELDS).join(', '));
+  });
+}
 jsHarmony.prototype.ParseEntities = function () {
   var _this = this;
   var base_controls = ["label", "html", "textbox", "textzoom", "dropdown", "date", "textarea", "hidden", "subform", "html", "password", "file_upload", "file_download", "button", "linkbutton", "tree", "checkbox"];
@@ -408,6 +418,8 @@ jsHarmony.prototype.ParseEntities = function () {
         if ('popup_copy_results' in field.controlparams) LogDeprecated(model.id + ' > ' + field.name + ': The controlparams popup_copy_results attribute has been deprecated - use "popuplov":{...}');
         if ('base_readonly' in field.controlparams) LogDeprecated(model.id + ' > ' + field.name + ': The controlparams base_readonly attribute has been deprecated - use "popuplov":{...}');
         if ('onpopup' in field.controlparams) LogDeprecated(model.id + ' > ' + field.name + ': The controlparams onpopup attribute has been deprecated - use "popuplov":{...}');
+        if ('image' in field.controlparams && (field.controlparams.image.resize || field.controlparams.image.crop)) _this.TestImageMagick(model.id + ' > ' + field.name);
+        if ('thumbnails' in field.controlparams) _.each(field.controlparams.thumbnails,function(thumbnail){ if(thumbnail.resize || thumbnail.crop) _this.TestImageMagick(model.id + ' > ' + field.name); });
       }
       if ('popuplov' in field) {
         var has_own = false;
