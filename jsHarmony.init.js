@@ -106,7 +106,9 @@ exports.ValidateConfig = function(jsh){
     "codeparentid": "codeparentid",
     "codeicon": "codeicon",
     "codeid": "codeid",
-    "codeparent": "codeparent"
+    "codeparent": "codeparent",
+    "codeseq": "codeseq",
+    "codetype": "codetype"
   };
   if(!jsh.Config.default_buttons) jsh.Config.default_buttons = { "add": { "icon": "add", "text": "Add %%%CAPTION%%%", "access": "I", "class": "xbuttonadd" } };
   //if (!jsh.Config.field_mapping) throw 'field_mapping required in _config.json';

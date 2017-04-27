@@ -27,7 +27,12 @@ function XForm<%=model.id%>_Init(callback){
   xfilter_<%=model.id%> = new XPost('','#xfilter_template_<%=model.id%>','#xfilter_<%=model.id%>');
   xfilter_<%=model.id%>.Data = new XSearch.SearchQuery(new XForm<%=model.id%>());
   xfilter_<%=model.id%>.Data.Items.unshift(new XSearch.SearchItem('ALL','','and','contains'));
-  xfilter_<%=model.id%>.OnAfterRender = function(){ $('#xfilter_<%=model.id%> input.xfilter_value').each(function(){ XBarcode.EnableScanner($(this)); }); };
+  xfilter_<%=model.id%>.OnAfterRender = function(){ 
+    $('#xfilter_<%=model.id%> input.xfilter_value').each(function(){ XBarcode.EnableScanner($(this)); }); 
+    $('#xfilter_<%=model.id%> input.xfilter_value.datepicker').each(function(){ 
+      $(this).datepicker({ constrainInput: false, changeMonth: true, changeYear: true, dateFormat: JSH_DEFAULT_DATEFORMAT });
+    }); 
+  };
   xfilter_<%=model.id%>.Render();
   <% if(model.grid_expand_filter){ %>XForm<%=model.id%>_FilterExpand(0);<% } %>
 

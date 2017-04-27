@@ -518,6 +518,7 @@ DIALOG BOXES
 #xalertbox input,
 #xconfirmbox input,
 .xdialogbox input.button_ok,
+.xdialogbox input.button_no,
 .xdialogbox input.button_cancel {
   margin: 20px 0 0px 0;
   padding:4px 15px;

@@ -81,7 +81,7 @@ exports.CancelBubble = function (e) {
   else e.cancelBubble = true;
 }
 
-exports.ShowContextMenu = function (selector, context_item) {
+exports.ShowContextMenu = function (selector,context_item,data){
   if (!selector) selector = '.xcontext_menu';
   $('.xcontext_menu').hide();
   $(selector).css('visibility', 'hidden');
@@ -90,13 +90,25 @@ exports.ShowContextMenu = function (selector, context_item) {
   var offset = $(selector).offsetParent().offset();
   xtop -= offset.top - 1;
   xleft -= offset.left - 1;
+
+  var wwidth = $(window).width();
+  var wheight = $(window).height() - 20;
+  var dwidth = $(selector).outerWidth()+4;
+  var dheight = $(selector).outerHeight()+4;
+  if ((xtop + dheight) > wheight) xtop = wheight - dheight;
+  if ((xleft + dwidth) > wwidth) xleft = wwidth - dwidth;
+  if (xtop < 0) xtop = 0;
+  if (xleft < 0) xleft = 0;
+
   $(selector).css({ 'top': xtop, 'left': xleft });
   $(selector).css('visibility', 'visible');
   global.xContextMenuVisible = true;
   global.xContextMenuItem = context_item;
+  global.xContentMenuItemData = data;
 }
 
-exports.CallAppFunc = function (q, method, d, onComplete, onFail) {
+exports.CallAppFunc = function (q, method, d, onComplete, onFail, options){
+  if(!options) options = {};
   var getVars = function () {
     for (var dname in d) {
       var dval = d[dname];
@@ -115,6 +127,8 @@ exports.CallAppFunc = function (q, method, d, onComplete, onFail) {
     xpost.Data = d;
     var dq = {}, dp = {};
     if (method == 'get') dq = d;
+    else if (method == 'postq') { dq = d; method = 'post'; }
+    else if (method == 'putq') { dq = d; method = 'put'; if (options.post) { dp = options.post; } }
     else dp = d;
     xpost.qExecute(xpost.PrepExecute(method, xpost.q, dq, dp, function (rslt) {
       if ('_success' in rslt) {
@@ -126,14 +140,16 @@ exports.CallAppFunc = function (q, method, d, onComplete, onFail) {
   getVars();
 }
 
-exports.InputValue = function (_Caption, _Validation) {
+exports.InputValue = function (_Caption, _Validation, _Default, _PostProcess){
   this.Caption = _Caption;
   this.Validation = _Validation;
+  this.Default = (_Default ? _Default : '');
+  this.PostProcess = _PostProcess;
   this.Value = undefined;
 }
 exports.InputValue.prototype.Prompt = function (onComplete) {
   var _this = this;
-  XExt.Prompt(_this.Caption, '', function (rslt) {
+  XExt.Prompt(_this.Caption, _this.Default, function (rslt) {
     if (rslt == null) {
       if (onComplete) { onComplete(null); }
       return;
@@ -149,6 +165,7 @@ exports.InputValue.prototype.Prompt = function (onComplete) {
           return;
         }
       }
+      if (_this.PostProcess) rslt = _this.PostProcess(rslt);
       _this.Value = rslt;
       if (onComplete) onComplete(rslt);
     }
@@ -248,10 +265,11 @@ exports.escapeHTML = function (val) {
     ">": "&gt;",
     '"': '&quot;',
     "'": '&#39;',
-    "/": '&#x2F;'
+    "/": '&#x2F;',
+    '\u00A0':'&#xa0;'
   };
   
-  return String(val).replace(/[&<>"'\/]/g, function (s) {
+  return String(val).replace(/[\u00A0&<>"'\/]/g, function (s) {
     return entityMap[s];
   });
 }
@@ -451,9 +469,14 @@ exports.StripTags = function (val, ignore) {
   var clienttags = /<\/?([a-z][a-z0-9]*)\b[^>]*>/gi
   var servertags = /<!--[\s\S]*?-->|<\?(?:php)?[\s\S]*?\?>/gi
   
-  return val.replace(servertags, '').replace(clienttags, function ($0, $1) {
+  return exports.unescapeHTMLEntity(val.replace(servertags, '').replace(clienttags, function ($0, $1) {
     return ignore.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : ''
-  })
+  }));
+}
+exports.unescapeHTMLEntity = function(val){
+  var obj = document.createElement("textarea");
+  obj.innerHTML = val;
+  return obj.value;
 }
 exports.readCookie = function(id){
   var rslt = [];
@@ -499,6 +522,7 @@ exports.TreeRender = function (ctrl, LOV, field) {
   var tree = [];
   var nodes = {};
   var sortednodes = [];
+  var has_seq = false;
   for (var i = 0; i < LOV.length; i++) {
     var iLOV = LOV[i];
     var node = new XTreeNode();
@@ -507,8 +531,10 @@ exports.TreeRender = function (ctrl, LOV, field) {
     node.Value = iLOV[window.jshuimap.codeval];
     node.Text = iLOV[window.jshuimap.codetxt];
     node.Icon = iLOV[window.jshuimap.codeicon];
-    if (_.includes(expanded_nodes, node.ID)) node.Expanded = true;
-    if (_.includes(selected_nodes, node.ID)) node.Selected = true;
+    node.Seq = iLOV[window.jshuimap.codeseq];
+    if (node.Seq) has_seq = true;
+    if (_.includes(expanded_nodes, node.Value)) node.Expanded = true;
+    if (_.includes(selected_nodes, node.Value)) node.Selected = true;
     
     if (!node.ParentID) tree.push(node);
     nodes[node.ID] = node;
@@ -518,6 +544,7 @@ exports.TreeRender = function (ctrl, LOV, field) {
     var node = sortednodes[i];
     if (node.ParentID && (node.ParentID in nodes)) nodes[node.ParentID].Children.push(node);
   }
+  if (has_seq) sortednodes = sortednodes.SortBy(sortednodes, [window.jshuimap.codeseq, window.jshuimap.codetxt]);
   
   var body = '';
   for (var i = 0; i < tree.length; i++) {
@@ -536,21 +563,31 @@ exports.TreeRenderNode = function (ctrl, n) {
     children += exports.TreeRenderNode(ctrl, n.Children[i]);
   }
   var rslt = ejs.render('\
-    <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-value="<%=n.Value%>" onclick=\'XExt.TreeSelectNode(this,<%-JSON.stringify(n.ID)%>); return false;\' oncontextmenu=\'return XExt.TreeItemContextMenu(this);\'><div class="glyph" href="#" onclick=\'XExt.CancelBubble(arguments[0]); XExt.TreeToggleNode($(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><img class="icon" src="/images/icon_<%=n.Icon%>.png"><%=n.Text%></a>\
+    <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-value="<%=n.Value%>" onclick=\'XExt.TreeSelectNode(this,<%-JSON.stringify(n.ID)%>); return false;\' ondblclick=\'XExt.TreeDoubleClickNode(this,<%-JSON.stringify(n.ID)%>); return false;\' oncontextmenu=\'return XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'XExt.CancelBubble(arguments[0]); XExt.TreeToggleNode($(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><img class="icon" src="/images/icon_<%=n.Icon%>.png"><%=n.Text%></a>\
     <div class="children <%=(n.Expanded?"expanded":"")%> tree_item_<%=n.ID%>" data-value="<%=n.Value%>"><%-children%></div>',
     { n: n, children: children }
   );
   return rslt;
 }
 
-exports.TreeItemContextMenu = function (ctrl) {
+exports.TreeItemContextMenu = function (ctrl, n) {
+  var jctrl = $(ctrl);
+  var jtree = jctrl.closest('.xform_ctrl.tree');
   var fieldname = exports.getFieldFromObject(ctrl);
   var menuid = '#_item_context_menu_' + fieldname;
+  if(jtree.data('oncontextmenu')) { var rslt = (new Function('n', jtree.data('oncontextmenu'))); rslt.call(ctrl, n); }
   if ($(menuid).length) {
-    exports.ShowContextMenu(menuid, $(ctrl).data('value'));
+    exports.ShowContextMenu(menuid, $(ctrl).data('value'), { id:n });
     return false;
   }
   return true;
+}
+
+exports.TreeDoubleClickNode = function (ctrl, n) {
+  var jctrl = $(ctrl);
+  var jtree = jctrl.closest('.xform_ctrl.tree');
+  var fieldname = exports.getFieldFromObject(ctrl);
+  if(jtree.data('ondoubleclick')) { var rslt = (new Function('n', jtree.data('ondoubleclick'))); rslt.call(ctrl, n); }
 }
 
 exports.TreeGetSelectedNodes = function (ctrl) {
@@ -579,16 +616,17 @@ exports.TreeSelectNode = function (ctrl, nodeid) {
   var field = undefined;
   if (xform && fieldname) field = xform.Data.Fields[fieldname];
   
-  var top_parent = jctrl.closest('.xform_ctrl.tree');
-  if (top_parent.hasClass('uneditable')) return;
-  top_parent.find('.selected').removeClass('selected');
-  top_parent.find('.tree_item.tree_item_' + nodeid).addClass('selected');
+  var jtree = jctrl.closest('.xform_ctrl.tree');
+  if (jtree.hasClass('uneditable')) return;
+  jtree.find('.selected').removeClass('selected');
+  jtree.find('.tree_item.tree_item_' + nodeid).addClass('selected');
   if (field && field.controlparams) {
     if ((typeof field.controlparams.expand_to_selected == 'undefined') || (field.controlparams.expand_to_selected)) exports.TreeExpandToSelected(ctrl);
   }
   if (field && init_complete) {
     if ('onchange' in field) { var rslt = (new Function('obj', 'newval', 'e', field.onchange)); rslt.call(xform.Data, ctrl, xform.Data.GetValue(field), null); }
   }
+  if(jtree.data('onselected')) { var rslt = (new Function('nodeid', jtree.data('onselected'))); rslt.call(ctrl, nodeid); }
 }
 
 exports.TreeToggleNode = function (jctrl, nodeid) {
@@ -742,7 +780,8 @@ exports.Alert = function (obj, onAccept, params) {
   if (!exports.isIOS()) $('#xalertbox input').focus();
 }
 
-exports.Confirm = function (obj, onAccept, onCancel) {
+exports.Confirm = function (obj, onAccept, onCancel, options) {
+  if (!options) options = {};
   var msg = '';
   if (obj && _.isString(obj)) msg = obj;
   else msg = JSON.stringify(obj);
@@ -759,6 +798,16 @@ exports.Confirm = function (obj, onAccept, onCancel) {
   $('#xconfirmbox input').off('click');
   $('#xconfirmbox input').off('keydown');
   var cancelfunc = exports.dialogButtonFunc('#xconfirmbox', oldactive, onCancel);
+  if (options.button_no) {
+    $('#xconfirmbox input.button_no').show();
+    $('#xconfirmbox input.button_no').on('click', exports.dialogButtonFunc('#xconfirmbox', oldactive, options.button_no));
+  }
+  else $('#xconfirmbox input.button_no').hide();
+  if (options.button_ok_caption) $('#xconfirmbox input.button_ok').val(options.button_ok_caption);
+  if (options.button_no_caption) $('#xconfirmbox input.button_no').val(options.button_no_caption);
+  if (options.button_cancel_caption) $('#xconfirmbox input.button_cancel').val(options.button_cancel_caption);
+
+
   $('#xconfirmbox input.button_ok').on('click', exports.dialogButtonFunc('#xconfirmbox', oldactive, onAccept));
   $('#xconfirmbox input.button_cancel').on('click', cancelfunc);
   $('#xconfirmbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });

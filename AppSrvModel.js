@@ -222,17 +222,21 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost) {
         var acss = 'xtab xtab' + model.id;
         if (i == ejsext.size(model.tabs)) acss += ' last';
         var linktabs = new Object();
-        linktabs[model.id] = model.tabs[tabname].target;
+        var tabmodelid = model.tabs[tabname].target;
+        linktabs[model.id] = tabmodelid;
         var link = jsh.getURL(req, '', linktabs);
         var caption = model.tabs[tabname].caption;
+        var tab_selected = false;
         if (!caption) caption = tabname;
-        if (req.curtabs[model.id] == model.tabs[tabname].target) acss += ' selected';
+        if (req.curtabs[model.id] == tabmodelid){ acss += ' selected'; tab_selected = true; }
         else if (('action' in req.query) && (req.query.action == 'add')) { link = '#'; acss += ' disabled'; }
         var rslttab = {
           'acss': acss,
           'link': link,
           'name': tabname,
-          'caption': caption
+          'caption': caption,
+          'selected': tab_selected,
+          'modelid': tabmodelid
         };
         rslttabs.push(rslttab);
       }

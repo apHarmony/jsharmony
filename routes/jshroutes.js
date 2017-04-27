@@ -23,7 +23,6 @@ var _ = require('lodash');
 var path = require('path');
 var fs = require('fs');
 
-var jsHarmony = require('../jsHarmony.js');
 var ejsext = require('../lib/ejsext.js');
 var Helper = require('../lib/Helper.js');
 var HelperFS = require('../lib/HelperFS.js');

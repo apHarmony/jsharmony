@@ -43,6 +43,7 @@ global.XForms = [];
 global.isHTML5 = (document.createElement('canvas').getContext);
 global.xContextMenuVisible = false;
 global.xContextMenuItem = undefined;
+global.xContentMenuItemData = undefined;
 global.mouseX = 0;
 global.mouseY = 0;
 global.mouseDown = false;
@@ -81,6 +82,7 @@ $(document).ready(function(){
     if (global.xContextMenuVisible) {
       global.xContextMenuVisible = false;
       global.xContextMenuItem = undefined;
+      global.xContentMenuItemData = undefined;
       $('.xcontext_menu').hide();
     }
   });
@@ -112,7 +114,7 @@ global.init_dialogs = function () {
   $("body").append($('\
     <div id="xdialogblock" style="display:none;">\
     <div id="xalertbox" class="xdialogbox"><div id="xalertmessage"></div><div align="center"><input type="button" value="OK" /></div></div>\
-    <div id="xconfirmbox" class="xdialogbox"><div id="xconfirmmessage"></div><div align="center"><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
+    <div id="xconfirmbox" class="xdialogbox"><div id="xconfirmmessage"></div><div align="center"><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="No" class="button_no" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
     <div id="xpromptbox" class="xdialogbox xpromptbox"><div id="xpromptmessage"></div><div align="right"><input id="xpromptfield" type="text"><br/><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
     <div id="xtextzoombox" class="xdialogbox xtextzoombox"><div id="xtextzoommessage"></div><div align="right"><textarea id="xtextzoomfield"></textarea><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
     </div>\

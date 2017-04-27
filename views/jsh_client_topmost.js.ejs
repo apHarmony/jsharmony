@@ -356,7 +356,17 @@ function XFormsParseEJS(onComplete) {
   if (orig_title.indexOf('<#') >= 0) {
     var new_title = ParseEJS(orig_title, XForms_root);
     $('#xform_title').html(new_title);
-    document.title = XExt.StripTags(new_title);
+    var window_title = XExt.StripTags(new_title).trim();
+    //If Title = blank, pull title from Tabs
+    var curform = XForms[XForms_root];
+    while(!window_title && curform){
+      if(curform._title){
+        window_title = ParseEJS(curform._title,curform._id);
+        window_title = XExt.StripTags(window_title).trim();
+      }
+      curform = XForms[curform._curtab];
+    }
+    document.title = window_title;
   }
 
   //Update Breadcrumbs
@@ -404,11 +414,12 @@ function getObjEJS(jobj) {
   return rslt;
 }
 
-function XFormTree(parentid, callback, oncomplete) {
+function XFormTree(parentid, callback, oncomplete, options) {
+  if(!options) options = {};
   _.each(XForms, function (xform, xformid) {
     if (xform._parent == parentid) {
       callback(xform);
-      XFormTree(xform._id, callback);
+      if(!options.childrenOnly) XFormTree(xform._id, callback, undefined, options);
     }
   });
   if (typeof oncomplete != 'undefined') oncomplete();

@@ -24,6 +24,13 @@ var XForms_root = '<%=model.id%>';
 var XPopups = {};
 var is_popup = <%=xejs.iif('popup' in model,'true','false')%>;
 <% } %>
+<%
+var curtab = null;
+if(model.tabs && model.tabs.length){
+	var tab = _.find(model.tabs,function(tab){ return tab.selected; });
+	if(tab) curtab = tab.modelid;
+}
+%>
 XForms['<%=model.id%>'] = {
 	_id:'<%=model.id%>',
 	_access:'<%=model.access%>',
@@ -34,6 +41,7 @@ XForms['<%=model.id%>'] = {
 	_bindings:<%-((typeof model.bindings == 'undefined')?'null':JSON.stringify(_.keys(model.bindings)))%>,
 	_keys:[<% xejs.eachKey(model.fields,function(field){%>'<%=field.name%>',<%});%>],
 	_commitlevel:'<%=(model.commitlevel?model.commitlevel:'')%>',
+	_curtab:<%-(curtab?JSON.stringify(curtab):'null')%>,
 //  _is_new:(_GET['action']=='add'),
   <% 
 	if(model.topmost) _.each(model.fields,function(field){ if(field.lovkey || field.key || (model.bindings && (field.name in model.bindings))) {%><%=field['name']%>: function(){return LiteralOrCollection(<%-JSON.stringify(field['name'])%>,_GET);},<%	}});

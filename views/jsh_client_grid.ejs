@@ -41,6 +41,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
     XExt.pushLOV(comparison_numeric,'<=','<=');
     XExt.pushLOV(comparison_numeric,'null','Is Blank');
     XExt.pushLOV(comparison_numeric,'notnull','Is Not Blank');
+    var comparison_date = comparison_numeric;
     var comparison_object = [];
     XExt.pushLOV(comparison_object,'=','Equals');
     XExt.pushLOV(comparison_object,'<>','Does Not Equal');
@@ -64,6 +65,10 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           <select class="xfilter_comparison" onchange="XForm<%=model.id%>_FilterComparisonChange();">
             <#-xejs.renderLOV(comparison_numeric,data.Items[i].Comparison)#>
           </select>
+        <# } else if(selected_column && (selected_column.comparison_type=='date')){ #>
+          <select class="xfilter_comparison" onchange="XForm<%=model.id%>_FilterComparisonChange();">
+            <#-xejs.renderLOV(comparison_date,data.Items[i].Comparison)#>
+          </select>
         <# } else if(selected_column && (selected_column.comparison_type=='object')){ #>
           <select class="xfilter_comparison" onchange="XForm<%=model.id%>_FilterComparisonChange();">
             <#-xejs.renderLOV(comparison_object,data.Items[i].Comparison)#>
@@ -72,7 +77,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
         containing the value
         <# } #>
       </div>&nbsp; 
-      <input type="text" class="xfilter_value" value="<#=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'',data.Items[i].Value)#>" onkeyup="XForm<%=model.id%>_FilterKeyUp(event);" style="<#=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'visibility:hidden;')#>" /> 
+      <input type="text" class="xfilter_value <#=xejs.iif((selected_column && (selected_column.comparison_type=='date')),'datepicker')#>" value="<#=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'',data.Items[i].Value)#>" onkeyup="XForm<%=model.id%>_FilterKeyUp(event);" style="<#=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'visibility:hidden;')#>" /> 
         <# if(i==(data.Items.length-1)){ #>
         <a href="#" style="width:80px;" onclick="XForm<%=model.id%>_FilterApply(); return false;"><img src="/images/icon_search.png" alt="Apply Filter" title="Apply Filter" />GO</a>
         <a href="#" style="width:130px;text-align:right;" onclick="XForm<%=model.id%>_FilterAdd(); return false;">Add Criteria<img src="/images/icon_add.png" alt="Add Criteria" title="Add Criteria" /></a>

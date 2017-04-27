@@ -280,6 +280,7 @@ AppSrv.prototype.getModelForm = function (req, res, modelid, Q, P, form_m) {
   var lovkeylist = this.getFieldNamesWithProp(model.fields, 'lovkey');
   if ((encryptedfields.length > 0) && !(req.secure)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
   
+
   var is_new;
   var selecttype = 'single';
   if (typeof form_m == 'undefined') form_m = false;
@@ -290,13 +291,18 @@ AppSrv.prototype.getModelForm = function (req, res, modelid, Q, P, form_m) {
     else if (_this.ParamCheck('Q', Q, _.union(_.map(filterlist, function (field) { return '|' + field; }), ['|_action']), false)) {
       selecttype = 'multiple';
     }
-    else { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
+    else { 
+      //Display missing keys
+      _this.ParamCheck('Q', Q, _.map(keylist, function (key) { return '&' + key; }), true);
+      Helper.GenError(req, res, -4, 'Invalid Parameters');
+      return; 
+    }
   }
   else {
     is_new = (_.isEmpty(Q));
     if (!_this.ParamCheck('Q', Q, _.map(keylist, function (key) { return '|' + key; }), false)) {
       is_new = true;
-      if (!_this.ParamCheck('Q', Q, _.union(_.map(_.union(crumbfieldlist, lovkeylist), function (field) { return '&' + field; })), false)) {
+      if (!_this.ParamCheck('Q', Q, _.union(_.map(_.union(crumbfieldlist, lovkeylist), function (field) { return '|' + field; })), true)) {
         Helper.GenError(req, res, -4, 'Invalid Parameters'); return;
       }
     }
@@ -550,7 +556,7 @@ AppSrv.prototype.getModelExec = function (req, res, modelid, Q, P, form_m) {
   var filterlist = this.getFieldNames(req, model.fields, 'F');
   var crumbfieldlist = this.getFieldNames(req, model.fields, 'C');
   
-  if (!_this.ParamCheck('Q', Q, _.union(_.map(crumbfieldlist, function (field) { return '&' + field; })), false)) {
+  if (!_this.ParamCheck('Q', Q, _.union(_.map(crumbfieldlist, function (field) { return '|' + field; })), false)) {
     Helper.GenError(req, res, -4, 'Invalid Parameters'); return;
   }
   if (!_this.ParamCheck('P', P, [])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
@@ -1627,29 +1633,7 @@ AppSrv.prototype.AppDBError = function (req, res, err) {
   if ('number' in err) return Helper.GenError(req, res, err.number, err.message);
   return Helper.GenError(req, res, -99999, err.message);
 }
-AppSrv.prototype.ParamCheck = function (desc, col, params, show_errors) {
-  if (typeof show_errors == 'undefined') show_errors = true;
-  var args = arguments;
-  var parsed = [];
-  if (typeof params != 'undefined') {
-    for (var i = 0; i < params.length; i++) {
-      var param = params[i].substr(1);
-      var req = (params[i][0] == '&');
-      if (req && !(param in col)) {
-        if (show_errors) global.log(desc + ': Invalid Parameters - Missing ' + param);
-        return false;
-      }
-      parsed.push(param);
-    }
-  }
-  for (var i in col) {
-    if (!_.includes(parsed, i)) {
-      if (show_errors) global.log(desc + ': Invalid Parameters - Extra Parameter ' + i);
-      return false;
-    }
-  }
-  return true;
-}
+AppSrv.prototype.ParamCheck = Helper.ParamCheck;
 AppSrv.prototype.DeformatParam = function (field, val, verrors) {
   if ((field.type == 'date') || (field.type == 'datetime')) {
     if (val === '') return null;
