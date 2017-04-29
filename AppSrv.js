@@ -78,6 +78,7 @@ AppSrv.prototype.getModelRecordset = function (req, res, modelid, Q, P, rowlimit
   var searchlist = this.getFieldNames(req, model.fields, 'BS', function(field){ if(field.disable_search){ return false; } return true; });
   var keylist = this.getKeyNames(model.fields);
   var allfieldslist = _.union(keylist, fieldlist);
+  var availablesortfieldslist = this.getFieldNames(req, model.fields, 'BFK');
   var filterlist = this.getFieldNames(req, model.fields, 'F');
   filterlist = _.union(keylist, filterlist);
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'B');
@@ -120,7 +121,7 @@ AppSrv.prototype.getModelRecordset = function (req, res, modelid, Q, P, rowlimit
     if (sortdir == 'v') sortdir = 'desc';
     else if (sortdir == '^') sortdir = 'asc';
     else throw new Error('Invalid sort string');
-    if (!_.includes(allfieldslist, sortfield)) throw new Error('Invalid sort field ' + sortfield);
+    if (!_.includes(availablesortfieldslist, sortfield)) throw new Error('Invalid sort field ' + sortfield);
     
     var field = AppSrv.prototype.getFieldByName(model.fields, sortfield);
     sortfields.push({ 'field': sortfield, 'dir': sortdir, 'sql': (field.sql_sort || '') });

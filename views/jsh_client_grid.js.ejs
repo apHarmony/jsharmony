@@ -350,6 +350,7 @@ function XForm<%=model.id%>_AddRow(){
   newobj.focus();
   if(xdata.OnRowBind) xdata.OnRowBind(jobj);
   xgrid_<%=model.id%>.CurrentCell = document.activeElement;
+  newobj.focus();
   return rowid;
 }
 

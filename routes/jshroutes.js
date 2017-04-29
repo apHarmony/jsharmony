@@ -314,6 +314,7 @@ var Routes = function (jsh, jshconfig) {
     //Verify model exists
     var modelid = req.params.modelid;
     if (!jsh.hasModel(req, modelid)){ return next(); }
+    processModelQuerystring(jsh, req, modelid);
     processCustomRouting('onepage', req, res, jsh, modelid, function(){
       genOnePage(jsh, req, res, modelid);
     });
