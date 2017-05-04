@@ -161,6 +161,7 @@ exports.App = function(jshconfig, jsh){
     if(jshconfig.cookiesalt) app.use('/', cookieParser(jshconfig.cookiesalt, { path: jshconfig.baseurl }));
     else app.use('/', cookieParser({ path: jshconfig.baseurl }));
     app.use('/', routes);
+    app.jshRouter = routes;
     exports.addDefaultRoutes(app);
   }
 
