@@ -1210,3 +1210,33 @@ exports.renderCanvasCheckboxes = function () {
     ctx.stroke();
   });
 }
+exports.DataBinding = function(data){
+  this.Bindings = [];
+  this.Data = data;
+}
+exports.DataBinding.prototype.Bind = function(obj){
+  if(!obj.OnUpdate) throw new Error('Binding missing OnUpdate handler');
+  if(!_.includes(this.Bindings,obj)){
+    this.Bindings.push(obj);
+    obj.OnUpdate(this.Data);
+  }
+}
+exports.DataBinding.prototype.Unbind = function(obj){
+  var found = false;
+  for(var i=0;i<this.Bindings.length;i++){
+    if(this.Bindings[i]==obj){
+      found = true;
+      this.Bindings.splice(i,1);
+      i--;
+    }
+  }
+  if(!found) throw new Error('Binding not found');
+}
+exports.DataBinding.prototype.Update = function(data){
+  var _this = this;
+  if(data) _this.Data = data;
+  for(var i=0;i<_this.Bindings.length;i++){
+    var binding = _this.Bindings[i];
+    binding.OnUpdate(_this.Data);
+  }
+}

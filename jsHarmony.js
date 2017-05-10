@@ -237,21 +237,22 @@ jsHarmony.prototype.AddModel = function (modeldir, modelname, model, prefix) {
   if (('inherits' in model) && (model.inherits.indexOf(prefix)!=0)) model.inherits = prefix + model.inherits;
   //if (modelname in this.Models) throw new Error('Cannot add ' + modelname + '.  The model already exists.')
   //Load JS
-  var jsfname = (modeldir + modelname + '.js');
+  var jsfname = (modeldir + modelname.substr(prefix.length) + '.js');
   if (fs.existsSync(jsfname)) {
     var newjs = fs.readFileSync(jsfname, 'utf8');
     if ('js' in model) newjs += "\r\n" + model.js;
     model['js'] = newjs;
   }
   //Load EJS
-  var ejsfname = (modeldir + modelname + '.ejs');
+  var ejsfname = (modeldir + modelname.substr(prefix.length) + '.ejs');
+  if(prefix=='_report_') ejsfname = (modeldir + modelname.substr(prefix.length) + '.form.ejs');
   if (fs.existsSync(ejsfname)) {
     var newejs = fs.readFileSync(ejsfname, 'utf8');
     if ('ejs' in model) newejs += "\r\n" + model.ejs;
     model['ejs'] = newejs;
   }
   if (!('helpid' in model) && !('inherits' in model)) model.helpid = modelname;
-  var jsonroutefname = (modeldir + modelname + '.onroute.js');
+  var jsonroutefname = (modeldir + modelname.substr(prefix.length) + '.onroute.js');
   if (fs.existsSync(jsonroutefname)) {
     var newjs = fs.readFileSync(jsonroutefname, 'utf8');
     if ('onroute' in model) newjs += "\r\n" + model.onroute;
