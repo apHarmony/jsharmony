@@ -1739,6 +1739,7 @@ AppSrv.prototype.addSearchTerm = function (field, search_i, in_search_value, com
         //Generate Hash
         if (!(field.salt in this.jsh.Config.salts)) throw new Error('Hash salt not defined.');
         in_search_value = crypto.createHash('sha1').update(in_search_value + this.jsh.Config.salts[field.salt]).digest();
+        in_search_value = this.DeformatParam(field, in_search_value, {});
         break;
       default: throw new Error('Search type ' + field.name + '/' + ftype + ' not supported.');
     }
