@@ -2871,6 +2871,55 @@ exports.DataBinding.prototype.Update = function(data){
     binding.OnUpdate(_this.Data);
   }
 }
+exports.insertTextAtCursor = function(txt,className){
+  if(window.getSelection){
+    var s = document.createElement('SPAN');
+    s.innerText = txt;
+    if(className) s.className = className;
+    var sel = window.getSelection();
+    if(!sel || !sel.rangeCount) return null;// throw new Error('Control does not have an available');
+    sel.getRangeAt(0).insertNode(s); 
+    return s;
+  }
+  else if(document.selection && document.selection.createRange){ 
+    document.selection.createRange().text = txt;
+    return null;
+  }
+  else throw new Error('Inserting text into contenteditable not supported.');
+}
+exports.selectionIsChildOf = function(jobj){
+  if(window.getSelection){
+    var sel = window.getSelection();
+    if(!sel || !sel.rangeCount) return false;
+    var rstart = sel.getRangeAt(0);
+    if(jobj[0] == rstart.startContainer) return true;
+    return $.contains(jobj[0],rstart.startContainer);
+  }
+  else throw new Error('Inserting text into contenteditable not supported.');
+}
+exports.hasSelection = function(){
+  if (window.getSelection) {
+    var sel = window.getSelection();
+    if(!sel || !sel.rangeCount) return false;
+    var r = sel.getRangeAt(0);
+    if(!r) return false;
+    return !r.collapsed;
+  }
+  return false;
+}
+exports.clearSelection = function(){
+  if(!exports.hasSelection()) return;
+  if (window.getSelection) {
+    if (window.getSelection().empty) {  // Chrome
+      window.getSelection().empty();
+    } else if (window.getSelection().removeAllRanges) {  // Firefox
+      window.getSelection().removeAllRanges();
+    }
+  } else if (document.selection) {  // IE
+    document.selection.empty();
+  }
+}
+
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./XExt.XForm.js":8}],10:[function(require,module,exports){
 /*

@@ -504,6 +504,7 @@ AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete
   var reportid = modelid.substr(8);
   //Validate Parameters
   var fieldlist = thisapp.getFieldNames(req, model.fields, 'B');
+  _.map(fieldlist, function (field) { if (!(field in Q)) Q[field] = ''; });
   var Qfields = _.map(fieldlist, function (field) { return '&' + field; });
   Qfields.push('|_test');
   if (!thisapp.ParamCheck('Q', Q, Qfields)) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
