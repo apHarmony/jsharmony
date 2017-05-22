@@ -538,7 +538,7 @@ jsHarmony.prototype.ParseEntities = function () {
     if (model.breadcrumbs && model.breadcrumbs.sql_params && !model.fields) LogEntityError(_ERROR, model.id + ': Cannot use breadcrumb sql params without any fields defined.');
     else if (model.fields && model.breadcrumbs && model.breadcrumbs.sql_params) _.each(model.breadcrumbs.sql_params, function (sql_param) {
       var sql_param_field = AppSrv.prototype.getFieldByName(model.fields, sql_param);
-      if (!sql_param_field) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': Breadcrumb sql param "' + sql_param + '" is not defined as a field');
+      if (!sql_param_field) LogEntityError(_ERROR, model.id + ' > ' + sql_param + ': Breadcrumb sql param "' + sql_param + '" is not defined as a field');
       else if (!Helper.access(sql_param_field.access, 'C')) { if (!sql_param_field.access) sql_param_field_access = ''; sql_param_field.access += 'C'; }
     });
 

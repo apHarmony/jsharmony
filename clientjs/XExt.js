@@ -1288,3 +1288,6 @@ exports.clearSelection = function(){
     document.selection.empty();
   }
 }
+exports.Tick = function(f){
+  window.setTimeout(f,1);
+}

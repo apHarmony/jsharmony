@@ -117,7 +117,6 @@ exports.RenderField = function (_this, parentobj, modelid, field, val){
     var jctrl_preview = parentobj.find(filefieldselector + '_preview');
     var jctrl_thumbnail = parentobj.find(filefieldselector + '_thumbnail');
     var file_token = jctrl_token.val();
-    if (field.virtual) val = false;
     if (val === true) {
       //Has DB file
       jctrl.removeClass('nodocument');
