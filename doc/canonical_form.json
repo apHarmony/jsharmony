@@ -73,6 +73,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "bindings": {"J_ID":"J_ID"}, //Additional bindings for top-level forms
   "tabpanelstyle": "min-width:900px;",
   "tablestyle": "min-width:700px;",
+  "formstyle": "min-width:900px;",
   "inlinepopup": 1, //Used internally by program for popuplov child grid
   "codeval": "J_ID", //Used internally by program for popuplov child grid
   "disableautoload": 1, //Disables autoload in grid on scroll to bottom

@@ -114,7 +114,7 @@ AppSrvRpt.prototype.parseReportSQLData = function (req, res, model, sql_ptypes, 
     if ('nodatalock' in dparams) {
       var skipdatalock = true;
       for (datalockid in req.jshconfig.datalock) {
-        if (dparams.nodatalock.indexOf(datalockid) < 0) skipdatalock = false;
+        if (Helper.arrayIndexOf(dparams.nodatalock,datalockid,{caseInsensitive:global.jshSettings.case_insensitive_datalocks}) < 0) skipdatalock = false;
       }
     }
     

@@ -88,7 +88,7 @@ for(var i=0;i<model.fields.length;i++){
   if(field.control=='linkbutton'){ 
     if('link' in field){ %><a <%-xejs.showProp('id',field.name)%> href="#" data-url="<%-field.link%>" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.id%> <%=field.controlclass%> <%=xejs.iif(!field.value,'xform_label')%>" onclick="<%-field.onclick%>; return false;"><%=xejs.ifnull(field.value,'')%></a><% }
     else { %><a <%-xejs.showProp('id',field.name)%> data-model="<%=model.id%>" href="#" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.id%> <%=field.controlclass%> <%=xejs.iif(!field.value,'xform_label')%>" onclick="<%-field.onclick%>; return false;"><%=xejs.ifnull(field.value,'')%></a><% }
-    }
+  }
   if(field.control=='tree'){
     %><div id="<%=field.name%>" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.id%> tree <%=field.controlclass%>"></div><%
     if(('controlparams' in field) && ('item_context_menu' in field.controlparams)){

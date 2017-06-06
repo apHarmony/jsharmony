@@ -243,14 +243,17 @@ exports.hideTab = function (modelid, tabname) {
   });
 }
 
+//Escape JavaScript string
 exports.escapeJS = function (q) {
   return q.replace(/[\\'"]/g, "\\$&");
 }
 
+//Escape just quotes (for XML/HTML key-value pairs)
 exports.escapeHTMLQ = function (q) {
   return q.replace(/["]/g, "&quot;");
 }
 
+//Escape while enabling escape characters in a string
 exports.escapeHTMLN = function (val) {
   var rslt = exports.escapeHTML(val);
   return String(val).replace(/&amp;([\w]+);/g, function (s,p1) {
@@ -258,6 +261,7 @@ exports.escapeHTMLN = function (val) {
   });
 }
 
+//Escape all HTML
 exports.escapeHTML = function (val) {
   var entityMap = {
     "&": "&amp;",
@@ -273,14 +277,17 @@ exports.escapeHTML = function (val) {
     return entityMap[s];
   });
 }
+//Escape HTML and replace line breaks with HTML line breaks
 exports.escapeHTMLBR = function (val) {
   if (!val) return val;
   return XExt.ReplaceAll(XExt.ReplaceAll(exports.escapeHTML(val), '\n', '<br/>'), '\r', '');
 }
+//Escape HTML and replace line breaks with spaces
 exports.escapeBRSpace = function (val) {
   if (!val) return val;
   return XExt.ReplaceAll(XExt.ReplaceAll(val, '\n', ' '), '\r', '');
 }
+//Escape string for regular expression matching
 exports.escapeRegEx = function (q) {
   return q.replace(/[-[\]{}()*+?.,\\/^$|#\s]/g, "\\$&");
 }
@@ -1234,7 +1241,7 @@ exports.DataBinding.prototype.Unbind = function(obj){
 }
 exports.DataBinding.prototype.Update = function(data){
   var _this = this;
-  if(data) _this.Data = data;
+  _this.Data = data;
   for(var i=0;i<_this.Bindings.length;i++){
     var binding = _this.Bindings[i];
     binding.OnUpdate(_this.Data);

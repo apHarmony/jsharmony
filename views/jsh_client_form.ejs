@@ -28,7 +28,7 @@
   <%-jshRenderEJS('jsh_buttons',ejsparams)%>
 </div>
 <% } %>
-<div class="xform xelem<%=model.id%>" id="xform<%=model.id%>">
+<div class="xform xelem<%=model.id%>" id="xform<%=model.id%>" style="<%=model.formstyle%>">
 <%-jshRenderEJS('jsh_embed.js',ejsparams)%>
 <%-jshRenderEJS('jsh_controls',ejsparams)%>
 <% if(model.duplicate){

@@ -2864,7 +2864,7 @@ exports.DataBinding.prototype.Unbind = function(obj){
 }
 exports.DataBinding.prototype.Update = function(data){
   var _this = this;
-  if(data) _this.Data = data;
+  _this.Data = data;
   for(var i=0;i<_this.Bindings.length;i++){
     var binding = _this.Bindings[i];
     binding.OnUpdate(_this.Data);

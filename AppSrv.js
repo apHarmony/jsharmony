@@ -85,7 +85,6 @@ AppSrv.prototype.getModelRecordset = function (req, res, modelid, Q, P, rowlimit
   if (encryptedfields.length > 0) throw new Error('Encrypted fields not supported on GRID');
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'S');
   if ((encryptedfields.length > 0) && !(req.secure)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
-  //var datalockfields = this.getDataLockFields(req);
   if ('d' in Q) P = JSON.parse(Q.d);
   
   if (!_this.ParamCheck('Q', Q, ['|rowstart', '|rowcount', '|sort', '|search', '|searchjson', '|d', '|meta', '|getcount'])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
@@ -745,7 +744,7 @@ AppSrv.prototype.putModelForm = function (req, res, modelid, Q, P, onComplete) {
             if (dfield != field) return false;
             param_datalocks.push({ pname: fname, datalockquery: datalockquery });
             return true;
-          });
+          },undefined,model.id + ': '+fname);
         }
       }
       else throw new Error('Missing parameter ' + fname);
@@ -2198,23 +2197,21 @@ AppSrv.prototype.getFileFieldNames = function (req, fields, perm) {
   return rslt;
 };
 
-AppSrv.prototype.getDataLockFields = function (req) {
-  if (!('datalock' in req.jshconfig)) return [];
-  return _.keys(req.jshconfig.datalock);
-}
-
 AppSrv.prototype.getDataLockSQL = function (req, fields, sql_ptypes, sql_params, verrors, fPerDataLock, nodatalock, descriptor) {
   if (!('datalock' in req.jshconfig)) return;
   if (!nodatalock) nodatalock = '';
+  var arrayOptions = {};
+  if(global.jshSettings.case_insensitive_datalocks) arrayOptions.caseInsensitive = true;
+
   for (datalockid in req.jshconfig.datalock) {
-    if ((typeof nodatalock != 'undefined') && (nodatalock.indexOf(datalockid) >= 0)) continue;
+    if ((typeof nodatalock != 'undefined') && (Helper.arrayIndexOf(nodatalock,datalockid,arrayOptions) >= 0)) continue;
     var found_datalock = false;
     datalockval = req.jshconfig.datalock[datalockid](req);
     for (i = 0; i < fields.length; i++) {
       var field = fields[i];
       if ('datalock' in field) {
-        if (datalockid in field.datalock) {
-          var datalockqueryid = field.datalock[datalockid];
+        var datalockqueryid = Helper.arrayItem(field.datalock,datalockid,arrayOptions);
+        if (datalockqueryid) {
           if (!('datalocks' in this.jsh.Config)) throw new Error("No datalocks in config");
           if (!(datalockqueryid in this.jsh.Config.datalocks)) throw new Error("Datalock query '" + datalockqueryid + "' not defined in config");
           var datalockquery = this.jsh.Config.datalocks[datalockqueryid];

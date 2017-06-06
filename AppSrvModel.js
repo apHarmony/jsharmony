@@ -118,7 +118,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost) {
   var rslt = {};
   copyValues(rslt, model, [
     'title', 'id', 'layout', 'caption', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onupdate', 'oncommit', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy', 'js', 'hide_system_buttons',
-    'popup', 'rowclass', 'rowstyle', 'tabpanelstyle', 'tablestyle', 'sort', 'querystring', 'disableautoload', 'tabpos',
+    'popup', 'rowclass', 'rowstyle', 'tabpanelstyle', 'tablestyle', 'formstyle', 'sort', 'querystring', 'disableautoload', 'tabpos',
     'reselectafteredit','newrowposition','commitlevel','validationlevel','nogridadd','grid_expand_filter','grid_rowcount', 'grid_require_filter','grid_save_before_update','noresultsmessage','bindings','ejs',
     //General Data
     function () {
