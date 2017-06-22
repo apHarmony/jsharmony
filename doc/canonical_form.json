@@ -26,7 +26,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "title": "CLIENT - @C_Name - STRD", //Can use dynamic parameters from jshconfig.globalparams: @C_Name, or <#=data.C_Name#> for form data, or <#=bcrumbs.PL_YEAR_TXT#> for breadcrumb SQL data, <#=_GET.TO_ID#> for GET Parameters
   "topmenu": "clients",
   "access": "B", //B,BI,BIU,BD,BID,BIUD
-  "roles": { "CLIENT": "*", "C_ADMIN": "B" }, //By default, only SYSADMIN has access
+  "roles": { "CLIENT": "*", "C_ADMIN": "B" }, //By default, only SYSADMIN & DEV have access
   "scope": "*", //Scope is not used
   "popup": [ 1000, 900 ],
   "sort": [ "^E_Name asc", "^C_Name" ], //^ = Ascending or v = Descending

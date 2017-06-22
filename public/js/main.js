@@ -537,7 +537,7 @@ XValidate.prototype.Validate = function (perms, _obj, field, ignore, roles) {
     }*/
 		if (!HasAccess(v.Access, perms)) continue;
     eval('var val = ' + v.Field);
-    if ((typeof val === 'undefined') && v.Roles && roles && !('SYSADMIN' in roles) && HasAccess("BIUD", perms)) {
+    if ((typeof val === 'undefined') && v.Roles && roles && !('SYSADMIN' in roles) && !('DEV' in roles) && HasAccess("BIUD", perms)) {
       var has_role_access = false;
       for (role in v.Roles) {
         if (role in roles) {
