@@ -1,6 +1,6 @@
 {
   "name": "jsharmony",
-  "version": "1.0.52",
+  "version": "1.0.53",
   "description": "Rapid Application Development (RAD) Platform for Node.js Database Application Development",
   "main": "index.js",
   "scripts": {

@@ -357,6 +357,7 @@ jsHarmony.prototype.TestImageMagick  = function(strField){
   _this._IMAGEMAGICK_FIELDS.push(strField); 
   if(_this._IMAGEMAGICK_FIELDS.length > 1) return;
   var imagick = require('gm').subClass({ imageMagick: true });
+  if(global.jshSettings && global.jshSettings.ignore_imagemagick) return;
   imagick(100,100,'white').setFormat('PNG').toBuffer(function(err,b){
     if(err) LogEntityError(_ERROR, 'Please install ImageMagick.  Used by: ' + _.uniq(_this._IMAGEMAGICK_FIELDS).join(', '));
   });

@@ -296,6 +296,30 @@ exports.pad = function (val, padding, length) {
   while (rslt.length < length) rslt = padding + rslt;
   return rslt;
 }
+exports.getMargin = function(jctrl){
+  return {
+    top: parseInt(jctrl.css('margin-top')),
+    right: parseInt(jctrl.css('margin-right')),
+    bottom: parseInt(jctrl.css('margin-bottom')),
+    left: parseInt(jctrl.css('margin-left'))
+  };
+}
+exports.getPadding = function(jctrl){
+  return {
+    top: parseInt(jctrl.css('padding-top')),
+    right: parseInt(jctrl.css('padding-right')),
+    bottom: parseInt(jctrl.css('padding-bottom')),
+    left: parseInt(jctrl.css('padding-left'))
+  };
+}
+exports.getBorder = function(jctrl){
+  return {
+    top: parseInt(jctrl.css('border-top-width')),
+    right: parseInt(jctrl.css('border-right-width')),
+    bottom: parseInt(jctrl.css('border-bottom-width')),
+    left: parseInt(jctrl.css('border-left-width'))
+  };
+}
 exports.xejs = {
   'escapeJS': function(val){ return exports.escapeJS(val); },
   'escapeHTMLN': function(val){ return exports.escapeHTMLN(val); },
@@ -551,7 +575,7 @@ exports.TreeRender = function (ctrl, LOV, field) {
     var node = sortednodes[i];
     if (node.ParentID && (node.ParentID in nodes)) nodes[node.ParentID].Children.push(node);
   }
-  if (has_seq) sortednodes = sortednodes.SortBy(sortednodes, [window.jshuimap.codeseq, window.jshuimap.codetxt]);
+  if (has_seq) sortednodes = _.sortBy(sortednodes, [window.jshuimap.codeseq, window.jshuimap.codetxt]);
   
   var body = '';
   for (var i = 0; i < tree.length; i++) {
@@ -570,7 +594,7 @@ exports.TreeRenderNode = function (ctrl, n) {
     children += exports.TreeRenderNode(ctrl, n.Children[i]);
   }
   var rslt = ejs.render('\
-    <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-value="<%=n.Value%>" onclick=\'XExt.TreeSelectNode(this,<%-JSON.stringify(n.ID)%>); return false;\' ondblclick=\'XExt.TreeDoubleClickNode(this,<%-JSON.stringify(n.ID)%>); return false;\' oncontextmenu=\'return XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'XExt.CancelBubble(arguments[0]); XExt.TreeToggleNode($(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><img class="icon" src="/images/icon_<%=n.Icon%>.png"><%=n.Text%></a>\
+    <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-value="<%=n.Value%>" onclick=\'XExt.TreeSelectNode(this,<%-JSON.stringify(n.ID)%>); return false;\' ondblclick=\'XExt.TreeDoubleClickNode(this,<%-JSON.stringify(n.ID)%>); return false;\' oncontextmenu=\'return XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'XExt.CancelBubble(arguments[0]); XExt.TreeToggleNode($(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><img class="icon" src="/images/icon_<%=n.Icon%>.png"><span><%=n.Text%></span></a>\
     <div class="children <%=(n.Expanded?"expanded":"")%> tree_item_<%=n.ID%>" data-value="<%=n.Value%>"><%-children%></div>',
     { n: n, children: children }
   );

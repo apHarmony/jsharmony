@@ -44,6 +44,7 @@ exports.validateGlobals = function(){
   if(Helper.notset(global.user_temp_expiration)) global.user_temp_expiration = 6 * 60 * 60; //Clear 6 hours of user temp files
   if(Helper.notset(global.jshSettings)) global.jshSettings = {};
   if(Helper.notset(global.jshSettings.case_insensitive_datalocks)) global.jshSettings.case_insensitive_datalocks = true;
+  if(Helper.notset(global.jshSettings.ignore_imagemagick)) global.jshSettings.ignore_imagemagick = false;
   if(!global.valid_extensions) global.valid_extensions = [".jpg", ".jpeg", ".pdf", ".png", ".gif", ".txt", ".xlsm", ".xls", ".xlsx", ".bak", ".zip", ".csv"];
   if(!global.debug_params) global.debug_params = {  };
   if(Helper.notset(global.debug_params.jsh_error_level)) global.debug_params.jsh_error_level = 1; //1 = ERROR, 2 = WARNING, 4 = INFO  :: Messages generated while parsing jsHarmony configs
