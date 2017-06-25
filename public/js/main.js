@@ -2952,6 +2952,37 @@ exports.clearSelection = function(){
 exports.Tick = function(f){
   window.setTimeout(f,1);
 }
+exports.scrollIntoView = function(jcontainer, pos, h){
+  if(!jcontainer.length) return;
+  var sTop = jcontainer.scrollTop();
+  var sLeft = jcontainer.scrollLeft();
+  var cW = jcontainer[0].clientWidth;
+  var cH = jcontainer[0].clientHeight;
+  var minV = sTop;
+  var maxV = sTop + cH;
+  var minH = sLeft;
+  var maxH = sLeft + cW;
+  var posbottom = pos.top + h;
+  if((pos.left < minH) || (pos.left > maxH)) jcontainer.scrollLeft(pos.left);
+  if((posbottom < minV) || (posbottom > maxV)){
+    if(posbottom < minV) jcontainer.scrollTop(pos.top);
+    else { 
+      var newscrollTop = posbottom - cH;
+      if(newscrollTop < 0) newscrollTop = 0;
+      jcontainer.scrollTop(newscrollTop);
+    }
+  }
+  else if(pos.top < minV){
+    jcontainer.scrollTop(pos.top);
+  }
+}
+exports.scrollObjIntoView = function(jcontainer, jobj){
+  var jobjpos = jobj.offset();
+  var jcontainerpos = jcontainer.offset();
+  jobjpos.top -= jcontainerpos.top - jcontainer.scrollTop();
+  jobjpos.left -= jcontainerpos.left - jcontainer.scrollLeft();
+  exports.scrollIntoView(jcontainer, jobjpos, jobj.height());
+}
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./XExt.XForm.js":8}],10:[function(require,module,exports){
 /*

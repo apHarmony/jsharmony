@@ -46,7 +46,7 @@ var jsh_static_paths = ['logout'];
 init_xfileupload();
 var jsh_title_html = '';
 var jsh_html_title = '<%=global.site_title%> - %%%PAGETITLE%%%';
-var jsh_frontsalt = '<%=global.frontsalt%>';
+var jsh_frontsalt = <%-JSON.stringify(global.frontsalt)%>;
 var jsh_app_errors = [];
 <% if(global.debug_params.web_detailed_errors && global.app_errors){ %>
 jsh_app_errors = <%-JSON.stringify(global.app_errors)%>;
