@@ -764,6 +764,118 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+exports = module.exports = {};
+
+exports.parse = function (_q, options) {
+  var q = _q;
+  if (!options) options = {};
+  if (q.indexOf('/') === 0) {
+    var lqpos = q.lastIndexOf('/');
+    if (lqpos > 0) {
+      var qflags = q.substr(lqpos + 1);
+      var flags = 'g';
+      if (qflags.indexOf('i') >= 0) flags += 'i';
+      if (qflags.indexOf('m') >= 0) flags += 'm';
+      q = new RegExp(q.substr(1, lqpos - 1), flags);
+    }
+  }
+  else {
+    if (options.caseSensitive) q = new RegExp(exports.escape(q),'g');
+    else q = new RegExp(exports.escape(q),'ig');
+  }
+  return q;
+}
+
+exports.search = function (data, q, fpath){
+  //Search file for text
+  var rslt = [];
+  var m = [];
+  var mlen = [];
+  var pos = -1;
+  if (q instanceof RegExp) {
+    //Regular Expression
+    while (rm = q.exec(data)) {
+      m.push(rm.index);
+      mlen.push(rm[0].length);
+    }
+  }
+  else {
+    //Use indexOF
+    while ((pos = data.indexOf(q, pos + 1)) >= 0) {
+      m.push(pos);
+      mlen.push(q.length);
+    }
+  }
+  //Get Lines / Line Numbers
+  if (m.length) {
+    var lineno = 0;
+    var line = '';
+    var i = 0;
+    var lastpos = -1;
+    pos = -1;
+    while (i < m.length) {
+      if (m[i] > pos) {
+        lineno++;
+        lastpos = pos;
+        pos = data.indexOf('\n', pos + 1);
+        line = data.substr(lastpos + 1, pos - lastpos);
+      }
+      else {
+        line = ReplaceAll(line, '\r', '');
+        line = ReplaceAll(line, '\n', '');
+        line = ReplaceAll(line, '\t', '  ');
+        rslt.push({
+          File: fpath,
+          Line: lineno,
+          Char: m[i] - (lastpos + 1) + 1,
+          Len: mlen[i],
+          Preview: line
+        });
+        i++;
+      }
+    }
+  }
+  return rslt;
+}
+
+exports.replace = function (data, q, val) {
+  //Search file for text
+  if (!(q instanceof RegExp)) q = exports.parse(q);
+  return data.replace(q, val);
+}
+
+exports.numMatches = function (data, q) {
+  if (!(q instanceof RegExp)) q = exports.parse(q);
+  return (data.match(q) || []).length;
+}
+
+function ReplaceAll(val, find, replace) {
+  return val.split(find).join(replace);
+}
+
+exports.escape = function(q) {
+  return q.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+}
+},{}],7:[function(require,module,exports){
+/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 function XBarcode(_Template, _Params) {
   this.Template = _Template;
   this.Server = jsh_global.global_params.barcode_server;
@@ -835,7 +947,7 @@ XBarcode.EnableScanner = function (jobj, onSuccess){
 }
 
 exports = module.exports = XBarcode;
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 (function (global){
 /*
 Copyright 2017 apHarmony
@@ -1185,7 +1297,7 @@ XData.prototype.Destroy = function (){
 
 module.exports = XData;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -1626,7 +1738,7 @@ exports.BindLOV = function (modelid) {
     });
   };
 }
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 (function (global){
 /*
 Copyright 2017 apHarmony
@@ -2984,7 +3096,7 @@ exports.scrollObjIntoView = function(jcontainer, jobj){
   exports.scrollIntoView(jcontainer, jobjpos, jobj.height());
 }
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./XExt.XForm.js":8}],10:[function(require,module,exports){
+},{"./XExt.XForm.js":9}],11:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -3149,7 +3261,7 @@ exports.Apply = function(format,val){
 	return val;
 }
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -3455,7 +3567,7 @@ XGrid.prototype.BindRow = function (jobj) {
 }
 
 exports = module.exports = XGrid;
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -3536,7 +3648,7 @@ function XImageLoader () {
 }
 
 exports = module.exports = XImageLoader;
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -3604,7 +3716,7 @@ function GetOpacity(elem) {
 }
 
 exports = module.exports = XLoader;
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 (function (global){
 /*
 Copyright 2017 apHarmony
@@ -3798,7 +3910,7 @@ function XSubMenuResize() {
   }
 }
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -3903,7 +4015,7 @@ XPayment.prototype.Result = function() {
 }
 
 exports = module.exports = XPayment;
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 (function (global){
 /*
 Copyright 2017 apHarmony
@@ -4405,7 +4517,7 @@ XPost.prototype.XExecutePost = function (q, d, onComplete, onFail){
 
 module.exports = XPost;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -4493,7 +4605,7 @@ XScanner.prototype.Scan = function (_Params, onComplete, onFail) {
 }
 
 exports = module.exports = XScanner;
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -4579,7 +4691,7 @@ function SearchItem(_Column, _Value, _Join, _Comparison) {
 
 exports.SearchQuery = SearchQuery;
 exports.SearchItem = SearchItem;
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 /*
  * Crypto-JS v2.5.3
  * http://code.google.com/p/crypto-js/
@@ -4598,7 +4710,7 @@ d=k(d,e,c,a,b[f+6],23,76029189),a=k(a,d,e,c,b[f+9],4,-640364487),c=k(c,a,d,e,b[f
 e=l(e,c,a,d,b[f+6],15,-1560198380),d=l(d,e,c,a,b[f+13],21,1309151649),a=l(a,d,e,c,b[f+4],6,-145523070),c=l(c,a,d,e,b[f+11],10,-1120210379),e=l(e,c,a,d,b[f+2],15,718787259),d=l(d,e,c,a,b[f+9],21,-343485551),a=a+m>>>0,d=d+n>>>0,e=e+p>>>0,c=c+q>>>0;return o.endian([a,d,e,c])};i._ff=function(a,b,g,d,e,c,f){a=a+(b&g|~b&d)+(e>>>0)+f;return(a<<c|a>>>32-c)+b};i._gg=function(a,b,g,d,e,c,f){a=a+(b&d|g&~d)+(e>>>0)+f;return(a<<c|a>>>32-c)+b};i._hh=function(a,b,g,d,e,c,f){a=a+(b^g^d)+(e>>>0)+f;return(a<<c|a>>>
 32-c)+b};i._ii=function(a,b,g,d,e,c,f){a=a+(g^(b|~d))+(e>>>0)+f;return(a<<c|a>>>32-c)+b};i._blocksize=16;i._digestsize=16})();
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v1.11.2
  * http://jquery.com/
@@ -14946,7 +15058,7 @@ return jQuery;
 
 }));
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 (function (global){
 /*
 Copyright 2017 apHarmony
@@ -14985,6 +15097,7 @@ global.XBarcode = require('./XBarcode.js');
 global.XScanner = require('./XScanner.js');
 global.XGrid = require('./XGrid.js');
 global.XMenu = require('./XMenu.js');
+global.JSHFind = require('./JSHFind.js');
 var XLoader = require('./XLoader.js');
 var XImageLoader = require('./XImageLoader.js');
 global._GET = XExt.parseGET();
@@ -15173,7 +15286,7 @@ global.SelectMenu = function (menuid) {
   XMenu.XSubMenuInit(menuid);
 };
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./XBarcode.js":6,"./XData.js":7,"./XExt.js":9,"./XFormat.js":10,"./XGrid.js":11,"./XImageLoader.js":12,"./XLoader.js":13,"./XMenu.js":14,"./XPayment.js":15,"./XPost.js":16,"./XScanner.js":17,"./XSearch.js":18,"./crypto-md5-2.5.3.js":19,"./jquery-1.11.2":20,"./polyfill.js":22,"async":23,"ejs":24,"jsharmony-validate":4,"lodash":27,"moment":28}],22:[function(require,module,exports){
+},{"./JSHFind.js":6,"./XBarcode.js":7,"./XData.js":8,"./XExt.js":10,"./XFormat.js":11,"./XGrid.js":12,"./XImageLoader.js":13,"./XLoader.js":14,"./XMenu.js":15,"./XPayment.js":16,"./XPost.js":17,"./XScanner.js":18,"./XSearch.js":19,"./crypto-md5-2.5.3.js":20,"./jquery-1.11.2":21,"./polyfill.js":23,"async":24,"ejs":25,"jsharmony-validate":4,"lodash":28,"moment":29}],23:[function(require,module,exports){
 if (!String.prototype.trim) {
   (function () {
     // Make sure we trim BOM and NBSP
@@ -15183,7 +15296,7 @@ if (!String.prototype.trim) {
     };
   })();
 }
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 (function (process,global){
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -20663,7 +20776,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 })));
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":3}],24:[function(require,module,exports){
+},{"_process":3}],25:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -21506,7 +21619,7 @@ if (typeof window != 'undefined') {
   window.ejs = exports;
 }
 
-},{"../package.json":26,"./utils":25,"fs":1,"path":2}],25:[function(require,module,exports){
+},{"../package.json":27,"./utils":26,"fs":1,"path":2}],26:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -21672,7 +21785,7 @@ exports.cache = {
   }
 };
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 module.exports={
   "_args": [
     [
@@ -21788,7 +21901,7 @@ module.exports={
   "version": "2.5.6"
 }
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -38876,7 +38989,7 @@ module.exports={
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 //! moment.js
 //! version : 2.18.1
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -43341,4 +43454,4 @@ return hooks;
 
 })));
 
-},{}]},{},[21]);
+},{}]},{},[22]);

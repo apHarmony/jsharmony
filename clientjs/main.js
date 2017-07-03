@@ -35,6 +35,7 @@ global.XBarcode = require('./XBarcode.js');
 global.XScanner = require('./XScanner.js');
 global.XGrid = require('./XGrid.js');
 global.XMenu = require('./XMenu.js');
+global.JSHFind = require('./JSHFind.js');
 var XLoader = require('./XLoader.js');
 var XImageLoader = require('./XImageLoader.js');
 global._GET = XExt.parseGET();

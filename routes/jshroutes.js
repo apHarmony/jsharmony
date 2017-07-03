@@ -35,7 +35,7 @@ var Routes = function (jsh, jshconfig) {
   var router = express.Router();
   router.jsh = jsh;
   router.jshconfig = jshconfig;
-  if (jshconfig.onLoad) jshconfig.onLoad(jsh);
+  if (jshconfig.onLoad) jshconfig.onLoad(jsh, router);
   
   /* GET home page. */
   router.all('*', function (req, res, next) {

@@ -252,7 +252,7 @@ exports.Run = function(jshconfig, jsh, app, cb){
         if(server_txt == '0.0.0.0') server_txt = os.hostname().toLowerCase();
         global.log('Log in at http://'+server_txt+':'+server.address().port);
       }
-      if (global.onServerStart) global.onServerStart();
+      if (global.onServerStart) global.onServerStart([server]);
       if(cb) cb([server]);
     }, function(err){
       console.log('\r\n\r\nCANNOT START SERVER!!!!!!\r\n\r\n');
@@ -287,8 +287,8 @@ exports.Run = function(jshconfig, jsh, app, cb){
           if(server_txt == '0.0.0.0') server_txt = os.hostname().toLowerCase();
           global.log('Log in at https://'+server_txt+':'+new_https_port);
         }
-        if (global.onServerStart) global.onServerStart();
         if(servers.push(server));
+        if (global.onServerStart) global.onServerStart(servers);
         if(cb_https) cb_https(servers);
       }, function(err){
         console.log('\r\n\r\nCANNOT START SERVER!!!!!!\r\n\r\n');
