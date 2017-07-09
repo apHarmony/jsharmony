@@ -177,7 +177,7 @@ jsHarmony.prototype.MergeFolder = function (dir) {
 }
 jsHarmony.prototype.LoadSQL = function (dir, type) {
   var rslt = jsHarmony.LoadSQL(dir, type);
-  for(var sqlid in sql) this.SQL[sqlid] = rslt[sqlid];
+  for(var sqlid in rslt) this.SQL[sqlid] = rslt[sqlid];
 }
 jsHarmony.LoadSQL = function (dir, type) {
   var _this = this;
