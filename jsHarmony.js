@@ -176,10 +176,15 @@ jsHarmony.prototype.MergeFolder = function (dir) {
   return rslt;
 }
 jsHarmony.prototype.LoadSQL = function (dir, type) {
+  var rslt = jsHarmony.LoadSQL(dir, type);
+  for(var sqlid in sql) this.SQL[sqlid] = rslt[sqlid];
+}
+jsHarmony.LoadSQL = function (dir, type) {
   var _this = this;
   var f = {};
+  var rslt = {};
   if (fs.existsSync(dir)) f = fs.readdirSync(dir);
-  else return;
+  else return rslt;
   f.sort(function (a, b) {
     var abase = a;
     var bbase = b;
@@ -223,9 +228,10 @@ jsHarmony.prototype.LoadSQL = function (dir, type) {
       if (sqlid in found_sqlids) { LogEntityError(_ERROR, 'Duplicate SQL ' + sqlid + ' in ' + found_sqlids[sqlid] + ' and ' + fname); }
       found_sqlids[sqlid] = fname;
       var sqlval = Helper.ParseMultiLine(sql[sqlid]);
-      _this.SQL[sqlid] = sqlval;
+      rslt[sqlid] = sqlval;
     }
   }
+  return rslt;
 }
 jsHarmony.prototype.AddModel = function (modeldir, modelname, model, prefix) {
   if(!prefix) prefix = '';
