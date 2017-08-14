@@ -103,6 +103,21 @@ exports.decimalext_decode = function (numdigits, val) {
   return parseFloat(val);
 }
 
+exports.comma = function(val){
+	if(val==null) return '';
+  var n= val.toString().split(".");
+  n[0] = n[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return n.join(".");
+}
+
+exports.comma_decode = function(val){
+  if (isNaN(val)) return val;
+	if (val === '') return val;
+  if (val === null) return val;
+	val = $.trim(val.replace(/,/g,''));
+	return parseFloat(val);
+}
+
 exports.ssn = function (val) {
   if (!_.isString(val)) return val;
   if (val.length != 9) return val;

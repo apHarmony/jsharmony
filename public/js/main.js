@@ -780,8 +780,22 @@ exports.parse = function (_q, options) {
     }
   }
   else {
-    if (options.caseSensitive) q = new RegExp(exports.escape(q),'g');
-    else q = new RegExp(exports.escape(q),'ig');
+    var exp = exports.escape(q);
+    if(options.multiWord){
+      q = q.split(/[ ,]+/);
+      for(var i=0;i<q.length;i++){
+        q[i] = q[i].trim();
+        if(!q[i]){ q.splice(i,1); i--; }
+      }
+      var exp = '';
+      for(var i=0;i<q.length;i++){
+        if(exp) exp+='|';
+        exp+=exports.escape(q[i]);
+      }
+      if(exp) exp = '('+exp + ')';
+    }
+    if (options.caseSensitive) q = new RegExp(exp,'g');
+    else q = new RegExp(exp,'ig');
   }
   return q;
 }
@@ -800,7 +814,7 @@ exports.search = function (data, q, fpath){
     }
   }
   else {
-    //Use indexOF
+    //Use indexOf
     while ((pos = data.indexOf(q, pos + 1)) >= 0) {
       m.push(pos);
       mlen.push(q.length);
@@ -818,6 +832,7 @@ exports.search = function (data, q, fpath){
         lineno++;
         lastpos = pos;
         pos = data.indexOf('\n', pos + 1);
+        if(pos==-1) pos = data.length-1;
         line = data.substr(lastpos + 1, pos - lastpos);
       }
       else {
@@ -2504,6 +2519,12 @@ exports.isIOS = function () {
   }
 }
 
+exports.clearDialogs = function(){
+  window.xDialog = [];
+  $('#xdialogblock').children().hide();
+  $('#xdialogblock').hide();
+}
+
 exports.dialogButtonFunc = function (dialogClass, oldactive, onComplete, params) {
   if (!params) params = {};
   return function () {
@@ -3202,6 +3223,21 @@ exports.decimalext_decode = function (numdigits, val) {
   return parseFloat(val);
 }
 
+exports.comma = function(val){
+	if(val==null) return '';
+  var n= val.toString().split(".");
+  n[0] = n[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return n.join(".");
+}
+
+exports.comma_decode = function(val){
+  if (isNaN(val)) return val;
+	if (val === '') return val;
+  if (val === null) return val;
+	val = $.trim(val.replace(/,/g,''));
+	return parseFloat(val);
+}
+
 exports.ssn = function (val) {
   if (!_.isString(val)) return val;
   if (val.length != 9) return val;
@@ -3779,7 +3815,7 @@ function XMenuInit() {
     if (xmenuside.size() > 0) {
       for (var i = 0; i < XMenuItems.length; i++) {
         var xmenuitem = XMenuItems[i];
-        var htmlobj = '<a id="side' + xmenuitem[0].id + '" href="' + xmenuitem.attr('href') + '" class="' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
+        var htmlobj = '<a id="side' + xmenuitem[0].id + '" href="' + xmenuitem.attr('href') + '" onclick="' + xmenuitem.attr('onclick') + '" class="' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
         xmenuside.append(htmlobj);
       }
     }
@@ -3826,7 +3862,11 @@ exports.XSubMenuInit = function (menuid){
     for (var i = 0; i < XSubMenuItems.length; i++) {
       var xsubmenuitem = XSubMenuItems[i];
       if ($(xsubmenuitem).is('a')) {
-        var htmlobj = '<a id="side' + xsubmenuitem[0].id + '" href="' + xsubmenuitem.attr('href') + '" class="' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
+        var link_onclick = xsubmenuitem.attr('onclick');
+        if(link_onclick){
+          link_onclick = 'onclick="$(\'#xsubmenuside\').hide(); ' + link_onclick + '"';
+        }
+        var htmlobj = '<a id="side' + xsubmenuitem[0].id + '" href="' + xsubmenuitem.attr('href') + '" ' + link_onclick + ' class="' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
         xsubmenuside.append(htmlobj);
       }
     }
@@ -4510,8 +4550,10 @@ XPost.prototype.XExecuteBlock = function(q,d,onComplete,onFail){
 	xpost.Execute(onComplete,onFail);
 }
 
-XPost.prototype.XExecutePost = function (q, d, onComplete, onFail){
+XPost.prototype.XExecutePost = function (q, d, onComplete, onFail, options){
+  if(!options) options = {};
   var xpost = new XPost(q, '', '');
+  if(options.OnDBError) xpost.Data.OnDBError = options.OnDBError;
   xpost.qExecute(xpost.PrepExecute('post', xpost.q, {}, d, onComplete, onFail)); 
 }
 

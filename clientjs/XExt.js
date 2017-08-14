@@ -762,6 +762,12 @@ exports.isIOS = function () {
   }
 }
 
+exports.clearDialogs = function(){
+  window.xDialog = [];
+  $('#xdialogblock').children().hide();
+  $('#xdialogblock').hide();
+}
+
 exports.dialogButtonFunc = function (dialogClass, oldactive, onComplete, params) {
   if (!params) params = {};
   return function () {

@@ -20,6 +20,7 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var async = require('async');
+var DB = require('jsharmony-db');
 var HelperFS = require('./lib/HelperFS.js');
 var Helper = require('./lib/Helper.js');
 var path = require('path');
@@ -33,7 +34,8 @@ var _ = require('lodash');
 exports = module.exports = {};
 
 exports.validateGlobals = function(){
-  if(!global.dbconfig || !global.dbconfig._driver || !global.dbconfig._driver.name) { console.error("*** Fatal error: global.dbconfig missing or invalid _driver"); process.exit(8); }
+  if(!global.dbconfig) { global.dbconfig = { _driver: new DB.noDriver() }; }
+  else if(!global.dbconfig._driver || !global.dbconfig._driver.name) { console.error("*** Fatal error: global.dbconfig missing or invalid _driver"); process.exit(8); }
   if(!global.support_email) global.support_email = 'donotreply@company.com';
   if(!global.mailer_email) global.mailer_email = 'DO NOT REPLY <donotreply@company.com>';
   if(Helper.notset(global.default_rowlimit)) global.default_rowlimit = 50;
@@ -214,6 +216,10 @@ exports.Run = function(jshconfig, jsh, app, cb){
 
   if(!jshconfig) jshconfig = {};
   if(!jshconfig.server) jshconfig.server = { http_port:0 };
+  if(!global.frontsalt){
+    var xlib = (require('./WebConnect.js')).xlib;
+    global.frontsalt = xlib.getSalt(60);
+  }
   if(typeof jshconfig.server.request_timeout === 'undefined') jshconfig.server.request_timeout = 2*60*1000;
   if(('http_ip' in jshconfig.server) && !('http_port' in jshconfig.server)) jshconfig.server.http_port = 0;
   if(('http_port' in jshconfig.server) && !('http_ip' in jshconfig.server)) jshconfig.server.http_ip = '0.0.0.0';

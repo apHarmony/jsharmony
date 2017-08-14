@@ -491,8 +491,10 @@ XPost.prototype.XExecuteBlock = function(q,d,onComplete,onFail){
 	xpost.Execute(onComplete,onFail);
 }
 
-XPost.prototype.XExecutePost = function (q, d, onComplete, onFail){
+XPost.prototype.XExecutePost = function (q, d, onComplete, onFail, options){
+  if(!options) options = {};
   var xpost = new XPost(q, '', '');
+  if(options.OnDBError) xpost.Data.OnDBError = options.OnDBError;
   xpost.qExecute(xpost.PrepExecute('post', xpost.q, {}, d, onComplete, onFail)); 
 }
 

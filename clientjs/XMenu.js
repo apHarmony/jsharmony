@@ -59,7 +59,7 @@ function XMenuInit() {
     if (xmenuside.size() > 0) {
       for (var i = 0; i < XMenuItems.length; i++) {
         var xmenuitem = XMenuItems[i];
-        var htmlobj = '<a id="side' + xmenuitem[0].id + '" href="' + xmenuitem.attr('href') + '" class="' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
+        var htmlobj = '<a id="side' + xmenuitem[0].id + '" href="' + xmenuitem.attr('href') + '" onclick="' + xmenuitem.attr('onclick') + '" class="' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
         xmenuside.append(htmlobj);
       }
     }
@@ -106,7 +106,11 @@ exports.XSubMenuInit = function (menuid){
     for (var i = 0; i < XSubMenuItems.length; i++) {
       var xsubmenuitem = XSubMenuItems[i];
       if ($(xsubmenuitem).is('a')) {
-        var htmlobj = '<a id="side' + xsubmenuitem[0].id + '" href="' + xsubmenuitem.attr('href') + '" class="' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
+        var link_onclick = xsubmenuitem.attr('onclick');
+        if(link_onclick){
+          link_onclick = 'onclick="$(\'#xsubmenuside\').hide(); ' + link_onclick + '"';
+        }
+        var htmlobj = '<a id="side' + xsubmenuitem[0].id + '" href="' + xsubmenuitem.attr('href') + '" ' + link_onclick + ' class="' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
         xsubmenuside.append(htmlobj);
       }
     }
