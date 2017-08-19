@@ -45,7 +45,6 @@ function jsHarmony() {
   this.Models = {}; //Do not access this directly - use getModel, hasModel
   this.CustomControls = [];
   this.Config = {};
-  this.Routes = {};
   this.Popups = {};
   this.Cache = {};
   this.SQL = {};
@@ -53,17 +52,15 @@ function jsHarmony() {
   //Constructor
   Init.validateGlobals();
   console.log('Loading models...');
-  if (!_.isArray(global.modeldir)) global.modeldir = [global.modeldir];
   this.LoadSQL(path.dirname(module.filename) + '/sql/', global.dbconfig._driver.name);
   this.Cache['system.js'] = '';
   this.Cache['system.css'] = fs.readFileSync(path.dirname(module.filename)+'/jsHarmony.theme.css', 'utf8');
   for (var i = 0; i < global.modeldir.length; i++) {
-    this.LoadModels(global.modeldir[i], '', global.dbconfig._driver.name);
-    this.LoadModels(global.modeldir[i] + 'reports/', '_report_', global.dbconfig._driver.name);
-    this.ParseRoutes(global.modeldir[i],'');
-    if (fs.existsSync(global.modeldir[i] + 'js/')) this.Cache['system.js'] += '\r\n' + this.MergeFolder(global.modeldir[i] + 'js/');
-    if (fs.existsSync(global.modeldir[i] + 'style/')) this.Cache['system.css'] += '\r\n' + this.MergeFolder(global.modeldir[i] + 'style/');
-    this.LoadSQL(global.modeldir[i] + 'sql/', global.dbconfig._driver.name);
+    this.LoadModels(global.modeldir[i].path, global.modeldir[i], '', global.dbconfig._driver.name);
+    this.LoadModels(global.modeldir[i].path + 'reports/', global.modeldir[i], '_report_', global.dbconfig._driver.name);
+    if (fs.existsSync(global.modeldir[i].path + 'js/')) this.Cache['system.js'] += '\r\n' + this.MergeFolder(global.modeldir[i].path + 'js/');
+    if (fs.existsSync(global.modeldir[i].path + 'style/')) this.Cache['system.css'] += '\r\n' + this.MergeFolder(global.modeldir[i].path + 'style/');
+    this.LoadSQL(global.modeldir[i].path + 'sql/', global.dbconfig._driver.name);
   }
   this.ParseInheritance();
   this.ParseEntities();
@@ -86,14 +83,14 @@ function jsHarmony() {
 |    LOAD MODELS   |
 *******************/
 jsHarmony.prototype.setModels = function (models) { this.Models = models; }
-jsHarmony.prototype.LoadModels = function (modeldir, prefix, dbtype) {
+jsHarmony.prototype.LoadModels = function (modelbasedir, modeldir, prefix, dbtype) {
   var _this = this;
   if (typeof prefix == 'undefined') prefix = '';
   if (typeof dbtype == 'undefined') dbtype = '';
-  if(!fs.existsSync(modeldir)){ LogEntityError(_ERROR, 'Model folder ' + modeldir + ' not found'); return; }
-  var fmodels = fs.readdirSync(modeldir);
+  if(!fs.existsSync(modelbasedir)){ LogEntityError(_ERROR, 'Model folder ' + modelbasedir + ' not found'); return; }
+  var fmodels = fs.readdirSync(modelbasedir);
   for (var i in fmodels) {
-    var fname = modeldir + fmodels[i];
+    var fname = modelbasedir + fmodels[i];
     if (fname.indexOf('.json', fname.length - 5) == -1) continue;
     if (fmodels[i] == '_canonical.json') continue;
     var modelname = prefix + fmodels[i].replace('.json', '');
@@ -135,19 +132,16 @@ jsHarmony.prototype.LoadModels = function (modeldir, prefix, dbtype) {
         else this.Config[c] = model[c];
       }
     }
-    else if (modelname == '_routes') {
-      for (var r in model) this.Routes[r] = model[r];
-    }
     else {
       if (!('layout' in model) && !('inherits' in model)) {
         //Parse file as multiple-model file
         _.each(model, function (submodel, submodelname) {
           submodelname = prefix + submodelname;
           LogEntityError(_INFO, 'Loading sub-model ' + submodelname);
-          _this.AddModel(modeldir, submodelname, submodel, prefix);
+          _this.AddModel(submodelname, submodel, prefix, fname, modeldir);
         });
       }
-      else this.AddModel(modeldir, modelname, model, prefix);
+      else this.AddModel(modelname, model, prefix, fname, modeldir);
     }
   }
 }
@@ -233,37 +227,43 @@ jsHarmony.LoadSQL = function (dir, type) {
   }
   return rslt;
 }
-jsHarmony.prototype.AddModel = function (modeldir, modelname, model, prefix) {
+jsHarmony.prototype.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
   if(!prefix) prefix = '';
   model['id'] = modelname;
   model['idmd5'] = crypto.createHash('md5').update(global.frontsalt + model.id).digest('hex');
   model['access_models'] = {};
   model['_inherits'] = [];
+  if(!model.path && modelpath) model.path = modelpath;
+  if(!model.component && modeldir && modeldir.component)  model.component = modeldir.component;
   if ('access' in model) model['access_models'][modelname] = model.access;
   if (('inherits' in model) && (model.inherits.indexOf(prefix)!=0)) model.inherits = prefix + model.inherits;
   //if (modelname in this.Models) throw new Error('Cannot add ' + modelname + '.  The model already exists.')
-  //Load JS
-  var jsfname = (modeldir + modelname.substr(prefix.length) + '.js');
-  if (fs.existsSync(jsfname)) {
-    var newjs = fs.readFileSync(jsfname, 'utf8');
-    if ('js' in model) newjs += "\r\n" + model.js;
-    model['js'] = newjs;
-  }
-  //Load EJS
-  var ejsfname = (modeldir + modelname.substr(prefix.length) + '.ejs');
-  if(prefix=='_report_') ejsfname = (modeldir + modelname.substr(prefix.length) + '.form.ejs');
-  if (fs.existsSync(ejsfname)) {
-    var newejs = fs.readFileSync(ejsfname, 'utf8');
-    if ('ejs' in model) newejs += "\r\n" + model.ejs;
-    model['ejs'] = newejs;
+  var modelbasedir = '';
+  if(model.path) modelbasedir = path.dirname(model.path);
+  if(modelbasedir){
+    //Load JS
+    var jsfname = (modelbasedir + modelname.substr(prefix.length) + '.js');
+    if (fs.existsSync(jsfname)) {
+      var newjs = fs.readFileSync(jsfname, 'utf8');
+      if ('js' in model) newjs += "\r\n" + model.js;
+      model['js'] = newjs;
+    }
+    //Load EJS
+    var ejsfname = (modelbasedir + modelname.substr(prefix.length) + '.ejs');
+    if(prefix=='_report_') ejsfname = (modelbasedir + modelname.substr(prefix.length) + '.form.ejs');
+    if (fs.existsSync(ejsfname)) {
+      var newejs = fs.readFileSync(ejsfname, 'utf8');
+      if ('ejs' in model) newejs += "\r\n" + model.ejs;
+      model['ejs'] = newejs;
+    }
+    var jsonroutefname = (modelbasedir + modelname.substr(prefix.length) + '.onroute.js');
+    if (fs.existsSync(jsonroutefname)) {
+      var newjs = fs.readFileSync(jsonroutefname, 'utf8');
+      if ('onroute' in model) newjs += "\r\n" + model.onroute;
+      model['onroute'] = newjs;
+    }
   }
   if (!('helpid' in model) && !('inherits' in model)) model.helpid = modelname;
-  var jsonroutefname = (modeldir + modelname.substr(prefix.length) + '.onroute.js');
-  if (fs.existsSync(jsonroutefname)) {
-    var newjs = fs.readFileSync(jsonroutefname, 'utf8');
-    if ('onroute' in model) newjs += "\r\n" + model.onroute;
-    model['onroute'] = newjs;
-  }
   if ('onroute' in model) model.onroute = (new Function('routetype', 'req', 'res', 'callback', 'require', 'jsh', 'modelid', 'params', model.onroute));
   this.Models[modelname] = model;
 }
@@ -570,6 +570,7 @@ jsHarmony.prototype.ParseEntities = function () {
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
       'js', 'ejs', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
+      'path', 'component',
       //Report Parameters
       'subheader', 'footerheight', 'headeradd',
     ];
@@ -662,13 +663,6 @@ function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
     }
   });
 };
-jsHarmony.prototype.ParseRoutes = function (modeldir, prefix) {
-  var _this = this;
-  _.each(_this.Routes, function (route, routename) {
-    LogEntityError(_INFO, 'Loading route ' + routename);
-    _this.AddModel(modeldir, routename, route, prefix);
-  });
-};
 jsHarmony.prototype.ParsePopups = function () {
   var _this = this;
   _.forOwn(this.Models, function (model) {
@@ -701,14 +695,14 @@ jsHarmony.prototype.getEJSFilename = function (f) {
   var fpath = '';
   if (f.indexOf('reports/') == 0) {
     for (var i = global.modeldir.length - 1; i >= 0; i--) {
-      fpath = global.modeldir[i] + f + '.ejs';
+      fpath = global.modeldir[i].path + f + '.ejs';
       if (fs.existsSync(fpath)) return fpath;
     }
   }
   fpath = appDir + '/views/' + f + '.ejs';
   if (fs.existsSync(fpath)) return fpath;
   for (var i = global.modeldir.length - 1; i >= 0; i--) {
-    fpath = global.modeldir[i] + '../views/' + f + '.ejs';
+    fpath = global.modeldir[i].path + '../views/' + f + '.ejs';
     if (fs.existsSync(fpath)) return fpath;
   }
   var fpath = jshDir + '/views/' + f + '.ejs';
@@ -732,18 +726,24 @@ jsHarmony.prototype.LoadEJS = function (f, onError) {
 |    RENDER HTML   |
 *******************/
 jsHarmony.prototype.RenderListing = function () {
-  var rslt = '';
-  var modelids = new Array();
+  var rslt = '<br/>&nbsp;';
+  var components = { 'Local':[] };
   for (var modelid in this.Models) {
-    modelids.push(modelid);
+    var component = this.Models[modelid].component||'Local';
+    if(!(component in components)) components[component] = [];
+    components[component].push(modelid);
   }
-  modelids.sort();
-  rslt += '<ul>';
-  for (var i = 0; i < modelids.length; i++) {
-    var modelid = modelids[i];
-    rslt += '<li><a href="' + modelid + '">' + modelid + '</a></li>';
+  for(var component in components){
+    var modelids = components[component];
+    modelids.sort();
+    rslt += '<h2>'+component+'</h2>';
+    rslt += '<ul>';
+    for (var i = 0; i < modelids.length; i++) {
+      var modelid = modelids[i];
+      rslt += '<li><a href="' + modelid + '" target="_blank">' + modelid + '</a></li>';
+    }
+    rslt += '</ul>';
   }
-  rslt += '</ul>';
   return rslt;
 }
 

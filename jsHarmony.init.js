@@ -66,14 +66,19 @@ exports.validateGlobals = function(){
     global.modeldir.push(global.localmodeldir);
   }
   else if(global.modeldir.count==0) global.modeldir.push(global.localmodeldir);
-  
+
+  if(_.isString(global.localmodeldir)) global.localmodeldir = { path: global.localmodeldir };
+  for(var i=0;i<global.modeldir.length;i++){
+    if(_.isString(global.modeldir[i])) global.modeldir[i] = { path: global.modeldir[i] };
+  }
+
 
   HelperFS.loadViews(path.join(__dirname, 'views'), '', true);
   HelperFS.loadViews(global.appbasepath + '/views', '');
 
   requireFolder(global.datadir,'Data folder');
-  HelperFS.createFolderIfNotExistsSync(global.localmodeldir);
-  HelperFS.createFolderIfNotExistsSync(global.localmodeldir + 'reports');
+  HelperFS.createFolderIfNotExistsSync(global.localmodeldir.path);
+  HelperFS.createFolderIfNotExistsSync(global.localmodeldir.path + 'reports');
   async.waterfall([
     async.apply(HelperFS.createFolderIfNotExists, global.logdir),
     async.apply(HelperFS.createFolderIfNotExists, global.datadir + 'temp'),

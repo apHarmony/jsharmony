@@ -276,15 +276,17 @@ var Routes = function (jsh, jshconfig) {
             if(link && (link != url.parse(req.originalUrl).pathname)) return Helper.Redirect302(res, link);
           }
         }
-        //Show model listing, if applicable
-        if(params.ShowListing){
+        //Show model listing, if no menu exists and user has access
+        if(params.ShowListing || !jshconfig.auth || ('DEV' in req._roles)){
           //_.extend(params, { title: 'Models', body: jsh.RenderListing(), XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
           return jsh.RenderTemplate(req, res, 'index', {
             title: 'Models', body: jsh.RenderListing(), TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh
           });
         }
         //Otherwise, show error
-        res.end('No forms available');
+        var no_forms_html = 'No forms available';
+        if(jshconfig.auth) no_forms_html += '<br/><br/><a href="/logout">Logout</a>';
+        res.end(no_forms_html);
       });
     }
   });
