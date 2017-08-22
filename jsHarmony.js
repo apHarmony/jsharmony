@@ -239,7 +239,7 @@ jsHarmony.prototype.AddModel = function (modelname, model, prefix, modelpath, mo
   if (('inherits' in model) && (model.inherits.indexOf(prefix)!=0)) model.inherits = prefix + model.inherits;
   //if (modelname in this.Models) throw new Error('Cannot add ' + modelname + '.  The model already exists.')
   var modelbasedir = '';
-  if(model.path) modelbasedir = path.dirname(model.path);
+  if(model.path) modelbasedir = path.dirname(model.path) + '/';
   if(modelbasedir){
     //Load JS
     var jsfname = (modelbasedir + modelname.substr(prefix.length) + '.js');
