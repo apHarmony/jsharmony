@@ -523,7 +523,7 @@ jsHarmony.prototype.ParseEntities = function () {
     multi_to_single(model, ['js', 'sqlselect', 'sqldownloadselect', 'sqlinsert', 'sqlinsertencrypt', 'sqlupdate', 'sqldelete', 'sqlexec', 'sqlwhere', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onvalidate', 'onupdate', 'ondestroy', 'oncommit']);
     if (model.breadcrumbs) multi_to_single(model.breadcrumbs, ['sql']);
     if (model.fields) _.each(model.fields, function (field) {
-      multi_to_single(field, ['onchange', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlwhere', 'sql_sort', 'sql_search', 'sql_search_sound']);
+      multi_to_single(field, ['onchange', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlwhere', 'sql_sort', 'sql_search', 'sql_search_sound', 'value']);
       if (field.lov) multi_to_single(field.lov, ['sql', 'sql2', 'sqlmp', 'sqlselect']);
       if (field.controlparams) multi_to_single(field.controlparams, ['onpopup']);
     });
