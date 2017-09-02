@@ -329,7 +329,7 @@ Routes.ValidateSystemConfig = function(jshconfig){
   if(Helper.notset(jshconfig.basetemplate)) jshconfig.basetemplate = 'index';
   if(Helper.notset(jshconfig.baseurl)) jshconfig.baseurl = '/';
   if(Helper.notset(jshconfig.show_system_errors)) jshconfig.show_system_errors = true;
-  if(!jshconfig.menu) jshconfig.menu = function(req,res,jsh,params,onComplete){ params.ShowListing = true; onComplete(); }
+  if(!jshconfig.menu) jshconfig.menu = function(req,res,jsh,params,onComplete){ params.ShowListing = true; params.XMenu = { MainMenu:[], SubMenus:{} }; onComplete(); }
   if(!jshconfig.globalparams) jshconfig.globalparams = {};
   if(!jshconfig.sqlparams) jshconfig.sqlparams = {};
   if(!jshconfig.public_apps) jshconfig.public_apps = [];

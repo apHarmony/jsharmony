@@ -378,6 +378,7 @@ jsHarmony.prototype.ParseEntities = function () {
     //Add Model caption if not set
     if (!('caption' in model)) { model.caption = ['', model.id, model.id]; LogEntityError(_WARNING, 'Model ' + model.id + ' missing caption'); }
     if (!('ejs' in model)) model.ejs = '';
+    if (!('templates' in model)) model.templates = {};
     if ('sort' in model) {
       if (model.sort && model.sort.length) {
         for (var i = 0; i < model.sort.length; i++) {
@@ -570,7 +571,7 @@ jsHarmony.prototype.ParseEntities = function () {
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
       'js', 'ejs', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
-      'path', 'component',
+      'path', 'component', 'templates',
       //Report Parameters
       'subheader', 'footerheight', 'headeradd',
     ];
@@ -733,9 +734,12 @@ jsHarmony.prototype.RenderListing = function () {
     if(!(component in components)) components[component] = [];
     components[component].push(modelid);
   }
+  var has_models = false;
   for(var component in components){
     var modelids = components[component];
     modelids.sort();
+    if(!modelids.length) continue;
+    else has_models = true;
     rslt += '<h2>'+component+'</h2>';
     rslt += '<ul>';
     for (var i = 0; i < modelids.length; i++) {
@@ -744,6 +748,7 @@ jsHarmony.prototype.RenderListing = function () {
     }
     rslt += '</ul>';
   }
+  if(!has_models) rslt += 'No models found';
   return rslt;
 }
 

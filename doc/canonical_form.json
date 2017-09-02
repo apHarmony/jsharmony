@@ -101,6 +101,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "grid_require_filter": 1, //Do not initially load results
   "grid_save_before_update": 1,
   "duplicate": {"target": "E_DUPLICATE", "bindings": {"E_ID":"E_ID", "C_ID": "C_ID"},"link":"edit:EW&E_ID=NEW_E_ID","link_text": "Duplicate Item"},
+  "templates": { "grid": "#xgrid_calendar_template" },
   "fields": [
     {
       "name": "E_Name",

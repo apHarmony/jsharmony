@@ -699,6 +699,11 @@ exports.TreeExpandAll = function (ctrl) {
   jctrl.find('.children').addClass('expanded');
   jctrl.find('.glyph').html('&#x25e2;');
 }
+
+/*********************
+ * GENERAL FUNCTIONS *
+ *********************/
+
 exports.getMaxLength = function (field) {
   var rslt = -1;
   if ('type' in field) {

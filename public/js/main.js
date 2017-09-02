@@ -1616,6 +1616,7 @@ exports.GetValue = function (modelid) {
       return checkval;
     }
     var val = jctrl.val();
+    if(typeof val === 'undefined') val = '';
     if ((typeof CKEDITOR != 'undefined') && (field.name in CKEDITOR.instances)) {
       val = CKEDITOR.instances[field.name].getData();
       val = XExt.ReplaceAll(val, '&lt;%', '<' + '%');
@@ -2456,6 +2457,11 @@ exports.TreeExpandAll = function (ctrl) {
   jctrl.find('.children').addClass('expanded');
   jctrl.find('.glyph').html('&#x25e2;');
 }
+
+/*********************
+ * GENERAL FUNCTIONS *
+ *********************/
+
 exports.getMaxLength = function (field) {
   var rslt = -1;
   if ('type' in field) {
@@ -3775,8 +3781,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 exports = module.exports = {};
 
-$(document).ready(function () { XMenuResize(); });
-$(window).resize(function () { XMenuResize(); });
+$(document).ready(function () { exports.XMenuResize(); });
+$(window).resize(function () { exports.XMenuResize(); });
 
 var XMenuItems = [];
 var XMenuLeft = 0;
@@ -3794,13 +3800,9 @@ function XMenuInit() {
   if ($('#xmenu').size() > 0) {
     $('#xmenu a').each(function (i, obj) {
       if (obj.id == 'xmenu_more') return;
-      var jobj = $(obj);
-      var jwidth = jobj.outerWidth(true);
-      jobj.data('width', jwidth);
-      XMenuItems.push(jobj);
+      XMenuItems.push($(obj));
     });
-    XMenuLeft = $('#xmenu').offset().left + parseInt($('#xmenu').css('padding-left').replace(/\D/g, ''));
-    if (isNaN(XMenuLeft)) XMenuLeft = 0;
+    XMenuCalcDimensions(true);
     
     $('#xmenu_more').click(function () {
       var xmenuside = $('#xmenuside');
@@ -3821,6 +3823,20 @@ function XMenuInit() {
     }
   }
   isXMenuInit = true;
+}
+
+function XMenuCalcDimensions(force){
+  if(!force && (XMenuItems.length > 0)){
+    var jobj = XMenuItems[0];
+    if(jobj.outerWidth(true).toString() == jobj.data('width')) return;
+  }
+  for(var i=0;i<XMenuItems.length;i++){
+    var jobj = XMenuItems[i];
+    var jwidth = jobj.outerWidth(true);
+    jobj.data('width', jwidth);
+  }
+  XMenuLeft = $('#xmenu').offset().left + parseInt($('#xmenu').css('padding-left').replace(/\D/g, ''));
+  if (isNaN(XMenuLeft)) XMenuLeft = 0;
 }
 
 exports.XSubMenuInit = function (menuid){
@@ -3871,14 +3887,17 @@ exports.XSubMenuInit = function (menuid){
       }
     }
   }
-  XMenuResize();
+  exports.XMenuResize();
 }
 
-function XMenuResize() {
+exports.XMenuResize = function() {
   if ($('#xmenu').size() == 0) return;
   if (!isXMenuInit) XMenuInit();
   var maxw = $(window).width()-1;
   
+  //Refresh dimensions, if necessary
+  XMenuCalcDimensions();
+
   var showmore = false;
   //Find out if we need to show "more" menu
   var curleft = XMenuLeft;

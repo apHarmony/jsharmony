@@ -301,6 +301,7 @@ exports.GetValue = function (modelid) {
       return checkval;
     }
     var val = jctrl.val();
+    if(typeof val === 'undefined') val = '';
     if ((typeof CKEDITOR != 'undefined') && (field.name in CKEDITOR.instances)) {
       val = CKEDITOR.instances[field.name].getData();
       val = XExt.ReplaceAll(val, '&lt;%', '<' + '%');
