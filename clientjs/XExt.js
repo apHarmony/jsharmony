@@ -713,10 +713,19 @@ exports.getMaxLength = function (field) {
     else if (ftype == 'datetime') rslt = 25;
     else if (ftype == 'time') rslt = 20;
     else if (ftype == 'date') rslt = 10;
-    else if (ftype == 'decimal') rslt = 15;
+    else if (ftype == 'decimal'){
+      rslt = 40;
+      var prec_h = 38;
+      var prec_l = 4;
+      if ('precision' in field) {
+        prec_h = field.precision[0];
+        prec_l = field.precision[1];
+      }
+      rslt = prec_h + 2;
+    }
     else if (ftype == 'int') rslt = 15;
     else if (ftype == 'smallint') rslt = 10;
-    else if (ftype == 'bit') rslt = 1;
+    else if (ftype == 'bit') rslt = 5;
   }
   return rslt;
 }

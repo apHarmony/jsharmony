@@ -33,9 +33,9 @@ function SearchQuery(model) {
         if ('lov' in field) comparison_type = 'lov';
         else if ('type' in field) {
           if ((field.type == 'varchar') || (field.type == 'char')) comparison_type = 'string';
-          else if (_.includes(['bigint', 'int', 'smallint', 'decimal', 'time', 'bit'], field.type)) comparison_type = 'numeric';
+          else if (_.includes(['bigint', 'int', 'smallint', 'decimal', 'time'], field.type)) comparison_type = 'numeric';
           else if (_.includes(['datetime', 'date'], field.type)) comparison_type = 'date';
-          else if ((field.type == 'hash')) comparison_type = 'object';
+          else if (_.includes(['hash', 'bit'], field.type)) comparison_type = 'object';
         }
         var sfield = { "name": field.name, "caption": field.caption, "comparison_type": comparison_type };
         if (field.search_sound) sfield.search_sound = 1;

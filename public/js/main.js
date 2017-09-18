@@ -1669,10 +1669,15 @@ exports.HasUpdate = function () {
     if (('virtual' in field) && field.virtual) return false;
     if (('static' in field) && field.static) return false;
     var oldval = this[id];
-    if (oldval == null) oldval = '';
+    if (typeof oldval === 'undefined') oldval = '';
+    if (oldval === null) oldval = '';
     var newval = this.GetValue(field);
-    if (newval == null) newval = '';
-    if (newval != oldval) { console.log(id + " Old: " + oldval); console.log(id + " New: " + newval); return true; }
+    if (typeof newval === 'undefined') newval = '';
+    if (newval === null) newval = '';
+    if (newval != oldval) { 
+      if(newval.toString() == oldval.toString()) return false;
+      console.log(id + " Old: " + oldval); console.log(id + " New: " + newval); return true; 
+    }
     return false;
   };
 };
@@ -2471,10 +2476,19 @@ exports.getMaxLength = function (field) {
     else if (ftype == 'datetime') rslt = 25;
     else if (ftype == 'time') rslt = 20;
     else if (ftype == 'date') rslt = 10;
-    else if (ftype == 'decimal') rslt = 15;
+    else if (ftype == 'decimal'){
+      rslt = 40;
+      var prec_h = 38;
+      var prec_l = 4;
+      if ('precision' in field) {
+        prec_h = field.precision[0];
+        prec_l = field.precision[1];
+      }
+      rslt = prec_h + 2;
+    }
     else if (ftype == 'int') rslt = 15;
     else if (ftype == 'smallint') rslt = 10;
-    else if (ftype == 'bit') rslt = 1;
+    else if (ftype == 'bit') rslt = 5;
   }
   return rslt;
 }
@@ -3299,7 +3313,8 @@ exports.Apply = function(format,val){
 		fargs.push(val);
 		val = this[format[0]].apply(this,fargs);
 	}
-	if(val == null) val = '';
+  if(val === false) val = 'false';
+  if(val == null) val = '';
 	return val;
 }
 
@@ -4702,9 +4717,9 @@ function SearchQuery(model) {
         if ('lov' in field) comparison_type = 'lov';
         else if ('type' in field) {
           if ((field.type == 'varchar') || (field.type == 'char')) comparison_type = 'string';
-          else if (_.includes(['bigint', 'int', 'smallint', 'decimal', 'time', 'bit'], field.type)) comparison_type = 'numeric';
+          else if (_.includes(['bigint', 'int', 'smallint', 'decimal', 'time'], field.type)) comparison_type = 'numeric';
           else if (_.includes(['datetime', 'date'], field.type)) comparison_type = 'date';
-          else if ((field.type == 'hash')) comparison_type = 'object';
+          else if (_.includes(['hash', 'bit'], field.type)) comparison_type = 'object';
         }
         var sfield = { "name": field.name, "caption": field.caption, "comparison_type": comparison_type };
         if (field.search_sound) sfield.search_sound = 1;

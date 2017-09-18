@@ -48,6 +48,7 @@ function jsHarmony() {
   this.Popups = {};
   this.Cache = {};
   this.SQL = {};
+  this.CustomDataTypes = {};
   this._IMAGEMAGICK_FIELDS = [];
   //Constructor
   Init.validateGlobals();
@@ -171,12 +172,13 @@ jsHarmony.prototype.MergeFolder = function (dir) {
 }
 jsHarmony.prototype.LoadSQL = function (dir, type) {
   var rslt = jsHarmony.LoadSQL(dir, type);
-  for(var sqlid in rslt) this.SQL[sqlid] = rslt[sqlid];
+  for(var sqlid in rslt.SQL) this.SQL[sqlid] = rslt.SQL[sqlid];
+  for(var datatypeid in rslt.CustomDataTypes) this.CustomDataTypes[datatypeid] = rslt.CustomDataTypes[datatypeid];
 }
 jsHarmony.LoadSQL = function (dir, type) {
   var _this = this;
   var f = {};
-  var rslt = {};
+  var rslt = { CustomDataTypes: {}, SQL: {} };
   if (fs.existsSync(dir)) f = fs.readdirSync(dir);
   else return rslt;
   f.sort(function (a, b) {
@@ -218,11 +220,18 @@ jsHarmony.LoadSQL = function (dir, type) {
       process.exit(8);
       throw (ex);
     }
-    for (var sqlid in sql) {
-      if (sqlid in found_sqlids) { LogEntityError(_ERROR, 'Duplicate SQL ' + sqlid + ' in ' + found_sqlids[sqlid] + ' and ' + fname); }
-      found_sqlids[sqlid] = fname;
-      var sqlval = Helper.ParseMultiLine(sql[sqlid]);
-      rslt[sqlid] = sqlval;
+    if(path.basename(fname).toLowerCase() == ('datatypes.'+type+'.json')){
+      for (var datatypeid in sql) {
+        rslt.CustomDataTypes[datatypeid] = sql[datatypeid];
+      }
+    }
+    else{
+      for (var sqlid in sql) {
+        if (sqlid in found_sqlids) { LogEntityError(_ERROR, 'Duplicate SQL ' + sqlid + ' in ' + found_sqlids[sqlid] + ' and ' + fname); }
+        found_sqlids[sqlid] = fname;
+        var sqlval = Helper.ParseMultiLine(sql[sqlid]);
+        rslt.SQL[sqlid] = sqlval;
+      }
     }
   }
   return rslt;
@@ -371,6 +380,7 @@ jsHarmony.prototype.TestImageMagick  = function(strField){
 jsHarmony.prototype.ParseEntities = function () {
   var _this = this;
   var base_controls = ["label", "html", "textbox", "textzoom", "dropdown", "date", "textarea", "hidden", "subform", "html", "password", "file_upload", "file_download", "button", "linkbutton", "tree", "checkbox"];
+  var base_datatypes = ['NVARCHAR','DATETIME2','DATETIME','VARCHAR','CHAR','BIT','BIGINT','INT','SMALLINT','DECIMAL','DATE','DATETIME','TIME','ENCASCII','HASH','FILE'];
   _.forOwn(this.Models, function (model) {
     model.xvalidate = new XValidate();
     if (!('table' in model)) LogEntityError(_WARNING, 'Model ' + model.id + ' missing table');
@@ -445,6 +455,16 @@ jsHarmony.prototype.ParseEntities = function () {
           else if (key == 'onpopup') field.controlparams.onpopup = field.popuplov.onpopup;
         });
       }
+      if (('type' in field) && (field.type in _this.CustomDataTypes)) {
+        while(field.type in _this.CustomDataTypes){
+          var fieldtype = field.type;
+          var datatype = _this.CustomDataTypes[fieldtype];
+          for (var prop in datatype) {
+            if(!(prop in field) || (prop=='type')) field[prop] = datatype[prop];
+          }
+          if(field.type==fieldtype) break;
+        }
+      }
       if ('control' in field) {
         //Parse and apply Custom Controls
         while (base_controls.indexOf(field.control) < 0) {
@@ -475,9 +495,10 @@ jsHarmony.prototype.ParseEntities = function () {
         switch (field.type.toUpperCase()) {
           case 'VARCHAR':
           case 'CHAR':
-            if ('length' in field) AddValidation(field, 'MaxLength:' + field.length);
+            if (('length' in field) && (field.length >= 0)) AddValidation(field, 'MaxLength:' + field.length);
             break;
           case 'BIT':
+            break;
           case 'BIGINT':
           case 'INT':
           case 'SMALLINT':
@@ -490,7 +511,7 @@ jsHarmony.prototype.ParseEntities = function () {
           case 'TIME':
             AddValidation(field, 'IsTime'); break;
           case 'ENCASCII':
-            if ('length' in field) AddValidation(field, 'MaxLength:' + (field.length - 1));
+            if (('length' in field) && (field.length >= 0)) AddValidation(field, 'MaxLength:' + (field.length - 1));
             break;
           case 'HASH':
             break;
@@ -579,7 +600,8 @@ jsHarmony.prototype.ParseEntities = function () {
       'name', 'type', 'access', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'serverejs','roles','static','cellclass',
       'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
       'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'precision', 'password', 'hash', 'salt', 'unbound',
-      'sqlselect', 'sqlupdate', 'sqlinsert','sql_sort', 'sqlwhere', 'sql_search_sound', 'sql_search', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVEFIELD__'
+      'sqlselect', 'sqlupdate', 'sqlinsert','sql_sort', 'sqlwhere', 'sql_search_sound', 'sql_search', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVEFIELD__',
+      'sql_from_db','sql_to_db','sql_conversion_defaults'
     ];
     var _v_controlparams = [
       'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'dateformat', 'base_readonly',

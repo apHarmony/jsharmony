@@ -1,0 +1,22 @@
+{
+  "decimal":{ 
+    "sql_from_db": "cast(%%%SQL%%% as nvarchar)",
+    "sql_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
+    "sql_conversion_defaults":{ "PREC_H": 38, "PREC_L": 10 }
+  },
+  "money4":{
+    "sql_from_db": "convert(nvarchar, %%%SQL%%%, 2)",
+    "type": "money"
+  },
+  "money":{ 
+    "sql_from_db": "cast(%%%SQL%%% as nvarchar)",
+    "sql_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
+    "sql_conversion_defaults":{ "PREC_H": 34, "PREC_L": 4 },
+    "type": "decimal"
+  },
+  "geography":{ 
+    "sql_from_db": "(%%%SQL%%%).STAsText()",
+    "sql_to_db": "geography::STGeomFromText(%%%SQL%%%, 4326)",
+    "type": "varchar"
+  }
+}

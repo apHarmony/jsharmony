@@ -325,6 +325,7 @@ AppSrv.prototype.getModelForm = function (req, res, modelid, Q, P, form_m) {
     if ((selecttype == 'single')) _.each(keylist, function (val) { sql_filterkeys.push(val); });
     else if (selecttype == 'multiple') _.each(filterlist, function (val) { if (val in Q) sql_filterkeys.push(val); });
   }
+  var sql_filterfields = this.getFieldsByName(model.fields, sql_filterkeys);
   
   //Add DataLock parameters to SQL 
   this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, modelid);
@@ -374,7 +375,7 @@ AppSrv.prototype.getModelForm = function (req, res, modelid, Q, P, form_m) {
     if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   }
   
-  var sql = _this.db.sql.getModelForm(_this.jsh, model, selecttype, allfields, sql_filterkeys, datalockqueries, sortfields);
+  var sql = _this.db.sql.getModelForm(_this.jsh, model, selecttype, allfields, sql_filterfields, datalockqueries, sortfields);
   
   //Return applicable drop-down lists
   var dbtasks = {};
@@ -463,6 +464,7 @@ AppSrv.prototype.getModelMultisel = function (req, res, modelid, Q, P) {
   });
   if (lovfield == null) throw new Error('Invalid Multisel - No LOV field.');
   var allfieldslist = _.union([lovfield.name], fieldlist);
+  var allfields = this.getFieldsByName(model.fields, allfieldslist);
   
   var is_new = true;
   if (_this.ParamCheck('Q', Q, _.map(filterlist, function (filter) { return '&' + filter; }), false)) { is_new = false; }
@@ -479,6 +481,7 @@ AppSrv.prototype.getModelMultisel = function (req, res, modelid, Q, P) {
   var sql_filterkeys = [];
   
   if (!is_new) _.each(filterlist, function (val) { sql_filterkeys.push(val); });
+  var sql_filterfields = this.getFieldsByName(model.fields, sql_filterkeys);
   
   //Add DataLock parameters to SQL 
   this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
@@ -523,7 +526,7 @@ AppSrv.prototype.getModelMultisel = function (req, res, modelid, Q, P) {
       sql_params[fname] = _this.DeformatParam(field, Q[fname], verrors);
       _this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
         if (dfield != field) return false;
-        param_datalocks.push({ pname: fname, datalockquery: datalockquery });
+        param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
         return true;
       }, null, modelid + "_key");
     }
@@ -533,7 +536,7 @@ AppSrv.prototype.getModelMultisel = function (req, res, modelid, Q, P) {
   verrors = _.merge(verrors, model.xvalidate.Validate('KF', sql_params));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   
-  var sql = _this.db.sql.getModelMultisel(_this.jsh, model, lovfield, allfieldslist, sql_filterkeys, datalockqueries, lov_datalockqueries, param_datalocks);
+  var sql = _this.db.sql.getModelMultisel(_this.jsh, model, lovfield, allfields, sql_filterfields, datalockqueries, lov_datalockqueries, param_datalocks);
   
   var dbtasks = {};
   dbtasks[modelid] = function (dbtrans, callback) {
@@ -616,7 +619,7 @@ AppSrv.prototype.getTabCode = function (req, res, modelid, onComplete) {
   verrors = _.merge(verrors, model.xvalidate.Validate('K', sql_params));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   
-  var sql = _this.db.sql.getTabCode(_this.jsh, model, selectfields, keylist, datalockqueries);
+  var sql = _this.db.sql.getTabCode(_this.jsh, model, selectfields, keys, datalockqueries);
   
   this.ExecScalar(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt) {
     if (err) { global.log(err); Helper.GenError(req, res, -99999, "An unexpected error has occurred"); return; }
@@ -742,7 +745,7 @@ AppSrv.prototype.putModelForm = function (req, res, modelid, Q, P, onComplete) {
         if (Helper.access(field.access, 'F')) {
           _this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
             if (dfield != field) return false;
-            param_datalocks.push({ pname: fname, datalockquery: datalockquery });
+            param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
             return true;
           },undefined,model.id + ': '+fname);
         }
@@ -753,7 +756,7 @@ AppSrv.prototype.putModelForm = function (req, res, modelid, Q, P, onComplete) {
     verrors = _.merge(verrors, model.xvalidate.Validate('I', _.merge(vfiles, enc_sql_params, sql_params)));
     if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
     
-    var dbsql = _this.db.sql.putModelForm(_this.jsh, model, fields, keys, sql_extfields, sql_extvalues, encryptedfields, enc_datalockqueries, param_datalocks);
+    var dbsql = _this.db.sql.putModelForm(_this.jsh, model, fields, keys, sql_extfields, sql_extvalues, encryptedfields, hashfields, enc_datalockqueries, param_datalocks);
     
     _.each(subs, function (fname) { sql_params[fname] = '%%%' + fname + '%%%'; });
     var dbtasks = {};
@@ -880,8 +883,6 @@ AppSrv.prototype.postModelForm = function (req, res, modelid, Q, P, onComplete) 
           var hashfield = _.find(model.fields, function (xfield) { return xfield.name == field.hash; });
           if (typeof hashfield == 'undefined') throw new Error('Field ' + field.name + ' hash is not defined.');
           hashfields[field.name] = hashfield;
-          sql_extfields.push(hashfields[field.name].name);
-          sql_extvalues.push('@' + hashfields[field.name].name);
         }
       }
     });
@@ -912,7 +913,7 @@ AppSrv.prototype.postModelForm = function (req, res, modelid, Q, P, onComplete) 
         if (Helper.access(field.access, 'F')) {
           _this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
             if (dfield != field) return false;
-            param_datalocks.push({ pname: fname, datalockquery: datalockquery });
+            param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
             return true;
           });
         }
@@ -958,7 +959,7 @@ AppSrv.prototype.postModelForm = function (req, res, modelid, Q, P, onComplete) 
       });
     }
     
-    var sql = _this.db.sql.postModelForm(_this.jsh, model, fields, keylist, sql_extfields, sql_extvalues, param_datalocks, datalockqueries);
+    var sql = _this.db.sql.postModelForm(_this.jsh, model, fields, keys, sql_extfields, sql_extvalues, hashfields, param_datalocks, datalockqueries);
     
     var dbtasks = {};
     dbtasks[modelid] = function (dbtrans, callback, transtbl) {
@@ -998,6 +999,7 @@ AppSrv.prototype.postModelMultisel = function (req, res, modelid, Q, P, onComple
   });
   if (lovfield == null) throw new Error('Invalid Multisel - No LOV field.');
   var filterlist = _this.getFieldNames(req, model.fields, 'F');
+  var filterfields = this.getFieldsByName(model.fields, filterlist);
   
   if (!_this.ParamCheck('Q', Q, _.map(filterlist, function (filter) { return '&' + filter; }))) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   if (!_this.ParamCheck('P', P, ['&' + lovfield.name])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
@@ -1039,7 +1041,7 @@ AppSrv.prototype.postModelMultisel = function (req, res, modelid, Q, P, onComple
       //Add PreCheck, if type='F'
       _this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
         if (dfield != field) return false;
-        param_datalocks.push({ pname: fname, datalockquery: datalockquery });
+        param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
         return true;
       });
     }
@@ -1076,7 +1078,7 @@ AppSrv.prototype.postModelMultisel = function (req, res, modelid, Q, P, onComple
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   _.each(subs, function (fname) { sql_params[fname] = '%%%' + fname + '%%%'; });
   
-  var sql = _this.db.sql.postModelMultisel(_this.jsh, model, lovfield, lovvals, filterlist, param_datalocks, datalockqueries, lov_datalockqueries);
+  var sql = _this.db.sql.postModelMultisel(_this.jsh, model, lovfield, lovvals, filterfields, param_datalocks, datalockqueries, lov_datalockqueries);
   
   var dbtasks = {};
   dbtasks[modelid] = function (dbtrans, callback, transtbl) {
@@ -1120,7 +1122,7 @@ AppSrv.prototype.postModelExec = function (req, res, modelid, Q, P, onComplete) 
       if ('datalock' in field) {
         _this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
           if (dfield != field) return false;
-          param_datalocks.push({ pname: fname, datalockquery: datalockquery });
+          param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
           return true;
         });
       }
@@ -1212,7 +1214,7 @@ AppSrv.prototype.deleteModelForm = function (req, res, modelid, Q, P, onComplete
   verrors = _.merge(verrors, model.xvalidate.Validate('K', sql_params));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   
-  var sql = _this.db.sql.deleteModelForm(_this.jsh, model, keylist, datalockqueries);
+  var sql = _this.db.sql.deleteModelForm(_this.jsh, model, keys, datalockqueries);
   
   var dbtasks = {};
   dbtasks[modelid] = function (dbtrans, callback) {
@@ -1469,10 +1471,11 @@ AppSrv.prototype.Download = function (req, res, modelid, keyid, fieldid, options
     if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
     if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
     //Get key name
-    var keys = this.getKeyNames(model.fields);
+    var keylist = this.getKeyNames(model.fields);
+    var keys = this.getFieldsByName(model.fields, keylist);
     if (keys.length != 1) throw new Error('File downloads require one key');
     var filelist = this.getFileFieldNames(req, model.fields, 'B');
-    var fieldlist = [keys[0]];
+    var fieldlist = [keylist[0]];
     //Make sure fieldid is in fields
     if (!_.includes(filelist, fieldid)) return Helper.GenError(req, res, -33, 'Download file not found.');
     var field = this.getFieldByName(model.fields, fieldid);
@@ -1485,11 +1488,12 @@ AppSrv.prototype.Download = function (req, res, modelid, keyid, fieldid, options
     var sql_params = {};
     var verrors = {};
     var datalockqueries = [];
+    var fields = _this.getFieldsByName(model.fields, fieldlist);
     
     //Add DataLock parameters to SQL 
     this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
     //Add keys as SQL parameters
-    var keyfield = this.getFieldByName(model.fields, keys[0]);
+    var keyfield = keys[0];
     var keyname = keyfield.name;
     var dbtype = AppSrv.prototype.getDBType(keyfield);
     sql_ptypes.push(dbtype);
@@ -1498,7 +1502,7 @@ AppSrv.prototype.Download = function (req, res, modelid, keyid, fieldid, options
     verrors = _.merge(verrors, model.xvalidate.Validate('K', sql_params));
     if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
     
-    var sql = _this.db.sql.Download(_this.jsh, model, fieldlist, keys, datalockqueries);
+    var sql = _this.db.sql.Download(_this.jsh, model, fields, keys, datalockqueries);
     
     this.ExecRow(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt) {
       //Get extension, filename
@@ -1678,13 +1682,18 @@ AppSrv.prototype.DeformatParam = function (field, val, verrors) {
     //return Helper.stringToASCIIBuffer(val);
     return new Buffer(val, 'ascii');
   }
-  /*
+  
   else if (field.type == 'bit') {
+    if (val === '') return null;
+    if (val === null) return null;
+    return val;
+    /*
     if (!val) return false;
     if (val == '0') return false;
     if (val == 0) return false;
     return true;
-  }*/
+    */
+  }
   return val;
 }
 function add_verror(verrors, err) {
@@ -1711,6 +1720,7 @@ AppSrv.prototype.addSearchTerm = function (field, search_i, in_search_value, com
     //Validate search parameter
     switch (field.type) {
       case 'bit':
+        break;
       case 'bigint':
       case 'int':
       case 'smallint':
@@ -1793,7 +1803,7 @@ AppSrv.prototype.addDefaultTasks = function (req, res, model, Q, dbtasks) {
               dflt_params[dflt_pname] = _this.DeformatParam(dflt_pfield, Q[dflt_pname], dflt_verrors);
               _this.getDataLockSQL(req, model.fields, dflt_ptypes, dflt_params, dflt_verrors, function (datalockquery, dfield) {
                 if (dfield != dflt_pfield) return false;
-                dflt_sql_field_param_datalocks.push({ pname: dflt_pname, datalockquery: datalockquery });
+                dflt_sql_field_param_datalocks.push({ pname: dflt_pname, datalockquery: datalockquery, field: dfield });
                 return true;
               }, undefined, field.name + "_" + model.id + "_dflt_key");
             }
@@ -1802,7 +1812,7 @@ AppSrv.prototype.addDefaultTasks = function (req, res, model, Q, dbtasks) {
         }
         if (!_.isEmpty(dflt_verrors)) { Helper.GenError(req, res, -2, dflt_verrors[''].join('\n')); return; }
         
-        dflt_sql_fields.push({ name: field.name, sql: sql, datalockqueries: dflt_sql_field_datalockqueries, param_datalocks: dflt_sql_field_param_datalocks });
+        dflt_sql_fields.push({ name: field.name, field: field, sql: sql, datalockqueries: dflt_sql_field_datalockqueries, param_datalocks: dflt_sql_field_param_datalocks });
       }
     }
   }
@@ -1841,7 +1851,7 @@ AppSrv.prototype.addBreadcrumbTasks = function (req, res, model, Q, dbtasks) {
   var bcrumb_ptypes = [];
   var bcrumb_params = {};
   var datalockqueries = [];
-  var bcrumb_sql_fields = [];
+  var bcrumb_sql_fieldlist = [];
   var bcrumb_fields = this.getFields(req, model.fields, 'KC');
   for (var i = 0; i < bcrumb_fields.length; i++) {
     var field = bcrumb_fields[i];
@@ -1853,12 +1863,13 @@ AppSrv.prototype.addBreadcrumbTasks = function (req, res, model, Q, dbtasks) {
       _this.getDataLockSQL(req, model.fields, bcrumb_ptypes, bcrumb_params, verrors, function (datalockquery, dfield) {
         if (dfield != field) return false;
         datalockqueries.push(datalockquery);
-        if (bcrumb_sql_fields.indexOf(fname) < 0) bcrumb_sql_fields.push(fname);
+        if (bcrumb_sql_fieldlist.indexOf(fname) < 0) bcrumb_sql_fieldlist.push(fname);
         return true;
       });
     }
   }
   verrors = _.merge(verrors, model.xvalidate.Validate('KFC', bcrumb_params));
+  var bcrumb_sql_fields = _this.getFieldsByName(model.fields, bcrumb_sql_fieldlist);
   var bcrumb_sql = _this.db.sql.getBreadcrumbTasks(_this.jsh, model, datalockqueries, bcrumb_sql_fields);
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   dbtasks['_bcrumbs'] = function (dbtrans, callback) {
@@ -1896,7 +1907,7 @@ AppSrv.prototype.addLOVTasks = function (req, res, model, Q, dbtasks) {
               lov_params[lov_pname] = _this.DeformatParam(lov_pfield, Q[lov_pname], lov_verrors);
               _this.getDataLockSQL(req, model.fields, lov_ptypes, lov_params, lov_verrors, function (datalockquery, dfield) {
                 if (dfield != lov_pfield) return false;
-                param_datalocks.push({ pname: lov_pname, datalockquery: datalockquery });
+                param_datalocks.push({ pname: lov_pname, datalockquery: datalockquery, field: dfield });
                 return true;
               }, undefined, field.name + "_" + model.id + "_lov_key");
               lov_verrors = _.merge(lov_verrors, model.xvalidate.Validate('*', lov_params, lov_pname));
@@ -2244,12 +2255,14 @@ AppSrv.prototype.getDBType = function (field) {
   var ftype = field.type;
   if (ftype == 'bigint') return DB.types.BigInt;
   else if (ftype == 'varchar') {
-    if (!('length' in field)) throw new Error('Key ' + fname + ' must have length.');
-    return DB.types.VarChar(field.length);
+    var flen = field.length;
+    if (!('length' in field) || (field.length==-1)) flen = DB.types.MAX;
+    return DB.types.VarChar(flen);
   }
   else if (ftype == 'char') {
-    if (!('length' in field)) throw new Error('Key ' + fname + ' must have length.');
-    return DB.types.Char(field.length);
+    var flen = field.length;
+    if (!('length' in field) || (field.length==-1)) flen = DB.types.MAX;
+    return DB.types.Char(flen);
   }
   else if (ftype == 'datetime') {
     if (!('length' in field)) throw new Error('Key ' + fname + ' must have length.');
@@ -2261,8 +2274,8 @@ AppSrv.prototype.getDBType = function (field) {
   }
   else if (ftype == 'date') return DB.types.Date;
   else if (ftype == 'decimal') {
-    var prec_h = 22;
-    var prec_l = 4;
+    var prec_h = 38;
+    var prec_l = 10;
     if ('precision' in field) {
       prec_h = field.precision[0];
       prec_l = field.precision[1];

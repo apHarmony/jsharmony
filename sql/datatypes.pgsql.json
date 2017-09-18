@@ -1,0 +1,14 @@
+{
+  "decimal":{ 
+    "sql_from_db": "cast(%%%SQL%%% as varchar)",
+    "sql_conversion_defaults":{ "PREC_H": 38, "PREC_L": 10 }
+  },
+  "polygon":{ 
+    "sql_from_db": "cast(%%%SQL%%% as varchar)",
+    "sql_to_db": "cast(%%%SQL%%% as polygon)",
+    "type": "varchar"
+  },
+  "boolean":{
+    "type": "bit"
+  }
+}

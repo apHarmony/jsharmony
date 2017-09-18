@@ -354,10 +354,15 @@ exports.HasUpdate = function () {
     if (('virtual' in field) && field.virtual) return false;
     if (('static' in field) && field.static) return false;
     var oldval = this[id];
-    if (oldval == null) oldval = '';
+    if (typeof oldval === 'undefined') oldval = '';
+    if (oldval === null) oldval = '';
     var newval = this.GetValue(field);
-    if (newval == null) newval = '';
-    if (newval != oldval) { console.log(id + " Old: " + oldval); console.log(id + " New: " + newval); return true; }
+    if (typeof newval === 'undefined') newval = '';
+    if (newval === null) newval = '';
+    if (newval != oldval) { 
+      if(newval.toString() == oldval.toString()) return false;
+      console.log(id + " Old: " + oldval); console.log(id + " New: " + newval); return true; 
+    }
     return false;
   };
 };
