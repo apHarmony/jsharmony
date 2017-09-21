@@ -220,7 +220,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "sql_sort": "(case when X then 1 else 0 end)", //Only applies to grid
       "sql_search": "(case when X then 1 else 0 end)", //Only applies to grid
       "sql_search_sound": "C_ID in (select C_ID from SDX where SDX_COL='CN' and SDX_VAL=SOUNDEX(%%%FIELD%%%))",
-      "__REMOVEFIELD__":1 //Remove Model field in inherited child
+      "__REMOVEFIELD__":1, //Remove Model field in inherited child
+      "__AFTER__": "FIELDNAME", "__START__", "__END__", //Position in inherited child
     }
   ],
   "dberrors": [

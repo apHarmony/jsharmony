@@ -1516,7 +1516,9 @@ exports.RenderField = function (_this, parentobj, modelid, field, val){
       jctrl.val(val);
     }
   }
-  else jctrl.val(val);
+  else{
+    jctrl.val(val);
+  }
   
   //Make fields editable or locked / read-only
   var show_lookup_when_readonly = false;
@@ -2042,13 +2044,13 @@ exports.escapeHTML = function (val) {
 }
 //Escape HTML and replace line breaks with HTML line breaks
 exports.escapeHTMLBR = function (val) {
-  if (!val) return val;
-  return XExt.ReplaceAll(XExt.ReplaceAll(exports.escapeHTML(val), '\n', '<br/>'), '\r', '');
+  if((typeof val=='undefined')||(val===null)) return val;
+  return XExt.ReplaceAll(XExt.ReplaceAll(exports.escapeHTML(val.toString()), '\n', '<br/>'), '\r', '');
 }
 //Escape HTML and replace line breaks with spaces
 exports.escapeBRSpace = function (val) {
-  if (!val) return val;
-  return XExt.ReplaceAll(XExt.ReplaceAll(val, '\n', ' '), '\r', '');
+  if((typeof val=='undefined')||(val===null)) return val;
+  return XExt.ReplaceAll(XExt.ReplaceAll(val.toString(), '\n', ' '), '\r', '');
 }
 //Escape string for regular expression matching
 exports.escapeRegEx = function (q) {
@@ -3313,7 +3315,6 @@ exports.Apply = function(format,val){
 		fargs.push(val);
 		val = this[format[0]].apply(this,fargs);
 	}
-  if(val === false) val = 'false';
   if(val == null) val = '';
 	return val;
 }

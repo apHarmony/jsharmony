@@ -173,7 +173,6 @@ exports.Apply = function(format,val){
 		fargs.push(val);
 		val = this[format[0]].apply(this,fargs);
 	}
-  if(val === false) val = 'false';
   if(val == null) val = '';
 	return val;
 }

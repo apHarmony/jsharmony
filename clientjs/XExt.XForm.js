@@ -201,7 +201,9 @@ exports.RenderField = function (_this, parentobj, modelid, field, val){
       jctrl.val(val);
     }
   }
-  else jctrl.val(val);
+  else{
+    jctrl.val(val);
+  }
   
   //Make fields editable or locked / read-only
   var show_lookup_when_readonly = false;

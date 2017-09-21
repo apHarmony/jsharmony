@@ -4,19 +4,79 @@
     "sql_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "sql_conversion_defaults":{ "PREC_H": 38, "PREC_L": 10 }
   },
+  "money":{ 
+    "sql_from_db": "cast(%%%SQL%%% as nvarchar)",
+    "sql_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
+    "sql_conversion_defaults":{ "PREC_H": 19, "PREC_L": 4 },
+    "type": "decimal"
+  },
   "money4":{
     "sql_from_db": "convert(nvarchar, %%%SQL%%%, 2)",
     "type": "money"
   },
-  "money":{ 
+  "smallmoney":{ 
     "sql_from_db": "cast(%%%SQL%%% as nvarchar)",
     "sql_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
-    "sql_conversion_defaults":{ "PREC_H": 34, "PREC_L": 4 },
+    "sql_conversion_defaults":{ "PREC_H": 10, "PREC_L": 4 },
     "type": "decimal"
+  },
+  "smallmoney4":{ 
+    "sql_from_db": "convert(nvarchar, %%%SQL%%%, 2)",
+    "type": "smallmoney"
+  },
+  "binary":{ 
+    "sql_from_db": "convert(varchar(max), %%%SQL%%%, 1)",
+    "sql_to_db": "convert(BINARY(%%%LENGTH%%%), %%%SQL%%%, 1)",
+    "sql_conversion_defaults":{ "LENGTH": 8000 },
+    "type": "varchar"
+  },
+  "varbinary":{ 
+    "sql_from_db": "convert(varchar(max), %%%SQL%%%, 1)",
+    "sql_to_db": "convert(VARBINARY(%%%LENGTH%%%), %%%SQL%%%, 1)",
+    "type": "varchar"
+  },
+  "image":{ 
+    "sql_from_db": "convert(varchar(max), convert(varbinary(max),%%%SQL%%%), 1)",
+    "sql_to_db": "convert(VARBINARY(MAX), %%%SQL%%%, 1)",
+    "type": "varchar"
+  },
+  "timestamp":{ 
+    "sql_from_db": "convert(varchar(max), convert(varbinary(max), %%%SQL%%%), 1)",
+    "sql_to_db": "convert(VARBINARY(8), %%%SQL%%%, 1)",
+    "type": "varchar"
+  },
+  "uniqueidentifier":{ 
+    "sql_from_db": "cast(%%%SQL%%% as varchar(36))",
+    "sql_to_db": "convert(uniqueidentifier, %%%SQL%%%)",
+    "type": "varchar"
+  },
+  "sql_variant":{ 
+    "sql_from_db": "cast(%%%SQL%%% as nvarchar)",
+    "sql_to_db": "%%%SQL%%%",
+    "type": "varchar"
+  },
+  "hierarchyid":{ 
+    "sql_from_db": "cast(%%%SQL%%% as nvarchar)",
+    "sql_to_db": "cast(%%%SQL%%% as hierarchyid)",
+    "type": "varchar"
+  },
+  "geometry":{ 
+    "sql_from_db": "(%%%SQL%%%).STAsText()",
+    "sql_to_db": "geography::STGeomFromText(%%%SQL%%%, 0)",
+    "type": "varchar"
   },
   "geography":{ 
     "sql_from_db": "(%%%SQL%%%).STAsText()",
     "sql_to_db": "geography::STGeomFromText(%%%SQL%%%, 4326)",
+    "type": "varchar"
+  },
+  "xml":{ 
+    "sql_from_db": "%%%SQL%%%",
+    "sql_to_db": "cast(%%%SQL%%% as xml)",
+    "type": "varchar"
+  },
+  "sysname":{ 
+    "length": 128,
     "type": "varchar"
   }
 }

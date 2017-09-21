@@ -319,6 +319,7 @@ jsHarmony.prototype.ParseInheritance = function () {
               }
             }
           });
+          SortFields(model, rslt);
           for (var i = 0; i < rslt.length; i++) {
             if ('__REMOVEFIELD__' in rslt[i]) {
               rslt.splice(i, 1);
@@ -362,6 +363,40 @@ function LogEntityError(severity, msg) {
     if (!global.app_errors) global.app_errors = [];
     global.app_errors.push(msg);
   }
+}
+function SortFields(model, fields){
+  var cnt = 0;
+  do {
+    cnt = 0;
+    for( var i = 0; i < fields.length; i++) {
+      var field = fields[i];
+      var newidx = -1;
+      if('__AFTER__' in field){
+        //Get position of new index
+        if(field['__AFTER__']=='__START__') newidx = 0;
+        else if(field['__AFTER__']=='__END__') newidx = fields.length - 1;
+        else {
+          for(var j = 0; j < fields.length; j++){
+            if(fields[j].name == field['__AFTER__']){ 
+              if(j > i) newidx = j + 1;
+              else newidx = j; 
+              break; 
+            }
+          }
+        }
+        if(newidx >= 0){
+          cnt++;
+          delete field['__AFTER__'];
+          if(newidx != i){
+            fields.splice(i, 1);
+            if(newidx > i) newidx--;
+            fields.splice(newidx, 0, field);
+            if(newidx > i) i--;
+          }
+        }
+      }
+    }
+  } while(cnt > 0);
 }
 function LogDeprecated(msg) {
   if (global.debug_params.hide_deprecated) return;
@@ -600,7 +635,7 @@ jsHarmony.prototype.ParseEntities = function () {
       'name', 'type', 'access', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'serverejs','roles','static','cellclass',
       'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
       'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'precision', 'password', 'hash', 'salt', 'unbound',
-      'sqlselect', 'sqlupdate', 'sqlinsert','sql_sort', 'sqlwhere', 'sql_search_sound', 'sql_search', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVEFIELD__',
+      'sqlselect', 'sqlupdate', 'sqlinsert','sql_sort', 'sqlwhere', 'sql_search_sound', 'sql_search', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVEFIELD__', '__AFTER__',
       'sql_from_db','sql_to_db','sql_conversion_defaults'
     ];
     var _v_controlparams = [
