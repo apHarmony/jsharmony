@@ -582,6 +582,7 @@ XValidate.Vex = function (validator, val) {
 
 XValidate._v_MaxLength = function (_max) {
   return (new Function('_caption', '_val', '\
+    if(' + _max + ' < 0) return "";\
     if(!_val) return "";\
     if(_val.length > ' + _max + ') return _caption+" is too long (limit ' + _max + ' characters).";\
     return "";'));

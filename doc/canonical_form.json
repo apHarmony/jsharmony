@@ -222,6 +222,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "sql_search_sound": "C_ID in (select C_ID from SDX where SDX_COL='CN' and SDX_VAL=SOUNDEX(%%%FIELD%%%))",
       "__REMOVEFIELD__":1, //Remove Model field in inherited child
       "__AFTER__": "FIELDNAME", "__START__", "__END__", //Position in inherited child
+      //SYSTEM: datatype_config, sql_from_db, sql_to_db
     }
   ],
   "dberrors": [

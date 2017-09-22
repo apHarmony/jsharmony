@@ -2168,10 +2168,24 @@ AppSrv.prototype.getFieldsWithProp = function (fields, prop) {
 }
 
 AppSrv.prototype.getFieldsByName = function (fields, fieldnames) {
-  return _.filter(fields, function (field) {
-    if (_.includes(fieldnames, field.name)) { return true; }
-    return false;
-  });
+  var rslt = [];
+  if(!fieldnames) return rslt;
+  var fieldnames_missing = fieldnames.slice();
+  for(var i=0;i<fields.length;i++){
+    var field = fields[i];
+    if (_.includes(fieldnames, field.name)){
+      rslt.push(field);
+      for(var j=0;j<fieldnames_missing.length;j++){
+        if(fieldnames_missing[j]==field.name){ 
+          fieldnames_missing.splice(j,1);
+          j--;
+        }
+      }
+    }
+  }
+  if(fieldnames_missing.length > 0){ global.log('Fields not found: ' + fieldnames_missing.join(', ')); }
+  
+  return rslt;
 }
 
 AppSrv.prototype.getFieldByName = function (fields, fieldname) {
@@ -2253,24 +2267,23 @@ AppSrv.prototype.getDBType = function (field) {
   var fname = field.name;
   if (!('type' in field)) throw new Error('Key ' + fname + ' must have type.');
   var ftype = field.type;
+  var flen = field.length;
   if (ftype == 'bigint') return DB.types.BigInt;
   else if (ftype == 'varchar') {
-    var flen = field.length;
-    if (!('length' in field) || (field.length==-1)) flen = DB.types.MAX;
+    if ((typeof flen == 'undefined') || (flen==-1)) flen = DB.types.MAX;
     return DB.types.VarChar(flen);
   }
   else if (ftype == 'char') {
-    var flen = field.length;
-    if (!('length' in field) || (field.length==-1)) flen = DB.types.MAX;
+    if ((typeof flen == 'undefined') || (flen==-1)) flen = DB.types.MAX;
     return DB.types.Char(flen);
   }
   else if (ftype == 'datetime') {
-    if (!('length' in field)) throw new Error('Key ' + fname + ' must have length.');
-    return DB.types.DateTime(field.length);
+    if (typeof flen == 'undefined') throw new Error('Key ' + fname + ' must have length.');
+    return DB.types.DateTime(flen);
   }
   else if (ftype == 'time') {
-    if (!('length' in field)) throw new Error('Key ' + fname + ' must have length.');
-    return DB.types.Time(field.length);
+    if (typeof flen == 'undefined') throw new Error('Key ' + fname + ' must have length.');
+    return DB.types.Time(flen);
   }
   else if (ftype == 'date') return DB.types.Date;
   else if (ftype == 'decimal') {
@@ -2286,8 +2299,8 @@ AppSrv.prototype.getDBType = function (field) {
   else if (ftype == 'smallint') return DB.types.SmallInt;
   else if (ftype == 'bit') return DB.types.Bit;
   else if ((ftype == 'hash') || (ftype == 'encascii')) {
-    if (!('length' in field)) throw new Error('Key ' + fname + ' must have length.');
-    return DB.types.VarBinary(field.length);
+    if (typeof flen == 'undefined') throw new Error('Key ' + fname + ' must have length.');
+    return DB.types.VarBinary(flen);
   }
   else throw new Error('Key ' + fname + ' has invalid type.');
 }

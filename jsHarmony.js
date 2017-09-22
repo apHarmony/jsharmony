@@ -415,7 +415,7 @@ jsHarmony.prototype.TestImageMagick  = function(strField){
 jsHarmony.prototype.ParseEntities = function () {
   var _this = this;
   var base_controls = ["label", "html", "textbox", "textzoom", "dropdown", "date", "textarea", "hidden", "subform", "html", "password", "file_upload", "file_download", "button", "linkbutton", "tree", "checkbox"];
-  var base_datatypes = ['NVARCHAR','DATETIME2','DATETIME','VARCHAR','CHAR','BIT','BIGINT','INT','SMALLINT','DECIMAL','DATE','DATETIME','TIME','ENCASCII','HASH','FILE'];
+  var base_datatypes = ['DATETIME','VARCHAR','CHAR','BIT','BIGINT','INT','SMALLINT','DECIMAL','DATE','DATETIME','TIME','ENCASCII','HASH','FILE'];
   _.forOwn(this.Models, function (model) {
     model.xvalidate = new XValidate();
     if (!('table' in model)) LogEntityError(_WARNING, 'Model ' + model.id + ' missing table');
@@ -496,6 +496,11 @@ jsHarmony.prototype.ParseEntities = function () {
           var datatype = _this.CustomDataTypes[fieldtype];
           for (var prop in datatype) {
             if(!(prop in field) || (prop=='type')) field[prop] = datatype[prop];
+            else if(prop=='datatype_config'){
+              for(var subprop in datatype.datatype_config){
+                if(!(subprop in field.datatype_config)) field.datatype_config[subprop] = datatype.datatype_config[subprop];
+              }
+            }
           }
           if(field.type==fieldtype) break;
         }
@@ -527,40 +532,57 @@ jsHarmony.prototype.ParseEntities = function () {
             field.type = 'datetime';
             break;
         }
-        switch (field.type.toUpperCase()) {
-          case 'VARCHAR':
-          case 'CHAR':
-            if (('length' in field) && (field.length >= 0)) AddValidation(field, 'MaxLength:' + field.length);
-            break;
-          case 'BIT':
-            break;
-          case 'BIGINT':
-          case 'INT':
-          case 'SMALLINT':
-            AddValidation(field, 'IsNumeric'); break;
-          case 'DECIMAL':
-            AddValidation(field, 'IsDecimal'); break;
-          case 'DATE':
-          case 'DATETIME':
-            AddValidation(field, 'IsDate'); break;
-          case 'TIME':
-            AddValidation(field, 'IsTime'); break;
-          case 'ENCASCII':
-            if (('length' in field) && (field.length >= 0)) AddValidation(field, 'MaxLength:' + (field.length - 1));
-            break;
-          case 'HASH':
-            break;
-          case 'FILE':
-            if (!field.controlparams || !field.controlparams.data_folder) { LogEntityError(_ERROR, 'Model ' + model.id + ' Field ' + (field.name || '') + ' missing data_folder'); }
-            HelperFS.createFolderIfNotExists(global.datadir + field.controlparams.data_folder, function () { });
-            break;
-          default:
-            LogEntityError(_ERROR, 'Model ' + model.id + ' Field ' + field.name + ' Invalid data type ' + field.type);
-            //throw new Error('Data type ' + field.type + ' not recognized');
+        if(!_.includes(base_datatypes,field.type.toUpperCase())){
+          LogEntityError(_ERROR, 'Model ' + model.id + ' Field ' + field.name + ' Invalid data type ' + field.type);
+          //throw new Error('Data type ' + field.type + ' not recognized');
+        }
+        if (field.sql_from_db) field.sql_from_db = _this.parseFieldExpression(field, field.sql_from_db, {}, { ejs:true });
+        if (field.sql_to_db) field.sql_to_db = _this.parseFieldExpression(field, field.sql_to_db, {}, { ejs:true });
+        if (field.datatype_config){
+          if(field.datatype_config.override_length){
+            field.datatype_config.orig_length = field.length;
+            field.length = field.datatype_config.override_length;
+          }
+          if(field.datatype_config.validate){
+            for(var i=0;i<field.datatype_config.validate.length;i++){
+              var validator = _this.parseFieldExpression(field, field.datatype_config.validate[i], {}, { ejs: true });
+              if(validator) AddValidation(field, validator);
+            }
+          }
+        }
+        else {
+          switch (field.type.toUpperCase()) {
+            case 'VARCHAR':
+            case 'CHAR':
+              if (('length' in field) && (field.length >= 0)) AddValidation(field, 'MaxLength:' + field.length);
+              break;
+            case 'BIT':
+              break;
+            case 'BIGINT':
+            case 'INT':
+            case 'SMALLINT':
+              AddValidation(field, 'IsNumeric'); break;
+            case 'DECIMAL':
+              AddValidation(field, 'IsDecimal'); break;
+            case 'DATE':
+            case 'DATETIME':
+              AddValidation(field, 'IsDate'); break;
+            case 'TIME':
+              AddValidation(field, 'IsTime'); break;
+            case 'ENCASCII':
+              if (('length' in field) && (field.length >= 0)) AddValidation(field, 'MaxLength:' + (field.length - 1));
+              break;
+            case 'HASH':
+              break;
+            case 'FILE':
+              if (!field.controlparams || !field.controlparams.data_folder) { LogEntityError(_ERROR, 'Model ' + model.id + ' Field ' + (field.name || '') + ' missing data_folder'); }
+              HelperFS.createFolderIfNotExists(global.datadir + field.controlparams.data_folder, function () { });
+              break;
+          }
         }
       }
       //Add Validation Functions
-      model.xvalidate.AddValidator('_obj.' + field.name, field.caption, field.access, _this.GetValidatorFuncs(field), field.roles);
+      model.xvalidate.AddValidator('_obj.' + field.name, field.caption, field.access, _this.GetValidatorFuncs(field.validate), field.roles);
     });
     if (!foundkey) LogEntityError(_WARNING, 'Model ' + model.id + ' missing key');
     ParseAccessModels(_this, model, model.id, model.access);
@@ -636,7 +658,7 @@ jsHarmony.prototype.ParseEntities = function () {
       'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
       'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'precision', 'password', 'hash', 'salt', 'unbound',
       'sqlselect', 'sqlupdate', 'sqlinsert','sql_sort', 'sqlwhere', 'sql_search_sound', 'sql_search', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVEFIELD__', '__AFTER__',
-      'sql_from_db','sql_to_db','sql_conversion_defaults'
+      'sql_from_db','sql_to_db','datatype_config'
     ];
     var _v_controlparams = [
       'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'dateformat', 'base_readonly',
@@ -906,6 +928,30 @@ jsHarmony.prototype.parseLink = function (target) {
   return { 'action': action, 'modelid': modelid, 'keys': keys, 'tabs': tabs };
 }
 
+jsHarmony.prototype.parseFieldExpression = function(field, exp, params, options){
+  if(!params) params = {};
+  if(!options) options = {};
+  var rslt = exp;
+  var rparams = {};
+  if(field.datatype_config && field.datatype_config.defaults) rparams = field.datatype_config.defaults;
+  rparams.FIELD = field.name;
+  for(var p in params) rparams[p] = params[p];
+  if(('precision' in field) && _.isArray(field.precision) && (field.precision.length==2)){
+    rparams.PREC_H = field.precision[0];
+    rparams.PREC_L = field.precision[1];
+  }
+  if('length' in field) rparams.LENGTH = field.length;
+  if(field.datatype_config && field.datatype_config.orig_length) rparams.LENGTH = field.datatype_config.orig_length;
+
+  for(var rparam in rparams) rslt = Helper.ReplaceAll(rslt, '%%%'+rparam+'%%%', rparams[rparam]);
+
+  if(options.ejs && (rslt.indexOf('<%') >= 0)){ 
+    rslt = ejs.render(rslt, rparams); 
+  }
+
+  return rslt;
+}
+
 jsHarmony.prototype.getURL = function (req, target, tabs, fields, bindings, keys) {
   var ptarget = this.parseLink(target);
   var modelid = ptarget.modelid;
@@ -1093,9 +1139,9 @@ jsHarmony.prototype.GetValidatorClientStr = function (field) {
   });
   return rslt.join(',');
 };
-jsHarmony.prototype.GetValidatorFuncs = function (field) {
+jsHarmony.prototype.GetValidatorFuncs = function (validators) {
   var rslt = [];
-  _.each(field.validate, function (validator) {
+  _.each(validators, function (validator) {
     var vname = validator;
     var vparams = '';
     var vsplit = vname.indexOf(':');
