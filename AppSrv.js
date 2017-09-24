@@ -1683,7 +1683,7 @@ AppSrv.prototype.DeformatParam = function (field, val, verrors) {
     return new Buffer(val, 'ascii');
   }
   
-  else if (field.type == 'bit') {
+  else if (field.type == 'boolean') {
     if (val === '') return null;
     if (val === null) return null;
     return val;
@@ -1719,7 +1719,7 @@ AppSrv.prototype.addSearchTerm = function (field, search_i, in_search_value, com
   else {
     //Validate search parameter
     switch (field.type) {
-      case 'bit':
+      case 'boolean':
         break;
       case 'bigint':
       case 'int':
@@ -2297,7 +2297,7 @@ AppSrv.prototype.getDBType = function (field) {
   }
   else if (ftype == 'int') return DB.types.Int;
   else if (ftype == 'smallint') return DB.types.SmallInt;
-  else if (ftype == 'bit') return DB.types.Bit;
+  else if (ftype == 'boolean') return DB.types.Boolean;
   else if ((ftype == 'hash') || (ftype == 'encascii')) {
     if (typeof flen == 'undefined') throw new Error('Key ' + fname + ' must have length.');
     return DB.types.VarBinary(flen);

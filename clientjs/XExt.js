@@ -382,7 +382,7 @@ exports.xejs = {
     }
     if (field && field.type) {
       if ((field.type == 'varchar') || (field.type == 'char')) return 'text';
-      //else if (_.includes(['bigint', 'int', 'smallint', 'bit'], field.type)) return 'number';
+      //else if (_.includes(['bigint', 'int', 'smallint', 'boolean'], field.type)) return 'number';
       //else if ((field.type == 'datetime')) return 'number';// return 'datetime';
       //else if ((field.type == 'date')) return 'number';// return 'date';
       //else if ((field.type == 'time')) return 'number';// return 'time';
@@ -725,7 +725,7 @@ exports.getMaxLength = function (field) {
     }
     else if (ftype == 'int') rslt = 15;
     else if (ftype == 'smallint') rslt = 10;
-    else if (ftype == 'bit') rslt = 5;
+    else if (ftype == 'boolean') rslt = 5;
   }
   return rslt;
 }

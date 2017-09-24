@@ -6,6 +6,9 @@
       "defaults":{ "PREC_H": 38, "PREC_L": 10 }
     }
   },
+  "bit":{
+    "type": "boolean"
+  },
   "money":{ 
     "sql_from_db": "cast(%%%SQL%%% as nvarchar)",
     "sql_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",

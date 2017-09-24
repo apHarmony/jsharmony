@@ -415,7 +415,7 @@ jsHarmony.prototype.TestImageMagick  = function(strField){
 jsHarmony.prototype.ParseEntities = function () {
   var _this = this;
   var base_controls = ["label", "html", "textbox", "textzoom", "dropdown", "date", "textarea", "hidden", "subform", "html", "password", "file_upload", "file_download", "button", "linkbutton", "tree", "checkbox"];
-  var base_datatypes = ['DATETIME','VARCHAR','CHAR','BIT','BIGINT','INT','SMALLINT','DECIMAL','DATE','DATETIME','TIME','ENCASCII','HASH','FILE'];
+  var base_datatypes = ['DATETIME','VARCHAR','CHAR','BOOLEAN','BIGINT','INT','SMALLINT','DECIMAL','DATE','DATETIME','TIME','ENCASCII','HASH','FILE'];
   _.forOwn(this.Models, function (model) {
     model.xvalidate = new XValidate();
     if (!('table' in model)) LogEntityError(_WARNING, 'Model ' + model.id + ' missing table');
@@ -556,7 +556,7 @@ jsHarmony.prototype.ParseEntities = function () {
             case 'CHAR':
               if (('length' in field) && (field.length >= 0)) AddValidation(field, 'MaxLength:' + field.length);
               break;
-            case 'BIT':
+            case 'BOOLEAN':
               break;
             case 'BIGINT':
             case 'INT':

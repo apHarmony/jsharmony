@@ -35,7 +35,7 @@ function SearchQuery(model) {
           if ((field.type == 'varchar') || (field.type == 'char')) comparison_type = 'string';
           else if (_.includes(['bigint', 'int', 'smallint', 'decimal', 'time'], field.type)) comparison_type = 'numeric';
           else if (_.includes(['datetime', 'date'], field.type)) comparison_type = 'date';
-          else if (_.includes(['hash', 'bit'], field.type)) comparison_type = 'object';
+          else if (_.includes(['hash', 'boolean'], field.type)) comparison_type = 'object';
         }
         var sfield = { "name": field.name, "caption": field.caption, "comparison_type": comparison_type };
         if (field.search_sound) sfield.search_sound = 1;

@@ -105,7 +105,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "fields": [
     {
       "name": "E_Name",
-      "type": "varchar", //bigint, varchar, date, decimal, int, datetime, char, smallint, file, hash, encascii, time, bit
+      "type": "varchar", //bigint, varchar, date, decimal, int, datetime, char, smallint, file, hash, encascii, time, boolean
       "length": "255",
       "precision": [12,6], //For decimal, default is 10,4 if omitted
       "key": 1, //If key exists, then this is a key field
