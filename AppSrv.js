@@ -164,7 +164,7 @@ AppSrv.prototype.getModelRecordset = function (req, res, modelid, Q, P, rowlimit
           var searchlistfields = this.getFieldsByName(model.fields, searchlist);
           _.each(searchlistfields, function (field) {
             if(field.disable_search_all) return;
-            var searchtermsql = _this.addSearchTerm(field, i, search_value, search_comparison, sql_ptypes, sql_params, verrors);
+            var searchtermsql = _this.addSearchTerm(field, i, search_value, search_comparison, sql_ptypes, sql_params, verrors, { search_all: true });
             if (searchtermsql) {
               if (searchall.length) searchall.push('or');
               searchall.push(searchtermsql);
@@ -1686,7 +1686,13 @@ AppSrv.prototype.DeformatParam = function (field, val, verrors) {
   else if (field.type == 'boolean') {
     if (val === '') return null;
     if (val === null) return null;
-    return val;
+    if (typeof val == 'undefined') return null;
+    if (val === false) return false;
+    if (val === true) return true;
+    var valstr = val.toString().toUpperCase();
+    if((valstr==='TRUE')||(valstr==='T')||(valstr==='Y')||(valstr==='YES')||(valstr==='ON')||(valstr==='1')) return true;
+    if((valstr==='FALSE')||(valstr==='F')||(valstr==='N')||(valstr==='NO')||(valstr==='OFF')||(valstr==='0')) return false;
+    return null;
     /*
     if (!val) return false;
     if (val == '0') return false;
@@ -1709,7 +1715,8 @@ function ApplyTransTbl(sql_params, transtbl) {
   }
   return sql_params;
 }
-AppSrv.prototype.addSearchTerm = function (field, search_i, in_search_value, comparison, sql_ptypes, sql_params, verrors) {
+AppSrv.prototype.addSearchTerm = function (field, search_i, in_search_value, comparison, sql_ptypes, sql_params, verrors, options) {
+  if(!options) options = {};
   if (!('type' in field)) throw new Error('Search term ' + field.name + ' must have type.');
   var ftype = field.type;
   var pname = 'search_' + search_i + '_' + field.name;
@@ -1756,9 +1763,16 @@ AppSrv.prototype.addSearchTerm = function (field, search_i, in_search_value, com
   var searchterm = this.db.sql.getSearchTerm(this.jsh, field, pname, in_search_value, comparison);
   if (searchterm) {
     if (!searchterm.dbtype) searchterm.dbtype = AppSrv.prototype.getDBType(field);
-    sql_ptypes.push(searchterm.dbtype);
     //Dont deformat dates
     if ((ftype != 'datetime') && (ftype != 'date') && (ftype != 'time')) searchterm.search_value = this.DeformatParam(field, searchterm.search_value, verrors);
+    if((searchterm.search_value === null) && ((comparison != 'null') && (comparison != 'notnull'))){
+      if(options.search_all) return '';
+      else {
+        if(!verrors['']) verrors[''] = [];
+        verrors[''].push('Invalid search value for ' + field.name + ' (' + ftype + ')');
+      }
+    }
+    sql_ptypes.push(searchterm.dbtype);
     sql_params[pname] = searchterm.search_value;
     return searchterm.sql;
   }

@@ -2148,7 +2148,7 @@ exports.xejs = {
     }
     if (field && field.type) {
       if ((field.type == 'varchar') || (field.type == 'char')) return 'text';
-      //else if (_.includes(['bigint', 'int', 'smallint', 'bit'], field.type)) return 'number';
+      //else if (_.includes(['bigint', 'int', 'smallint', 'boolean'], field.type)) return 'number';
       //else if ((field.type == 'datetime')) return 'number';// return 'datetime';
       //else if ((field.type == 'date')) return 'number';// return 'date';
       //else if ((field.type == 'time')) return 'number';// return 'time';
@@ -2491,7 +2491,7 @@ exports.getMaxLength = function (field) {
     }
     else if (ftype == 'int') rslt = 15;
     else if (ftype == 'smallint') rslt = 10;
-    else if (ftype == 'bit') rslt = 5;
+    else if (ftype == 'boolean') rslt = 5;
   }
   return rslt;
 }
@@ -4721,7 +4721,7 @@ function SearchQuery(model) {
           if ((field.type == 'varchar') || (field.type == 'char')) comparison_type = 'string';
           else if (_.includes(['bigint', 'int', 'smallint', 'decimal', 'time'], field.type)) comparison_type = 'numeric';
           else if (_.includes(['datetime', 'date'], field.type)) comparison_type = 'date';
-          else if (_.includes(['hash', 'bit'], field.type)) comparison_type = 'object';
+          else if (_.includes(['hash', 'boolean'], field.type)) comparison_type = 'object';
         }
         var sfield = { "name": field.name, "caption": field.caption, "comparison_type": comparison_type };
         if (field.search_sound) sfield.search_sound = 1;
@@ -4734,11 +4734,12 @@ SearchQuery.prototype.GetValues = function (_PlaceholderID) {
   _this = this;
   _this.Items = [];
   $(_PlaceholderID + ' div.xfilter_expression').each(function (i, obj) {
+    var v_column = $(obj).find('select.xfilter_column').val();
     var v_value = $(obj).find('input.xfilter_value').val();
     var v_join = $(obj).find('input.xfilter_join').val();
     var v_comparison = $(obj).find('select.xfilter_comparison').val();
-    if (!v_comparison) v_comparison = 'contains';
-    _this.Items.push(new SearchItem($(obj).find('select.xfilter_column').val(), v_value, v_join, v_comparison));
+    if ((v_column==='ALL') || !v_comparison) v_comparison = 'contains';
+    _this.Items.push(new SearchItem(v_column, v_value, v_join, v_comparison));
   });
 };
 SearchQuery.prototype.HasUpdates = function (_PlaceholderID) {
@@ -4747,7 +4748,7 @@ SearchQuery.prototype.HasUpdates = function (_PlaceholderID) {
   $(_PlaceholderID + ' div').each(function (i, obj) {
     var v_value = $(obj).find('input.xfilter_value').val();
     var v_join = $(obj).find('input.xfilter_join').val();
-    var v_comparison = $(obj).find('input.xfilter_comparison').val();
+    var v_comparison = $(obj).find('select.xfilter_comparison').val();
     newitems.push(new SearchItem($(obj).find('select.xfilter_column').val(), v_value, v_join, v_comparison));
   });
   if (newitems.length != _this.Items.length) return true;

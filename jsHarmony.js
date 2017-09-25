@@ -658,7 +658,7 @@ jsHarmony.prototype.ParseEntities = function () {
       'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
       'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'precision', 'password', 'hash', 'salt', 'unbound',
       'sqlselect', 'sqlupdate', 'sqlinsert','sql_sort', 'sqlwhere', 'sql_search_sound', 'sql_search', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVEFIELD__', '__AFTER__',
-      'sql_from_db','sql_to_db','datatype_config'
+      'sql_from_db','sql_to_db','sql_search_to_db','datatype_config'
     ];
     var _v_controlparams = [
       'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'dateformat', 'base_readonly',

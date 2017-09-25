@@ -75,6 +75,8 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           </select>
         <# } else { #>
         containing the value
+          <select class="xfilter_comparison" onchange="XForm<%=model.id%>_FilterComparisonChange();" style="display:none;">
+          </select>
         <# } #>
       </div>&nbsp; 
       <input type="text" class="xfilter_value <#=xejs.iif((selected_column && (selected_column.comparison_type=='date')),'datepicker')#>" value="<#=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'',data.Items[i].Value)#>" onkeyup="XForm<%=model.id%>_FilterKeyUp(event);" style="<#=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'visibility:hidden;')#>" /> 
