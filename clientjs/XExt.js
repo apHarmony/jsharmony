@@ -382,7 +382,7 @@ exports.xejs = {
     }
     if (field && field.type) {
       if ((field.type == 'varchar') || (field.type == 'char')) return 'text';
-      //else if (_.includes(['bigint', 'int', 'smallint', 'boolean'], field.type)) return 'number';
+      //else if (_.includes(['bigint', 'int', 'smallint', 'tinyint', 'decimal', 'float', 'boolean'], field.type)) return 'number';
       //else if ((field.type == 'datetime')) return 'number';// return 'datetime';
       //else if ((field.type == 'date')) return 'number';// return 'date';
       //else if ((field.type == 'time')) return 'number';// return 'time';
@@ -710,9 +710,9 @@ exports.getMaxLength = function (field) {
     var ftype = field.type;
     if ((ftype == 'varchar' || ftype == 'char') && ('length' in field)) rslt = field.length;
     else if (ftype == 'bigint') rslt = 25;
-    else if (ftype == 'datetime') rslt = 25;
-    else if (ftype == 'time') rslt = 20;
-    else if (ftype == 'date') rslt = 10;
+    else if (ftype == 'datetime') rslt = 50;
+    else if (ftype == 'time') rslt = 50;
+    else if (ftype == 'date') rslt = 50;
     else if (ftype == 'decimal'){
       rslt = 40;
       var prec_h = 38;
@@ -723,8 +723,10 @@ exports.getMaxLength = function (field) {
       }
       rslt = prec_h + 2;
     }
+    else if (ftype == 'float'){ rslt = 128; }
     else if (ftype == 'int') rslt = 15;
     else if (ftype == 'smallint') rslt = 10;
+    else if (ftype == 'tinyint') rslt = 3;
     else if (ftype == 'boolean') rslt = 5;
   }
   return rslt;

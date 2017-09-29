@@ -636,6 +636,15 @@ XValidate._v_IsDecimal = function (_maxplaces) {
     return "";'));
 }
 
+XValidate._v_IsFloat = function () {
+  return (new Function('_caption', '_val', '\
+	  if(!_val) return "";\
+    if(_val == null) return "";\
+    if(_val == "") return "";\
+    if(isNaN(parseFloat(val))) return _caption + " must be a valid number.";\
+    return "";'));
+}
+
 XValidate._v_MaxValue = function (_max) {
   return (new Function('_caption', '_val', '\
     if(!_val) return "";\
@@ -2148,7 +2157,7 @@ exports.xejs = {
     }
     if (field && field.type) {
       if ((field.type == 'varchar') || (field.type == 'char')) return 'text';
-      //else if (_.includes(['bigint', 'int', 'smallint', 'boolean'], field.type)) return 'number';
+      //else if (_.includes(['bigint', 'int', 'smallint', 'tinyint', 'decimal', 'float', 'boolean'], field.type)) return 'number';
       //else if ((field.type == 'datetime')) return 'number';// return 'datetime';
       //else if ((field.type == 'date')) return 'number';// return 'date';
       //else if ((field.type == 'time')) return 'number';// return 'time';
@@ -2476,9 +2485,9 @@ exports.getMaxLength = function (field) {
     var ftype = field.type;
     if ((ftype == 'varchar' || ftype == 'char') && ('length' in field)) rslt = field.length;
     else if (ftype == 'bigint') rslt = 25;
-    else if (ftype == 'datetime') rslt = 25;
-    else if (ftype == 'time') rslt = 20;
-    else if (ftype == 'date') rslt = 10;
+    else if (ftype == 'datetime') rslt = 50;
+    else if (ftype == 'time') rslt = 50;
+    else if (ftype == 'date') rslt = 50;
     else if (ftype == 'decimal'){
       rslt = 40;
       var prec_h = 38;
@@ -2489,8 +2498,10 @@ exports.getMaxLength = function (field) {
       }
       rslt = prec_h + 2;
     }
+    else if (ftype == 'float'){ rslt = 128; }
     else if (ftype == 'int') rslt = 15;
     else if (ftype == 'smallint') rslt = 10;
+    else if (ftype == 'tinyint') rslt = 3;
     else if (ftype == 'boolean') rslt = 5;
   }
   return rslt;
@@ -4719,7 +4730,7 @@ function SearchQuery(model) {
         if ('lov' in field) comparison_type = 'lov';
         else if ('type' in field) {
           if ((field.type == 'varchar') || (field.type == 'char')) comparison_type = 'string';
-          else if (_.includes(['bigint', 'int', 'smallint', 'decimal', 'time'], field.type)) comparison_type = 'numeric';
+          else if (_.includes(['bigint', 'int', 'smallint', 'tinyint', 'decimal', 'float', 'time'], field.type)) comparison_type = 'numeric';
           else if (_.includes(['datetime', 'date'], field.type)) comparison_type = 'date';
           else if (_.includes(['hash', 'boolean'], field.type)) comparison_type = 'object';
         }

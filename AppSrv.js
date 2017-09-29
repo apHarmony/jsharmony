@@ -836,7 +836,7 @@ AppSrv.prototype.postModel = function (req, res, modelid, noexecute, Q, P, onCom
     _this.ExecTasks(req, res, dbtasks, false, onComplete);
   }
   
-  if (model.layout == 'form') setTimeout(function(){ _this.postModelForm(req, res, modelid, Q, P, fdone);},2000);
+  if (model.layout == 'form') _this.postModelForm(req, res, modelid, Q, P, fdone);
   else if (model.layout == 'form-m') this.postModelForm(req, res, modelid, Q, P, fdone);
   else if ((model.layout == 'grid') && (model.commitlevel) && (model.commitlevel != 'none')) this.postModelForm(req, res, modelid, Q, P, fdone);
   else if (model.layout == 'multisel') this.postModelMultisel(req, res, modelid, Q, P, fdone);
@@ -1653,8 +1653,28 @@ AppSrv.prototype.DeformatParam = function (field, val, verrors) {
     if (!mtstmp.isValid()) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
     if (mtstmp.year()>9999) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
     if (mtstmp.year()<1753) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
-    //Remove timezone
-    return moment(mtstmp.format("YYYY-MM-DDTHH:mm:ss.SSS")).toDate();
+    
+    //Remove timezone, unless we need to preserve it
+    var dtrslt = null;
+    if(field.type=='date'){
+      dtrslt = moment(mtstmp.format("YYYY-MM-DDTHH:mm:ss.SSS")).toDate();
+    }
+    else if(field.type=='datetime'){
+      if(field.datatype_config.preserve_timezone){
+        //If no timezone specified, set to UTC
+        if(!has_timezone) mtstmp = moment.parseZone(mtstmp.format("YYYY-MM-DDTHH:mm:ss.SSS")+'Z');
+        dtrslt = mtstmp.toDate();
+        dtrslt.jsh_utcOffset = -1*mtstmp.utcOffset();
+      }
+      else dtrslt = moment(mtstmp.format("YYYY-MM-DDTHH:mm:ss.SSS")).toDate();
+      //Get microseconds
+      if(val){
+        var re_micros = /:\d\d\.\d\d\d(\d+)/.exec(val);
+        if(re_micros){ dtrslt.jsh_microseconds = parseFloat("0."+re_micros[1]) * 1000; }
+      }
+    }
+    return dtrslt;
+    //return mtstmp.format("YYYY-MM-DDTHH:mm:ss.SSS")+'Z';
     //return mtstmp.toDate();
     //return new Date(dtstmp);
   }
@@ -1666,16 +1686,29 @@ AppSrv.prototype.DeformatParam = function (field, val, verrors) {
     if (isNaN(dtstmp)) { dtstmp = Date.parse(val); fulldate = true; }
     if (isNaN(dtstmp)) { add_verror(verrors, field.name + ': Invalid Time'); return ''; }
     var dt = new Date('1970-01-01');
-    if (fulldate) {
-      var has_timezone = false;
-      if (/Z|[+\-][0-9]+:[0-9]+$/.test(val)) has_timezone = true;
-      var mtstmp = null;
-      if (has_timezone) mtstmp = moment.parseZone(val);
-      else mtstmp = moment(val);
-      dt = moment(mtstmp.format("YYYY-MM-DDTHH:mm:ss.SSS")).toDate();
+    
+    //Get time in original timezone
+    var has_timezone = false;
+    if (/Z|[+\-][0-9]+:[0-9]+$/.test(val)) has_timezone = true;
+
+    var mtstmp = null;
+    var prefix = (!fulldate?'1970-01-01 ':'');
+    if (has_timezone) mtstmp = moment.parseZone(prefix + val);
+    else mtstmp = moment(prefix + val);
+
+    if(field.datatype_config.preserve_timezone){
+      //If no timezone specified, set to UTC
+      if(!has_timezone) mtstmp = moment.parseZone(mtstmp.format("YYYY-MM-DDTHH:mm:ss.SSS")+'Z');
+      dt = mtstmp.toDate();
+      dt.jsh_utcOffset = -1*mtstmp.utcOffset();
     }
-    else dt = new Date('1970-01-01 ' + val);
-    //else dt = new Date(dtstmp - dt.getTimezoneOffset() * 60 * 1000);
+    else dt = moment(mtstmp.format("YYYY-MM-DDTHH:mm:ss.SSS")).toDate();
+
+    //Get microseconds
+    if(val){
+      var re_micros = /:\d\d\.\d\d\d(\d+)/.exec(val);
+      if(re_micros){ dt.jsh_microseconds = parseFloat("0."+re_micros[1]) * 1000; }
+    }
     return dt;
   }
   else if (field.type == 'encascii') {
@@ -1731,9 +1764,11 @@ AppSrv.prototype.addSearchTerm = function (field, search_i, in_search_value, com
       case 'bigint':
       case 'int':
       case 'smallint':
-        //If is not numeric, move on
+      case 'tinyint':
         if (isNaN(in_search_value)) return '';
+        if ((parseFloat(in_search_value)%1) != 0) return '';
         break;
+      case 'float':
       case 'decimal':
         if (isNaN(in_search_value)) return '';
         break;
@@ -2279,7 +2314,7 @@ AppSrv.prototype.getDataLockSQL = function (req, fields, sql_ptypes, sql_params,
 
 AppSrv.prototype.getDBType = function (field) {
   var fname = field.name;
-  if (!('type' in field)) throw new Error('Key ' + fname + ' must have type.');
+  if (!('type' in field)) throw new Error('Field ' + fname + ' must have type.');
   var ftype = field.type;
   var flen = field.length;
   if (ftype == 'bigint') return DB.types.BigInt;
@@ -2292,12 +2327,10 @@ AppSrv.prototype.getDBType = function (field) {
     return DB.types.Char(flen);
   }
   else if (ftype == 'datetime') {
-    if (typeof flen == 'undefined') throw new Error('Key ' + fname + ' must have length.');
-    return DB.types.DateTime(flen);
+    return DB.types.DateTime(field.precision, field.datatype_config.preserve_timezone);
   }
   else if (ftype == 'time') {
-    if (typeof flen == 'undefined') throw new Error('Key ' + fname + ' must have length.');
-    return DB.types.Time(flen);
+    return DB.types.Time(field.precision, field.datatype_config.preserve_timezone);
   }
   else if (ftype == 'date') return DB.types.Date;
   else if (ftype == 'decimal') {
@@ -2309,11 +2342,19 @@ AppSrv.prototype.getDBType = function (field) {
     }
     return DB.types.Decimal(prec_h, prec_l);
   }
+  else if (ftype == 'float') {
+    var prec = 53;
+    if ('precision' in field) {
+      prec = field.precision;
+    }
+    return DB.types.Float(prec);
+  }
   else if (ftype == 'int') return DB.types.Int;
   else if (ftype == 'smallint') return DB.types.SmallInt;
+  else if (ftype == 'tinyint') return DB.types.TinyInt;
   else if (ftype == 'boolean') return DB.types.Boolean;
   else if ((ftype == 'hash') || (ftype == 'encascii')) {
-    if (typeof flen == 'undefined') throw new Error('Key ' + fname + ' must have length.');
+    if (typeof flen == 'undefined') throw new Error('Field ' + fname + ' must have length.');
     return DB.types.VarBinary(flen);
   }
   else throw new Error('Key ' + fname + ' has invalid type.');

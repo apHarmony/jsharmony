@@ -7,9 +7,38 @@
       "defaults":{ "PREC_H": 38, "PREC_L": 10 }
     }
   },
-  "money":{ 
+  "money":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as money)",
+    "type": "varchar"
+  },
+  "double precision":{ 
+    "sql_from_db": "cast(%%%SQL%%% as varchar(50))",
+    "sql_search": "%%%SQL%%%",
+    "sql_search_to_db": "cast(%%%SQL%%% as float(%%%PREC%%%))",
+    "datatype_config":{
+      "defaults":{ "PREC": 53 }
+    },
+    "type": "float"
+  },
+  "real":{ 
+    "datatype_config":{
+      "defaults":{ "PREC": 24 }
+    },
+    "type": "double precision"
+  },
+  "timetz":{ 
+    "type": "time",
+    "datatype_config": { "preserve_timezone": true }
+  },
+  "timestamp":{ "type": "datetime" },
+  "timestamptz":{ 
+    "type": "datetime",
+    "datatype_config": { "preserve_timezone": true }
+  },
+  "interval":{ 
+    "sql_from_db": "cast(%%%SQL%%% as varchar)",
+    "sql_to_db": "cast(%%%SQL%%% as interval)",
     "type": "varchar"
   },
   "bytea":{ 

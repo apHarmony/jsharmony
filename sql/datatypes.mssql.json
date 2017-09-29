@@ -8,6 +8,19 @@
       "defaults":{ "PREC_H": 38, "PREC_L": 10 }
     }
   },
+  "float":{ 
+    "sql_from_db": "convert(varchar(50), %%%SQL%%%, 3)",
+    "sql_search": "%%%SQL%%%",
+    "sql_to_db": "cast(%%%SQL%%% as float(%%%PREC%%%))",
+    "sql_search_to_db": "cast(%%%SQL%%% as float(%%%PREC%%%))",
+    "datatype_config": {
+      "defaults":{ "PREC": 53 }
+    }
+  },
+  "real":{
+    "type":"float",
+    "precision": 24
+  },
   "bit":{
     "type": "boolean"
   },
@@ -38,6 +51,18 @@
   "smallmoney4":{ 
     "sql_from_db": "convert(nvarchar, %%%SQL%%%, 2)",
     "type": "smallmoney"
+  },
+  "datetime":{
+    "sql_from_db": "cast(%%%SQL%%% as datetime2(7))",
+    "sql_search": "%%%SQL%%%"
+  },
+  "datetimeoffset":{
+    "sql_from_db": "convert(varchar(50),%%%SQL%%%,126)",
+    "sql_search": "%%%SQL%%%",
+    "type": "datetime",
+    "datatype_config": {
+      "preserve_timezone": true
+    }
   },
   "binary":{ 
     "sql_from_db": "convert(varchar(max), %%%SQL%%%, 1)",

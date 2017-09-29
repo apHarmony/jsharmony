@@ -33,7 +33,7 @@ function SearchQuery(model) {
         if ('lov' in field) comparison_type = 'lov';
         else if ('type' in field) {
           if ((field.type == 'varchar') || (field.type == 'char')) comparison_type = 'string';
-          else if (_.includes(['bigint', 'int', 'smallint', 'decimal', 'time'], field.type)) comparison_type = 'numeric';
+          else if (_.includes(['bigint', 'int', 'smallint', 'tinyint', 'decimal', 'float', 'time'], field.type)) comparison_type = 'numeric';
           else if (_.includes(['datetime', 'date'], field.type)) comparison_type = 'date';
           else if (_.includes(['hash', 'boolean'], field.type)) comparison_type = 'object';
         }

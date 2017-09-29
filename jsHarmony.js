@@ -415,7 +415,7 @@ jsHarmony.prototype.TestImageMagick  = function(strField){
 jsHarmony.prototype.ParseEntities = function () {
   var _this = this;
   var base_controls = ["label", "html", "textbox", "textzoom", "dropdown", "date", "textarea", "hidden", "subform", "html", "password", "file_upload", "file_download", "button", "linkbutton", "tree", "checkbox"];
-  var base_datatypes = ['DATETIME','VARCHAR','CHAR','BOOLEAN','BIGINT','INT','SMALLINT','DECIMAL','DATE','DATETIME','TIME','ENCASCII','HASH','FILE'];
+  var base_datatypes = ['DATETIME','VARCHAR','CHAR','BOOLEAN','BIGINT','INT','SMALLINT','TINYINT','DECIMAL','FLOAT','DATE','DATETIME','TIME','ENCASCII','HASH','FILE'];
   _.forOwn(this.Models, function (model) {
     model.xvalidate = new XValidate();
     if (!('table' in model)) LogEntityError(_WARNING, 'Model ' + model.id + ' missing table');
@@ -458,6 +458,7 @@ jsHarmony.prototype.ParseEntities = function () {
         if (('control' in field) && (field.control == 'hidden')) field.caption = '';
         else field.caption = field.name;
       }
+      if(!('datatype_config' in field)) field.datatype_config = {};
       if ('name' in field) {
         //if (_.includes(fieldnames, field.name)) { throw new Error("Duplicate field " + field.name + " in model " + model.id + "."); }
         if (_.includes(fieldnames, field.name)) { LogEntityError(_ERROR, "Duplicate field " + field.name + " in model " + model.id + "."); }
@@ -562,8 +563,14 @@ jsHarmony.prototype.ParseEntities = function () {
             case 'INT':
             case 'SMALLINT':
               AddValidation(field, 'IsNumeric'); break;
+            case 'TINYINT':
+              AddValidation(field, 'MaxValue:255');
+              AddValidation(field, 'IsNumeric:true');
+              break;
             case 'DECIMAL':
               AddValidation(field, 'IsDecimal'); break;
+            case 'FLOAT':
+              AddValidation(field, 'IsFloat'); break;
             case 'DATE':
             case 'DATETIME':
               AddValidation(field, 'IsDate'); break;
@@ -939,6 +946,9 @@ jsHarmony.prototype.parseFieldExpression = function(field, exp, params, options)
   if(('precision' in field) && _.isArray(field.precision) && (field.precision.length==2)){
     rparams.PREC_H = field.precision[0];
     rparams.PREC_L = field.precision[1];
+  }
+  else if(('precision' in field) && _.isInteger(field.precision)){
+    rparams.PREC = field.precision;
   }
   if('length' in field) rparams.LENGTH = field.length;
   if(field.datatype_config && field.datatype_config.orig_length) rparams.LENGTH = field.datatype_config.orig_length;

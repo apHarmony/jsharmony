@@ -105,9 +105,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "fields": [
     {
       "name": "E_Name",
-      "type": "varchar", //bigint, varchar, date, decimal, int, datetime, char, smallint, file, hash, encascii, time, boolean
+      "type": "varchar", //bigint, varchar, date, decimal, float, int, datetime, char, smallint, tinyint, file, hash, encascii, time, boolean
       "length": "255",
       "precision": [12,6], //For decimal, default is 10,4 if omitted
+      "precision": 53, //For float
       "key": 1, //If key exists, then this is a key field
       "lovkey": 1, //Used by Multisel to enable additional foreign key in LOV expression, without being a required parameter
       "virtual": 1, //Field is not bound on I/U, can be B, but will not pull updates or respond to HasUpdates
