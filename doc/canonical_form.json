@@ -85,7 +85,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //Buttons without I access will not show up on Insert
     //"link":"js:XExt.popupReport('I',{ C_ID: 97 },{ width:900, height:500 });"
   ],
-  "hide_system_buttons" : ["print","export","help","filter"], //Current only on Grid
+  "hide_system_buttons" : ["print","export","help","filter","clear"], //Current only on Grid
   "rowstyle": "<#=xejs.iif(1==1,'color:red;','color:yellow;')#>", //Used in grid to style rows dynamically
   "rowclass": "<#-xejs.case(datarow['PLE_SEL_NOTIF'],'xgrid_row_highlight',!datarow['PLE_SEL_NOTIF_OK'],'xgrid_row_disabled')#>", //Used in grid to style rows dynamically
     //xejs.iif(condition,true,[false])  [false] result is optional
