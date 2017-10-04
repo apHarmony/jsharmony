@@ -198,6 +198,14 @@ a.xtab{
 .xtbl td.xcheckbox_column {
   text-align:center;
 }
+.xicon {
+  display:block;
+  margin:0 auto;
+  text-align:center;
+  height:16px;
+  position:relative;
+  top:2px;
+}
 .xform_ctrl_textzoom {
   height:17px;
   display:inline-block;
@@ -356,6 +364,13 @@ a.linkbutton img {
   padding-left:1px;
   padding-right:5px;
   border:0;
+}
+.xform_ctrl.checkbox {
+  position:relative;
+  top:2px;
+}
+.xtbl .xform_ctrl.checkbox {
+  top:0px;
 }
 .xlookup.icon, .xtextzoom.icon {
   position:relative;

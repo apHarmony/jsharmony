@@ -197,7 +197,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "lov": { "GCOD": "E_CTGR", "showcode": 1 }, //showcode ignores the CODETxt and shows the CODEVal on the front-end.  Useful for States
       "lov": { "GCOD2": "DSCOPE_DCTGR","blank": 1,"parent": "CA_COUNTRY" },
       "eol": 1,
-      "popuplov": {  //Enable POPUPLOV, requires target
+      "popuplov": {  //Enable POPUPLOV, requires target grid
                        "target":  "J",
                        "codeval": "J_ID",
                        "popupstyle": "height:200px;",

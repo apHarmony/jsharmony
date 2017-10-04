@@ -3310,7 +3310,12 @@ exports.time_decode = function (format, val) {
   if (val instanceof Date) rslt = moment(val);
   else rslt = moment(new Date(val));
   if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm", true); //Strict parsing
-  if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm a");
+  if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm a", true); //Strict parsing
+  if (!rslt.isValid()) rslt = moment(val.trim(), "HH:mm", true); //Strict parsing
+  if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm:ss", true); //Strict parsing
+  if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm:ss a", true); //Strict parsing
+  if (!rslt.isValid()) rslt = moment(val.trim(), "HH:mm:ss", true); //Strict parsing
+  if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm:ss.SSSSSSSS a");
   
   return rslt.format("1970-01-01THH:mm:ss.SSS");
   //return m.format("HH:mm:ss.SSS");

@@ -175,10 +175,13 @@ jsHarmony.prototype.LoadSQL = function (dir, type) {
   for(var sqlid in rslt.SQL) this.SQL[sqlid] = rslt.SQL[sqlid];
   for(var datatypeid in rslt.CustomDataTypes) this.CustomDataTypes[datatypeid] = rslt.CustomDataTypes[datatypeid];
 }
-jsHarmony.LoadSQL = function (dir, type) {
+jsHarmony.LoadSQL = function (dir, type, rslt) {
+  if(!rslt) rslt = {};
+  if(!rslt.CustomDataTypes) rslt.CustomDataTypes = {};
+  if(!rslt.SQL) rslt.SQL = {};
+  
   var _this = this;
   var f = {};
-  var rslt = { CustomDataTypes: {}, SQL: {} };
   if (fs.existsSync(dir)) f = fs.readdirSync(dir);
   else return rslt;
   f.sort(function (a, b) {
@@ -648,7 +651,7 @@ jsHarmony.prototype.ParseEntities = function () {
     
     //Validate Model and Field Parameters
     var _v_model = [
-      'comment', 'layout', 'title', 'table', 'access', 'roles', 'caption', 'sort','dev',
+      'comment', 'layout', 'title', 'table', 'access', 'roles', 'caption', 'sort', 'dev',
       'samplerepeat', 'topmenu', 'id', 'idmd5', 'access_models', '_inherits', 'helpid', 'querystring', 'buttons', 'xvalidate',
       'pagesettings', 'pageheader', 'pageheaderjs', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue',
       'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'nogridadd', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
