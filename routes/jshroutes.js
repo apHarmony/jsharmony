@@ -309,7 +309,7 @@ var Routes = function (jsh, jshconfig) {
   });
   router.get('/_restart', function (req, res, next) {
     if(!('SYSADMIN' in req._roles) && !('DEV' in req._roles)) return next();
-    res.end('<html><body>Server will restart in 1 sec...<script type="text/javascript">window.setTimeout(function(){document.write(\'Restart initiated\');},1000);</script></body></html>');
+    res.end('<html><body>System will restart in 1 sec...<script type="text/javascript">window.setTimeout(function(){document.write(\'Restart initiated...\');},1000); window.setTimeout(function(){window.location.href="/";},5000);</script></body></html>');
     setTimeout(function(){ process.exit(); },1000);
   });
   router.get('/:modelid/:modelkey?', function (req, res, next) {

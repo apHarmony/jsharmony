@@ -157,6 +157,8 @@ XForm<%=model.id%>.prototype.OnRender = function(){
       jctrl.val(val);
     }
     else jctrl.val(val);
+
+    if(('readonly' in field) && (field.readonly == 1)) XDisable(jctrl);
     
   });
   $("#navtext_<%=model.id%>").html((xform_<%=model.id%>.Index+1)+' of '+xform_<%=model.id%>.Count());

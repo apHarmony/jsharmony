@@ -2369,8 +2369,8 @@ exports.TreeRenderNode = function (ctrl, n) {
     children += exports.TreeRenderNode(ctrl, n.Children[i]);
   }
   var rslt = ejs.render('\
-    <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-value="<%=n.Value%>" onclick=\'XExt.TreeSelectNode(this,<%-JSON.stringify(n.ID)%>); return false;\' ondblclick=\'XExt.TreeDoubleClickNode(this,<%-JSON.stringify(n.ID)%>); return false;\' oncontextmenu=\'return XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'XExt.CancelBubble(arguments[0]); XExt.TreeToggleNode($(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><img class="icon" src="/images/icon_<%=n.Icon%>.png"><span><%=n.Text%></span></a>\
-    <div class="children <%=(n.Expanded?"expanded":"")%> tree_item_<%=n.ID%>" data-value="<%=n.Value%>"><%-children%></div>',
+    <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>" onclick=\'XExt.TreeSelectNode(this,<%-JSON.stringify(n.Value)%>); return false;\' ondblclick=\'XExt.TreeDoubleClickNode(this,<%-JSON.stringify(n.ID)%>); return false;\' oncontextmenu=\'return XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'XExt.CancelBubble(arguments[0]); XExt.TreeToggleNode($(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><img class="icon" src="/images/icon_<%=n.Icon%>.png"><span><%=n.Text%></span></a>\
+    <div class="children <%=(n.Expanded?"expanded":"")%> tree_item_<%=n.ID%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>"><%-children%></div>',
     { n: n, children: children }
   );
   return rslt;
@@ -2381,7 +2381,11 @@ exports.TreeItemContextMenu = function (ctrl, n) {
   var jtree = jctrl.closest('.xform_ctrl.tree');
   var fieldname = exports.getFieldFromObject(ctrl);
   var menuid = '#_item_context_menu_' + fieldname;
-  if(jtree.data('oncontextmenu')) { var rslt = (new Function('n', jtree.data('oncontextmenu'))); rslt.call(ctrl, n); }
+  if(jtree.data('oncontextmenu')) { 
+    var f = (new Function('n', jtree.data('oncontextmenu'))); 
+    var frslt = f.call(ctrl, n);
+    if((frslt === false) || (frslt===true)) return frslt;
+  }
   if ($(menuid).length) {
     exports.ShowContextMenu(menuid, $(ctrl).data('value'), { id:n });
     return false;
@@ -2414,7 +2418,7 @@ exports.TreeGetExpandedNodes = function (ctrl) {
   return rslt;
 }
 
-exports.TreeSelectNode = function (ctrl, nodeid) {
+exports.TreeSelectNode = function (ctrl, nodevalue) {
   var jctrl = $(ctrl);
   
   var xform = exports.getFormFromObject(ctrl);
@@ -2424,6 +2428,14 @@ exports.TreeSelectNode = function (ctrl, nodeid) {
   
   var jtree = jctrl.closest('.xform_ctrl.tree');
   if (jtree.hasClass('uneditable')) return;
+
+  //Get nodeid from nodevalue
+  var nodeid = '';
+  jtree.find('.tree_item').each(function(){
+    if($(this).data('value')==nodevalue) nodeid = $(this).data('id');
+  });
+  if(!nodeid){ return XExt.Alert('Tree node with value \'' + nodevalue + '\' not found'); }
+
   jtree.find('.selected').removeClass('selected');
   jtree.find('.tree_item.tree_item_' + nodeid).addClass('selected');
   if (field && field.controlparams) {
