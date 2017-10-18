@@ -542,19 +542,21 @@ jsHarmony.prototype.ParseEntities = function () {
         }
         if (field.sql_from_db) field.sql_from_db = _this.parseFieldExpression(field, field.sql_from_db, {}, { ejs:true });
         if (field.sql_to_db) field.sql_to_db = _this.parseFieldExpression(field, field.sql_to_db, {}, { ejs:true });
+        var has_datatype_validator = false;
         if (field.datatype_config){
           if(field.datatype_config.override_length){
             field.datatype_config.orig_length = field.length;
             field.length = field.datatype_config.override_length;
           }
           if(field.datatype_config.validate){
+            has_datatype_validator = true;
             for(var i=0;i<field.datatype_config.validate.length;i++){
               var validator = _this.parseFieldExpression(field, field.datatype_config.validate[i], {}, { ejs: true });
               if(validator) AddValidation(field, validator);
             }
           }
         }
-        else {
+        if(!has_datatype_validator){
           switch (field.type.toUpperCase()) {
             case 'VARCHAR':
             case 'CHAR':
