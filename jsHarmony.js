@@ -290,9 +290,11 @@ jsHarmony.prototype.ParseInheritance = function () {
         if (!(model.inherits in _this.Models)) throw new Error('Model ' + model.id + ' parent model does not exist.');
         if (model.inherits == model.id) throw new Error('Model ' + model.id + ' cyclic inheritance.')
         var parentmodel = _this.Models[model.inherits];
+        var origparentmodel = parentmodel;
         var parentinheritance = parentmodel.inherits;
         if (typeof parentinheritance !== 'undefined') return;
         parentmodel = JSON.parse(JSON.stringify(parentmodel)); //Deep clone
+        if(origparentmodel.onroute) parentmodel.onroute = origparentmodel.onroute;
         model._inherits = parentmodel._inherits.concat([model.inherits]);
         //Merge Models
         //Extend this to enable delete existing values by making them NULL
