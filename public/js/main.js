@@ -3826,9 +3826,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 exports = module.exports = {};
 
-$(document).ready(function () { exports.XMenuResize(); });
-$(window).resize(function () { exports.XMenuResize(); });
-
 var XMenuItems = [];
 var XMenuLeft = 0;
 var XMenuMoreWidth = 0;
@@ -15307,6 +15304,7 @@ global.XWindowResize = function (source) {
     $('.xbodyhead').css('max-width', bodyhead_width + 'px');
   }
   global.XDialogResize(source, params);
+  global.XMenu.XMenuResize();
 }
 global.XDialogResize = function (source, params) {
   $('#xdialogblock').css('width', params.pw + 'px');

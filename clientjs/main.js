@@ -138,6 +138,7 @@ global.XWindowResize = function (source) {
     $('.xbodyhead').css('max-width', bodyhead_width + 'px');
   }
   global.XDialogResize(source, params);
+  global.XMenu.XMenuResize();
 }
 global.XDialogResize = function (source, params) {
   $('#xdialogblock').css('width', params.pw + 'px');

@@ -19,9 +19,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 exports = module.exports = {};
 
-$(document).ready(function () { exports.XMenuResize(); });
-$(window).resize(function () { exports.XMenuResize(); });
-
 var XMenuItems = [];
 var XMenuLeft = 0;
 var XMenuMoreWidth = 0;
