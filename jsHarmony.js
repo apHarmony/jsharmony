@@ -610,15 +610,12 @@ jsHarmony.prototype.ParseEntities = function () {
     });
     
     //Convert mutli-line variables to single string
-    var multi_to_single = function (obj, arr) {
-      _.each(arr, function (p) { if (p in obj) obj[p] = Helper.ParseMultiLine(obj[p]); });
-    }
-    multi_to_single(model, ['js', 'sqlselect', 'sqldownloadselect', 'sqlinsert', 'sqlinsertencrypt', 'sqlupdate', 'sqldelete', 'sqlexec', 'sqlwhere', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onvalidate', 'onupdate', 'ondestroy', 'oncommit']);
-    if (model.breadcrumbs) multi_to_single(model.breadcrumbs, ['sql']);
+    ParseMultiLineProperties(model, ['js', 'sqlselect', 'sqldownloadselect', 'sqlinsert', 'sqlinsertencrypt', 'sqlupdate', 'sqldelete', 'sqlexec', 'sqlwhere', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onvalidate', 'onupdate', 'ondestroy', 'oncommit']);
+    if (model.breadcrumbs) ParseMultiLineProperties(model.breadcrumbs, ['sql']);
     if (model.fields) _.each(model.fields, function (field) {
-      multi_to_single(field, ['onchange', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlwhere', 'sql_sort', 'sql_search', 'sql_search_sound', 'value']);
-      if (field.lov) multi_to_single(field.lov, ['sql', 'sql2', 'sqlmp', 'sqlselect']);
-      if (field.controlparams) multi_to_single(field.controlparams, ['onpopup']);
+      ParseMultiLineProperties(field, ['onchange', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlwhere', 'sql_sort', 'sql_search', 'sql_search_sound', 'value']);
+      if (field.lov) ParseMultiLineProperties(field.lov, ['sql', 'sql2', 'sqlmp', 'sqlselect']);
+      if (field.controlparams) ParseMultiLineProperties(field.controlparams, ['onpopup']);
     });
     
     
@@ -729,7 +726,14 @@ jsHarmony.prototype.ParseEntities = function () {
       }
     }
   });
+
+  ParseMultiLineProperties(_this.Config,['datalocks']);
 };
+
+function ParseMultiLineProperties(obj, arr) {
+  _.each(arr, function (p) { if (p in obj) obj[p] = Helper.ParseMultiLine(obj[p]); });
+}
+
 //This is not used for now.  Models are granted access on an individual basis to enforce security restrictions
 function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
   if ('tabs' in model) for (var tabname in model.tabs) {

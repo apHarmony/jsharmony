@@ -8,6 +8,7 @@ CKEDITOR.editorConfig = function( config ) {
 	// config.language = 'fr';
   // config.uiColor = '#AADC6E';
   config.filebrowserUploadUrl = _BASEURL + '_ul/ckeditor';
+  config.extraPlugins = 'pastebase64';
 
   config.toolbar = [
     ['Styles', 'Format', 'Font', 'FontSize'],
