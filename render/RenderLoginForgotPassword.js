@@ -56,12 +56,12 @@ exports = module.exports = function (req, res, onComplete){
           if (user_info[jsh.map.user_status].toUpperCase() == 'ACTIVE') {
             all_suspended = false;
             //Send message
-            var PE_ID = user_info[jsh.map.user_id];
+            var user_id = user_info[jsh.map.user_id];
             var PE_Name = req.jshconfig.auth.getuser_name(user_info, jsh);
             var PE_LL_Tstmp = user_info[jsh.map.user_last_tstmp];
             var PE_Email = user_info[jsh.map.user_email];
             var support_email = global.support_email;
-            var reset_link = Helper.getFullURL(req, req.baseurl + 'login/forgot_password_reset?email=' + encodeURIComponent(email) + '&key=' + crypto.createHash('sha1').update(PE_ID + req.jshconfig.auth.salt + PE_LL_Tstmp).digest('hex'));
+            var reset_link = Helper.getFullURL(req, req.baseurl + 'login/forgot_password_reset?email=' + encodeURIComponent(email) + '&key=' + crypto.createHash('sha1').update(user_id + req.jshconfig.auth.salt + PE_LL_Tstmp).digest('hex'));
             Helper.SendTXTEmail(req._DBContext, jsh, 'RESETPASS', PE_Email, null, null, null, { 'PE_NAME': PE_Name, 'SUPPORT_EMAIL': support_email, 'RESET_LINK': reset_link }, function (err) {
               if (err) { global.log(err); res.end('An error occurred sending the password reset email.  Please contact support for assistance.'); }
               else onComplete(RenderPage(jsh, fdata, verrors, "A link to reset your password has been sent to your email address."));

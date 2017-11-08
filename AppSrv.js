@@ -2287,8 +2287,8 @@ AppSrv.prototype.getDataLockSQL = function (req, fields, sql_ptypes, sql_params,
         var datalockqueryid = Helper.arrayItem(field.datalock,datalockid,arrayOptions);
         if (datalockqueryid) {
           if (!('datalocks' in this.jsh.Config)) throw new Error("No datalocks in config");
-          if (!(datalockqueryid in this.jsh.Config.datalocks)) throw new Error("Datalock query '" + datalockqueryid + "' not defined in config");
-          var datalockquery = this.jsh.Config.datalocks[datalockqueryid];
+          var datalockquery = Helper.arrayItem(this.jsh.Config.datalocks,datalockqueryid,arrayOptions);
+          if (!datalockquery) throw new Error("Datalock query '" + datalockqueryid + "' not defined in config");
           var frslt = fPerDataLock(datalockquery, field);
           if ((typeof frslt !== 'undefined') && (frslt === false)) continue;
           found_datalock = true;

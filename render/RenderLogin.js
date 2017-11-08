@@ -71,14 +71,14 @@ exports = module.exports = function (req, res, onComplete) {
           else {
             if (nopass) prehash = user_info[jsh.map.user_hash].toString('hex');
             if (user_info[jsh.map.user_hash].toString('hex') == prehash) {
-              var PE_ID = user_info[jsh.map.user_id];
+              var user_id = user_info[jsh.map.user_id];
               good_login = true;
               var PE_LL_Tstmp = new Date();
               account.tstmp = Helper.DateToSQLISO(PE_LL_Tstmp);
               account.password = crypto.createHash('sha1').update(prehash + account.tstmp).digest('hex');
               var sqlparams = {};
               sqlparams[jsh.map.user_last_ip] = ipaddr;
-              sqlparams[jsh.map.user_id] = PE_ID;
+              sqlparams[jsh.map.user_id] = user_id;
               sqlparams[jsh.map.user_last_tstmp] = PE_LL_Tstmp;
               req.jshconfig.auth.on_loginsuccess(req, jsh, sqlparams, function (err, rslt) {
                 if ((rslt != null) && (rslt.length == 1) && (rslt[0] != null) && (rslt[0][jsh.map.rowcount] == 1)) {
