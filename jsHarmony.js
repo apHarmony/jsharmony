@@ -727,7 +727,7 @@ jsHarmony.prototype.ParseEntities = function () {
     }
   });
 
-  ParseMultiLineProperties(_this.Config,['datalocks']);
+  ParseMultiLineProperties(_this.Config.datalocks,_.keys(_this.Config.datalocks));
 };
 
 function ParseMultiLineProperties(obj, arr) {
