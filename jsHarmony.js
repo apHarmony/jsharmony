@@ -36,7 +36,7 @@ require('./lib/ext-validation.js')(XValidate);
 var _ERROR = 1;
 var _WARNING = 2;
 var _INFO = 4;
-var _DBTYPES = ['pgsql', 'mssql'];
+var _DBTYPES = ['pgsql', 'mssql', 'sqlite'];
 
 function jsHarmony() {
   this.EJS = [];
@@ -63,6 +63,7 @@ function jsHarmony() {
     if (fs.existsSync(global.modeldir[i].path + 'style/')) this.Cache['system.css'] += '\r\n' + this.MergeFolder(global.modeldir[i].path + 'style/');
     this.LoadSQL(global.modeldir[i].path + 'sql/', global.dbconfig._driver.name);
   }
+  this.ParseDeprecated();
   this.ParseInheritance();
   this.ParseEntities();
   this.ParsePopups();
@@ -347,7 +348,14 @@ function LogEntityError(severity, msg) {
 }
 function MergeModelArray(newval, oldval, eachItem){
   var modelfields = _.map(newval, 'name');
-  var rslt = newval.slice(0);
+  try{
+    var rslt = newval.slice(0);
+  }
+  catch(ex){
+    console.log(ex);
+    console.log(newval);
+    throw(ex);
+  }
   _.each(oldval, function (field) {
     if ((typeof field.name != 'undefined') && (field.name)) {
       var modelfield = _.find(rslt, function (mfield) { return mfield.name == field.name; });
@@ -424,6 +432,23 @@ jsHarmony.prototype.TestImageMagick  = function(strField){
     if(err) LogEntityError(_ERROR, 'Please install ImageMagick.  Used by: ' + _.uniq(_this._IMAGEMAGICK_FIELDS).join(', '));
   });
 }
+jsHarmony.prototype.ParseDeprecated = function () {
+  _.forOwn(this.Models, function (model) {
+    //Convert tabs to indexed format, if necessary
+    if(model.tabs){
+      if(!_.isArray(model.tabs)){
+        LogDeprecated(model.id + ': Defining tabs as an associative array has been deprecated.  Please convert to the indexed array syntax [{ "name": "xxx" }]');
+        var new_tabs = [];
+        for (var tabname in model.tabs) {
+          if(!model.tabs[tabname]) model.tabs[tabname] = { '__REMOVE__': 1 };
+          if(!model.tabs[tabname].name) model.tabs[tabname].name = tabname;
+          new_tabs.push(model.tabs[tabname]);
+        }
+        model.tabs = new_tabs;
+      }
+    }
+  });
+}
 jsHarmony.prototype.ParseEntities = function () {
   var _this = this;
   var base_controls = ["label", "html", "textbox", "textzoom", "dropdown", "date", "textarea", "hidden", "subform", "html", "password", "file_upload", "file_download", "button", "linkbutton", "tree", "checkbox"];
@@ -453,19 +478,6 @@ jsHarmony.prototype.ParseEntities = function () {
             model.sort.splice(i, 1);
           }
         }
-      }
-    }
-    //Convert tabs to indexed format, if necessary
-    if(model.tabs){
-      if(!_.isArray(model.tabs)){
-        LogDeprecated(model.id + ': Defining tabs as an associative array has been deprecated.  Please convert to the indexed array syntax [{ "name": "xxx" }]');
-        var new_tabs = [];
-        for (var tabname in model.tabs) {
-          if(!model.tabs[tabname]) model.tabs[tabname] = { '__REMOVE__': 1 };
-          if(!model.tabs[tabname].name) model.tabs[tabname].name = tabname;
-          new_tabs.push(model.tabs[tabname]);
-        }
-        model.tabs = new_tabs;
       }
     }
     var foundkey = false;
