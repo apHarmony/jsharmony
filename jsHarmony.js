@@ -232,8 +232,12 @@ jsHarmony.LoadSQL = function (dir, type, rslt) {
       for (var sqlid in sql) {
         if (sqlid in found_sqlids) { LogEntityError(_ERROR, 'Duplicate SQL ' + sqlid + ' in ' + found_sqlids[sqlid] + ' and ' + fname); }
         found_sqlids[sqlid] = fname;
-        var sqlval = Helper.ParseMultiLine(sql[sqlid]);
-        rslt.SQL[sqlid] = sqlval;
+        var sqlval = sql[sqlid];
+        if(sqlval && sqlval.params){
+          if(sqlval.sql) sqlval.sql = Helper.ParseMultiLine(sqlval.sql);
+          rslt.SQL[sqlid] = sqlval; //Function
+        }
+        else sqlval = Helper.ParseMultiLine(sqlval);
       }
     }
   }
@@ -302,45 +306,17 @@ jsHarmony.prototype.ParseInheritance = function () {
         
         var mergedprops = {};
         EntityPropMerge(mergedprops, 'fields', model, parentmodel, function (newval, oldval) {
-          var modelfields = _.map(newval, 'name');
-          var rslt = newval.slice(0);
-          _.each(oldval, function (field) {
-            if ((typeof field.name != 'undefined') && (field.name)) {
-              var modelfield = _.find(rslt, function (mfield) { return mfield.name == field.name; });
-            }
-            if (typeof modelfield !== 'undefined') {
-              rslt.splice(rslt.indexOf(modelfield), 1);
-              if (!('__REMOVEFIELD__' in modelfield)) {
-                //oldfield = field, newfield = modelfield
-                var newfield = _.merge({}, field, modelfield);
-                if ('validate' in modelfield) newfield.validate = modelfield.validate;
-                EntityPropMerge(newfield, 'roles', modelfield, field, function (newval, oldval) { return _.merge({}, oldval, newval) });
-                rslt.push(newfield);
-              }
-            }
-            else {
-              if (!('__REMOVEFIELD__' in field)) {
-                rslt.push(field);
-              }
-            }
+          return MergeModelArray(newval, oldval, function(newItem, oldItem, rsltItem){
+            if ('validate' in newItem) rsltItem.validate = newItem.validate;
+            EntityPropMerge(rsltItem, 'roles', newItem, oldItem, function (newval, oldval) { return _.merge({}, oldval, newval) });
           });
-          SortFields(model, rslt);
-          for (var i = 0; i < rslt.length; i++) {
-            if ('__REMOVEFIELD__' in rslt[i]) {
-              rslt.splice(i, 1);
-              i--;
-            }
-          }
-          return rslt;
         });
         //Create a clone of parent model instead of object reference
         if (('fields' in parentmodel) && !('fields' in model)) model.fields = parentmodel.fields.slice(0);
         EntityPropMerge(mergedprops, 'roles', model, parentmodel, function (newval, oldval) { return _.merge({}, oldval, newval) });
         EntityPropMerge(mergedprops, 'pagesettings', model, parentmodel, function (newval, oldval) { return _.merge({}, oldval, newval) });
         EntityPropMerge(mergedprops, 'tabs', model, parentmodel, function (newval, oldval) {
-          var rslt = _.extend({}, oldval, newval)
-          if (rslt) _.each(rslt, function (v, k) { if (v === null) delete rslt[k]; });
-          return rslt;
+          return MergeModelArray(newval, oldval);
         });
         EntityPropMerge(mergedprops, 'reportdata', model, parentmodel, function (newval, oldval) { return _.extend({}, oldval, newval); });
         EntityPropMerge(mergedprops, 'js', model, parentmodel, function (newval, oldval) { return oldval + "\r\n" + newval; });
@@ -369,7 +345,38 @@ function LogEntityError(severity, msg) {
     global.app_errors.push(msg);
   }
 }
-function SortFields(model, fields){
+function MergeModelArray(newval, oldval, eachItem){
+  var modelfields = _.map(newval, 'name');
+  var rslt = newval.slice(0);
+  _.each(oldval, function (field) {
+    if ((typeof field.name != 'undefined') && (field.name)) {
+      var modelfield = _.find(rslt, function (mfield) { return mfield.name == field.name; });
+    }
+    if (typeof modelfield !== 'undefined') {
+      rslt.splice(rslt.indexOf(modelfield), 1);
+      if (!('__REMOVE__' in modelfield)) {
+        //oldfield = field, newfield = modelfield
+        var newfield = _.merge({}, field, modelfield);
+        if(eachItem) eachItem(modelfield, field, newfield);
+        rslt.push(newfield);
+      }
+    }
+    else {
+      if (!('__REMOVE__' in field)) {
+        rslt.push(field);
+      }
+    }
+  });
+  SortModelArray(rslt);
+  for (var i = 0; i < rslt.length; i++) {
+    if ('__REMOVE__' in rslt[i]) {
+      rslt.splice(i, 1);
+      i--;
+    }
+  }
+  return rslt;
+}
+function SortModelArray(fields){
   var cnt = 0;
   do {
     cnt = 0;
@@ -420,7 +427,7 @@ jsHarmony.prototype.TestImageMagick  = function(strField){
 jsHarmony.prototype.ParseEntities = function () {
   var _this = this;
   var base_controls = ["label", "html", "textbox", "textzoom", "dropdown", "date", "textarea", "hidden", "subform", "html", "password", "file_upload", "file_download", "button", "linkbutton", "tree", "checkbox"];
-  var base_datatypes = ['DATETIME','VARCHAR','CHAR','BOOLEAN','BIGINT','INT','SMALLINT','TINYINT','DECIMAL','FLOAT','DATE','DATETIME','TIME','ENCASCII','HASH','FILE'];
+  var base_datatypes = ['DATETIME','VARCHAR','CHAR','BOOLEAN','BIGINT','INT','SMALLINT','TINYINT','DECIMAL','FLOAT','DATE','DATETIME','TIME','ENCASCII','HASH','FILE','BINARY'];
   _.forOwn(this.Models, function (model) {
     model.xvalidate = new XValidate();
     if (!('table' in model)) LogEntityError(_WARNING, 'Model ' + model.id + ' missing table');
@@ -448,6 +455,19 @@ jsHarmony.prototype.ParseEntities = function () {
         }
       }
     }
+    //Convert tabs to indexed format, if necessary
+    if(model.tabs){
+      if(!_.isArray(model.tabs)){
+        LogDeprecated(model.id + ': Defining tabs as an associative array has been deprecated.  Please convert to the indexed array syntax [{ "name": "xxx" }]');
+        var new_tabs = [];
+        for (var tabname in model.tabs) {
+          if(!model.tabs[tabname]) model.tabs[tabname] = { '__REMOVE__': 1 };
+          if(!model.tabs[tabname].name) model.tabs[tabname].name = tabname;
+          new_tabs.push(model.tabs[tabname]);
+        }
+        model.tabs = new_tabs;
+      }
+    }
     var foundkey = false;
     var fieldnames = [];
     _.each(model.fields, function (field) {
@@ -470,6 +490,11 @@ jsHarmony.prototype.ParseEntities = function () {
         fieldnames.push(field.name);
       }
       if (field.key) { field.access += 'K'; foundkey = true; }
+      if ('__REMOVEFIELD__' in field){ 
+        LogDeprecated(model.id + ' > ' + field.name + ': __REMOVEFIELD__ has been deprecated.  Please use __REMOVE__ instead.'); 
+        field.__REMOVE__ = field.__REMOVEFIELD__;
+        delete field.__REMOVEFIELD__;
+      }
       if (field.controlparams) {
         if (field.controlparams.CODEVal) { field.controlparams.codeval = field.controlparams.CODEVal; delete field.controlparams.CODEVal; }
         if ('codeval' in field.controlparams) LogDeprecated(model.id + ' > ' + field.name + ': The controlparams codeval attribute has been deprecated - use "popuplov":{...}');
@@ -592,6 +617,11 @@ jsHarmony.prototype.ParseEntities = function () {
               if (!field.controlparams || !field.controlparams.data_folder) { LogEntityError(_ERROR, 'Model ' + model.id + ' Field ' + (field.name || '') + ' missing data_folder'); }
               HelperFS.createFolderIfNotExists(global.datadir + field.controlparams.data_folder, function () { });
               break;
+            case 'BINARY':
+              var flen = -1;
+              if (('length' in field) && (field.length >= 0)) flen = field.length;
+              AddValidation(field, 'IsBinary:'+field.length);
+              break;
           }
         }
       }
@@ -668,7 +698,7 @@ jsHarmony.prototype.ParseEntities = function () {
       'name', 'type', 'access', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'serverejs','roles','static','cellclass',
       'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
       'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'precision', 'password', 'hash', 'salt', 'unbound',
-      'sqlselect', 'sqlupdate', 'sqlinsert','sql_sort', 'sqlwhere', 'sql_search_sound', 'sql_search', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVEFIELD__', '__AFTER__',
+      'sqlselect', 'sqlupdate', 'sqlinsert','sql_sort', 'sqlwhere', 'sql_search_sound', 'sql_search', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVE__', '__AFTER__',
       'sql_from_db','sql_to_db','sql_search_to_db','datatype_config'
     ];
     var _v_controlparams = [
@@ -713,9 +743,11 @@ jsHarmony.prototype.ParseEntities = function () {
   //Check Parent / Child Relationships for Potentially Missing "F" keys
   _.forOwn(_this.Models, function (model) {
     if (model.tabs) {
-      for (var tabname in model.tabs) {
-        var tab = model.tabs[tabname];
+      for (var i=0; i<model.tabs.length; i++) {
+        var tab = model.tabs[i];
+        var tabname = tab.name;
         var tabmodel = _this.Models[tab.target];
+        if(!('access' in tab)) tab.access='*';
         for (var binding_child in tab.bindings) {
           if (!tabmodel) { continue; }
           if (!tabmodel.fields) LogEntityError(_ERROR, model.id + ' > Tab ' + tabname + ': Target model has no fields for binding');
@@ -736,9 +768,11 @@ function ParseMultiLineProperties(obj, arr) {
 
 //This is not used for now.  Models are granted access on an individual basis to enforce security restrictions
 function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
-  if ('tabs' in model) for (var tabname in model.tabs) {
-    var tab = model.tabs[tabname];
+  if ('tabs' in model) for (var i=0;i<model.tabs.length;i++) {
+    var tab = model.tabs[i];
+    var tabname = tab.name;
     if (!_.isObject(tab)) { LogEntityError(_ERROR, model.id + ' > Tab ' + tabname + ': Invalid tab format'); return }
+    if (!('name' in tab)) { LogEntityError(_ERROR, model.id + ' > Tab ' + tabname + ': Invalid tab format - missing name'); return }
     if (!('target' in tab)) { LogEntityError(_ERROR, model.id + ' > Tab ' + tabname + ': Invalid tab format - missing target'); return }
     if (!('bindings' in tab)) { LogEntityError(_ERROR, model.id + ' > Tab ' + tabname + ': Invalid tab format - missing bindings'); return }
     if (!(tab.target in jsh.Models)) { LogEntityError(_ERROR, model.id + ' > Tab ' + tabname + ': Target model "' + tab.target + '" not found'); return }

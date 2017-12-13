@@ -22,6 +22,7 @@ var Helper = require('./lib/Helper.js');
 var ejs = require('ejs');
 var ejsext = require('./lib/ejsext.js');
 var moment = require('moment');
+var async = require('async');
 
 /*
 ---------------------------
@@ -91,18 +92,15 @@ AppSrvModel.prototype.GetModel = function (req, res, modelid) {
   var jsh = this.AppSrv.jsh;
   var model = jsh.getModel(req, modelid);
   if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
+  req.curtabs = jsh.getTabs(req, modelid);
+  req.TopModel = modelid;
 
-  Helper.execif(model.tabcode, function (f) {
-    _this.AppSrv.getTabCode(req, res, modelid, f);
-  }, function () {
-    req.curtabs = jsh.getTabs(req, modelid);
-    req.TopModel = modelid;
-    var rslt = _this.genClientModel(req, res, modelid, true);
+  _this.genClientModel(req, res, modelid, true, function(rslt){
     res.end(JSON.stringify(rslt));
   });
 };
 
-AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost) {
+AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, onComplete) {
   var _this = this;
   var jsh = this.AppSrv.jsh;
   if (!jsh.hasModel(req, modelid)) throw new Error('Model ID not found: ' + modelid);
@@ -110,12 +108,13 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost) {
   
   var targetperm = 'B';
   if ('action' in req.query) {
-    if (req.query.action == 'add') targetperm = 'BI';
-    else if (req.query.action == 'edit') targetperm = 'BU'; //Browse is accessed the same way as update
+    if (req.query.action == 'add') targetperm = 'I';
+    else if (req.query.action == 'edit') targetperm = 'U'; //Browse is accessed the same way as update
   }
-  if (!Helper.HasModelAccess(req, model, targetperm)) { return "<div>You do not have access to this form.</div>"; }
+  if (!Helper.HasModelAccess(req, model, 'B'+targetperm)) { return onComplete("<div>You do not have access to this form.</div>"); }
 
   var rslt = {};
+
   copyValues(rslt, model, [
     'title', 'id', 'layout', 'caption', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onupdate', 'oncommit', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy', 'js', 'hide_system_buttons',
     'popup', 'rowclass', 'rowstyle', 'tabpanelstyle', 'tablestyle', 'formstyle', 'sort', 'querystring', 'disableautoload', 'tabpos', 'templates',
@@ -174,139 +173,185 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost) {
       }
       return { 'buttons': rsltbuttons };
     },
-    //Generate Tabs
-    function () {
-      if (!('tabpos' in model)) return;
-
-      var tabbindings = {};
-      var basetab = req.curtabs[model.id];
-      if (!basetab) basetab = '';
-      
-      var showtabs = [];
-      var showmodels = [];
-
-      for (var tabname in model.tabs) {
-        if (model.tabs[tabname].showcode) {
-          if (_.includes(model.tabs[tabname].showcode, req._tabcode)) {
-            showtabs.push(tabname);
-            showmodels.push(model.tabs[tabname].target);
-          }
-        }
-        else {
-          showtabs.push(tabname);
-          showmodels.push(model.tabs[tabname].target);
-        }
-      }
-      
-      if(showtabs.length == 0) { Helper.GenError(req, res, -9, "No tabs available for display"); return; }
-      if (!(model.id in req.curtabs) || !(_.includes(showmodels, req.curtabs[model.id]))) req.curtabs[model.id] = showmodels[0];
-
-      for (var tabname in model['tabs']) {
-        if (req.curtabs[model.id] == model['tabs'][tabname].target) {
-          tabbindings = model['tabs'][tabname].bindings;
-          break;
-        }
-      }
-      
-      //Override Help URL to that of first tab
-      if (jsh.hasModel(req, req.curtabs[model.id])){
-        var firsttabmodel = jsh.getModel(req, req.curtabs[model.id]);
-        rslt.helpurl = ejsext.getHelpURL(req, jsh, firsttabmodel.helpid);
-      }
-
-      var i = 0;
-      var rslttabs = [];
-      for (var tabname in model.tabs) {
-        i++;
-        if (!_.includes(showtabs, tabname)) continue;
-        var acss = 'xtab xtab' + model.id;
-        if (i == ejsext.size(model.tabs)) acss += ' last';
-        var linktabs = new Object();
-        var tabmodelid = model.tabs[tabname].target;
-        linktabs[model.id] = tabmodelid;
-        var link = jsh.getURL(req, '', linktabs);
-        var caption = model.tabs[tabname].caption;
-        var tab_selected = false;
-        if (!caption) caption = tabname;
-        if (req.curtabs[model.id] == tabmodelid){ acss += ' selected'; tab_selected = true; }
-        else if (('action' in req.query) && (req.query.action == 'add')) { link = '#'; acss += ' disabled'; }
-        var rslttab = {
-          'acss': acss,
-          'link': link,
-          'name': tabname,
-          'caption': caption,
-          'selected': tab_selected,
-          'modelid': tabmodelid
-        };
-        rslttabs.push(rslttab);
-      }
-      //Get value of current tab
-      var curtabmodel = _this.genClientModel(req, res, req.curtabs[model.id], false);
-      curtabmodel['bindings'] = tabbindings;
-      return { 'tabs': rslttabs, 'curtabmodel':curtabmodel };
-    },
   ]);
   if (global.use_sample_data) rslt['sample_data'] = 1;
 
   if (!model._inherits || (model._inherits.length == 0)) rslt._basemodel = model.id;
   else rslt._basemodel = model._inherits[0];
-  
-  //Duplicate Model
-  if (model.duplicate && ejsext.access(req, model, 'I')) {
-    var dmodelid = model.duplicate.target;
-    if (!jsh.hasModel(req, dmodelid)) { throw new Error('Duplicate Model ID not found: ' + dmodelid); }
-    var dmodel = jsh.getModel(req, dmodelid);
-    var dclientmodel = this.genClientModel(req, res, dmodelid, false);
-    if (!_.isString(dclientmodel)) {
-      rslt.duplicate = {};
-      rslt.duplicate.target = dmodelid;
-      rslt.duplicate.bindings = model.duplicate.bindings;
-      rslt.duplicate.model = dclientmodel;
-      rslt.duplicate.model.bindings = model.duplicate.bindings;
-      rslt.duplicate.popupstyle = '';
-      if ('popup' in dmodel) rslt.duplicate.popupstyle = 'width: ' + dmodel.popup[0] + 'px; height: ' + dmodel.popup[1] + 'px;';
-      if(model.layout != 'grid') rslt.buttons.push({
-        'url': '#',
-        'onclick': "if(XForm_HasUpdates()){ XExt.Alert('Please save changes before duplicating.'); return false; } XExt.popupShow('" + dmodelid + "','" + model.id + "_duplicate','Duplicate " + model.caption[1] + "',undefined,this); return false;",
-        'access': 'I',
-        'icon': 'copy',
-        'text': (model.duplicate.link_text || 'Duplicate'),
-        'style': 'display:none;',
-        'class': 'duplicate'
-      });
-      if ('link' in model.duplicate) {
-        rslt.duplicate.link = jsh.getURL(req, model.duplicate.link, undefined, dmodel.fields);
-        rslt.duplicate.link_options = "resizable=1,scrollbars=1";
-        var ptarget = jsh.parseLink(model.duplicate.link);
-        if (!jsh.hasModel(req, ptarget.modelid)) throw new Error("Link Model " + ptarget.modelid + " not found.");
-        var link_model = jsh.getModel(req, ptarget.modelid);
-        if ('popup' in link_model) {
-          rslt.duplicate.link_options += ',width=' + link_model.popup[0] + ',height=' + link_model.popup[1];
-        }
-      }
-    }
-  }
 
-  if (topmost) {
-    rslt['topmost'] = 1;
-    rslt['topmenu'] = '';
-    copyValues(rslt, model, ['topmenu']);
-    rslt['toptitle'] = model.id;
-    if ('title' in model) rslt['toptitle'] = Helper.ResolveParams(req, model.title);
-    rslt['forcequery'] = req.forcequery;
-  }
-  if ('fields' in model) rslt.fields = this.copyModelFields(req,res,model);
-  return rslt;
+  //Define whether the model definition needs to be reselected after update
+  rslt.modeltype = 'static';
+  if(req.jshlocal && (modelid in req.jshlocal.Models)) rslt.modeltype = 'dynamic'; //Model uses onroute to customize properties
+  else if(model.tabcode) rslt.modeltype = 'dynamic'; //Model has tabs calculated server-side
+
+  var tabcode = null;
+
+  async.waterfall([
+    //Get tabcode, if applicable
+    function(cb){
+      if(model.tabcode){
+        _this.AppSrv.getTabCode(req, res, modelid, function(_tabcode){
+          tabcode = _tabcode;
+          return cb();
+        });
+      }
+      else return cb();
+    },
+
+    function(cb){
+      //Generate Tabs
+      tabcode = (tabcode || '').toString();
+      if(('tabpos' in model) && model.tabs) {
+        var tabbindings = {};
+        var basetab = req.curtabs[model.id];
+        if (!basetab) basetab = '';
+        
+        var showtabs = [];
+        var showmodels = [];
+
+        for(var i=0; i<model.tabs.length;i++){
+          var tab = model.tabs[i];
+          var tabname = tab.name;
+          //if (!ejsext.access(req, model, targetperm, tab.access)) continue;
+          //if('roles' in tab) if (!ejsext.access(req, tab, targetperm, tab.access)) continue;
+          if (tab.showcode) {
+            if (_.includes(tab.showcode, tabcode)) {
+              showtabs.push(tabname);
+              showmodels.push(tab.target);
+            }
+          }
+          else {
+            showtabs.push(tabname);
+            showmodels.push(tab.target);
+          }
+        }
+        
+        if(showtabs.length == 0) { return Helper.GenError(req, res, -9, "No tabs available for display"); }
+        if (!(model.id in req.curtabs) || !(_.includes(showmodels, req.curtabs[model.id]))) req.curtabs[model.id] = showmodels[0];
+
+        for(var i=0; i<model.tabs.length;i++){
+          var tab = model.tabs[i];
+          if (req.curtabs[model.id] == tab.target) {
+            tabbindings = tab.bindings;
+            break;
+          }
+        }
+        
+        //Override Help URL to that of first tab
+        if (jsh.hasModel(req, req.curtabs[model.id])){
+          var firsttabmodel = jsh.getModel(req, req.curtabs[model.id]);
+          rslt.helpurl = ejsext.getHelpURL(req, jsh, firsttabmodel.helpid);
+        }
+
+        var rslttabs = [];
+        for(var i=0; i<model.tabs.length;i++){
+          var tab = model.tabs[i];
+          var tabname = tab.name;
+          if (!_.includes(showtabs, tabname)) continue;
+          var acss = 'xtab xtab' + model.id;
+          if (i == (model.tabs.length-1)) acss += ' last';
+          var linktabs = new Object();
+          var tabmodelid = tab.target;
+          linktabs[model.id] = tabmodelid;
+          var link = jsh.getURL(req, '', linktabs);
+          var caption = tab.caption;
+          var tab_selected = false;
+          if (!caption) caption = tabname;
+          if (req.curtabs[model.id] == tabmodelid){ acss += ' selected'; tab_selected = true; }
+          else if (('action' in req.query) && (req.query.action == 'add')) { link = '#'; acss += ' disabled'; }
+          var rslttab = {
+            'acss': acss,
+            'link': link,
+            'name': tabname,
+            'caption': caption,
+            'selected': tab_selected,
+            'modelid': tabmodelid
+          };
+          rslttabs.push(rslttab);
+        }
+        //Get value of current tab
+        _this.genClientModel(req, res, req.curtabs[model.id], false, function(curtabmodel){
+          curtabmodel['bindings'] = tabbindings;
+          rslt.tabs = rslttabs;
+          rslt.curtabmodel = curtabmodel;
+          return cb();
+        });
+      }
+      else return cb();
+    },
+
+    function(cb){
+      //Duplicate Model
+      if (model.duplicate && ejsext.access(req, model, 'I')) {
+        var dmodelid = model.duplicate.target;
+        if (!jsh.hasModel(req, dmodelid)) { throw new Error('Duplicate Model ID not found: ' + dmodelid); }
+        var dmodel = jsh.getModel(req, dmodelid);
+        _this.genClientModel(req, res, dmodelid, false, function(dclientmodel){
+          if (!_.isString(dclientmodel)) {
+            rslt.duplicate = {};
+            rslt.duplicate.target = dmodelid;
+            rslt.duplicate.bindings = model.duplicate.bindings;
+            rslt.duplicate.model = dclientmodel;
+            rslt.duplicate.model.bindings = model.duplicate.bindings;
+            rslt.duplicate.popupstyle = '';
+            if ('popup' in dmodel) rslt.duplicate.popupstyle = 'width: ' + dmodel.popup[0] + 'px; height: ' + dmodel.popup[1] + 'px;';
+            if(model.layout != 'grid') rslt.buttons.push({
+              'url': '#',
+              'onclick': "if(XForm_HasUpdates()){ XExt.Alert('Please save changes before duplicating.'); return false; } XExt.popupShow('" + dmodelid + "','" + model.id + "_duplicate','Duplicate " + model.caption[1] + "',undefined,this); return false;",
+              'access': 'I',
+              'icon': 'copy',
+              'text': (model.duplicate.link_text || 'Duplicate'),
+              'style': 'display:none;',
+              'class': 'duplicate'
+            });
+            if ('link' in model.duplicate) {
+              rslt.duplicate.link = jsh.getURL(req, model.duplicate.link, undefined, dmodel.fields);
+              rslt.duplicate.link_options = "resizable=1,scrollbars=1";
+              var ptarget = jsh.parseLink(model.duplicate.link);
+              if (!jsh.hasModel(req, ptarget.modelid)) throw new Error("Link Model " + ptarget.modelid + " not found.");
+              var link_model = jsh.getModel(req, ptarget.modelid);
+              if ('popup' in link_model) {
+                rslt.duplicate.link_options += ',width=' + link_model.popup[0] + ',height=' + link_model.popup[1];
+              }
+            }
+          }
+          return cb();
+        });
+      }
+      else return cb();
+    },
+
+    //Set up fields
+    function(cb){
+      if (topmost) {
+        rslt['topmost'] = 1;
+        rslt['topmenu'] = '';
+        copyValues(rslt, model, ['topmenu']);
+        rslt['toptitle'] = model.id;
+        if ('title' in model) rslt['toptitle'] = Helper.ResolveParams(req, model.title);
+        rslt['forcequery'] = req.forcequery;
+      }
+      if ('fields' in model) _this.copyModelFields(req,res,model,function(fields){
+        rslt.fields = fields;
+        return cb();
+      });
+      else return cb();
+    },
+
+  ],function(err){
+    //Return result
+    if(onComplete) onComplete(rslt);
+  });
 }
 
-AppSrvModel.prototype.copyModelFields = function (req, res, srcobj) {
+AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, onComplete) {
   var jsh = this.AppSrv.jsh;
   var model = srcobj;
   var rslt = [];
   var auxfields = null;
+  var _this = this;
   if ((model.layout == 'grid') || (model.layout == 'multisel')) { auxfields = jsh.getAuxFields(req,res,model); }
-  for (var i = 0; i < srcobj.fields.length; i++) {
-    var srcfield = srcobj.fields[i];
+  async.eachOfSeries(srcobj.fields, function(srcfield,i,cb){
     var dstfield = {};
     copyValues(dstfield, srcfield, [
       'name', 'key', 'control', 'caption', 'caption_ext', 'captionstyle', 'captionclass', 'nl', 'eol', 'type', 'length',
@@ -364,13 +409,20 @@ AppSrvModel.prototype.copyModelFields = function (req, res, srcobj) {
     }
     dstfield.validate = jsh.GetValidatorClientStr(srcfield);
     if (('control' in dstfield) && ((dstfield.control == 'subform') || (dstfield.popuplov))) {
-      var subform = this.genClientModel(req, res, srcfield.target, false);
-      subform['bindings'] = srcfield.bindings;
-      dstfield.model = subform;
+      _this.genClientModel(req, res, srcfield.target, false, function(subform){
+        subform['bindings'] = srcfield.bindings;
+        dstfield.model = subform;
+        rslt.push(dstfield);
+        return cb();
+      });
     }
-    rslt.push(dstfield);
-  }
-  return rslt;
+    else {
+      rslt.push(dstfield);
+      return cb();
+    }
+  }, function(err){
+    if(onComplete) onComplete(rslt);
+  });
 };
 
 function copyValues(destobj, srcobj, values) {

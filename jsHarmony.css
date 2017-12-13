@@ -39,6 +39,10 @@ BODY
 	position:relative;
 	display:inline-block;
 }
+body.popup #xbody {
+  display:block;
+  padding-right:25px;
+}
 .xactions {
 	float:left;
 	padding-bottom:15px;

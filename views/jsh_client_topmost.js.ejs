@@ -268,7 +268,7 @@ function topmost_jsh_ready() {
         $('.xfilter_value:visible').first().select().focus();
 
         console.log('Initialization Complete');
-      });
+      }, XForms_root);
     });
 }
 $(document).on('jsh_ready', topmost_jsh_ready);
@@ -279,7 +279,7 @@ function XForm_Refresh(modelid) {
   //Modify grid refresh to load multiple pages
   var foundchanges = XForm_GetChanges();
   if (foundchanges.length > 0) return;
-  
+
   XForm_Select(function () { XForm_RefreshParent(modelid); console.log('Reselect complete'); }, modelid);
 }
 
@@ -321,8 +321,16 @@ function XForm_Destroy() {
   $(document).on('jsh_ready', topmost_jsh_ready);
 }
 
+//Calling XForm_Select with a null root model will check the model definition for updates
 function XForm_Select(callback, root) {
-  if (typeof root == 'undefined') root = XForms_root;
+  if (typeof root == 'undefined'){
+    var isDynamic = false;
+    jshModelTree(jsh_cur_model, null, function (model, modelParent) {
+      if(model.modeltype=='dynamic') isDynamic = true;
+    });
+    if(isDynamic) return jshLoad({ addHistory: false, onRefreshNoChange: function(){ XForm_Select(callback, XForms_root); } });
+    else root = XForms_root;
+  }
   XFormAsyncTree(root,
     function (xform, done) {
       var onDone = function () {
@@ -725,8 +733,14 @@ function XRunQueue() {
   });
 }
 
-function XRunDBFunc(cb) {
+function XRunDBFunc() {
+  var cb = arguments[0];
   var xform = XForms[XForms_root];
+  if(arguments.length==2){
+    xform = XForms[XExt.getModelIdFromObject(arguments[0])];
+    cb = arguments[1];
+  }
+  
   if (!(xform._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
   window['XForm' + xform._id + '_RunDBFunc'](cb);
 }

@@ -167,14 +167,14 @@ exports.RenderField = function (_this, parentobj, modelid, field, val){
   else if (('control' in field) && (field.control == 'checkbox')) {
     var checkval = false;
     var checkhidden = false;
+    if ((val == null) || (typeof val == 'undefined')) val = '';
     if ('controlparams' in field) {
-      if ((val == null) || (typeof val == 'undefined')) val = '';
       if (('value_hidden' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_hidden.toUpperCase())) checkhidden = true;
       if (('value_true' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_true.toUpperCase())) checkval = true;
       else if (('value_false' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_false.toUpperCase())) checkval = false;
-      else checkval = (val?true:false);
+      else checkval = XFormat.bool_decode(val);
     }
-    else checkval = (val?true:false);
+    else checkval = XFormat.bool_decode(val);
     jctrl.prop('checked', checkval);
     if (checkhidden) jctrl.css('visibility', 'hidden');
     else if (checkhidden) jctrl.css('visibility', 'visible');
@@ -293,7 +293,7 @@ exports.GetValue = function (modelid) {
     if (('control' in field) && (field.control == 'checkbox')) {
       var checked = jctrl.prop('checked');
       var ishidden = jctrl.css('visibility').toLowerCase() == 'hidden';
-      var checkval = checked ? '1':'';
+      var checkval = checked ? '1':'0';
       
       if ('controlparams' in field) {
         if(ishidden && ('value_hidden' in field.controlparams)) checkval = field.controlparams.value_hidden;

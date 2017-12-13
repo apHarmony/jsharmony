@@ -84,7 +84,7 @@ AppSrv.prototype.getModelRecordset = function (req, res, modelid, Q, P, rowlimit
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'B');
   if (encryptedfields.length > 0) throw new Error('Encrypted fields not supported on GRID');
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'S');
-  if ((encryptedfields.length > 0) && !(req.secure)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
+  if ((encryptedfields.length > 0) && !(req.secure) && (global.jshSettings && !global.jshSettings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
   if ('d' in Q) P = JSON.parse(Q.d);
   
   if (!_this.ParamCheck('Q', Q, ['|rowstart', '|rowcount', '|sort', '|search', '|searchjson', '|d', '|meta', '|getcount'])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
@@ -278,7 +278,7 @@ AppSrv.prototype.getModelForm = function (req, res, modelid, Q, P, form_m) {
   var allfieldslist = _.union(keylist, fieldlist);
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'B');
   var lovkeylist = this.getFieldNamesWithProp(model.fields, 'lovkey');
-  if ((encryptedfields.length > 0) && !(req.secure)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
+  if ((encryptedfields.length > 0) && !(req.secure) && (global.jshSettings && !global.jshSettings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
   
 
   var is_new;
@@ -624,8 +624,7 @@ AppSrv.prototype.getTabCode = function (req, res, modelid, onComplete) {
   this.ExecScalar(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt) {
     if (err) { global.log(err); Helper.GenError(req, res, -99999, "An unexpected error has occurred"); return; }
     if (rslt && rslt[0]) {
-      req._tabcode = rslt[0];
-      return onComplete();
+      return onComplete(rslt[0]);
     }
     else { Helper.GenError(req, res, -1, "Record not found"); return; }
   });
@@ -665,7 +664,7 @@ AppSrv.prototype.putModelForm = function (req, res, modelid, Q, P, onComplete) {
   var fieldlist = this.getFieldNames(req, model.fields, 'I');
   var filelist = this.getFileFieldNames(req, model.fields, 'I');
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'I');
-  if ((encryptedfields.length > 0) && !(req.secure)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
+  if ((encryptedfields.length > 0) && !(req.secure) && (global.jshSettings && !global.jshSettings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
   
   var Pcheck = _.map(fieldlist, function (field) { return '&' + field; });
   Pcheck = Pcheck.concat(_.map(filelist, function (file) { return '|' + file; }));
@@ -854,7 +853,7 @@ AppSrv.prototype.postModelForm = function (req, res, modelid, Q, P, onComplete) 
   var keylist = this.getKeyNames(model.fields);
   var filelist = this.getFileFieldNames(req, model.fields, 'U');
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'U');
-  if ((encryptedfields.length > 0) && !(req.secure)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
+  if ((encryptedfields.length > 0) && !(req.secure) && (global.jshSettings && !global.jshSettings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
   
   var Pcheck = _.map(fieldlist, function (field) { return '&' + field; });
   Pcheck = Pcheck.concat(_.map(filelist, function (file) { return '|' + file; }));
@@ -1715,7 +1714,15 @@ AppSrv.prototype.DeformatParam = function (field, val, verrors) {
     //return Helper.stringToASCIIBuffer(val);
     return new Buffer(val, 'ascii');
   }
-  
+  else if (field.type == 'binary') {
+    if(!val) return null;
+    if(val && (val.toString().substr(0,2).toLowerCase()=='0x')){
+      val = val.toString().substr(2);
+      if(val.length % 2 == 1) val = val + '0';
+      return new Buffer(val, 'hex');
+    }
+    return new Buffer(val, 'ascii');
+  }
   else if (field.type == 'boolean') {
     if (val === '') return null;
     if (val === null) return null;
@@ -1792,6 +1799,21 @@ AppSrv.prototype.addSearchTerm = function (field, search_i, in_search_value, com
         in_search_value = crypto.createHash('sha1').update(in_search_value + this.jsh.Config.salts[field.salt]).digest();
         in_search_value = this.DeformatParam(field, in_search_value, {});
         break;
+      case 'binary':
+        if(in_search_value){
+          in_search_value = in_search_value.toString();
+          var wild_start = (in_search_value.substr(0,1)=='%');
+          if(wild_start) in_search_value = in_search_value.substr(1);
+          var wild_end = (in_search_value && (in_search_value.substr(in_search_value.length-1,1)=='%'));
+          if(wild_end) in_search_value = in_search_value.substr(0,in_search_value.length - 1);
+          if(in_search_value.substr(0,2).toLowerCase()=='0x') in_search_value = in_search_value.substr(2).toUpperCase();
+          else if(in_search_value) in_search_value = Helper.str2hex(in_search_value).toUpperCase();
+          else in_search_value = '';
+          if(wild_start) in_search_value = '%' + in_search_value;
+          if(wild_end) in_search_value = in_search_value + '%';
+        }
+        else in_search_value = null;
+        break;
       default: throw new Error('Search type ' + field.name + '/' + ftype + ' not supported.');
     }
   }
@@ -1799,7 +1821,7 @@ AppSrv.prototype.addSearchTerm = function (field, search_i, in_search_value, com
   if (searchterm) {
     if (!searchterm.dbtype) searchterm.dbtype = AppSrv.prototype.getDBType(field);
     //Dont deformat dates
-    if ((ftype != 'datetime') && (ftype != 'date') && (ftype != 'time')) searchterm.search_value = this.DeformatParam(field, searchterm.search_value, verrors);
+    if ((ftype != 'datetime') && (ftype != 'date') && (ftype != 'time') && (ftype != 'binary')) searchterm.search_value = this.DeformatParam(field, searchterm.search_value, verrors);
     if((searchterm.search_value === null) && ((comparison != 'null') && (comparison != 'notnull'))){
       if(options.search_all) return '';
       else {
@@ -2355,6 +2377,10 @@ AppSrv.prototype.getDBType = function (field) {
   else if (ftype == 'boolean') return DB.types.Boolean;
   else if ((ftype == 'hash') || (ftype == 'encascii')) {
     if (typeof flen == 'undefined') throw new Error('Field ' + fname + ' must have length.');
+    return DB.types.VarBinary(flen);
+  }
+  else if(ftype == 'binary'){
+    if ((typeof flen == 'undefined') || (flen==-1)) flen = DB.types.MAX;
     return DB.types.VarBinary(flen);
   }
   else throw new Error('Key ' + fname + ' has invalid type.');

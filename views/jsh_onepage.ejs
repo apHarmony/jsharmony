@@ -24,7 +24,7 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
-var jsh_state = { GET:{},fullpath:'',path:'',modelid:'' };
+var jsh_state = { GET:{},QS:'',fullpath:'',fullurl:_BASEURL,hash:'',modelid:'',path:'' };
 var jsh_global = {
   max_filesize: <%-JSON.stringify(global.max_filesize)%>,
   global_params: <%-(('globalparams' in req.jshconfig) ? JSON.stringify(_.mapValues(req.jshconfig.globalparams,function(val,key){ if(_.isFunction(val)) return val(req); return val; })) : '{}')%>,
@@ -42,6 +42,7 @@ var jsh_ignorefocusHandler = false;
 var jsh_qInputAction = null;
 var CODE_EJSPREPEND = '<!--'+'%%%EJSPREPEND%%%'+'-->';
 var jsh_static_paths = ['logout'];
+var jsh_cur_model = null;
 
 init_xfileupload();
 var jsh_title_html = '';
@@ -56,7 +57,7 @@ jsh_app_errors = <%-JSON.stringify(global.app_errors)%>;
     jsh_title_html = "\r\n"+'<h1 style="display:inline-block;" id="xform_title">&nbsp;</h1>' + "\r\n";
     jsh_state = jshGetState();
     if(!jsh_state) return;
-    jshLoad(jsh_state);
+    jshLoad();
     if(jsh_app_errors.length){
       XExt.Alert("The following jsHarmony errors have occurred:\r\n"+jsh_app_errors.join("\r\n"));
     }
@@ -80,25 +81,63 @@ $(document).focusout(function(){
   },1);
 });
 
-function jshLoad(state,addHistory){
-  if(!state) return;
+function jshModelTree(model,modelParent,modelEach,onComplete){ //modelcb(model,modelParent)
+  if(!model) return;
+  modelEach(model,modelParent);
+  if(model.curtabmodel) jshModelTree(model.curtabmodel,model,modelEach);
+  if(model.fields) for(var i=0;i<model.fields.length;i++){
+    if(model.fields[i].model) jshModelTree(model.fields[i].model,model,modelEach);
+  }
+  if(onComplete) onComplete();
+}
+
+function jshLoad(options){
+  if(!options) options = {
+    //addHistory: false, if we should not add history to the browser state
+    //onRefreshNoChange: function(){ /* If unchanged */ }, if we should only render if the model is different from the cached model
+  };
 
   //Clear Previous Loaders
   xLoader.ClearLoading();
 
-  if(_.includes(jsh_static_paths,state.path)) { window.location.href = state.fullurl; return; }
+  if(_.includes(jsh_static_paths,jsh_state.path)) { window.location.href = jsh_state.fullurl; return; }
 
   //Get Model
   jshGetModel(jsh_state.modelid,jsh_state.GET,function(rslt){//On Success
     var model = rslt;
+    //Do not reload if performing a refresh, and the model is the same as the previous model
+    if(options.onRefreshNoChange && jsh_cur_model && model && (JSON.stringify(model)==JSON.stringify(jsh_cur_model))){ options.onRefreshNoChange(); return; }
 
     jsh_prev_title = $('#xform_title').html();
     if(!jsh_prev_title) jsh_prev_title = '';
     jsh_prev_bcrumbs = $('div.bcrumbs').html();
     if(!jsh_prev_bcrumbs) jsh_prev_bcrumbs = '';
 
-    //XForm_AddHistory(jsh_prev_state);
-    if((typeof addHistory == 'undefined') || addHistory) XForm_AddHistory(state);
+    //Update tab in state, if applicable
+    if(jsh_state.GET && jsh_state.GET.tabs){
+      var tabs = jsh_state.GET.tabs;
+      var tabsChanged = false;
+      try{ if(tabs) tabs = JSON.parse(tabs); }
+      catch(ex){ tabs = null; }
+      if(tabs){
+        //Check if any of the tabs need to be updated
+        jshModelTree(model, null, function (model, modelParent) {
+          if(modelParent && modelParent.curtabmodel){
+            if((modelParent.id in tabs) && (tabs[modelParent.id] != model.id)){
+              tabs[modelParent.id] = model.id;
+              tabsChanged = true;
+            }
+          }
+        });
+        if(tabsChanged){
+          //Recalculate jsh_state
+          jsh_state.GET.tabs = JSON.stringify(tabs);
+          jsh_state.QS = '?'+$.param(jsh_state.GET);
+          jsh_state.fullurl = jsh_state.fullpath + jsh_state.QS + jsh_state.hash;
+        }
+      }
+    }
+    if((typeof options.addHistory == 'undefined') || options.addHistory) XForm_AddHistory(jsh_state);
 
     var ejsrslt = jshRender(model);
     //console.log(ejsrslt); //Show Full Source
@@ -123,6 +162,7 @@ function jshLoad(state,addHistory){
     delete_target = null;
     _bcrumbs = {};
     window.xPopupStack = [];
+    jsh_cur_model = model;
 
     var ejsprepend = '';
     if(rslt.breadcrumbs) ejsprepend += rslt.breadcrumbs;
@@ -157,17 +197,18 @@ function jshLoad(state,addHistory){
     $('#toplink_help').not('.static').attr('onclick',model.helpurl_onclick);
     if(model.topmenu){ SelectMenu(model.topmenu); }
     jshResetLinks();
-    jsh_prev_state = state;
+    jsh_prev_state = jsh_state;
     $(document).trigger('jsh_ready');
+    return;
   }, function(data){//On Fail
     var closeIfPopup = function(){
       if(history.length==1) window.close();
     }
-    if(data.status == 404){ window.location.href = state.fullurl; return true; }
-    else if(data.status == 302){ window.location.href = state.fullurl; return true; }
-    else if(data.status == 301){ window.location.href = state.fullurl; return true; }
+    if(data.status == 404){ window.location.href = jsh_state.fullurl; return true; }
+    else if(data.status == 302){ window.location.href = jsh_state.fullurl; return true; }
+    else if(data.status == 301){ window.location.href = jsh_state.fullurl; return true; }
     else if(data.responseText && data.responseText.indexOf('***ACCOUNT_UNPAID_BALANCE***')>=0){ window.location.href = _BASEURL+'C_PA_CC'; return true; }
-    else if(data.responseText && data.responseText.indexOf('***JSHARMONY_LOGIN***')>=0){ window.location.href = state.fullurl; return true; }
+    else if(data.responseText && data.responseText.indexOf('***JSHARMONY_LOGIN***')>=0){ window.location.href = jsh_state.fullurl; return true; }
     else if ((data instanceof Object) && ('Number' in data)){ 
       if(data.Number == -11){ XExt.Alert('Invalid Model Access'); return true; }
       else if(_.includes([-1,-2],data.Number)){ XExt.Alert(data.Message,null,{ onAcceptImmediate:closeIfPopup }); return true; }
@@ -205,12 +246,12 @@ function jshNavigate(a,addHistory,orig_url,onCancel){
   if(amodelid.indexOf('/') >= 0) return true;
   var new_jsh_state = {
     GET : XExt.parseGET(aqs),
-    fullpath : a.pathname,
-    path : apath,
-    modelid : amodelid,
     QS : aqs,
+    fullpath : a.pathname,
+    fullurl : a.href,
     hash: ahash,
-    fullurl : a.href
+    modelid : amodelid,
+    path : apath,
   }
   
   //Check if this is an anchor link to the same page
@@ -226,7 +267,7 @@ function jshNavigate(a,addHistory,orig_url,onCancel){
   
   var exec_navigate = function(){
     jsh_state = new_jsh_state;
-    jshLoad(jsh_state,addHistory);
+    jshLoad({addHistory: addHistory});
   }
 
   //Try to exit, show message if changes on the page

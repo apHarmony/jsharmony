@@ -66,11 +66,13 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   //    params = { query: {...}, post: {...} }
   "nokey": 1, //No primary key - only browse
   "unbound": 1, //Disable any AppSrv operations
-  "tabs": {
-    "General": { "caption":"General Info", "target": "C", "bindings": { "C_ID": "C_ID" }, "showcode": ["VIEW","EDIT"] }
+  "tabs": [
+    { "name": "General", "caption": "General Info", "target": "C", "bindings": { "C_ID": "C_ID" }, "showcode": ["VIEW","EDIT"] },
+    { "name": "General", "__REMOVE__": 1 }
     //showcode - If the value of the column defined in model.tabcode is not one of the values of showcode, hide the tab entirely
     //To hide a tab in an inherited form, use "General": null
-  },
+    //If no caption is specified, name will be used as the caption
+  ],
   "tabcode": "A_TYPE", //The column used as a basis for "showcode" - hiding or showing tabs.  Must be defined as a parameter
   "bindings": {"J_ID":"J_ID"}, //Additional bindings for top-level forms
   "tabpanelstyle": "min-width:900px;",
@@ -107,7 +109,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "fields": [
     {
       "name": "E_Name",
-      "type": "varchar", //bigint, varchar, date, decimal, float, int, datetime, char, smallint, tinyint, file, hash, encascii, time, boolean
+      "type": "varchar", //bigint, varchar, date, decimal, float, int, datetime, char, smallint, tinyint, file, hash, encascii, time, boolean, binary
       "length": "255",
       "precision": [12,6], //For decimal, default is 10,4 if omitted
       "precision": 53, //For float
@@ -223,7 +225,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "sql_sort": "(case when X then 1 else 0 end)", //Only applies to grid
       "sql_search": "(case when X then 1 else 0 end)", //Only applies to grid
       "sql_search_sound": "C_ID in (select C_ID from SDX where SDX_COL='CN' and SDX_VAL=SOUNDEX(%%%FIELD%%%))",
-      "__REMOVEFIELD__":1, //Remove Model field in inherited child
+      "__REMOVE__":1, //Remove Model field in inherited child
       "__AFTER__": "FIELDNAME", "__START__", "__END__", //Position in inherited child
       //SYSTEM: datatype_config, sql_from_db, sql_to_db
     }

@@ -1,0 +1,35 @@
+{
+  "integer":{ "type": "int" },
+  "decimal":{ 
+    "sql_from_db": "cast(%%%SQL%%% as varchar)",
+    "sql_search": "%%%SQL%%%",
+    "sql_search_to_db": "cast(%%%SQL%%% as real)"
+  },
+  "real":{ 
+    "sql_from_db": "cast(%%%SQL%%% as text)",
+    "sql_search": "%%%SQL%%%",
+    "sql_search_to_db": "cast(%%%SQL%%% as real)",
+    "datatype_config":{
+      "defaults":{ "PREC": 53 }
+    },
+    "type": "float"
+  },
+  "time":{
+    "sql_from_db": "strftime('1970-01-01T%H:%M:%f',%%%SQL%%%)",
+    "sql_search_to_db": "strftime('1970-01-01T%H:%M:%f',%%%SQL%%%)"
+  },
+  "date":{
+    "sql_from_db": "strftime('%Y-%m-%dT%H:%M:%f',%%%SQL%%%)",
+    "sql_search_to_db": "strftime('%Y-%m-%dT%H:%M:%f',%%%SQL%%%)"
+  },
+  "datetime":{
+    "sql_from_db": "strftime('%Y-%m-%dT%H:%M:%f',%%%SQL%%%)",
+    "sql_search_to_db": "strftime('%Y-%m-%dT%H:%M:%f',%%%SQL%%%)"
+  },
+  "text":{ "type": "varchar" },
+  "blob":{ 
+    "sql_from_db": "case when %%%SQL%%% is null then null else '0x'||hex(%%%SQL%%%) end",
+    "sql_search": "%%%SQL%%%",
+    "type": "binary"
+  }
+}

@@ -641,7 +641,22 @@ XValidate._v_IsFloat = function () {
 	  if(!_val) return "";\
     if(_val == null) return "";\
     if(_val == "") return "";\
-    if(isNaN(parseFloat(val))) return _caption + " must be a valid number.";\
+    if(isNaN(parseFloat(_val))) return _caption + " must be a valid number.";\
+    return "";'));
+}
+
+XValidate._v_IsBinary = function (_maxlength) {
+  return (new Function('_caption', '_val', '\
+	  if(!_val) return "";\
+    if(_val == null) return "";\
+    if(_val == "") return "";\
+    if(_val.toString().substr(0,2).toLowerCase() == "0x"){ \
+      var hexstr = _val.substr(2); \
+      if(!(/^[0-9A-Fa-f]*$/.test(hexstr))) return _caption + " must be a valid hex string."; \
+      if((' + _maxlength + ' >= 0) && (hexstr.length > ' + _maxlength * 2 + ')) return _caption+" is too long (limit ' + _maxlength + ' bytes).";\
+      return "";\
+    } \
+    if((' + _maxlength + ' >= 0) && (_val.length > ' + _maxlength + ')) return _caption+" is too long (limit ' + _maxlength + ' bytes).";\
     return "";'));
 }
 
@@ -683,6 +698,15 @@ XValidate._v_IsSSN = function () {
     var rslt = _val;\
     //var rslt = String(_val).replace(/-/g,"");\
     if(!rslt.match(/^\\d{9}$/)) return _caption+" must be in the format 999-99-9999";\
+    return "";'));
+}
+
+XValidate._v_IsEIN = function () {
+  return (new Function('_caption', '_val', '\
+	  if(!_val) return "";\
+    var rslt = _val;\
+    //var rslt = String(_val).replace(/-/g,"");\
+    if(!rslt.match(/^\\d{9}$/)) return _caption+" must be in the format 99-9999999";\
     return "";'));
 }
 
@@ -1492,14 +1516,14 @@ exports.RenderField = function (_this, parentobj, modelid, field, val){
   else if (('control' in field) && (field.control == 'checkbox')) {
     var checkval = false;
     var checkhidden = false;
+    if ((val == null) || (typeof val == 'undefined')) val = '';
     if ('controlparams' in field) {
-      if ((val == null) || (typeof val == 'undefined')) val = '';
       if (('value_hidden' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_hidden.toUpperCase())) checkhidden = true;
       if (('value_true' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_true.toUpperCase())) checkval = true;
       else if (('value_false' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_false.toUpperCase())) checkval = false;
-      else checkval = (val?true:false);
+      else checkval = XFormat.bool_decode(val);
     }
-    else checkval = (val?true:false);
+    else checkval = XFormat.bool_decode(val);
     jctrl.prop('checked', checkval);
     if (checkhidden) jctrl.css('visibility', 'hidden');
     else if (checkhidden) jctrl.css('visibility', 'visible');
@@ -1618,7 +1642,7 @@ exports.GetValue = function (modelid) {
     if (('control' in field) && (field.control == 'checkbox')) {
       var checked = jctrl.prop('checked');
       var ishidden = jctrl.css('visibility').toLowerCase() == 'hidden';
-      var checkval = checked ? '1':'';
+      var checkval = checked ? '1':'0';
       
       if ('controlparams' in field) {
         if(ishidden && ('value_hidden' in field.controlparams)) checkval = field.controlparams.value_hidden;
@@ -2515,6 +2539,8 @@ exports.getMaxLength = function (field) {
     else if (ftype == 'smallint') rslt = 10;
     else if (ftype == 'tinyint') rslt = 3;
     else if (ftype == 'boolean') rslt = 5;
+    else if ((ftype == 'binary') && ('length' in field)) rslt = field.length * 2 + 2;
+
   }
   return rslt;
 }
@@ -3295,6 +3321,17 @@ exports.ssn_decode = function (val) {
   return rslt;
 }
 
+exports.ein = function (val) {
+  if (!_.isString(val)) return val;
+  if (val.length != 9) return val;
+  return val.substr(0, 2) + '-' + val.substr(2);
+}
+
+exports.ein_decode = function (val) {
+  var rslt = val.replace(/[^0-9]+/g, '');
+  return rslt;
+}
+
 exports.time = function (format, val) {
   if (val == null) return val;
   if (val == "") return val;
@@ -3331,6 +3368,18 @@ exports.time_decode = function (format, val) {
   
   return rslt.format("1970-01-01THH:mm:ss.SSS");
   //return m.format("HH:mm:ss.SSS");
+}
+
+exports.bool_decode = function (val) {
+  if(typeof val == 'undefined') return false;
+  if(val===null) return false;
+  if(val==='') return false;
+  if(val===true) return true;
+  if(val===false) return false;
+  var valstr = val.toString().toUpperCase();
+  if((valstr==='TRUE')||(valstr==='T')||(valstr==='Y')||(valstr==='YES')||(valstr==='ON')||(valstr==='1')) return true;
+  if((valstr==='FALSE')||(valstr==='F')||(valstr==='N')||(valstr==='NO')||(valstr==='OFF')||(valstr==='0')) return false;
+  return (val?true:false);
 }
 
 exports.Apply = function(format,val){
@@ -4743,7 +4792,7 @@ function SearchQuery(model) {
         var comparison_type = 'none';
         if ('lov' in field) comparison_type = 'lov';
         else if ('type' in field) {
-          if ((field.type == 'varchar') || (field.type == 'char')) comparison_type = 'string';
+          if ((field.type == 'varchar') || (field.type == 'char') || (field.type == 'binary')) comparison_type = 'string';
           else if (_.includes(['bigint', 'int', 'smallint', 'tinyint', 'decimal', 'float', 'time'], field.type)) comparison_type = 'numeric';
           else if (_.includes(['datetime', 'date'], field.type)) comparison_type = 'date';
           else if (_.includes(['hash', 'boolean'], field.type)) comparison_type = 'object';

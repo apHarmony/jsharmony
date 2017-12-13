@@ -42,7 +42,7 @@ var Routes = function (jsh, jshconfig) {
     req.baseurl = jshconfig.baseurl;
     req.jshconfig = jshconfig;
     req.jshlocal = {
-      Models: { } 
+      Models: { },
     };
     req.forcequery = {};
     req.getBaseJS = function () { return jsh.getBaseJS(req, jsh); }
@@ -312,6 +312,18 @@ var Routes = function (jsh, jshconfig) {
     res.end('<html><body>System will restart in 1 sec...<script type="text/javascript">window.setTimeout(function(){document.write(\'Restart initiated...\');},1000); window.setTimeout(function(){window.location.href="/";},5000);</script></body></html>');
     setTimeout(function(){ process.exit(); },1000);
   });
+  router.post('/_db/exec', function (req, res, next) {
+    if(!('SYSADMIN' in req._roles) && !('DEV' in req._roles)) return next();
+    var sql = req.body.sql;
+    jsh.AppSrv.ExecMultiRecordset('login', sql, [], {}, function (err, dbrslt) {
+      if(err){ err.sql = sql; return jsh.AppSrv.AppDBError(req, res, err); }
+      rslt = {
+        '_success': 1,
+        'dbrslt': dbrslt
+      };
+      res.send(JSON.stringify(rslt));
+    });
+  });
   router.get('/:modelid/:modelkey?', function (req, res, next) {
     //Verify model exists
     var modelid = req.params.modelid;
@@ -397,6 +409,7 @@ function processCustomRouting(routetype, req, res, jsh, modelid, cb, params){
   var model = jsh.getModel(req, modelid);
   if (model && model.onroute) {
     var onroute_params = { };
+    
     if((routetype=='d') || (routetype=='csv')){
       var verb = req.method.toLowerCase();
       if((model.layout=='grid') && (verb == 'get')){
@@ -407,6 +420,7 @@ function processCustomRouting(routetype, req, res, jsh, modelid, cb, params){
     }
     else if(routetype=='d_transaction'){ onroute_params = params; }
     else { onroute_params = { query: req.query, post: req.body }; }
+
     return model.onroute(routetype, req, res, cb, require, jsh, modelid, onroute_params);
   }
   else return cb();

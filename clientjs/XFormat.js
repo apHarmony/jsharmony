@@ -129,6 +129,17 @@ exports.ssn_decode = function (val) {
   return rslt;
 }
 
+exports.ein = function (val) {
+  if (!_.isString(val)) return val;
+  if (val.length != 9) return val;
+  return val.substr(0, 2) + '-' + val.substr(2);
+}
+
+exports.ein_decode = function (val) {
+  var rslt = val.replace(/[^0-9]+/g, '');
+  return rslt;
+}
+
 exports.time = function (format, val) {
   if (val == null) return val;
   if (val == "") return val;
@@ -165,6 +176,18 @@ exports.time_decode = function (format, val) {
   
   return rslt.format("1970-01-01THH:mm:ss.SSS");
   //return m.format("HH:mm:ss.SSS");
+}
+
+exports.bool_decode = function (val) {
+  if(typeof val == 'undefined') return false;
+  if(val===null) return false;
+  if(val==='') return false;
+  if(val===true) return true;
+  if(val===false) return false;
+  var valstr = val.toString().toUpperCase();
+  if((valstr==='TRUE')||(valstr==='T')||(valstr==='Y')||(valstr==='YES')||(valstr==='ON')||(valstr==='1')) return true;
+  if((valstr==='FALSE')||(valstr==='F')||(valstr==='N')||(valstr==='NO')||(valstr==='OFF')||(valstr==='0')) return false;
+  return (val?true:false);
 }
 
 exports.Apply = function(format,val){

@@ -424,7 +424,7 @@ AppSrvRpt.prototype.genReport = function (req, res, modelid, params, data, done)
               page.property('paperSize', pagesettings).then(function () {
                 page.on('onLoadFinished', onLoadFinished).then(function () {
                   page.property('content', rptcontent.body).then(function () { /* Report Generation Complete */ }).catch(function (err) { global.log(err); });;
-                });
+                }).catch(function (err) { global.log(err); });
               }).catch(function (err) { global.log(err); });
               //page.set('viewportSize',{width:3700,height:3800});
             }).catch(function (err) { global.log(err); });;

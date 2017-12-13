@@ -740,6 +740,8 @@ exports.getMaxLength = function (field) {
     else if (ftype == 'smallint') rslt = 10;
     else if (ftype == 'tinyint') rslt = 3;
     else if (ftype == 'boolean') rslt = 5;
+    else if ((ftype == 'binary') && ('length' in field)) rslt = field.length * 2 + 2;
+
   }
   return rslt;
 }
