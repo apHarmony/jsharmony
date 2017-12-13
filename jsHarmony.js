@@ -235,10 +235,11 @@ jsHarmony.LoadSQL = function (dir, type, rslt) {
         found_sqlids[sqlid] = fname;
         var sqlval = sql[sqlid];
         if(sqlval && sqlval.params){
+          //SQL Function
           if(sqlval.sql) sqlval.sql = Helper.ParseMultiLine(sqlval.sql);
-          rslt.SQL[sqlid] = sqlval; //Function
         }
         else sqlval = Helper.ParseMultiLine(sqlval);
+        rslt.SQL[sqlid] = sqlval;
       }
     }
   }
