@@ -355,10 +355,14 @@ Routes.ValidateSystemConfig = function(jshconfig){
       jsh.AppSrv.ExecRecordset('login', req.jshconfig.auth.sql_superlogin, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
     };
     if(Helper.notset(jshconfig.auth.on_loginsuccess)) jshconfig.auth.on_loginsuccess = function(req, jsh, params, cb){ //cb(err, rslt)
-      jsh.AppSrv.ExecRow(params[jsh.map.user_id], req.jshconfig.auth.sql_loginsuccess, [jsh.AppSrv.DB.types.VarChar(255), jsh.AppSrv.DB.types.BigInt, jsh.AppSrv.DB.types.DateTime(7)], params, cb);
+      var context = params[jsh.map.user_id];
+      if(jshconfig.auth.getContextUser) context = jshconfig.auth.getContextUser(context, jsh);
+      jsh.AppSrv.ExecRow(context, req.jshconfig.auth.sql_loginsuccess, [jsh.AppSrv.DB.types.VarChar(255), jsh.AppSrv.DB.types.BigInt, jsh.AppSrv.DB.types.DateTime(7)], params, cb);
     };
     if(Helper.notset(jshconfig.auth.on_passwordreset)) jshconfig.auth.on_passwordreset = function(req, jsh, params, cb){ //cb(err, rslt)
-      jsh.AppSrv.ExecRow(params[jsh.map.user_id], req.jshconfig.auth.sql_passwordreset, [jsh.AppSrv.DB.types.VarBinary(200), jsh.AppSrv.DB.types.VarChar(255), jsh.AppSrv.DB.types.BigInt, jsh.AppSrv.DB.types.DateTime(7)], params, cb);
+      var context = params[jsh.map.user_id];
+      if(jshconfig.auth.getContextUser) context = jshconfig.auth.getContextUser(context, jsh);
+      jsh.AppSrv.ExecRow(context, req.jshconfig.auth.sql_passwordreset, [jsh.AppSrv.DB.types.VarBinary(200), jsh.AppSrv.DB.types.VarChar(255), jsh.AppSrv.DB.types.BigInt, jsh.AppSrv.DB.types.DateTime(7)], params, cb);
     };
     if(Helper.notset(jshconfig.auth.on_auth)) jshconfig.auth.on_auth = function(req, jsh, params, cb){ //cb(err, rslt)
       jsh.AppSrv.ExecMultiRecordset('login', req.jshconfig.auth.sql_auth, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);

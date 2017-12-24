@@ -237,6 +237,7 @@ jsHarmony.LoadSQL = function (dir, type, rslt) {
         if(sqlval && sqlval.params){
           //SQL Function
           if(sqlval.sql) sqlval.sql = Helper.ParseMultiLine(sqlval.sql);
+          if(sqlval.exec) sqlval.exec = Helper.ParseMultiLine(sqlval.exec);
         }
         else sqlval = Helper.ParseMultiLine(sqlval);
         rslt.SQL[sqlid] = sqlval;
@@ -438,7 +439,7 @@ jsHarmony.prototype.ParseDeprecated = function () {
     //Convert tabs to indexed format, if necessary
     if(model.tabs){
       if(!_.isArray(model.tabs)){
-        LogDeprecated(model.id + ': Defining tabs as an associative array has been deprecated.  Please convert to the indexed array syntax [{ "name": "xxx" }]');
+        LogDeprecated(model.id + ': Defining tabs as an associative array has been deprecated.  Please convert to the indexed array syntax [{ "name": "TABNAME" }]');
         var new_tabs = [];
         for (var tabname in model.tabs) {
           if(!model.tabs[tabname]) model.tabs[tabname] = { '__REMOVE__': 1 };
