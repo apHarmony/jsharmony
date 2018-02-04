@@ -63,6 +63,7 @@ function jsHarmony() {
     if (fs.existsSync(global.modeldir[i].path + 'style/')) this.Cache['system.css'] += '\r\n' + this.MergeFolder(global.modeldir[i].path + 'style/');
     this.LoadSQL(global.modeldir[i].path + 'sql/', global.dbconfig._driver.name);
   }
+  this.ParseMacros();
   this.ParseDeprecated();
   this.ParseInheritance();
   this.ParseEntities();
@@ -822,6 +823,71 @@ jsHarmony.prototype.ParsePopups = function () {
 function AddValidation(field, validator) {
   if (!('validate' in field)) field.validate = [];
   field.validate.push(validator);
+}
+jsHarmony.prototype.ParseMacros = function() {
+  var _this = this;
+  var macros = _this.Config.macros;
+  macros['merge'] = function(){
+    var args = Array.from(arguments);
+    args.unshift({});
+    return _.extend.apply(_,args);
+  }
+  var macroids = {};
+  if(!macros) return;
+  //Parse js functions
+  for(var macroid in macros){
+    var macro = macros[macroid];
+    if(_.isString(macro) && (macro.substr(0,3)=='js:')){
+      try{ macros[macroid] = eval('['+macro.substr(3)+']')[0]; }
+      catch(ex){ LogEntityError(_ERROR, 'Macro: '+macroid+', error parsing function. '+ex.toString()); }
+    }
+    macroids['#'+macroid] = true;
+  }
+  //Execute macro (get replacement value)
+  function evalMacro(macro, params){
+    if(params) for(var i=0;i<params.length;i++){
+      var xval = parseObject(params[i]);
+      if(xval) params[i] = xval();
+    }
+    if(_.isFunction(macro)) return macro.apply(_this, params);
+    return macro;
+  }
+  //Parse objects and apply macros
+  function parseObject(obj){
+    if(!obj) return;
+    else if(_.isNumber(obj)) return;
+    else if(_.isBoolean(obj)) return;
+    else if(_.isString(obj)){
+      if(obj in macroids) return function(){ return evalMacro(macros[obj.substr(1)]); }
+    }
+    else if(_.isArray(obj) && (obj.length > 0)){
+      if(obj[0] in macroids){
+        return function(){ return evalMacro(macros[obj[0].substr(1)], obj.splice(1)); }
+      }
+      else{
+        for(var i=0;i<obj.length;i++){
+          var xval = parseObject(obj[i]);
+          if(xval) obj[i] = xval();
+        }
+      }
+    }
+    else{
+      var numkeys = 0;
+      var lastkey = null;
+      for(var key in obj){
+        numkeys++;
+        lastkey = key;
+        var xval = parseObject(obj[key]);
+        if(xval) obj[key] = xval();
+      }
+      if((numkeys==1) && (lastkey in macroids)){
+        return function(){ return _.extend({},evalMacro(macros[lastkey.substr(1)]),obj[lastkey]); }
+      }
+    }
+  }
+  parseObject(_this.Config);
+  parseObject(_this.CustomControls);
+  parseObject(_this.Models);
 }
 
 

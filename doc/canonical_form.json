@@ -197,9 +197,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "lov": { "sql2": "select X_ID as CODEParent, HP_CODE as CODEVal,HP_Desc as CODETxt from HP order by HP_Desc","parent": "CA_COUNTRY", "datalock":{"C_ID":"client_C_ID"} }, //CODEParent = Parent Value, CODEVal = Value, CODETxt = Desc
       "lov": { "sqlmp": "select X_ID as CODEParent1, Y_ID as CODEParent2, HP_CODE as CODEVal,HP_Desc as CODETxt from HP order by HP_Desc","parents": ["CA_COUNTRY","OTHER"], "datalock":{"C_ID":"client_C_ID"} }, //CODEParent[#] = Parent Value, CODEVal = Value, CODETxt = Desc
       "lov": { "UCOD": "E_STS" },
-      "lov": { "UCOD2": "DSCOPE_DCTGR","blank": 1,"parent": "CA_COUNTRY" }, //Alternatively, blank can be set to text: "blank":"(None)" otherwise defaults to "Please Select..."
+      "lov": { "UCOD2": "DSCOPE_DCTGR", "schema": "jsharmony","blank": 1,"parent": "CA_COUNTRY" }, //Alternatively, blank can be set to text: "blank":"(None)" otherwise defaults to "Please Select..."
       "lov": { "GCOD": "E_CTGR", "showcode": 1 }, //showcode ignores the CODETxt and shows the CODEVal on the front-end.  Useful for States
-      "lov": { "GCOD2": "DSCOPE_DCTGR","blank": 1,"parent": "CA_COUNTRY" },
+      "lov": { "GCOD2": "DSCOPE_DCTGR", "schema": "jsharmony","blank": 1,"parent": "CA_COUNTRY" },
       "eol": 1,
       "popuplov": {  //Enable POPUPLOV, requires target grid
                        "target":  "J",
