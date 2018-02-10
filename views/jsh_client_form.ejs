@@ -16,8 +16,8 @@
   <div class="navtext" id="navtext_<%=model.id%>">1 of 1</div>
   <a href="#" onclick="xform_<%=model.id%>.NavNext(); return false;" class="navbar"><img src="/images/icon_next.png" alt="Next" title="Next" /></a>
   <a href="#" onclick="xform_<%=model.id%>.NavLast(); return false;" class="navbar"><img src="/images/icon_last.png" alt="Last" title="Last" /></a>
-  <a href="#" onclick="xform_<%=model.id%>.NavAdd(); return false;" style="<%-xejs.visible(XExt.access(model.access,'IU'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a>
-  <a href="#" onclick="xform_<%=model.id%>.NavDelete(); return false;" style="<%-xejs.visible(XExt.access(model.access,'D'))%>"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a>
+  <a href="#" onclick="xform_<%=model.id%>.NavAdd(); return false;" style="<%-xejs.visible(XExt.access(model.actions,'IU'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a>
+  <a href="#" onclick="xform_<%=model.id%>.NavDelete(); return false;" style="<%-xejs.visible(XExt.access(model.actions,'D'))%>"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a>
   <%-jshRenderEJS('jsh_buttons',ejsparams)%>
 </div>
 <div class="clear"></div>

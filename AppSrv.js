@@ -80,6 +80,7 @@ AppSrv.prototype.getModelRecordset = function (req, res, modelid, Q, P, rowlimit
   var allfieldslist = _.union(keylist, fieldlist);
   var availablesortfieldslist = this.getFieldNames(req, model.fields, 'BFK');
   var filterlist = this.getFieldNames(req, model.fields, 'F');
+  //Any field with "B" access can now be the filterlist
   filterlist = _.union(keylist, filterlist);
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'B');
   if (encryptedfields.length > 0) throw new Error('Encrypted fields not supported on GRID');
@@ -210,7 +211,7 @@ AppSrv.prototype.getModelRecordset = function (req, res, modelid, Q, P, rowlimit
   for (var i = 0; i < keys.length; i++) {
     var field = keys[i];
     var fname = field.name;
-    if (fname in P) {
+    if ((fname in P) && !(fname in sql_params)) {
       var dbtype = AppSrv.prototype.getDBType(field);
       sql_ptypes.push(dbtype);
       sql_params[fname] = _this.DeformatParam(field, P[fname], verrors);
@@ -741,7 +742,7 @@ AppSrv.prototype.putModelForm = function (req, res, modelid, Q, P, onComplete) {
         if (P[fname] == '%%%' + fname + '%%%') { subs.push(fname); P[fname] = ''; }
         sql_params[fname] = _this.DeformatParam(field, P[fname], verrors);
         //Add PreCheck, if type='F'
-        if (Helper.access(field.access, 'F')) {
+        if (Helper.access(field.actions, 'F')) {
           _this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
             if (dfield != field) return false;
             param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
@@ -909,7 +910,7 @@ AppSrv.prototype.postModelForm = function (req, res, modelid, Q, P, onComplete) 
         sql_ptypes.push(dbtype);
         sql_params[fname] = _this.DeformatParam(field, P[fname], verrors);
         //Add PreCheck, if type='F'
-        if (Helper.access(field.access, 'F')) {
+        if (Helper.access(field.actions, 'F')) {
           _this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
             if (dfield != field) return false;
             param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
@@ -2326,8 +2327,8 @@ AppSrv.prototype.getDataLockSQL = function (req, fields, sql_ptypes, sql_params,
         }
       }
       else if (field.key) throw new Error('Missing DataLock for key.');
-      else if (('access' in field) && (Helper.access(field.access, 'F'))) throw new Error('Missing DataLock for foreign key ' + field.name);
-      else if (('access' in field) && (Helper.access(field.access, 'C'))) throw new Error('Missing DataLock for breadcrumb key ' + field.name);
+      else if (('actions' in field) && (Helper.access(field.actions, 'F'))) throw new Error('Missing DataLock for foreign key ' + field.name);
+      else if (('actions' in field) && (Helper.access(field.actions, 'C'))) throw new Error('Missing DataLock for breadcrumb key ' + field.name);
     }
     //if(!found_datalock){ console.log(fields); } //Use for debugging
     if (!found_datalock) throw new Error('DataLock ' + datalockid + ' not found.' + (descriptor ? ' (' + descriptor + ')' : ''));

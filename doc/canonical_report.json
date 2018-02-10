@@ -22,7 +22,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   //Same top-level settings as Forms
   "layout": "report",
   "title": "Report Title",
-  "access": "B",
+  "actions": "B",
   "roles": { "C_ADMIN": "B" },
   "topmenu":"reports",
   "description": "Report Description",
@@ -31,11 +31,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "zoom": "0.75", //Zoom applied to Header, Body, and Footer - Default 0.75
   "fields": [
     {"name":"C_ID","type":"bigint","datalock":{"C_ID":"client_C_C_ID"},"nl":1,
-	      "control":"dropdown_L","access": "B",
+	      "control":"dropdown_L","actions": "B",
         "lov": { "sql": "select C_ID as CODEVal,C_Name as CODETxt from C where 1=1 %%%DATALOCKS%%% order by C_Name", "datalock":{"C_ID":"client_C_ID"}, "blank": "(All)" },
         "default": "js:XExt.UndefinedBlank(_GET['C_ID'])", //Set a default value for the field if in query string
         "caption":"Company Name"},
-    {"name": "MDate","type": "date","nl": 1,"access": "B",
+    {"name": "MDate","type": "date","nl": 1,"actions": "B",
       "control": "date_mmddyy","sample": "01/28/11","validate": [ "Required" ],
       "default": "js:moment().format()",
       "caption": "Start Date"

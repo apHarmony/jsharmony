@@ -19,7 +19,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 <%
 var no_B = true;
-_.each(model.fields,function(field){ if(XExt.access(field.access,'B') && (field.control != 'html') && (field.name) && (field.control != 'subform') && (field.control != 'button')) no_B = false; });
+_.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field.control != 'html') && (field.name) && (field.control != 'subform') && (field.control != 'button')) no_B = false; });
 %>
 function XForm<%=model.id%>_Init(callback){
 	xform_<%=model.id%> = new XPost('<%=model.id%>','','');
@@ -36,7 +36,7 @@ function XForm<%=model.id%>_Init(callback){
       }
     else {
       //Add parameters for breadcrumbs
-      <% _.each(model.fields,function(field){ if(!field.name) return; if(XExt.access(field.access,'C')) { %>rslt.<%=field['name']%> = LiteralOrCollection('<%=field['name']%>',[_GET,this.Data]);<% } }); %>
+      <% _.each(model.fields,function(field){ if(!field.name) return; if(XExt.access(field.actions,'C')) { %>rslt.<%=field['name']%> = LiteralOrCollection('<%=field['name']%>',[_GET,this.Data]);<% } }); %>
       <% _.each(model.fields,function(field){ if(!field.name) return; if(field.lovkey){ %>rslt.<%=field['name']%> = LiteralOrCollection('<%=field['name']%>',[_GET,this.Data]);<% } }); %>
       }
     return rslt; 
@@ -50,7 +50,7 @@ function XForm<%=model.id%>_Init(callback){
   $('.xelem<%=model.id%>.dropdown').change(function(){ if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
   $('.xelem<%=model.id%>.checkbox').change(function(){ if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
 
-  <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if((field.control=='date') && (XExt.access(field.access,'IU'))) {%>
+  <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if((field.control=='date') && (XExt.access(field.actions,'IU'))) {%>
   $("#<%=field.name%>.xelem<%=model.id%>").datepicker({ changeMonth: true, changeYear: true, dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||JSH_DEFAULT_DATEFORMAT), onSelect: function(){ if(is_add) return; xform_<%=model.id%>.Data.OnControlUpdate(this); } });
   <% } }); %>  
   callback();

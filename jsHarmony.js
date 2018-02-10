@@ -255,7 +255,7 @@ jsHarmony.prototype.AddModel = function (modelname, model, prefix, modelpath, mo
   model['_inherits'] = [];
   if(!model.path && modelpath) model.path = modelpath;
   if(!model.component && modeldir && modeldir.component)  model.component = modeldir.component;
-  if ('access' in model) model['access_models'][modelname] = model.access;
+  if ('actions' in model) model['access_models'][modelname] = model.actions;
   if (('inherits' in model) && (model.inherits.indexOf(prefix)!=0)) model.inherits = prefix + model.inherits;
   //if (modelname in this.Models) throw new Error('Cannot add ' + modelname + '.  The model already exists.')
   var modelbasedir = '';
@@ -459,7 +459,7 @@ jsHarmony.prototype.ParseEntities = function () {
   _.forOwn(this.Models, function (model) {
     model.xvalidate = new XValidate();
     if (!('table' in model)) LogEntityError(_WARNING, 'Model ' + model.id + ' missing table');
-    if (!('access' in model)) LogEntityError(_WARNING, 'Model ' + model.id + ' missing access');
+    if (!('actions' in model)) LogEntityError(_WARNING, 'Model ' + model.id + ' missing actions');
     //Add Model caption if not set
     if (!('caption' in model)) { model.caption = ['', model.id, model.id]; LogEntityError(_WARNING, 'Model ' + model.id + ' missing caption'); }
     if (!('ejs' in model)) model.ejs = '';
@@ -487,9 +487,9 @@ jsHarmony.prototype.ParseEntities = function () {
     var fieldnames = [];
     _.each(model.fields, function (field) {
       if (field.name === '') delete field.name;
-      if (!('access' in field)) {
-        field.access = '';
-        if ((field.control == 'html') || (field.control == 'button')) field.access = 'B';
+      if (!('actions' in field)) {
+        field.actions = '';
+        if ((field.control == 'html') || (field.control == 'button')) field.actions = 'B';
         else {
           LogEntityError(_WARNING, 'Model ' + model.id + ' Field ' + (field.name || field.caption || JSON.stringify(field)) + ' missing access.');
         }
@@ -504,7 +504,7 @@ jsHarmony.prototype.ParseEntities = function () {
         if (_.includes(fieldnames, field.name)) { LogEntityError(_ERROR, "Duplicate field " + field.name + " in model " + model.id + "."); }
         fieldnames.push(field.name);
       }
-      if (field.key) { field.access += 'K'; foundkey = true; }
+      if (field.key) { field.actions += 'K'; foundkey = true; }
       if ('__REMOVEFIELD__' in field){ 
         LogDeprecated(model.id + ' > ' + field.name + ': __REMOVEFIELD__ has been deprecated.  Please use __REMOVE__ instead.'); 
         field.__REMOVE__ = field.__REMOVEFIELD__;
@@ -641,14 +641,14 @@ jsHarmony.prototype.ParseEntities = function () {
         }
       }
       //Add Validation Functions
-      model.xvalidate.AddValidator('_obj.' + field.name, field.caption, field.access, _this.GetValidatorFuncs(field.validate), field.roles);
+      model.xvalidate.AddValidator('_obj.' + field.name, field.caption, field.actions, _this.GetValidatorFuncs(field.validate), field.roles);
     });
     if (!foundkey) LogEntityError(_WARNING, 'Model ' + model.id + ' missing key');
-    ParseAccessModels(_this, model, model.id, model.access);
+    ParseAccessModels(_this, model, model.id, model.actions);
     
     //**DEPRECATED MESSAGES**
     if (model.fields) _.each(model.fields, function (field) {
-      if (field.access && Helper.access(field.access, 'C')) LogDeprecated(model.id + ' > ' + field.name + ': Access \'C\' has been deprecated - use breadcrumbs.sql_params');
+      if (field.actions && Helper.access(field.actions, 'C')) LogDeprecated(model.id + ' > ' + field.name + ': Access \'C\' has been deprecated - use breadcrumbs.sql_params');
       if ('hidden' in field) LogDeprecated(model.id + ' > ' + field.name + ': The hidden attribute has been deprecated - use "control":"hidden"');
       if ('html' in field) LogDeprecated(model.id + ' > ' + field.name + ': The html attribute has been deprecated - use "control":"html"');
       if ('lovkey' in field) LogDeprecated(model.id + ' > ' + field.name + ': The lovkey attribute has been deprecated');
@@ -671,7 +671,7 @@ jsHarmony.prototype.ParseEntities = function () {
           //Get field
           var sql_param_field = AppSrv.prototype.getFieldByName(model.fields, sql_param);
           if (!sql_param_field) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': LOV sql param "' + sql_param + '" is not defined as a field');
-          else if (!sql_param_field.key && !Helper.access(sql_param_field.access, 'F') && !sql_param_field.lovkey) { sql_param_field.lovkey = 1; }
+          else if (!sql_param_field.key && !Helper.access(sql_param_field.actions, 'F') && !sql_param_field.lovkey) { sql_param_field.lovkey = 1; }
         });
       }
     });
@@ -681,7 +681,7 @@ jsHarmony.prototype.ParseEntities = function () {
     else if (model.fields && model.breadcrumbs && model.breadcrumbs.sql_params) _.each(model.breadcrumbs.sql_params, function (sql_param) {
       var sql_param_field = AppSrv.prototype.getFieldByName(model.fields, sql_param);
       if (!sql_param_field) LogEntityError(_ERROR, model.id + ' > ' + sql_param + ': Breadcrumb sql param "' + sql_param + '" is not defined as a field');
-      else if (!Helper.access(sql_param_field.access, 'C')) { if (!sql_param_field.access) sql_param_field_access = ''; sql_param_field.access += 'C'; }
+      else if (!Helper.access(sql_param_field.actions, 'C')) { if (!sql_param_field.actions) sql_param_field.actions = ''; sql_param_field.actions += 'C'; }
     });
 
     //Automatically add C based on default fields
@@ -691,13 +691,13 @@ jsHarmony.prototype.ParseEntities = function () {
       _.each(default_params,function(sql_param){
         var sql_param_field = AppSrv.prototype.getFieldByName(model.fields, sql_param);
         if (!sql_param_field) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': Default sql param "' + sql_param + '" is not defined as a field');
-        else if (!Helper.access(sql_param_field.access, 'C')) { if (!sql_param_field.access) sql_param_field_access = ''; sql_param_field.access += 'C'; }
+        else if (!Helper.access(sql_param_field.actions, 'C')) { if (!sql_param_field.actions) sql_param_field.actions = ''; sql_param_field.actions += 'C'; }
       });
     }
     
     //Validate Model and Field Parameters
     var _v_model = [
-      'comment', 'layout', 'title', 'table', 'access', 'roles', 'caption', 'sort', 'dev',
+      'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev',
       'samplerepeat', 'topmenu', 'id', 'idmd5', 'access_models', '_inherits', 'helpid', 'querystring', 'buttons', 'xvalidate',
       'pagesettings', 'pageheader', 'pageheaderjs', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue',
       'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'nogridadd', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
@@ -710,7 +710,7 @@ jsHarmony.prototype.ParseEntities = function () {
       'subheader', 'footerheight', 'headeradd',
     ];
     var _v_field = [
-      'name', 'type', 'access', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'serverejs','roles','static','cellclass',
+      'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'serverejs','roles','static','cellclass',
       'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
       'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'precision', 'password', 'hash', 'salt', 'unbound',
       'sqlselect', 'sqlupdate', 'sqlinsert','sql_sort', 'sqlwhere', 'sql_search_sound', 'sql_search', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVE__', '__AFTER__',
@@ -728,7 +728,7 @@ jsHarmony.prototype.ParseEntities = function () {
     var no_B = true;
     var no_key = true;
     if (model.fields) _.each(model.fields, function (field) {
-      if (Helper.access(field.access, 'B') && (field.control != 'html') && (field.control != 'subform') && (field.control != 'button')) no_B = false;
+      if (Helper.access(field.actions, 'B') && (field.control != 'html') && (field.control != 'subform') && (field.control != 'button')) no_B = false;
       if (field.key) no_key = false;
       if (field.hidden) { field.control = 'hidden'; }
       for (var f in field) {
@@ -740,7 +740,7 @@ jsHarmony.prototype.ParseEntities = function () {
       if (field.popuplov) {
         for (var f in field.popuplov) { if (!_.includes(_v_popuplov, f)) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': Invalid popuplov parameter: ' + f); }
       }
-      if ((field.control == 'label') && Helper.access(field.access, 'IUD')) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': Label can only have access B');
+      if ((field.control == 'label') && Helper.access(field.actions, 'IUD')) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': Label can only have action B');
       //Check unique target
       if (field.target) {
         if (!_.includes(existing_targets, field.target)) existing_targets.push(field.target);
@@ -762,13 +762,13 @@ jsHarmony.prototype.ParseEntities = function () {
         var tab = model.tabs[i];
         var tabname = tab.name;
         var tabmodel = _this.Models[tab.target];
-        if(!('access' in tab)) tab.access='*';
+        if(!('actions' in tab)) tab.actions='*';
         for (var binding_child in tab.bindings) {
           if (!tabmodel) { continue; }
           if (!tabmodel.fields) LogEntityError(_ERROR, model.id + ' > Tab ' + tabname + ': Target model has no fields for binding');
           var binding_child_field = AppSrv.prototype.getFieldByName(tabmodel.fields, binding_child);
           if (!binding_child_field) LogEntityError(_ERROR, model.id + ' > Tab ' + tabname + ': Bound field "' + binding_child + '" is not defined in the target model "' + tab.target + '"');
-          else if (!Helper.access(binding_child_field.access, 'F') && !binding_child_field.key) LogEntityError(_ERROR, model.id + ' > Tab ' + tabname + ': Bound field "' + binding_child + '" in target model "' + tab.target + '" missing F access');
+          else if (!Helper.access(binding_child_field.actions, 'F') && !binding_child_field.key) LogEntityError(_ERROR, model.id + ' > Tab ' + tabname + ': Bound field "' + binding_child + '" in target model "' + tab.target + '" missing F access');
         }
       }
     }

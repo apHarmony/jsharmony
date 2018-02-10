@@ -33,7 +33,7 @@ if(model.tabs && model.tabs.length){
 %>
 XForms['<%=model.id%>'] = {
 	_id:'<%=model.id%>',
-	_access:'<%=model.access%>',
+	_actions:'<%=model.actions%>',
 	_layout:'<%=model.layout%>',
 	_title: <%-xejs.iif(model.title,JSON.stringify(model.title),"''")%>,
 	_caption:<%-JSON.stringify(model.caption)%>,

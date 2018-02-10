@@ -209,7 +209,7 @@ exports.RenderField = function (_this, parentobj, modelid, field, val){
   var show_lookup_when_readonly = false;
 
   var access = (_this._is_new?'I':'U');
-  var is_editable = XExt.HasAccess(field.access, access);
+  var is_editable = XExt.HasAccess(field.actions, access);
   if (is_editable && ('readonly' in field) && (field.readonly == 1)) is_editable = false;
   if (('virtual' in field) && field.virtual) is_editable = true;
   if (is_editable && ('controlparams' in field) && (field.controlparams.base_readonly)) {
@@ -251,7 +251,7 @@ exports.GetValues = function () {
   return function (perm) {
     var _this = this;
     _.each(this.Fields, function (field) {
-      if (!(('virtual' in field) && field.virtual) && !XExt.HasAccess(field.access, perm)) return;
+      if (!(('virtual' in field) && field.virtual) && !XExt.HasAccess(field.actions, perm)) return;
       var newval = _this.GetValue(field);
       //if (!('control' in field) && (newval == undefined)) return;
       _this[field.name] = newval;
@@ -343,7 +343,7 @@ exports.HasUpdates = function () {
     var access = (this._is_new?'I':'U');
     var hasUpdates = false;
     _.each(this.Fields, function (field) {
-      if (!XExt.HasAccess(field.access, access)) return;
+      if (!XExt.HasAccess(field.actions, access)) return;
       if (_this.HasUpdate(field.name)) { hasUpdates = true; }
     });
     return hasUpdates;

@@ -20,11 +20,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 function XForm<%=model.id%>(){ }
 
 XForm<%=model.id%>.prototype.Fields = {
-  <% _.each(model.fields,function(field){ if(!('access' in field)) return; if(field.control=='subform') return; if(field.control=='html') return; if(!field.name) return; %>
+  <% _.each(model.fields,function(field){ if(!('actions' in field)) return; if(field.control=='subform') return; if(field.control=='html') return; if(!field.name) return; %>
     "<%=field.name%>":{"name":"<%=field.name%>",
       "caption":<%-JSON.stringify(field.caption_ext||field.caption)%>,
     <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
-    <%-xejs.iif('access' in field,'"access":'+JSON.stringify(field.access)+',') %>
+    <%-xejs.iif('actions' in field,'"actions":'+JSON.stringify(field.actions)+',') %>
     <%-xejs.iif('static' in field,'"static":'+JSON.stringify(field.static)+',') %>
     <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>
     }, <%});%>

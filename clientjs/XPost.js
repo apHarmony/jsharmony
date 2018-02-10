@@ -456,11 +456,11 @@ XPost.prototype.OnUndefined = function(data){
 	if(this.Data && (this.Data.OnUndefined)) this.Data.OnUndefined(data);
 	else XExt.Alert("Undefined: " + JSON.stringify(data));
 }
-XPost.prototype.GetFieldParams = function(access){
+XPost.prototype.GetFieldParams = function(action){
 	var _this = this;
   var rslt = {};
 	_.each(_this.Data.Fields,function(field){
-    if (!XExt.HasAccess(field.access, access)) return;
+    if (!XExt.HasAccess(field.actions, action)) return;
 		if((typeof _this.Data[field.name] == 'undefined') && _.includes(XForms[_this.q]._bindings,field.name)){
 			rslt[field.name] = '%%%'+field.name+'%%%';
 		}

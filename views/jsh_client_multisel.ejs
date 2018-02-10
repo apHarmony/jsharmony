@@ -27,8 +27,8 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
       <th>Select</th>
       <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
 	  if(!('caption' in field)) continue; 
-      if(!('access' in field)) continue; 
-      if(!XExt.access(field.access,'B')) continue;
+      if(!('actions' in field)) continue; 
+      if(!XExt.access(field.actions,'B')) continue;
 	  %>
       <th nowrap><%=field.caption%></th>
       <% } %>
@@ -47,11 +47,11 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
   <script id="xmultisel_<%=model.id%>_template" type="text/x-ejs-template">
     <# for(var j=0;j<data.length;j++){ var datarow=data[j]; #>
     <tr class="<#=(j%2==1?'even':'odd')#>">
-      <td align="center" style="vertical-align:middle;"><input type="checkbox" class="xselitem" value="<#=data[j][window.jshuimap.codeval]#>" <%-xejs.iif(!XExt.access(model.access,'IU'),'disabled="disabled"')%> <# if(data[j]['<%=lovfield%>']!==null){ #>checked="checked"<# } #> /></td>
+      <td align="center" style="vertical-align:middle;"><input type="checkbox" class="xselitem" value="<#=data[j][window.jshuimap.codeval]#>" <%-xejs.iif(!XExt.access(model.actions,'IU'),'disabled="disabled"')%> <# if(data[j]['<%=lovfield%>']!==null){ #>checked="checked"<# } #> /></td>
     <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
       if(!('caption' in field)) continue; 
-      if(!('access' in field)) continue; 
-      if(!XExt.access(field.access,'B')) continue;
+      if(!('actions' in field)) continue; 
+      if(!XExt.access(field.actions,'B')) continue;
       var format = 'undefined';
       if('format' in field) format = JSON.stringify(field.format);
       %>

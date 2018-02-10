@@ -28,12 +28,12 @@ function XForm<%=model.id%>(){
 }
 
 XForm<%=model.id%>.prototype.Fields = {
-  <% _.each(model.fields,function(field){ if(!('access' in field)) return; if(field.control=='subform') return; if(field.control=='html') return; if(!field.name) return; %>
+  <% _.each(model.fields,function(field){ if(!('actions' in field)) return; if(field.control=='subform') return; if(field.control=='html') return; if(!field.name) return; %>
     "<%=field.name%>":{"name":"<%=field.name%>",
     "caption":<%-JSON.stringify(field.caption_ext||field.caption)%>,
     <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
     <%-xejs.iif('type' in field,'"type":'+JSON.stringify(field.type)+',') %>
-    <%-xejs.iif('access' in field,'"access":'+JSON.stringify(field.access)+',') %>
+    <%-xejs.iif('actions' in field,'"actions":'+JSON.stringify(field.actions)+',') %>
     <%-xejs.iif('readonly' in field,'"readonly":'+JSON.stringify(field.readonly)+',') %>
     <%-xejs.iif('control' in field,'"control":'+JSON.stringify(field.control)+',') %>
     <%-xejs.iif('virtual' in field,'"virtual":'+JSON.stringify(field.virtual)+',') %>
@@ -70,6 +70,6 @@ XForm<%=model.id%>.prototype.BindLOV = XExt.XForm.BindLOV('<%=model.id%>');
 
 XForm<%=model.id%>.prototype.xvalidate = new XValidate();
 <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; %>
-XForm<%=model.id%>.prototype.xvalidate.AddControlValidator('.<%=field.name%>.xelem<%=model.id%>','_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getaccess(model.access,"BIU"):field.access)%>',[<%-field.validate%>]);<%});%>
+XForm<%=model.id%>.prototype.xvalidate.AddControlValidator('.<%=field.name%>.xelem<%=model.id%>','_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getaccess(model.actions,"BIU"):field.actions)%>',[<%-field.validate%>]);<%});%>
 
 jsh_heap.push('XForm<%=model.id%>');

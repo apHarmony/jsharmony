@@ -25,7 +25,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "caption": [ "", "Client", "Clients" ],
   "title": "CLIENT - @C_Name - STRD", //Can use dynamic parameters from jshconfig.globalparams: @C_Name, or <#=data.C_Name#> for form data, or <#=bcrumbs.PL_YEAR_TXT#> for breadcrumb SQL data, <#=_GET.TO_ID#> for GET Parameters
   "topmenu": "clients",
-  "access": "B", //B,BI,BIU,BD,BID,BIUD
+  "actions": "B", //B,BI,BIU,BD,BID,BIUD
   "roles": { "CLIENT": "*", "C_ADMIN": "B" }, //By default, only SYSADMIN & DEV have access
   "scope": "*", //Scope is not used
   "popup": [ 1000, 900 ],
@@ -82,11 +82,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "codeval": "J_ID", //Used internally by program for popuplov child grid
   "disableautoload": 1, //Disables autoload in grid on scroll to bottom
   "buttons": [
-    { "link": "add:H", "icon": "add", "text": "Add %%%CAPTION%%%", "access": "I", "bindings": { "N_SCOPE_ID": "N_SCOPE_ID", "N_SCOPE": "'C'", "C_ID":  "N_SCOPE_ID", "N_TYPE":  "'C'" }, "style": "", "class": "", "roles": { "CLIENT": "*", "C_ADMIN": "B" }, "nl": 1 }, //or just put the link for add
-    {"link":"js:C_LOVBAR_Add(this,xformid);", "icon": "add", "text": "Add Customer", "access": "B" },
-    {"link": "savenew:", "icon": "add", "text": "Save and New", "access": "IU" }
-    {"link": "savenew:", "icon": "add", "text": "Save and New", "access": "IU", "group":"Actions" }
-    //Buttons without I access will not show up on Insert
+    { "link": "add:H", "icon": "add", "text": "Add %%%CAPTION%%%", "actions": "I", "bindings": { "N_SCOPE_ID": "N_SCOPE_ID", "N_SCOPE": "'C'", "C_ID":  "N_SCOPE_ID", "N_TYPE":  "'C'" }, "style": "", "class": "", "roles": { "CLIENT": "*", "C_ADMIN": "B" }, "nl": 1 }, //or just put the link for add
+    {"link":"js:C_LOVBAR_Add(this,xformid);", "icon": "add", "text": "Add Customer", "actions": "B" },
+    {"link": "savenew:", "icon": "add", "text": "Save and New", "actions": "IU" }
+    {"link": "savenew:", "icon": "add", "text": "Save and New", "actions": "IU", "group":"Actions" }
+    //Buttons without I actions will not show up on Insert
     //"link":"js:XExt.popupReport('I',{ C_ID: 97 },{ width:900, height:500 });"
   ],
   "hide_system_buttons" : ["print","export","help","filter","clear"], //Current only on Grid
@@ -156,7 +156,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                            "delete_button": "Delete File", //Text for delete button
                            "data_folder": "D"}, //Folder for files, must be unique per model
                       {"item_context_menu": [ //tree params - Context Menu for an Item
-                        { "icon": "add", "text": "Add", "action": "XExt.Alert('add' + context_item);", "access": "IUD" }
+                        { "icon": "add", "text": "Add", "action": "XExt.Alert('add' + context_item);", "actions": "IUD" }
                         ],
                        "expand_all": false, //Show nodes expanded by default
                        "expand_to_selected": true

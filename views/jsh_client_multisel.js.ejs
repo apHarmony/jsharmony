@@ -44,7 +44,7 @@ function XForm<%=model.id%>_Init(callback){
     if(!is_add){
       _.each(XForms['<%=model.id%>']._bindings,function(binding){
         var bfield = XForm<%=model.id%>.prototype.Fields[binding];
-        if((typeof bfield != 'undefined') && (XExt.HasAccess(bfield.access,'F'))){
+        if((typeof bfield != 'undefined') && (XExt.HasAccess(bfield.actions,'F'))){
           execparams[binding] = XForms['<%=model.id%>'][binding]();
         }
       });
@@ -98,7 +98,7 @@ function XForm<%=model.id%>_Save(){
   var _query = {};
   _.each(XForms['<%=model.id%>']._bindings,function(binding){
     var bfield = XForm<%=model.id%>.prototype.Fields[binding];
-    if((typeof bfield != 'undefined') && !(XExt.HasAccess(bfield.access,'F'))) return;
+    if((typeof bfield != 'undefined') && !(XExt.HasAccess(bfield.actions,'F'))) return;
     _query[binding] = XForms['<%=model.id%>'][binding]();
     if(is_add && (typeof  _query[binding] == 'undefined')){
       _query[binding] = '%%%'+binding+'%%%';

@@ -20,7 +20,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 window.xform_<%=model.id%> = undefined;
 <%
 var no_B = true;
-_.each(model.fields,function(field){ if(XExt.access(field.access,'B') && (field.control != 'html') && (field.control != 'subform') && (field.control != 'button')) no_B = false; });
+_.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field.control != 'html') && (field.control != 'subform') && (field.control != 'button')) no_B = false; });
 %>
 
 function XForm<%=model.id%>_Init(callback){
@@ -38,7 +38,7 @@ function XForm<%=model.id%>_Init(callback){
 	    }
 	  else {
 	    //Add parameters for breadcrumbs
-	    <% _.each(model.fields,function(field){  if(!field.name) return; if(XExt.access(field.access,'C')) { %>rslt.<%=field['name']%> = LiteralOrCollection('<%=field['name']%>',[_GET,this.Data]);<% } }); %>
+	    <% _.each(model.fields,function(field){  if(!field.name) return; if(XExt.access(field.actions,'C')) { %>rslt.<%=field['name']%> = LiteralOrCollection('<%=field['name']%>',[_GET,this.Data]);<% } }); %>
 	    }
 	  return rslt; 
 	};

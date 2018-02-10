@@ -57,7 +57,7 @@ window.jsh_cancelExit = false;
 function XForm_GetChanges() {  //Returns array of form names that have changed
   var foundchanges = [];
   _.each(XForms, function (xform) {
-    if (!XExt.HasAccess(xform._access, 'IUD')) return;
+    if (!XExt.HasAccess(xform._actions, 'IUD')) return;
     if (window['xform_' + xform._id].HasUpdates()) { foundchanges.push(xform._caption[1]); }
     else if ((window['xform_' + xform._id].Data) && (window['xform_' + xform._id].Data._is_dirty)) { foundchanges.push(xform._caption[1]); }
   });
@@ -72,12 +72,12 @@ function XForm_Save(options) {
   XFormTree(null, function (xform) {
     if (!valid) return;
     var xformid = xform._id;
-    if (XExt.HasAccess(xform._access, 'IU')) {
+    if (XExt.HasAccess(xform._actions, 'IU')) {
       var access = 'U';
       if (xform._layout == 'multisel') access = 'U';
       else if (xform._layout == 'grid') access = 'IU';
       else if (window['xform_' + xformid].Data._is_new) access = 'I';
-      if (XExt.HasAccess(xform._access, access)) {
+      if (XExt.HasAccess(xform._actions, access)) {
         var ftasks = window['XForm' + xformid + '_Save']();
         if (typeof ftasks == 'undefined') { valid = false; return; }
         dbtasks = _.union(dbtasks, ftasks);
@@ -192,7 +192,7 @@ function XForm_Delete() {
 
 function topmost_jsh_ready() {
   XForms_Hide();
-  if (!XForms[XForms_root]._access) { XExt.Alert('ERROR - No effective access to root form'); return; }
+  if (!XForms[XForms_root]._actions) { XExt.Alert('ERROR - No effective access to root form'); return; }
 
   //  XFormTree(null,function(xform){ console.log(xform._id); },function(){ $('.xelemX').show(); });
   //  XFormAsyncTree(XForms_root,function(xform,done){ done(); },function(){ $('.xelemX').show(); console.log('all done'); });
@@ -200,12 +200,12 @@ function topmost_jsh_ready() {
   var enable_delete = false;
   XFormTree(null, function (xform) {
     if ((xform._layout == 'form') || (xform._layout == 'multisel')) {
-      if (XExt.HasAccess(xform._access, 'IU')) enable_save = true;
+      if (XExt.HasAccess(xform._actions, 'IU')) enable_save = true;
       if ((xform._id == XForms_root) || (xform._parent == XForms_root))
-        if (XExt.HasAccess(xform._access, 'D')) { enable_delete = true; delete_target = xform._id; }
+        if (XExt.HasAccess(xform._actions, 'D')) { enable_delete = true; delete_target = xform._id; }
     }
     else if ((xform._layout == 'grid') && (xform._commitlevel) && (xform._commitlevel != 'none')) {
-      if (XExt.HasAccess(xform._access, 'IUD')) enable_save = true;
+      if (XExt.HasAccess(xform._actions, 'IUD')) enable_save = true;
     }
   });
 
@@ -218,7 +218,7 @@ function topmost_jsh_ready() {
       var button_groups = {};
       $('.xform_button').each(function () {
         var jbtn = $(this);
-        var btnaccess = jbtn.data('access');
+        var btnaccess = jbtn.data('actions');
         if (is_add && !XExt.HasAccess(btnaccess, 'I')) jbtn.hide();
         else {
           if(jbtn.is(':visible') && jbtn.hasClass('grouped')){
@@ -251,7 +251,7 @@ function topmost_jsh_ready() {
         if (enable_save) $('.xactions.top .save').show();
         if (enable_delete) $('.xactions.top .delete').show();
         XFormTree(null, function (xform) {
-          if (!is_add && XExt.HasAccess(xform._access, 'I')) $('.xactions.xelem' + xform._id + ' .duplicate').show();
+          if (!is_add && XExt.HasAccess(xform._actions, 'I')) $('.xactions.xelem' + xform._id + ' .duplicate').show();
         });
         init_complete = true;
         //Update Browser History with URL/state
@@ -337,7 +337,7 @@ function XForm_Select(callback, root) {
         if (typeof xform._onloadimmediate != 'undefined') xform._onloadimmediate(xform);
         done();
       };
-      if (is_add && (!XExt.HasAccess(xform._access, 'I')) && (xform._layout != 'multisel') && (xform._layout != 'exec')) { return done(); }
+      if (is_add && (!XExt.HasAccess(xform._actions, 'I')) && (xform._layout != 'multisel') && (xform._layout != 'exec')) { return done(); }
       window['xform_' + xform._id].Select(onDone);
     },
     function () {
@@ -527,7 +527,7 @@ function XForms_Show() {
 function XForm_GetState(url) {
   var rslt = {};
   _.each(XForms, function (xform) {
-    if (!XExt.HasAccess(xform._access, 'B')) return;
+    if (!XExt.HasAccess(xform._actions, 'B')) return;
     if (xform._layout != 'grid') return;
     rslt[xform._id] = window['XForm' + xform._id + '_GetState']();
   });
@@ -582,7 +582,7 @@ function XForm_LoadState(state, addBackHistoryOnCancel) {
     }
   }
   _.each(XForms, function (xform) {
-    if (!XExt.HasAccess(xform._access, 'B')) return;
+    if (!XExt.HasAccess(xform._actions, 'B')) return;
     if (xform._onloadstate) return xform._onloadstate(xform, state[xform._id]);
     if (xform._layout != 'grid') return;
     if (xform._id in state) {
@@ -839,7 +839,7 @@ function XForm_Duplicate(modelid, link, link_options) {
 function XForm_HasUpdates() {
   var rslt = false;
   _.each(XForms, function (xform) {
-    if (!XExt.HasAccess(xform._access, 'IUD')) return;
+    if (!XExt.HasAccess(xform._actions, 'IUD')) return;
     if (window['xform_' + xform._id].HasUpdates()) { rslt = true; }
   });
   return rslt;

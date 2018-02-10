@@ -124,7 +124,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, onC
       return {
         'helpurl': ejsext.getHelpURL(req, jsh, model.helpid), 
         'helpurl_onclick': ejsext.getHelpOnClick(req, jsh),
-        'access': ejsext.getaccess(req, model, 'BIUD'),
+        'actions': ejsext.getaccess(req, model, 'BIUD'),
         'breadcrumbs': ejsext.BreadCrumbs(req, jsh, modelid)
       }
     },
@@ -136,7 +136,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, onC
         var button = buttons[i];
         var link_target = button['link'];
         var link_bindings = button['bindings'];
-        var link_access = button['access'];
+        var link_actions = button['actions'];
         var link_text = button['text'] || '';
         link_text = link_text.replace(new RegExp('%%%CAPTION%%%', 'g'), model.caption[1]);
         link_text = link_text.replace(new RegExp('%%%CAPTIONS%%%', 'g'), model.caption[2]);
@@ -145,8 +145,8 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, onC
         var link_class = button['class'];
         var link_newline = button['nl'] ? 1 : 0;
         var link_group = button['group'] || '';
-        if (!ejsext.access(req, model, link_access)) continue;
-        if('roles' in button) if (!ejsext.access(req, button, link_access)) continue;
+        if (!ejsext.access(req, model, link_actions)) continue;
+        if('roles' in button) if (!ejsext.access(req, button, link_actions)) continue;
         var link_url = '';
         var link_onclick = '';
         if (link_target && link_target.substr(0, 3) == 'js:') {
@@ -161,7 +161,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, onC
         var rsltbutton = {
           'url': link_url,
           'onclick': link_onclick,
-          'access': link_access,
+          'actions': link_actions,
           'icon': link_icon,
           'text': link_text,
           'style': link_style,
@@ -212,8 +212,8 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, onC
         for(var i=0; i<model.tabs.length;i++){
           var tab = model.tabs[i];
           var tabname = tab.name;
-          //if (!ejsext.access(req, model, targetperm, tab.access)) continue;
-          //if('roles' in tab) if (!ejsext.access(req, tab, targetperm, tab.access)) continue;
+          //if (!ejsext.access(req, model, targetperm, tab.actions)) continue;
+          //if('roles' in tab) if (!ejsext.access(req, tab, targetperm, tab.actions)) continue;
           if (tab.showcode) {
             if (_.includes(tab.showcode, tabcode)) {
               showtabs.push(tabname);
@@ -298,7 +298,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, onC
             if(model.layout != 'grid') rslt.buttons.push({
               'url': '#',
               'onclick': "if(XForm_HasUpdates()){ XExt.Alert('Please save changes before duplicating.'); return false; } XExt.popupShow('" + dmodelid + "','" + model.id + "_duplicate','Duplicate " + model.caption[1] + "',undefined,this); return false;",
-              'access': 'I',
+              'actions': 'I',
               'icon': 'copy',
               'text': (model.duplicate.link_text || 'Duplicate'),
               'style': 'display:none;',
@@ -403,9 +403,9 @@ AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, onComplete) 
       if (('UCOD2' in srcfield.lov) || ('sql2' in srcfield.lov)) dstfield.lov.duallov = 1;
       else if ('sqlmp' in srcfield.lov) dstfield.lov.multilov = 1;
     }
-    if ('access' in srcfield) {
-      dstfield.access = ejsext.getaccess(req, model, srcfield.access);
-      if ('roles' in srcfield) dstfield.access = ejsext.getaccess(req, srcfield, dstfield.access);
+    if ('actions' in srcfield) {
+      dstfield.actions = ejsext.getaccess(req, model, srcfield.actions);
+      if ('roles' in srcfield) dstfield.actions = ejsext.getaccess(req, srcfield, dstfield.actions);
     }
     dstfield.validate = jsh.GetValidatorClientStr(srcfield);
     if (('control' in dstfield) && ((dstfield.control == 'subform') || (dstfield.popuplov))) {
