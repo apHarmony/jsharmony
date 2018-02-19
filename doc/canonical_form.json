@@ -23,7 +23,30 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "inherits": "C_CA", //Inherit from another form
   "table": "V_E001L",
   "caption": [ "", "Client", "Clients" ],
-  "title": "CLIENT - @C_Name - STRD", //Can use dynamic parameters from jshconfig.globalparams: @C_Name, or <#=data.C_Name#> for form data, or <#=bcrumbs.PL_YEAR_TXT#> for breadcrumb SQL data, <#=_GET.TO_ID#> for GET Parameters
+  "title": 
+    //Title string:
+    "CLIENT - @C_Name - STRD" //Can use dynamic parameters from jshconfig.globalparams: @C_Name, or <#=data.C_Name#> for form data, or <#=bcrumbs.PL_YEAR_TXT#> for breadcrumb SQL data, <#=_GET.TO_ID#> for GET Parameters
+    //Title with fields from form data:
+    "<#=data.C_Name#>"
+    //Title with fields from breadcrumb sql:
+    "<#=bcrumbs.PL_YEAR_TXT#>"
+    //Title with GET parameters:
+    "<#=_GET.TO_ID#>"
+    //Title with SQL lookup
+    { "sql":"select getdate()" }
+    //Title with separate Add/Edit titles
+    {
+      "add": "Add Customer",
+      "edit": "Edit Customer"
+    }
+    //Title with separate Add/Edit SQL lookups:
+    {
+      "add": { "sql":"select getdate()" },
+      "edit": { "sql":"select c_name||' Contacts' from c where c_id=@c_id" }
+    }
+    //If the title is not set, the caption will be used.  If the caption is not set, the model ID will be used
+    //The topmost form's title will be used in the window title
+    //If the title is set to blank on a tabbed form, the current tab's title will be used for the window title
   "topmenu": "clients",
   "actions": "B", //B,BI,BIU,BD,BID,BIUD
   "roles": { "CLIENT": "*", "C_ADMIN": "B" }, //By default, only SYSADMIN & DEV have access

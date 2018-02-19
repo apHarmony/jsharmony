@@ -404,6 +404,7 @@ exports.GetOwnFields = function(val) {
   _.forOwn(val, function (val, key) {
     if (key == '_LOVs') return;
     if (key == '_defaults') return;
+    if (key == '_title') return;
     if (key == '_bcrumbs') return;
     if (key == '_is_new') return;
     if (key == '_is_dirty') return;

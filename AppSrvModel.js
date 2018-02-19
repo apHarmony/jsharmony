@@ -116,7 +116,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, onC
   var rslt = {};
 
   copyValues(rslt, model, [
-    'title', 'id', 'layout', 'caption', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onupdate', 'oncommit', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy', 'js', 'hide_system_buttons',
+    'id', 'layout', 'caption', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onupdate', 'oncommit', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy', 'js', 'hide_system_buttons',
     'popup', 'rowclass', 'rowstyle', 'tabpanelstyle', 'tablestyle', 'formstyle', 'sort', 'querystring', 'disableautoload', 'tabpos', 'templates',
     'reselectafteredit','newrowposition','commitlevel','validationlevel','nogridadd','grid_expand_filter','grid_rowcount', 'grid_require_filter','grid_save_before_update','noresultsmessage','bindings','ejs',
     //General Data
@@ -321,6 +321,14 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, onC
       else return cb();
     },
 
+    //Resolve title, if applicable
+    function(cb){
+      _this.AppSrv.getTitle(req, res, modelid, (targetperm=='U'?'BU':targetperm), function(err, title){
+        if(typeof title !== 'undefined') rslt.title = (title||'');
+        return cb();
+      });
+    },
+
     //Set up fields
     function(cb){
       if (topmost) {
@@ -328,7 +336,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, onC
         rslt['topmenu'] = '';
         copyValues(rslt, model, ['topmenu']);
         rslt['toptitle'] = model.id;
-        if ('title' in model) rslt['toptitle'] = Helper.ResolveParams(req, model.title);
+        if ('title' in rslt) rslt['toptitle'] = rslt.title;
         rslt['forcequery'] = req.forcequery;
       }
       if ('fields' in model) _this.copyModelFields(req,res,model,function(fields){

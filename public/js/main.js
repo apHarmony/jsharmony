@@ -1068,6 +1068,7 @@ function XData(_q,_TemplateID,_PlaceholderID,_CustomScroll,_Paging,_ScrollContro
   this._LOVs = {};
   this._defaults = {};
   this._bcrumbs = {};
+  this._title = null;
 }
 //Passing 0,-1 for rowcount will return total rowcount
 XData.prototype.Load = function(rowstart,rowcount,onComplete,getCSV,onFail){
@@ -1151,6 +1152,7 @@ XData.prototype.ProcessData = function(data,rowstart,onComplete,reqdata){
       _this.GetMeta = false;
       if ('_defaults' in data) { _this._defaults = data['_defaults']; }
       if ('_bcrumbs' in data) { _this._bcrumbs = data['_bcrumbs']; }
+      if ('_title' in data) { _this._title = data['_title']; }
       for (var tbl in data) {
         if (tbl.indexOf('_LOV_') == 0) {
           _this._LOVs[tbl.substring(5)] = data[tbl];
@@ -1743,6 +1745,7 @@ exports.GetOwnFields = function(val) {
   _.forOwn(val, function (val, key) {
     if (key == '_LOVs') return;
     if (key == '_defaults') return;
+    if (key == '_title') return;
     if (key == '_bcrumbs') return;
     if (key == '_is_new') return;
     if (key == '_is_dirty') return;
@@ -4311,6 +4314,7 @@ XPost.prototype.SetIndex = function (_index, saveold) {
   delete this.Data._LOVs;
   delete this.Data._defaults;
   delete this.Data._bcrumbs;
+  delete this.Data._title;
   if (saveold) {
     if (!this.CommitRow()) return false;
   }
@@ -4319,6 +4323,7 @@ XPost.prototype.SetIndex = function (_index, saveold) {
   this.Data._LOVs = this._LOVs;
   this.Data._defaults = this._defaults;
   this.Data._bcrumbs = this._bcrumbs;
+  this.Data._title = this._title;
   if (this.xData) {
     this.Data._jrow = $(this.xData.PlaceholderID).find("tr[data-id='" + this.Index + "']");
   }
@@ -4368,9 +4373,11 @@ XPost.prototype.Select = function(onComplete){
 		}
     if ('_defaults' in rslt) { _this.Data['_defaults'] = rslt['_defaults']; }
     if ('_bcrumbs' in rslt) { _this.Data['_bcrumbs'] = rslt['_bcrumbs']; }
+    if ('_title' in rslt) { _this.Data['_title'] = rslt['_title']; }
 		_this._LOVs = _this.Data._LOVs;
     _this._defaults = _this.Data._defaults;
     _this._bcrumbs = _this.Data._bcrumbs;
+    _this._title = _this.Data._title;
 		//Load Data
 		if(_this.q in rslt){
 			if(_.isArray(rslt[_this.q])){

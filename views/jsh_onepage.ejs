@@ -179,8 +179,8 @@ function jshLoad(options){
     if(!model.toptitle) model.toptitle = '';
     orig_title = XExt.unescapeEJS(model.toptitle);
     if (orig_title.indexOf('<#') < 0){
-      $('#xform_title').html(model.toptitle);
-      document.title = XExt.StripTags(jsh_html_title.replace('%%%PAGETITLE%%%',model.toptitle));
+      $('#xform_title').html(orig_title);
+      document.title = XExt.StripTags(jsh_html_title.replace('%%%PAGETITLE%%%',orig_title));
     }
     else if(jsh_prev_title_src == model.toptitle) $('#xform_title').html(jsh_prev_title);
     else $('#xform_title').html('&nbsp;');

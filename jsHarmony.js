@@ -462,6 +462,10 @@ jsHarmony.prototype.ParseEntities = function () {
     if (!('actions' in model)) LogEntityError(_WARNING, 'Model ' + model.id + ' missing actions');
     //Add Model caption if not set
     if (!('caption' in model)) { model.caption = ['', model.id, model.id]; LogEntityError(_WARNING, 'Model ' + model.id + ' missing caption'); }
+    if (!('title' in model)){
+      if((model.layout == 'grid') || (model.layout == 'multisel')) model.title = model.caption[2];
+      model.title = model.caption[1];
+    }
     if (!('ejs' in model)) model.ejs = '';
     if (!('templates' in model)) model.templates = {};
     if ('sort' in model) {
@@ -826,6 +830,7 @@ function AddValidation(field, validator) {
 }
 jsHarmony.prototype.ParseMacros = function() {
   var _this = this;
+  if(!_this.Config.macros) _this.Config.macros = {};
   var macros = _this.Config.macros;
   macros['merge'] = function(){
     var args = Array.from(arguments);

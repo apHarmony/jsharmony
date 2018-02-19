@@ -79,7 +79,7 @@ function XForm<%=model.id%>_Init(callback){
     var xform = XForms['<%=model.id%>'];
     if(xform._onrowbind) xform._onrowbind(xform,jobj,datarow);
   };
-  xform_<%=model.id%>.OnMetaData = function(data){ xform_post_<%=model.id%>._LOVs = this._LOVs; xform_post_<%=model.id%>._defaults = this._defaults; }
+  xform_<%=model.id%>.OnMetaData = function(data){ xform_post_<%=model.id%>._LOVs = this._LOVs; xform_post_<%=model.id%>._defaults = this._defaults; xform_post_<%=model.id%>._title = this._title; }
   xform_<%=model.id%>.OnDBRowCount = function(data){ XForm<%=model.id%>_UpdateTitleCaption(); };
   xform_<%=model.id%>.OnResetDataSet = function(data){ var xpost = xform_post_<%=model.id%>;
     xpost.DataSet = []; xpost.ResetDirty();

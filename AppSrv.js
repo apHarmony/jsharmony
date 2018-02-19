@@ -79,8 +79,7 @@ AppSrv.prototype.getModelRecordset = function (req, res, modelid, Q, P, rowlimit
   var keylist = this.getKeyNames(model.fields);
   var allfieldslist = _.union(keylist, fieldlist);
   var availablesortfieldslist = this.getFieldNames(req, model.fields, 'BFK');
-  var filterlist = this.getFieldNames(req, model.fields, 'F');
-  //Any field with "B" access can now be the filterlist
+  var filterlist = this.getFieldNames(req, model.fields, 'BFK');
   filterlist = _.union(keylist, filterlist);
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'B');
   if (encryptedfields.length > 0) throw new Error('Encrypted fields not supported on GRID');
@@ -262,6 +261,7 @@ AppSrv.prototype.getModelRecordset = function (req, res, modelid, Q, P, rowlimit
     _this.addDefaultTasks(req, res, model, P, dbtasks);
     _this.addLOVTasks(req, res, model, P, dbtasks);
     _this.addBreadcrumbTasks(req, res, model, P, dbtasks);
+    _this.addTitleTasks(req, res, model, P, dbtasks, 'B');
   }
   return dbtasks;
 }
@@ -440,6 +440,12 @@ AppSrv.prototype.getModelForm = function (req, res, modelid, Q, P, form_m) {
   if (is_new || (selecttype == 'multiple')) {
     _this.addDefaultTasks(req, res, model, Q, dbtasks);
   }
+  //Titles
+  var titleperm = 'U';
+  if(selecttype == 'multiple') titleperm = 'U';
+  else if(is_new) titleperm = 'I';
+  _this.addTitleTasks(req, res, model, Q, dbtasks, titleperm);
+
   //Breadcrumbs
   _this.addBreadcrumbTasks(req, res, model, Q, dbtasks);
   //LOV
@@ -547,6 +553,9 @@ AppSrv.prototype.getModelMultisel = function (req, res, modelid, Q, P) {
       callback(err, rslt);
     });
   }
+  //Title Tasks
+  _this.addTitleTasks(req, res, model, Q, dbtasks, 'B');
+  
   return dbtasks;
 };
 
@@ -572,6 +581,8 @@ AppSrv.prototype.getModelExec = function (req, res, modelid, Q, P, form_m) {
   var dbtasks = {};
   //Default Values
   _this.addDefaultTasks(req, res, model, Q, dbtasks);
+  //Title
+  _this.addTitleTasks(req, res, model, Q, dbtasks, 'B');
   //Breadcrumbs
   _this.addBreadcrumbTasks(req, res, model, Q, dbtasks);
   //LOV
@@ -604,8 +615,6 @@ AppSrv.prototype.getTabCode = function (req, res, modelid, onComplete) {
   var datalockqueries = [];
   var selectfields = this.getFieldsByName(model.fields, tabcodelist);
   
-  this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, modelid);
-  
   var keys = this.getKeys(model.fields);
   for (var i = 0; i < keys.length; i++) {
     var field = keys[i];
@@ -617,6 +626,7 @@ AppSrv.prototype.getTabCode = function (req, res, modelid, onComplete) {
     }
     else { global.log('Missing parameter ' + fname); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   }
+  this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, modelid);
   verrors = _.merge(verrors, model.xvalidate.Validate('K', sql_params));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   
@@ -629,6 +639,79 @@ AppSrv.prototype.getTabCode = function (req, res, modelid, onComplete) {
     }
     else { Helper.GenError(req, res, -1, "Record not found"); return; }
   });
+}
+
+AppSrv.prototype.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
+  var title = undefined;
+
+  var sql = '';
+  if (model.title){
+    if(_.isString(model.title)) title = model.title;
+    else if(model.title.add && Helper.access(targetperm,'I')){
+      if(_.isString(model.title.add)) title = model.title.add;
+      else if(model.title.add.sql) sql = model.title.add.sql;
+      else if(title.sql) sql = title.sql;
+    }
+    else if(model.title.edit && Helper.access(targetperm,'BU')){
+      if(_.isString(model.title.edit)) title = model.title.edit;
+      else if(model.title.edit.sql) sql = model.title.edit.sql;
+      else if(title.sql) sql = title.sql;
+    }
+    else if(title.sql) sql = title.sql;
+  }
+  if(!sql){ 
+    if(title) title = Helper.ResolveParams(req, title);
+    dbtasks['_title'] = function(dbtrans, callback, transtbl){ return callback(null, title); }
+    return;
+  }
+
+  var _this = this;
+  var fieldlist = this.getFieldNames(req, model.fields, 'BFK');
+  var fields = this.getFieldsByName(model.fields, fieldlist);
+  var sql_ptypes = [];
+  var sql_params = {};
+  var verrors = {};
+  var datalockqueries = [];
+
+  for (var i = 0; i < fields.length; i++) {
+    var field = fields[i];
+    var fname = field.name;
+    if (fname in Q){
+      var dbtype = AppSrv.prototype.getDBType(field);
+      sql_ptypes.push(dbtype);
+      sql_params[fname] = _this.DeformatParam(field, Q[fname], verrors);
+    }
+  }
+
+  //Add DataLock parameters to SQL 
+  this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, model.id);
+  verrors = _.merge(verrors, model.xvalidate.Validate('BFK', sql_params));
+  if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
+  
+  var sql = _this.db.sql.getTitle(_this.jsh, model, sql, datalockqueries);
+  
+  dbtasks['_title'] = function (dbtrans, callback, transtbl) {
+    if (transtbl) {
+      for (sql_param in sql_params) {
+        if ((sql_params[sql_param] === null) && (sql_param in transtbl)) sql_params[sql_param] = transtbl[sql_param];
+      }
+    }
+    _this.db.Scalar(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, title) {
+      if (err) { global.log(err); Helper.GenError(req, res, -99999, "An unexpected error has occurred"); return; }
+      if(title) title = Helper.ResolveParams(req, title);
+      return callback(null, title);
+    });
+  }
+}
+
+AppSrv.prototype.getTitle = function (req, res, modelid, targetperm, onComplete) {
+  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
+  var model = this.jsh.getModel(req, modelid);
+  if (!Helper.HasModelAccess(req, model, targetperm)) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
+
+  var dbtasks = {};
+  this.addTitleTasks(req, res, model, req.query, dbtasks, targetperm);
+  dbtasks['_title'](undefined, onComplete, null);
 }
 
 /*********************

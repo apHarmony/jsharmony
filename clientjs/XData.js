@@ -78,6 +78,7 @@ function XData(_q,_TemplateID,_PlaceholderID,_CustomScroll,_Paging,_ScrollContro
   this._LOVs = {};
   this._defaults = {};
   this._bcrumbs = {};
+  this._title = null;
 }
 //Passing 0,-1 for rowcount will return total rowcount
 XData.prototype.Load = function(rowstart,rowcount,onComplete,getCSV,onFail){
@@ -161,6 +162,7 @@ XData.prototype.ProcessData = function(data,rowstart,onComplete,reqdata){
       _this.GetMeta = false;
       if ('_defaults' in data) { _this._defaults = data['_defaults']; }
       if ('_bcrumbs' in data) { _this._bcrumbs = data['_bcrumbs']; }
+      if ('_title' in data) { _this._title = data['_title']; }
       for (var tbl in data) {
         if (tbl.indexOf('_LOV_') == 0) {
           _this._LOVs[tbl.substring(5)] = data[tbl];

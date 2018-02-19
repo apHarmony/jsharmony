@@ -323,6 +323,7 @@ function XForm_Destroy() {
 
 //Calling XForm_Select with a null root model will check the model definition for updates
 function XForm_Select(callback, root) {
+  //If the Model itself is dynamic, reload the model definition before reloading the data
   if (typeof root == 'undefined'){
     var isDynamic = false;
     jshModelTree(jsh_cur_model, null, function (model, modelParent) {
@@ -331,6 +332,7 @@ function XForm_Select(callback, root) {
     if(isDynamic) return jshLoad({ addHistory: false, onRefreshNoChange: function(){ XForm_Select(callback, XForms_root); } });
     else root = XForms_root;
   }
+  //Call Select on each model
   XFormAsyncTree(root,
     function (xform, done) {
       var onDone = function () {
@@ -343,6 +345,7 @@ function XForm_Select(callback, root) {
     function () {
       //Update title and other dynamic elements with in-place EJS
       XFormsParseEJS(function () {
+        //Trigger the onload event for each model
         var bubble = true;
         XFormTree(null, function (xform) {
           if (!bubble) return;
@@ -359,6 +362,18 @@ function XFormsParseEJS(onComplete) {
   var root_data = window['xform_' + XForms_root];
   if ('_bcrumbs' in root_data) _bcrumbs = root_data._bcrumbs;
 
+  //Check for new titles in returned data
+  XFormTree(null, function(xform) {
+    if(!window['xform_' + xform._id]) return;
+    var title = window['xform_' + xform._id]._title||'';
+    if(title != xform._title){
+      xform._title = title;
+      if(xform._id==XForms_root){
+        orig_title = XExt.unescapeEJS(title);
+      }
+    }
+  });
+
   //Update title
   if (orig_title.indexOf('<#') >= 0) {
     var new_title = ParseEJS(orig_title, XForms_root);
@@ -366,6 +381,7 @@ function XFormsParseEJS(onComplete) {
     var window_title = XExt.StripTags(new_title).trim();
     //If Title = blank, pull title from Tabs
     var curform = XForms[XForms_root];
+    //Apply child tab's title to window if the form's title is blank
     while(!window_title && curform){
       if(curform._title){
         window_title = ParseEJS(curform._title,curform._id);
@@ -374,6 +390,10 @@ function XFormsParseEJS(onComplete) {
       curform = XForms[curform._curtab];
     }
     document.title = window_title;
+  }
+  else {
+    $('#xform_title').html(orig_title);
+    document.title = XExt.StripTags(jsh_html_title.replace('%%%PAGETITLE%%%',orig_title));
   }
 
   //Update Breadcrumbs
@@ -385,9 +405,8 @@ function XFormsParseEJS(onComplete) {
     $(".xtitle.xelem" + xform._id).each(function () {
       //Update each form title
       var title_text = xform._title;
-      if (title_text.indexOf('<#') >= 0) {
-        $(this).html(ParseEJS(title_text, xform._id));
-      }
+      if (title_text.indexOf('<#') >= 0) $(this).html(ParseEJS(title_text, xform._id));
+      else $(this).html(title_text);
     });
     $(".xform_button.xelem" + xform._id).each(function () {
       var href = $(this).attr('href');
