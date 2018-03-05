@@ -95,12 +95,12 @@ AppSrvModel.prototype.GetModel = function (req, res, modelid) {
   req.curtabs = jsh.getTabs(req, modelid);
   req.TopModel = modelid;
 
-  _this.genClientModel(req, res, modelid, true, function(rslt){
+  _this.genClientModel(req, res, modelid, true, null, function(rslt){
     res.end(JSON.stringify(rslt));
   });
 };
 
-AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, onComplete) {
+AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, parentBindings, onComplete) {
   var _this = this;
   var jsh = this.AppSrv.jsh;
   if (!jsh.hasModel(req, modelid)) throw new Error('Model ID not found: ' + modelid);
@@ -118,7 +118,12 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, onC
   copyValues(rslt, model, [
     'id', 'layout', 'caption', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onupdate', 'oncommit', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy', 'js', 'hide_system_buttons',
     'popup', 'rowclass', 'rowstyle', 'tabpanelstyle', 'tablestyle', 'formstyle', 'sort', 'querystring', 'disableautoload', 'tabpos', 'templates',
-    'reselectafteredit','newrowposition','commitlevel','validationlevel','nogridadd','grid_expand_filter','grid_rowcount', 'grid_require_filter','grid_save_before_update','noresultsmessage','bindings','ejs',
+    'reselectafteredit','newrowposition','commitlevel','validationlevel','nogridadd','grid_expand_filter','grid_rowcount', 'grid_require_filter','grid_save_before_update','noresultsmessage','ejs',
+    //Add Bindings
+    function() {
+      if(parentBindings) rslt.bindings = parentBindings;
+      else if(model.bindings) rslt.bindings = model.bindings;
+    },
     //General Data
     function () {
       return {
@@ -138,8 +143,6 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, onC
         var link_bindings = button['bindings'];
         var link_actions = button['actions'];
         var link_text = button['text'] || '';
-        link_text = link_text.replace(new RegExp('%%%CAPTION%%%', 'g'), model.caption[1]);
-        link_text = link_text.replace(new RegExp('%%%CAPTIONS%%%', 'g'), model.caption[2]);
         var link_icon = button['icon'];
         var link_style = button['style'];
         var link_class = button['class'];
@@ -154,10 +157,32 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, onC
           link_onclick = "var xformid = '" + modelid + "'; "+link_target.substr(3)+' return false;';
         }
         else {
-          var link_targetmodelid = jsh.parseLink(link_target).modelid;
+          var link_parsed = jsh.parseLink(link_target);
+          var link_targetmodelid = link_parsed.modelid;
+          var link_targetmodel = jsh.getModel(req, link_targetmodelid);
+          if(link_targetmodel){
+            //Apply text in button caption
+            link_text = link_text.replace(new RegExp('%%%CAPTION%%%', 'g'), link_targetmodel.caption[1]);
+            link_text = link_text.replace(new RegExp('%%%CAPTIONS%%%', 'g'), link_targetmodel.caption[2]);
+            //Add bindings, if applicable
+            if(!link_bindings && _.isEmpty(link_parsed.keys)){
+              var tmodel = jsh.Models[link_targetmodelid];
+              var link_bindingObj = { target: link_targetmodelid };
+              var link_binding_additionalFields = _.keys(req.forcequery).concat(_.keys(rslt.bindings)).concat(_.pullAll(_.keys(req.query),['action','tabs']));
+              if(link_parsed.action=='add'){
+                link_bindings = jsh.AddBindings(model, link_bindingObj, 'Button '+(link_text||link_target), { req: req, bindType: 'nonKeyFields', additionalFields: link_binding_additionalFields });
+              }
+              else{
+                link_bindings = jsh.AddBindings(model, link_bindingObj, 'Button '+(link_text||link_target), { req: req, bindType: 'childKey' });
+              }
+            }
+          }
+          //Generate link
           link_url = jsh.getURL(req, link_target, undefined, undefined, link_bindings);
           link_onclick = jsh.getModelLinkOnClick(link_targetmodelid, req, link_target);
         }
+        link_text = link_text.replace(new RegExp('%%%CAPTION%%%', 'g'), model.caption[1]);
+        link_text = link_text.replace(new RegExp('%%%CAPTIONS%%%', 'g'), model.caption[2]);
         var rsltbutton = {
           'url': link_url,
           'onclick': link_onclick,
@@ -270,8 +295,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, onC
           rslttabs.push(rslttab);
         }
         //Get value of current tab
-        _this.genClientModel(req, res, req.curtabs[model.id], false, function(curtabmodel){
-          curtabmodel['bindings'] = tabbindings;
+        _this.genClientModel(req, res, req.curtabs[model.id], false, tabbindings, function(curtabmodel){
           rslt.tabs = rslttabs;
           rslt.curtabmodel = curtabmodel;
           return cb();
@@ -286,13 +310,12 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, onC
         var dmodelid = model.duplicate.target;
         if (!jsh.hasModel(req, dmodelid)) { throw new Error('Duplicate Model ID not found: ' + dmodelid); }
         var dmodel = jsh.getModel(req, dmodelid);
-        _this.genClientModel(req, res, dmodelid, false, function(dclientmodel){
+        _this.genClientModel(req, res, dmodelid, false, model.duplicate.bindings, function(dclientmodel){
           if (!_.isString(dclientmodel)) {
             rslt.duplicate = {};
             rslt.duplicate.target = dmodelid;
             rslt.duplicate.bindings = model.duplicate.bindings;
             rslt.duplicate.model = dclientmodel;
-            rslt.duplicate.model.bindings = model.duplicate.bindings;
             rslt.duplicate.popupstyle = '';
             if ('popup' in dmodel) rslt.duplicate.popupstyle = 'width: ' + dmodel.popup[0] + 'px; height: ' + dmodel.popup[1] + 'px;';
             if(model.layout != 'grid') rslt.buttons.push({
@@ -417,8 +440,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, onComplete) 
     }
     dstfield.validate = jsh.GetValidatorClientStr(srcfield);
     if (('control' in dstfield) && ((dstfield.control == 'subform') || (dstfield.popuplov))) {
-      _this.genClientModel(req, res, srcfield.target, false, function(subform){
-        subform['bindings'] = srcfield.bindings;
+      _this.genClientModel(req, res, srcfield.target, false, srcfield.bindings, function(subform){
         dstfield.model = subform;
         rslt.push(dstfield);
         return cb();

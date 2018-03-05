@@ -121,7 +121,10 @@ exports.ValidateConfig = function(jsh){
     "codeseq": "codeseq",
     "codetype": "codetype"
   };
-  if(!jsh.Config.default_buttons) jsh.Config.default_buttons = { "add": { "icon": "add", "text": "Add %%%CAPTION%%%", "actions": "I", "class": "xbuttonadd" } };
+  jsh.Config.default_buttons = _.extend({ 
+    "add": { "icon": "add", "text": "Add %%%CAPTION%%%", "actions": "I", "class": "xbuttonadd" },
+    "edit": { "icon": "edit", "text": "Edit %%%CAPTION%%%" } 
+  }, jsh.Config.default_buttons);;
   //if (!jsh.Config.field_mapping) throw 'field_mapping required in _config.json';
   //if (!jsh.Config.ui_field_mapping) throw 'ui_field_mapping required in _config.json';
 }

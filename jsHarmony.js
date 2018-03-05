@@ -44,7 +44,12 @@ function jsHarmony() {
   this.EJSForm = '';
   this.Models = {}; //Do not access this directly - use getModel, hasModel
   this.CustomControls = [];
-  this.Config = {};
+  this.Config = {
+    system_settings: {
+      automatic_bindings: true,
+      automatic_datalocks: true
+    }
+  };
   this.Popups = {};
   this.Cache = {};
   this.SQL = {};
@@ -126,12 +131,13 @@ jsHarmony.prototype.LoadModels = function (modelbasedir, modeldir, prefix, dbtyp
       for (var c in model) this.CustomControls[c] = model[c];
     }
     else if (modelname == '_config') {
-      var col = ['default_buttons', 'field_mapping', 'ui_field_mapping', 'datalocks', 'salts', 'passwords'];
+      var col = ['default_buttons', 'field_mapping', 'ui_field_mapping', 'datalocks', 'salts', 'passwords', 'macros', 'model_groups', 'dynamic_bindings'];
+      _.each(col, function(c){ if(!(c in _this.Config)) _this.Config[c] = {}; });
       for (var c in model) {
         if (_.includes(col, c)) {
-          if (!(c in this.Config)) this.Config[c] = {};
           for (var cc in model[c]) this.Config[c][cc] = model[c][cc];
         }
+        else if(c=='system_settings') _.extend(this.Config[c],model[c]);
         else this.Config[c] = model[c];
       }
     }
@@ -290,6 +296,14 @@ jsHarmony.prototype.AddModel = function (modelname, model, prefix, modelpath, mo
 jsHarmony.prototype.ParseInheritance = function () {
   var _this = this;
   var foundinheritance = true;
+  //Add model groups
+  _.forOwn(this.Models, function (model) {
+    if(!model.groups) model.groups = [];
+    if(!_.isArray(model.groups)) throw new Error(modelname + ': model.groups must be an array');
+    for(var modelgroup in _this.Config.model_groups){
+      if(_.includes(_this.Config.model_groups[modelgroup],model.id)) model.groups.push(modelgroup);
+    }
+  });
   while (foundinheritance) {
     foundinheritance = false;
     _.forOwn(this.Models, function (model) {
@@ -304,6 +318,10 @@ jsHarmony.prototype.ParseInheritance = function () {
         parentmodel = JSON.parse(JSON.stringify(parentmodel)); //Deep clone
         if(origparentmodel.onroute) parentmodel.onroute = origparentmodel.onroute;
         model._inherits = parentmodel._inherits.concat([model.inherits]);
+
+        //Add Parent Model Groups
+        model.groups = _.union(parentmodel.groups, model.groups);
+
         //Merge Models
         //Extend this to enable delete existing values by making them NULL
         //Extend this to enable merging arrays, like "button", "fields", "roles" using key, other arrays just overwrite
@@ -648,7 +666,6 @@ jsHarmony.prototype.ParseEntities = function () {
       model.xvalidate.AddValidator('_obj.' + field.name, field.caption, field.actions, _this.GetValidatorFuncs(field.validate), field.roles);
     });
     if (!foundkey) LogEntityError(_WARNING, 'Model ' + model.id + ' missing key');
-    ParseAccessModels(_this, model, model.id, model.actions);
     
     //**DEPRECATED MESSAGES**
     if (model.fields) _.each(model.fields, function (field) {
@@ -667,6 +684,10 @@ jsHarmony.prototype.ParseEntities = function () {
       if (field.controlparams) ParseMultiLineProperties(field.controlparams, ['onpopup']);
     });
     
+    //Apply default actions to buttons
+    _.each(model.buttons, function(button){
+      if(!('actions' in button)) button.actions = 'BIU';
+    });
     
     //Automatically add lovkey based on lov.sqlparams
     if (model.fields) _.each(model.fields, function (field) {
@@ -698,11 +719,31 @@ jsHarmony.prototype.ParseEntities = function () {
         else if (!Helper.access(sql_param_field.actions, 'C')) { if (!sql_param_field.actions) sql_param_field.actions = ''; sql_param_field.actions += 'C'; }
       });
     }
-    
+
+    //Automatically add bindings
+    if(_this.Config.system_settings.automatic_bindings){
+      if(('nokey' in model) && (model.nokey)){ }
+      else{
+        if ('tabs' in model) for (var i=0;i<model.tabs.length;i++) {
+          var tab = model.tabs[i]; //tab.target, tab.bindings
+          _this.AddBindings(model, tab, 'Tab '+(tab.name||''));
+        }
+        if ('duplicate' in model) {
+          var duplicate = model.duplicate; //duplicate.target, duplicate,bindings
+          _this.AddBindings(model, model.duplicate, "Duplicate action");
+        }
+        _.each(model.fields, function (field) {
+          if (field.control == 'subform') {
+            _this.AddBindings(model, field, 'Subform '+field.name);
+          }
+        });
+      }
+    }
+
     //Validate Model and Field Parameters
     var _v_model = [
       'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev',
-      'samplerepeat', 'topmenu', 'id', 'idmd5', 'access_models', '_inherits', 'helpid', 'querystring', 'buttons', 'xvalidate',
+      'samplerepeat', 'topmenu', 'id', 'idmd5', 'access_models', '_inherits', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
       'pagesettings', 'pageheader', 'pageheaderjs', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue',
       'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'nogridadd', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_filter', 'grid_save_before_update', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
@@ -759,8 +800,12 @@ jsHarmony.prototype.ParseEntities = function () {
     }
   });
   
-  //Check Parent / Child Relationships for Potentially Missing "F" keys
   _.forOwn(_this.Models, function (model) {
+
+    //Verify bindings are set up properly
+    ParseAccessModels(_this, model, model.id, model.actions);
+
+    //Check Parent / Child Relationships for Potentially Missing "F" keys  
     if (model.tabs) {
       for (var i=0; i<model.tabs.length; i++) {
         var tab = model.tabs[i];
@@ -785,7 +830,96 @@ function ParseMultiLineProperties(obj, arr) {
   _.each(arr, function (p) { if (p in obj) obj[p] = Helper.ParseMultiLine(obj[p]); });
 }
 
-//This is not used for now.  Models are granted access on an individual basis to enforce security restrictions
+jsHarmony.prototype.AddBindings = function(model, element, elementname, options){
+  //bindType: parentKey, childKey, nonKeyFields
+  options = _.extend({ bindType: 'parentKey', additionalFields: [], req: null }, options);
+  var _this = this;
+  if('bindings' in element) return;
+
+  //Parse target model
+  if (!('target' in element)) { LogEntityError(_ERROR, model.id + ' > ' + elementname + ' Bindings: Missing target'); return }
+  if (!(element.target in _this.Models)) { LogEntityError(_ERROR, model.id + ' > ' + elementname + ': Target model "' + element.target + '" not found'); return }
+  var tmodel = _this.getModel(options.req, element.target);
+
+  //Get keys in parent model
+  var parentKeys = AppSrv.prototype.getKeyNames(model.fields);
+  if(!parentKeys.length) { LogEntityError(_ERROR, model.id + ' > ' + elementname + ' Bindings: Parent model has no key'); return; }
+
+  //Check for dynamic bindings
+  var bindings = {};
+  var found_bindings = false;
+  for(var modelgroup in this.Config.dynamic_bindings){
+    if(!this.isInModelGroup(tmodel.id, modelgroup)) continue;
+    found_bindings = true;
+    var dynamic_binding = this.Config.dynamic_bindings[modelgroup];
+    //Apply dynamic bindings
+    for(var childKey in dynamic_binding){
+      var parentField = dynamic_binding[childKey];
+      if(!_.isString(parentField)){
+        for(var parentFieldCondition in dynamic_binding[childKey]){
+          if(parentFieldCondition.substr(0,4)=='key:'){
+            if(_.includes(parentKeys,parentFieldCondition.substr(4))) parentField = dynamic_binding[childKey][parentFieldCondition];
+          }
+          else { LogEntityError(_ERROR, model.id + ' > ' + elementname + ' Bindings: Invalid condition for '+childKey+': '+parentFieldCondition); return; }
+        }
+      }
+      if(_.isString(parentField)){
+        if(parentField=='key'){
+          if(parentKeys.length != 1) { LogEntityError(_ERROR, model.id + ' > ' + elementname + ' Bindings: Must have one key in the parent model when dynamically binding '+childKey+' to "key"'); return } 
+          parentField = parentKeys[0];
+        }
+        bindings[childKey] = parentField;
+      }
+    }
+  }
+
+  //If bindings not found
+  if(!found_bindings){ 
+    if(options.bindType=='nonKeyFields'){
+      //Match all child fields that are not keys (for add operations)
+      _.each(tmodel.fields, function(childField){
+        if(childField.key) return;
+        var field = null;
+        //Don't bind to parent fields if the parent is a grid
+        if((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec')){
+          field = AppSrv.prototype.getFieldByName(model.fields, childField.name);
+        }
+        if(field || _.includes(options.additionalFields,childField.name)){
+          bindings[childField.name] = childField.name;
+        }
+      });
+    }
+    else if(options.bindType=='childKey'){
+      //Match parent keys with child fields
+      var childKeys = AppSrv.prototype.getKeyNames(tmodel.fields);
+      _.each(childKeys, function(childKey){
+        var field = AppSrv.prototype.getFieldByName(model.fields, childKey);
+        if(!field) { LogEntityError(_ERROR, model.id + ' > ' + elementname + ' Bindings: Key '+childKey+' not found in parent form.  Explicitly define bindings if necessary.'); return; }
+        bindings[field.name] = childKey;
+      });
+    }
+    else{
+      //Match parent keys with child fields
+      _.each(parentKeys, function(parentKey){
+        var field = AppSrv.prototype.getFieldByName(tmodel.fields, parentKey);
+        if(!field) { LogEntityError(_ERROR, model.id + ' > ' + elementname + ' Bindings: Key '+parentKey+' not found in target form.  Explicitly define bindings if necessary.'); return; }
+        bindings[field.name] = parentKey;
+      });
+    }
+  }
+
+  element.bindings = bindings;
+  return bindings;
+}
+
+jsHarmony.prototype.isInModelGroup = function(modelid, modelgroupid){
+  if(!(modelid in this.Models)) throw new Error('Invalid modelid: '+modelid);
+  if(modelid==modelgroupid) return true;
+  if(_.includes(this.Models[modelid].groups, modelgroupid)) return true;
+  if(_.includes(this.Models[modelid]._inherits, modelgroupid)) return true;
+  return false;
+}
+
 function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
   if ('tabs' in model) for (var i=0;i<model.tabs.length;i++) {
     var tab = model.tabs[i];
@@ -992,11 +1126,13 @@ jsHarmony.prototype.parseButtons = function (buttons) {
   _.each(buttons, function (button) {
     if (!('link' in button)) throw new Error('Cannot have button without link.');
     var ptarget = _this.parseLink(button['link']);
+    var rsltbtn = {};
     if (ptarget.action in _this.Config.default_buttons) {
-      var rsltbtn = {};
-      rslt.push(_.merge(rsltbtn, _this.Config.default_buttons[ptarget.action], button));
+      rsltbtn = _.merge(rsltbtn, _this.Config.default_buttons[ptarget.action]);
     }
-    else rslt.push(button);
+    rsltbtn = _.merge(rsltbtn, button);
+    if(!('icon' in rsltbtn) && !('text' in rsltbtn)) rsltbtn.icon = 'ok';
+    rslt.push(rsltbtn);
   });
   return rslt;
 }
@@ -1125,7 +1261,6 @@ jsHarmony.prototype.getURL = function (req, target, tabs, fields, bindings, keys
   }
   var rsltparams = '';
   var rsltoverride = '';
-  if (!_.isEmpty(q)) rsltparams += querystring.stringify(q, '&amp;')
 
   //Handle download action
   if(action=='download'){
@@ -1166,6 +1301,7 @@ jsHarmony.prototype.getURL = function (req, target, tabs, fields, bindings, keys
       if (_.size(ptarget.keys) > 0) {
         var ptargetkeys = _.keys(ptarget.keys);
         for (var i = 0; i < ptargetkeys.length; i++) {
+          delete q[ptargetkeys[i]];
           rsltparams += '&amp;' + ptargetkeys[i] + '=<#=data[j][\'' + ptarget.keys[ptargetkeys[i]] + '\']#>';
           /* Commented out for Amber COMH_CDUP form, so that C_ID=X1 would work
           for (var j = 0; j < fields.length; j++) {
@@ -1180,6 +1316,7 @@ jsHarmony.prototype.getURL = function (req, target, tabs, fields, bindings, keys
       else {
         _.each(fields, function (field) {
           if (field.key) {
+            delete q[field['name']];
             rsltparams += '&amp;' + field['name'] + '=<#=data[j][\'' + field['name'] + '\']#>';
           }
         });
@@ -1189,10 +1326,12 @@ jsHarmony.prototype.getURL = function (req, target, tabs, fields, bindings, keys
   if (typeof bindings !== 'undefined') {
     _.each(bindings, function (binding, bindingid) {
       //Evaluate bindings
+      delete q[bindingid];
       rsltparams += '&amp;' + bindingid + '=<#=LiteralOrCollection(' + JSON.stringify(binding).replace(/"/g, '&quot;') + ',data)#>';
     });
   }
   if (rsltoverride) return rsltoverride;
+  if (!_.isEmpty(q)) rsltparams = querystring.stringify(q, '&amp;') + rsltparams;
   if (rsltparams) {
     if (rsltparams.indexOf('&amp;') == 0) rsltparams = rsltparams.substring(5);
     rslt += '?' + rsltparams;
