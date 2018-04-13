@@ -66,7 +66,7 @@ AppSrv.prototype.getModel = function (req, res, modelid, noexecute, Q, P) {
   //	if(_.isUndefined(dbtasks)) dbtasks = {};
   if (_.isUndefined(dbtasks)) return;
   if ((typeof noexecute != 'undefined') && noexecute) return dbtasks;
-  this.ExecTasks(req, res, dbtasks, (model.layout == 'form'));
+  this.ExecTasks(req, res, dbtasks, false);
 }
 
 AppSrv.prototype.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options) {
@@ -379,8 +379,8 @@ AppSrv.prototype.getModelForm = function (req, res, modelid, Q, P, form_m) {
   var sql = _this.db.sql.getModelForm(_this.jsh, model, selecttype, allfields, sql_filterfields, datalockqueries, sortfields);
   
   //Return applicable drop-down lists
-  var dbtasks = {};
-  if (!is_new) dbtasks[modelid] = function (dbtrans, callback) {
+  var dbtasks = [{},{}];
+  if (!is_new) dbtasks[0][modelid] = function (dbtrans, callback) {
     var dbfunc = _this.db.Row;
     if (selecttype == 'multiple') dbfunc = _this.db.Recordset;
     dbfunc.call(_this.db, req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt) {
@@ -389,6 +389,20 @@ AppSrv.prototype.getModelForm = function (req, res, modelid, Q, P, form_m) {
       else {
         if ((rslt != null) && (selecttype == 'single') && (keylist.length == 1)) {
           var keyval = sql_params[keylist[0]];
+          //Decrypt encrypted fields
+          if (encryptedfields.length > 0) {
+            if (keys.length != 1) throw new Error('Encryption requires one key');
+            _.each(encryptedfields, function (field) {
+              var encval = rslt[field.name];
+              if (encval == null) return;
+              if (field.type == 'encascii') {
+                if (!(field.password in _this.jsh.Config.passwords)) throw new Error('Encryption password not defined.');
+                var decipher = crypto.createDecipher('aes128', keyval + _this.jsh.Config.passwords[field.password]);
+                decipher.update(encval);
+                rslt[field.name] = decipher.final().toString('ascii');
+              }
+            });
+          }
           //Verify files exist on disk
           if (filelist.length > 0) {
             //For each file
@@ -407,20 +421,6 @@ AppSrv.prototype.getModelForm = function (req, res, modelid, Q, P, form_m) {
             });
             return;
           }
-          //Decrypt Encrypted fields
-          if (encryptedfields.length > 0) {
-            if (keys.length != 1) throw new Error('Encryption requires one key');
-            _.each(encryptedfields, function (field) {
-              var encval = rslt[field.name];
-              if (encval == null) return;
-              if (field.type == 'encascii') {
-                if (!(field.password in _this.jsh.Config.passwords)) throw new Error('Encryption password not defined.');
-                var decipher = crypto.createDecipher('aes128', keyval + _this.jsh.Config.passwords[field.password]);
-                decipher.update(encval);
-                rslt[field.name] = decipher.final().toString('ascii');
-              }
-            });
-          }
         }
         else if ((rslt != null) && (selecttype == 'multiple')) {
           if (filelist.length > 0) { throw new Error('Files not supported on FORM-M'); }
@@ -431,25 +431,25 @@ AppSrv.prototype.getModelForm = function (req, res, modelid, Q, P, form_m) {
     });
   }
   else if (is_new && (selecttype == 'multiple')) {
-    dbtasks[modelid] = function (dbtrans, callback) {
+    dbtasks[0][modelid] = function (dbtrans, callback) {
       var rslt = [];
       callback(null, rslt);
     };
   }
   //Default Values
   if (is_new || (selecttype == 'multiple')) {
-    _this.addDefaultTasks(req, res, model, Q, dbtasks);
+    _this.addDefaultTasks(req, res, model, Q, dbtasks[1]);
   }
   //Titles
   var titleperm = 'U';
   if(selecttype == 'multiple') titleperm = 'U';
   else if(is_new) titleperm = 'I';
-  _this.addTitleTasks(req, res, model, Q, dbtasks, titleperm);
+  _this.addTitleTasks(req, res, model, Q, dbtasks[1], titleperm);
 
   //Breadcrumbs
-  _this.addBreadcrumbTasks(req, res, model, Q, dbtasks);
+  _this.addBreadcrumbTasks(req, res, model, Q, dbtasks[1]);
   //LOV
-  _this.addLOVTasks(req, res, model, Q, dbtasks);
+  _this.addLOVTasks(req, res, model, Q, dbtasks[1]);
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   return dbtasks;
 }
@@ -691,11 +691,7 @@ AppSrv.prototype.addTitleTasks = function (req, res, model, Q, dbtasks, targetpe
   var sql = _this.db.sql.getTitle(_this.jsh, model, sql, datalockqueries);
   
   dbtasks['_title'] = function (dbtrans, callback, transtbl) {
-    if (transtbl) {
-      for (sql_param in sql_params) {
-        if ((sql_params[sql_param] === null) && (sql_param in transtbl)) sql_params[sql_param] = transtbl[sql_param];
-      }
-    }
+    sql_params = ApplyTransTblChainedParameters(transtbl, sql, sql_ptypes, sql_params, model.fields);
     _this.db.Scalar(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, title) {
       if (err) { global.log(err); Helper.GenError(req, res, -99999, "An unexpected error has occurred"); return; }
       if(title) title = Helper.ResolveParams(req, title);
@@ -844,7 +840,7 @@ AppSrv.prototype.putModelForm = function (req, res, modelid, Q, P, onComplete) {
     _.each(subs, function (fname) { sql_params[fname] = '%%%' + fname + '%%%'; });
     var dbtasks = {};
     dbtasks[modelid] = function (dbtrans, callback, transtbl) {
-      sql_params = ApplyTransTbl(sql_params, transtbl);
+      sql_params = ApplyTransTblEscapedParameters(sql_params, transtbl);
       _this.db.Row(req._DBContext, dbsql.sql, sql_ptypes, sql_params, dbtrans, function (err, rslt) {
         if ((err == null) && (rslt != null) && (_this.jsh.map.rowcount in rslt) && (rslt[_this.jsh.map.rowcount] == 0)) err = Helper.NewError('No records affected', -3);
         if (err != null) { err.model = model; err.sql = dbsql.sql; }
@@ -862,8 +858,9 @@ AppSrv.prototype.putModelForm = function (req, res, modelid, Q, P, onComplete) {
       if (keys.length != 1) throw new Error('Encryption requires one key');
       dbtasks['enc_' + modelid] = function (dbtrans, callback, transtbl) {
         if (typeof dbtrans == 'undefined') return callback(Helper.NewError('Encryption must be executed within a transaction', -50), null);
-        enc_sql_params = ApplyTransTbl(enc_sql_params, transtbl);
-        var keyval = transtbl[keys[0].name];
+        enc_sql_params = ApplyTransTblEscapedParameters(enc_sql_params, transtbl);
+        var transvars = getTransVars(transtbl);
+        var keyval = transvars[keys[0].name];
         //Encrypt Data
         _.each(encryptedfields, function (field) {
           var clearval = enc_sql_params[field.name];
@@ -1046,7 +1043,7 @@ AppSrv.prototype.postModelForm = function (req, res, modelid, Q, P, onComplete) 
     
     var dbtasks = {};
     dbtasks[modelid] = function (dbtrans, callback, transtbl) {
-      sql_params = ApplyTransTbl(sql_params, transtbl);
+      sql_params = ApplyTransTblEscapedParameters(sql_params, transtbl);
       _this.db.Row(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt) {
         if ((err == null) && (rslt != null) && (_this.jsh.map.rowcount in rslt) && (rslt[_this.jsh.map.rowcount] == 0)) err = Helper.NewError('No records affected', -3);
         if (err != null) { err.model = model; err.sql = sql; }
@@ -1165,7 +1162,7 @@ AppSrv.prototype.postModelMultisel = function (req, res, modelid, Q, P, onComple
   
   var dbtasks = {};
   dbtasks[modelid] = function (dbtrans, callback, transtbl) {
-    sql_params = ApplyTransTbl(sql_params, transtbl);
+    sql_params = ApplyTransTblEscapedParameters(sql_params, transtbl);
     _this.db.Row(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt) {
       if (err != null) { err.model = model; err.sql = sql; }
       callback(err, rslt);
@@ -1223,7 +1220,7 @@ AppSrv.prototype.postModelExec = function (req, res, modelid, Q, P, onComplete) 
   
   var dbtasks = {};
   dbtasks[modelid] = function (dbtrans, callback, transtbl) {
-    sql_params = ApplyTransTbl(sql_params, transtbl);
+    sql_params = ApplyTransTblEscapedParameters(sql_params, transtbl);
     var dbfunc = _this.db.Recordset;
     if (model.sqltype && (model.sqltype == 'multirecordset')) dbfunc = _this.db.MultiRecordset;
     dbfunc.call(_this.db, req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt) {
@@ -1830,11 +1827,64 @@ function add_verror(verrors, err) {
   if (!('' in verrors)) verrors[''] = [];
   verrors[''].push(err);
 }
-function ApplyTransTbl(sql_params, transtbl) {
+function getTransVars(transtbl){
+  var transvars = {};
+  if(transtbl){
+    for(var tblid in transtbl){
+      if(transtbl[tblid]){
+        var tbl = transtbl[tblid];
+        if(_.isString(tbl)) continue;
+        if (!_.isArray(tbl) || tbl.length < 2) transvars = _.extend(transvars, tbl);
+      }
+    }
+  }
+  return transvars;
+}
+function ApplyTransTblEscapedParameters(sql_params, transtbl) {
   if (typeof transtbl == 'undefined') return sql_params;
+  var transvars = getTransVars(transtbl);
   for (var pname in sql_params) {
-    if ((sql_params[pname] == '%%%' + pname + '%%%') && (pname in transtbl)) {
-      sql_params[pname] = transtbl[pname];
+    if ((sql_params[pname] == '%%%' + pname + '%%%') && (pname in transvars)) {
+      sql_params[pname] = transvars[pname];
+    }
+  }
+  return sql_params;
+}
+function ApplyTransTblChainedParameters(transtbl, sql, sql_ptypes, sql_params, fields){
+  if(!transtbl) return sql_params;
+  var transvars = getTransVars(transtbl);
+  for (sql_param in sql_params) {
+    if ((sql_params[sql_param] === null) && (sql_param in transvars)){
+      sql_params[sql_param] = transvars[sql_param];
+    }
+  }
+  //Sort keys descending
+  var transkeys = _.keys(transvars);
+  transkeys.sort(function (a, b) { return b.length - a.length; });
+  var usql = sql.toUpperCase();
+  //Search SQL for missing parameters that are in transtbl
+  var sql_terminators = "(),.+-*/%<>=&|!@$?:~#; \t\r\n\f^`[]{}\\|'\"";
+  for(transvar in transvars){
+    if(transvar in sql_params) continue;
+    //Check if the transvar is in usql
+    var lastidx = null;
+    utransvar = '@'+transvar.toUpperCase();
+    var foundvar = false;
+    while(!foundvar && (lastidx != -1)){
+      lastidx = usql.indexOf(utransvar,(lastidx===null?0:lastidx+1));
+      if(lastidx >= 0){
+        var nextchar = '';
+        if(usql.length > (lastidx+utransvar.length)) nextchar = usql[lastidx+utransvar.length];
+        if((nextchar==='') || (sql_terminators.indexOf(nextchar)>=0)) foundvar = true;
+      }
+    }
+    if(foundvar){
+      //Add missing variable
+      var field = AppSrv.prototype.getFieldByName(fields, transvar);
+      if(field){
+        sql_ptypes.push(AppSrv.prototype.getDBType(field));
+        sql_params[transvar] = transvars[transvar];
+      }
     }
   }
   return sql_params;
@@ -1976,11 +2026,7 @@ AppSrv.prototype.addDefaultTasks = function (req, res, model, Q, dbtasks) {
   
   //Execute Query
   dbtasks['_defaults'] = function (dbtrans, callback, transtbl) {
-    if (transtbl) {
-      for (dflt_param in dflt_params) {
-        if ((dflt_params[dflt_param] === null) && (dflt_param in transtbl)) dflt_params[dflt_param] = transtbl[dflt_param];
-      }
-    }
+    dflt_params = ApplyTransTblChainedParameters(transtbl, dflt_sql, dflt_ptypes, dflt_params, model.fields);
     if (dflt_sql) {
       _this.db.Row(req._DBContext, dflt_sql, dflt_ptypes, dflt_params, dbtrans, function (err, rslt) {
         if (err == null) {
@@ -2074,11 +2120,7 @@ AppSrv.prototype.addLOVTasks = function (req, res, model, Q, dbtasks) {
       if (!_.isEmpty(lov_verrors)) { Helper.GenError(req, res, -2, lov_verrors[''].join('\n')); return; }
       var sql = _this.db.sql.getLOV(_this.jsh, field.name, lov, datalockqueries, param_datalocks);
       dbtasks['_LOV_' + field.name] = function (dbtrans, callback, transtbl) {
-        if (transtbl) {
-          for (lov_param in lov_params) {
-            if ((lov_params[lov_param] === null) && (lov_param in transtbl)) lov_params[lov_param] = transtbl[lov_param];
-          }
-        }
+        lov_params = ApplyTransTblChainedParameters(transtbl, sql, lov_ptypes, lov_params, model.fields);
         _this.db.Recordset(req._DBContext, sql, lov_ptypes, lov_params, dbtrans, function (err, rslt) {
           if (err == null) {
             if (('showcode' in lov) && lov.showcode) {
@@ -2529,20 +2571,29 @@ AppSrv.prototype.exportCSV = function (req, res, dbtasks, modelid) {
   });
 }
 AppSrv.prototype.ExecTasks = function (req, res, dbtasks, trans, callback) {
+  /*
+  dbtasks is an array of:
+    function(dbtrans, callback, transtbl){ ... }
+  */
   var _this = this;
   if (_.isEmpty(dbtasks)) { res.end(JSON.stringify({ '_success': 1 })); return; }
   
   //Split off post-processing
   var posttasks = [];
-  dbtasks = _.reduce(dbtasks, function (rslt, dbtask, key) {
+  dbtasks = Helper.transformDBTasks(dbtasks, function(dbtask, key){
     if (Helper.endsWith(key, '_POSTPROCESS')) posttasks.push(dbtask);
-    else rslt[key] = dbtask;
-    return rslt;
-  }, {});
-  
+    else return dbtask;
+  });
   var dbfunc = _this.db.ExecTasks;
   if ((typeof trans != 'undefined') && trans) dbfunc = _this.db.ExecTransTasks;
-  else dbtasks = _.reduce(dbtasks, function (rslt, dbtask, key) { rslt[key] = async.apply(dbtask, undefined); return rslt; }, {});
+  else{
+    /*
+    For db.ExecTasks, dbtasks is converted to an array of:
+      dbtask = function(cb, transtbl){ ... }
+    dbtrans is set to undefined
+    */
+    dbtasks = Helper.transformDBTasks(dbtasks, function(dbtask, key){ return async.apply(dbtask, undefined); });
+  }
   dbfunc.call(_this.db, dbtasks, function (err, rslt) {
     if (err != null) { _this.AppDBError(req, res, err); return; }
     if (rslt == null) rslt = {};

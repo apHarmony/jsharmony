@@ -579,7 +579,8 @@ function XForm_AddHistory(new_jsh_state, use_cur_state) {
   XExt.AddHistory(url, state);
 }
 
-function XForm_LoadState(state, addBackHistoryOnCancel) {
+function XForm_LoadState(state, options) {
+  if(!options) options = { addBackHistoryOnCancel: false };
   if (!_.isObject(state)) return;
 
   if ('_url' in state) {
@@ -593,7 +594,7 @@ function XForm_LoadState(state, addBackHistoryOnCancel) {
       var orig_url = orig_a.pathname + orig_a.search;
       cur_history_url = state._url;
       jshNavigate(a, false, orig_url, function () {
-        if (addBackHistoryOnCancel) {
+        if (options.addBackHistoryOnCancel) {
           XForm_AddHistory(jsh_state, true);
         }
       });
@@ -617,15 +618,18 @@ window.onpopstate = function (event) {
   _GET = XExt.parseGET();
 
   var f = function () {
-    if (!XForm_LoadState(state, true)) return;
+    if (!XForm_LoadState(state, {addBackHistoryOnCancel: true})) return;
     XForm_Select(function () { });
   };
 
   if (_.isObject(state)) {
     var drslt = XForm_OnExit();
     if (drslt) {
-      XExt.Confirm(drslt + '  Leave page?', f, function () {
-        XForm_AddHistory();
+      XExt.Confirm(drslt + '\r\n\r\nAre you sure you want to leave this page?', function(){
+        window.jsh_cancelExit = true;
+        f();
+      }, function () {
+        XForm_AddHistory(jsh_state, true);
       });
       return;
     }

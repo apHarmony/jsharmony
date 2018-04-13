@@ -81,12 +81,13 @@ $(document).focusout(function(){
   },1);
 });
 
-function jshModelTree(model,modelParent,modelEach,onComplete){ //modelcb(model,modelParent)
+function jshModelTree(model,modelParent,modelEach,onComplete,options){ //modelcb(model,modelParent)
+  if(!options) options = { ignoreFields: false, ignoreTabs: false };
   if(!model) return;
   modelEach(model,modelParent);
-  if(model.curtabmodel) jshModelTree(model.curtabmodel,model,modelEach);
-  if(model.fields) for(var i=0;i<model.fields.length;i++){
-    if(model.fields[i].model) jshModelTree(model.fields[i].model,model,modelEach);
+  if(!options.ignoreTabs && model.curtabmodel) jshModelTree(model.curtabmodel,model,modelEach,undefined,options);
+  if(!options.ignoreFields && model.fields) for(var i=0;i<model.fields.length;i++){
+    if(model.fields[i].model) jshModelTree(model.fields[i].model,model,modelEach,undefined,options);
   }
   if(onComplete) onComplete();
 }
@@ -128,7 +129,7 @@ function jshLoad(options){
               tabsChanged = true;
             }
           }
-        });
+        }, undefined, { ignoreFields: true });
         if(tabsChanged){
           //Recalculate jsh_state
           jsh_state.GET.tabs = JSON.stringify(tabs);

@@ -66,7 +66,7 @@ exports = module.exports = function (req, res, onComplete) {
         if ((rslt != null) && (rslt.length == 1) && (rslt[0].length == 1)) {
           var user_info = rslt[0][0];
           var prehash = crypto.createHash('sha1').update(user_info[jsh.map.user_id] + xpassword + req.jshconfig.auth.salt).digest('hex');
-          if (user_info[jsh.map.user_status].toUpperCase() != 'ACTIVE') { verrors[''] = 'Your account has been suspended.  Please contact support at <a href="mailto:' + global.support_email + '">' + global.support_email + '</a> for more information'; }
+          if ((user_info[jsh.map.user_status]||'').toUpperCase() != 'ACTIVE') { verrors[''] = 'Your account has been suspended.  Please contact support at <a href="mailto:' + global.support_email + '">' + global.support_email + '</a> for more information'; }
           else if (user_info[jsh.map.user_hash] == null) { verrors[''] = 'Invalid email address or password'; }
           else {
             if (nopass) prehash = user_info[jsh.map.user_hash].toString('hex');
