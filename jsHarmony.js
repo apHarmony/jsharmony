@@ -47,7 +47,8 @@ function jsHarmony() {
   this.Config = {
     system_settings: {
       automatic_bindings: true,
-      automatic_datalocks: true
+      automatic_datalocks: true,
+      automatic_parameters: true
     }
   };
   this.Popups = {};
@@ -688,6 +689,25 @@ jsHarmony.prototype.ParseEntities = function () {
     _.each(model.buttons, function(button){
       if(!('actions' in button)) button.actions = 'BIU';
     });
+
+    //Automatically add sql_param based on SQL
+    if(_this.Config.system_settings.automatic_parameters){
+      //1. Add fkeys
+      //2. Parse sql title, and add any params, if sql_params are not defined
+      if (model.fields) _.each(model.fields, function (field) {
+        var fkeys = [];
+        if (field.lov && !('sql_params' in field.lov) && (('sql' in field.lov) || ('sql2' in field.lov) || ('sqlmp' in field.lov))) {
+          var sql = (field.lov.sql||'')+' '+(field.lov.sql2||'')+' '+(field.lov.sqlmp||'');
+          var params = AppSrv.prototype.getSQLParameters(sql, model.fields, _this);
+          if(params.length) field.lov.sql_params = params;
+        }
+        if (field.default && field.default.sql && !('sql_params' in field.default)) {
+          var sql = (field.default.sql||'');
+          var params = AppSrv.prototype.getSQLParameters(sql, model.fields, _this);
+          if(params.length) field.default.sql_params = params;
+        }
+      });
+    }
     
     //Automatically add lovkey based on lov.sqlparams
     if (model.fields) _.each(model.fields, function (field) {

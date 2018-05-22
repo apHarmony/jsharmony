@@ -22,6 +22,7 @@ function XForm<%=model.id%>(){
   this._is_new = true;
   this._modelid = '<%=model.id%>';
   <% _.each(model.fields,function(field){ if(!field.name) return; %>this.<%=field.name%> = '';<%});%>
+  XExt.XForm.ApplyDefaults(this);
 }
 
 XForm<%=model.id%>.prototype.Fields = {

@@ -21,7 +21,6 @@ var _ = require('lodash');
 var Helper = require('./lib/Helper.js');
 var ejs = require('ejs');
 var ejsext = require('./lib/ejsext.js');
-var moment = require('moment');
 var async = require('async');
 
 /*

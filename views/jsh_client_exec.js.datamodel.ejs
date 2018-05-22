@@ -22,6 +22,7 @@ function XForm<%=model.id%>(){
   this._is_new = true;
   this._modelid = '<%=model.id%>';
   <% _.each(model.fields,function(field){ if(!field.name) return; %>this.<%=field.name%> = '';<%});%>
+  XExt.XForm.ApplyDefaults(this);
 }
 
 XForm<%=model.id%>.prototype.Fields = {
@@ -32,206 +33,34 @@ XForm<%=model.id%>.prototype.Fields = {
     <%-xejs.iif('readonly' in field,'"readonly":'+JSON.stringify(field.readonly)+',') %>
     <%-xejs.iif('control' in field,'"control":'+JSON.stringify(field.control)+',') %>
     <%-xejs.iif('virtual' in field,'"virtual":'+JSON.stringify(field.virtual)+',') %>
-    <%-xejs.iif('static' in field,'"static":'+JSON.stringify(field.static)+',') %>
     <%-xejs.iif('onchange' in field,'"onchange":'+JSON.stringify(field.onchange)+',') %>
+    <%-xejs.iif('static' in field,'"static":'+JSON.stringify(field.static)+',') %>
+    <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>
     <% if('controlparams' in field){ %>controlparams:{
+      <%-xejs.iif('thumbnail_width' in field.controlparams,'"thumbnail_width":'+JSON.stringify(field.controlparams.thumbnail_width)+',') %>
+      <%-xejs.iif('expand_all' in field.controlparams,'"expand_all":'+JSON.stringify(field.controlparams.expand_all)+',') %>
+      <%-xejs.iif('expand_to_selected' in field.controlparams,'"expand_to_selected":'+JSON.stringify(field.controlparams.expand_to_selected)+',') %>
       <%-xejs.iif('value_true' in field.controlparams,'"value_true":'+JSON.stringify(field.controlparams.value_true)+',') %>
       <%-xejs.iif('value_false' in field.controlparams,'"value_false":'+JSON.stringify(field.controlparams.value_false)+',') %>
       <%-xejs.iif('popup_copy_results' in field.controlparams,'"popup_copy_results":'+JSON.stringify(field.controlparams.popup_copy_results)+',') %>
       <%-xejs.iif('base_readonly' in field.controlparams,'"base_readonly":'+JSON.stringify(field.controlparams.base_readonly)+',') %>
       <%-xejs.iif('onpopup' in field.controlparams,'"onpopup":function(popupmodelid, parentmodelid, fieldid, onComplete){'+field.controlparams.onpopup+'},') %>
-      },<% }%>
+    },<% }%>
     <% if(('lov' in field) && ('parent' in field.lov)){ %>"lovparent":<%-JSON.stringify(field.lov.parent)%>, <% } %>
     <% if(('lov' in field) && ('parents' in field.lov)){ %>"lovparents":<%-JSON.stringify(field.lov.parents)%>, <% } %>
     <% if(('lov' in field) && ('blank' in field.lov)){ %>"lovblank":1, <% } %>
     }, <%});%>
 };
 
-$(document).on('jsh_ready', function(){
-  <% _.each(model.fields,function(field){ if(!('control' in field)) return; if(field.control=='subform') return; if((field.control=='dropdown') && ('lov' in field)) {
-    var lovparents = [];
-    if(field.lov.duallov) lovparents = [field.lov.parent];
-    else if(field.lov.multilov) lovparents = field.lov.parents;
-    if(lovparents.length == 0) return;
-    var lovparents_selector = '';
-    var lovparents_val = '';
-    for(var i=0;i<lovparents.length;i++){
-      var curselector = '#'+lovparents[i]+'.xelem'+model.id;
-      lovparents_selector += ((i>0)?',':'')+curselector;
-      lovparents_val += 'parentvals.push($("'+curselector+'").val()); ';
-    }
-    %>
-        $('<%-lovparents_selector%>').change(function(evt){
-          var parentvals = [];
-          //Narrow value of child LOV to values where CODVAL1 = that value
-          var ctrl = $('#<%=field.name%>.xelem<%=model.id%>');
-          <%-lovparents_val%>
-          XExt.RenderParentLOV(xform_<%=model.id%>.Data,ctrl,parentvals,xform_<%=model.id%>.Data._LOVs['<%=field.name%>'],xform_<%=model.id%>.Data.Fields['<%=field.name%>'],<%=('multilov' in field.lov)%>);
-        });
-    <%} });%>
-});
-
-XForm<%=model.id%>.prototype.OnRender = function(){
-  var _this = this;
-  //Clear highlighted background of currently edited cells
-  
-  //Set List of Values
-  if('_LOVs' in this){
-    for(var _LOV in this._LOVs){
-      var ctrl = $('#'+_LOV+'.xelem<%=model.id%>');
-      if('lovparent' in this.Fields[_LOV])
-        XExt.RenderParentLOV(_this, ctrl,[_this[this.Fields[_LOV].lovparent]],this._LOVs[_LOV],this.Fields[_LOV],false);
-      else if('lovparents' in this.Fields[_LOV]){
-        var parentvals = [];
-        for(var i=0;i<this.Fields[_LOV].lovparents.length;i++){
-          parentvals.push(_this[this.Fields[_LOV].lovparents[i]]);
-        }
-        XExt.RenderParentLOV(_this, ctrl,parentvals,this._LOVs[_LOV],this.Fields[_LOV],true);
-      }
-      else
-        XExt.RenderLOV(_this, ctrl,this._LOVs[_LOV]);
-    }
-  }
-  //Put data into the form
-  _.each(this.Fields,function(field){
-  	var val = _this[field.name];
-    //Apply formatting
-    val = XFormat.Apply(field.format,val);
-    var jctrl = $('#'+field.name+'.xelem<%=model.id%>');
-    if(('control' in field) && (field.control == 'file_upload')){
-      //Show "Upload File" always
-      var jctrl_download = $('.xelem<%=model.id%> #'+field.name+'_download');
-      var jctrl_upload = $('.xelem<%=model.id%> #'+field.name+'_upload');
-      var jctrl_delete = $('.xelem<%=model.id%> #'+field.name+'_delete');
-      var jctrl_token = $('.xelem<%=model.id%> #'+field.name+'_token');
-      var jctrl_dbdelete = $('.xelem<%=model.id%> #'+field.name+'_dbdelete');
-      var jctrl_dbexists = $('.xelem<%=model.id%> #'+field.name+'_dbexists');
-      if(val===true){
-        //Has DB file
-        jctrl.removeClass('nodocument');
-        jctrl_token.val('');
-        jctrl_dbdelete.val('0');
-        jctrl_dbexists.val('1');
-      }
-      else if(val===false){
-        //No DB File
-        jctrl.addClass('nodocument');
-        jctrl_token.val('');
-        jctrl_dbdelete.val('0');
-        jctrl_dbexists.val('0');
-      }
-      else if(val===''){
-        //Delete action (either delete temp file or DB file
-        jctrl.addClass('nodocument');
-        jctrl_token.val('');
-        if(jctrl_dbexists.val()=='1') jctrl_dbdelete.val('1');
-        else jctrl_dbdelete.val('0');
-      }
-      else if(_.isString(val)){
-        //Uploaded new temp file
-        jctrl.removeClass('nodocument');
-        jctrl_token.val(val);
-        jctrl_dbdelete.val('0');
-      }
-    }
-    else if(('control' in field) && (field.control == 'button')){ }
-    else if(('control' in field) && (field.control == 'checkbox')){
-      var checkval = false;
-      if('controlparams' in field){
-        if(('value_true' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_true.toUpperCase())) checkval = true;
-        else if(('value_false' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_false.toUpperCase())) checkval = false;
-        else checkval = (val?true:false);
-      }
-      else checkval = (val?true:false);
-
-      jctrl.prop('checked',checkval);
-    }
-    else if((jctrl.size() > 0) && jctrl.hasClass('xform_label')) jctrl.text(val);
-    else if((jctrl.size() > 0) && (jctrl.prop('nodeName').toUpperCase()=='SELECT')){
-      //Check if SELECT has value.  If not, add it as an additional option at the end
-      var lov_matches = jctrl.children('option').filter(function(){ return $(this).val().toUpperCase()==val.toUpperCase(); }).length;
-      var has_lov = (lov_matches > 0);
-      if(!has_lov){ 
-        jctrl.append($('<option>',{value:val}).text(val));
-      }
-      jctrl.val(val);
-    }
-    else jctrl.val(val);
-
-    if(('readonly' in field) && (field.readonly == 1)) XDisable(jctrl);
-    
-  });
-  $("#navtext_<%=model.id%>").html((xform_<%=model.id%>.Index+1)+' of '+xform_<%=model.id%>.Count());
-};
-
-XForm<%=model.id%>.prototype.Commit = function(perm){
-  var _this = this;
-	this.GetValues('B');
-  if(XForm<%=model.id%>.prototype.xvalidate){
-		this.xvalidate = XForm<%=model.id%>.prototype.xvalidate;
-		var valid = xform_<%=model.id%>.Validate('B');
-		delete this.xvalidate;
-		if(!valid) return false;
-	}
-  return true;
-}
-
-XForm<%=model.id%>.prototype.GetValues = function(perm){
-  var _this = this;
-  _.each(this.Fields,function(field){
-    if(!XExt.HasAccess(field.actions,perm)) return;
-    _this[field.name] = _this.GetValue(field);
-  });
-};
-
-XForm<%=model.id%>.prototype.GetValue = function(field){
-  if(('control' in field) && (field.control == 'file_upload')){
-    var jctrl_token = $('.xelem<%=model.id%> #'+field.name+'_token');
-    var jctrl_dbdelete = $('.xelem<%=model.id%> #'+field.name+'_dbdelete');
-    var jctrl_dbexists = $('.xelem<%=model.id%> #'+field.name+'_dbexists');
-    var file_token = jctrl_token.val();
-    if(file_token) return file_token;
-    if(jctrl_dbdelete.val()=='1') return '';
-    if(jctrl_dbexists.val()=='1') return true;
-    return false;
-  }
-  if(('control' in field) && (field.control == 'checkbox')){
-    var checked = $('#'+field.name+'.xelem<%=model.id%>').prop('checked');
-    var checkval = checked ? '1':'';
-    if('controlparams' in field){
-      if(checked && ('value_true' in field.controlparams)) checkval = field.controlparams.value_true;
-      else if(!checked && ('value_false' in field.controlparams)) checkval = field.controlparams.value_false;
-    }
-    return checkval;
-  }
-  var val = $('#'+field.name+'.xelem<%=model.id%>').val();
-  //If field is in bindings
-  var xform = XForms['<%=model.id%>'];
-  if(('_bindings' in xform) && (_.includes(xform._bindings,field.name))){
-    val = xform[field.name]();
-  }
-  if('format' in field){
-    var format = field.format;
-    if(_.isString(format)) val = XFormat[format+'_decode'](val);
-    else {
-      var fargs = [];
-      for(var i=1;i < format.length;i++) fargs.push(format[i]);
-      fargs.push(val);
-      val = XFormat[format[0]+'_decode'].apply(this,fargs);
-    }
-  }
-  return val;
-};
-
-XForm<%=model.id%>.prototype.HasUpdates = function(){ return false; }
-
-XForm<%=model.id%>.prototype.HasUpdate = function(id){ return false; }
-
-XForm<%=model.id%>.prototype.OnControlUpdate = function(obj){
-  var id = $(obj).attr('id');
-  var field = this.Fields[id];
-  if('onchange' in field){ var rslt = (new Function('obj',field.onchange)); rslt.call(obj); }
-};
+XForm<%=model.id%>.prototype.OnRender = XExt.XForm.OnRender('<%=model.id%>');
+XForm<%=model.id%>.prototype.GetValues = XExt.XForm.GetValues();
+XForm<%=model.id%>.prototype.GetValue = XExt.XForm.GetValue('<%=model.id%>');
+XForm<%=model.id%>.prototype.HasUpdates = XExt.XForm.HasUpdates();
+XForm<%=model.id%>.prototype.HasUpdate = XExt.XForm.HasUpdate();
+XForm<%=model.id%>.prototype.OnControlUpdate = XExt.XForm.OnControlUpdate();
+XForm<%=model.id%>.prototype.Commit = XExt.XForm.Commit('<%=model.id%>','xform_<%=model.id%>');
+XForm<%=model.id%>.prototype.BindLOV = XExt.XForm.BindLOV('<%=model.id%>');
+$(document).on('jsh_ready', function(){ XForm<%=model.id%>.prototype.BindLOV(xform_<%=model.id%>); });
 
 XForm<%=model.id%>.prototype.xvalidate = new XValidate();
 <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; %>

@@ -1505,6 +1505,7 @@ exports.RenderField = function (_this, parentobj, modelid, field, val){
   else if (('control' in field) && (field.control == 'tree')) {
     XExt.TreeSelectNode(jctrl, val);
   }
+  else if(('control' in field) && (field.control == 'button')){ }
   else if (('control' in field) && (field.control == 'checkbox')) {
     var checkval = false;
     var checkhidden = false;
@@ -1550,6 +1551,7 @@ exports.RenderField = function (_this, parentobj, modelid, field, val){
   var show_lookup_when_readonly = false;
 
   var access = (_this._is_new?'I':'U');
+  if (XForms[modelid]._layout=='exec') access = 'B';
   var is_editable = XExt.HasAccess(field.actions, access);
   if (is_editable && ('readonly' in field) && (field.readonly == 1)) is_editable = false;
   if (('virtual' in field) && field.virtual) is_editable = true;
@@ -1679,6 +1681,7 @@ exports.GetValue = function (modelid) {
 
 exports.HasUpdates = function () {
   return function () {
+    if (XForms[this._modelid]._layout=='exec') return false;
     var _this = this;
     if (this._is_new) { return true; }
     var access = (this._is_new?'I':'U');
@@ -1693,6 +1696,7 @@ exports.HasUpdates = function () {
 
 exports.HasUpdate = function () {
   return function (id) {
+    if (XForms[this._modelid]._layout=='exec') return false;
     var field = this.Fields[id];
     if (('virtual' in field) && field.virtual) return false;
     if (('static' in field) && field.static) return false;
@@ -1721,6 +1725,7 @@ exports.Commit = function (modelid,xpostid) {
     //_is_new at record-level
     var _this = this;
     var access = (this._is_new?'I':'U');
+    if (XForms[modelid]._layout=='exec') access = 'B';
     if (this.HasUpdates()) {
       if (!this._is_dirty) {
         //Clone Data to Orig
@@ -1787,6 +1792,12 @@ exports.BindLOV = function (modelid) {
       }
     });
   };
+}
+
+exports.ApplyDefaults = function (xformdata) {
+  for(var fname in xformdata.Fields){
+    if((fname in _GET) && _GET[fname]) xformdata[fname] = _GET[fname];
+  }
 }
 },{}],10:[function(require,module,exports){
 (function (global){

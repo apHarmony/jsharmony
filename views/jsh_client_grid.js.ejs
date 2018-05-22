@@ -153,6 +153,16 @@ function XForm<%=model.id%>_Init(callback){
       else xform_<%=model.id%>.Data[binding] = bindval;
     });
 
+    //Pass parameters from querystring
+    for(var fieldname in XForm<%=model.id%>.prototype.Fields){
+      if((fieldname in _GET) && !(fieldname in xform_<%=model.id%>.Data)){
+        var fieldval = _GET[fieldname];
+        if((typeof fieldval !== 'undefined') && (fieldval !== null)){
+          xform_<%=model.id%>.Data[fieldname] = fieldval;
+        }
+      }
+    }
+
     if(!is_add || isInlinePopup) delete xform_<%=model.id%>.Data._action;
     else xform_<%=model.id%>.Data._action = 'add';
 
