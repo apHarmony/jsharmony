@@ -154,5 +154,9 @@ AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.File.js'));
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.Queue.js'));
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.DB.js'));
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.Helper.js'));
+AppSrv.prototype.getSQL = function (sqlid, jsh) {
+  if(!jsh) jsh = this.jsh;
+  return DB.ParseSQL(sqlid, jsh);
+}
 
 module.exports = AppSrv;

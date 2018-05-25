@@ -17,6 +17,8 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+var Helper = require('../lib/Helper.js');
+
 // RenderLogout.js
 exports = module.exports = function (req, res, onComplete) {
   var jsh = this;
@@ -26,14 +28,15 @@ exports = module.exports = function (req, res, onComplete) {
     remember: false,
     tstmp: ''
   };
-  if ('account' in req.cookies) {
-    if ('username' in req.cookies.account) account.username = req.cookies.account.username;
-    if ('remember' in req.cookies.account) account.remember = (req.cookies.account.remember == 1);
+  var accountCookie = Helper.GetCookie(req, res, jsh, 'account');
+  if (accountCookie) {
+    if ('username' in accountCookie) account.username = accountCookie.username;
+    if ('remember' in accountCookie) account.remember = (accountCookie.remember == 1);
   }
   var expiry = false;
   if (account.remember) expiry = new Date(Date.now() + 31536000000);
-  res.clearCookie('account', { 'path': req.baseurl });
-  res.cookie('account', account, { 'expires': expiry, 'path': req.baseurl });
+  Helper.ClearCookie(req, res, jsh, 'account', { 'path': req.baseurl });
+  Helper.SetCookie(req, res, jsh, 'account', account, { 'expires': expiry, 'path': req.baseurl });
   delete req[jsh.map.user_id];
   req.isAuthenticated = false;
   onComplete('<div>You have successfully logged out of the system. <a href="' + req.baseurl + 'login">Log back in.</a></div>');

@@ -35,9 +35,10 @@ exports = module.exports = function (req, res, onComplete) {
     remember: false,
     tstmp: ''
   };
-  if ('account' in req.cookies) {
-    if ('username' in req.cookies.account) account.username = req.cookies.account.username;
-    if ('remember' in req.cookies.account) account.remember = (req.cookies.account.remember == 1);
+  var accountCookie = Helper.GetCookie(req, res, jsh, 'account');
+  if (accountCookie) {
+    if ('username' in accountCookie) account.username = accountCookie.username;
+    if ('remember' in accountCookie) account.remember = (accountCookie.remember == 1);
   }
   var xpassword = '';
   if ('username' in req.body) account.username = req.body.username;
@@ -82,8 +83,8 @@ exports = module.exports = function (req, res, onComplete) {
               sqlparams[jsh.map.user_last_tstmp] = PE_LL_Tstmp;
               req.jshconfig.auth.on_loginsuccess(req, jsh, sqlparams, function (err, rslt) {
                 if ((rslt != null) && (rslt.length == 1) && (rslt[0] != null) && (rslt[0][jsh.map.rowcount] == 1)) {
-                  res.clearCookie('account', { 'path': req.baseurl });
-                  res.cookie('account', account, { 'expires': expiry, 'path': req.baseurl });
+                  Helper.ClearCookie(req, res, jsh, 'account', { 'path': req.baseurl });
+                  Helper.SetCookie(req, res, jsh, 'account', account, { 'expires': expiry, 'path': req.baseurl });
                   Helper.Redirect302(res, source);
                   onComplete(false);
                   return;
@@ -122,8 +123,6 @@ exports = module.exports = function (req, res, onComplete) {
       });
     }
     else loginfunc(false);
-		//if(!('account' in res.cookies)) res.cookies.account = {};
-		//res.cookies.account.username = username;
   }
   else onComplete(RenderPage(req, jsh, account, source));
 };

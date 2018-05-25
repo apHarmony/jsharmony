@@ -28,7 +28,7 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
   var _this = this;
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
   var keylist = this.getKeyNames(model.fields);
-  var filterlist = this.getFieldNames(req, model.fields, 'F');
+  var foreignkeylist = this.getFieldNames(req, model.fields, 'F');
   var lovkeylist = this.getFieldNamesWithProp(model.fields, 'lovkey');
   var lovfield = null;
   _.each(model.fields, function (field) {
@@ -42,7 +42,7 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
   var allfields = this.getFieldsByName(model.fields, allfieldslist);
   
   var is_new = true;
-  if (_this.ParamCheck('Q', Q, _.map(filterlist, function (filter) { return '&' + filter; }), false)) { is_new = false; }
+  if (_this.ParamCheck('Q', Q, _.map(foreignkeylist, function (foreignkey) { return '&' + foreignkey; }), false)) { is_new = false; }
   else if (_this.ParamCheck('Q', Q, _.map(lovkeylist, function (lovkey) { return '|' + lovkey; }), false)) { /* OK */ }
   else { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   if (!_this.ParamCheck('P', P, [])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
@@ -53,10 +53,10 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
   var datalockqueries = [];
   var lov_datalockqueries = [];
   var param_datalocks = [];
-  var sql_filterkeys = [];
+  var sql_foreignkeys = [];
   
-  if (!is_new) _.each(filterlist, function (val) { sql_filterkeys.push(val); });
-  var sql_filterfields = this.getFieldsByName(model.fields, sql_filterkeys);
+  if (!is_new) _.each(foreignkeylist, function (val) { sql_foreignkeys.push(val); });
+  var sql_foreignkeyfields = this.getFieldsByName(model.fields, sql_foreignkeys);
   
   //Add DataLock parameters to SQL 
   this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
@@ -83,7 +83,6 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
           sql_params[lov_pname] = null;
         }
       }
-      //verrors = _.merge(verrors, model.xvalidate.Validate('KF', lov_params));
     }
   }
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
@@ -91,7 +90,7 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
   //Add dynamic parameters from query string	
   var keys = [];
   if (is_new) keys = this.getFieldsByName(model.fields, lovkeylist);
-  else keys = this.getFieldsByName(model.fields, filterlist);
+  else keys = this.getFieldsByName(model.fields, foreignkeylist);
   for (var i = 0; i < keys.length; i++) {
     var field = keys[i];
     var fname = field.name;
@@ -111,7 +110,7 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
   verrors = _.merge(verrors, model.xvalidate.Validate('KF', sql_params));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   
-  var sql = _this.db.sql.getModelMultisel(_this.jsh, model, lovfield, allfields, sql_filterfields, datalockqueries, lov_datalockqueries, param_datalocks);
+  var sql = _this.db.sql.getModelMultisel(_this.jsh, model, lovfield, allfields, sql_foreignkeyfields, datalockqueries, lov_datalockqueries, param_datalocks);
   
   var dbtasks = {};
   dbtasks[modelid] = function (dbtrans, callback) {
@@ -122,7 +121,7 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
     });
   }
   //Title Tasks
-  _this.addTitleTasks(req, res, model, Q, dbtasks, 'B');
+  if(_this.addTitleTasks(req, res, model, Q, dbtasks, 'B')===false) return;
   
   return dbtasks;
 };
@@ -141,10 +140,10 @@ exports.postModelMultisel = function (req, res, modelid, Q, P, onComplete) {
     }
   });
   if (lovfield == null) throw new Error('Invalid Multisel - No LOV field.');
-  var filterlist = _this.getFieldNames(req, model.fields, 'F');
-  var filterfields = this.getFieldsByName(model.fields, filterlist);
+  var foreignkeylist = _this.getFieldNames(req, model.fields, 'F');
+  var foreignkeyfields = this.getFieldsByName(model.fields, foreignkeylist);
   
-  if (!_this.ParamCheck('Q', Q, _.map(filterlist, function (filter) { return '&' + filter; }))) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
+  if (!_this.ParamCheck('Q', Q, _.map(foreignkeylist, function (foreignkey) { return '&' + foreignkey; }))) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   if (!_this.ParamCheck('P', P, ['&' + lovfield.name])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   
   var lovvals = JSON.parse(P[lovfield.name]);
@@ -171,7 +170,7 @@ exports.postModelMultisel = function (req, res, modelid, Q, P, onComplete) {
     sql_params[fname] = _this.DeformatParam(lovfield, lovval, verrors);
   }
   
-  //Add filter fields
+  //Add foreign key fields
   var fields = _this.getFields(req, model.fields, 'F');
   if (fields.length == 0) return onComplete(null, {});
   _.each(fields, function (field) {
@@ -217,11 +216,12 @@ exports.postModelMultisel = function (req, res, modelid, Q, P, onComplete) {
   }
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   
+  //Validate Key and Foreign Key
   verrors = _.merge(verrors, model.xvalidate.Validate('KF', sql_params));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   _.each(subs, function (fname) { sql_params[fname] = '%%%' + fname + '%%%'; });
   
-  var sql = _this.db.sql.postModelMultisel(_this.jsh, model, lovfield, lovvals, filterfields, param_datalocks, datalockqueries, lov_datalockqueries);
+  var sql = _this.db.sql.postModelMultisel(_this.jsh, model, lovfield, lovvals, foreignkeyfields, param_datalocks, datalockqueries, lov_datalockqueries);
   
   var dbtasks = {};
   dbtasks[modelid] = function (dbtrans, callback, transtbl) {

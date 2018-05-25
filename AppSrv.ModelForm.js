@@ -33,7 +33,7 @@ exports.getModelForm = function (req, res, modelid, Q, P, form_m) {
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
   var filelist = this.getFileFieldNames(req, model.fields, 'B');
   var keylist = this.getKeyNames(model.fields);
-  var filterlist = this.getFieldNames(req, model.fields, 'F');
+  var foreignkeylist = this.getFieldNames(req, model.fields, 'F');
   var crumbfieldlist = this.getFieldNames(req, model.fields, 'C');
   var allfieldslist = _.union(keylist, fieldlist);
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'B');
@@ -48,7 +48,7 @@ exports.getModelForm = function (req, res, modelid, Q, P, form_m) {
     is_new = (('_action' in Q) && (Q['_action'] == 'add'));
     //Check if multiple or single and validate parameters
     if (_this.ParamCheck('Q', Q, _.map(keylist, function (key) { return '&' + key; }), false)) { /* Default */ }
-    else if (_this.ParamCheck('Q', Q, _.union(_.map(filterlist, function (field) { return '|' + field; }), ['|_action']), false)) {
+    else if (_this.ParamCheck('Q', Q, _.union(_.map(foreignkeylist, function (field) { return '|' + field; }), ['|_action']), false)) {
       selecttype = 'multiple';
     }
     else { 
@@ -76,16 +76,16 @@ exports.getModelForm = function (req, res, modelid, Q, P, form_m) {
   var sql_params = {};
   var verrors = {};
   var allfields = this.getFieldsByName(model.fields, allfieldslist);
-  var sql_filterkeys = [];
+  var sql_allkeys = [];
   var datalockqueries = [];
   var sortfields = [];
   
   //Add Keys to where
   if (!nokey) {
-    if ((selecttype == 'single')) _.each(keylist, function (val) { sql_filterkeys.push(val); });
-    else if (selecttype == 'multiple') _.each(filterlist, function (val) { if (val in Q) sql_filterkeys.push(val); });
+    if ((selecttype == 'single')) _.each(keylist, function (val) { sql_allkeys.push(val); });
+    else if (selecttype == 'multiple') _.each(foreignkeylist, function (val) { if (val in Q) sql_allkeys.push(val); });
   }
-  var sql_filterfields = this.getFieldsByName(model.fields, sql_filterkeys);
+  var sql_allkeyfields = this.getFieldsByName(model.fields, sql_allkeys);
   
   //Add DataLock parameters to SQL 
   this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, modelid);
@@ -130,12 +130,12 @@ exports.getModelForm = function (req, res, modelid, Q, P, form_m) {
       }
       else if (selecttype == 'single') { global.log('Missing parameter ' + fname); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
     }
-    
-    verrors = _.merge(verrors, model.xvalidate.Validate('KF', sql_params));
+    if (selecttype == 'single') verrors = _.merge(verrors, model.xvalidate.Validate('K', sql_params));
+    else if (selecttype == 'multiple') verrors = _.merge(verrors, model.xvalidate.Validate('F', sql_params));
     if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   }
   
-  var sql = _this.db.sql.getModelForm(_this.jsh, model, selecttype, allfields, sql_filterfields, datalockqueries, sortfields);
+  var sql = _this.db.sql.getModelForm(_this.jsh, model, selecttype, allfields, sql_allkeyfields, datalockqueries, sortfields);
   
   //Return applicable drop-down lists
   var dbtasks = [{},{}];
@@ -197,18 +197,18 @@ exports.getModelForm = function (req, res, modelid, Q, P, form_m) {
   }
   //Default Values
   if (is_new || (selecttype == 'multiple')) {
-    _this.addDefaultTasks(req, res, model, Q, dbtasks[1]);
+    if(_this.addDefaultTasks(req, res, model, Q, dbtasks[1])===false) return;
   }
   //Titles
   var titleperm = 'U';
   if(selecttype == 'multiple') titleperm = 'U';
   else if(is_new) titleperm = 'I';
-  _this.addTitleTasks(req, res, model, Q, dbtasks[1], titleperm);
+  if(_this.addTitleTasks(req, res, model, Q, dbtasks[1], titleperm)===false) return;
 
   //Breadcrumbs
-  _this.addBreadcrumbTasks(req, res, model, Q, dbtasks[1]);
+  if(_this.addBreadcrumbTasks(req, res, model, Q, dbtasks[1])===false) return;
   //LOV
-  _this.addLOVTasks(req, res, model, Q, dbtasks[1]);
+  if(_this.addLOVTasks(req, res, model, Q, dbtasks[1])===false) return;
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   return dbtasks;
 }

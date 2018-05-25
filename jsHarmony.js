@@ -475,6 +475,15 @@ jsHarmony.prototype.ParseEntities = function () {
   var _this = this;
   var base_controls = ["label", "html", "textbox", "textzoom", "dropdown", "date", "textarea", "hidden", "subform", "html", "password", "file_upload", "file_download", "button", "linkbutton", "tree", "checkbox"];
   var base_datatypes = ['DATETIME','VARCHAR','CHAR','BOOLEAN','BIGINT','INT','SMALLINT','TINYINT','DECIMAL','FLOAT','DATE','DATETIME','TIME','ENCASCII','HASH','FILE','BINARY'];
+  var all_keys = {};
+  _.forOwn(this.Models, function (model) {
+    _.each(model.fields, function (field) {
+      if(field.key && field.name){
+        if(!(field.name in all_keys)) all_keys[field.name] = [];
+        all_keys[field.name].push(model);
+      }
+    });
+  });
   _.forOwn(this.Models, function (model) {
     model.xvalidate = new XValidate();
     if (!('table' in model)) LogEntityError(_WARNING, 'Model ' + model.id + ' missing table');
@@ -527,7 +536,11 @@ jsHarmony.prototype.ParseEntities = function () {
         if (_.includes(fieldnames, field.name)) { LogEntityError(_ERROR, "Duplicate field " + field.name + " in model " + model.id + "."); }
         fieldnames.push(field.name);
       }
-      if (field.key) { field.actions += 'K'; foundkey = true; }
+      if (field.key) { 
+        field.actions += 'K'; 
+        foundkey = true; 
+        if(Helper.access(field.actions, 'F') || field.foreignkey){ LogEntityError(_WARNING, model.id + ' > ' + field.name + ': Key field should not also have foreignkey attribute.'); }
+      }
       if ('__REMOVEFIELD__' in field){ 
         LogDeprecated(model.id + ' > ' + field.name + ': __REMOVEFIELD__ has been deprecated.  Please use __REMOVE__ instead.'); 
         field.__REMOVE__ = field.__REMOVEFIELD__;
@@ -559,6 +572,29 @@ jsHarmony.prototype.ParseEntities = function () {
           else if (key == 'onpopup') field.controlparams.onpopup = field.popuplov.onpopup;
         });
       }
+      //Add foreign keys
+      if(!field.key){
+        if(!Helper.access(field.actions, 'F')){
+          if(_this.Config.system_settings.automatic_parameters){
+            var add_foreignkey = false;
+            if (('control' in field) && ((field.lov && (field.lov.sql||field.lov.sql2||field.lov.sqlmp||field.lov.sqlselect))||(field.popuplov))){ add_foreignkey = 'lov'; }
+            //Check if the field is in the list of key fields
+            if (field.name && (field.name in all_keys)){ add_foreignkey = 'key'; }
+            //Do not add foreign keys for Multisel LOV
+            if ((model.layout=='multisel') && field.lov) add_foreignkey = false;
+            if(add_foreignkey){
+              if(!field.foreignkey) LogEntityError(_INFO, 'Adding foreign key : ' + model.id + ' > ' + field.name + ' || ' + add_foreignkey); //_INFO
+              field.foreignkey = 1;
+            }
+          }
+          if (field.foreignkey) { field.actions += 'F'; }
+        }
+        else if(Helper.access(field.actions, 'F')){
+          LogDeprecated(model.id + ' > ' + field.name + ': "F" access is deprecated.  Please use foreignkey instead, or automatic parameters.');
+          field.foreignkey = 1;
+        }
+      }
+
       if (('type' in field) && (field.type in _this.CustomDataTypes)) {
         while(field.type in _this.CustomDataTypes){
           var fieldtype = field.type;
@@ -663,8 +699,6 @@ jsHarmony.prototype.ParseEntities = function () {
           }
         }
       }
-      //Add Validation Functions
-      model.xvalidate.AddValidator('_obj.' + field.name, field.caption, field.actions, _this.GetValidatorFuncs(field.validate), field.roles);
     });
     if (!foundkey) LogEntityError(_WARNING, 'Model ' + model.id + ' missing key');
     
@@ -690,23 +724,20 @@ jsHarmony.prototype.ParseEntities = function () {
       if(!('actions' in button)) button.actions = 'BIU';
     });
 
-    //Automatically add sql_param based on SQL
+    //Automatically add sql_params based on SQL
     if(_this.Config.system_settings.automatic_parameters){
       //1. Add fkeys
       //2. Parse sql title, and add any params, if sql_params are not defined
       if (model.fields) _.each(model.fields, function (field) {
-        var fkeys = [];
-        if (field.lov && !('sql_params' in field.lov) && (('sql' in field.lov) || ('sql2' in field.lov) || ('sqlmp' in field.lov))) {
-          var sql = (field.lov.sql||'')+' '+(field.lov.sql2||'')+' '+(field.lov.sqlmp||'');
-          var params = AppSrv.prototype.getSQLParameters(sql, model.fields, _this);
-          if(params.length) field.lov.sql_params = params;
-        }
-        if (field.default && field.default.sql && !('sql_params' in field.default)) {
-          var sql = (field.default.sql||'');
-          var params = AppSrv.prototype.getSQLParameters(sql, model.fields, _this);
-          if(params.length) field.default.sql_params = params;
-        }
+        _this.AddSqlParams(model, field.lov, ['sql','sql2','sqlmp']);
+        _this.AddSqlParams(model, field.default);
       });
+      _this.AddSqlParams(model, model.breadcrumbs);
+      if(model.title){
+        _this.AddSqlParams(model, model.title);
+        _this.AddSqlParams(model, model.title.add);
+        _this.AddSqlParams(model, model.title.edit);
+      }
     }
     
     //Automatically add lovkey based on lov.sqlparams
@@ -716,7 +747,7 @@ jsHarmony.prototype.ParseEntities = function () {
           //Get field
           var sql_param_field = AppSrv.prototype.getFieldByName(model.fields, sql_param);
           if (!sql_param_field) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': LOV sql param "' + sql_param + '" is not defined as a field');
-          else if (!sql_param_field.key && !Helper.access(sql_param_field.actions, 'F') && !sql_param_field.lovkey) { sql_param_field.lovkey = 1; }
+          else if (!sql_param_field.key && !sql_param_field.lovkey) { sql_param_field.lovkey = 1; }
         });
       }
     });
@@ -775,7 +806,7 @@ jsHarmony.prototype.ParseEntities = function () {
       'subheader', 'footerheight', 'headeradd',
     ];
     var _v_field = [
-      'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'serverejs','roles','static','cellclass',
+      'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'foreignkey', 'serverejs','roles','static','cellclass',
       'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
       'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'precision', 'password', 'hash', 'salt', 'unbound',
       'sqlselect', 'sqlupdate', 'sqlinsert','sql_sort', 'sqlwhere', 'sql_search_sound', 'sql_search', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVE__', '__AFTER__',
@@ -818,6 +849,11 @@ jsHarmony.prototype.ParseEntities = function () {
     if (no_key && !model.nokey && !model.unbound && ((model.layout == 'form') || (model.layout == 'form-m'))) {
       LogEntityError(_ERROR, model.id + ': No key is defined.  Use nokey or unbound attributes if intentional.');
     }
+
+    //Generate Validators
+    _.each(model.fields, function (field) {
+      model.xvalidate.AddValidator('_obj.' + field.name, field.caption, field.actions, _this.GetValidatorFuncs(field.validate), field.roles);
+    });
   });
   
   _.forOwn(_this.Models, function (model) {
@@ -825,7 +861,7 @@ jsHarmony.prototype.ParseEntities = function () {
     //Verify bindings are set up properly
     ParseAccessModels(_this, model, model.id, model.actions);
 
-    //Check Parent / Child Relationships for Potentially Missing "F" keys  
+    //Check Parent / Child Relationships for Potentially Missing Foreign keys  
     if (model.tabs) {
       for (var i=0; i<model.tabs.length; i++) {
         var tab = model.tabs[i];
@@ -848,6 +884,30 @@ jsHarmony.prototype.ParseEntities = function () {
 
 function ParseMultiLineProperties(obj, arr) {
   _.each(arr, function (p) { if (p in obj) obj[p] = Helper.ParseMultiLine(obj[p]); });
+}
+
+jsHarmony.prototype.AddSqlParams = function(model, element, props){
+  var _this = this;
+  if(!props) props = ['sql'];
+  if(!element) return;
+  var sql = '';
+  _.each(props, function(prop){ 
+    if(element[prop]) sql += AppSrv.prototype.getSQL(element[prop], _this)+' '; 
+  });
+  sql = sql.trim();
+  if (sql && !('sql_params' in element)) {
+    var params = AppSrv.prototype.getSQLParameters(sql, model.fields, _this);
+    if(params.length){
+      for(var i=0;i<params.length;i++){
+        var pfield = AppSrv.prototype.getFieldByName(model.fields, params[i]);
+        if (!Helper.access(pfield.actions, 'F') && !pfield.key){ pfield.actions += 'F'; }
+        //Investigate why this is necessary xxxxxxxxxxxx
+        //if(!pfield.key && !('lovkey' in pfield)) pfield.lovkey = 1;
+        //Also, now the Insert does not work without the "c_id"
+      }
+      element.sql_params = params;
+    }
+  }
 }
 
 jsHarmony.prototype.AddBindings = function(model, element, elementname, options){

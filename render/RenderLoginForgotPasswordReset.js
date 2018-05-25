@@ -82,14 +82,14 @@ exports = module.exports = function (req, res, onComplete) {
             req.jshconfig.auth.on_passwordreset(req, jsh, sqlparams, function (err, rslt) {
               if ((rslt != null) && (rslt.length == 1) && (rslt[0][jsh.map.rowcount] == 1)) {
                 //Create authentication cookie
-                res.clearCookie('account', { 'path': req.baseurl });
+                Helper.ClearCookie(req, res, jsh, 'account', { 'path': req.baseurl });
                 var account = {
                   username: fdata.username,
                   password: crypto.createHash('sha1').update(prehash + tstmp).digest('hex'),
                   remember: false,
                   tstmp: tstmp
                 };
-                res.cookie('account', account, { 'expires': false, 'path': req.baseurl });
+                Helper.SetCookie(req, res, jsh, 'account', account, { 'expires': false, 'path': req.baseurl });
                 //Redirect to home
                 Helper.Redirect302(res, req.baseurl);
                 onComplete(false);

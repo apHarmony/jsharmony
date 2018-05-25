@@ -25,10 +25,6 @@ var moment = require('moment');
 
 module.exports = exports = {};
 
-exports.getSQL = function (sqlid) {
-  return this.DB.ParseSQL(sqlid, this.jsh);
-}
-
 exports.ExecDBFunc = function (dbfunc, context, sql, ptypes, params, callback, constring) {
   var _this = this;
   _this.db.ExecTasks([function (cb) {

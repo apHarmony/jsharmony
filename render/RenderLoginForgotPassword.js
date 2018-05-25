@@ -29,9 +29,10 @@ exports = module.exports = function (req, res, onComplete){
   var jsh = this;
   if (!(req.secure) && !(req.jshconfig.auth.allow_insecure_http_logins)) { return Helper.GenError(req, res, -21, 'Secure connection required'); return; }
   if(!req.jshconfig.auth.on_passwordreset) { return Helper.GenError(req, res, -9, 'Password reset not enabled'); return; }
-	var fdata = { username:'' };
-	if('account' in req.cookies){
-		if('username' in req.cookies.account) fdata.username = req.cookies.account.username;
+  var fdata = { username:'' };
+  var accountCookie = Helper.GetCookie(req, res, jsh, 'account');
+	if(accountCookie){
+		if('username' in accountCookie) fdata.username = accountCookie.username;
 	}
   if ('username' in req.body) fdata.username = req.body.username;
 

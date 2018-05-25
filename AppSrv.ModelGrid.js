@@ -176,7 +176,7 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
   }
   //Add DataLock parameters to SQL 
   this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, modelid);
-  verrors = _.merge(verrors, model.xvalidate.Validate('F', sql_params));
+  verrors = _.merge(verrors, model.xvalidate.Validate('BFK', sql_params, undefined, undefined, undefined, { ignoreUndefined: true }));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   
   var dbsql = _this.db.sql.getModelRecordset(_this.jsh, model, sql_filterfields, allfields, sortfields, searchfields, datalockqueries, rowstart, rowcount + 1);
@@ -216,10 +216,10 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
     };
   }
   if (('meta' in Q) && (Q['meta'] != '')) {
-    _this.addDefaultTasks(req, res, model, P, dbtasks);
-    _this.addLOVTasks(req, res, model, P, dbtasks);
-    _this.addBreadcrumbTasks(req, res, model, P, dbtasks);
-    _this.addTitleTasks(req, res, model, P, dbtasks, 'B');
+    if(_this.addDefaultTasks(req, res, model, P, dbtasks)===false) return;
+    if(_this.addLOVTasks(req, res, model, P, dbtasks)===false) return;
+    if(_this.addBreadcrumbTasks(req, res, model, P, dbtasks)===false) return;
+    if(_this.addTitleTasks(req, res, model, P, dbtasks, 'B')===false) return;
   }
   return dbtasks;
 }

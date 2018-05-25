@@ -42,13 +42,13 @@ exports.getModelExec = function (req, res, modelid, Q, P, form_m) {
   var verrors = {};
   var dbtasks = {};
   //Default Values
-  _this.addDefaultTasks(req, res, model, Q, dbtasks);
+  if(_this.addDefaultTasks(req, res, model, Q, dbtasks)===false) return;
   //Title
-  _this.addTitleTasks(req, res, model, Q, dbtasks, 'B');
+  if(_this.addTitleTasks(req, res, model, Q, dbtasks, 'B')===false) return;
   //Breadcrumbs
-  _this.addBreadcrumbTasks(req, res, model, Q, dbtasks);
+  if(_this.addBreadcrumbTasks(req, res, model, Q, dbtasks)===false) return;
   //LOV
-  _this.addLOVTasks(req, res, model, Q, dbtasks);
+  if(_this.addLOVTasks(req, res, model, Q, dbtasks)===false) return;
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   return dbtasks;
 }

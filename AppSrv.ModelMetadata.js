@@ -76,19 +76,18 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
   var title = undefined;
 
   var sql = '';
+  var fieldlist = [];
   if (model.title){
     if(_.isString(model.title)) title = model.title;
     else if(model.title.add && Helper.access(targetperm,'I')){
       if(_.isString(model.title.add)) title = model.title.add;
-      else if(model.title.add.sql) sql = model.title.add.sql;
-      else if(title.sql) sql = title.sql;
+      else if(model.title.add.sql){ sql = model.title.add.sql; fieldlist = model.title.add.sql_params; }
     }
     else if(model.title.edit && Helper.access(targetperm,'BU')){
       if(_.isString(model.title.edit)) title = model.title.edit;
-      else if(model.title.edit.sql) sql = model.title.edit.sql;
-      else if(title.sql) sql = title.sql;
+      else if(model.title.edit.sql){ sql = model.title.edit.sql; fieldlist = model.title.edit.sql_params; }
     }
-    else if(title.sql) sql = title.sql;
+    else if(model.title.sql){ sql = model.title.sql; fieldlist = model.title.sql_params; }
   }
   if(!sql){ 
     if(title) title = Helper.ResolveParams(req, title);
@@ -97,7 +96,6 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
   }
 
   var _this = this;
-  var fieldlist = this.getFieldNames(req, model.fields, 'BFK');
   var fields = this.getFieldsByName(model.fields, fieldlist);
   var sql_ptypes = [];
   var sql_params = {};
@@ -116,8 +114,8 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
 
   //Add DataLock parameters to SQL 
   this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, model.id);
-  verrors = _.merge(verrors, model.xvalidate.Validate('BFK', sql_params));
-  if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
+  verrors = _.merge(verrors, model.xvalidate.Validate('*', sql_params, undefined, undefined, undefined, { ignoreUndefined: true }));
+  if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return false; }
   
   var sql = _this.db.sql.getTitle(_this.jsh, model, sql, datalockqueries);
 
@@ -140,7 +138,7 @@ exports.getTitle = function (req, res, modelid, targetperm, onComplete) {
   if (!Helper.HasModelAccess(req, model, targetperm)) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
 
   var dbtasks = {};
-  this.addTitleTasks(req, res, model, req.query, dbtasks, targetperm);
+  if(this.addTitleTasks(req, res, model, req.query, dbtasks, targetperm)===false) return;
   dbtasks['_title'](undefined, onComplete, null);
 }
 
@@ -163,7 +161,7 @@ exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
       else {
         var sql = '';
         if ('sql' in dflt) { sql = dflt.sql; }
-        else { Helper.GenError(req, res, -99999, 'Custom Default Value requires SQL'); return; }
+        else { Helper.GenError(req, res, -99999, 'Custom Default Value requires SQL'); return false; }
         
         var datalockstr = '';
         var dflt_sql_field_datalockqueries = [];
@@ -186,11 +184,11 @@ exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
                 dflt_sql_field_param_datalocks.push({ pname: dflt_pname, datalockquery: datalockquery, field: dfield });
                 return true;
               }, undefined, field.name + "_" + model.id + "_dflt_key");
+              dflt_verrors = _.merge(dflt_verrors, model.xvalidate.Validate('*', dflt_params, dflt_pname));
             }
           }
-          dflt_verrors = _.merge(dflt_verrors, model.xvalidate.Validate('KF', dflt_params));
         }
-        if (!_.isEmpty(dflt_verrors)) { Helper.GenError(req, res, -2, dflt_verrors[''].join('\n')); return; }
+        if (!_.isEmpty(dflt_verrors)) { Helper.GenError(req, res, -2, dflt_verrors[''].join('\n')); return false; }
         
         dflt_sql_fields.push({ name: field.name, field: field, sql: sql, datalockqueries: dflt_sql_field_datalockqueries, param_datalocks: dflt_sql_field_param_datalocks });
       }
@@ -248,12 +246,12 @@ exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks) {
         if (bcrumb_sql_fieldlist.indexOf(fname) < 0) bcrumb_sql_fieldlist.push(fname);
         return true;
       });
+      verrors = _.merge(verrors, model.xvalidate.Validate('*', bcrumb_params, fname));
     }
   }
-  verrors = _.merge(verrors, model.xvalidate.Validate('KFC', bcrumb_params));
   var bcrumb_sql_fields = _this.getFieldsByName(model.fields, bcrumb_sql_fieldlist);
   var bcrumb_sql = _this.db.sql.getBreadcrumbTasks(_this.jsh, model, datalockqueries, bcrumb_sql_fields);
-  if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
+  if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return false; }
   dbtasks['_bcrumbs'] = function (dbtrans, callback) {
     _this.db.Row(req._DBContext, bcrumb_sql, bcrumb_ptypes, bcrumb_params, dbtrans, function (err, rslt) {
       if ((err == null) && (rslt == null)) err = Helper.NewError('Breadcrumbs not found', -14);
@@ -266,7 +264,10 @@ exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks) {
 exports.addLOVTasks = function (req, res, model, Q, dbtasks) {
   var _this = this;
   var jsh = _this.jsh;
+  var fatalError = false;
+  //Use function loop so that dbtasks works for multiple LOVs
   _.each(model.fields, function (field) {
+    if(fatalError) return;
     if ('lov' in field) {
       var lov = field['lov'];
       var lov_ptypes = [];
@@ -295,10 +296,9 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks) {
               lov_verrors = _.merge(lov_verrors, model.xvalidate.Validate('*', lov_params, lov_pname));
             }
           }
-          lov_verrors = _.merge(lov_verrors, model.xvalidate.Validate('KF', lov_params));
         }
       }
-      if (!_.isEmpty(lov_verrors)) { Helper.GenError(req, res, -2, lov_verrors[''].join('\n')); return; }
+      if (!_.isEmpty(lov_verrors)) { Helper.GenError(req, res, -2, lov_verrors[''].join('\n')); fatalError = true; return; }
       var sql = _this.db.sql.getLOV(_this.jsh, field.name, lov, datalockqueries, param_datalocks);
 
       //Add parameters from querystring
@@ -325,6 +325,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks) {
       };
     }
   });
+  if(fatalError) return false;
 }
 
 return module.exports;
