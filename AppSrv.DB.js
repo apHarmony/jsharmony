@@ -92,7 +92,7 @@ exports.DeformatParam = function (field, val, verrors) {
     if (/Z|[+\-][0-9]+:[0-9]+$/.test(val)) has_timezone = true;
     var mtstmp = null;
     if (has_timezone) mtstmp = moment.parseZone(val);
-    else mtstmp = moment(val);
+    else mtstmp = moment(new Date(val));
     if (!mtstmp.isValid()) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
     if (mtstmp.year()>9999) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
     if (mtstmp.year()<1753) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
@@ -137,7 +137,7 @@ exports.DeformatParam = function (field, val, verrors) {
     var mtstmp = null;
     var prefix = (!fulldate?'1970-01-01 ':'');
     if (has_timezone) mtstmp = moment.parseZone(prefix + val);
-    else mtstmp = moment(prefix + val);
+    else mtstmp = moment(new Date(prefix + val));
 
     if(field.datatype_config.preserve_timezone){
       //If no timezone specified, set to UTC

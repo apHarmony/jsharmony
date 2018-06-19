@@ -1,4 +1,6 @@
 {
   "Helper_SendTXTEmail": "select TXT_TVAL,TXT_VAL,TXT_BCC,TXT_TYPE from jsharmony.TXT where TXT_PROCESS='EMAIL' and TXT_ATTRIB=@TXT_ATTRIB",
-  "HelperRender_getTXT": "select TXT_VAL from jsharmony.TXT where TXT_PROCESS=@TXT_PROCESS and TXT_ATTRIB=@TXT_ATTRIB"
+  "HelperRender_getTXT": "select TXT_VAL from jsharmony.TXT where TXT_PROCESS=@TXT_PROCESS and TXT_ATTRIB=@TXT_ATTRIB",
+  "TRUE": "1",
+  "FALSE": "0"
 }

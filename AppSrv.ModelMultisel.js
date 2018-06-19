@@ -24,7 +24,7 @@ module.exports = exports = {};
 
 exports.getModelMultisel = function (req, res, modelid, Q, P) {
   var model = this.jsh.getModel(req, modelid);
-  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
+  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
   var _this = this;
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
   var keylist = this.getKeyNames(model.fields);
@@ -130,7 +130,7 @@ exports.postModelMultisel = function (req, res, modelid, Q, P, onComplete) {
   if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
   var _this = this;
   var model = this.jsh.getModel(req, modelid);
-  if (!Helper.HasModelAccess(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
+  if (!Helper.HasModelAccess(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
   
   var lovfield = null;
   _.each(model.fields, function (field) {

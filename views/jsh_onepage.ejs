@@ -211,7 +211,7 @@ function jshLoad(options){
     else if(data.responseText && data.responseText.indexOf('***ACCOUNT_UNPAID_BALANCE***')>=0){ window.location.href = _BASEURL+'C_PA_CC'; return true; }
     else if(data.responseText && data.responseText.indexOf('***JSHARMONY_LOGIN***')>=0){ window.location.href = jsh_state.fullurl; return true; }
     else if ((data instanceof Object) && ('Number' in data)){ 
-      if(data.Number == -11){ XExt.Alert('Invalid Model Access'); return true; }
+      if(data.Number == -11){ XExt.Alert(data.Message?data.Message:'Invalid Model Access'); return true; }
       else if(_.includes([-1,-2],data.Number)){ XExt.Alert(data.Message,null,{ onAcceptImmediate:closeIfPopup }); return true; }
     }
     var msg = 'Failed to load state';

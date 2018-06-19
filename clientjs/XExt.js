@@ -654,22 +654,28 @@ exports.TreeSelectNode = function (ctrl, nodevalue) {
   var jtree = jctrl.closest('.xform_ctrl.tree');
   if (jtree.hasClass('uneditable')) return;
 
-  //Get nodeid from nodevalue
-  var nodeid = '';
-  jtree.find('.tree_item').each(function(){
-    if($(this).data('value')==nodevalue) nodeid = $(this).data('id');
-  });
-  if(!nodeid){ return XExt.Alert('Tree node with value \'' + nodevalue + '\' not found'); }
-
+  //Deselect previously selected value
   jtree.find('.selected').removeClass('selected');
-  jtree.find('.tree_item.tree_item_' + nodeid).addClass('selected');
-  if (field && field.controlparams) {
-    if ((typeof field.controlparams.expand_to_selected == 'undefined') || (field.controlparams.expand_to_selected)) exports.TreeExpandToSelected(ctrl);
+
+  var nodeid = '';
+  if(nodevalue){
+    //Get nodeid from nodevalue
+    jtree.find('.tree_item').each(function(){
+      if($(this).data('value')==nodevalue) nodeid = $(this).data('id');
+    });
+    if(!nodeid){ return XExt.Alert('Tree node with value \'' + nodevalue + '\' not found'); }
+
+    jtree.find('.tree_item.tree_item_' + nodeid).addClass('selected');
+    if (field && field.controlparams) {
+      if ((typeof field.controlparams.expand_to_selected == 'undefined') || (field.controlparams.expand_to_selected)) exports.TreeExpandToSelected(ctrl);
+    }
   }
+
+  //Fire events
   if (field && init_complete) {
     if ('onchange' in field) { var rslt = (new Function('obj', 'newval', 'e', field.onchange)); rslt.call(xform.Data, ctrl, xform.Data.GetValue(field), null); }
   }
-  if(jtree.data('onselected')) { var rslt = (new Function('nodeid', jtree.data('onselected'))); rslt.call(ctrl, nodeid); }
+  if(nodeid && jtree.data('onselected')) { var rslt = (new Function('nodeid', jtree.data('onselected'))); rslt.call(ctrl, nodeid); }
 }
 
 exports.TreeToggleNode = function (jctrl, nodeid) {

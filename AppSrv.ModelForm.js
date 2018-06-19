@@ -27,7 +27,7 @@ module.exports = exports = {};
 
 exports.getModelForm = function (req, res, modelid, Q, P, form_m) {
   var model = this.jsh.getModel(req, modelid);
-  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
+  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
   if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   var _this = this;
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
@@ -216,7 +216,7 @@ exports.getModelForm = function (req, res, modelid, Q, P, form_m) {
 exports.putModelForm = function (req, res, modelid, Q, P, onComplete) {
   var _this = this;
   var model = this.jsh.getModel(req, modelid);
-  if (!Helper.HasModelAccess(req, model, 'I')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
+  if (!Helper.HasModelAccess(req, model, 'I')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
   var fieldlist = this.getFieldNames(req, model.fields, 'I');
   var filelist = this.getFileFieldNames(req, model.fields, 'I');
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'I');
@@ -376,7 +376,7 @@ exports.postModelForm = function (req, res, modelid, Q, P, onComplete) {
   var _this = this;
   if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
   var model = this.jsh.getModel(req, modelid);
-  if (!Helper.HasModelAccess(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
+  if (!Helper.HasModelAccess(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
   
   var fieldlist = this.getFieldNames(req, model.fields, 'U');
   var keylist = this.getKeyNames(model.fields);
@@ -516,7 +516,7 @@ exports.deleteModelForm = function (req, res, modelid, Q, P, onComplete) {
   if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
   var _this = this;
   var model = this.jsh.getModel(req, modelid);
-  if (!Helper.HasModelAccess(req, model, 'D')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
+  if (!Helper.HasModelAccess(req, model, 'D')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
   var keylist = this.getKeyNames(model.fields);
   var fieldlist = this.getFieldNames(req, model.fields, 'D');
   var filelist = this.getFileFieldNames(req, model.fields, '*');

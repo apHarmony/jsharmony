@@ -174,7 +174,7 @@ exports.Download = function (req, res, modelid, keyid, fieldid, options) {
     if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
     var model = this.jsh.getModel(req, modelid);
     //Verify model access
-    if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
+    if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
     if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
     //Get key name
     var keylist = this.getKeyNames(model.fields);

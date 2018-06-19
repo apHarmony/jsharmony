@@ -27,7 +27,7 @@ exports.getTabCode = function (req, res, modelid, onComplete) {
   var model = this.jsh.getModel(req, modelid);
   if (!(model.tabcode)) throw new Error("Error: Tabcode required for " + modelid + " tabcode lookup.");
   var Q = req.query;
-  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
+  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
   var _this = this;
   var keylist = this.getKeyNames(model.fields);
   var tabcodelist = [model.tabcode];
@@ -135,7 +135,7 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
 exports.getTitle = function (req, res, modelid, targetperm, onComplete) {
   if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
   var model = this.jsh.getModel(req, modelid);
-  if (!Helper.HasModelAccess(req, model, targetperm)) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
+  if (!Helper.HasModelAccess(req, model, targetperm)) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
 
   var dbtasks = {};
   if(this.addTitleTasks(req, res, model, req.query, dbtasks, targetperm)===false) return;

@@ -72,6 +72,7 @@ exports.validateGlobals = function(){
   if(_.isString(global.localmodeldir)) global.localmodeldir = { path: global.localmodeldir };
   for(var i=0;i<global.modeldir.length;i++){
     if(_.isString(global.modeldir[i])) global.modeldir[i] = { path: global.modeldir[i] };
+    if(!global.modeldir[i].component) global.modeldir[i].component = 'application';
   }
 
 

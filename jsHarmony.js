@@ -38,7 +38,9 @@ var _WARNING = 2;
 var _INFO = 4;
 var _DBTYPES = ['pgsql', 'mssql', 'sqlite'];
 
-function jsHarmony() {
+function jsHarmony(options) {
+  options = _.extend({ }, options);
+
   this.EJS = [];
   this.EJSGrid = '';
   this.EJSForm = '';
@@ -54,20 +56,22 @@ function jsHarmony() {
   this.Popups = {};
   this.Cache = {};
   this.SQL = {};
+  this.SQLScripts = {};
   this.CustomDataTypes = {};
   this._IMAGEMAGICK_FIELDS = [];
   //Constructor
   Init.validateGlobals();
   console.log('Loading models...');
-  this.LoadSQL(path.dirname(module.filename) + '/sql/', global.dbconfig._driver.name);
+  this.LoadSQL(path.dirname(module.filename) + '/sql/', global.dbconfig._driver.name, 'jsharmony');
   this.Cache['system.js'] = '';
   this.Cache['system.css'] = fs.readFileSync(path.dirname(module.filename)+'/jsHarmony.theme.css', 'utf8');
   for (var i = 0; i < global.modeldir.length; i++) {
-    this.LoadModels(global.modeldir[i].path, global.modeldir[i], '', global.dbconfig._driver.name);
-    this.LoadModels(global.modeldir[i].path + 'reports/', global.modeldir[i], '_report_', global.dbconfig._driver.name);
-    if (fs.existsSync(global.modeldir[i].path + 'js/')) this.Cache['system.js'] += '\r\n' + this.MergeFolder(global.modeldir[i].path + 'js/');
-    if (fs.existsSync(global.modeldir[i].path + 'style/')) this.Cache['system.css'] += '\r\n' + this.MergeFolder(global.modeldir[i].path + 'style/');
-    this.LoadSQL(global.modeldir[i].path + 'sql/', global.dbconfig._driver.name);
+    var modeldir = global.modeldir[i];
+    this.LoadModels(modeldir.path, modeldir, '', global.dbconfig._driver.name);
+    this.LoadModels(modeldir.path + 'reports/', modeldir, '_report_', global.dbconfig._driver.name);
+    if (fs.existsSync(modeldir.path + 'js/')) this.Cache['system.js'] += '\r\n' + this.MergeFolder(modeldir.path + 'js/');
+    if (fs.existsSync(modeldir.path + 'style/')) this.Cache['system.css'] += '\r\n' + this.MergeFolder(modeldir.path + 'style/');
+    this.LoadSQL(modeldir.path + 'sql/', global.dbconfig._driver.name, modeldir.component);
   }
   this.ParseMacros();
   this.ParseDeprecated();
@@ -77,6 +81,7 @@ function jsHarmony() {
   Init.ValidateConfig(this);
   this.map = this.Config.field_mapping;
   this.uimap = this.Config.ui_field_mapping;
+  jsHarmony.AddSQLParams(this.SQL, this.map, 'jsh.map.');
   this.AppSrv = new AppSrv(this);
   /*
   var portstr = ' Port ';
@@ -179,21 +184,25 @@ jsHarmony.prototype.MergeFolder = function (dir) {
   }
   return rslt;
 }
-jsHarmony.prototype.LoadSQL = function (dir, type) {
-  var rslt = jsHarmony.LoadSQL(dir, type);
+jsHarmony.AddSQLParams = function(SQL, items, prefix){
+  if(!items) return;
+  for(var key in items){
+    var fullkey = prefix + key;
+    if(fullkey in SQL) continue;
+    SQL[fullkey] = items[key];
+  }
+}
+jsHarmony.prototype.LoadSQL = function (dir, type, component) {
+  var rslt = jsHarmony.LoadSQL(dir, type, component);
   for(var sqlid in rslt.SQL) this.SQL[sqlid] = rslt.SQL[sqlid];
   for(var datatypeid in rslt.CustomDataTypes) this.CustomDataTypes[datatypeid] = rslt.CustomDataTypes[datatypeid];
+  this.SQLScripts = _.merge(this.SQLScripts, rslt.SQLScripts);
 }
-jsHarmony.LoadSQL = function (dir, type, rslt) {
-  if(!rslt) rslt = {};
-  if(!rslt.CustomDataTypes) rslt.CustomDataTypes = {};
-  if(!rslt.SQL) rslt.SQL = {};
-  
-  var _this = this;
-  var f = {};
-  if (fs.existsSync(dir)) f = fs.readdirSync(dir);
-  else return rslt;
-  f.sort(function (a, b) {
+function LoadSQLFiles(dir, options){
+  options = _.extend({ ignoreDirectories: true, filterType: '' },options||{});
+  if (!fs.existsSync(dir)) return [];
+  var d = fs.readdirSync(dir);
+  d.sort(function (a, b) {
     var abase = a;
     var bbase = b;
     var a_lastdot = a.lastIndexOf('.');
@@ -203,55 +212,165 @@ jsHarmony.LoadSQL = function (dir, type, rslt) {
     if (abase == bbase) return a > b;
     return abase > bbase;
   });
-  var found_sqlids = {};
-  for (var i in f) {
-    var fname = dir + f[i];
-    if (type && (fname.indexOf('.' + type + '.') < 0)) {
+  var rslt = [];
+  for (var i=0; i<d.length; i++) {
+    var fname = dir + d[i];
+    var fstat = fs.lstatSync(fname);
+    var fobj = {
+      name: d[i],
+      path: fname,
+      type: (fstat.isDirectory()?'folder':'file')
+    };
+    
+    //Ignore directories
+    if(fstat.isDirectory()){
+      if(options.ignoreDirectories){
+        continue;
+      }
+      else {
+        if (options.filterType && (fname!=options.filterType)) {
+          var found_other_dbtype = false;
+          _.each(_DBTYPES, function (dbtype) { if (fname==dbtype) found_other_dbtype = true; });
+          if (found_other_dbtype){
+            continue;
+          }
+        }
+      }
+    }
+
+    if (options.filterType && (fname.indexOf('.' + options.filterType + '.') < 0)) {
       var found_other_dbtype = false;
       _.each(_DBTYPES, function (dbtype) { if (fname.indexOf('.' + dbtype + '.') >= 0) found_other_dbtype = true; });
-      if (found_other_dbtype) continue;
+      if (found_other_dbtype){
+        continue;
+      }
     }
-    LogEntityError(_INFO, 'Loading ' + fname);
-    //Parse text
-    var ftext = Helper.JSONstrip(fs.readFileSync(fname, 'utf8'));
-    var sql = {};
-    try {
-      sql = JSON.parse(ftext);
-    }
-    catch (ex) {
-      console.error("-------------------------------------------");
-      console.error("FATAL ERROR Parsing SQL " + fname);
-      console.log(ex.name + ': "' + ex.message + '"');
+
+    rslt.push(fobj);
+  }
+  return rslt;
+}
+jsHarmony.LoadSQL = function (dir, type, component, rslt) {
+  if(!rslt) rslt = {};
+  if(!rslt.CustomDataTypes) rslt.CustomDataTypes = {};
+  if(!rslt.SQL) rslt.SQL = {};
+  if(!rslt.SQLScripts) rslt.SQLScripts = { };
+  
+  var _this = this;
+  var d = LoadSQLFiles(dir, { ignoreDirectories: true, filterType: type });
+
+
+  //Load Base SQL files
+  if(d.length){
+    var found_sqlids = {};
+
+    for (var i=0; i<d.length; i++) {
+      var fpath = d[i].path;
+
+      LogEntityError(_INFO, 'Loading ' + fpath);
+      //Parse text
+      var ftext = Helper.JSONstrip(fs.readFileSync(fpath, 'utf8'));
+      var sql = {};
       try {
-        require('jsonlint').parse(ftext);
+        sql = JSON.parse(ftext);
       }
-      catch (ex2) {
-        console.log(ex2);
-      }
-      console.error("-------------------------------------------");
-      process.exit(8);
-      throw (ex);
-    }
-    if(path.basename(fname).toLowerCase() == ('datatypes.'+type+'.json')){
-      for (var datatypeid in sql) {
-        rslt.CustomDataTypes[datatypeid] = sql[datatypeid];
-      }
-    }
-    else{
-      for (var sqlid in sql) {
-        if (sqlid in found_sqlids) { LogEntityError(_ERROR, 'Duplicate SQL ' + sqlid + ' in ' + found_sqlids[sqlid] + ' and ' + fname); }
-        found_sqlids[sqlid] = fname;
-        var sqlval = sql[sqlid];
-        if(sqlval && sqlval.params){
-          //SQL Function
-          if(sqlval.sql) sqlval.sql = Helper.ParseMultiLine(sqlval.sql);
-          if(sqlval.exec) sqlval.exec = Helper.ParseMultiLine(sqlval.exec);
+      catch (ex) {
+        console.error("-------------------------------------------");
+        console.error("FATAL ERROR Parsing SQL " + fpath);
+        console.log(ex.name + ': "' + ex.message + '"');
+        try {
+          require('jsonlint').parse(ftext);
         }
-        else sqlval = Helper.ParseMultiLine(sqlval);
-        rslt.SQL[sqlid] = sqlval;
+        catch (ex2) {
+          console.log(ex2);
+        }
+        console.error("-------------------------------------------");
+        process.exit(8);
+        throw (ex);
+      }
+      if(path.basename(fpath).toLowerCase() == ('datatypes.'+type+'.json')){
+        for (var datatypeid in sql) {
+          rslt.CustomDataTypes[datatypeid] = sql[datatypeid];
+        }
+      }
+      else{
+        for (var sqlid in sql) {
+          if (sqlid in found_sqlids) { LogEntityError(_ERROR, 'Duplicate SQL ' + sqlid + ' in ' + found_sqlids[sqlid] + ' and ' + fpath); }
+          found_sqlids[sqlid] = fpath;
+          var sqlval = sql[sqlid];
+          if(sqlval && sqlval.params){
+            //SQL Function
+            if(sqlval.sql) sqlval.sql = Helper.ParseMultiLine(sqlval.sql);
+            if(sqlval.exec) sqlval.exec = Helper.ParseMultiLine(sqlval.exec);
+          }
+          else sqlval = Helper.ParseMultiLine(sqlval);
+          rslt.SQL[sqlid] = sqlval;
+        }
       }
     }
   }
+
+  //Load SQL Scripts
+  var scriptsdir = dir+'scripts/';
+  d = LoadSQLFiles(scriptsdir, { ignoreDirectories: false, filterType: type });
+  if(component && (d.length > 0)){
+    var scripts = {};
+
+    //Process folders
+    for(var i=0;i<d.length;i++){
+      if(d[i].type=='folder'){
+        var subdname = d[i].name;
+        var subd1 = LoadSQLFiles(scriptsdir+subdname+'/', { ignoreDirectories: true, filterType: type });
+        var subd2 = LoadSQLFiles(scriptsdir+subdname+'/'+type+'/', { ignoreDirectories: true, filterType: type });
+        var subd = subd1.concat(subd2);
+        scripts[subdname] = {};
+        for(var j=0;j<subd.length;j++){
+          var fname = subd[j].name;
+          if(!(fname in subd[j])) scripts[subdname][fname] = '';
+          else scripts[subdname][fname] += "\r\n";
+          scripts[subdname][fname] += fs.readFileSync(subd[j].path, 'utf8');
+        }
+      }
+    }
+
+    //Process files
+    for(var i=0;i<d.length;i++){
+      if(d[i].type=='file'){
+        scripts[d[i].name] = fs.readFileSync(d[i].path, 'utf8')
+      }
+    }
+
+    //Post-process - extract prefix if in xxx.yyy.sql format
+    function processScriptPrefix(node){
+      for(var key in node){
+        var val = node[key];
+        if(_.isString(val)){
+          //File has as least two periods
+          if(key.indexOf(".",key.indexOf(".")+1)>=0){
+            var prefix = key.substr(0,key.indexOf("."));
+            var newkey = key.substr(key.indexOf(".")+1);
+            if(prefix && newkey){
+              if(!(prefix in node)) node[prefix] = {};
+              if(_.isString(node[prefix])) node[prefix] = { prefix: node[prefix] };
+              //Move node to element with prefix
+              if(!(newkey in node[prefix])) node[prefix][newkey] = '';
+              else node[prefix][newkey] += "\r\n";
+              node[prefix][newkey] += val;
+              if(_.isString(node[key])) delete node[key];
+            }
+          }
+        }
+      }
+      for(var key in node){
+        var val = node[key];
+        if(!_.isString(val)) processScriptPrefix(val);
+      }
+    }
+    processScriptPrefix(scripts);
+
+    rslt.SQLScripts[component] = scripts;
+  }
+
   return rslt;
 }
 jsHarmony.prototype.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
