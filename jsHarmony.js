@@ -39,7 +39,7 @@ var _INFO = 4;
 var _DBTYPES = ['pgsql', 'mssql', 'sqlite'];
 
 function jsHarmony(options) {
-  options = _.extend({ }, options);
+  options = _.extend({ silent: false }, options);
 
   this.EJS = [];
   this.EJSGrid = '';
@@ -61,7 +61,7 @@ function jsHarmony(options) {
   this._IMAGEMAGICK_FIELDS = [];
   //Constructor
   Init.validateGlobals();
-  console.log('Loading models...');
+  if(!options.silent) console.log('Loading models...');
   this.LoadSQL(path.dirname(module.filename) + '/sql/', global.dbconfig._driver.name, 'jsharmony');
   this.Cache['system.js'] = '';
   this.Cache['system.css'] = fs.readFileSync(path.dirname(module.filename)+'/jsHarmony.theme.css', 'utf8');
@@ -90,7 +90,7 @@ function jsHarmony(options) {
   else if(global.https_port) port_str += global.https_port;
   else portstr = '';
   */
-  console.log('::jsHarmony Server ready::');
+ if(!options.silent) console.log('::jsHarmony Server ready::');
 }
 
 /*******************

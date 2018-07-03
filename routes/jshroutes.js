@@ -315,7 +315,7 @@ var Routes = function (jsh, jshconfig) {
   router.post('/_db/exec', function (req, res, next) {
     if(!('SYSADMIN' in req._roles) && !('DEV' in req._roles)) return next();
     var sql = req.body.sql;
-    jsh.AppSrv.ExecMultiRecordset('login', sql, [], {}, function (err, dbrslt) {
+    jsh.AppSrv.ExecMultiRecordset(req._DBContext, sql, [], {}, function (err, dbrslt) {
       if(err){ err.sql = sql; return jsh.AppSrv.AppDBError(req, res, err); }
       rslt = {
         '_success': 1,

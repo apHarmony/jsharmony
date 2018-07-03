@@ -131,7 +131,7 @@ exports.getModelForm = function (req, res, modelid, Q, P, form_m) {
       else if (selecttype == 'single') { global.log('Missing parameter ' + fname); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
     }
     if (selecttype == 'single') verrors = _.merge(verrors, model.xvalidate.Validate('K', sql_params));
-    else if (selecttype == 'multiple') verrors = _.merge(verrors, model.xvalidate.Validate('F', sql_params));
+    else if (selecttype == 'multiple') verrors = _.merge(verrors, model.xvalidate.Validate('F', sql_params, undefined, undefined, undefined, { ignoreUndefined: true }));
     if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   }
   

@@ -410,13 +410,14 @@ exports.getDataLockSQL = function (req, fields, sql_ptypes, sql_params, verrors,
           if ((typeof frslt !== 'undefined') && (frslt === false)) continue;
           found_datalock = true;
           //Add field to parameters
-          if (!(('datalock_' + datalockid) in sql_params)) {
+          var datalockparamname = 'datalock_' + datalockid;
+          if (!(datalockparamname in sql_params)) {
             if (!('datalocktypes' in req.jshconfig)) throw new Error('Missing datalocktypes in config');
             if (!(datalockid in req.jshconfig.datalocktypes)) throw new Error('Missing DataLock type for ' + datalockid);
             var datalocktype = req.jshconfig.datalocktypes[datalockid];
             var dbtype = _this.getDBType(datalocktype);
             sql_ptypes.push(dbtype);
-            sql_params['datalock_' + datalockid] = this.DeformatParam(datalocktype, datalockval, verrors);
+            sql_params[datalockparamname] = this.DeformatParam(datalocktype, datalockval, verrors);
           }
         }
       }
