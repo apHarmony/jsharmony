@@ -57,7 +57,7 @@ exports.getTabCode = function (req, res, modelid, onComplete) {
     }
     else { global.log('Missing parameter ' + fname); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   }
-  this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, modelid);
+  this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, modelid);
   verrors = _.merge(verrors, model.xvalidate.Validate('K', sql_params));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   
@@ -77,17 +77,18 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
 
   var sql = '';
   var fieldlist = [];
+  var nodatalock = null;
   if (model.title){
     if(_.isString(model.title)) title = model.title;
     else if(model.title.add && Helper.access(targetperm,'I')){
       if(_.isString(model.title.add)) title = model.title.add;
-      else if(model.title.add.sql){ sql = model.title.add.sql; fieldlist = model.title.add.sql_params; }
+      else if(model.title.add.sql){ sql = model.title.add.sql; fieldlist = model.title.add.sql_params; nodatalock = model.title.add.nodatalock; }
     }
     else if(model.title.edit && Helper.access(targetperm,'BU')){
       if(_.isString(model.title.edit)) title = model.title.edit;
-      else if(model.title.edit.sql){ sql = model.title.edit.sql; fieldlist = model.title.edit.sql_params; }
+      else if(model.title.edit.sql){ sql = model.title.edit.sql; fieldlist = model.title.edit.sql_params; nodatalock = model.title.edit.nodatalock; }
     }
-    else if(model.title.sql){ sql = model.title.sql; fieldlist = model.title.sql_params; }
+    else if(model.title.sql){ sql = model.title.sql; fieldlist = model.title.sql_params; nodatalock = model.title.nodatalock; }
   }
   if(!sql){ 
     if(title) title = Helper.ResolveParams(req, title);
@@ -113,7 +114,10 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
   }
 
   //Add DataLock parameters to SQL 
-  this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, model.id);
+  this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) { 
+    if(Helper.access(targetperm,'I') && dfield.key) return false;
+    datalockqueries.push(datalockquery);
+  }, nodatalock, model.id);
   verrors = _.merge(verrors, model.xvalidate.Validate('*', sql_params, undefined, undefined, undefined, { ignoreUndefined: true }));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return false; }
   
@@ -166,7 +170,7 @@ exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
         var datalockstr = '';
         var dflt_sql_field_datalockqueries = [];
         var dflt_sql_field_param_datalocks = [];
-        _this.getDataLockSQL(req, [dflt], dflt_ptypes, dflt_params, dflt_verrors, function (datalockquery) { dflt_sql_field_datalockqueries.push(datalockquery); }, dflt.nodatalock, field.name + "_" + model.id + "_dflt");
+        _this.getDataLockSQL(req, model, [dflt], dflt_ptypes, dflt_params, dflt_verrors, function (datalockquery) { dflt_sql_field_datalockqueries.push(datalockquery); }, dflt.nodatalock, field.name + "_" + model.id + "_dflt");
         
         //Add lov parameters
         if ('sql_params' in dflt) {
@@ -179,7 +183,7 @@ exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
             dflt_params[dflt_pname] = null;
             if (dflt_pname in Q) {
               dflt_params[dflt_pname] = _this.DeformatParam(dflt_pfield, Q[dflt_pname], dflt_verrors);
-              _this.getDataLockSQL(req, model.fields, dflt_ptypes, dflt_params, dflt_verrors, function (datalockquery, dfield) {
+              _this.getDataLockSQL(req, model, model.fields, dflt_ptypes, dflt_params, dflt_verrors, function (datalockquery, dfield) {
                 if (dfield != dflt_pfield) return false;
                 dflt_sql_field_param_datalocks.push({ pname: dflt_pname, datalockquery: datalockquery, field: dfield });
                 return true;
@@ -240,7 +244,7 @@ exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks) {
     bcrumb_params[fname] = null;
     if (fname in Q) {
       bcrumb_params[fname] = _this.DeformatParam(field, Q[fname], verrors);
-      _this.getDataLockSQL(req, model.fields, bcrumb_ptypes, bcrumb_params, verrors, function (datalockquery, dfield) {
+      _this.getDataLockSQL(req, model, model.fields, bcrumb_ptypes, bcrumb_params, verrors, function (datalockquery, dfield) {
         if (dfield != field) return false;
         datalockqueries.push(datalockquery);
         if (bcrumb_sql_fieldlist.indexOf(fname) < 0) bcrumb_sql_fieldlist.push(fname);
@@ -277,7 +281,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks) {
       var param_datalocks = [];
       
       if (('sql' in lov) || ('sql2' in lov) || ('sqlmp' in lov)) {
-        _this.getDataLockSQL(req, [lov], lov_ptypes, lov_params, lov_verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, lov.nodatalock, field.name + "_" + model.id + "_lov");
+        _this.getDataLockSQL(req, model, [lov], lov_ptypes, lov_params, lov_verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, lov.nodatalock, field.name + "_" + model.id + "_lov");
         //Add lov parameters
         if ('sql_params' in lov) {
           var lov_pfields = _this.getFieldsByName(model.fields, lov.sql_params);
@@ -288,7 +292,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks) {
             lov_params[lov_pname] = null;
             if (lov_pname in Q) {
               lov_params[lov_pname] = _this.DeformatParam(lov_pfield, Q[lov_pname], lov_verrors);
-              _this.getDataLockSQL(req, model.fields, lov_ptypes, lov_params, lov_verrors, function (datalockquery, dfield) {
+              _this.getDataLockSQL(req, model, model.fields, lov_ptypes, lov_params, lov_verrors, function (datalockquery, dfield) {
                 if (dfield != lov_pfield) return false;
                 param_datalocks.push({ pname: lov_pname, datalockquery: datalockquery, field: dfield });
                 return true;

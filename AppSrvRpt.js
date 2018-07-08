@@ -109,7 +109,7 @@ AppSrvRpt.prototype.parseReportSQLData = function (req, res, model, sql_ptypes, 
     if (!('sql' in dparams)) throw new Error(dname + ' missing sql');
     //Add DataLock parameters to SQL 
     var datalockqueries = [];
-    thisapp.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, dparams.nodatalock);
+    thisapp.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, dparams.nodatalock);
     var skipdatalock = false;
     if ('nodatalock' in dparams) {
       var skipdatalock = true;
@@ -535,7 +535,7 @@ AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete
   
   //Add DataLock parameters to SQL 
   var datalockqueries = [];
-  thisapp.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
+  thisapp.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
   
   var sql = thisapp.db.sql.runReportJob(thisapp.jsh, model, datalockqueries);
   

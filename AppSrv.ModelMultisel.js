@@ -59,7 +59,7 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
   var sql_foreignkeyfields = this.getFieldsByName(model.fields, sql_foreignkeys);
   
   //Add DataLock parameters to SQL 
-  this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
+  this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
     if ('lovkey' in dfield) return false; //DATALOCK validation handled  below in prefix
     datalockqueries.push(datalockquery);
     return true;
@@ -68,7 +68,7 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
   var lov = lovfield.lov;
   if ('sql' in lov) {
     var datalockstr = '';
-    _this.getDataLockSQL(req, [lov], sql_ptypes, sql_params, verrors, function (datalockquery) {
+    _this.getDataLockSQL(req, model, [lov], sql_ptypes, sql_params, verrors, function (datalockquery) {
       lov_datalockqueries.push(datalockquery);
     }, null, modelid + '_lov');
     
@@ -98,7 +98,7 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
       var dbtype = _this.getDBType(field);
       sql_ptypes.push(dbtype);
       sql_params[fname] = _this.DeformatParam(field, Q[fname], verrors);
-      _this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
+      _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
         if (dfield != field) return false;
         param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
         return true;
@@ -181,7 +181,7 @@ exports.postModelMultisel = function (req, res, modelid, Q, P, onComplete) {
       if (Q[fname] == '%%%' + fname + '%%%') { subs.push(fname); Q[fname] = ''; }
       sql_params[fname] = _this.DeformatParam(field, Q[fname], verrors);
       //Add PreCheck, if type='F'
-      _this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
+      _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
         if (dfield != field) return false;
         param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
         return true;
@@ -192,7 +192,7 @@ exports.postModelMultisel = function (req, res, modelid, Q, P, onComplete) {
   
   //Add DataLock parameters to SQL 
   var datalockstr = '';
-  _this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
+  _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
     if ('lovkey' in dfield) return false; //DATALOCK lovkey validation not necessary here, this only checks existing data
     datalockqueries.push(datalockquery);
     return true;
@@ -200,7 +200,7 @@ exports.postModelMultisel = function (req, res, modelid, Q, P, onComplete) {
   
   var lov = lovfield.lov;
   if ('sql' in lov) {
-    _this.getDataLockSQL(req, [lov], sql_ptypes, sql_params, verrors, function (datalockquery) { lov_datalockqueries.push(datalockquery); });
+    _this.getDataLockSQL(req, model, model, [lov], sql_ptypes, sql_params, verrors, function (datalockquery) { lov_datalockqueries.push(datalockquery); });
     
     if ('sql_params' in lov) {
       var lov_pfields = _this.getFieldsByName(model.fields, lov.sql_params);

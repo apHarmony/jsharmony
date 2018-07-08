@@ -33,7 +33,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //Title with GET parameters:
     "<#=_GET.TO_ID#>"
     //Title with SQL lookup
-    { "sql":"select getdate()" }
+    { "sql":"select getdate()" } //"nodatalock":["C_ID"] (If applicable)
     //Title with separate Add/Edit titles
     {
       "add": "Add Customer",
@@ -41,15 +41,19 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     //Title with separate Add/Edit SQL lookups:
     {
-      "add": { "sql":"select getdate()" },
-      "edit": { "sql":"select c_name||' Contacts' from c where c_id=@c_id" }
+      "add": { "sql":"select getdate()" }, //"nodatalock":["C_ID"] (If applicable)
+      "edit": { "sql":"select c_name||' Contacts' from c where c_id=@c_id" } //"nodatalock":["C_ID"] (If applicable)
     }
     //If the title is not set, the caption will be used.  If the caption is not set, the model ID will be used
     //The topmost form's title will be used in the window title
     //If the title is set to blank on a tabbed form, the current tab's title will be used for the window title
   "topmenu": "clients",
   "actions": "B", //B,BI,BIU,BD,BID,BIUD
-  "roles": { "CLIENT": "*", "C_ADMIN": "B" }, //By default, only SYSADMIN & DEV have access
+  "roles": { "X_X": "*", "X_B": "B" }, //By default, only SYSADMIN & DEV have access.  Permissions only assigned to "main" site, not "client" site
+  "roles": 
+    "main":   { "SYSADMIN": "*", "*": "B" },
+    "client": { "C*": "B" }
+  },
   "scope": "*", //Scope is not used
   "popup": [ 1000, 900 ],
   "sort": [ "^E_Name asc", "^C_Name" ], //^ = Ascending or v = Descending
@@ -88,9 +92,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   //    routetypes: onepage, model, d, d_transaction, csv, report, d_report, d_report_html, d_reportjob
   //    params = { query: {...}, post: {...} }
   "nokey": 1, //No primary key - only browse
+  "nodatalock": ["C_ID"],
   "unbound": 1, //Disable any AppSrv operations
   "tabs": [
-    { "name": "General", "caption": "General Info", "target": "C", "bindings": { "C_ID": "C_ID" }, "showcode": ["VIEW","EDIT"] },
+    { "name": "General", "caption": "General Info", "target": "C", "bindings": { "C_ID": "C_ID" }, "showcode": ["VIEW","EDIT"],
+      "roles": { "main": ["*"], "client": ["CX_B","CX_X"] }
+    },
     { "name": "General", "__REMOVE__": 1 }
     //showcode - If the value of the column defined in model.tabcode is not one of the values of showcode, hide the tab entirely
     //To hide a tab in an inherited form, use "General": null
@@ -105,7 +112,16 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "codeval": "J_ID", //Used internally by program for popuplov child grid
   "disableautoload": 1, //Disables autoload in grid on scroll to bottom
   "buttons": [
-    { "link": "add:H", "icon": "add", "text": "Add %%%CAPTION%%%", "actions": "I", "bindings": { "N_SCOPE_ID": "N_SCOPE_ID", "N_SCOPE": "'C'", "C_ID":  "N_SCOPE_ID", "N_TYPE":  "'C'" }, "style": "", "class": "", "roles": { "CLIENT": "*", "C_ADMIN": "B" }, "nl": 1 }, //or just put the link for add
+    { 
+      "link": "add:H", 
+      "icon": "add", 
+      "text": "Add %%%CAPTION%%%", 
+      "actions": "I", 
+      "bindings": { "N_SCOPE_ID": "N_SCOPE_ID", "N_SCOPE": "'C'", "C_ID":  "N_SCOPE_ID", "N_TYPE":  "'C'" }, 
+      "style": "", 
+      "class": "", 
+      "roles": { "client": { "CLIENT": "*", "C_ADMIN": "B" } }, 
+      "nl": 1 }, //or just put the link for add
     {"link":"js:C_LOVBAR_Add(this,xformid);", "icon": "add", "text": "Add Customer", "actions": "B" },
     {"link": "savenew:", "icon": "add", "text": "Save and New", "actions": "IU" }
     {"link": "savenew:", "icon": "add", "text": "Save and New", "actions": "IU", "group":"Actions" }
@@ -233,7 +249,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                        "onpopup": "console.log('popup');", //(popupmodelid, parentmodelid, fieldid, onComplete)
                        "popupiconstyle": "display:none;",
                       },
-      "default": "js:moment().format()", // or just "USA" for literals, or { "sql": "select C_Name from C where C_ID=@C_ID", "sql_params": ["C_ID"] }
+      "default": "USA",
+      "default": "js:moment().format()",
+      "default": { "sql": "select C_Name from C where C_ID=@C_ID", "sql_params": ["C_ID"] }, //"nodatalock":["C_ID"] (If applicable)
       "readonly": 1,
       //for subform, popuplov
       "target": "E_Name",

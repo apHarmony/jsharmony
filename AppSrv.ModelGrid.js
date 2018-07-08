@@ -175,7 +175,7 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
     }
   }
   //Add DataLock parameters to SQL 
-  this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, modelid);
+  this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, modelid);
   verrors = _.merge(verrors, model.xvalidate.Validate('BFK', sql_params, undefined, undefined, undefined, { ignoreUndefined: true }));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   

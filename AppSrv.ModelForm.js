@@ -87,8 +87,10 @@ exports.getModelForm = function (req, res, modelid, Q, P, form_m) {
   }
   var sql_allkeyfields = this.getFieldsByName(model.fields, sql_allkeys);
   
-  //Add DataLock parameters to SQL 
-  this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, modelid);
+  //Add DataLock parameters to SQL
+  var skipDataLocks = [];
+  if(is_new) skipDataLocks = skipDataLocks.concat(keylist);
+  this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, modelid, { skipDataLocks: skipDataLocks });
   
   if (selecttype == 'multiple') {
     var dsort = new Array();
@@ -282,7 +284,7 @@ exports.putModelForm = function (req, res, modelid, Q, P, onComplete) {
         else throw new Error('Missing parameter ' + fname);
       });
       //Add DataLock parameters to Encryption SQL 
-      _this.getDataLockSQL(req, model.fields, enc_sql_ptypes, enc_sql_params, verrors, function (datalockquery) { enc_datalockqueries.push(datalockquery); });
+      _this.getDataLockSQL(req, model, model.fields, enc_sql_ptypes, enc_sql_params, verrors, function (datalockquery) { enc_datalockqueries.push(datalockquery); });
     }
     
     var subs = [];
@@ -298,7 +300,7 @@ exports.putModelForm = function (req, res, modelid, Q, P, onComplete) {
         sql_params[fname] = _this.DeformatParam(field, P[fname], verrors);
         //Add PreCheck, if type='F'
         if (Helper.access(field.actions, 'F')) {
-          _this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
+          _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
             if (dfield != field) return false;
             param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
             return true;
@@ -439,7 +441,7 @@ exports.postModelForm = function (req, res, modelid, Q, P, onComplete) {
         sql_params[fname] = _this.DeformatParam(field, P[fname], verrors);
         //Add PreCheck, if type='F'
         if (Helper.access(field.actions, 'F')) {
-          _this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
+          _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
             if (dfield != field) return false;
             param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
             return true;
@@ -450,7 +452,7 @@ exports.postModelForm = function (req, res, modelid, Q, P, onComplete) {
     });
     
     //Add DataLock parameters to SQL 
-    _this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
+    _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
     
     verrors = _.merge(verrors, model.xvalidate.Validate('UK', _.merge(vfiles, sql_params), '', vignorefiles, req._roles));
     if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
@@ -544,7 +546,7 @@ exports.deleteModelForm = function (req, res, modelid, Q, P, onComplete) {
   });
   
   //Add DataLock parameters to SQL 
-  _this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
+  _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
   
   verrors = _.merge(verrors, model.xvalidate.Validate('K', sql_params));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }

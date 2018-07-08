@@ -82,7 +82,7 @@ exports.postModelExec = function (req, res, modelid, Q, P, onComplete) {
       sql_params[fname] = _this.DeformatParam(field, P[fname], verrors);
       //Add PreCheck for any datalock fields
       if ('datalock' in field) {
-        _this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
+        _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
           if (dfield != field) return false;
           param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
           return true;
@@ -93,7 +93,7 @@ exports.postModelExec = function (req, res, modelid, Q, P, onComplete) {
   });
   
   //Add DataLock parameters to SQL 
-  _this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
+  _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
   
   verrors = _.merge(verrors, model.xvalidate.Validate('UK', sql_params));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }

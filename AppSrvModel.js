@@ -236,8 +236,16 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
         for(var i=0; i<model.tabs.length;i++){
           var tab = model.tabs[i];
           var tabname = tab.name;
+          //Initially, thought to disable hiding based on role, because
+          //  a. Roles should define effective permissions
+          //  b. "Hiding" based on roles is confusing to the developer and user.
+          //  This should be handled via inheritance instead
+          //Then, added it back, because it is such a hassle to need to
+          //redeclare inheritance for nested forms just to remove one tab
+          //var tabmodel = jsh.getModel(req, tab.target);
           //if (!ejsext.access(req, model, targetperm, tab.actions)) continue;
-          //if('roles' in tab) if (!ejsext.access(req, tab, targetperm, tab.actions)) continue;
+          if('roles' in tab) if (!ejsext.access(req, tab, 'B')) continue;
+          //if(!Helper.HasModelAccess(req, tabmodel, 'B')) continue;
           if (tab.showcode) {
             if (_.includes(tab.showcode, tabcode)) {
               showtabs.push(tabname);

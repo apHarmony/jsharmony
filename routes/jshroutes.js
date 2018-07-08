@@ -31,7 +31,7 @@ var url = require('url');
 
 var Routes = function (jsh, jshconfig) {
   if(!jshconfig) jshconfig = {};
-  Routes.ValidateSystemConfig(jshconfig);
+  Routes.ValidateSiteConfig(jshconfig);
   var router = express.Router();
   router.jsh = jsh;
   router.jshconfig = jshconfig;
@@ -337,7 +337,11 @@ var Routes = function (jsh, jshconfig) {
   return router;
 };
 
-Routes.ValidateSystemConfig = function(jshconfig){
+Routes.ValidateSiteConfig = function(jshconfig){
+  if(!jshconfig.id){
+    console.log('jsHarmony Site ID not set, defaulting to "main"');
+    jshconfig.id = 'main';
+  }
   if(Helper.notset(jshconfig.basetemplate)) jshconfig.basetemplate = 'index';
   if(Helper.notset(jshconfig.baseurl)) jshconfig.baseurl = '/';
   if(Helper.notset(jshconfig.show_system_errors)) jshconfig.show_system_errors = true;
@@ -393,18 +397,28 @@ function processModelQuerystring(jsh, req, modelid) {
   if (!jsh.hasModel(req, modelid)) return;
   req.forcequery = {};
   var model = jsh.getModel(req, modelid);
-  if (!('querystring' in model)) return;
-  var qs = model.querystring;
+  var qs = model.querystring||{};
+  var foundq = [];
   for (qkey in model.querystring) {
     if (qkey.length < 2) continue;
     var qtype = qkey[0];
     var qkeyname = qkey.substr(1);
+    foundq.push(qkeyname);
     if ((qtype == '&') || ((qtype == '|') && !(qkeyname in req.query))) {
       var qval = model.querystring[qkey];
       qval = Helper.ResolveParams(req, qval);
       //Resolve qval
       req.query[qkeyname] = qval;
       req.forcequery[qkeyname] = qval;
+    }
+  }
+  //Add querystring parameters for datalocks
+  for(var datalockid in req.jshconfig.datalock){
+    if(_.includes(foundq, datalockid)) continue;
+    if(!(datalockid in req.query)){
+      var qval = Helper.ResolveParams(req, '@'+datalockid);
+      req.query[datalockid] = qval;
+      req.forcequery[datalockid] = qval;
     }
   }
 }

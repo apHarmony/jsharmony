@@ -140,7 +140,8 @@ jsHarmony.prototype.LoadModels = function (modelbasedir, modeldir, prefix, dbtyp
       var col = ['default_buttons', 'field_mapping', 'ui_field_mapping', 'datalocks', 'salts', 'passwords', 'macros', 'model_groups', 'dynamic_bindings'];
       _.each(col, function(c){ if(!(c in _this.Config)) _this.Config[c] = {}; });
       for (var c in model) {
-        if (_.includes(col, c)) {
+        if(c=='datalocks') _.merge(this.Config[c],model[c]);
+        else if (_.includes(col, c)) {
           for (var cc in model[c]) this.Config[c][cc] = model[c][cc];
         }
         else if(c=='system_settings') _.extend(this.Config[c],model[c]);
@@ -595,16 +596,25 @@ jsHarmony.prototype.ParseEntities = function () {
   var base_controls = ["label", "html", "textbox", "textzoom", "dropdown", "date", "textarea", "hidden", "subform", "html", "password", "file_upload", "file_download", "button", "linkbutton", "tree", "checkbox"];
   var base_datatypes = ['DATETIME','VARCHAR','CHAR','BOOLEAN','BIGINT','INT','SMALLINT','TINYINT','DECIMAL','FLOAT','DATE','DATETIME','TIME','ENCASCII','HASH','FILE','BINARY'];
   var all_keys = {};
+  var all_lovs = {};
   _.forOwn(this.Models, function (model) {
     _.each(model.fields, function (field) {
-      if(field.key && field.name){
-        if(!(field.name in all_keys)) all_keys[field.name] = [];
-        all_keys[field.name].push(model);
+      if(field.name){
+        if(field.key){
+          if(!(field.name in all_keys)) all_keys[field.name] = [];
+          all_keys[field.name].push(model.id);
+        }
+        if((field.lov && (field.lov.sql||field.lov.sql2||field.lov.sqlmp||field.lov.sqlselect))||(field.popuplov)){
+          if(!(field.name in all_lovs)) all_lovs[field.name] = [];
+          all_lovs[field.name].push(model.id);
+        }
       }
     });
   });
   _.forOwn(this.Models, function (model) {
     model.xvalidate = new XValidate();
+    if ('sites' in model) LogEntityError(_WARNING, 'Model ' + model.id + ' had previous "sites" attribute - overwritten by system value');
+    model.sites = Helper.GetRoleSites(model.roles);
     if (!('table' in model)) LogEntityError(_WARNING, 'Model ' + model.id + ' missing table');
     if (!('actions' in model)) LogEntityError(_WARNING, 'Model ' + model.id + ' missing actions');
     //Add Model caption if not set
@@ -696,7 +706,8 @@ jsHarmony.prototype.ParseEntities = function () {
         if(!Helper.access(field.actions, 'F')){
           if(_this.Config.system_settings.automatic_parameters){
             var add_foreignkey = false;
-            if (('control' in field) && ((field.lov && (field.lov.sql||field.lov.sql2||field.lov.sqlmp||field.lov.sqlselect))||(field.popuplov))){ add_foreignkey = 'lov'; }
+            //Disabled this check, because lov's with "nodatalock" should not be tagged with the foreign key
+            //if (('control' in field) && ((field.lov && (field.lov.sql||field.lov.sql2||field.lov.sqlmp||field.lov.sqlselect))||(field.popuplov))){ add_foreignkey = 'lov'; }
             //Check if the field is in the list of key fields
             if (field.name && (field.name in all_keys)){ add_foreignkey = 'key'; }
             //Do not add foreign keys for Multisel LOV
@@ -871,13 +882,13 @@ jsHarmony.prototype.ParseEntities = function () {
       }
     });
     
-    //Automatically add C (breadcrumb parameter) based on lov.sqlparams
-    if (model.breadcrumbs && model.breadcrumbs.sql_params && !model.fields) LogEntityError(_ERROR, model.id + ': Cannot use breadcrumb sql params without any fields defined.');
-    else if (model.fields && model.breadcrumbs && model.breadcrumbs.sql_params) _.each(model.breadcrumbs.sql_params, function (sql_param) {
-      var sql_param_field = AppSrv.prototype.getFieldByName(model.fields, sql_param);
-      if (!sql_param_field) LogEntityError(_ERROR, model.id + ' > ' + sql_param + ': Breadcrumb sql param "' + sql_param + '" is not defined as a field');
-      else if (!Helper.access(sql_param_field.actions, 'C')) { if (!sql_param_field.actions) sql_param_field.actions = ''; sql_param_field.actions += 'C'; }
-    });
+    //Automatically add C (breadcrumb parameter) for breadcrumb and title sql_params
+    _this.AddSqlParamsFieldFlags(model, model.breadcrumbs, 'Breadcrumb');
+    if(model.title){
+      _this.AddSqlParamsFieldFlags(model, model.title, 'Title');
+      _this.AddSqlParamsFieldFlags(model, model.title.add, 'Title.Add');
+      _this.AddSqlParamsFieldFlags(model, model.title.edit, 'Title.Edit');
+    }
 
     //Automatically add C based on default fields
     if(model.fields){
@@ -912,14 +923,14 @@ jsHarmony.prototype.ParseEntities = function () {
 
     //Validate Model and Field Parameters
     var _v_model = [
-      'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev',
+      'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites',
       'samplerepeat', 'topmenu', 'id', 'idmd5', 'access_models', '_inherits', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
       'pagesettings', 'pageheader', 'pageheaderjs', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue',
       'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'nogridadd', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_filter', 'grid_save_before_update', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
       'js', 'ejs', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
-      'nokey', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
+      'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
       'path', 'component', 'templates',
       //Report Parameters
       'subheader', 'footerheight', 'headeradd',
@@ -974,7 +985,22 @@ jsHarmony.prototype.ParseEntities = function () {
       model.xvalidate.AddValidator('_obj.' + field.name, field.caption, field.actions, _this.GetValidatorFuncs(field.validate), field.roles);
     });
   });
+
+  //Validate and parse _config datalocks
+  var validDatalocks = true;
+  if(_this.Config.datalocks) for(var siteid in _this.Config.datalocks){
+    var sitedatalocks = _this.Config.datalocks[siteid];
+    if(_.isString(sitedatalocks)){ LogEntityError(_ERROR, 'Invalid datalocks syntax in _config for site: '+siteid); validDatalocks = false; }
+    else{
+      for(var datalockid in sitedatalocks){
+        if(_.isString(sitedatalocks[datalockid])){ LogEntityError(_ERROR, 'Invalid datalocks syntax in _config for site: '+siteid+', datalock: '+datalockid); validDatalocks = false; }
+        else ParseMultiLineProperties(sitedatalocks[datalockid],_.keys(sitedatalocks[datalockid]));
+      }
+    }
+  }
   
+  //Validate Parent/Child Bindings and generate list of Foreign Keys
+  var all_foreignkeys = {};
   _.forOwn(_this.Models, function (model) {
 
     //Verify bindings are set up properly
@@ -996,9 +1022,107 @@ jsHarmony.prototype.ParseEntities = function () {
         }
       }
     }
+    
+    //Generate list of foreign keys
+    _.each(model.fields, function (field) {
+      if(field.name){
+        if(field.foreignkey){
+          if(!(field.name in all_foreignkeys)) all_foreignkeys[field.name] = [];
+          all_foreignkeys[field.name].push(model.id);
+        }
+      }
+    });
   });
 
-  ParseMultiLineProperties(_this.Config.datalocks,_.keys(_this.Config.datalocks));
+  //Validate Datalocks
+  if(validDatalocks) _.forOwn(_this.Models, function (model) {
+    var datalockSearchOptions = {};
+    if(global.jshSettings.case_insensitive_datalocks) datalockSearchOptions.caseInsensitive = true;
+
+    for(var siteid in _this.Config.datalocks){
+      if((siteid=='main') || (model.roles && model.roles[siteid] && !_.isString(model.roles[siteid]))){
+        for(var datalockid in _this.Config.datalocks[siteid]){
+
+          function skip_datalock(element, datalockid, datalockSearchOptions){ return (element && element.nodatalock && (Helper.arrayIndexOf(element.nodatalock,datalockid,datalockSearchOptions) >= 0)); }
+
+          //----------------------
+
+          var skip_datalock_model = skip_datalock(model, datalockid, datalockSearchOptions);
+          var skip_datalock_title = skip_datalock(model.title, datalockid, datalockSearchOptions);
+          var skip_datalock_title_add = model.title && skip_datalock(model.title.add, datalockid, datalockSearchOptions);
+          var skip_datalock_title_edit = model.title && skip_datalock(model.title.edit, datalockid, datalockSearchOptions);
+
+          if(skip_datalock_model) continue;
+
+          //Check if datalocks are missing from any SQL statements that require them
+          if(model.title){
+            if(!skip_datalock_title) _this.CheckDatalockSQL(model, model.title.sql, 'Title');
+            if(model.title.add && !skip_datalock_title_add) _this.CheckDatalockSQL(model, model.title.add.sql, 'Title.Add');
+            if(model.title.edit && !skip_datalock_title_edit) _this.CheckDatalockSQL(model, model.title.edit.sql, 'Title.Edit');
+          }
+          //Do not require breadcrumb datalocks, because in order to access them, the keys / foreign keys already need to be validated anyway
+          //if(model.breadcrumbs) _this.CheckDatalockSQL(model, model.breadcrumbs.sql, 'Breadcrumbs');
+          _.each(['sqlselect','sqlinsert','sqlupdate','sqldelete','sqlexec','sqlrowcount','sqldownloadselect','sqlinsertencrypt'],
+            function(sqlkey){ _this.CheckDatalockSQL(model, model[sqlkey], sqlkey); });
+
+          _.each(model.fields, function (field) {
+            var skip_datalock_lov = skip_datalock(field.lov, datalockid, datalockSearchOptions);
+            var skip_datalock_default = skip_datalock(field.default, datalockid, datalockSearchOptions);
+
+            //Check if datalocks are missing from any SQL statements that require them
+            if(field.lov && !skip_datalock_lov) _.each(['sql','sql2','sqlmp'],function(sqlkey){
+              if(field.lov[sqlkey]){
+                _this.CheckDatalockSQL(model, field.lov[sqlkey], field.name + ' > ' + sqlkey);
+                if(!field.lov.datalock || !Helper.arrayItem(field.lov.datalock,datalockid,datalockSearchOptions)) LogEntityError(_ERROR, model.id + ' > ' + field.name + ' > ' + sqlkey + ': Missing datalock '+siteid+'::'+datalockid+' on lov');
+              }
+            });
+            if(field.default && !skip_datalock_default){
+              if(field.default.sql){
+                _this.CheckDatalockSQL(model, field.default.sql, field.name + ' > Default');
+                if(!field.default.datalock || !Helper.arrayItem(field.default.datalock,datalockid,datalockSearchOptions)) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': Missing datalock '+siteid+'::'+datalockid+' on default');
+              }
+            }
+
+            //If datalock exists, continue to next field
+            if(field.datalock && Helper.arrayItem(field.datalock,datalockid,datalockSearchOptions)) return;
+            //Do not require datalocks on Multisel LOV
+            if ((model.layout=='multisel') && field.lov) return;
+
+            //Auto-add datalocks
+            if(_this.Config.system_settings.automatic_datalocks){
+              //Check if any KFC field is missing a datalock
+              if(field.key) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
+              else if(field.foreignkey) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
+              else if(Helper.access(field.actions, 'C')) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
+              //Lovkey parameters in multisel
+              else if((model.layout=='multisel') && field.lovkey) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
+              //Check if any custom LOV is missing a datalock
+              else if(!skip_datalock_lov && ((field.lov && (field.lov.sql||field.lov.sql2||field.lov.sqlmp||field.lov.sqlselect))||(field.popuplov))) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
+              //Any key fields + any fields defined as foreign keys elsewhere + any LOVs
+              else if(_.includes(all_keys, field.name)) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
+              else if(_.includes(all_foreignkeys, field.name)) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
+              else if(_.includes(all_lovs, field.name)) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
+              //Any Exec / U fields with a datalock defined
+              if ((model.layout=='exec') && Helper.access(field.actions, 'U') && Helper.arrayItem(_this.Config.datalocks[siteid][datalockid],field.name,datalockSearchOptions)) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
+
+              //If datalock was added, continue to next field
+              if(field.datalock && Helper.arrayItem(field.datalock,datalockid,datalockSearchOptions)) return;
+            }
+
+            //Check if any KFC field is missing a datalock
+            if(field.key) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': Missing datalock on key '+siteid+'::'+datalockid);
+            else if(field.foreignkey) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': Missing datalock on foreign key '+siteid+'::'+datalockid);
+            else if(Helper.access(field.actions, 'C')) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': Missing datalock on sql param '+siteid+'::'+datalockid);
+            //Lovkey parameters in multisel
+            else if((model.layout=='multisel') && field.lovkey) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': Missing datalock on multisel lovkey '+siteid+'::'+datalockid);
+            //Check if any custom LOV is missing a datalock
+            else if(!skip_datalock_lov && ((field.lov && (field.lov.sql||field.lov.sql2||field.lov.sqlmp||field.lov.sqlselect))||(field.popuplov))) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': Missing datalock on lov '+siteid+'::'+datalockid);
+          });
+
+        }
+      }
+    }
+  });  
 };
 
 function ParseMultiLineProperties(obj, arr) {
@@ -1020,13 +1144,34 @@ jsHarmony.prototype.AddSqlParams = function(model, element, props){
       for(var i=0;i<params.length;i++){
         var pfield = AppSrv.prototype.getFieldByName(model.fields, params[i]);
         if (!Helper.access(pfield.actions, 'F') && !pfield.key){ pfield.actions += 'F'; }
-        //Investigate why this is necessary xxxxxxxxxxxx
-        //if(!pfield.key && !('lovkey' in pfield)) pfield.lovkey = 1;
-        //Also, now the Insert does not work without the "c_id"
       }
       element.sql_params = params;
     }
   }
+}
+
+jsHarmony.prototype.AddSqlParamsFieldFlags = function(model, element, desc){
+  if (element && element.sql_params && !model.fields) LogEntityError(_ERROR, model.id + ': Cannot use '+desc+' sql_params without any fields defined.');
+  else if (model.fields && element && element.sql_params) _.each(element.sql_params, function (sql_param) {
+    var sql_param_field = AppSrv.prototype.getFieldByName(model.fields, sql_param);
+    if (!sql_param_field) LogEntityError(_ERROR, model.id + ' > ' + sql_param + ': '+desc+' sql param "' + sql_param + '" is not defined as a field');
+    else if (!Helper.access(sql_param_field.actions, 'C')) { if (!sql_param_field.actions) sql_param_field.actions = ''; sql_param_field.actions += 'C'; }
+  });
+}
+
+jsHarmony.prototype.CheckDatalockSQL = function(model, sql, desc){
+  if(!sql) return;
+  if (!(sql.indexOf('%%%DATALOCKS%%%') >= 0)) LogEntityError(_ERROR, model.id + ' > ' + desc + ': SQL missing %%%DATALOCKS%%% in query');
+}
+
+jsHarmony.prototype.AddFieldDatalock = function(model, field, siteid, datalockid, datalockSearchOptions){
+  var datalocks = this.Config.datalocks[siteid][datalockid];
+  var datalockquery = Helper.arrayKey(datalocks,field.name,datalockSearchOptions);
+  if(datalockquery){
+    if(!field.datalock) field.datalock = {};
+    field.datalock[datalockid] = datalockquery;
+  }
+  else LogEntityError(_ERROR, model.id + ' > ' + field.name + ': Could not auto-add datalock - please define in _config.datalocks.'+siteid+'.'+datalockid+'.'+field.name);
 }
 
 jsHarmony.prototype.AddBindings = function(model, element, elementname, options){
@@ -1120,6 +1265,32 @@ jsHarmony.prototype.isInModelGroup = function(modelid, modelgroupid){
 }
 
 function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
+
+  function validateSiteAccess(model, tmodel, prefix, suffix, roles){
+    var childSites = _.intersection(model.sites, tmodel.sites);
+    var parentSites = model.sites;
+    if(roles){
+      var roleSites = Helper.GetRoleSites(roles);
+      childSites = _.intersection(childSites, roleSites);
+      parentSites = _.intersection(parentSites, roleSites);
+    }
+    if(childSites.length != parentSites.length){
+      LogEntityError(_ERROR, (prefix||'') + 'Target model "' + tmodel.id + '" not defined for site: '+_.difference(model.sites, _.intersection(model.sites, tmodel.sites)).join(', ') +(suffix?' in link expression "'+suffix+'"':'')); return
+    }
+  }
+
+  function validateSiteLinks(model, link, prefix, suffix, roles){
+    if(!link) return;
+    var linkTarget = jsh.parseLink(link);
+    if(!linkTarget.modelid) return;
+    if(linkTarget.modelid.substr(0,3)=='js:') return;
+    if (!(linkTarget.modelid in jsh.Models)) { LogEntityError(_ERROR, (prefix||'') + 'Link Target model "' + linkTarget.modelid + '" not found'+(suffix?' in link expression "'+suffix+'"':'')); return }
+    var linkModel = jsh.Models[linkTarget.modelid];
+    validateSiteAccess(model, linkModel, prefix, suffix, roles);
+  }
+
+  //-----------------------
+
   if ('tabs' in model) for (var i=0;i<model.tabs.length;i++) {
     var tab = model.tabs[i];
     var tabname = tab.name;
@@ -1128,21 +1299,39 @@ function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
     if (!('target' in tab)) { LogEntityError(_ERROR, model.id + ' > Tab ' + tabname + ': Invalid tab format - missing target'); return }
     if (!('bindings' in tab)) { LogEntityError(_ERROR, model.id + ' > Tab ' + tabname + ': Invalid tab format - missing bindings'); return }
     if (!(tab.target in jsh.Models)) { LogEntityError(_ERROR, model.id + ' > Tab ' + tabname + ': Target model "' + tab.target + '" not found'); return }
+    if (tab.roles) {
+      if(_.isArray(tab.roles)) tab.roles = { "main": tab.roles };
+      for(var siteid in tab.roles){
+        if(!_.isArray(tab.roles[siteid])) { LogEntityError(_ERROR, model.id + ' > Tab ' + tabname + ': Invalid tab roles format - please use { "siteid": ["role1", "role2"] }'); return }
+        //Convert tab roles into standard roles format "role":"perm"
+        var rolesObj = {};
+        for(var j=0;j<tab.roles[siteid].length;j++) rolesObj[tab.roles[siteid][j]] = 'B';
+        tab.roles[siteid] = rolesObj;
+      }
+    }
     var tmodel = jsh.Models[tab.target];
     tmodel.access_models[srcmodelid] = srcaccess;
+    validateSiteAccess(model, tmodel, model.id + ' > Tab ' + tabname + ': ', '', tab.roles);
     ParseAccessModels(jsh, tmodel, srcmodelid, srcaccess);
   }
   if ('duplicate' in model) {
     if (!(model.duplicate.target in jsh.Models)) { LogEntityError(_WARNING, 'Invalid duplicate model ' + model.duplicate + ' in ' + model.id); return }
     var tmodel = jsh.Models[model.duplicate.target];
     tmodel.access_models[srcmodelid] = srcaccess;
+    validateSiteAccess(model, tmodel, model.id + ' > Duplicate model ' + model.duplicate + ': ', '');
+    validateSiteLinks(model, model.duplicate.link, model.id + ' > Duplicate model ' + model.duplicate + ' link: ', model.duplicate.link);
     ParseAccessModels(jsh, tmodel, srcmodelid, srcaccess);
   }
+  _.each(model.buttons, function (button) {
+    validateSiteLinks(model, button.link, model.id + ' > Button link: ', button.link, button.roles);
+  });
   _.each(model.fields, function (field) {
     if (('target' in field) && ((field.control == 'subform') || (field.popuplov))) {
       if (!(field.target in jsh.Models)) { LogEntityError(_WARNING, 'Invalid ' + field.control + ' target model ' + field.target + ' in ' + model.id); return }
       var tmodel = jsh.Models[field.target];
       tmodel.access_models[srcmodelid] = srcaccess;
+      validateSiteAccess(model, tmodel, model.id + ' > ' + field.control + ': ', '', field.roles);
+      validateSiteLinks(model, field.link, model.id + ' > ' + field.control + ' link: ', field.link, field.roles);
       ParseAccessModels(jsh, tmodel, srcmodelid, srcaccess);
     }
   });

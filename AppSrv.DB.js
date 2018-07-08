@@ -387,8 +387,10 @@ exports.addSearchTerm = function (field, search_i, in_search_value, comparison, 
   return '';
 }
 
-exports.getDataLockSQL = function (req, fields, sql_ptypes, sql_params, verrors, fPerDataLock, nodatalock, descriptor) {
+exports.getDataLockSQL = function (req, model, fields, sql_ptypes, sql_params, verrors, fPerDataLock, nodatalock, descriptor, options) {
   if (!('datalock' in req.jshconfig)) return;
+  descriptor =  (descriptor ? ' (' + descriptor + ')' : '');
+  options = _.extend({ skipDataLocks: [] }, options);
   var _this = this;
   if (!nodatalock) nodatalock = '';
   var arrayOptions = {};
@@ -396,24 +398,29 @@ exports.getDataLockSQL = function (req, fields, sql_ptypes, sql_params, verrors,
 
   for (datalockid in req.jshconfig.datalock) {
     if ((typeof nodatalock != 'undefined') && (Helper.arrayIndexOf(nodatalock,datalockid,arrayOptions) >= 0)) continue;
+    if(model && Helper.arrayIndexOf(model.nodatalock,datalockid,arrayOptions) >= 0) continue;
     var found_datalock = false;
     datalockval = req.jshconfig.datalock[datalockid](req);
     for (i = 0; i < fields.length; i++) {
       var field = fields[i];
+      if(Helper.arrayIndexOf(options.skipDataLocks,field.name,arrayOptions) >= 0) continue;
       if ('datalock' in field) {
         var datalockqueryid = Helper.arrayItem(field.datalock,datalockid,arrayOptions);
         if (datalockqueryid) {
           if (!('datalocks' in this.jsh.Config)) throw new Error("No datalocks in config");
-          var datalockquery = Helper.arrayItem(this.jsh.Config.datalocks,datalockqueryid,arrayOptions);
-          if (!datalockquery) throw new Error("Datalock query '" + datalockqueryid + "' not defined in config");
+          if(!(req.jshconfig.id in this.jsh.Config.datalocks)) throw new Error("Site '"+req.jshconfig.id+"' not defined in datalocks");
+          var datalocks = Helper.arrayItem(this.jsh.Config.datalocks[req.jshconfig.id],datalockid,arrayOptions);
+          if(!datalocks) throw new Error("Datalock '"+datalockid+"' not defined in site datalocks");
+          var datalockquery = Helper.arrayItem(datalocks,datalockqueryid,arrayOptions);
+          if (!datalockquery) throw new Error("Datalock query '" + datalockqueryid + "' not defined in config for site "+req.jshconfig.id+", datalock: "+datalockid);
           var frslt = fPerDataLock(datalockquery, field);
           if ((typeof frslt !== 'undefined') && (frslt === false)) continue;
           found_datalock = true;
           //Add field to parameters
           var datalockparamname = 'datalock_' + datalockid;
           if (!(datalockparamname in sql_params)) {
-            if (!('datalocktypes' in req.jshconfig)) throw new Error('Missing datalocktypes in config');
-            if (!(datalockid in req.jshconfig.datalocktypes)) throw new Error('Missing DataLock type for ' + datalockid);
+            if (!('datalocktypes' in req.jshconfig)) throw new Error('Missing datalocktypes in config' + descriptor);
+            if (!(datalockid in req.jshconfig.datalocktypes)) throw new Error('Missing DataLock type for ' + datalockid + descriptor);
             var datalocktype = req.jshconfig.datalocktypes[datalockid];
             var dbtype = _this.getDBType(datalocktype);
             sql_ptypes.push(dbtype);
@@ -421,12 +428,12 @@ exports.getDataLockSQL = function (req, fields, sql_ptypes, sql_params, verrors,
           }
         }
       }
-      else if (field.key) throw new Error('Missing DataLock for key.');
-      else if (('actions' in field) && (Helper.access(field.actions, 'F'))) throw new Error('Missing DataLock for foreign key ' + field.name);
-      else if (('actions' in field) && (Helper.access(field.actions, 'C'))) throw new Error('Missing DataLock for breadcrumb key ' + field.name);
+      else if (field.key) throw new Error('Missing DataLock for key ' + field.name + descriptor);
+      else if (('actions' in field) && (Helper.access(field.actions, 'F'))) throw new Error('Missing DataLock for foreign key ' + field.name + descriptor);
+      else if (('actions' in field) && (Helper.access(field.actions, 'C'))) throw new Error('Missing DataLock for breadcrumb key ' + field.name + descriptor);
     }
     //if(!found_datalock){ console.log(fields); } //Use for debugging
-    if (!found_datalock) throw new Error('DataLock ' + datalockid + ' not found.' + (descriptor ? ' (' + descriptor + ')' : ''));
+    if (!found_datalock) throw new Error('DataLock ' + datalockid + ' not found.' + descriptor);
   }
 };
 

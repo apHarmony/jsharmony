@@ -197,7 +197,7 @@ exports.Download = function (req, res, modelid, keyid, fieldid, options) {
     var fields = _this.getFieldsByName(model.fields, fieldlist);
     
     //Add DataLock parameters to SQL 
-    this.getDataLockSQL(req, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
+    this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
     //Add keys as SQL parameters
     var keyfield = keys[0];
     var keyname = keyfield.name;
