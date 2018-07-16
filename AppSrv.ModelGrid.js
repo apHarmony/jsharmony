@@ -217,7 +217,7 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
   }
   if (('meta' in Q) && (Q['meta'] != '')) {
     if(_this.addDefaultTasks(req, res, model, P, dbtasks)===false) return;
-    if(_this.addLOVTasks(req, res, model, P, dbtasks)===false) return;
+    if(_this.addLOVTasks(req, res, model, P, dbtasks, { action: model.actions })===false) return;
     if(_this.addBreadcrumbTasks(req, res, model, P, dbtasks)===false) return;
     if(_this.addTitleTasks(req, res, model, P, dbtasks, 'B')===false) return;
   }

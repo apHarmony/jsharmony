@@ -212,12 +212,17 @@ exports.RenderField = function (_this, parentobj, modelid, field, val){
   var access = (_this._is_new?'I':'U');
   if (XForms[modelid]._layout=='exec') access = 'B';
   var is_editable = XExt.HasAccess(field.actions, access);
-  if (is_editable && ('readonly' in field) && (field.readonly == 1)) is_editable = false;
+  if (is_editable && field.always_editable_on_insert && ((access == 'I') || (XForms[modelid]._layout=='exec'))){ }
+  else {
+    if (is_editable && ('readonly' in field) && (field.readonly == 1)) is_editable = false;
+    if (_this._readonly && _.includes(_this._readonly, field.name)) is_editable = false;
+  }
   if (('virtual' in field) && field.virtual) is_editable = true;
   if (is_editable && ('controlparams' in field) && (field.controlparams.base_readonly)) {
     is_editable = false;
     show_lookup_when_readonly = true;
   }
+
   if (is_editable && !jctrl.hasClass('editable')) { XEnable(jctrl); }
   else if (!is_editable && !jctrl.hasClass('uneditable')) { XDisable(jctrl, show_lookup_when_readonly); }
 
@@ -417,6 +422,7 @@ exports.GetOwnFields = function(val) {
     if (key == '_orig') return;
     if (key == '_jrow') return;
     if (key == '_modelid') return;
+    if (key == '_readonly') return;
     rslt[key] = val;
   });
   return rslt;
@@ -454,7 +460,11 @@ exports.BindLOV = function (modelid) {
 }
 
 exports.ApplyDefaults = function (xformdata) {
+  if(!('_readonly' in xformdata)) xformdata._readonly = [];
   for(var fname in xformdata.Fields){
-    if((fname in _GET) && _GET[fname]) xformdata[fname] = _GET[fname];
-  }
+    if((fname in _GET) && _GET[fname]){
+      xformdata[fname] = _GET[fname];
+      xformdata._readonly.push(fname);
+    }
+  }  
 }

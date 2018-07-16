@@ -230,7 +230,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         "sql": "select HP_CODE as CODEVal,HP_Desc as CODETxt from HP order by HP_Desc", 
         "datalock":{"C_ID":"client_C_ID"}, 
         "sql_params":["C_ID","T_ID"],
-        "sqlselect": "select HP_Desc from HP where HP_CODE=XXXXXXXXXXXXXXXXXXXX"
+        "sqlselect": "(select hp_desc from jsharmony.hp where hp.hp_code = h.hp_code)",
+        "always_get_full_lov": 1 //Do not truncate LOV to one value, when field is "B", readonly, or value is set in querystring.
       }, //codeval = Value, codetxt = Desc    "nodatalock":["C_ID"] (If applicable)
       "lov": { "sql": "select fcert_id as CODEID,fcert_parent_id as CODEParentID,fcert_id as CODEVal,fcert_name as CODETxt,'folder' as CODEIcon from fcert where C_ID=(select C_ID from E where E_ID=@E_ID) order by fcert_parent_id, fcert_name, fcert_id", "sql_params":["E_ID"] }, //For Tree Control
       "lov": { "sql2": "select X_ID as CODEParent, HP_CODE as CODEVal,HP_Desc as CODETxt from HP order by HP_Desc","parent": "CA_COUNTRY", "datalock":{"C_ID":"client_C_ID"} }, //CODEParent = Parent Value, CODEVal = Value, CODETxt = Desc
@@ -253,6 +254,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "default": "js:moment().format()",
       "default": { "sql": "select C_Name from C where C_ID=@C_ID", "sql_params": ["C_ID"] }, //"nodatalock":["C_ID"] (If applicable)
       "readonly": 1,
+      "always_editable_on_insert": 1, //Make field editable on insert, even if value is set in querystring, or field is readonly
       //for subform, popuplov
       "target": "E_Name",
       "bindings": { "C_ID": "C_ID" },

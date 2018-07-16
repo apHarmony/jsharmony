@@ -341,7 +341,7 @@ jsHarmony.LoadSQL = function (dir, type, component, rslt) {
       }
     }
 
-    //Post-process - extract prefix if in xxx.yyy.sql format
+    //Post-process - extract prefix if in aaa.bbb.sql format
     function processScriptPrefix(node){
       for(var key in node){
         var val = node[key];
@@ -880,6 +880,16 @@ jsHarmony.prototype.ParseEntities = function () {
           else if (!sql_param_field.key && !sql_param_field.lovkey) { sql_param_field.lovkey = 1; }
         });
       }
+      //Add C for any LOV field that can be used in truncate_lov
+      if(field.lov){
+        if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')){
+          if(!field.always_editable_on_insert && Helper.access(model.actions, 'I') && Helper.access(field.actions, 'I')){
+            if(field.lov.sql||field.lov.sql2||field.lov.sqlmp||field.lov.sqlselect){
+              if (!Helper.access(field.actions, 'C')) { if (!field.actions) field.actions = ''; field.actions += 'C'; }
+            }
+          }
+        }
+      }
     });
     
     //Automatically add C (breadcrumb parameter) for breadcrumb and title sql_params
@@ -936,9 +946,9 @@ jsHarmony.prototype.ParseEntities = function () {
       'subheader', 'footerheight', 'headeradd',
     ];
     var _v_field = [
-      'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'foreignkey', 'serverejs','roles','static','cellclass',
+      'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'foreignkey', 'serverejs', 'roles', 'static', 'cellclass',
       'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
-      'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'precision', 'password', 'hash', 'salt', 'unbound',
+      'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'always_editable_on_insert', 'precision', 'password', 'hash', 'salt', 'unbound',
       'sqlselect', 'sqlupdate', 'sqlinsert','sql_sort', 'sqlwhere', 'sql_search_sound', 'sql_search', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVE__', '__AFTER__',
       'sql_from_db','sql_to_db','sql_search_to_db','datatype_config'
     ];
@@ -948,6 +958,7 @@ jsHarmony.prototype.ParseEntities = function () {
       'image', 'thumbnails', 'expand_all', 'item_context_menu'
     ];
     var _v_popuplov = ['target', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
+    var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'always_get_full_lov', 'nodatalock', 'showcode'];
     //lov
     var existing_targets = [];
     for (var f in model) { if (f.substr(0, 7) == 'comment') continue; if (!_.includes(_v_model, f)) LogEntityError(_ERROR, model.id + ': Invalid model property: ' + f); }
@@ -965,6 +976,9 @@ jsHarmony.prototype.ParseEntities = function () {
       }
       if (field.popuplov) {
         for (var f in field.popuplov) { if (!_.includes(_v_popuplov, f)) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': Invalid popuplov parameter: ' + f); }
+      }
+      if (field.lov) {
+        for (var f in field.lov) { if (!_.includes(_v_lov, f)) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': Invalid lov parameter: ' + f); }
       }
       if ((field.control == 'label') && Helper.access(field.actions, 'IUD')) LogEntityError(_ERROR, model.id + ' > ' + field.name + ': Label can only have action B');
       //Check unique target

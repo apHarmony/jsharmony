@@ -19,6 +19,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 var Helper = require('./lib/Helper.js');
 var _ = require('lodash');
+var ejsext = require('./lib/ejsext.js');
 
 module.exports = exports = {};
 
@@ -265,7 +266,8 @@ exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks) {
   };
 }
 
-exports.addLOVTasks = function (req, res, model, Q, dbtasks) {
+exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
+  options = _.extend({ action: '' }, options);
   var _this = this;
   var jsh = _this.jsh;
   var fatalError = false;
@@ -279,7 +281,49 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks) {
       var lov_verrors = {};
       var datalockqueries = [];
       var param_datalocks = [];
-      
+      var truncate_lov = false;
+      var no_lov_required = false;
+      var can_optimize = false;
+      var codeval = null;
+
+      //If form and access="B", do not get the full LOV
+      var tgtaccess = ejsext.getaccess(req, model, field.actions, options.action);
+      if(!field.lov.always_get_full_lov){
+        if((model.layout=='form')||(model.layout=='form-m')){
+          if(Helper.access(tgtaccess, 'U') && field.readonly) no_lov_required = true;
+          else if(Helper.access(tgtaccess, 'I')){
+            if(field.name in req.query){
+              if(!field.always_editable_on_insert){
+                codeval = req.query[field.name];
+                truncate_lov = true;
+              }
+            }
+          }
+          else no_lov_required = true;
+        }
+        else if(model.layout=='grid'){
+          if(!Helper.access(tgtaccess, 'IU')) no_lov_required = true;
+        }
+        else if(model.layout=='exec'){
+          if(field.name in req.query){
+            if(!field.always_editable_on_insert){
+              codeval = req.query[field.name];
+              truncate_lov = true;
+            }
+          }
+        }
+      }
+
+      can_optimize = (no_lov_required || truncate_lov);
+
+      if(no_lov_required){
+        //If sqlselect is enabled, or if it is a UCOD/UCOD2/GCOD/GCOD2, return
+        if(('sql' in lov) || ('sql2' in lov) || ('sqlmp' in lov)){
+          if(lov.sqlselect) return;
+        }
+        else return;
+      }
+
       if (('sql' in lov) || ('sql2' in lov) || ('sqlmp' in lov)) {
         _this.getDataLockSQL(req, model, [lov], lov_ptypes, lov_params, lov_verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, lov.nodatalock, field.name + "_" + model.id + "_lov");
         //Add lov parameters
@@ -302,8 +346,14 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks) {
           }
         }
       }
+      if(truncate_lov){
+        codevalpname = '__' + _this.jsh.map.codeval;
+        if(codevalpname in lov_params) { Helper.GenError(req, res, -4, 'Invalid existing parameter in LOV SQL expression: _codeval'); fatalError = true; return; }
+        lov_ptypes.push(_this.getDBType(field));
+        lov_params[codevalpname] = _this.DeformatParam(field, codeval, lov_verrors);
+      }
       if (!_.isEmpty(lov_verrors)) { Helper.GenError(req, res, -2, lov_verrors[''].join('\n')); fatalError = true; return; }
-      var sql = _this.db.sql.getLOV(_this.jsh, field.name, lov, datalockqueries, param_datalocks);
+      var sql = _this.db.sql.getLOV(_this.jsh, field.name, lov, datalockqueries, param_datalocks, { truncate_lov: truncate_lov });
 
       //Add parameters from querystring
       _this.ApplyQueryParameters(Q, sql, lov_ptypes, lov_params, model);
@@ -312,6 +362,10 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks) {
         _this.ApplyTransTblChainedParameters(transtbl, sql, lov_ptypes, lov_params, model.fields);
         _this.db.Recordset(req._DBContext, sql, lov_ptypes, lov_params, dbtrans, function (err, rslt) {
           if (err == null) {
+            //Generate warning if the LOV options are too long, and sqlselect is not defined for the field
+            if(can_optimize && (rslt.length > 1000)){
+              global.log(model.id + ' > ' + field.name + ': More than 1000 results returned for LOV query.  Please consider implementing lov.sqlselect to improve performance.');
+            }
             if (('showcode' in lov) && lov.showcode) {
               for (var i = 0; i < rslt.length; i++) {
                 rslt[i][jsh.map.codetxt] = rslt[i][jsh.map.codeval];

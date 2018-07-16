@@ -32,7 +32,7 @@ function AppSrv(_jsh) {
   this.rptsrv = new AppSrvRpt(this);
   this.jobproc = null;
   this.modelsrv = new AppSrvModel(this);
-  this.QueueSubscriptions = []; // { id: "xxx", req: req, res: res }
+  this.QueueSubscriptions = []; // { id: "QUEUEID", req: req, res: res }
 }
 AppSrv.prototype.SQL_TERMINATORS = "(),.+-*/%<>=&|!@$?:~#; \t\r\n\f^`[]{}\\|'\"";
 

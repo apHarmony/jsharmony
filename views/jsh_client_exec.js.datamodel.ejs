@@ -33,6 +33,7 @@ XForm<%=model.id%>.prototype.Fields = {
     <%-xejs.iif('readonly' in field,'"readonly":'+JSON.stringify(field.readonly)+',') %>
     <%-xejs.iif('control' in field,'"control":'+JSON.stringify(field.control)+',') %>
     <%-xejs.iif('virtual' in field,'"virtual":'+JSON.stringify(field.virtual)+',') %>
+    <%-xejs.iif('always_editable_on_insert' in field,'"always_editable_on_insert":'+JSON.stringify(field.always_editable_on_insert)+',') %>
     <%-xejs.iif('onchange' in field,'"onchange":'+JSON.stringify(field.onchange)+',') %>
     <%-xejs.iif('static' in field,'"static":'+JSON.stringify(field.static)+',') %>
     <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>

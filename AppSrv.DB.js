@@ -430,7 +430,7 @@ exports.getDataLockSQL = function (req, model, fields, sql_ptypes, sql_params, v
       }
       else if (field.key) throw new Error('Missing DataLock for key ' + field.name + descriptor);
       else if (('actions' in field) && (Helper.access(field.actions, 'F'))) throw new Error('Missing DataLock for foreign key ' + field.name + descriptor);
-      else if (('actions' in field) && (Helper.access(field.actions, 'C'))) throw new Error('Missing DataLock for breadcrumb key ' + field.name + descriptor);
+      else if (('actions' in field) && (Helper.access(field.actions, 'C'))) throw new Error('Missing DataLock for initial parameter ' + field.name + descriptor);
     }
     //if(!found_datalock){ console.log(fields); } //Use for debugging
     if (!found_datalock) throw new Error('DataLock ' + datalockid + ' not found.' + descriptor);

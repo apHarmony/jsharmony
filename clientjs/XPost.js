@@ -255,6 +255,7 @@ XPost.prototype.ApplyDefaults = function(data){
 	var rslt = data;
   if(rslt._is_new && ('_defaults' in this)){
     _.each(this._defaults, function (val, fieldname){
+      if(rslt[fieldname]) return; //If field is set via GET, do not overwrite
 			if(fieldname in rslt){
 				if(val.indexOf('js:')==0){
 					var js = val.substr(3);

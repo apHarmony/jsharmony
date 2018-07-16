@@ -210,7 +210,7 @@ exports.getModelForm = function (req, res, modelid, Q, P, form_m) {
   //Breadcrumbs
   if(_this.addBreadcrumbTasks(req, res, model, Q, dbtasks[1])===false) return;
   //LOV
-  if(_this.addLOVTasks(req, res, model, Q, dbtasks[1])===false) return;
+  if(_this.addLOVTasks(req, res, model, Q, dbtasks[1], { action: titleperm })===false) return;
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   return dbtasks;
 }
