@@ -482,7 +482,7 @@ function LogEntityError(severity, msg) {
     switch (severity) {
       case _ERROR: console.log("ERROR: " + msg); break;
       case _WARNING: console.log("WARNING: " + msg); break;
-      default: global.log(msg); break;
+      default: global.log.info(msg); break;
     }
     if (!global.app_errors) global.app_errors = [];
     global.app_errors.push(msg);

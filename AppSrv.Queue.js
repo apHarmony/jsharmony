@@ -37,7 +37,7 @@ exports.SubscribeToQueue = function (req, res, next, queueid) {
   if (!this.jsh.Config.queues) { next(); return; }
   if (!(queueid in this.jsh.Config.queues)) { return Helper.GenError(req, res, -1, 'Queue not found'); }
   if (!this.jobproc) { return Helper.GenError(req, res, -1, 'Job Processor not configured'); }
-  if (global.debug_params.appsrv_requests) global.log('User subscribing to queue ' + queueid);
+  if (global.debug_params.appsrv_requests) global.log.info('User subscribing to queue ' + queueid);
   var queue = this.jsh.Config.queues[queueid];
   if (!Helper.HasModelAccess(req, queue, 'B')) { Helper.GenError(req, res, -11, 'Invalid Access'); return; }
   //Check if queue has a message, otherwise, add to subscriptions
@@ -48,7 +48,7 @@ exports.PopQueue = function (req, res, queueid) {
   var _this = this;
   if (!this.jsh.Config.queues) { next(); return; }
   if (!(queueid in this.jsh.Config.queues)) { return Helper.GenError(req, res, -1, 'Queue not found'); }
-  if (global.debug_params.appsrv_requests) global.log('Result for queue ' + queueid);
+  if (global.debug_params.appsrv_requests) global.log.info('Result for queue ' + queueid);
   if (!this.jobproc) throw new Error('Job Processor not configured');
   var queue = this.jsh.Config.queues[queueid];
   
@@ -71,7 +71,7 @@ exports.SendQueue = function (queueid, message) {
     var queue = this.QueueSubscriptions[i];
     if (!queue.res || queue.res.finished) { this.QueueSubscriptions.splice(i, 1); i--; continue; }
     if (queue.id == queueid) {
-      if (global.debug_params.appsrv_requests) global.log('Notifying subscriber ' + queueid);
+      if (global.debug_params.appsrv_requests) global.log.info('Notifying subscriber ' + queueid);
       try {
         queue.res.send(message);
       } catch (ex) {

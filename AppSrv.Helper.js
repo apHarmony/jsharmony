@@ -70,7 +70,7 @@ exports.getFieldsByName = function (fields, fieldnames) {
       }
     }
   }
-  if(fieldnames_missing.length > 0){ global.log('Fields not found: ' + fieldnames_missing.join(', ')); }
+  if(fieldnames_missing.length > 0){ global.log.warning('Fields not found: ' + fieldnames_missing.join(', ')); }
   
   return rslt;
 }

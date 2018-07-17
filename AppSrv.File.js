@@ -38,7 +38,7 @@ exports.Upload = function (req, res) {
     //Handle Error
     if (err != null) {
       if (('code' in err) && (err.code == 'ETOOBIG')) { return Helper.GenError(req, res, -31, 'Upload file exceeded maximum file size.'); }
-      global.log(err);
+      global.log.error(err);
       return Helper.GenError(req, res, -30, 'Invalid file upload request.');
     }
     
@@ -91,7 +91,7 @@ exports.UploadCKEditor = function (req, res) {
     //Handle Error
     if (err != null) {
       if (('code' in err) && (err.code == 'ETOOBIG')) { return Helper.GenError(req, res, -31, 'Upload file exceeded maximum file size.'); }
-      global.log(err);
+      global.log.error(err);
       return Helper.GenError(req, res, -30, 'Invalid file upload request.');
     }
     if (files == null) { return Helper.GenError(req, res, -30, 'Invalid file upload request.'); }
@@ -402,7 +402,7 @@ exports.ProcessFileOperations = function (keyval, fileops, rslt, callback) {
   }, function (fileerr) {
     if ((fileerr != null) && ('code' in fileerr) && (fileerr.code == 'ENOENT')) { /* Ignore this error */ }
     else if (fileerr != null) {
-      global.log(fileerr);
+      global.log.error(fileerr);
       return callback(Helper.NewError('Error committing file update.', -35), null);
     }
     return callback(null, rslt);

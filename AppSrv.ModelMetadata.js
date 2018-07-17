@@ -56,7 +56,7 @@ exports.getTabCode = function (req, res, modelid, onComplete) {
       sql_ptypes.push(dbtype);
       sql_params[fname] = _this.DeformatParam(field, Q[fname], verrors);
     }
-    else { global.log('Missing parameter ' + fname); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
+    else { global.log.warning('Missing parameter ' + fname); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   }
   this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, modelid);
   verrors = _.merge(verrors, model.xvalidate.Validate('K', sql_params));
@@ -65,7 +65,7 @@ exports.getTabCode = function (req, res, modelid, onComplete) {
   var sql = _this.db.sql.getTabCode(_this.jsh, model, selectfields, keys, datalockqueries);
   
   this.ExecScalar(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt) {
-    if (err) { global.log(err); Helper.GenError(req, res, -99999, "An unexpected error has occurred"); return; }
+    if (err) { global.log.error(err); Helper.GenError(req, res, -99999, "An unexpected error has occurred"); return; }
     if (rslt && rslt[0]) {
       return onComplete(rslt[0]);
     }
@@ -130,7 +130,7 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
   dbtasks['_title'] = function (dbtrans, callback, transtbl) {
     _this.ApplyTransTblChainedParameters(transtbl, sql, sql_ptypes, sql_params, model.fields);
     _this.db.Scalar(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, title) {
-      if (err) { global.log(err); Helper.GenError(req, res, -99999, "An unexpected error has occurred"); return; }
+      if (err) { global.log.error(err); Helper.GenError(req, res, -99999, "An unexpected error has occurred"); return; }
       if(title) title = Helper.ResolveParams(req, title);
       return callback(null, title);
     });
@@ -364,7 +364,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
           if (err == null) {
             //Generate warning if the LOV options are too long, and sqlselect is not defined for the field
             if(can_optimize && (rslt.length > 1000)){
-              global.log(model.id + ' > ' + field.name + ': More than 1000 results returned for LOV query.  Please consider implementing lov.sqlselect to improve performance.');
+              global.log.warning(model.id + ' > ' + field.name + ': More than 1000 results returned for LOV query.  Please consider implementing lov.sqlselect to improve performance.');
             }
             if (('showcode' in lov) && lov.showcode) {
               for (var i = 0; i < rslt.length; i++) {

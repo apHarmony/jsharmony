@@ -88,7 +88,7 @@ exports.validateGlobals = function(){
     async.apply(HelperFS.createFolderIfNotExists, global.datadir + 'temp/public'),
     async.apply(HelperFS.createFolderIfNotExists, global.datadir + 'temp/cmsfiles'),
     async.apply(HelperFS.createFolderIfNotExists, global.datadir + 'temp/report'),
-  ], function (err, rslt) { if (err) global.log(err); });
+  ], function (err, rslt) { if (err) global.log.error(err); });
 }
 
 exports.ValidateConfig = function(jsh){
@@ -142,8 +142,8 @@ exports.addDefaultRoutes = function (app) {
   app.use(function (err, req, res, next) {
     var errorpage = 'error';
     if (req.jshconfig && req.jshconfig.show_system_errors) errorpage = 'error_debug';
-    global.log(err);
-    global.log(err.stack);
+    global.log.error(err);
+    global.log.info(err.stack);
     res.status(err.status || 500);
     res.render(HelperFS.getView(req, errorpage, { disable_override: true }), {
       message: err.message,
@@ -263,11 +263,11 @@ exports.Run = function(jshconfig, jsh, app, cb){
     var server = http.createServer(app);
     server.timeout = jshconfig.server.request_timeout;
     ListenPort(server, jshconfig.server.http_port, jshconfig.server.http_ip, function(){
-      global.log('Listening on HTTP port ' + server.address().port);
+      global.log.info('Listening on HTTP port ' + server.address().port);
       if(!jshconfig.server.http_port){
         var server_txt = jshconfig.server.http_ip;
         if(server_txt == '0.0.0.0') server_txt = os.hostname().toLowerCase();
-        global.log('Log in at http://'+server_txt+':'+server.address().port);
+        global.log.info('Log in at http://'+server_txt+':'+server.address().port);
       }
       if (global.onServerStart) global.onServerStart([server]);
       if(cb) cb([server]);
@@ -294,15 +294,15 @@ exports.Run = function(jshconfig, jsh, app, cb){
       ListenPort(server, jshconfig.server.https_port, jshconfig.server.https_ip, function(){
         new_https_port = server.address().port;
         if(!http_redirect){
-          global.log('Listening on HTTPS port ' + new_https_port);
+          global.log.info('Listening on HTTPS port ' + new_https_port);
         }
         else {
-          global.log('Listening on HTTP/HTTPS ports ' + new_http_port + '/' + new_https_port);
+          global.log.info('Listening on HTTP/HTTPS ports ' + new_http_port + '/' + new_https_port);
         }
         if(!jshconfig.server.https_port){
           var server_txt = jshconfig.server.https_ip;
           if(server_txt == '0.0.0.0') server_txt = os.hostname().toLowerCase();
-          global.log('Log in at https://'+server_txt+':'+new_https_port);
+          global.log.info('Log in at https://'+server_txt+':'+new_https_port);
         }
         if(servers.push(server));
         if (global.onServerStart) global.onServerStart(servers);

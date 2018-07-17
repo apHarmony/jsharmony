@@ -65,7 +65,7 @@ AppSrvRpt.prototype.queueReport = function (req, res, modelid, Q, P, params, onC
   if (!thisapp.ParamCheck('Q', Q, _.map(fieldlist, function (field) { return '&' + field; }))) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   if (!thisapp.ParamCheck('P', P, [])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   
-  global.log("REPORT: " + req.originalUrl + " " + (req.user_id || '') + " " + (req.user_name || ''));
+  global.log.info("REPORT: " + req.originalUrl + " " + (req.user_id || '') + " " + (req.user_name || ''));
   
   var sql_ptypes = [];
   var sql_params = {};
@@ -415,19 +415,19 @@ AppSrvRpt.prototype.genReport = function (req, res, modelid, params, data, done)
                           if (typeof disposedone != 'undefined') disposedone();
                         });
                       });
-                    }).catch(function (err) { global.log(err); });;
+                    }).catch(function (err) { global.log.error(err); });;
                   };
                   done(null, tmppdfpath, dispose);
-                }).catch(function (err) { global.log(err); });
+                }).catch(function (err) { global.log.error(err); });
               };
 
               page.property('paperSize', pagesettings).then(function () {
                 page.on('onLoadFinished', onLoadFinished).then(function () {
-                  page.property('content', rptcontent.body).then(function () { /* Report Generation Complete */ }).catch(function (err) { global.log(err); });;
-                }).catch(function (err) { global.log(err); });
-              }).catch(function (err) { global.log(err); });
+                  page.property('content', rptcontent.body).then(function () { /* Report Generation Complete */ }).catch(function (err) { global.log.error(err); });;
+                }).catch(function (err) { global.log.error(err); });
+              }).catch(function (err) { global.log.error(err); });
               //page.set('viewportSize',{width:3700,height:3800});
-            }).catch(function (err) { global.log(err); });;
+            }).catch(function (err) { global.log.error(err); });;
           } catch (err) {
             try { if (page != null) page.close(); } catch (ex) { }
             return done(Helper.NewError("Error occurred during report generation (" + err.toString() + ')', -99999), null);
@@ -463,7 +463,7 @@ AppSrvRpt.prototype.getPhantom = function (callback) {
     if (_this.phreqcount > 3) { _this.phsession.exit(); _this.phsession = null; }
     else return callback(_this.phsession);
   }
-  global.log('Launching PhantomJS Report Renderer');
+  global.log.info('Launching PhantomJS Report Renderer');
   var rptlogger = function () {
     var logtxt = '';
     for (var i = 0; i < arguments.length; i++) {
@@ -471,7 +471,7 @@ AppSrvRpt.prototype.getPhantom = function (callback) {
       logtxt += arguments[i].toString() + ' - ';
     }
     if (!logtxt || (logtxt.indexOf('NOOP command') >= 0)) return;
-    global.log(logtxt);
+    global.log.info(logtxt);
   };
   var phantomConfig = {
     onExit: function (code, signal) {
@@ -490,7 +490,7 @@ AppSrvRpt.prototype.getPhantom = function (callback) {
     _this.phsession = _phsession;
     _this.phreqcount = 0;
     return callback(_this.phsession);
-  }).catch(function (err) { global.log(err); });
+  }).catch(function (err) { global.log.error(err); });
 }
 
 AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete) {

@@ -104,7 +104,7 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
         return true;
       }, null, modelid + "_key");
     }
-    else { if (is_new) continue; global.log('Missing parameter ' + fname); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
+    else { if (is_new) continue; global.log.warning('Missing parameter ' + fname); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   }
   
   verrors = _.merge(verrors, model.xvalidate.Validate('KF', sql_params));

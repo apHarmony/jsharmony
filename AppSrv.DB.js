@@ -71,7 +71,7 @@ exports.AppDBError = function (req, res, err) {
   //Not necessary because sql is printed out in node debug in global.log below
   //if ('sql' in err) { if (global.debug_params.appsrv_logsql) err.message += ' SQL: ' + err.sql; }
   if ((err.message) && (err.message == 'INVALID ACCESS')) return Helper.GenError(req, res, -12, "Invalid DataLock Access");
-  if (global.debug_params.appsrv_requests) global.log(err);
+  if (global.debug_params.appsrv_requests) global.log.error(err);
   if ((err.message) && (err.message.indexOf('Application Error - ') == 0)) return Helper.GenError(req, res, -5, err.message);
   if ('number' in err) return Helper.GenError(req, res, err.number, err.message);
   return Helper.GenError(req, res, -99999, err.message);

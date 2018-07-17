@@ -165,7 +165,7 @@ var Routes = function (jsh, jshconfig) {
     if (!(data instanceof Array)) { next(); return; }
     
     var dbtasks = {};
-    if (global.debug_params.appsrv_requests) global.log(data);
+    if (global.debug_params.appsrv_requests) global.log.info(data);
     var i = 0;
     async.eachSeries(data, function (action, callback) {
       i += 1;
