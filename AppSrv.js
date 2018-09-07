@@ -27,10 +27,9 @@ function AppSrv(_jsh) {
   var _this = this;
   this.jsh = _jsh;
   this.DB = DB;
-  this.db = new DB();
-  this.db.parseSQL = function (sql) { return _this.getSQL(sql); };
+  this.db = this.jsh.DB['default'];
   this.rptsrv = new AppSrvRpt(this);
-  this.jobproc = null;
+  this.JobProc = null;
   this.modelsrv = new AppSrvModel(this);
   this.QueueSubscriptions = []; // { id: "QUEUEID", req: req, res: res }
 }
@@ -143,7 +142,11 @@ AppSrv.prototype.deleteModel = function (req, res, modelid, noexecute, Q, P, onC
 /***************
 HELPER FUNCTIONS
 ****************/
-AppSrv.prototype.ParamCheck = Helper.ParamCheck;
+AppSrv.prototype.ParamCheck = function(desc, col, params, show_errors){
+  var log = this.jsh.Log;
+  if(!show_errors && (typeof show_errors !== 'undefined')) log = false;
+  return Helper.ParamCheck(desc, col, params, show_errors, log);
+}
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.ModelGrid.js'));
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.ModelForm.js'));
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.ModelMultisel.js'));
@@ -154,9 +157,15 @@ AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.File.js'));
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.Queue.js'));
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.DB.js'));
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.Helper.js'));
-AppSrv.prototype.getSQL = function (sqlid, jsh) {
+AppSrv.prototype.getSQL = function (model, sqlid, jsh) {
   if(!jsh) jsh = this.jsh;
-  return DB.ParseSQL(sqlid, jsh);
+
+  //Set driver name
+  var driverName = '';
+  if(model && model.db) driverName = jsh.DBConfig[model.db]._driver.name;
+  else driverName = jsh.DBConfig['default']._driver.name;
+
+  return DB.ParseSQLBase(sqlid, jsh, driverName);
 }
 
 module.exports = AppSrv;

@@ -39,7 +39,7 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'B');
   if (encryptedfields.length > 0) throw new Error('Encrypted fields not supported on GRID');
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'S');
-  if ((encryptedfields.length > 0) && !(req.secure) && (global.jshSettings && !global.jshSettings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
+  if ((encryptedfields.length > 0) && !(req.secure) && (!_this.jsh.Config.system_settings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
   if ('d' in Q) P = JSON.parse(Q.d);
   
   if (!_this.ParamCheck('Q', Q, ['|rowstart', '|rowcount', '|sort', '|search', '|searchjson', '|d', '|meta', '|getcount'])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
@@ -155,7 +155,7 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
   //Apply rowcount
   if (typeof rowlimit == 'undefined') {
     if ('rowlimit' in model) rowlimit = model.rowlimit;
-    else rowlimit = global.default_rowlimit;
+    else rowlimit = _this.jsh.Config.default_rowlimit;
   }
   var rowcount = rowlimit;
   if ('rowcount' in Q) {
@@ -259,7 +259,7 @@ exports.exportCSV = function (req, res, dbtasks, modelid) {
           eofrow[fcol] = '';
         }
         for (fcol in frow) {
-          eofrow[fcol] = 'Data exceeded limit of ' + global.export_rowlimit + ' rows, data has been truncated.';
+          eofrow[fcol] = 'Data exceeded limit of ' + _this.jsh.Config.export_rowlimit + ' rows, data has been truncated.';
           break;
         }
         rslt[modelid].unshift(eofrow);

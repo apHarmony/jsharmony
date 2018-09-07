@@ -113,7 +113,7 @@ exports = module.exports = function (req, res, onComplete) {
 function RenderPage(jsh, fdata, verrors, rslt) {
   return ejs.render(jsh.getEJS('jsh_login.forgotpassword.reset'), {
     'fdata': fdata,
-    'global': global,
+    'jsh': jsh,
     'verrors': verrors,
     'rslt': rslt,
     'ejsext': ejsext

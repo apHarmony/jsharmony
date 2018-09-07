@@ -36,20 +36,20 @@ exports.GetToken = function (req, res) {
 exports.SubscribeToQueue = function (req, res, next, queueid) {
   if (!this.jsh.Config.queues) { next(); return; }
   if (!(queueid in this.jsh.Config.queues)) { return Helper.GenError(req, res, -1, 'Queue not found'); }
-  if (!this.jobproc) { return Helper.GenError(req, res, -1, 'Job Processor not configured'); }
-  if (global.debug_params.appsrv_requests) global.log.info('User subscribing to queue ' + queueid);
+  if (!this.JobProc) { return Helper.GenError(req, res, -1, 'Job Processor not configured'); }
+  if (this.jsh.Config.debug_params.appsrv_requests) this.jsh.Log.info('User subscribing to queue ' + queueid);
   var queue = this.jsh.Config.queues[queueid];
   if (!Helper.HasModelAccess(req, queue, 'B')) { Helper.GenError(req, res, -11, 'Invalid Access'); return; }
   //Check if queue has a message, otherwise, add to subscriptions
-  this.jobproc.SubscribeToQueue(req, res, queueid);
+  this.JobProc.SubscribeToQueue(req, res, queueid);
 }
 
 exports.PopQueue = function (req, res, queueid) {
   var _this = this;
   if (!this.jsh.Config.queues) { next(); return; }
   if (!(queueid in this.jsh.Config.queues)) { return Helper.GenError(req, res, -1, 'Queue not found'); }
-  if (global.debug_params.appsrv_requests) global.log.info('Result for queue ' + queueid);
-  if (!this.jobproc) throw new Error('Job Processor not configured');
+  if (this.jsh.Config.debug_params.appsrv_requests) this.jsh.Log.info('Result for queue ' + queueid);
+  if (!this.JobProc) throw new Error('Job Processor not configured');
   var queue = this.jsh.Config.queues[queueid];
   
   //Verify parameters
@@ -63,15 +63,16 @@ exports.PopQueue = function (req, res, queueid) {
   if (!_.isEmpty(verrors)) { return Helper.GenError(req, res, -2, verrors[''].join('\n')); }
   
   if (!Helper.HasModelAccess(req, queue, 'D')) { return Helper.GenError(req, res, -11, 'Invalid Access'); }
-  this.jobproc.PopQueue(req, res, queueid, P, function () { res.end(JSON.stringify({ '_success': 1 })); });
+  this.JobProc.PopQueue(req, res, queueid, P, function () { res.end(JSON.stringify({ '_success': 1 })); });
 }
 
 exports.SendQueue = function (queueid, message) {
+  var _this = this;
   for (var i = 0; i < this.QueueSubscriptions.length; i++) {
     var queue = this.QueueSubscriptions[i];
     if (!queue.res || queue.res.finished) { this.QueueSubscriptions.splice(i, 1); i--; continue; }
     if (queue.id == queueid) {
-      if (global.debug_params.appsrv_requests) global.log.info('Notifying subscriber ' + queueid);
+      if (_this.jsh.Config.debug_params.appsrv_requests) _this.jsh.Log.info('Notifying subscriber ' + queueid);
       try {
         queue.res.send(message);
       } catch (ex) {

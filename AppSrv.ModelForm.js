@@ -38,7 +38,7 @@ exports.getModelForm = function (req, res, modelid, Q, P, form_m) {
   var allfieldslist = _.union(keylist, fieldlist);
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'B');
   var lovkeylist = this.getFieldNamesWithProp(model.fields, 'lovkey');
-  if ((encryptedfields.length > 0) && !(req.secure) && (global.jshSettings && !global.jshSettings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
+  if ((encryptedfields.length > 0) && !(req.secure) && (!_this.jsh.Config.system_settings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
   
 
   var is_new;
@@ -130,7 +130,7 @@ exports.getModelForm = function (req, res, modelid, Q, P, form_m) {
         sql_ptypes.push(dbtype);
         sql_params[fname] = _this.DeformatParam(field, Q[fname], verrors);
       }
-      else if (selecttype == 'single') { global.log.warning('Missing parameter ' + fname); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
+      else if (selecttype == 'single') { _this.jsh.Log.warning('Missing parameter ' + fname); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
     }
     if (selecttype == 'single') verrors = _.merge(verrors, model.xvalidate.Validate('K', sql_params));
     else if (selecttype == 'multiple') verrors = _.merge(verrors, model.xvalidate.Validate('F', sql_params, undefined, undefined, undefined, { ignoreUndefined: true }));
@@ -170,7 +170,7 @@ exports.getModelForm = function (req, res, modelid, Q, P, form_m) {
             var filerslt = {};
             async.each(filelist, function (file, filecallback) {
               var filefield = _this.getFieldByName(model.fields, file);
-              var fpath = global.datadir + filefield.controlparams.data_folder + '/' + file + '_' + keyval;
+              var fpath = _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + file + '_' + keyval;
               HelperFS.exists(fpath, function (exists) {
                 filerslt[file] = exists;
                 filecallback(null);
@@ -222,7 +222,7 @@ exports.putModelForm = function (req, res, modelid, Q, P, onComplete) {
   var fieldlist = this.getFieldNames(req, model.fields, 'I');
   var filelist = this.getFileFieldNames(req, model.fields, 'I');
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'I');
-  if ((encryptedfields.length > 0) && !(req.secure) && (global.jshSettings && !global.jshSettings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
+  if ((encryptedfields.length > 0) && !(req.secure) && (!_this.jsh.Config.system_settings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
   
   var Pcheck = _.map(fieldlist, function (field) { return '&' + field; });
   Pcheck = Pcheck.concat(_.map(filelist, function (file) { return '|' + file; }));
@@ -384,7 +384,7 @@ exports.postModelForm = function (req, res, modelid, Q, P, onComplete) {
   var keylist = this.getKeyNames(model.fields);
   var filelist = this.getFileFieldNames(req, model.fields, 'U');
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'U');
-  if ((encryptedfields.length > 0) && !(req.secure) && (global.jshSettings && !global.jshSettings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
+  if ((encryptedfields.length > 0) && !(req.secure) && (!_this.jsh.Config.system_settings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
   
   var Pcheck = _.map(fieldlist, function (field) { return '&' + field; });
   Pcheck = Pcheck.concat(_.map(filelist, function (file) { return '|' + file; }));
@@ -571,10 +571,10 @@ exports.deleteModelForm = function (req, res, modelid, Q, P, onComplete) {
     _.each(filelist, function (file) {
       var filefield = _this.getFieldByName(model.fields, file);
       //Delete file in post-processing
-      fileops.push({ op: 'move', src: global.datadir + filefield.controlparams.data_folder + '/' + file + '_' + keyval, dst: '' });
+      fileops.push({ op: 'move', src: _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + file + '_' + keyval, dst: '' });
       //Delete thumbnails in post-processing
       if (filefield.controlparams.thumbnails) for (var tname in filefield.controlparams.thumbnails) {
-        fileops.push({ op: 'move', src: global.datadir + filefield.controlparams.data_folder + '/' + tname + '_' + keyval, dst: '' });
+        fileops.push({ op: 'move', src: _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + tname + '_' + keyval, dst: '' });
       }
     });
     dbtasks['_POSTPROCESS'] = function (callback) {

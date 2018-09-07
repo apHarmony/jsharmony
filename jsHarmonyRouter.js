@@ -17,16 +17,4 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// RenderTemplate.js
-var HelperFS = require('../lib/HelperFS.js');
-
-exports = module.exports = {};
-
-exports = module.exports = function(req,res,basetemplate,params){
-  var jsh = this;
-	req.jshconfig.menu(req,res,jsh,params,function(){
-		if(req._override_title) params.title = req._override_title;
-		res.render(jsh.getView(req, basetemplate),params);
-	});
-};
-
+module.exports = require('./routes/jsHarmonyRouter.js');

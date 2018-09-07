@@ -61,16 +61,16 @@ exports = module.exports = function (req, res, onComplete){
             var PE_Name = req.jshconfig.auth.getuser_name(user_info, jsh);
             var PE_LL_Tstmp = user_info[jsh.map.user_last_tstmp];
             var PE_Email = user_info[jsh.map.user_email];
-            var support_email = global.support_email;
+            var support_email = jsh.Config.support_email;
             var reset_link = Helper.getFullURL(req, req.baseurl + 'login/forgot_password_reset?email=' + encodeURIComponent(email) + '&key=' + crypto.createHash('sha1').update(user_id + req.jshconfig.auth.salt + PE_LL_Tstmp).digest('hex'));
-            Helper.SendTXTEmail(req._DBContext, jsh, 'RESETPASS', PE_Email, null, null, null, { 'PE_NAME': PE_Name, 'SUPPORT_EMAIL': support_email, 'RESET_LINK': reset_link }, function (err) {
-              if (err) { global.log.error(err); res.end('An error occurred sending the password reset email.  Please contact support for assistance.'); }
+            jsh.SendTXTEmail(req._DBContext, 'RESETPASS', PE_Email, null, null, null, { 'PE_NAME': PE_Name, 'SUPPORT_EMAIL': support_email, 'RESET_LINK': reset_link }, function (err) {
+              if (err) { jsh.Log.error(err); res.end('An error occurred sending the password reset email.  Please contact support for assistance.'); }
               else onComplete(RenderPage(jsh, fdata, verrors, "A link to reset your password has been sent to your email address."));
             });
             return;
           }
         }
-        if(all_suspended) { verrors[''] = 'Your account has been suspended.  Please contact support at <a href="mailto:' + global.support_email + '">' + global.support_email + '</a> for more information'; }
+        if(all_suspended) { verrors[''] = 'Your account has been suspended.  Please contact support at <a href="mailto:' + jsh.Config.support_email + '">' + jsh.Config.support_email + '</a> for more information'; }
       }
       else { verrors[''] = 'Invalid email address.'; }
 			onComplete(RenderPage(jsh,fdata,verrors));
@@ -82,7 +82,7 @@ exports = module.exports = function (req, res, onComplete){
 function RenderPage(jsh, fdata, verrors, rslt){
 	return ejs.render(jsh.getEJS('jsh_login.forgotpassword'),{ 
 		'fdata':fdata,
-	  'global':global,
+	  'jsh': jsh,
     'verrors': verrors,
     'rslt': rslt,
 		'ejsext':ejsext

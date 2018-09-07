@@ -19,46 +19,59 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 var jsHarmony = require('../index');
 var pgsqlDBDriver = require('jsharmony-db-pgsql');
-global.dbconfig = { host: "server.domain.com", database: "DBNAME", user: "DBUSER", password: "DBPASS", _driver: new pgsqlDBDriver() };
-global.appbasepath = __dirname;
+
+var jsh = new jsHarmony();
+jsh.DBConfig['default'] = { host: "server.domain.com", database: "DBNAME", user: "DBUSER", password: "DBPASS", _driver: new pgsqlDBDriver() };
+jsh.Config.appbasepath = __dirname;
+
 
 describe('Basic HTTP',function(){
   it('Basic', function (done) {
-    jsHarmony.Run(undefined,undefined,undefined,function(servers){
+    jsh.Run(function(servers){
       for(var i=0;i<servers.length;i++) servers[i].close();
+      jsh.Servers = {};
       done();
     });
   });
   it('Basic HTTPS', function (done) {
-    jsHarmony.Run({ server:{
-        https_port:0,
-        https_cert: '/path/to/cert.pem',
-        https_key: '/path/to/key.pem',
-      } },undefined,undefined,function(servers){
+    jsh.Config.server = {
+      https_port:0,
+      https_cert: '/path/to/cert.pem',
+      https_key: '/path/to/key.pem',
+    };
+    jsh.Run(function(servers){
       for(var i=0;i<servers.length;i++) servers[i].close();
+      jsh.Servers = {};
       done();
     });
   });
   it('Basic HTTP/HTTPS', function (done) {
-    jsHarmony.Run({ server:{
-        http_port:0,
-        https_port:0,
-        https_cert: '/path/to/cert.pem',
-        https_key: '/path/to/key.pem',
-      } },undefined,undefined,function(servers){
+    jsh.Config.server = {
+      http_port:0,
+      https_port:0,
+      https_cert: '/path/to/cert.pem',
+      https_key: '/path/to/key.pem',
+    }
+    jsh.Run(function(servers){
       for(var i=0;i<servers.length;i++) servers[i].close();
+      jsh.Servers = {};
       done();
     });
   });
   it('Static Auth', function (done) {
-    jsHarmony.Run({
-      auth: jsHarmony.Auth.Static([
-        {user_id: 1, user_name: 'Andrew', user_email: 'andrew@domain.com', password: 'SAMPLE_PASSWORD', _roles: ['SYSADMIN']},
-        {user_id: 2, user_name: 'Steve', user_email: 'steve@domain.com', password: 'SAMPLE_PASSWORD', _roles: ['BROWSE']},
-      ])
-    },undefined,undefined,function(servers){
-      for(var i=0;i<servers.length;i++) servers[i].close();
-      done();
+    jsh.Init(function(){
+      jsh.Sites['default'].Merge({
+        auth: jsHarmony.Auth.Static([
+          {user_id: 1, user_name: 'Andrew', user_email: 'andrew@domain.com', password: 'SAMPLE_PASSWORD', _roles: ['SYSADMIN']},
+          {user_id: 2, user_name: 'Steve', user_email: 'steve@domain.com', password: 'SAMPLE_PASSWORD', _roles: ['BROWSE']},
+        ])
+      });
+      jsh.Run(function(servers){
+        return;
+        for(var i=0;i<servers.length;i++) servers[i].close();
+        jsh.Servers = {};
+        done();
+      });
     });
   });
 });

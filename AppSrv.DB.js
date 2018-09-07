@@ -25,31 +25,31 @@ var moment = require('moment');
 
 module.exports = exports = {};
 
-exports.ExecDBFunc = function (dbfunc, context, sql, ptypes, params, callback, constring) {
+exports.ExecDBFunc = function (dbfunc, context, sql, ptypes, params, callback, dbconfig) {
   var _this = this;
   _this.db.ExecTasks([function (cb) {
-      dbfunc.call(_this.db, context, sql, ptypes, params, undefined, function (err, rslt) { cb(err, rslt); }, constring);
+      dbfunc.call(_this.db, context, sql, ptypes, params, undefined, function (err, rslt) { cb(err, rslt); }, dbconfig);
     }], callback);
 }
 
-exports.ExecRecordset = function (context, sql, ptypes, params, callback, constring) {
-  this.ExecDBFunc(this.db.Recordset, context, sql, ptypes, params, callback, constring);
+exports.ExecRecordset = function (context, sql, ptypes, params, callback, dbconfig) {
+  this.ExecDBFunc(this.db.Recordset, context, sql, ptypes, params, callback, dbconfig);
 };
 
-exports.ExecMultiRecordset = function (context, sql, ptypes, params, callback, constring) {
-  this.ExecDBFunc(this.db.MultiRecordset, context, sql, ptypes, params, callback, constring);
+exports.ExecMultiRecordset = function (context, sql, ptypes, params, callback, dbconfig) {
+  this.ExecDBFunc(this.db.MultiRecordset, context, sql, ptypes, params, callback, dbconfig);
 };
 
-exports.ExecRow = function (context, sql, ptypes, params, callback, constring) {
-  this.ExecDBFunc(this.db.Row, context, sql, ptypes, params, callback, constring);
+exports.ExecRow = function (context, sql, ptypes, params, callback, dbconfig) {
+  this.ExecDBFunc(this.db.Row, context, sql, ptypes, params, callback, dbconfig);
 };
 
-exports.ExecCommand = function (context, sql, ptypes, params, callback, constring) {
-  this.ExecDBFunc(this.db.Command, context, sql, ptypes, params, callback, constring);
+exports.ExecCommand = function (context, sql, ptypes, params, callback, dbconfig) {
+  this.ExecDBFunc(this.db.Command, context, sql, ptypes, params, callback, dbconfig);
 };
 
-exports.ExecScalar = function (context, sql, ptypes, params, callback, constring) {
-  this.ExecDBFunc(this.db.Scalar, context, sql, ptypes, params, callback, constring);
+exports.ExecScalar = function (context, sql, ptypes, params, callback, dbconfig) {
+  this.ExecDBFunc(this.db.Scalar, context, sql, ptypes, params, callback, dbconfig);
 };
 
 exports.AppDBError = function (req, res, err) {
@@ -68,10 +68,10 @@ exports.AppDBError = function (req, res, err) {
       }
     }
   }
-  //Not necessary because sql is printed out in node debug in global.log below
-  //if ('sql' in err) { if (global.debug_params.appsrv_logsql) err.message += ' SQL: ' + err.sql; }
+  //Not necessary because sql is printed out in node debug in log below
+  //if ('sql' in err) { if (this.jsh.Config.debug_params.appsrv_logsql) err.message += ' SQL: ' + err.sql; }
   if ((err.message) && (err.message == 'INVALID ACCESS')) return Helper.GenError(req, res, -12, "Invalid DataLock Access");
-  if (global.debug_params.appsrv_requests) global.log.error(err);
+  if (this.jsh.Config.debug_params.appsrv_requests) this.jsh.Log.error(err);
   if ((err.message) && (err.message.indexOf('Application Error - ') == 0)) return Helper.GenError(req, res, -5, err.message);
   if ('number' in err) return Helper.GenError(req, res, err.number, err.message);
   return Helper.GenError(req, res, -99999, err.message);
@@ -87,12 +87,14 @@ exports.DeformatParam = function (field, val, verrors) {
     if (val === null) return null;
     var dtstmp = Date.parse(val);
     if (isNaN(dtstmp)) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
+    
     //Get time in original timezone
     var has_timezone = false;
     if (/Z|[+\-][0-9]+:[0-9]+$/.test(val)) has_timezone = true;
     var mtstmp = null;
     if (has_timezone) mtstmp = moment.parseZone(val);
-    else mtstmp = moment(new Date(val));
+    else mtstmp = moment(Helper.ParseDate(val));
+
     if (!mtstmp.isValid()) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
     if (mtstmp.year()>9999) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
     if (mtstmp.year()<1753) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
@@ -137,7 +139,7 @@ exports.DeformatParam = function (field, val, verrors) {
     var mtstmp = null;
     var prefix = (!fulldate?'1970-01-01 ':'');
     if (has_timezone) mtstmp = moment.parseZone(prefix + val);
-    else mtstmp = moment(new Date(prefix + val));
+    else mtstmp = moment(Helper.ParseDate(prefix + val));
 
     if(field.datatype_config.preserve_timezone){
       //If no timezone specified, set to UTC
@@ -210,7 +212,7 @@ exports.getSQLParameters = function(sql, fields, jsh){
     var ivar = ivars[i];
     //Check if the iparamname is in usql
     var lastidx = null;
-    uivar = '@'+ivar.toUpperCase();
+    var uivar = '@'+ivar.toUpperCase();
     var foundvar = false;
     while(!foundvar && (lastidx != -1)){
       lastidx = usql.indexOf(uivar,(lastidx===null?0:lastidx+1));
@@ -243,7 +245,7 @@ exports.ApplyAutomaticSQLParameters = function(ivars, sql, sql_ptypes, sql_param
     if(ivar in sql_params) continue;
     //Check if the iparamname is in usql
     var lastidx = null;
-    uivar = '@'+ivar.toUpperCase();
+    var uivar = '@'+ivar.toUpperCase();
     var foundvar = false;
     while(!foundvar && (lastidx != -1)){
       lastidx = usql.indexOf(uivar,(lastidx===null?0:lastidx+1));
@@ -394,7 +396,7 @@ exports.getDataLockSQL = function (req, model, fields, sql_ptypes, sql_params, v
   var _this = this;
   if (!nodatalock) nodatalock = '';
   var arrayOptions = {};
-  if(global.jshSettings.case_insensitive_datalocks) arrayOptions.caseInsensitive = true;
+  if(this.jsh.Config.system_settings.case_insensitive_datalocks) arrayOptions.caseInsensitive = true;
 
   for (datalockid in req.jshconfig.datalock) {
     if ((typeof nodatalock != 'undefined') && (Helper.arrayIndexOf(nodatalock,datalockid,arrayOptions) >= 0)) continue;

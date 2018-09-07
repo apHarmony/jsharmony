@@ -198,7 +198,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
       return { 'buttons': rsltbuttons };
     },
   ]);
-  if (global.use_sample_data) rslt['sample_data'] = 1;
+  if (jsh.Config.use_sample_data) rslt['sample_data'] = 1;
 
   if (!model._inherits || (model._inherits.length == 0)) rslt._basemodel = model.id;
   else rslt._basemodel = model._inherits[0];
@@ -398,7 +398,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, onComplete) 
     ]);
     if (srcfield.popuplov) dstfield.popuplov = 1;
     if (srcfield.sql_search_sound) dstfield.search_sound = 1;
-    if (global.use_sample_data && ('sample' in srcfield)) dstfield.sample = srcfield.sample;
+    if (jsh.Config.use_sample_data && ('sample' in srcfield)) dstfield.sample = srcfield.sample;
     if ('controlparams' in srcfield) {
       dstfield.controlparams = {};
       copyValues(dstfield.controlparams, srcfield.controlparams, [
@@ -412,7 +412,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, onComplete) 
       }
     }
     if (('serverejs' in srcfield) && (srcfield.serverejs)) {
-      dstfield.value = ejs.render(dstfield.value, { ejsext: ejsext, req: req, res: res, _: _, model: model });
+      dstfield.value = ejs.render(dstfield.value, { ejsext: ejsext, req: req, res: res, _: _, model: model, jsh: jsh });
     }
     if (('link' in srcfield) && (srcfield.link)) {
       if (srcfield.link == 'select') {

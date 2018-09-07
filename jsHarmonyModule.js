@@ -17,4 +17,22 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-module.exports = require('./routes/jshroutes.js');
+var jsHarmony = require('./jsharmony.js');
+var jsHarmonyConfig = require('./jsharmonyConfig.js');
+
+function jsHarmonyModule(){
+  this.jsh = null;  //Set to target during jsh.AddModule
+  this.name = null; //Set to typename if not defined during jsh.AddModule
+  this.typename = "jsHarmonyModule";
+  this.Config = new jsHarmonyConfig.Base();
+}
+jsHarmonyModule.prototype.Init = function(cb){
+  if(cb) return cb();
+}
+jsHarmonyModule.prototype.Application = function(){
+  var jsh = new jsHarmony();
+  jsh.AddModule(this);
+  return jsh;
+}
+
+exports = module.exports = jsHarmonyModule;

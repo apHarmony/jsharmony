@@ -48,7 +48,6 @@ exports.date_decode = function (format, val){
   if (!m.isValid()) m = moment(new Date(val));
   return m.format("YYYY-MM-DDTHH:mm:ss.SSS");
   
-  
   var dtstmp = Date.parse(val);
 	if(isNaN(dtstmp)){ return null; }
 	return moment(new Date(dtstmp)).format("YYYY-MM-DDTHH:mm:ss.SSS");

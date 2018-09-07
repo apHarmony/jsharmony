@@ -29,16 +29,17 @@ var imagick = require('gm').subClass({ imageMagick: true });
 module.exports = exports = {};
 
 exports.Upload = function (req, res) {
+  var jsh = this.jsh;
   if (!('_DBContext' in req) || (req._DBContext == '') || (req._DBContext == null)) { return Helper.GenError(req, res, -30, 'Invalid file upload request.'); }
-  var temp_folder = global.datadir + 'temp/';
+  var temp_folder = jsh.Config.datadir + 'temp/';
   var public_folder = temp_folder + 'public/';
   var user_folder = temp_folder + req._DBContext + '/';
-  var form = new multiparty.Form({ maxFilesSize: global.max_filesize, uploadDir: (public_folder) });
+  var form = new multiparty.Form({ maxFilesSize: jsh.Config.max_filesize, uploadDir: (public_folder) });
   form.parse(req, function (err, fields, files) {
     //Handle Error
     if (err != null) {
       if (('code' in err) && (err.code == 'ETOOBIG')) { return Helper.GenError(req, res, -31, 'Upload file exceeded maximum file size.'); }
-      global.log.error(err);
+      jsh.Log.error(err);
       return Helper.GenError(req, res, -30, 'Invalid file upload request.');
     }
     
@@ -55,12 +56,12 @@ exports.Upload = function (req, res) {
     var file_origname = path.basename(xfile.originalFilename);
     var file_path = xfile.path;
     var file_ext = path.extname(path.basename(file_origname)).toLowerCase(); //Get extension
-    if (!_.includes(global.valid_extensions, file_ext)) { return Helper.GenError(req, res, -32, 'File extension is not supported.'); }
+    if (!_.includes(jsh.Config.valid_extensions, file_ext)) { return Helper.GenError(req, res, -32, 'File extension is not supported.'); }
     
     async.waterfall([
       async.apply(HelperFS.createFolderIfNotExists, user_folder),
-      async.apply(HelperFS.clearFiles, user_folder, global.user_temp_expiration, global.max_user_temp_foldersize),
-      async.apply(HelperFS.clearFiles, public_folder, global.public_temp_expiration, -1),
+      async.apply(HelperFS.clearFiles, user_folder, jsh.Config.user_temp_expiration, jsh.Config.max_user_temp_foldersize),
+      async.apply(HelperFS.clearFiles, public_folder, jsh.Config.public_temp_expiration, -1),
       async.apply(HelperFS.genRandomFileName, user_folder, file_ext),
       function (fname, callback) { file_token = fname; callback(null); },
       function (callback) { HelperFS.rename(file_path, (user_folder + file_token), callback); },
@@ -81,17 +82,18 @@ exports.Upload = function (req, res) {
 }
 
 exports.UploadCKEditor = function (req, res) {
+  var jsh = this.jsh;
   if (!('_DBContext' in req) || (req._DBContext == '') || (req._DBContext == null)) { return Helper.GenError(req, res, -30, 'Invalid file upload request.'); }
   if (!Helper.HasRole(req, 'CMSFILES')) { Helper.GenError(req, res, -15, 'Invalid Access'); return; }
-  var temp_folder = global.datadir + 'temp/';
+  var temp_folder = jsh.Config.datadir + 'temp/';
   var public_folder = temp_folder + 'public/';
-  var cmsfiles_folder = global.datadir + 'cmsfiles/';
-  var form = new multiparty.Form({ maxFilesSize: global.max_filesize, uploadDir: (public_folder) });
+  var cmsfiles_folder = jsh.Config.datadir + 'cmsfiles/';
+  var form = new multiparty.Form({ maxFilesSize: jsh.Config.max_filesize, uploadDir: (public_folder) });
   form.parse(req, function (err, fields, files) {
     //Handle Error
     if (err != null) {
       if (('code' in err) && (err.code == 'ETOOBIG')) { return Helper.GenError(req, res, -31, 'Upload file exceeded maximum file size.'); }
-      global.log.error(err);
+      jsh.Log.error(err);
       return Helper.GenError(req, res, -30, 'Invalid file upload request.');
     }
     if (files == null) { return Helper.GenError(req, res, -30, 'Invalid file upload request.'); }
@@ -103,11 +105,11 @@ exports.UploadCKEditor = function (req, res) {
     var file_origname = path.basename(xfile.originalFilename);
     var file_path = xfile.path;
     var file_ext = path.extname(path.basename(file_origname)).toLowerCase(); //Get extension
-    if (!_.includes(global.valid_extensions, file_ext)) { return Helper.GenError(req, res, -32, 'File extension is not supported.'); }
+    if (!_.includes(jsh.Config.valid_extensions, file_ext)) { return Helper.GenError(req, res, -32, 'File extension is not supported.'); }
     
     async.waterfall([
       async.apply(HelperFS.createFolderIfNotExists, cmsfiles_folder),
-      async.apply(HelperFS.clearFiles, public_folder, global.public_temp_expiration, -1),
+      async.apply(HelperFS.clearFiles, public_folder, jsh.Config.public_temp_expiration, -1),
       function (callback) {
         fs.exists(cmsfiles_folder + file_origname, function (exists) {
           if (exists) return callback({ number: -37, message: "File already exists" });
@@ -137,8 +139,9 @@ exports.UploadCKEditor = function (req, res) {
 }
 
 exports.ClearUpload = function (req, res) {
+  var jsh = this.jsh;
   if (!('_DBContext' in req) || (req._DBContext == '') || (req._DBContext == null)) { return Helper.GenError(req, res, -30, 'Invalid file upload request.'); }
-  var user_folder = global.datadir + 'temp/' + req._DBContext + '/';
+  var user_folder = jsh.Config.datadir + 'temp/' + req._DBContext + '/';
   HelperFS.clearFiles(user_folder, -1, -1, function (err) {
     res.end(JSON.stringify({ '_success': 1 }));
   });
@@ -150,6 +153,7 @@ exports.Download = function (req, res, modelid, keyid, fieldid, options) {
   if (!keyid) return Helper.GenError(req, res, -33, 'Download file not found.');
   if (req.query && (req.query.format=='js')) req.jsproxyid = 'xfiledownloader';
   var _this = this;
+  var jsh = this.jsh;
   
   var serveFile = function (req, res, fpath, fname, fext) {
     var serveoptions = {};
@@ -166,8 +170,8 @@ exports.Download = function (req, res, modelid, keyid, fieldid, options) {
   if (modelid == '_temp') {
     var fname = path.basename(keyid);
     var file_ext = path.extname(fname).toLowerCase(); //Get extension
-    if ((file_ext == '') || (!_.includes(global.valid_extensions, file_ext))) { return Helper.GenError(req, res, -32, 'File extension is not supported.'); }
-    var fpath = global.datadir + 'temp/' + req._DBContext + '/' + fname;
+    if ((file_ext == '') || (!_.includes(jsh.Config.valid_extensions, file_ext))) { return Helper.GenError(req, res, -32, 'File extension is not supported.'); }
+    var fpath = jsh.Config.datadir + 'temp/' + req._DBContext + '/' + fname;
     serveFile(req, res, fpath, fname, fname);
   }
   else {
@@ -217,10 +221,10 @@ exports.Download = function (req, res, modelid, keyid, fieldid, options) {
       if ('FILE_NAME' in field.controlparams.sqlparams) { fname = rslt[0][field.controlparams.sqlparams.FILE_NAME]; }
       else if ('FILE_EXT' in field.controlparams.sqlparams) { fname += rslt[0][field.controlparams.sqlparams.FILE_EXT]; }
       else if (field.controlparams.image && field.controlparams.image.format) { fname += '.' + field.controlparams.image.format; }
-      var fpath = global.datadir + field.controlparams.data_folder + '/' + fieldid + '_' + keyid;
+      var fpath = jsh.Config.datadir + field.controlparams.data_folder + '/' + fieldid + '_' + keyid;
       if (options.thumb) {
         if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
-          fpath = global.datadir + field.controlparams.data_folder + '/' + tname + '_' + keyid;
+          fpath = jsh.Config.datadir + field.controlparams.data_folder + '/' + tname + '_' + keyid;
           break;
         }
       }
@@ -231,6 +235,7 @@ exports.Download = function (req, res, modelid, keyid, fieldid, options) {
 
 exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfields, sql_extvalues, fileops, vfiles, file, filecallback) {
   var _this = this;
+  var jsh = this.jsh;
   var field = this.getFieldByName(model.fields, file);
   //Validate File field
   if (file in P) {
@@ -243,17 +248,17 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
       if (!('sqlparams' in req.jshconfig)) { throw new Error('Config missing sqlparams'); }
       if (!('TSTMP' in req.jshconfig.sqlparams)) { throw new Error('No TSTMP in sqlparams'); }
       if (!this.getFieldByName(model.fields, field.controlparams.sqlparams.FILE_UTSTMP)) throw new Error(file + ' FILE_UTSTMP parameter not defined as a field');
-      sql_extvalues.push(_this.getSQL(req.jshconfig.sqlparams.TSTMP));
+      sql_extvalues.push(_this.getSQL(model, req.jshconfig.sqlparams.TSTMP));
     }
     if ('FILE_UU' in field.controlparams.sqlparams) {
       sql_extfields.push(field.controlparams.sqlparams.FILE_UU);
       if (!('sqlparams' in req.jshconfig)) { throw new Error('Config missing sqlparams'); }
       if (!('CUSER' in req.jshconfig.sqlparams)) { throw new Error('No CUSER in sqlparams'); }
       if (!this.getFieldByName(model.fields, field.controlparams.sqlparams.FILE_UU)) throw new Error(file + ' FILE_UU parameter not defined as a field');
-      sql_extvalues.push(_this.getSQL(req.jshconfig.sqlparams.CUSER));
+      sql_extvalues.push(_this.getSQL(model, req.jshconfig.sqlparams.CUSER));
     }
     if (!('_DBContext' in req) || (req._DBContext == '') || (req._DBContext == null)) { return filecallback(Helper.GenError(req, res, -10, 'Invalid Login / Not Authenticated')); }
-    var filedest = global.datadir + field.controlparams.data_folder + '/' + file + '_%%%KEY%%%';
+    var filedest = jsh.Config.datadir + field.controlparams.data_folder + '/' + file + '_%%%KEY%%%';
     if (P[file] == '') {
       if ('FILE_SIZE' in field.controlparams.sqlparams) {
         if (field.controlparams.sqlparams.FILE_SIZE in P) throw new Error('Parameter conflict - ' + field.controlparams.sqlparams.FILE_SIZE);
@@ -267,7 +272,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
       fileops.push({ op: 'move', src: '', dest: filedest });
       //Delete Thumbnails in main operation
       if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
-        var tdest = global.datadir + field.controlparams.data_folder + '/' + tname + '_%%%KEY%%%';
+        var tdest = jsh.Config.datadir + field.controlparams.data_folder + '/' + tname + '_%%%KEY%%%';
         fileops.push({ op: 'move', src: '', dest: tdest });
       }
       filecallback(null);
@@ -279,8 +284,8 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
       var filekeyid = P[file].substr(('_temp/').length);
       var fname = path.basename(filekeyid);
       var file_ext = path.extname(fname).toLowerCase(); //Get extension
-      if ((file_ext == '') || (!_.includes(global.valid_extensions, file_ext))) { return filecallback(Helper.GenError(req, res, -32, 'File extension is not supported.')); }
-      fpath = global.datadir + 'temp/' + req._DBContext + '/' + fname;
+      if ((file_ext == '') || (!_.includes(jsh.Config.valid_extensions, file_ext))) { return filecallback(Helper.GenError(req, res, -32, 'File extension is not supported.')); }
+      fpath = jsh.Config.datadir + 'temp/' + req._DBContext + '/' + fname;
       //Validate file exists, get stats (size + ext)
       HelperFS.getFileStats(req, res, fpath, function (err, stat) {
         if (err != null) { return filecallback(Helper.GenError(req, res, -33, 'File not found.')); }
@@ -301,11 +306,11 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
         };
         
         //Resize Image, if applicable
-        if (field.controlparams.image && _.includes(Helper.SUPPORTED_IMAGES, file_ext)) {
+        if (field.controlparams.image && _.includes(jsh.Config.supported_images, file_ext)) {
           //Create Thumbnails, if applicable
           if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
-            var tdest = global.datadir + field.controlparams.data_folder + '/' + tname + '_%%%KEY%%%';
-            if (_.includes(Helper.SUPPORTED_IMAGES, file_ext)) {
+            var tdest = jsh.Config.datadir + field.controlparams.data_folder + '/' + tname + '_%%%KEY%%%';
+            if (_.includes(jsh.Config.supported_images, file_ext)) {
               if (field.controlparams.thumbnails[tname].resize) fileops.push({ op: 'img_resize', src: fpath, dest: tdest, size: field.controlparams.thumbnails[tname].resize, format: field.controlparams.thumbnails[tname].format });
               else if (field.controlparams.thumbnails[tname].crop) fileops.push({ op: 'img_crop', src: fpath, dest: tdest, size: field.controlparams.thumbnails[tname].crop, format: field.controlparams.thumbnails[tname].format });
               else throw new Error('No thumbnail resize or crop operation in ' + field.name);
@@ -330,6 +335,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
 };
 
 exports.ProcessFileOperations = function (keyval, fileops, rslt, callback) {
+  var jsh = this.jsh;
   if ((typeof keyval == 'undefined') || !keyval) return callback(Helper.NewError('Invalid file key', -13), null);
   
   async.each(fileops, function (fileop, opcallback) {
@@ -402,7 +408,7 @@ exports.ProcessFileOperations = function (keyval, fileops, rslt, callback) {
   }, function (fileerr) {
     if ((fileerr != null) && ('code' in fileerr) && (fileerr.code == 'ENOENT')) { /* Ignore this error */ }
     else if (fileerr != null) {
-      global.log.error(fileerr);
+      jsh.Log.error(fileerr);
       return callback(Helper.NewError('Error committing file update.', -35), null);
     }
     return callback(null, rslt);

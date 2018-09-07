@@ -26,7 +26,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 var jsh_state = { GET:{},QS:'',fullpath:'',fullurl:_BASEURL,hash:'',modelid:'',path:'' };
 var jsh_global = {
-  max_filesize: <%-JSON.stringify(global.max_filesize)%>,
+  max_filesize: <%-JSON.stringify(jsh.Config.max_filesize)%>,
   global_params: <%-(('globalparams' in req.jshconfig) ? JSON.stringify(_.mapValues(req.jshconfig.globalparams,function(val,key){ if(_.isFunction(val)) return val(req); return val; })) : '{}')%>,
   baseurl:<%-JSON.stringify(req.baseurl)%>
 };
@@ -46,11 +46,11 @@ var jsh_cur_model = null;
 
 init_xfileupload();
 var jsh_title_html = '';
-var jsh_html_title = '<%=global.site_title%> - %%%PAGETITLE%%%';
-var jsh_frontsalt = <%-JSON.stringify(global.frontsalt)%>;
+var jsh_html_title = '<%=jsh.Config.site_title%> - %%%PAGETITLE%%%';
+var jsh_frontsalt = <%-JSON.stringify(jsh.Config.frontsalt)%>;
 var jsh_app_errors = [];
-<% if(global.debug_params.web_detailed_errors && global.app_errors){ %>
-jsh_app_errors = <%-JSON.stringify(global.app_errors)%>;
+<% if(jsh.Config.debug_params.web_detailed_errors && jsh.SystemErrors){ %>
+jsh_app_errors = <%-JSON.stringify(jsh.SystemErrors)%>;
   <% } %>
 
   $(document).ready(function(){

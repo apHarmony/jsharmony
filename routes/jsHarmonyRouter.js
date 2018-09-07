@@ -26,55 +26,58 @@ var fs = require('fs');
 var ejsext = require('../lib/ejsext.js');
 var Helper = require('../lib/Helper.js');
 var HelperFS = require('../lib/HelperFS.js');
+var jsHarmonySite = require('../jsHarmonySite.js');
 var async = require('async');
 var url = require('url');
 
-var Routes = function (jsh, jshconfig) {
-  if(!jshconfig) jshconfig = {};
-  Routes.ValidateSiteConfig(jshconfig);
+var jsHarmonyRouter = function (jsh, siteid) {
+  if(!(siteid in jsh.Sites)) throw new Error('Site '+siteid+' not defined');
+  var siteConfig = jsh.Sites[siteid];
+  siteConfig.Validate();
   var router = express.Router();
   router.jsh = jsh;
-  router.jshconfig = jshconfig;
-  if (jshconfig.onLoad) jshconfig.onLoad(jsh, router);
+  router.jshconfig = siteConfig;
+  if (siteConfig.onLoad) siteConfig.onLoad(jsh, router);
   
   /* GET home page. */
   router.all('*', function (req, res, next) {
-    req.baseurl = jshconfig.baseurl;
-    req.jshconfig = jshconfig;
+    req.baseurl = siteConfig.baseurl;
+    req.jshconfig = siteConfig;
     req.jshlocal = {
       Models: { },
     };
     req.forcequery = {};
     req.getBaseJS = function () { return jsh.getBaseJS(req, jsh); }
-    if (global.debug_params.web_detailed_errors) req._web_detailed_errors = 1;
+    req.getJSH = function() { return jsh; };
+    if (jsh.Config.debug_params.web_detailed_errors) req._web_detailed_errors = 1;
     setNoCache(req,res);
     res.setHeader('X-UA-Compatible','IE=edge');
     return next();
   });
   router.route('/login').all(function (req, res, next) {
-    if(!jshconfig.auth){ console.log('Auth not configured in config'); return next(); }
-    (jshconfig.auth.onRenderLogin || jsh.RenderLogin).call(jsh, req, res, function (rslt) {
+    if(!siteConfig.auth){ console.log('Auth not configured in config'); return next(); }
+    (siteConfig.auth.onRenderLogin || jsh.RenderLogin).call(jsh, req, res, function (rslt) {
       if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Login', body: rslt, XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
   router.route('/login/forgot_password').all(function (req, res, next) {
-    if(!jshconfig.auth){ console.log('Auth not configured in config'); return next(); }
-    (jshconfig.auth.onRenderLoginForgotPassword || jsh.RenderLoginForgotPassword).call(jsh, req, res, function (rslt) {
+    if(!siteConfig.auth){ console.log('Auth not configured in config'); return next(); }
+    (siteConfig.auth.onRenderLoginForgotPassword || jsh.RenderLoginForgotPassword).call(jsh, req, res, function (rslt) {
       if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Forgot Password', body: rslt, XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
   router.route('/login/forgot_password_reset').all(function (req, res, next) {
-    if(!jshconfig.auth){ console.log('Auth not configured in config'); return next(); }
-    (jshconfig.auth.onRenderLoginForgotPasswordReset || jsh.RenderLoginForgotPasswordReset).call(jsh, req, res, function (rslt) {
+    if(!siteConfig.auth){ console.log('Auth not configured in config'); return next(); }
+    (siteConfig.auth.onRenderLoginForgotPasswordReset || jsh.RenderLoginForgotPasswordReset).call(jsh, req, res, function (rslt) {
       if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Reset Password', body: rslt, XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
-  for (var i = 0; i < global.public_apps.length; i++) {
-    var app = global.public_apps[i];
+  for (var i = 0; i < jsh.Config.public_apps.length; i++) {
+    var app = jsh.Config.public_apps[i];
     for (var j in app) router.all(j, app[j].bind(jsh.AppSrv));
   }
-  for (var i = 0; i < jshconfig.public_apps.length; i++) {
-    var app = jshconfig.public_apps[i];
+  for (var i = 0; i < siteConfig.public_apps.length; i++) {
+    var app = siteConfig.public_apps[i];
     for (var j in app) router.all(j, app[j].bind(jsh.AppSrv));
   }
   router.get('/system.css', function (req, res) {
@@ -93,9 +96,9 @@ var Routes = function (jsh, jshconfig) {
 	}
   });
   router.all('*', function (req, res, next) {
-    if(!jshconfig.auth){ return jsh.Auth.NoAuth(req, res, next); }
+    if(!siteConfig.auth){ return jsh.Auth.NoAuth(req, res, next); }
     //Handle Authentication
-    (jshconfig.auth.onAuth || jsh.Auth).call(jsh, req, res, next, function (errno, msg) {
+    (siteConfig.auth.onAuth || jsh.Auth).call(jsh, req, res, next, function (errno, msg) {
       if ((req.url.indexOf('/_d/') == 0) || (req.url.indexOf('/_ul/') == 0)) {
         //For AppSrv, return error message
         if (typeof errno == 'undefined') return Helper.GenError(req, res, -10, "User not authenticated, please log in");
@@ -108,7 +111,7 @@ var Routes = function (jsh, jshconfig) {
     });
   });
   router.get('/logout', function (req, res, next) {
-    if(!jshconfig.auth){ console.log('Auth not configured in config'); return next(); }
+    if(!siteConfig.auth){ console.log('Auth not configured in config'); return next(); }
     jsh.RenderLogout(req, res, function (rslt) {
       if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Logout', body: rslt, XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
@@ -116,12 +119,12 @@ var Routes = function (jsh, jshconfig) {
   router.get('/system.js', function (req, res) {
     HelperFS.outputContent(req, res, jsh.Cache['system.js'],'text/javascript');
   });
-  for (var i = 0; i < global.private_apps.length; i++) {
-    var app = global.private_apps[i];
+  for (var i = 0; i < jsh.Config.private_apps.length; i++) {
+    var app = jsh.Config.private_apps[i];
     for (var j in app) router.all(j, app[j].bind(jsh.AppSrv));
   }
-  for (var i = 0; i < jshconfig.private_apps.length; i++) {
-    var app = jshconfig.private_apps[i];
+  for (var i = 0; i < siteConfig.private_apps.length; i++) {
+    var app = siteConfig.private_apps[i];
     for (var j in app) router.all(j, app[j].bind(jsh.AppSrv));
   }
   router.post('/_ul/clear', function (req, res) {
@@ -165,7 +168,7 @@ var Routes = function (jsh, jshconfig) {
     if (!(data instanceof Array)) { next(); return; }
     
     var dbtasks = {};
-    if (global.debug_params.appsrv_requests) global.log.info(data);
+    if (jsh.Config.debug_params.appsrv_requests) jsh.Log.info(data);
     var i = 0;
     async.eachSeries(data, function (action, callback) {
       i += 1;
@@ -234,7 +237,7 @@ var Routes = function (jsh, jshconfig) {
     var model = jsh.getModel(req, modelid);
     if (model.layout != 'grid') throw new Error('CSV Export only supported on Grid');
     processCustomRouting('csv', req, res, jsh, modelid, function(){
-      var dbtask = jsh.AppSrv.getModelRecordset(req, res, modelid, req.query, req.body, global.export_rowlimit, { 'export': false });
+      var dbtask = jsh.AppSrv.getModelRecordset(req, res, modelid, req.query, req.body, jsh.Config.export_rowlimit, { 'export': false });
       jsh.AppSrv.exportCSV(req, res, dbtask, modelid);
     });
   });
@@ -277,7 +280,7 @@ var Routes = function (jsh, jshconfig) {
           }
         }
         //Show model listing, if no menu exists and user has access
-        if(params.ShowListing || !jshconfig.auth || ('DEV' in req._roles)){
+        if(params.ShowListing || !siteConfig.auth || ('DEV' in req._roles)){
           //_.extend(params, { title: 'Models', body: jsh.RenderListing(), XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
           return jsh.RenderTemplate(req, res, 'index', {
             title: 'Models', body: jsh.RenderListing(), TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh
@@ -285,7 +288,7 @@ var Routes = function (jsh, jshconfig) {
         }
         //Otherwise, show error
         var no_forms_html = 'No forms available';
-        if(jshconfig.auth) no_forms_html += '<br/><br/><a href="/logout">Logout</a>';
+        if(siteConfig.auth) no_forms_html += '<br/><br/><a href="/logout">Logout</a>';
         res.end(no_forms_html);
       });
     }
@@ -337,47 +340,10 @@ var Routes = function (jsh, jshconfig) {
   return router;
 };
 
-Routes.ValidateSiteConfig = function(jshconfig){
-  if(!jshconfig.id){
-    console.log('jsHarmony Site ID not set, defaulting to "main"');
-    jshconfig.id = 'main';
-  }
-  if(Helper.notset(jshconfig.basetemplate)) jshconfig.basetemplate = 'index';
-  if(Helper.notset(jshconfig.baseurl)) jshconfig.baseurl = '/';
-  if(Helper.notset(jshconfig.show_system_errors)) jshconfig.show_system_errors = true;
-  if(!jshconfig.menu) jshconfig.menu = function(req,res,jsh,params,onComplete){ params.ShowListing = true; params.XMenu = { MainMenu:[], SubMenus:{} }; onComplete(); }
-  if(!jshconfig.globalparams) jshconfig.globalparams = {};
-  if(!jshconfig.sqlparams) jshconfig.sqlparams = {};
-  if(!jshconfig.public_apps) jshconfig.public_apps = [];
-  if(!jshconfig.private_apps) jshconfig.private_apps = [];
-
-  if(jshconfig.auth){
-    if(Helper.notset(jshconfig.auth.on_login)) jshconfig.auth.on_login = function(req, jsh, params, cb){ //cb(err, rslt)
-      jsh.AppSrv.ExecRecordset('login', req.jshconfig.auth.sql_login, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
-    };
-    if(Helper.notset(jshconfig.auth.on_superlogin)) jshconfig.auth.on_superlogin = function(req, jsh, params, cb){ //cb(err, rslt)
-      jsh.AppSrv.ExecRecordset('login', req.jshconfig.auth.sql_superlogin, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
-    };
-    if(Helper.notset(jshconfig.auth.on_loginsuccess)) jshconfig.auth.on_loginsuccess = function(req, jsh, params, cb){ //cb(err, rslt)
-      var context = params[jsh.map.user_id];
-      if(jshconfig.auth.getContextUser) context = jshconfig.auth.getContextUser(context, jsh);
-      jsh.AppSrv.ExecRow(context, req.jshconfig.auth.sql_loginsuccess, [jsh.AppSrv.DB.types.VarChar(255), jsh.AppSrv.DB.types.BigInt, jsh.AppSrv.DB.types.DateTime(7)], params, cb);
-    };
-    if(Helper.notset(jshconfig.auth.on_passwordreset)) jshconfig.auth.on_passwordreset = function(req, jsh, params, cb){ //cb(err, rslt)
-      var context = params[jsh.map.user_id];
-      if(jshconfig.auth.getContextUser) context = jshconfig.auth.getContextUser(context, jsh);
-      jsh.AppSrv.ExecRow(context, req.jshconfig.auth.sql_passwordreset, [jsh.AppSrv.DB.types.VarBinary(200), jsh.AppSrv.DB.types.VarChar(255), jsh.AppSrv.DB.types.BigInt, jsh.AppSrv.DB.types.DateTime(7)], params, cb);
-    };
-    if(Helper.notset(jshconfig.auth.on_auth)) jshconfig.auth.on_auth = function(req, jsh, params, cb){ //cb(err, rslt)
-      jsh.AppSrv.ExecMultiRecordset('login', req.jshconfig.auth.sql_auth, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
-    };
-  }
-}
-
 function genOnePage(jsh, req, res, modelid){
   //Render OnePage body content
   var ejsbody = require('ejs').render(jsh.getEJS('jsh_onepage'), {
-    req: req, _: _, ejsext: ejsext,
+    req: req, _: _, ejsext: ejsext, jsh: jsh,
     srcfiles: jsh.AppSrv.modelsrv.srcfiles,
     popups: jsh.Popups
   });
@@ -385,7 +351,7 @@ function genOnePage(jsh, req, res, modelid){
   var tmpl_name = req.jshconfig.basetemplate;
   var model = jsh.getModel(req, modelid);
   if ('popup' in model){
-    if('popup' in global.views) tmpl_name = 'popup';
+    if('popup' in jsh.Views) tmpl_name = 'popup';
   }
   //Render page
   jsh.RenderTemplate(req, res, tmpl_name, {
@@ -451,4 +417,4 @@ function setNoCache(req, res){
   }
 }
 
-module.exports = Routes;
+module.exports = jsHarmonyRouter;

@@ -65,7 +65,7 @@ AppSrvRpt.prototype.queueReport = function (req, res, modelid, Q, P, params, onC
   if (!thisapp.ParamCheck('Q', Q, _.map(fieldlist, function (field) { return '&' + field; }))) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   if (!thisapp.ParamCheck('P', P, [])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   
-  global.log.info("REPORT: " + req.originalUrl + " " + (req.user_id || '') + " " + (req.user_name || ''));
+  jsh.Log.info("REPORT: " + req.originalUrl + " " + (req.user_id || '') + " " + (req.user_name || ''));
   
   var sql_ptypes = [];
   var sql_params = {};
@@ -114,7 +114,7 @@ AppSrvRpt.prototype.parseReportSQLData = function (req, res, model, sql_ptypes, 
     if ('nodatalock' in dparams) {
       var skipdatalock = true;
       for (datalockid in req.jshconfig.datalock) {
-        if (Helper.arrayIndexOf(dparams.nodatalock,datalockid,{caseInsensitive:global.jshSettings.case_insensitive_datalocks}) < 0) skipdatalock = false;
+        if (Helper.arrayIndexOf(dparams.nodatalock,datalockid,{caseInsensitive:thisapp.jsh.Config.system_settings.case_insensitive_datalocks}) < 0) skipdatalock = false;
       }
     }
     
@@ -192,20 +192,21 @@ function stringToAscii(s) {
 AppSrvRpt.prototype.genReportContent = function(req, res, modelid, params, data){
   var rslt = { header: '', body: '', footer: '' };
   var _this = this;
+  var jsh = _this.AppSrv.jsh;
   if (modelid.indexOf('_report_') != 0) throw new Error('Model '+modelid+' is not a report');
   var reportid = modelid.substr(8);
-  var model = _this.AppSrv.jsh.getModel(req, modelid);
+  var model = jsh.getModel(req, modelid);
   var ejsname = 'reports/' + reportid;
-  var ejsbody = _this.AppSrv.jsh.getEJS(ejsname,function(){});
-  var ejsbody_header = _this.AppSrv.jsh.getEJS(ejsname+'.header',function(){});
-  var ejsbody_footer = _this.AppSrv.jsh.getEJS(ejsname+'.footer',function(){});
+  var ejsbody = jsh.getEJS(ejsname,function(){});
+  var ejsbody_header = jsh.getEJS(ejsname+'.header',function(){});
+  var ejsbody_footer = jsh.getEJS(ejsname+'.footer',function(){});
   for (var i = model._inherits.length - 1; i >= 0; i--) {
     var ejsid = model._inherits[i];
     if (ejsid.substr(0, 8) == '_report_') {
       ejsid = ejsid.substr(8);
-      if (ejsbody == null) ejsbody = _this.AppSrv.jsh.getEJS('reports/' + ejsid,function(){});
-      if (ejsbody_header == null) ejsbody_header = _this.AppSrv.jsh.getEJS('reports/' + ejsid + '.header',function(){});
-      if (ejsbody_footer == null) ejsbody_footer = _this.AppSrv.jsh.getEJS('reports/' + ejsid + '.footer',function(){});
+      if (ejsbody == null) ejsbody = jsh.getEJS('reports/' + ejsid,function(){});
+      if (ejsbody_header == null) ejsbody_header = jsh.getEJS('reports/' + ejsid + '.header',function(){});
+      if (ejsbody_footer == null) ejsbody_footer = jsh.getEJS('reports/' + ejsid + '.footer',function(){});
     }
   }
 
@@ -223,10 +224,10 @@ AppSrvRpt.prototype.genReportContent = function(req, res, modelid, params, data)
   if(!ejsbody_footer) ejsbody_footer = '';
 
   if (ejsbody == null) ejsbody = 'REPORT BODY NOT FOUND';
-  if (global.debug_params.report_debug) {
-    ejsbody = ejsbody.replace(/{{(.*?)}}/g, '<%=ejsext.null_log($1,\'$1\')%>');
-    ejsbody_header = ejsbody_header.replace(/{{(.*?)}}/g, '<%=ejsext.null_log($1,\'$1\')%>');
-    ejsbody_footer = ejsbody_footer.replace(/{{(.*?)}}/g, '<%=ejsext.null_log($1,\'$1\')%>');
+  if (jsh.Config.debug_params.report_debug) {
+    ejsbody = ejsbody.replace(/{{(.*?)}}/g, '<%=ejsext.null_log(jsh.Log,$1,\'$1\')%>');
+    ejsbody_header = ejsbody_header.replace(/{{(.*?)}}/g, '<%=ejsext.null_log(jsh.Log,$1,\'$1\')%>');
+    ejsbody_footer = ejsbody_footer.replace(/{{(.*?)}}/g, '<%=ejsext.null_log(jsh.Log,$1,\'$1\')%>');
   }
   else {
     ejsbody = ejsbody.replace(/{{/g, '<%=(');
@@ -240,11 +241,12 @@ AppSrvRpt.prototype.genReportContent = function(req, res, modelid, params, data)
     model: model,
     moment: moment,
     _this: _this,
+    jsh: jsh,
     ejsext: ejsext,
     data: data,
     params: params,
     _: _,
-    filename: _this.AppSrv.jsh.getEJSFilename(ejsname)
+    filename: jsh.getEJSFilename(ejsname)
   });
 
   if(ejsbody_header){
@@ -252,6 +254,7 @@ AppSrvRpt.prototype.genReportContent = function(req, res, modelid, params, data)
       model: model, 
       moment: moment, 
       _this: _this,
+      jsh: jsh,
       ejsext: ejsext,
       data: data,
       params: params,
@@ -266,6 +269,7 @@ AppSrvRpt.prototype.genReportContent = function(req, res, modelid, params, data)
       model: model, 
       moment: moment, 
       _this: _this,
+      jsh: jsh,
       ejsext: ejsext,
       data: data,
       params: params,
@@ -279,15 +283,16 @@ AppSrvRpt.prototype.genReportContent = function(req, res, modelid, params, data)
 }
 
 AppSrvRpt.prototype.genReport = function (req, res, modelid, params, data, done) {
-  var report_folder = global.datadir + 'temp/report/';
   var _this = this;
+  var jsh = _this.AppSrv.jsh;
+  var report_folder = jsh.Config.datadir + 'temp/report/';
   if (modelid.indexOf('_report_') != 0) throw new Error('Model is not a report');
   var reportid = modelid.substr(8);
   var model = _this.AppSrv.jsh.getModel(req, modelid);
 
   HelperFS.createFolderIfNotExists(report_folder, function (err) {
     if (err) throw err;
-    HelperFS.clearFiles(report_folder, global.public_temp_expiration, -1, function () {
+    HelperFS.clearFiles(report_folder, jsh.Config.public_temp_expiration, -1, function () {
       tmp.file({ dir: report_folder }, function (tmperr, tmppath, tmpfd) {
         if (tmperr) throw tmperr;
         _this.getPhantom(function (ph) {
@@ -398,7 +403,7 @@ AppSrvRpt.prototype.genReport = function (req, res, modelid, params, data, done)
               
               var contentWidth = pageWidth - borderLeft - borderRight;
               var contentHeight = pageHeight - borderTop - borderBottom - headerHeightPx - footerHeightPx;
-              if (global.debug_params.report_debug) { console.log('Calculated Page Size: '+contentHeight + 'x'+contentWidth); }
+              if (jsh.Config.debug_params.report_debug) { console.log('Calculated Page Size: '+contentHeight + 'x'+contentWidth); }
 
               contentWidth *= 0.998;
               contentHeight *= 0.998;
@@ -415,19 +420,19 @@ AppSrvRpt.prototype.genReport = function (req, res, modelid, params, data, done)
                           if (typeof disposedone != 'undefined') disposedone();
                         });
                       });
-                    }).catch(function (err) { global.log.error(err); });;
+                    }).catch(function (err) { jsh.Log.error(err); });;
                   };
                   done(null, tmppdfpath, dispose);
-                }).catch(function (err) { global.log.error(err); });
+                }).catch(function (err) { jsh.Log.error(err); });
               };
 
               page.property('paperSize', pagesettings).then(function () {
                 page.on('onLoadFinished', onLoadFinished).then(function () {
-                  page.property('content', rptcontent.body).then(function () { /* Report Generation Complete */ }).catch(function (err) { global.log.error(err); });;
-                }).catch(function (err) { global.log.error(err); });
-              }).catch(function (err) { global.log.error(err); });
+                  page.property('content', rptcontent.body).then(function () { /* Report Generation Complete */ }).catch(function (err) { jsh.Log.error(err); });;
+                }).catch(function (err) { jsh.Log.error(err); });
+              }).catch(function (err) { jsh.Log.error(err); });
               //page.set('viewportSize',{width:3700,height:3800});
-            }).catch(function (err) { global.log.error(err); });;
+            }).catch(function (err) { jsh.Log.error(err); });;
           } catch (err) {
             try { if (page != null) page.close(); } catch (ex) { }
             return done(Helper.NewError("Error occurred during report generation (" + err.toString() + ')', -99999), null);
@@ -457,13 +462,14 @@ AppSrvRpt.prototype.RenderEJS = function (ejssrc, ejsdata) {
 
 AppSrvRpt.prototype.getPhantom = function (callback) {
   var _this = this;
+  var jsh = _this.AppSrv.jsh;
   if (_this.phsession) {
     //Recycle phantom after 50 users
     _this.phreqcount++;
     if (_this.phreqcount > 3) { _this.phsession.exit(); _this.phsession = null; }
     else return callback(_this.phsession);
   }
-  global.log.info('Launching PhantomJS Report Renderer');
+  jsh.Log.info('Launching PhantomJS Report Renderer');
   var rptlogger = function () {
     var logtxt = '';
     for (var i = 0; i < arguments.length; i++) {
@@ -471,7 +477,7 @@ AppSrvRpt.prototype.getPhantom = function (callback) {
       logtxt += arguments[i].toString() + ' - ';
     }
     if (!logtxt || (logtxt.indexOf('NOOP command') >= 0)) return;
-    global.log.info(logtxt);
+    jsh.Log.info(logtxt);
   };
   var phantomConfig = {
     onExit: function (code, signal) {
@@ -490,7 +496,7 @@ AppSrvRpt.prototype.getPhantom = function (callback) {
     _this.phsession = _phsession;
     _this.phreqcount = 0;
     return callback(_this.phsession);
-  }).catch(function (err) { global.log.error(err); });
+  }).catch(function (err) { jsh.Log.error(err); });
 }
 
 AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete) {
@@ -499,7 +505,7 @@ AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete
   var model = thisapp.jsh.getModel(req, modelid);
   if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
   if (!('jobqueue' in model)) throw new Error(modelid + ' job queue not enabled');
-  if (!thisapp.jobproc) throw new Error('Job Processor not configured');
+  if (!thisapp.JobProc) throw new Error('Job Processor not configured');
   if (modelid.indexOf('_report_') != 0) throw new Error('Model '+modelid+' is not a report');
   var reportid = modelid.substr(8);
   //Validate Parameters
@@ -588,7 +594,7 @@ AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete
         verrors = _.merge(verrors, model.xvalidate.Validate('B', rparams));
         if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -99999, 'Error during job queue: ' + verrors[''].join('\n') + ' ' + JSON.stringify(rparams)); return; }
         
-        if(!thisapp.jobproc.AddDBJob(req, res, jobtasks, i, jrow, reportid, rparams)) return;
+        if(!thisapp.JobProc.AddDBJob(req, res, jobtasks, i, jrow, reportid, rparams)) return;
       }
       thisapp.db.ExecTransTasks(jobtasks, function (err, rslt) {
         if (err != null) { thisapp.AppDBError(req, res, err); return; }
