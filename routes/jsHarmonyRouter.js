@@ -36,18 +36,18 @@ var jsHarmonyRouter = function (jsh, siteid) {
   siteConfig.Validate();
   var router = express.Router();
   router.jsh = jsh;
-  router.jshconfig = siteConfig;
+  router.jshsite = siteConfig;
   if (siteConfig.onLoad) siteConfig.onLoad(jsh, router);
   
   /* GET home page. */
   router.all('*', function (req, res, next) {
     req.baseurl = siteConfig.baseurl;
-    req.jshconfig = siteConfig;
+    req.jshsite = siteConfig;
     req.jshlocal = {
       Models: { },
     };
     req.forcequery = {};
-    req.getBaseJS = function () { return jsh.getBaseJS(req, jsh); }
+    req.getJSClientParams = function () { return jsh.getJSClientParams(req, jsh); }
     req.getJSH = function() { return jsh; };
     if (jsh.Config.debug_params.web_detailed_errors) req._web_detailed_errors = 1;
     setNoCache(req,res);
@@ -272,7 +272,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     else {
       //Get root menu and render
       var params = {};
-      req.jshconfig.menu(req, res, jsh, params, function () {
+      req.jshsite.menu(req, res, jsh, params, function () {
         if (params.XMenu && params.XMenu.MainMenu) {
           for (var i = 0; i < params.XMenu.MainMenu.length; i++) {
             var link = params.XMenu.MainMenu[i].Link;
@@ -287,8 +287,9 @@ var jsHarmonyRouter = function (jsh, siteid) {
           });
         }
         //Otherwise, show error
-        var no_forms_html = 'No forms available';
-        if(siteConfig.auth) no_forms_html += '<br/><br/><a href="/logout">Logout</a>';
+        var no_forms_html = '<html><body>No forms available';
+        if(siteConfig.auth) no_forms_html += '<br/><br/><a href="'+req.baseurl+'logout">Logout</a>';
+        no_forms_html += '</body</html>';
         res.end(no_forms_html);
       });
     }
@@ -318,14 +319,26 @@ var jsHarmonyRouter = function (jsh, siteid) {
   router.post('/_db/exec', function (req, res, next) {
     if(!('SYSADMIN' in req._roles) && !('DEV' in req._roles)) return next();
     var sql = req.body.sql;
-    jsh.AppSrv.ExecMultiRecordset(req._DBContext, sql, [], {}, function (err, dbrslt) {
+    var dbid = req.body.db;
+    if(!(dbid in jsh.DB)) { Helper.GenError(req, res, -4, 'Invalid Database ID'); return; }
+    var db = jsh.DB[dbid];
+
+    //Run as user, if applicable
+    var dbconfig = jsh.DBConfig[dbid];
+    if(req.body.runas_user){
+      dbconfig = _.extend({}, dbconfig);
+      dbconfig.user = req.body.runas_user;
+      dbconfig.password = req.body.runas_password;
+    }
+
+    db.MultiRecordset(req._DBContext, sql, [], {}, undefined, function (err, dbrslt) {
       if(err){ err.sql = sql; return jsh.AppSrv.AppDBError(req, res, err); }
       rslt = {
         '_success': 1,
         'dbrslt': dbrslt
       };
       res.send(JSON.stringify(rslt));
-    });
+    }, dbconfig);
   });
   router.get('/:modelid/:modelkey?', function (req, res, next) {
     //Verify model exists
@@ -348,7 +361,7 @@ function genOnePage(jsh, req, res, modelid){
     popups: jsh.Popups
   });
   //Set template (popup vs full)
-  var tmpl_name = req.jshconfig.basetemplate;
+  var tmpl_name = req.jshsite.basetemplate;
   var model = jsh.getModel(req, modelid);
   if ('popup' in model){
     if('popup' in jsh.Views) tmpl_name = 'popup';
@@ -379,7 +392,7 @@ function processModelQuerystring(jsh, req, modelid) {
     }
   }
   //Add querystring parameters for datalocks
-  for(var datalockid in req.jshconfig.datalock){
+  for(var datalockid in req.jshsite.datalock){
     if(_.includes(foundq, datalockid)) continue;
     if(!(datalockid in req.query)){
       var qval = Helper.ResolveParams(req, '@'+datalockid);

@@ -25,9 +25,9 @@ module.exports = exports = {};
 
 exports.GetToken = function (req, res) {
   if (!('_DBContext' in req) || (req._DBContext == '') || (req._DBContext == null)) { return Helper.GenError(req, res, -10, 'Invalid Login / Not Authenticated'); }
-  if (!req.jshconfig.auth) { return Helper.GenError(req, res, -99999, 'Authentication not defined'); }
-  if (!req.jshconfig.auth.getToken) { return Helper.GenError(req, res, -99999, 'Token generation not defined'); }
-  req.jshconfig.auth.getToken(this, req, function (rslt, err) {
+  if (!req.jshsite.auth) { return Helper.GenError(req, res, -99999, 'Authentication not defined'); }
+  if (!req.jshsite.auth.getToken) { return Helper.GenError(req, res, -99999, 'Token generation not defined'); }
+  req.jshsite.auth.getToken(this, req, function (rslt, err) {
     if (err) { return Helper.GenError(req, res, -99999, err); }
     res.end(JSON.stringify(rslt));
   });

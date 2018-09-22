@@ -380,7 +380,7 @@ exports.ParseEntities = function () {
       if(!(model.db in _this.DBConfig)) _this.LogInit_ERROR('Model ' + model.id + ' uses an undefined db: '+model.db);
       else modelDB = model.db;
     }
-    var sqlext = _this.SQLExt[_this.DBConfig[modelDB]._driver.name];
+    var sqlext = _this.DB[modelDB].SQLExt;
     model.xvalidate = new XValidate();
     if ('sites' in model) _this.LogInit_WARNING('Model ' + model.id + ' had previous "sites" attribute - overwritten by system value');
     model.sites = Helper.GetRoleSites(model.roles);
@@ -653,9 +653,10 @@ exports.ParseEntities = function () {
       }
       //Add C for any LOV field that can be used in truncate_lov
       if(field.lov){
+        var lov = field.lov;
         if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')){
           if(!field.always_editable_on_insert && Helper.access(model.actions, 'I') && Helper.access(field.actions, 'I')){
-            if(field.lov.sql||field.lov.sql2||field.lov.sqlmp||field.lov.sqlselect){
+            if(lov.sql||lov.sql2||lov.sqlmp||lov.sqlselect){
               if (!Helper.access(field.actions, 'C')) { if (!field.actions) field.actions = ''; field.actions += 'C'; }
             }
           }
@@ -712,7 +713,7 @@ exports.ParseEntities = function () {
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
       'js', 'ejs', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
-      'path', 'component', 'templates',
+      'path', 'component', 'templates', 'db',
       //Report Parameters
       'subheader', 'footerheight', 'headeradd',
     ];
@@ -729,7 +730,7 @@ exports.ParseEntities = function () {
       'image', 'thumbnails', 'expand_all', 'item_context_menu'
     ];
     var _v_popuplov = ['target', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
-    var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'always_get_full_lov', 'nodatalock', 'showcode'];
+    var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'always_get_full_lov', 'nodatalock', 'showcode', 'db'];
     //lov
     var existing_targets = [];
     for (var f in model) { if (f.substr(0, 7) == 'comment') continue; if (!_.includes(_v_model, f)) _this.LogInit_ERROR(model.id + ': Invalid model property: ' + f); }
@@ -903,11 +904,30 @@ exports.ParseEntities = function () {
             //Check if any custom LOV is missing a datalock
             else if(!skip_datalock_lov && ((field.lov && (field.lov.sql||field.lov.sql2||field.lov.sqlmp||field.lov.sqlselect))||(field.popuplov))) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Missing datalock on lov '+siteid+'::'+datalockid);
           });
-
         }
       }
     }
   });  
+
+  //Validate LOV DB and add sqlselect for cross-db LOV
+  //Perform this after datalock validation, since datalocks should not be required for this sqlselect
+  _.forOwn(this.Models, function (model) {
+    var modelDB = 'default';
+    if('db' in model) modelDB = model.db;
+    if (model.fields) _.each(model.fields, function (field) {
+      if(field.lov){
+        var lov = field.lov;
+        var lovDB = 'default';
+        if('db' in lov){
+          if(!(lov.db in _this.DBConfig)) _this.LogInit_ERROR('Model ' + model.id + ' LOV ' + field.name + ' uses an undefined db: '+lov.db);
+          else lovDB = lov.db;
+        }
+        if(lovDB != modelDB){
+          lov.sqlselect = field.name;
+        }
+      }
+    });
+  });
 };
 
 function ParseMultiLineProperties(obj, arr) {
@@ -961,8 +981,9 @@ exports.AddFieldDatalock = function(model, field, siteid, datalockid, datalockSe
 }
 
 exports.AddBindings = function(model, element, elementname, options){
+  var _this = this;
   //bindType: parentKey, childKey, nonKeyFields
-  options = _.extend({ bindType: 'parentKey', additionalFields: [], req: null, log: function(msg){ this.Log.error(msg); } }, options);
+  options = _.extend({ bindType: 'parentKey', additionalFields: [], req: null, log: function(msg){ _this.Log.error(msg); } }, options);
   var _this = this;
   if('bindings' in element) return;
 
@@ -1051,7 +1072,7 @@ exports.isInModelGroup = function(modelid, modelgroupid){
 }
 
 function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
-  var _this = this;
+  var _this = jsh;
 
   function validateSiteAccess(model, tmodel, prefix, suffix, roles){
     var childSites = _.intersection(model.sites, tmodel.sites);

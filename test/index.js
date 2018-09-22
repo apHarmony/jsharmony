@@ -27,8 +27,8 @@ jsh.Config.appbasepath = __dirname;
 
 describe('Basic HTTP',function(){
   it('Basic', function (done) {
-    jsh.Run(function(servers){
-      for(var i=0;i<servers.length;i++) servers[i].close();
+    jsh.Run(function(){
+      jsh.Servers['default'].Close();
       jsh.Servers = {};
       done();
     });
@@ -40,7 +40,7 @@ describe('Basic HTTP',function(){
       https_key: '/path/to/key.pem',
     };
     jsh.Run(function(servers){
-      for(var i=0;i<servers.length;i++) servers[i].close();
+      jsh.Servers['default'].Close();
       jsh.Servers = {};
       done();
     });
@@ -53,7 +53,7 @@ describe('Basic HTTP',function(){
       https_key: '/path/to/key.pem',
     }
     jsh.Run(function(servers){
-      for(var i=0;i<servers.length;i++) servers[i].close();
+      jsh.Servers['default'].Close();
       jsh.Servers = {};
       done();
     });
@@ -67,8 +67,7 @@ describe('Basic HTTP',function(){
         ])
       });
       jsh.Run(function(servers){
-        return;
-        for(var i=0;i<servers.length;i++) servers[i].close();
+        jsh.Servers['default'].Close();
         jsh.Servers = {};
         done();
       });

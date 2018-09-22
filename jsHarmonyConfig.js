@@ -114,6 +114,8 @@ function jsHarmonyConfig(config){
   this.moduledir = path.dirname(module.filename);
   //Whether or not to display sample data instead of application server data
   this.use_sample_data = 0;
+  //Show a message if the user does not have an HTML5 browser
+  this.require_html5_after_login = true;
   
   //Server configuration
   this.server = {

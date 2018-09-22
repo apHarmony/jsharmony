@@ -42,15 +42,16 @@ exports.InitDB = function(dbid, cb){
   }
   if(dbid=='scripts') throw new Error('Invalid database ID - cannot use reserved keyword: scripts');
   if(!(dbid in this.DB)) this.DB[dbid] = new DB(this.DBConfig[dbid], this);
+  var db = this.DB[dbid];
   var modeldirs = this.getModelDirs();
   for (var i = 0; i < modeldirs.length; i++) {
     var modeldir = modeldirs[i];
     var fpath = modeldir.path;
     if(modeldir.component=='jsharmony') fpath = modeldir.path + '../';
-    this.LoadSQL(fpath + 'sql/', driverName, modeldir.component);
-    this.LoadSQL(fpath + 'sql/'+dbid+'/', driverName, modeldir.component);
+    this.LoadSQL(db, fpath + 'sql/', driverName, modeldir.component);
+    this.LoadSQL(db, fpath + 'sql/'+dbid+'/', driverName, modeldir.component);
   }
-  this.AddGlobalSQLParams(this.SQLExt[driverName].Funcs, this.map, 'jsh.map.');
+  this.AddGlobalSQLParams(db.SQLExt.Funcs, this.map, 'jsh.map.');
   if(cb) return cb();
 }
 
@@ -64,10 +65,9 @@ exports.AddGlobalSQLParams = function(sqlFuncs, items, prefix){
   }
 }
 
-exports.LoadSQL = function (dir, type, component) {
+exports.LoadSQL = function (db, dir, type, component) {
   var rslt = this.LoadSQLFromFolder(dir, type, component);
-  if(!(type in this.SQLExt)) this.SQLExt[type] = new DB.SQLExt();
-  var sqlext = this.SQLExt[type];
+  var sqlext = db.SQLExt;
   for(var funcName in rslt.Funcs) sqlext.Funcs[funcName] = rslt.Funcs[funcName];
   for(var datatypeid in rslt.CustomDataTypes) sqlext.CustomDataTypes[datatypeid] = rslt.CustomDataTypes[datatypeid];
   sqlext.Scripts = _.merge(sqlext.Scripts, rslt.Scripts);

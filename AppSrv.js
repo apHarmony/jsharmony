@@ -27,7 +27,6 @@ function AppSrv(_jsh) {
   var _this = this;
   this.jsh = _jsh;
   this.DB = DB;
-  this.db = this.jsh.DB['default'];
   this.rptsrv = new AppSrvRpt(this);
   this.JobProc = null;
   this.modelsrv = new AppSrvModel(this);
@@ -161,11 +160,11 @@ AppSrv.prototype.getSQL = function (model, sqlid, jsh) {
   if(!jsh) jsh = this.jsh;
 
   //Set driver name
-  var driverName = '';
-  if(model && model.db) driverName = jsh.DBConfig[model.db]._driver.name;
-  else driverName = jsh.DBConfig['default']._driver.name;
+  var db = undefined;
+  if(model && model.db) db = jsh.DB[model.db];
+  else db = jsh.DB['default'];
 
-  return DB.ParseSQLBase(sqlid, jsh, driverName);
+  return DB.ParseSQLBase(sqlid, jsh, db.SQLExt);
 }
 
 module.exports = AppSrv;

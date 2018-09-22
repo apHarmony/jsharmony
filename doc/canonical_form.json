@@ -25,7 +25,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "caption": [ "", "Client", "Clients" ],
   "title": 
     //Title string:
-    "CLIENT - @C_Name - STRD" //Can use dynamic parameters from jshconfig.globalparams: @C_Name, or <#=data.C_Name#> for form data, or <#=bcrumbs.PL_YEAR_TXT#> for breadcrumb SQL data, <#=_GET.TO_ID#> for GET Parameters
+    "CLIENT - @C_Name - STRD" //Can use dynamic parameters from jshsite.globalparams: @C_Name, or <#=data.C_Name#> for form data, or <#=bcrumbs.PL_YEAR_TXT#> for breadcrumb SQL data, <#=_GET.TO_ID#> for GET Parameters
     //Title with fields from form data:
     "<#=data.C_Name#>"
     //Title with fields from breadcrumb sql:
@@ -172,8 +172,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "controlparams": { "dateformat": "mm/dd/y" }, //DatePicker Params - dateformat is parameter to jQuery datepicker control for date display
                        {"sqlparams": {"FILE_SIZE": "D_SIZE",  //file_upload params - File Size
                              "FILE_EXT": "D_EXT", //File Extension
-                             "FILE_UTSTMP": "D_UTstmp", //Upload Timestamp - will be combined with app.jshconfig.sqlparams.TSTMP sql
-                             "FILE_UU": "D_UU", //Upload User - will be combined with app.jshconfig.sqlparams.CUSER sql
+                             "FILE_UTSTMP": "D_UTstmp", //Upload Timestamp - will be combined with req.jshsite.sqlparams.TSTMP sql
+                             "FILE_UU": "D_UU", //Upload User - will be combined with req.jshsite.sqlparams.CUSER sql
                              "FILE_NAME": "D_FileName" //Target file name for download
                            },
                            "image": {
@@ -196,7 +196,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                            "delete_button": "Delete File", //Text for delete button
                            "data_folder": "D"}, //Folder for files, must be unique per model
                       {"item_context_menu": [ //tree params - Context Menu for an Item
-                        { "icon": "add", "text": "Add", "action": "XExt.Alert('add' + context_item);", "actions": "IUD" }
+                        { "icon": "add", "text": "Add", "command": "XExt.Alert('add' + context_item);", "actions": "IUD" }
                         ],
                        "expand_all": false, //Show nodes expanded by default
                        "expand_to_selected": true
@@ -232,7 +232,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         "datalock":{"C_ID":"client_C_ID"}, 
         "sql_params":["C_ID","T_ID"],
         "sqlselect": "(select hp_desc from jsharmony.hp where hp.hp_code = h.hp_code)",
-        "always_get_full_lov": 1 //Do not truncate LOV to one value, when field is "B", readonly, or value is set in querystring.
+        "always_get_full_lov": 1, //Do not truncate LOV to one value, when field is "B", readonly, or value is set in querystring.
+        "db": "default" //Optional property - use an alternate database connection
       }, //codeval = Value, codetxt = Desc    "nodatalock":["C_ID"] (If applicable)
       "lov": { "sql": "select fcert_id as CODEID,fcert_parent_id as CODEParentID,fcert_id as CODEVal,fcert_name as CODETxt,'folder' as CODEIcon from fcert where C_ID=(select C_ID from E where E_ID=@E_ID) order by fcert_parent_id, fcert_name, fcert_id", "sql_params":["E_ID"] }, //For Tree Control
       "lov": { "sql2": "select X_ID as CODEParent, HP_CODE as CODEVal,HP_Desc as CODETxt from HP order by HP_Desc","parent": "CA_COUNTRY", "datalock":{"C_ID":"client_C_ID"} }, //CODEParent = Parent Value, CODEVal = Value, CODETxt = Desc

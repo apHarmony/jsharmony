@@ -49,7 +49,6 @@ function jsHarmony(config) {
   this.CustomControls = [];
   this.Popups = {};
   this.Cache = {};
-  this.SQLExt = {};
   this._IMAGEMAGICK_FIELDS = [];
   this.AppSrv = null;
   this.map = {};
@@ -75,7 +74,10 @@ jsHarmony.prototype.GetModule = function(moduleName){
 //Load models and initialize the configuration
 jsHarmony.prototype.Init = function(init_cb){
   var _this = this;
-  if(_this.isInitialized) return;
+  if(_this.isInitialized){
+    if(init_cb) init_cb();
+    return;
+  }
 
   //Load Configuration Files
   _this.Config.LoadJSConfigFolder(_this);
@@ -154,8 +156,8 @@ jsHarmony.prototype.Init = function(init_cb){
 
       _this.map = _this.Config.field_mapping;
       _this.uimap = _this.Config.ui_field_mapping;
-      for(var driverName in _this.SQLExt){
-        _this.AddGlobalSQLParams(_this.SQLExt[driverName].Funcs, _this.map, 'jsh.map.');
+      for(var dbid in _this.DB){
+        _this.AddGlobalSQLParams(_this.DB[dbid].SQLExt.Funcs, _this.map, 'jsh.map.');
       }
 
       //Load AppSrv

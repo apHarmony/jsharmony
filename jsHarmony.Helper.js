@@ -27,6 +27,7 @@ for (var key in XValidate) { XValidateBase[key] = XValidate[key]; }
 //Add Extended Validators
 require('./lib/ext-validation.js')(XValidate);
 var Helper = require('./lib/Helper.js');
+var moment = require('moment');
 
 var _ERROR = 1;
 var _WARNING = 2;
@@ -66,13 +67,13 @@ exports.getAuxFields = function (req, res, model) {
       var ptarget = this.parseLink(link);
       if (!this.hasModel(req, ptarget.modelid)) throw new Error("Link Model " + ptarget.modelid + " not found.");
       var link_model = this.getModel(req, ptarget.modelid);
-      if (!Helper.HasModelAccess(req, link_model, 'BIU')) { rslt[i]['link_onclick'] = "XExt.Alert('You do not have access to this form.');return false;"; }
+      if (!Helper.HasModelAccess(req, link_model, 'BIU')) { rslt[i]['link_onclick'] = req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;"; }
       else {
         if(ptarget.action=='download'){
-          rslt[i]['link_onclick'] = "var url = $(this).attr('href') + '?format=js'; $('#xfileproxy').prop('src', url); return false;";
+          rslt[i]['link_onclick'] = "var url = "+req.jshsite.instance+".$(this).attr('href') + '?format=js'; "+req.jshsite.instance+".$('#xfileproxy').prop('src', url); return false;";
         }
         else if ('popup' in link_model) {
-          rslt[i]['link_onclick'] = "window.open($(this).attr('href'),'_blank','width=" + link_model['popup'][0] + ",height=" + link_model['popup'][1] + ",resizable=1,scrollbars=1');return false;";
+          rslt[i]['link_onclick'] = "window.open("+req.jshsite.instance+".$(this).attr('href'),'_blank','width=" + link_model['popup'][0] + ",height=" + link_model['popup'][1] + ",resizable=1,scrollbars=1');return false;";
         }
       }
     }
@@ -243,7 +244,7 @@ exports.getURL = function (req, target, tabs, fields, bindings, keys) {
     _.each(bindings, function (binding, bindingid) {
       //Evaluate bindings
       delete q[bindingid];
-      rsltparams += '&amp;' + bindingid + '=<#=LiteralOrCollection(' + JSON.stringify(binding).replace(/"/g, '&quot;') + ',data)#>';
+      rsltparams += '&amp;' + bindingid + '=<#='+req.jshsite.instance+'.LiteralOrCollection(' + JSON.stringify(binding).replace(/"/g, '&quot;') + ',data)#>';
     });
   }
   if (rsltoverride) return rsltoverride;
@@ -256,19 +257,19 @@ exports.getURL = function (req, target, tabs, fields, bindings, keys) {
 }
 
 exports.getURL_onclick = function (req, field, model) {
-  var seturl = "var url = $(this).attr('data-url'); ";
-  var rslt = "XExt.navTo(url); return false;";
+  var seturl = "var url = "+req.jshsite.instance+".$(this).attr('data-url'); ";
+  var rslt = req.jshsite.instance+".XExt.navTo(url); return false;";
   if ('link' in field) {
     var link = field.link;
     var ptarget = this.parseLink(link);
     if (!this.hasModel(req, ptarget.modelid)) throw new Error("Link Model " + ptarget.modelid + " not found.");
-    if (!Helper.HasModelAccess(req, this.getModel(req, ptarget.modelid), 'BIU')) return "XExt.Alert('You do not have access to this form.');return false;";
+    if (!Helper.HasModelAccess(req, this.getModel(req, ptarget.modelid), 'BIU')) return req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;";
     if ((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec')) {
-      seturl += "url=XExt.ReplaceAll(url,'data[j]','data'); var xform = window['xform_" + model.id + "']; if(xform && xform.Data && !xform.Data.Commit()) return false; url = ParseEJS(url,'" + model.id + "'); ";
+      seturl += "url="+req.jshsite.instance+".XExt.ReplaceAll(url,'data[j]','data'); var xform = "+req.jshsite.instance+".App['xform_" + model.id + "']; if(xform && xform.Data && !xform.Data.Commit()) return false; url = "+req.jshsite.instance+".ParseEJS(url,'" + model.id + "'); ";
     }
     var link_model = this.getModel(req, ptarget.modelid);
     if(ptarget.action=='download'){
-      rslt = "url += '?format=js'; $('#xfileproxy').prop('src', url); return false;";
+      rslt = "url += '?format=js'; "+req.jshsite.instance+".$('#xfileproxy').prop('src', url); return false;";
     }
     else if ('popup' in link_model) {
       rslt = "window.open(url,'_blank','width=" + link_model.popup[0] + ",height=" + link_model.popup[1] + ",resizable=1,scrollbars=1');return false;";
@@ -311,16 +312,16 @@ exports.getModel = function(req, modelid) {
 }
 
 exports.getModelDB = function(req, modelid) {
-  var model = model = this.getModel(req, modelid);
+  var model = this.getModel(req, modelid);
   var dbid = '';
-  if(model.database) dbid = model.database;
+  if(model.db) dbid = model.db;
   return this.getDB(dbid);
 }
 
 exports.getDB = function(dbid){
   if(!dbid) dbid = 'default';
-  if(!(dbid in this.DBConfig)) throw new Error('Database connection '+dbid+' not found');
-  return this.DBConfig[dbid];
+  if(!(dbid in this.DB)) throw new Error('Database connection '+dbid+' not found');
+  return this.DB[dbid];
 }
 
 exports.hasModel = function(req, modelid){
@@ -347,7 +348,7 @@ exports.getModelLinkOnClick = function (tgtmodelid, req, link_target) {
   var model = this.getModel(req, tgtmodelid);
   //ParseEJS if necessary
   if (link_target && (link_target.substr(0, 8) == 'savenew:')) {
-    return "XForm_SaveNew(href);return false;";
+    return req.jshsite.instance+".XForm_SaveNew(href);return false;";
   }
   else if ('popup' in model) {
     return (" window.open(href,'_blank','width=" + model['popup'][0] + ",height=" + model['popup'][1] + ",resizable=1,scrollbars=1');return false;");

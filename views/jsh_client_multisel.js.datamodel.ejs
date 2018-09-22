@@ -17,17 +17,19 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 //DataModel <%=model.id%>
-function XForm<%=model.id%>(){ }
+(function(jsh){
 
-XForm<%=model.id%>.prototype.Fields = {
-  <% _.each(model.fields,function(field){ if(!('actions' in field)) return; if(field.control=='subform') return; if(field.control=='html') return; if(!field.name) return; %>
-    "<%=field.name%>":{"name":"<%=field.name%>",
-      "caption":<%-JSON.stringify(field.caption_ext||field.caption)%>,
-    <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
-    <%-xejs.iif('actions' in field,'"actions":'+JSON.stringify(field.actions)+',') %>
-    <%-xejs.iif('static' in field,'"static":'+JSON.stringify(field.static)+',') %>
-    <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>
-    }, <%});%>
-};
+  var XForm<%=model.id%> = jsh.App.XForm<%=model.id%> = function(){ }
 
-jsh_heap.push('XForm<%=model.id%>');
+  XForm<%=model.id%>.prototype.Fields = {
+    <% _.each(model.fields,function(field){ if(!('actions' in field)) return; if(field.control=='subform') return; if(field.control=='html') return; if(!field.name) return; %>
+      "<%=field.name%>":{"name":"<%=field.name%>",
+        "caption":<%-JSON.stringify(field.caption_ext||field.caption)%>,
+      <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
+      <%-xejs.iif('actions' in field,'"actions":'+JSON.stringify(field.actions)+',') %>
+      <%-xejs.iif('static' in field,'"static":'+JSON.stringify(field.static)+',') %>
+      <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>
+      }, <%});%>
+  };
+
+})(<%-instance%>);

@@ -27,7 +27,7 @@ var HelperFS = require('../lib/HelperFS.js');
 // RenderLogin
 exports = module.exports = function (req, res, onComplete) {
   var jsh = this;
-  if (!(req.secure) && !(req.jshconfig.auth.allow_insecure_http_logins)) { Helper.GenError(req, res, -21, 'Secure connection required for login'); return; }
+  if (!(req.secure) && !(req.jshsite.auth.allow_insecure_http_logins)) { Helper.GenError(req, res, -21, 'Secure connection required for login'); return; }
   var source = (('source' in req.query) ? req.query.source : req.baseurl);
   var account = {
     username: '',
@@ -63,10 +63,10 @@ exports = module.exports = function (req, res, onComplete) {
       //client@clientdomain.com:admin@admindomain.com
       var sqlparams = {};
       sqlparams[jsh.map.user_email] = account.username;
-      req.jshconfig.auth.on_login(req, jsh, sqlparams, function (err, rslt) {
+      req.jshsite.auth.on_login(req, jsh, sqlparams, function (err, rslt) {
         if ((rslt != null) && (rslt.length == 1) && (rslt[0].length == 1)) {
           var user_info = rslt[0][0];
-          var prehash = crypto.createHash('sha1').update(user_info[jsh.map.user_id] + xpassword + req.jshconfig.auth.salt).digest('hex');
+          var prehash = crypto.createHash('sha1').update(user_info[jsh.map.user_id] + xpassword + req.jshsite.auth.salt).digest('hex');
           if ((user_info[jsh.map.user_status]||'').toUpperCase() != 'ACTIVE') { verrors[''] = 'Your account has been suspended.  Please contact support at <a href="mailto:' + jsh.Config.support_email + '">' + jsh.Config.support_email + '</a> for more information'; }
           else if (user_info[jsh.map.user_hash] == null) { verrors[''] = 'Invalid email address or password'; }
           else {
@@ -81,7 +81,7 @@ exports = module.exports = function (req, res, onComplete) {
               sqlparams[jsh.map.user_last_ip] = ipaddr;
               sqlparams[jsh.map.user_id] = user_id;
               sqlparams[jsh.map.user_last_tstmp] = PE_LL_Tstmp;
-              req.jshconfig.auth.on_loginsuccess(req, jsh, sqlparams, function (err, rslt) {
+              req.jshsite.auth.on_loginsuccess(req, jsh, sqlparams, function (err, rslt) {
                 if ((rslt != null) && (rslt.length == 1) && (rslt[0] != null) && (rslt[0][jsh.map.rowcount] == 1)) {
                   Helper.ClearCookie(req, res, jsh, 'account', { 'path': req.baseurl });
                   Helper.SetCookie(req, res, jsh, 'account', account, { 'expires': expiry, 'path': req.baseurl });
@@ -107,10 +107,10 @@ exports = module.exports = function (req, res, onComplete) {
       var superemail = account.username.substr(superindex + 1);
       var sqlparams = {};
       sqlparams[jsh.map.user_email] = superemail;
-      req.jshconfig.auth.on_superlogin(req, jsh, sqlparams, function (err, rslt) {
+      req.jshsite.auth.on_superlogin(req, jsh, sqlparams, function (err, rslt) {
         if ((rslt != null) && (rslt.length == 1) && (rslt[0] != null) && (rslt[0].length == 1)) {
           var admin_info = rslt[0][0];
-          var prehash = crypto.createHash('sha1').update(admin_info[jsh.map.user_id] + xpassword + req.jshconfig.auth.supersalt).digest('hex');
+          var prehash = crypto.createHash('sha1').update(admin_info[jsh.map.user_id] + xpassword + req.jshsite.auth.supersalt).digest('hex');
           if ((admin_info[jsh.map.user_hash] != null) && (admin_info[jsh.map.user_hash].toString('hex') == prehash)) {
             account.username = uemail;
             loginfunc(true);
@@ -135,7 +135,8 @@ function RenderPage(req, jsh, account, source, verrors) {
     'jsh': jsh,
     'verrors': verrors,
     'ejsext': ejsext,
-    'enable_password_reset': (req.jshconfig.auth.on_passwordreset?true:false)
+    'enable_password_reset': (req.jshsite.auth.on_passwordreset?true:false),
+    'req': req
   });
 }
 

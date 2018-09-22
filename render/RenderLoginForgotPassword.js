@@ -27,8 +27,8 @@ var XValidate = require('jsharmony-validate');
 // RenderLoginForgotPassword
 exports = module.exports = function (req, res, onComplete){
   var jsh = this;
-  if (!(req.secure) && !(req.jshconfig.auth.allow_insecure_http_logins)) { return Helper.GenError(req, res, -21, 'Secure connection required'); return; }
-  if(!req.jshconfig.auth.on_passwordreset) { return Helper.GenError(req, res, -9, 'Password reset not enabled'); return; }
+  if (!(req.secure) && !(req.jshsite.auth.allow_insecure_http_logins)) { return Helper.GenError(req, res, -21, 'Secure connection required'); return; }
+  if(!req.jshsite.auth.on_passwordreset) { return Helper.GenError(req, res, -9, 'Password reset not enabled'); return; }
   var fdata = { username:'' };
   var accountCookie = Helper.GetCookie(req, res, jsh, 'account');
 	if(accountCookie){
@@ -49,7 +49,7 @@ exports = module.exports = function (req, res, onComplete){
     req._DBContext = 'loginforgotpassword';
     var sqlparams = {};
     sqlparams[jsh.map.user_email] = fdata.username;
-    req.jshconfig.auth.on_auth(req, jsh, sqlparams, function (err, rslt) {
+    req.jshsite.auth.on_auth(req, jsh, sqlparams, function (err, rslt) {
       if ((rslt != null) && (rslt.length == 1) && (rslt[0].length == 2) && (rslt[0][0].length >= 1)) {
         var all_suspended = true;
         for (var i = 0; i < rslt[0][0].length; i++) {
@@ -58,11 +58,11 @@ exports = module.exports = function (req, res, onComplete){
             all_suspended = false;
             //Send message
             var user_id = user_info[jsh.map.user_id];
-            var PE_Name = req.jshconfig.auth.getuser_name(user_info, jsh);
+            var PE_Name = req.jshsite.auth.getuser_name(user_info, jsh);
             var PE_LL_Tstmp = user_info[jsh.map.user_last_tstmp];
             var PE_Email = user_info[jsh.map.user_email];
             var support_email = jsh.Config.support_email;
-            var reset_link = Helper.getFullURL(req, req.baseurl + 'login/forgot_password_reset?email=' + encodeURIComponent(email) + '&key=' + crypto.createHash('sha1').update(user_id + req.jshconfig.auth.salt + PE_LL_Tstmp).digest('hex'));
+            var reset_link = Helper.getFullURL(req, req.baseurl + 'login/forgot_password_reset?email=' + encodeURIComponent(email) + '&key=' + crypto.createHash('sha1').update(user_id + req.jshsite.auth.salt + PE_LL_Tstmp).digest('hex'));
             jsh.SendTXTEmail(req._DBContext, 'RESETPASS', PE_Email, null, null, null, { 'PE_NAME': PE_Name, 'SUPPORT_EMAIL': support_email, 'RESET_LINK': reset_link }, function (err) {
               if (err) { jsh.Log.error(err); res.end('An error occurred sending the password reset email.  Please contact support for assistance.'); }
               else onComplete(RenderPage(jsh, fdata, verrors, "A link to reset your password has been sent to your email address."));

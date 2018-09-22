@@ -453,12 +453,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 exports = module.exports = {};
 
-function XValidate() {
+function XValidate(jsh) {
   this.Validators = new Array();
   this.Errors = new Array();
   this.FocusOnError = true;
   this.ErrorClass = 'xinputerror';
+  this.jsh = jsh||XValidate.jsh;
 }
+XValidate.jsh = undefined;
 XValidate.prototype.AddValidator = function (_field, _caption, _actions, _funcs, _roles) {
   this.Validators.push(new XValidator(_field, _caption, _actions, _funcs, undefined, _roles));
 };
@@ -466,7 +468,7 @@ XValidate.prototype.AddControlValidator = function (_control, _field, _caption, 
   this.Validators.push(new XValidator(_field, _caption, _actions, _funcs, _control));
 };
 XValidate.prototype.ResetValidation = function (field, parentobj) {
-  if (!parentobj) parentobj = $(document);
+  if (!parentobj) parentobj = this.jsh.$(document);
   this.Errors.length = 0;
   field = field || '';
   for (var i = 0; i < this.Validators.length; i++) {
@@ -479,12 +481,13 @@ XValidate.prototype.ResetValidation = function (field, parentobj) {
   }
 }
 XValidate.prototype.ValidateControls = function (perms, _obj, field, parentobj) {
+  var _this = this;
   field = field || '';
   var firstErrorControl = '';
-  if (!parentobj) parentobj = $(document);
+  if (!parentobj) parentobj = _this.jsh.$(document);
   this.ResetValidation(field, parentobj);
   var verrors = this.Validate(perms, _obj, field);
-  if (!_.isEmpty(verrors)) {
+  if (!isEmpty(verrors)) {
     var errstr = 'The following errors have occurred:\n\n';
     for (var ctrl in verrors) {
       errstr += verrors[ctrl].join('\n') + '\n';
@@ -499,11 +502,11 @@ XValidate.prototype.ValidateControls = function (perms, _obj, field, parentobj) 
     }
     errstr = errstr.substr(0, errstr.length - 1);
     
-    XExt.Alert(errstr, function () {
+    _this.jsh.XExt.Alert(errstr, function () {
       if (firstErrorControl != '') {
         window.ent_ignorefocusHandler = true;
         window.setTimeout(function () {
-          $(document.activeElement).blur();
+          _this.jsh.$(document.activeElement).blur();
           parentobj.find(firstErrorControl).focus();
           parentobj.find(firstErrorControl).select();
           window.setTimeout(function () { window.ent_ignorefocusHandler = false; }, 1);
@@ -557,6 +560,11 @@ function HasAccess(access, perm) {
     if (access.indexOf(perm[i]) > -1) return true;
   }
   return false;
+}
+function isEmpty(val){
+  if(!val) return true;
+  for(var key in val) return false;
+  return true;
 }
 
 function XValidator(_field, _caption, _actions, _funcs, _control, _roles) {
@@ -917,79 +925,84 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-function XBarcode(_Template, _Params) {
-  this.Template = _Template;
-  this.Server = jsh_global.global_params.barcode_server;
-  if (_Params) this.Params = _Params;
-  else this.Params = {};
-}
+var $ = require('./jquery-1.11.2');
+var _ = require('lodash');
 
-var XBarcode_Timer = null;
+exports = module.exports = function(jsh){
 
-function XBarcode_SetLoadEvents(onFail) {
-  XBarcode_Timer = setTimeout(function () { XBarcode_Timeout(onFail); }, 10000);
-}
-function XBarcode_ClearLoadEvents() {
-  xLoader.StopLoading(xfileuploadLoader);
-  if (XBarcode_Timer) { clearTimeout(XBarcode_Timer); XBarcode_Timer = null; }
-}
-function XBarcode_Timeout(onFail) {
-  XBarcode_ClearLoadEvents();
-  XExt.Alert('Print Failed: Could not connect to Barcode Print Server.', onFail);
-}
+  function XBarcode(_Template, _Params) {
+    this.Template = _Template;
+    this.Server = jsh.globalparams.barcode_server;
+    if (_Params) this.Params = _Params;
+    else this.Params = {};
+  }
 
-XBarcode.prototype.Print = function (_Params, onComplete, onFail) {
-  var params = {};
-  if (_Params) params = _.extend(this.Params, _Params);
-  var url = this.Server + '/print/' + this.Template + '/?' + $.param(params);
-  XBarcode_ClearLoadEvents();
-  XBarcode_SetLoadEvents(onFail);
-  
-  xLoader.StartLoading(xfileuploadLoader);
-  $.ajax({
-    url: url,
-    jsonp: 'callback',
-    dataType: 'jsonp',
-    complete: function (data) {
-      XBarcode_ClearLoadEvents();
-      var jdata = data.responseJSON;
-      if ((jdata instanceof Object) && ('_error' in jdata)) {
-        if (DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { }
-        else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { XExt.Alert(jdata._error.Message); }
-        else { XExt.Alert('Error #' + jdata._error.Number + ': ' + jdata._error.Message); }
+  var XBarcode_Timer = null;
+
+  function XBarcode_SetLoadEvents(onFail) {
+    XBarcode_Timer = setTimeout(function () { XBarcode_Timeout(onFail); }, 10000);
+  }
+  function XBarcode_ClearLoadEvents() {
+    jsh.xLoader.StopLoading(jsh.xfileuploadLoader);
+    if (XBarcode_Timer) { clearTimeout(XBarcode_Timer); XBarcode_Timer = null; }
+  }
+  function XBarcode_Timeout(onFail) {
+    XBarcode_ClearLoadEvents();
+    jsh.XExt.Alert('Print Failed: Could not connect to Barcode Print Server.', onFail);
+  }
+
+  XBarcode.prototype.Print = function (_Params, onComplete, onFail) {
+    var params = {};
+    if (_Params) params = _.extend(this.Params, _Params);
+    var url = this.Server + '/print/' + this.Template + '/?' + $.param(params);
+    XBarcode_ClearLoadEvents();
+    XBarcode_SetLoadEvents(onFail);
+    
+    jsh.xLoader.StartLoading(jsh.xfileuploadLoader);
+    $.ajax({
+      url: url,
+      jsonp: 'callback',
+      dataType: 'jsonp',
+      complete: function (data) {
+        XBarcode_ClearLoadEvents();
+        var jdata = data.responseJSON;
+        if ((jdata instanceof Object) && ('_error' in jdata)) {
+          if (jsh.DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { }
+          else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { jsh.XExt.Alert(jdata._error.Message); }
+          else { jsh.XExt.Alert('Error #' + jdata._error.Number + ': ' + jdata._error.Message); }
+          return;
+        }
+        else if ((jdata instanceof Object) && ('_success' in jdata)) {
+          if (onComplete) onComplete();
+        }
+        else {
+          jsh.XExt.Alert('Error Printing Barcode: ' + JSON.stringify(data.responseJSON ? data.responseJSON : ''), onFail);
+        }
+      },
+      error: function (err) { XBarcode_Timeout(onFail); }
+    });
+  }
+
+  XBarcode.EnableScanner = function (jobj, onSuccess){
+    if (typeof jobj.data('keydown_focus') !== 'undefined') return;
+    jobj.data('keydown_focus', '');
+    jobj.keydown(function (e) {
+      if ((e.which == 17 && e.ctrlKey) || (e.which == 66 && e.ctrlKey) || (e.which == 85 && e.ctrlKey)) {
+        e.preventDefault();
         return;
       }
-      else if ((jdata instanceof Object) && ('_success' in jdata)) {
-        if (onComplete) onComplete();
-      }
-      else {
-        XExt.Alert('Error Printing Barcode: ' + JSON.stringify(data.responseJSON ? data.responseJSON : ''), onFail);
-      }
-    },
-    error: function (err) { XBarcode_Timeout(onFail); }
-  });
-}
+      else if (e.keyCode == 13) { if (onSuccess) if (onSuccess() === false) { e.preventDefault(); e.stopImmediatePropagation(); return; } }
+      jobj.data('keydown_focus','1');
+    });
+    jobj.blur(function (e) { jobj.data('keydown_focus',''); });
+    jobj.keyup(function (e) {
+      if (jobj.data('keydown_focus') != '1') return;
+    });
+  }
 
-XBarcode.EnableScanner = function (jobj, onSuccess){
-  if (typeof jobj.data('keydown_focus') !== 'undefined') return;
-  jobj.data('keydown_focus', '');
-  jobj.keydown(function (e) {
-    if ((e.which == 17 && e.ctrlKey) || (e.which == 66 && e.ctrlKey) || (e.which == 85 && e.ctrlKey)) {
-      e.preventDefault();
-      return;
-    }
-    else if (e.keyCode == 13) { if (onSuccess) if (onSuccess() === false) { e.preventDefault(); e.stopImmediatePropagation(); return; } }
-    jobj.data('keydown_focus','1');
-  });
-  jobj.blur(function (e) { jobj.data('keydown_focus',''); });
-  jobj.keyup(function (e) {
-    if (jobj.data('keydown_focus') != '1') return;
-  });
+  return XBarcode;
 }
-
-exports = module.exports = XBarcode;
-},{}],8:[function(require,module,exports){
-(function (global){
+},{"./jquery-1.11.2":21,"lodash":28}],8:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -1009,338 +1022,344 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-exports = module.exports = {};
+var $ = require('./jquery-1.11.2');
 
-function XData(_q,_TemplateID,_PlaceholderID,_CustomScroll,_Paging,_ScrollControl){
-	this._this = this;
-	this.TemplateID = _TemplateID;
-	this.PlaceholderID = _PlaceholderID;
-	this.ColSpan = $(this.PlaceholderID).parent().find('thead th').length;
-	this.q = _q;
-	
-	if(_CustomScroll === undefined) this.CustomScroll = ''; 
-	else {
-		if(lteIE7()){
-			this.CustomScroll = '';
-			_ScrollControl = _CustomScroll;
-			$(_CustomScroll).css('overflow','auto');
-		}
-		else this.CustomScroll = _CustomScroll
-	}
-	
-	if(_Paging === undefined) this.Paging = true;
-	else this.Paging = _Paging;
-	if(_ScrollControl === undefined) this.ScrollControl = window; 
-	else this.ScrollControl = _ScrollControl;
-	this.Sort = new Array();
-	this.Search = '';
-	this.SearchJSON = '';
-	this.scrolledPastBottom = false;
-	this.lastDocumentHeight = 0;
-  this.scrollPrevious = 0;
-  this.scrollFunc = null;
-	this.EOF = true;
-  this.NoResultsMessage = 'No results %%%FORSEARCHPHRASE%%%';
-  this.RequireFilterMessage = 'Please select a filter';
-	this.RowCount = 0;
-	this.AutoLoadMore = true;
-	if(this.Paging) this.EnableScrollUpdate();
-	this.IsLoading = false;
-	this.TemplateHTMLFunc = null;
-	this.LastColumns = new Array(); //Used in Tool Search
-	this.Formatters = new Array(); //Used in Tool Search
-	this.LastData = null;
-	this.Data = null;
-  this.PreProcessResult = null;
-  this.OnBeforeSelect = null;
-  this.OnRowBind = null;
-  this.OnMetaData = null; //(data)
-  this.OnDBRowCount = null;
-  this.OnResetDataSet = null; //()
-  this.OnRender = null; //(ejssource,data)
-  this.OnLoadMoreData = null; //()
-  this.OnLoadComplete = null;
-  this.OnLoadError = null;
-  this.RequireFilter = false;
-  this.State = {};
-  this.Prop = {};
-  this.GetMeta = true;
-  this.GetDBRowCount = false;
-  this.DBRowCount = -1;
-  this._LOVs = {};
-  this._defaults = {};
-  this._bcrumbs = {};
-  this._title = null;
-}
-//Passing 0,-1 for rowcount will return total rowcount
-XData.prototype.Load = function(rowstart,rowcount,onComplete,getCSV,onFail){
-	if(this.IsLoading){
-		return;
-	}
-  this.IsLoading = true;
-  if (typeof getCSV == 'undefined') getCSV = false;
-	
-	var rowstart = typeof rowstart !== 'undefined' ? rowstart : 0;
-	var rowcount = typeof rowcount !== 'undefined' ? rowcount : 0;
-	var _this = this;
-	
-	if(rowstart > 0){
-		if(_this.EOF) return;
-		$(_this.PlaceholderID).find('tr.xtbl_loadmore').remove();
-		$(_this.PlaceholderID).append('<tr class="xtbl_loadmore"><td colspan="'+_this.ColSpan+'"><a href="#">Loading...</div></td></tr>');
-	}
-  var starttime = (new Date()).getTime();
-  
-  var reqdata = { rowstart: rowstart, rowcount: rowcount, sort: JSON.stringify(this.Sort), search: this.Search, searchjson: this.SearchJSON, d: JSON.stringify(this.Data) };
-  if (this.GetMeta) reqdata.meta = 1;
-  if (this.GetDBRowCount && (rowstart == 0)) {
-    _this.DBRowCount = -1;
-    reqdata.getcount = 1;
-  }
-  if (getCSV) {
-    this.IsLoading = false;
-    onComplete(global._BASEURL + '_csv/' + this.q + '/?'+$.param(reqdata));
-    return;
-  }
-  if (this.OnBeforeSelect) this.OnBeforeSelect();
-	global.xLoader.StartLoading(_this);
-	$.ajax({
-		type:"GET",
-		url:global._BASEURL+'_d/'+this.q+'/',
-    data: reqdata,
-		dataType: 'json',
-		success:function(data){
-			loadtime = ((new Date()).getTime() - starttime);
-			if((rowstart > 0) && (loadtime < 500)){
-				window.setTimeout(function(){ _this.ProcessData(data,rowstart,onComplete,reqdata); },500-loadtime);
-			}
-			else { _this.ProcessData(data,rowstart,onComplete,reqdata); }
-    },
-    error: function (data) {
-      global.xLoader.StopLoading(_this);
-      _this.IsLoading = false;
-      if (_this.OnLoadComplete) _this.OnLoadComplete();
-      if (onComplete) onComplete();
+exports = module.exports = function(jsh){
 
-      var jdata = data.responseJSON;
-      if ((jdata instanceof Object) && ('_error' in jdata)) {
-        if (DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { }
-        else if (_this.OnLoadError && _this.OnLoadError(jdata._error)) { }
-        else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { XExt.Alert(jdata._error.Message); }
-        else { XExt.Alert('Error #' + jdata._error.Number + ': ' + jdata._error.Message); }
-        if (onFail) onFail(jdata._error);
-        return;
-      }
-      if (onFail && onFail(data)) { }
-      else if (_this.OnLoadError && _this.OnLoadError(jdata._error)) { }
-      else if (('status' in data) && (data.status == '404')) { XExt.Alert('(404) The requested page was not found.'); }
-      else if (_debug) XExt.Alert('An error has occurred: ' + data.responseText);
-      else XExt.Alert('An error has occurred.  If the problem continues, please contact the system administrator for assistance.');
-    }
-	});
-};
-XData.prototype.ProcessData = function(data,rowstart,onComplete,reqdata){
-  var _this = this;
-	if(rowstart > 0){
-		$(_this.PlaceholderID).find('tr.xtbl_loadmore').remove();
-	}
-  if ((data instanceof Object) && ('_error' in data)) {
-    if (DefaultErrorHandler(data['_error'].Number, data['_error'].Message)) { }
-    else if ((data._error.Number == -9) || (data._error.Number == -5)) { XExt.Alert(data._error.Message); }
-    else { XExt.Alert('Error #' + data._error.Number + ': ' + data._error.Message); }
-  }
-  else {
-    if (_this.GetMeta) {
-      _this.GetMeta = false;
-      if ('_defaults' in data) { _this._defaults = data['_defaults']; }
-      if ('_bcrumbs' in data) { _this._bcrumbs = data['_bcrumbs']; }
-      if ('_title' in data) { _this._title = data['_title']; }
-      for (var tbl in data) {
-        if (tbl.indexOf('_LOV_') == 0) {
-          _this._LOVs[tbl.substring(5)] = data[tbl];
-        }
-      }
-      if (_this.OnMetaData) _this.OnMetaData(data);
-    }
-    if (('_count_' + this.q) in data) {
-      var dcount = data['_count_' + this.q];
-      if ((dcount != null)) _this.DBRowCount = dcount['cnt'];
-      _this.OnDBRowCount();
-      //if ((dcount != null) && (dcount.length == 1)) onComplete(dcount[0]['cnt']);
-      //else { XExt.Alert('Error retrieving total row count.'); }
-      //onComplete = null;  //Clear onComplete event, already handled
-    }
-    if ((data[this.q].length == 0) && ((_this.NoResultsMessage) || (_this.RequireFilter && _this.RequireFilterMessage))) {
-      _this.EOF = true;
-      var noresultsmessage = _this.NoResultsMessage.replace(/%%%FORSEARCHPHRASE%%%/g, (($.trim(_this.Search) != '')?'for selected search phrase':''));
-      if (_this.RequireFilter && !reqdata.search && !reqdata.searchjson) noresultsmessage = _this.RequireFilterMessage;
-      $(_this.PlaceholderID).html('<tr class="xtbl_noresults"><td colspan="' + _this.ColSpan + '" align="center" class="xtbl_noresults">' + noresultsmessage + '</td></tr>');
-      _this.RowCount = 0;
-      if (_this.OnResetDataSet) _this.OnResetDataSet(data);
-    }
+  function XData(_q,_TemplateID,_PlaceholderID,_CustomScroll,_Paging,_ScrollControl){
+    this._this = this;
+    this.TemplateID = _TemplateID;
+    this.PlaceholderID = _PlaceholderID;
+    this.ColSpan = jsh.$root(this.PlaceholderID).parent().find('thead th').length;
+    this.q = _q;
+    
+    if(_CustomScroll === undefined) this.CustomScroll = ''; 
     else {
-      if (_this.PreProcessResult) _this.PreProcessResult(data);
-      var ejssource = "";
-      if (_this.TemplateHTMLFunc != null) {
-        ejssource = _this.TemplateHTMLFunc(data, rowstart);
-        if (ejssource === false) {
-          global.xLoader.StopLoading(_this);
-          _this.IsLoading = false;
-          _this.Load();
+      if(lteIE7()){
+        this.CustomScroll = '';
+        _ScrollControl = _CustomScroll;
+        jsh.$root(_CustomScroll).css('overflow','auto');
+      }
+      else this.CustomScroll = _CustomScroll
+    }
+    
+    if(_Paging === undefined) this.Paging = true;
+    else this.Paging = _Paging;
+    if(_ScrollControl === undefined) this.ScrollControl = window; 
+    else this.ScrollControl = _ScrollControl;
+    this.Sort = new Array();
+    this.Search = '';
+    this.SearchJSON = '';
+    this.scrolledPastBottom = false;
+    this.lastDocumentHeight = 0;
+    this.scrollPrevious = 0;
+    this.scrollFunc = null;
+    this.EOF = true;
+    this.NoResultsMessage = 'No results %%%FORSEARCHPHRASE%%%';
+    this.RequireFilterMessage = 'Please select a filter';
+    this.RowCount = 0;
+    this.AutoLoadMore = true;
+    if(this.Paging) this.EnableScrollUpdate();
+    this.IsLoading = false;
+    this.TemplateHTMLFunc = null;
+    this.LastColumns = new Array(); //Used in Tool Search
+    this.Formatters = new Array(); //Used in Tool Search
+    this.LastData = null;
+    this.Data = null;
+    this.PreProcessResult = null;
+    this.OnBeforeSelect = null;
+    this.OnRowBind = null;
+    this.OnMetaData = null; //(data)
+    this.OnDBRowCount = null;
+    this.OnResetDataSet = null; //()
+    this.OnRender = null; //(ejssource,data)
+    this.OnLoadMoreData = null; //()
+    this.OnLoadComplete = null;
+    this.OnLoadError = null;
+    this.RequireFilter = false;
+    this.State = {};
+    this.Prop = {};
+    this.GetMeta = true;
+    this.GetDBRowCount = false;
+    this.DBRowCount = -1;
+    this._LOVs = {};
+    this._defaults = {};
+    this._bcrumbs = {};
+    this._title = null;
+  }
+
+  //Passing 0,-1 for rowcount will return total rowcount
+  XData.prototype.Load = function(rowstart,rowcount,onComplete,getCSV,onFail){
+    if(this.IsLoading){
+      return;
+    }
+    this.IsLoading = true;
+    var loader = jsh.xLoader;
+    if (typeof getCSV == 'undefined') getCSV = false;
+    
+    var rowstart = typeof rowstart !== 'undefined' ? rowstart : 0;
+    var rowcount = typeof rowcount !== 'undefined' ? rowcount : 0;
+    var _this = this;
+    
+    if(rowstart > 0){
+      if(_this.EOF) return;
+      jsh.$root(_this.PlaceholderID).find('tr.xtbl_loadmore').remove();
+      jsh.$root(_this.PlaceholderID).append('<tr class="xtbl_loadmore"><td colspan="'+_this.ColSpan+'"><a href="#">Loading...</div></td></tr>');
+    }
+    var starttime = (new Date()).getTime();
+    
+    var reqdata = { rowstart: rowstart, rowcount: rowcount, sort: JSON.stringify(this.Sort), search: this.Search, searchjson: this.SearchJSON, d: JSON.stringify(this.Data) };
+    if (this.GetMeta) reqdata.meta = 1;
+    if (this.GetDBRowCount && (rowstart == 0)) {
+      _this.DBRowCount = -1;
+      reqdata.getcount = 1;
+    }
+    if (getCSV) {
+      this.IsLoading = false;
+      onComplete(jsh._BASEURL + '_csv/' + this.q + '/?'+$.param(reqdata));
+      return;
+    }
+    if (this.OnBeforeSelect) this.OnBeforeSelect();
+    if(loader) loader.StartLoading(_this);
+    $.ajax({
+      type:"GET",
+      url:jsh._BASEURL+'_d/'+this.q+'/',
+      data: reqdata,
+      dataType: 'json',
+      success:function(data){
+        loadtime = ((new Date()).getTime() - starttime);
+        if((rowstart > 0) && (loadtime < 500)){
+          window.setTimeout(function(){ _this.ProcessData(data,rowstart,onComplete,reqdata); },500-loadtime);
+        }
+        else { _this.ProcessData(data,rowstart,onComplete,reqdata); }
+      },
+      error: function (data) {
+        if(loader) loader.StopLoading(_this);
+        _this.IsLoading = false;
+        if (_this.OnLoadComplete) _this.OnLoadComplete();
+        if (onComplete) onComplete();
+
+        var jdata = data.responseJSON;
+        if ((jdata instanceof Object) && ('_error' in jdata)) {
+          if (jsh.DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { }
+          else if (_this.OnLoadError && _this.OnLoadError(jdata._error)) { }
+          else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { jsh.XExt.Alert(jdata._error.Message); }
+          else { jsh.XExt.Alert('Error #' + jdata._error.Number + ': ' + jdata._error.Message); }
+          if (onFail) onFail(jdata._error);
           return;
         }
+        if (onFail && onFail(data)) { }
+        else if (_this.OnLoadError && _this.OnLoadError(jdata._error)) { }
+        else if (('status' in data) && (data.status == '404')) { jsh.XExt.Alert('(404) The requested page was not found.'); }
+        else if (jsh._debug) jsh.XExt.Alert('An error has occurred: ' + data.responseText);
+        else jsh.XExt.Alert('An error has occurred.  If the problem continues, please contact the system administrator for assistance.');
       }
-      else ejssource = $(_this.TemplateID).html();
-      
-      if (rowstart == 0) {
-        $(_this.PlaceholderID).empty();
+    });
+  };
+  XData.prototype.ProcessData = function(data,rowstart,onComplete,reqdata){
+    var _this = this;
+    var loader = jsh.xLoader;
+    if(rowstart > 0){
+      jsh.$root(_this.PlaceholderID).find('tr.xtbl_loadmore').remove();
+    }
+    if ((data instanceof Object) && ('_error' in data)) {
+      if (jsh.DefaultErrorHandler(data['_error'].Number, data['_error'].Message)) { }
+      else if ((data._error.Number == -9) || (data._error.Number == -5)) { jsh.XExt.Alert(data._error.Message); }
+      else { jsh.XExt.Alert('Error #' + data._error.Number + ': ' + data._error.Message); }
+    }
+    else {
+      if (_this.GetMeta) {
+        _this.GetMeta = false;
+        if ('_defaults' in data) { _this._defaults = data['_defaults']; }
+        if ('_bcrumbs' in data) { _this._bcrumbs = data['_bcrumbs']; }
+        if ('_title' in data) { _this._title = data['_title']; }
+        for (var tbl in data) {
+          if (tbl.indexOf('_LOV_') == 0) {
+            _this._LOVs[tbl.substring(5)] = data[tbl];
+          }
+        }
+        if (_this.OnMetaData) _this.OnMetaData(data);
+      }
+      if (('_count_' + this.q) in data) {
+        var dcount = data['_count_' + this.q];
+        if ((dcount != null)) _this.DBRowCount = dcount['cnt'];
+        _this.OnDBRowCount();
+        //if ((dcount != null) && (dcount.length == 1)) onComplete(dcount[0]['cnt']);
+        //else { jsh.XExt.Alert('Error retrieving total row count.'); }
+        //onComplete = null;  //Clear onComplete event, already handled
+      }
+      if ((data[this.q].length == 0) && ((_this.NoResultsMessage) || (_this.RequireFilter && _this.RequireFilterMessage))) {
+        _this.EOF = true;
+        var noresultsmessage = _this.NoResultsMessage.replace(/%%%FORSEARCHPHRASE%%%/g, (($.trim(_this.Search) != '')?'for selected search phrase':''));
+        if (_this.RequireFilter && !reqdata.search && !reqdata.searchjson) noresultsmessage = _this.RequireFilterMessage;
+        $(_this.PlaceholderID).html('<tr class="xtbl_noresults"><td colspan="' + _this.ColSpan + '" align="center" class="xtbl_noresults">' + noresultsmessage + '</td></tr>');
         _this.RowCount = 0;
         if (_this.OnResetDataSet) _this.OnResetDataSet(data);
       }
-      if (ejssource) {
-        ejssource = ejssource.replace(/<#/g, '<%').replace(/#>/g, '%>')
-        if (data[this.q] && _this.OnRender) _this.OnRender(ejssource, data);
-        else {
-          var ejsrslt = ejs.render(ejssource, {
-            rowid: undefined,
-            data: data[this.q],
-            xejs: XExt.xejs,
+      else {
+        if (_this.PreProcessResult) _this.PreProcessResult(data);
+        var ejssource = "";
+        if (_this.TemplateHTMLFunc != null) {
+          ejssource = _this.TemplateHTMLFunc(data, rowstart);
+          if (ejssource === false) {
+            if(loader) loader.StopLoading(_this);
+            _this.IsLoading = false;
+            _this.Load();
+            return;
+          }
+        }
+        else ejssource = $(_this.TemplateID).html();
+        
+        if (rowstart == 0) {
+          $(_this.PlaceholderID).empty();
+          _this.RowCount = 0;
+          if (_this.OnResetDataSet) _this.OnResetDataSet(data);
+        }
+        if (ejssource) {
+          ejssource = ejssource.replace(/<#/g, '<%').replace(/#>/g, '%>')
+          if (data[this.q] && _this.OnRender) _this.OnRender(ejssource, data);
+          else {
+            var ejsrslt = jsh.ejs.render(ejssource, {
+              rowid: undefined,
+              data: data[this.q],
+              xejs: jsh.XExt.xejs,
+              jsh: jsh
+            });
+            $(_this.PlaceholderID).append(ejsrslt);
+            _this.RowCount = $(_this.PlaceholderID).find('tr').length;
+          }
+        }
+        _this.EOF = data['_eof_' + this.q];
+        if ((_this.Paging) && (!_this.EOF)) {
+          $(_this.PlaceholderID).append('<tr class="xtbl_loadmore"><td colspan="' + _this.ColSpan + '"><a href="#">Load More Data</div></td></tr>');
+          $(_this.PlaceholderID).find('.xtbl_loadmore').click(function () {
+            if (_this.OnLoadMoreData) { _this.OnLoadMoreData(); return false; }
+            _this.Load(_this.RowCount);
+            return false;
           });
-          $(_this.PlaceholderID).append(ejsrslt);
-          _this.RowCount = $(_this.PlaceholderID).find('tr').length;
+        }
+        if (_this.CustomScroll != '') {
+          $(_this.CustomScroll).mCustomScrollbar("update");
         }
       }
-      _this.EOF = data['_eof_' + this.q];
-      if ((_this.Paging) && (!_this.EOF)) {
-        $(_this.PlaceholderID).append('<tr class="xtbl_loadmore"><td colspan="' + _this.ColSpan + '"><a href="#">Load More Data</div></td></tr>');
-        $(_this.PlaceholderID).find('.xtbl_loadmore').click(function () {
-          if (_this.OnLoadMoreData) { _this.OnLoadMoreData(); return false; }
-          _this.Load(_this.RowCount);
-          return false;
-        });
-      }
-      if (_this.CustomScroll != '') {
-        $(_this.CustomScroll).mCustomScrollbar("update");
-      }
     }
+    if(loader) loader.StopLoading(_this);
+    _this.IsLoading = false;
+    if (_this.OnLoadComplete) _this.OnLoadComplete();
+    if(onComplete) onComplete();
   }
-	global.xLoader.StopLoading(_this);
-  _this.IsLoading = false;
-  if (_this.OnLoadComplete) _this.OnLoadComplete();
-	if(onComplete) onComplete();
-}
-XData.prototype.ResetSortGlyphs = function (tblobj){
-  var xhtml_thead = tblobj.find('thead tr');
-  xhtml_thead.find("th").removeClass('sortAsc').removeClass('sortDesc');
-  if (!this.Sort || (this.Sort.length == 0)) return;
-  
-  var xhtml_th = tblobj.find('.thead' + this.Sort[0].substring(1));
-  if (this.Sort[0][0] == '^') { xhtml_th.addClass('sortAsc'); }
-  else { xhtml_th.addClass('sortDesc'); }
-}
-XData.prototype.AddSort = function(obj,col){
-	var newdir = '^';
-	for(var i = 0; i < this.Sort.length; i++){
-		 if(this.Sort[i].substring(1)==col){
-			 if(i==0){
-				 var curdir = this.Sort[i].substring(0,1);
-				 if(curdir == '^') newdir = 'v';
-			 }
-			 this.Sort.splice(i,1);
-			 i--;
-		 }
-	}
-	var xhtml_th = $(obj).parent();
-	var xhtml_thead = xhtml_th.parent();
-	if(newdir == '^'){ xhtml_thead.find("th").removeClass('sortAsc').removeClass('sortDesc'); xhtml_th.addClass('sortAsc'); }
-	else{ xhtml_thead.find("th").removeClass('sortAsc').removeClass('sortDesc'); xhtml_th.addClass('sortDesc'); }
-	this.Sort.unshift(newdir+col);
-	this.Load();
-	return false;
-}
-XData.prototype.NewSearch = function(txt){
-	this.Search = txt;
-	this.Load();
-	return false;
-}
-XData.prototype.NewSearchJSON = function(txt, cb){
-	this.SearchJSON = txt;
-	this.Load(undefined,undefined,cb);
-	return false;
-}
-XData.prototype._WindowOnScrollBottom = function(callback){
-	var _this = this;
-	_this.scrollFunc = function(){
-		var curDocumentHeight = _this._getDocumentHeight();
-		if(curDocumentHeight != _this.lastDocumentHeight){
-			_this.lastDocumentHeight = curDocumentHeight;
-			_this.scrolledPastBottom = false;
-		}
-		var pastBottom = (($(window).height() + $(window).scrollTop()) >= (curDocumentHeight));
-		if(!_this.scrolledPastBottom && pastBottom) {
-			callback($(window).height() + $(window).scrollTop());
-			_this.scrolledPastBottom = true;
-		} else {
-			if(!pastBottom) _this.scrolledPastBottom = false;
-		}
-		_this.scrollPrevious = $(window).scrollTop();
-  };
-  $(_this.ScrollControl).scroll(_this.scrollFunc);
-}
-XData.prototype._getDocumentHeight = function() {
-	return Math.max(
-			Math.max(document.body.scrollHeight, document.documentElement.scrollHeight),
-			Math.max(document.body.offsetHeight, document.documentElement.offsetHeight),
-			Math.max(document.body.clientHeight, document.documentElement.clientHeight)
-	);
-}
-XData.prototype._ControlOnScrollBottom = function(callback){
-	var _this = this;
-  _this.scrollFunc = function () {
-    var pastBottom = (($(_this.ScrollControl).outerHeight() + $(_this.ScrollControl).scrollTop()) >= $(_this.ScrollControl).get(0).scrollHeight);
-    //console.log(($(_this.ScrollControl).outerHeight()+$(_this.ScrollControl).scrollTop()) + ">=" + $(_this.ScrollControl).get(0).scrollHeight);
-    if (!_this.scrolledPastBottom && pastBottom) {
-      callback($(_this.ScrollControl).height() + $(_this.ScrollControl).scrollTop());
-      _this.scrolledPastBottom = true;
-    } else {
-      if (!pastBottom) _this.scrolledPastBottom = false;
+  XData.prototype.ResetSortGlyphs = function (tblobj){
+    var xhtml_thead = tblobj.find('thead tr');
+    xhtml_thead.find("th").removeClass('sortAsc').removeClass('sortDesc');
+    if (!this.Sort || (this.Sort.length == 0)) return;
+    
+    var xhtml_th = tblobj.find('.thead' + this.Sort[0].substring(1));
+    if (this.Sort[0][0] == '^') { xhtml_th.addClass('sortAsc'); }
+    else { xhtml_th.addClass('sortDesc'); }
+  }
+  XData.prototype.AddSort = function(obj,col){
+    var newdir = '^';
+    for(var i = 0; i < this.Sort.length; i++){
+      if(this.Sort[i].substring(1)==col){
+        if(i==0){
+          var curdir = this.Sort[i].substring(0,1);
+          if(curdir == '^') newdir = 'v';
+        }
+        this.Sort.splice(i,1);
+        i--;
+      }
     }
-    _this.scrollPrevious = $(_this.ScrollControl).scrollTop();
-  };
-  $(_this.ScrollControl).scroll(_this.scrollFunc);
-}
-XData.prototype.EnableScrollUpdate = function() {
-	var _this = this;
-	var updateFunc = function(){
-		if(_this.AutoLoadMore){
-			if(!_this.EOF){
-				_this.Load(_this.RowCount);
-			}
-		}
-	};
-	if(_this.CustomScroll != ''){
-		$(_this.CustomScroll).mCustomScrollbar({
-			theme:"dark",
-			autoScrollOnFocus: false,
-			scrollButtons:{ enable:true },
-			scrollInertia:0,
-			callbacks:{
-				onTotalScroll: updateFunc
-			}
-		});
-	}
-	else if(this.ScrollControl == window) this._WindowOnScrollBottom(updateFunc);
-	else this._ControlOnScrollBottom(updateFunc);
-}
-XData.prototype.Destroy = function (){
-  var _this = this;
-  if (_this.CustomScroll != '') { $(_this.CustomScroll).mCustomScrollbar("destroy"); }
-  else { $(_this.ScrollControl).unbind('scroll', _this.scrollFunc); }
-}
+    var xhtml_th = $(obj).parent();
+    var xhtml_thead = xhtml_th.parent();
+    if(newdir == '^'){ xhtml_thead.find("th").removeClass('sortAsc').removeClass('sortDesc'); xhtml_th.addClass('sortAsc'); }
+    else{ xhtml_thead.find("th").removeClass('sortAsc').removeClass('sortDesc'); xhtml_th.addClass('sortDesc'); }
+    this.Sort.unshift(newdir+col);
+    this.Load();
+    return false;
+  }
+  XData.prototype.NewSearch = function(txt){
+    this.Search = txt;
+    this.Load();
+    return false;
+  }
+  XData.prototype.NewSearchJSON = function(txt, cb){
+    this.SearchJSON = txt;
+    this.Load(undefined,undefined,cb);
+    return false;
+  }
+  XData.prototype._WindowOnScrollBottom = function(callback){
+    var _this = this;
+    _this.scrollFunc = function(){
+      var curDocumentHeight = _this._getDocumentHeight();
+      if(curDocumentHeight != _this.lastDocumentHeight){
+        _this.lastDocumentHeight = curDocumentHeight;
+        _this.scrolledPastBottom = false;
+      }
+      var pastBottom = (($(window).height() + $(window).scrollTop()) >= (curDocumentHeight));
+      if(!_this.scrolledPastBottom && pastBottom) {
+        callback($(window).height() + $(window).scrollTop());
+        _this.scrolledPastBottom = true;
+      } else {
+        if(!pastBottom) _this.scrolledPastBottom = false;
+      }
+      _this.scrollPrevious = $(window).scrollTop();
+    };
+    $(_this.ScrollControl).scroll(_this.scrollFunc);
+  }
+  XData.prototype._getDocumentHeight = function() {
+    return Math.max(
+        Math.max(document.body.scrollHeight, document.documentElement.scrollHeight),
+        Math.max(document.body.offsetHeight, document.documentElement.offsetHeight),
+        Math.max(document.body.clientHeight, document.documentElement.clientHeight)
+    );
+  }
+  XData.prototype._ControlOnScrollBottom = function(callback){
+    var _this = this;
+    _this.scrollFunc = function () {
+      var pastBottom = (($(_this.ScrollControl).outerHeight() + $(_this.ScrollControl).scrollTop()) >= $(_this.ScrollControl).get(0).scrollHeight);
+      //console.log(($(_this.ScrollControl).outerHeight()+$(_this.ScrollControl).scrollTop()) + ">=" + $(_this.ScrollControl).get(0).scrollHeight);
+      if (!_this.scrolledPastBottom && pastBottom) {
+        callback($(_this.ScrollControl).height() + $(_this.ScrollControl).scrollTop());
+        _this.scrolledPastBottom = true;
+      } else {
+        if (!pastBottom) _this.scrolledPastBottom = false;
+      }
+      _this.scrollPrevious = $(_this.ScrollControl).scrollTop();
+    };
+    $(_this.ScrollControl).scroll(_this.scrollFunc);
+  }
+  XData.prototype.EnableScrollUpdate = function() {
+    var _this = this;
+    var updateFunc = function(){
+      if(_this.AutoLoadMore){
+        if(!_this.EOF){
+          _this.Load(_this.RowCount);
+        }
+      }
+    };
+    if(_this.CustomScroll != ''){
+      $(_this.CustomScroll).mCustomScrollbar({
+        theme:"dark",
+        autoScrollOnFocus: false,
+        scrollButtons:{ enable:true },
+        scrollInertia:0,
+        callbacks:{
+          onTotalScroll: updateFunc
+        }
+      });
+    }
+    else if(this.ScrollControl == window) this._WindowOnScrollBottom(updateFunc);
+    else this._ControlOnScrollBottom(updateFunc);
+  }
+  XData.prototype.Destroy = function (){
+    var _this = this;
+    if (_this.CustomScroll != '') { $(_this.CustomScroll).mCustomScrollbar("destroy"); }
+    else { $(_this.ScrollControl).unbind('scroll', _this.scrollFunc); }
+  }
 
-module.exports = XData;
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],9:[function(require,module,exports){
+  return XData;
+}
+},{"./jquery-1.11.2":21}],9:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -1360,459 +1379,466 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-exports = module.exports = {};
+var $ = require('./jquery-1.11.2');
+var _ = require('lodash');
 
-exports.GetRowID = function (modelid,obj){
-  var jobj = $(obj);
-  if(jobj.hasClass('row_independent')) return -1;
-  var cur_row = jobj.closest('.xrow_'+modelid);
-  if (cur_row.length) {
-    return cur_row.data('id');
-  }
-  return -1;
-}
+exports = module.exports = function(jsh){
 
-exports.OnRender = function (modelid) {
-  return function(){
-    var _this = this;
-    var parentobj = $(document);
-    if (this._jrow) parentobj = this._jrow;
-    var isGrid = (XForms[modelid]._layout == 'grid');
-    //Clear highlighted background of currently edited cells
-    parentobj.find('.xelem'+modelid+'.xform_ctrl').removeClass('updated');
-    
-    if (XForms[modelid]._layout == 'form-m') {
-      if (window['xform_'+modelid].Count()==0) {
-        $('.xelem'+modelid+'.xnorecords').show();
-        $('.xelem'+modelid+'.xformcontainer').css('visibility', 'hidden');
-      }
-      else {
-        $('.xelem'+modelid+'.xnorecords').hide();
-        $('.xelem'+modelid+'.xformcontainer').css('visibility', 'visible');
-      }
-    }
-  
-    //Set List of Values
-    if ('_LOVs' in this) {
-      for (var _LOV in this._LOVs) {
-        var lovselector = '#' + _LOV + '.xelem' + modelid;
-        if (isGrid) lovselector = '.' + _LOV + '.xelem' + modelid;
-        var ctrl = parentobj.find(lovselector);
-        if (('control' in this.Fields[_LOV]) && (this.Fields[_LOV].control == 'tree'))
-          XExt.TreeRender(ctrl, this._LOVs[_LOV], this.Fields[_LOV]);
-        else if ('lovparent' in this.Fields[_LOV])
-          XExt.RenderParentLOV(_this, ctrl, [_this[this.Fields[_LOV].lovparent]], this._LOVs[_LOV], this.Fields[_LOV], false);
-        else if ('lovparents' in this.Fields[_LOV]) {
-          var parentvals = [];
-          for (var i = 0; i < this.Fields[_LOV].lovparents.length; i++) {
-            parentvals.push(_this[this.Fields[_LOV].lovparents[i]]);
-          }
-          XExt.RenderParentLOV(_this, ctrl, parentvals, this._LOVs[_LOV], this.Fields[_LOV], true);
-        }
-        else
-          XExt.RenderLOV(this, ctrl, this._LOVs[_LOV]);
-      }
-    }
-    //Put data into the form
-    _.each(this.Fields, function (field) {
-      exports.RenderField(_this, parentobj, modelid, field);
-    });
-    if (XForms[modelid]._layout == 'form-m') {
-      $('#navtext_' + modelid).html((window['xform_' + modelid].Index + 1) + ' of ' + window['xform_' + modelid].Count());
-    }
-  };
-};
+  var XExtXForm = function(){ }
 
-exports.SetFieldValue = function (xformdata, field, val){
-  xformdata[field.name] = val;
-  var parentobj = $(document);
-  if (xformdata._jrow) parentobj = xformdata._jrow;
-  exports.RenderField(xformdata, parentobj, xformdata._modelid, field, val);
-}
-
-exports.SetControlValue = function (xformdata, field, val) { //Leave val to "undefined" for refresh
-  var parentobj = $(document);
-  if (xformdata._jrow) parentobj = xformdata._jrow;
-  var jctrl = exports.RenderField(xformdata, parentobj, xformdata._modelid, field, val);
-  if(jctrl && jctrl.length) xformdata.OnControlUpdate(jctrl[0]);
-}
-
-exports.RenderField = function (_this, parentobj, modelid, field, val){
-  var isGrid = (XForms[modelid]._layout == 'grid');
-  if(typeof val === 'undefined') val = _this[field.name];
-  //Apply formatting
-  if ((field.name in _this) && (typeof val == 'undefined')) val = '';
-  else val = XFormat.Apply(field.format, val);
-  
-  var fieldselector = '#' + field.name + '.xelem' + modelid;
-  if (isGrid) fieldselector = '.' + field.name + '.xelem' + modelid;
-  var jctrl = parentobj.find(fieldselector);
-  if (('control' in field) && (field.control == 'file_upload')) {
-    //Show "Upload File" always
-    var filefieldselector = '.xelem' + modelid + ' #' + field.name;
-    if (isGrid) filefieldselector = '.xelem' + modelid + ' .' + field.name;
-    var jctrl_download = parentobj.find(filefieldselector + '_download');
-    var jctrl_upload = parentobj.find(filefieldselector + '_upload');
-    var jctrl_delete = parentobj.find(filefieldselector + '_delete');
-    var jctrl_token = parentobj.find(filefieldselector + '_token');
-    var jctrl_dbdelete = parentobj.find(filefieldselector + '_dbdelete');
-    var jctrl_dbexists = parentobj.find(filefieldselector + '_dbexists');
-    var jctrl_preview = parentobj.find(filefieldselector + '_preview');
-    var jctrl_thumbnail = parentobj.find(filefieldselector + '_thumbnail');
-    var file_token = jctrl_token.val();
-    if (val === true) {
-      //Has DB file
-      jctrl.removeClass('nodocument');
-      jctrl_token.val('');
-      jctrl_dbdelete.val('0');
-      jctrl_dbexists.val('1');
-      //Set thumbnail
-      if (jctrl_thumbnail.length && field.controlparams.thumbnail_width) {
-        var keys = window['xform_' + modelid].GetKeys();
-        if (XForms[modelid]._keys.length != 1) { throw new Error('File models require one key.'); }
-        var thumb_url = _BASEURL + '_dl/' + modelid + '/' + keys[XForms[modelid]._keys[0]] + '/' + field.name + '?view=1&thumb=1&_=' + (new Date().getTime());
-        jctrl_thumbnail.attr('src', thumb_url).show();
-        jctrl_thumbnail.attr('width', field.controlparams.thumbnail_width + 'px');
-      }
-      else jctrl_thumbnail.hide();
-    }
-    else if (val === false) {
-      //No DB File
-      jctrl.addClass('nodocument');
-      jctrl_token.val('');
-      jctrl_dbdelete.val('0');
-      jctrl_dbexists.val('0');
-    }
-    else if (val === '') {
-      //Delete action (either delete temp file or DB file
-      jctrl.addClass('nodocument');
-      jctrl_token.val('');
-      if (jctrl_dbexists.val() == '1') jctrl_dbdelete.val('1');
-      else jctrl_dbdelete.val('0');
-    }
-    else if (_.isString(val)) {
-      //Uploaded new temp file
-      jctrl.removeClass('nodocument');
-      jctrl_token.val(val);
-      jctrl_dbdelete.val('0');
-      //Set thumbnail
-      if (jctrl_thumbnail.length && field.controlparams.thumbnail_width) {
-        var thumb_url = _BASEURL + '_dl/_temp/' + file_token + '?view=1';
-        jctrl_thumbnail.attr('src', thumb_url).show();
-        jctrl_thumbnail.attr('width', field.controlparams.thumbnail_width + 'px');
-      }
-      else jctrl_thumbnail.hide();
-    }
-  }
-  else if (('control' in field) && (field.control == 'tree')) {
-    XExt.TreeSelectNode(jctrl, val);
-  }
-  else if(('control' in field) && (field.control == 'button')){ }
-  else if (('control' in field) && (field.control == 'checkbox')) {
-    var checkval = false;
-    var checkhidden = false;
-    if ((val == null) || (typeof val == 'undefined')) val = '';
-    if ('controlparams' in field) {
-      if (('value_hidden' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_hidden.toUpperCase())) checkhidden = true;
-      if (('value_true' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_true.toUpperCase())) checkval = true;
-      else if (('value_false' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_false.toUpperCase())) checkval = false;
-      else checkval = XFormat.bool_decode(val);
-    }
-    else checkval = XFormat.bool_decode(val);
-    jctrl.prop('checked', checkval);
-    if (checkhidden) jctrl.css('visibility', 'hidden');
-    else if (checkhidden) jctrl.css('visibility', 'visible');
-  }
-  else if ((jctrl.size() > 0) && jctrl.hasClass('xform_label')) { 
-    if(jctrl.hasClass('xform_label_static')){
-      if(val) jctrl.show();
-      else jctrl.hide();
-    }
-    else{ jctrl.html(XExt.escapeHTMLBR(val)); }
-  }
-  else if ((jctrl.size() > 0) && (String(jctrl.prop('nodeName')).toUpperCase() == 'SELECT')) {
-    //Check if SELECT has value.  If not, add it as an additional option at the end
-    var lov_matches = jctrl.children('option').filter(function () { return String($(this).val()).toUpperCase() == String(val).toUpperCase(); }).length;
-    var has_lov = (lov_matches > 0);
-    var has_parent = (('lovparent' in field) || ('lovparents' in field));
-    //If has parent and item missing, don't set the value
-    if (has_lov || !has_parent) {
-      if (!has_lov) {
-        var codtxt = _this['__' + window.jshuimap.codetxt + '__' + field.name];
-        if (!codtxt) codtxt = val;
-        jctrl.append($('<option>', { value: val }).text(codtxt));
-      }
-      jctrl.val(val);
-    }
-  }
-  else{
-    jctrl.val(val);
-  }
-  
-  //Make fields editable or locked / read-only
-  var show_lookup_when_readonly = false;
-
-  var access = (_this._is_new?'I':'U');
-  if (XForms[modelid]._layout=='exec') access = 'B';
-  var is_editable = XExt.HasAccess(field.actions, access);
-  if (is_editable && field.always_editable_on_insert && ((access == 'I') || (XForms[modelid]._layout=='exec'))){ }
-  else {
-    if (is_editable && ('readonly' in field) && (field.readonly == 1)) is_editable = false;
-    if (_this._readonly && _.includes(_this._readonly, field.name)) is_editable = false;
-  }
-  if (('virtual' in field) && field.virtual) is_editable = true;
-  if (is_editable && ('controlparams' in field) && (field.controlparams.base_readonly)) {
-    is_editable = false;
-    show_lookup_when_readonly = true;
-  }
-
-  if (is_editable && !jctrl.hasClass('editable')) { XEnable(jctrl); }
-  else if (!is_editable && !jctrl.hasClass('uneditable')) { XDisable(jctrl, show_lookup_when_readonly); }
-
-  return jctrl;
-}
-
-exports.OnControlUpdate = function () {
-  return function (obj, e) {
+  XExtXForm.GetRowID = function (modelid,obj){
     var jobj = $(obj);
-    var id = $(obj).data('id');
-    if(!id) id = $(obj).attr('id');
-    var field = this.Fields[id];
-    var _this = this;
-    if (!is_add) {
-      if (this.HasUpdate(id)) {
-        if (!jobj.hasClass('updated')) {
-          jobj.addClass('updated');
-          if(jobj.parent().hasClass('checkbox_container')) jobj.parent().addClass('updated');
-        }
-      }
-      else {
-        if (jobj.hasClass('updated')) {
-          jobj.removeClass('updated');
-          if (jobj.parent().hasClass('checkbox_container')) jobj.parent().removeClass('updated');
-        }
-      }
+    if(jobj.hasClass('row_independent')) return -1;
+    var cur_row = jobj.closest('.xrow_'+modelid);
+    if (cur_row.length) {
+      return cur_row.data('id');
     }
-    if ('onchange' in field) { var rslt = (new Function('obj', 'newval', 'e', field.onchange)); rslt.call(_this, obj, _this.GetValue(field), e); }
-  };
-};
+    return -1;
+  }
 
-exports.GetValues = function () {
-  return function (perm) {
-    var _this = this;
-    _.each(this.Fields, function (field) {
-      if (!(('virtual' in field) && field.virtual) && !XExt.HasAccess(field.actions, perm)) return;
-      var newval = _this.GetValue(field);
-      //if (!('control' in field) && (newval == undefined)) return;
-      _this[field.name] = newval;
-    });
+  XExtXForm.OnRender = function (modelid) {
+    return function(){
+      var _this = this;
+      var parentobj = $(document);
+      if (this._jrow) parentobj = this._jrow;
+      var isGrid = (jsh.XForms[modelid]._layout == 'grid');
+      //Clear highlighted background of currently edited cells
+      parentobj.find('.xelem'+modelid+'.xform_ctrl').removeClass('updated');
+      
+      if (jsh.XForms[modelid]._layout == 'form-m') {
+        if (jsh.App['xform_'+modelid].Count()==0) {
+          $('.xelem'+modelid+'.xnorecords').show();
+          $('.xelem'+modelid+'.xformcontainer').css('visibility', 'hidden');
+        }
+        else {
+          $('.xelem'+modelid+'.xnorecords').hide();
+          $('.xelem'+modelid+'.xformcontainer').css('visibility', 'visible');
+        }
+      }
+    
+      //Set List of Values
+      if ('_LOVs' in this) {
+        for (var _LOV in this._LOVs) {
+          var lovselector = '#' + _LOV + '.xelem' + modelid;
+          if (isGrid) lovselector = '.' + _LOV + '.xelem' + modelid;
+          var ctrl = parentobj.find(lovselector);
+          if (('control' in this.Fields[_LOV]) && (this.Fields[_LOV].control == 'tree'))
+            jsh.XExt.TreeRender(ctrl, this._LOVs[_LOV], this.Fields[_LOV]);
+          else if ('lovparent' in this.Fields[_LOV])
+            jsh.XExt.RenderParentLOV(_this, ctrl, [_this[this.Fields[_LOV].lovparent]], this._LOVs[_LOV], this.Fields[_LOV], false);
+          else if ('lovparents' in this.Fields[_LOV]) {
+            var parentvals = [];
+            for (var i = 0; i < this.Fields[_LOV].lovparents.length; i++) {
+              parentvals.push(_this[this.Fields[_LOV].lovparents[i]]);
+            }
+            jsh.XExt.RenderParentLOV(_this, ctrl, parentvals, this._LOVs[_LOV], this.Fields[_LOV], true);
+          }
+          else
+            jsh.XExt.RenderLOV(this, ctrl, this._LOVs[_LOV]);
+        }
+      }
+      //Put data into the form
+      _.each(this.Fields, function (field) {
+        XExtXForm.RenderField(_this, parentobj, modelid, field);
+      });
+      if (jsh.XForms[modelid]._layout == 'form-m') {
+        $('#navtext_' + modelid).html((jsh.App['xform_' + modelid].Index + 1) + ' of ' + jsh.App['xform_' + modelid].Count());
+      }
+    };
   };
-};
 
-exports.GetValue = function (modelid) {
-  return function (field) {
-    var _this = this;
+  XExtXForm.SetFieldValue = function (xformdata, field, val){
+    xformdata[field.name] = val;
     var parentobj = $(document);
-    if (this._jrow) parentobj = this._jrow;
-    var isGrid = (XForms[modelid]._layout == 'grid');
+    if (xformdata._jrow) parentobj = xformdata._jrow;
+    XExtXForm.RenderField(xformdata, parentobj, xformdata._modelid, field, val);
+  }
+
+  XExtXForm.SetControlValue = function (xformdata, field, val) { //Leave val to "undefined" for refresh
+    var parentobj = $(document);
+    if (xformdata._jrow) parentobj = xformdata._jrow;
+    var jctrl = XExtXForm.RenderField(xformdata, parentobj, xformdata._modelid, field, val);
+    if(jctrl && jctrl.length) xformdata.OnControlUpdate(jctrl[0]);
+  }
+
+  XExtXForm.RenderField = function (_this, parentobj, modelid, field, val){
+    var isGrid = (jsh.XForms[modelid]._layout == 'grid');
+    if(typeof val === 'undefined') val = _this[field.name];
+    //Apply formatting
+    if ((field.name in _this) && (typeof val == 'undefined')) val = '';
+    else val = jsh.XFormat.Apply(field.format, val);
     
     var fieldselector = '#' + field.name + '.xelem' + modelid;
     if (isGrid) fieldselector = '.' + field.name + '.xelem' + modelid;
     var jctrl = parentobj.find(fieldselector);
-
     if (('control' in field) && (field.control == 'file_upload')) {
+      //Show "Upload File" always
       var filefieldselector = '.xelem' + modelid + ' #' + field.name;
       if (isGrid) filefieldselector = '.xelem' + modelid + ' .' + field.name;
-
+      var jctrl_download = parentobj.find(filefieldselector + '_download');
+      var jctrl_upload = parentobj.find(filefieldselector + '_upload');
+      var jctrl_delete = parentobj.find(filefieldselector + '_delete');
       var jctrl_token = parentobj.find(filefieldselector + '_token');
       var jctrl_dbdelete = parentobj.find(filefieldselector + '_dbdelete');
       var jctrl_dbexists = parentobj.find(filefieldselector + '_dbexists');
+      var jctrl_preview = parentobj.find(filefieldselector + '_preview');
+      var jctrl_thumbnail = parentobj.find(filefieldselector + '_thumbnail');
       var file_token = jctrl_token.val();
-      if (file_token) return file_token;
-      if (jctrl_dbdelete.val() == '1') return '';
-      if (jctrl_dbexists.val() == '1') return true;
-      return false;
-    }
-    if (('control' in field) && (field.control == 'tree')) {
-      if (jctrl.length) {
-        var selected_nodes = XExt.TreeGetSelectedNodes(jctrl[0]);
-        if (selected_nodes.length > 0) return selected_nodes[0];
-      }
-      return null;
-    }
-    if (('control' in field) && (field.control == 'checkbox')) {
-      var checked = jctrl.prop('checked');
-      var ishidden = jctrl.css('visibility').toLowerCase() == 'hidden';
-      var checkval = checked ? '1':'0';
-      
-      if ('controlparams' in field) {
-        if(ishidden && ('value_hidden' in field.controlparams)) checkval = field.controlparams.value_hidden;
-        else if (checked && ('value_true' in field.controlparams)) checkval = field.controlparams.value_true;
-        else if (!checked && ('value_false' in field.controlparams)) checkval = field.controlparams.value_false;
-      }
-      return checkval;
-    }
-    var val = jctrl.val();
-    if(typeof val === 'undefined') val = '';
-    if ((typeof CKEDITOR != 'undefined') && (field.name in CKEDITOR.instances)) {
-      val = CKEDITOR.instances[field.name].getData();
-      val = XExt.ReplaceAll(val, '&lt;%', '<' + '%');
-      val = XExt.ReplaceAll(val, '%&gt;', '%' + '>');
-      val = XExt.ReplaceAll(val, '&#39;', '\'');
-      val = XExt.ReplaceAll(val, '&quot;', '"');
-    }
-    //If field is in bindings
-    var xform = XForms[modelid];
-    if (('_bindings' in xform) && (_.includes(xform._bindings, field.name))) {
-      val = xform[field.name]();
-    }
-    if ('static' in field) {
-      if (field.static.indexOf('js:') == 0) {
-        val = eval(field.static.substr(3));
-      }
-      else val = field.static;
-    }
-    if ('format' in field) {
-      var format = field.format;
-      if (_.isString(format)) val = XFormat[format + '_decode'](val);
-      else {
-        var fargs = [];
-        for (var i = 1; i < format.length; i++) fargs.push(format[i]);
-        fargs.push(val);
-        val = XFormat[format[0] + '_decode'].apply(this, fargs);
-      }
-    }
-    return val;
-  };
-};
-
-exports.HasUpdates = function () {
-  return function () {
-    if (XForms[this._modelid]._layout=='exec') return false;
-    var _this = this;
-    if (this._is_new) { return true; }
-    var access = (this._is_new?'I':'U');
-    var hasUpdates = false;
-    _.each(this.Fields, function (field) {
-      if (!XExt.HasAccess(field.actions, access)) return;
-      if (_this.HasUpdate(field.name)) { hasUpdates = true; }
-    });
-    return hasUpdates;
-  };
-};
-
-exports.HasUpdate = function () {
-  return function (id) {
-    if (XForms[this._modelid]._layout=='exec') return false;
-    var field = this.Fields[id];
-    if (('virtual' in field) && field.virtual) return false;
-    if (('static' in field) && field.static) return false;
-    var oldval = this[id];
-    if (typeof oldval === 'undefined') oldval = '';
-    if (oldval === null) oldval = '';
-    var newval = this.GetValue(field);
-    if (typeof newval === 'undefined') newval = '';
-    if (newval === null) newval = '';
-    if (newval != oldval) { 
-      if(newval.toString() == oldval.toString()) return false;
-      console.log(id + " Old: " + oldval); console.log(id + " New: " + newval); return true; 
-    }
-    return false;
-  };
-};
-
-exports.Commit = function (modelid,xpostid) {
-  return function (perm) {
-    var _this = this;
-    var parentobj = $(document);
-    if (this._jrow) parentobj = this._jrow;
-    if ((XForms[modelid]._layout == 'form-m') || (XForms[modelid]._layout == 'grid')) {
-      if (window[xpostid].Count()==0) return true;
-    }
-    //_is_new at record-level
-    var _this = this;
-    var access = (this._is_new?'I':'U');
-    if (XForms[modelid]._layout=='exec') access = 'B';
-    if (this.HasUpdates()) {
-      if (!this._is_dirty) {
-        //Clone Data to Orig
-        this._orig = exports.GetOwnFields(this);
-        this._is_dirty = true;
-      }
-    }
-    this.GetValues(access);
-    var _xvalidate = window['XForm' + modelid].prototype.xvalidate;
-    if (_xvalidate) {
-      this.xvalidate = _xvalidate;
-      var valid = window[xpostid].Validate(access);
-      delete this.xvalidate;
-      if (!valid) return false;
-    }
-    return true;
-  };
-};
-
-exports.GetOwnFields = function(val) {
-  var rslt = {};
-  _.forOwn(val, function (val, key) {
-    if (key == '_LOVs') return;
-    if (key == '_defaults') return;
-    if (key == '_title') return;
-    if (key == '_bcrumbs') return;
-    if (key == '_is_new') return;
-    if (key == '_is_dirty') return;
-    if (key == '_is_deleted') return;
-    if (key == '_orig') return;
-    if (key == '_jrow') return;
-    if (key == '_modelid') return;
-    if (key == '_readonly') return;
-    rslt[key] = val;
-  });
-  return rslt;
-}
-
-exports.BindLOV = function (modelid) {
-  return function (xform, parentobj) {
-    if (!parentobj) parentobj = $(document);
-    var isGrid = (XForms[modelid]._layout == 'grid');
-    _.each(this.Fields, function (field) {
-      if (!('control' in field)) return; if (field.control == 'subform') return;
-      if (field.control == 'dropdown') {
-        var lovparents = [];
-        var lovparents_selector = '';
-        var lovparents_val = '';
-        if (field.lovparent) lovparents = [field.lovparent];
-        else if (field.lovparents) lovparents = field.lovparents;
-        if (lovparents.length == 0) return;
-        var lovparents_val = '';
-        for (var i = 0; i < lovparents.length; i++) {
-          var curselector = (isGrid?'.':'#') + lovparents[i] + '.xelem' + modelid;
-          lovparents_selector += ((i > 0)?',':'') + curselector;
-          lovparents_val += 'parentvals.push(parentobj.find("' + curselector + '").val()); ';
+      if (val === true) {
+        //Has DB file
+        jctrl.removeClass('nodocument');
+        jctrl_token.val('');
+        jctrl_dbdelete.val('0');
+        jctrl_dbexists.val('1');
+        //Set thumbnail
+        if (jctrl_thumbnail.length && field.controlparams.thumbnail_width) {
+          var keys = jsh.App['xform_' + modelid].GetKeys();
+          if (jsh.XForms[modelid]._keys.length != 1) { throw new Error('File models require one key.'); }
+          var thumb_url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[jsh.XForms[modelid]._keys[0]] + '/' + field.name + '?view=1&thumb=1&_=' + (new Date().getTime());
+          jctrl_thumbnail.attr('src', thumb_url).show();
+          jctrl_thumbnail.attr('width', field.controlparams.thumbnail_width + 'px');
         }
-        parentobj.find(lovparents_selector).change(function (evt) {
-          var parentvals = [];
-          //Narrow value of child LOV to values where CODVAL1 = that value
-          var ctrl = parentobj.find((isGrid?'.':'#') + field.name + '.xelem' + modelid);
-          eval(lovparents_val);
-          XExt.RenderParentLOV(xform.Data, ctrl, parentvals, xform.Data._LOVs[field.name], xform.Data.Fields[field.name], ('lovparents' in field));
-        });
+        else jctrl_thumbnail.hide();
       }
-    });
-  };
-}
-
-exports.ApplyDefaults = function (xformdata) {
-  if(!('_readonly' in xformdata)) xformdata._readonly = [];
-  for(var fname in xformdata.Fields){
-    if((fname in _GET) && _GET[fname]){
-      xformdata[fname] = _GET[fname];
-      xformdata._readonly.push(fname);
+      else if (val === false) {
+        //No DB File
+        jctrl.addClass('nodocument');
+        jctrl_token.val('');
+        jctrl_dbdelete.val('0');
+        jctrl_dbexists.val('0');
+      }
+      else if (val === '') {
+        //Delete action (either delete temp file or DB file
+        jctrl.addClass('nodocument');
+        jctrl_token.val('');
+        if (jctrl_dbexists.val() == '1') jctrl_dbdelete.val('1');
+        else jctrl_dbdelete.val('0');
+      }
+      else if (_.isString(val)) {
+        //Uploaded new temp file
+        jctrl.removeClass('nodocument');
+        jctrl_token.val(val);
+        jctrl_dbdelete.val('0');
+        //Set thumbnail
+        if (jctrl_thumbnail.length && field.controlparams.thumbnail_width) {
+          var thumb_url = jsh._BASEURL + '_dl/_temp/' + file_token + '?view=1';
+          jctrl_thumbnail.attr('src', thumb_url).show();
+          jctrl_thumbnail.attr('width', field.controlparams.thumbnail_width + 'px');
+        }
+        else jctrl_thumbnail.hide();
+      }
     }
-  }  
+    else if (('control' in field) && (field.control == 'tree')) {
+      jsh.XExt.TreeSelectNode(jctrl, val);
+    }
+    else if(('control' in field) && (field.control == 'button')){ }
+    else if (('control' in field) && (field.control == 'checkbox')) {
+      var checkval = false;
+      var checkhidden = false;
+      if ((val == null) || (typeof val == 'undefined')) val = '';
+      if ('controlparams' in field) {
+        if (('value_hidden' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_hidden.toUpperCase())) checkhidden = true;
+        if (('value_true' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_true.toUpperCase())) checkval = true;
+        else if (('value_false' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_false.toUpperCase())) checkval = false;
+        else checkval = jsh.XFormat.bool_decode(val);
+      }
+      else checkval = jsh.XFormat.bool_decode(val);
+      jctrl.prop('checked', checkval);
+      if (checkhidden) jctrl.css('visibility', 'hidden');
+      else if (checkhidden) jctrl.css('visibility', 'visible');
+    }
+    else if ((jctrl.size() > 0) && jctrl.hasClass('xform_label')) { 
+      if(jctrl.hasClass('xform_label_static')){
+        if(val) jctrl.show();
+        else jctrl.hide();
+      }
+      else{ jctrl.html(jsh.XExt.escapeHTMLBR(val)); }
+    }
+    else if ((jctrl.size() > 0) && (String(jctrl.prop('nodeName')).toUpperCase() == 'SELECT')) {
+      //Check if SELECT has value.  If not, add it as an additional option at the end
+      var lov_matches = jctrl.children('option').filter(function () { return String($(this).val()).toUpperCase() == String(val).toUpperCase(); }).length;
+      var has_lov = (lov_matches > 0);
+      var has_parent = (('lovparent' in field) || ('lovparents' in field));
+      //If has parent and item missing, don't set the value
+      if (has_lov || !has_parent) {
+        if (!has_lov) {
+          var codtxt = _this['__' + jsh.uimap.codetxt + '__' + field.name];
+          if (!codtxt) codtxt = val;
+          jctrl.append($('<option>', { value: val }).text(codtxt));
+        }
+        jctrl.val(val);
+      }
+    }
+    else{
+      jctrl.val(val);
+    }
+    
+    //Make fields editable or locked / read-only
+    var show_lookup_when_readonly = false;
+
+    var access = (_this._is_new?'I':'U');
+    if (jsh.XForms[modelid]._layout=='exec') access = 'B';
+    var is_editable = jsh.XExt.HasAccess(field.actions, access);
+    if (is_editable && field.always_editable_on_insert && ((access == 'I') || (jsh.XForms[modelid]._layout=='exec'))){ }
+    else {
+      if (is_editable && ('readonly' in field) && (field.readonly == 1)) is_editable = false;
+      if (_this._readonly && _.includes(_this._readonly, field.name)) is_editable = false;
+    }
+    if (('virtual' in field) && field.virtual) is_editable = true;
+    if (is_editable && ('controlparams' in field) && (field.controlparams.base_readonly)) {
+      is_editable = false;
+      show_lookup_when_readonly = true;
+    }
+
+    if (is_editable && !jctrl.hasClass('editable')) { jsh.XEnable(jctrl); }
+    else if (!is_editable && !jctrl.hasClass('uneditable')) { jsh.XDisable(jctrl, show_lookup_when_readonly); }
+
+    return jctrl;
+  }
+
+  XExtXForm.OnControlUpdate = function () {
+    return function (obj, e) {
+      var jobj = $(obj);
+      var id = $(obj).data('id');
+      if(!id) id = $(obj).attr('id');
+      var field = this.Fields[id];
+      var _this = this;
+      if (!jsh.is_add) {
+        if (this.HasUpdate(id)) {
+          if (!jobj.hasClass('updated')) {
+            jobj.addClass('updated');
+            if(jobj.parent().hasClass('checkbox_container')) jobj.parent().addClass('updated');
+          }
+        }
+        else {
+          if (jobj.hasClass('updated')) {
+            jobj.removeClass('updated');
+            if (jobj.parent().hasClass('checkbox_container')) jobj.parent().removeClass('updated');
+          }
+        }
+      }
+      if ('onchange' in field) { var rslt = (new Function('obj', 'newval', 'e', field.onchange)); rslt.call(_this, obj, _this.GetValue(field), e); }
+    };
+  };
+
+  XExtXForm.GetValues = function () {
+    return function (perm) {
+      var _this = this;
+      _.each(this.Fields, function (field) {
+        if (!(('virtual' in field) && field.virtual) && !jsh.XExt.HasAccess(field.actions, perm)) return;
+        var newval = _this.GetValue(field);
+        //if (!('control' in field) && (newval == undefined)) return;
+        _this[field.name] = newval;
+      });
+    };
+  };
+
+  XExtXForm.GetValue = function (modelid) {
+    return function (field) {
+      var _this = this;
+      var parentobj = $(document);
+      if (this._jrow) parentobj = this._jrow;
+      var isGrid = (jsh.XForms[modelid]._layout == 'grid');
+      
+      var fieldselector = '#' + field.name + '.xelem' + modelid;
+      if (isGrid) fieldselector = '.' + field.name + '.xelem' + modelid;
+      var jctrl = parentobj.find(fieldselector);
+
+      if (('control' in field) && (field.control == 'file_upload')) {
+        var filefieldselector = '.xelem' + modelid + ' #' + field.name;
+        if (isGrid) filefieldselector = '.xelem' + modelid + ' .' + field.name;
+
+        var jctrl_token = parentobj.find(filefieldselector + '_token');
+        var jctrl_dbdelete = parentobj.find(filefieldselector + '_dbdelete');
+        var jctrl_dbexists = parentobj.find(filefieldselector + '_dbexists');
+        var file_token = jctrl_token.val();
+        if (file_token) return file_token;
+        if (jctrl_dbdelete.val() == '1') return '';
+        if (jctrl_dbexists.val() == '1') return true;
+        return false;
+      }
+      if (('control' in field) && (field.control == 'tree')) {
+        if (jctrl.length) {
+          var selected_nodes = jsh.XExt.TreeGetSelectedNodes(jctrl[0]);
+          if (selected_nodes.length > 0) return selected_nodes[0];
+        }
+        return null;
+      }
+      if (('control' in field) && (field.control == 'checkbox')) {
+        var checked = jctrl.prop('checked');
+        var ishidden = jctrl.css('visibility').toLowerCase() == 'hidden';
+        var checkval = checked ? '1':'0';
+        
+        if ('controlparams' in field) {
+          if(ishidden && ('value_hidden' in field.controlparams)) checkval = field.controlparams.value_hidden;
+          else if (checked && ('value_true' in field.controlparams)) checkval = field.controlparams.value_true;
+          else if (!checked && ('value_false' in field.controlparams)) checkval = field.controlparams.value_false;
+        }
+        return checkval;
+      }
+      var val = jctrl.val();
+      if(typeof val === 'undefined') val = '';
+      if ((typeof CKEDITOR != 'undefined') && (field.name in CKEDITOR.instances)) {
+        val = CKEDITOR.instances[field.name].getData();
+        val = jsh.XExt.ReplaceAll(val, '&lt;%', '<' + '%');
+        val = jsh.XExt.ReplaceAll(val, '%&gt;', '%' + '>');
+        val = jsh.XExt.ReplaceAll(val, '&#39;', '\'');
+        val = jsh.XExt.ReplaceAll(val, '&quot;', '"');
+      }
+      //If field is in bindings
+      var xform = jsh.XForms[modelid];
+      if (('_bindings' in xform) && (_.includes(xform._bindings, field.name))) {
+        val = xform[field.name]();
+      }
+      if ('static' in field) {
+        if (field.static.indexOf('js:') == 0) {
+          val = jsh.XExt.JSEval(field.static.substr(3),this);
+        }
+        else val = field.static;
+      }
+      if ('format' in field) {
+        var format = field.format;
+        if (_.isString(format)) val = jsh.XFormat[format + '_decode'](val);
+        else {
+          var fargs = [];
+          for (var i = 1; i < format.length; i++) fargs.push(format[i]);
+          fargs.push(val);
+          val = jsh.XFormat[format[0] + '_decode'].apply(this, fargs);
+        }
+      }
+      return val;
+    };
+  };
+
+  XExtXForm.HasUpdates = function () {
+    return function () {
+      if (jsh.XForms[this._modelid]._layout=='exec') return false;
+      var _this = this;
+      if (this._is_new) { return true; }
+      var access = (this._is_new?'I':'U');
+      var hasUpdates = false;
+      _.each(this.Fields, function (field) {
+        if (!jsh.XExt.HasAccess(field.actions, access)) return;
+        if (_this.HasUpdate(field.name)) { hasUpdates = true; }
+      });
+      return hasUpdates;
+    };
+  };
+
+  XExtXForm.HasUpdate = function () {
+    return function (id) {
+      if (jsh.XForms[this._modelid]._layout=='exec') return false;
+      var field = this.Fields[id];
+      if (('virtual' in field) && field.virtual) return false;
+      if (('static' in field) && field.static) return false;
+      var oldval = this[id];
+      if (typeof oldval === 'undefined') oldval = '';
+      if (oldval === null) oldval = '';
+      var newval = this.GetValue(field);
+      if (typeof newval === 'undefined') newval = '';
+      if (newval === null) newval = '';
+      if (newval != oldval) { 
+        if(newval.toString() == oldval.toString()) return false;
+        console.log(id + " Old: " + oldval); console.log(id + " New: " + newval); return true; 
+      }
+      return false;
+    };
+  };
+
+  XExtXForm.Commit = function (modelid,xpostid) {
+    return function (perm) {
+      var _this = this;
+      var parentobj = $(document);
+      if (this._jrow) parentobj = this._jrow;
+      if ((jsh.XForms[modelid]._layout == 'form-m') || (jsh.XForms[modelid]._layout == 'grid')) {
+        if (jsh.App[xpostid].Count()==0) return true;
+      }
+      //_is_new at record-level
+      var _this = this;
+      var access = (this._is_new?'I':'U');
+      if (jsh.XForms[modelid]._layout=='exec') access = 'B';
+      if (this.HasUpdates()) {
+        if (!this._is_dirty) {
+          //Clone Data to Orig
+          this._orig = XExtXForm.GetOwnFields(this);
+          this._is_dirty = true;
+        }
+      }
+      this.GetValues(access);
+      var _xvalidate = jsh.App['XForm' + modelid].prototype.xvalidate;
+      if (_xvalidate) {
+        this.xvalidate = _xvalidate;
+        var valid = jsh.App[xpostid].Validate(access);
+        delete this.xvalidate;
+        if (!valid) return false;
+      }
+      return true;
+    };
+  };
+
+  XExtXForm.GetOwnFields = function(val) {
+    var rslt = {};
+    _.forOwn(val, function (val, key) {
+      if (key == '_LOVs') return;
+      if (key == '_defaults') return;
+      if (key == '_title') return;
+      if (key == '_bcrumbs') return;
+      if (key == '_is_new') return;
+      if (key == '_is_dirty') return;
+      if (key == '_is_deleted') return;
+      if (key == '_orig') return;
+      if (key == '_jrow') return;
+      if (key == '_modelid') return;
+      if (key == '_readonly') return;
+      rslt[key] = val;
+    });
+    return rslt;
+  }
+
+  XExtXForm.BindLOV = function (modelid) {
+    return function (xform, parentobj) {
+      if (!parentobj) parentobj = $(document);
+      var isGrid = (jsh.XForms[modelid]._layout == 'grid');
+      _.each(this.Fields, function (field) {
+        if (!('control' in field)) return; if (field.control == 'subform') return;
+        if (field.control == 'dropdown') {
+          var lovparents = [];
+          var lovparents_selector = '';
+          var lovparents_val = '';
+          if (field.lovparent) lovparents = [field.lovparent];
+          else if (field.lovparents) lovparents = field.lovparents;
+          if (lovparents.length == 0) return;
+          var lovparents_val = '';
+          for (var i = 0; i < lovparents.length; i++) {
+            var curselector = (isGrid?'.':'#') + lovparents[i] + '.xelem' + modelid;
+            lovparents_selector += ((i > 0)?',':'') + curselector;
+            lovparents_val += 'parentvals.push(parentobj.find("' + curselector + '").val()); ';
+          }
+          parentobj.find(lovparents_selector).change(function (evt) {
+            var parentvals = [];
+            //Narrow value of child LOV to values where CODVAL1 = that value
+            var ctrl = parentobj.find((isGrid?'.':'#') + field.name + '.xelem' + modelid);
+            jsh.XExt.JSEval(lovparents_val,this);
+            jsh.XExt.RenderParentLOV(xform.Data, ctrl, parentvals, xform.Data._LOVs[field.name], xform.Data.Fields[field.name], ('lovparents' in field));
+          });
+        }
+      });
+    };
+  }
+
+  XExtXForm.ApplyDefaults = function (xformdata) {
+    if(!('_readonly' in xformdata)) xformdata._readonly = [];
+    for(var fname in xformdata.Fields){
+      if((fname in jsh._GET) && jsh._GET[fname]){
+        xformdata[fname] = jsh._GET[fname];
+        xformdata._readonly.push(fname);
+      }
+    }  
+  }
+
+  return XExtXForm;
 }
-},{}],10:[function(require,module,exports){
-(function (global){
+},{"./jquery-1.11.2":21,"lodash":28}],10:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -1832,1386 +1858,1416 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-exports = module.exports = {};
+var $ = require('./jquery-1.11.2');
+var _ = require('lodash');
 
-exports.XForm = require('./XExt.XForm.js');
+exports = module.exports = function(jsh){
+  var XValidate = jsh.XValidate;
 
-exports.parseGET = function (qs) {
-  if (typeof qs == 'undefined') qs = window.location.search;
-  if (qs == "" || qs.length == 1) return {};
-  if (qs[0] == '?' || qs[0] == '#') qs = qs.substr(1);
-  var qsa = qs.split('&');
-  var b = {};
-  for (var i = 0; i < qsa.length; i++) {
-    var p = qsa[i].split('=', 2);
-    if (p.length == 1)
-      b[p[0]] = "";
-    else
-      b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
-  }
-  return b;
-};
+  var XExt = function(){ }
 
-exports.RenderLOV = function (_data, ctrl, LOV) {
-  ctrl.empty();
-  ctrl.html(ejs.render('\
-	   <% for(var i=0;i<data.length;i++){ %>\
-		 <option value="<%=data[i][window.jshuimap.codeval]%>"><%=data[i][window.jshuimap.codetxt]%></option>\
-		 <% } %>'
-	  , { data: LOV }
-  ));
-}
+  XExt.XForm = require('./XExt.XForm.js')(jsh);
 
-exports.RenderParentLOV = function (_data, ctrl, parentvals, LOV, field, plural) {
-  //Get Previous Value
-  var prevval = _data[field.name];
-  if (prevval == null) prevval = '';
-  ctrl.empty();
-  var lovfilter = {};
-  if (!plural) lovfilter[window.jshuimap.codeparent] = parentvals[0];
-  else {
-    for (var i = 0; i < parentvals.length; i++) {
-      lovfilter[window.jshuimap.codeparent + (i + 1)] = parentvals[i];
+  XExt.parseGET = function (qs) {
+    if (typeof qs == 'undefined') qs = window.location.search;
+    if (qs == "" || qs.length == 1) return {};
+    if (qs[0] == '?' || qs[0] == '#') qs = qs.substr(1);
+    var qsa = qs.split('&');
+    var b = {};
+    for (var i = 0; i < qsa.length; i++) {
+      var p = qsa[i].split('=', 2);
+      if (p.length == 1)
+        b[p[0]] = "";
+      else
+        b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
     }
+    return b;
+  };
+
+  XExt.RenderLOV = function (_data, ctrl, LOV) {
+    ctrl.empty();
+    ctrl.html(jsh.ejs.render('\
+      <% for(var i=0;i<data.length;i++){ %>\
+      <option value="<%=data[i][jsh.uimap.codeval]%>"><%=data[i][jsh.uimap.codetxt]%></option>\
+      <% } %>'
+      , { data: LOV, jsh: jsh }
+    ));
   }
-  
-  var cLOV = _.filter(LOV, lovfilter);
-  if ((!plural) && (!(window.jshuimap.codeparent in LOV[0]))) cLOV.unshift(LOV[0]);
-  else if ((plural) && (!((window.jshuimap.codeparent + '1') in LOV[0]))) cLOV.unshift(LOV[0]);
-  else if ('lovblank' in field) cLOV.unshift(LOV[0]);
-  ctrl.html(ejs.render('\
-	   <% for(var i=0;i<data.length;i++){ %>\
-		 <option value="<%=data[i][window.jshuimap.codeval]%>"><%=data[i][window.jshuimap.codetxt]%></option>\
-		 <% } %>'
-	  , { data: cLOV }
-  ));
-  //Apply prevval
-  var lov_matches = ctrl.children('option').filter(function () { return String($(this).val()).toUpperCase() == String(prevval).toUpperCase(); }).length;
-  if (lov_matches > 0) ctrl.val(prevval);
-}
 
-exports.CancelBubble = function (e) {
-  if (!e) e = window.event;
-  if (e.stopPropagation) e.stopPropagation();
-  else e.cancelBubble = true;
-}
-
-exports.ShowContextMenu = function (selector,context_item,data){
-  if (!selector) selector = '.xcontext_menu';
-  $('.xcontext_menu').hide();
-  $(selector).css('visibility', 'hidden');
-  $(selector).show();
-  var xtop = mouseY; var xleft = mouseX;
-  var offset = $(selector).offsetParent().offset();
-  xtop -= offset.top - 1;
-  xleft -= offset.left - 1;
-
-  var wwidth = $(window).width();
-  var wheight = $(window).height() - 20;
-  var dwidth = $(selector).outerWidth()+4;
-  var dheight = $(selector).outerHeight()+4;
-  if ((xtop + dheight) > wheight) xtop = wheight - dheight;
-  if ((xleft + dwidth) > wwidth) xleft = wwidth - dwidth;
-  if (xtop < 0) xtop = 0;
-  if (xleft < 0) xleft = 0;
-
-  $(selector).css({ 'top': xtop, 'left': xleft });
-  $(selector).css('visibility', 'visible');
-  global.xContextMenuVisible = true;
-  global.xContextMenuItem = context_item;
-  global.xContentMenuItemData = data;
-}
-
-exports.CallAppFunc = function (q, method, d, onComplete, onFail, options){
-  if(!options) options = {};
-  var getVars = function () {
-    for (var dname in d) {
-      var dval = d[dname];
-      if (dval && (dval instanceof exports.InputValue)) {
-        dval.Prompt(function (rslt) {
-          if (rslt) {
-            d[dname] = dval.Value;
-            getVars();
-          }
-        });
-        return;
-      }
-    }
-    //All variables ready, run main operation
-    var xpost = new XPost(q, '', '');
-    xpost.Data = d;
-    var dq = {}, dp = {};
-    if (method == 'get') dq = d;
-    else if (method == 'postq') { dq = d; method = 'post'; }
-    else if (method == 'putq') { dq = d; method = 'put'; if (options.post) { dp = options.post; } }
-    else dp = d;
-    xpost.qExecute(xpost.PrepExecute(method, xpost.q, dq, dp, function (rslt) {
-      if ('_success' in rslt) {
-        if (onComplete) onComplete(rslt);
-        else XExt.Alert('Operation completed successfully.');
-      }
-    }, onFail));
-  }
-  getVars();
-}
-
-exports.InputValue = function (_Caption, _Validation, _Default, _PostProcess){
-  this.Caption = _Caption;
-  this.Validation = _Validation;
-  this.Default = (_Default ? _Default : '');
-  this.PostProcess = _PostProcess;
-  this.Value = undefined;
-}
-exports.InputValue.prototype.Prompt = function (onComplete) {
-  var _this = this;
-  XExt.Prompt(_this.Caption, _this.Default, function (rslt) {
-    if (rslt == null) {
-      if (onComplete) { onComplete(null); }
-      return;
-    }
+  XExt.RenderParentLOV = function (_data, ctrl, parentvals, LOV, field, plural) {
+    //Get Previous Value
+    var prevval = _data[field.name];
+    if (prevval == null) prevval = '';
+    ctrl.empty();
+    var lovfilter = {};
+    if (!plural) lovfilter[jsh.uimap.codeparent] = parentvals[0];
     else {
-      if (_this.Validation) {
-        var v = new XValidate();
-        v.AddValidator('_obj.Value', _this.Caption, 'BIUD', _this.Validation);
-        v.ResetValidation();
-        var verrors = v.Validate('BIUD', { Value: rslt });
-        if (!_.isEmpty(verrors)) {
-          XExt.Alert(verrors[''].join('\n'), function () { if (onComplete) onComplete(null); });
+      for (var i = 0; i < parentvals.length; i++) {
+        lovfilter[jsh.uimap.codeparent + (i + 1)] = parentvals[i];
+      }
+    }
+    
+    var cLOV = _.filter(LOV, lovfilter);
+    if ((!plural) && (!(jsh.uimap.codeparent in LOV[0]))) cLOV.unshift(LOV[0]);
+    else if ((plural) && (!((jsh.uimap.codeparent + '1') in LOV[0]))) cLOV.unshift(LOV[0]);
+    else if ('lovblank' in field) cLOV.unshift(LOV[0]);
+    ctrl.html(jsh.ejs.render('\
+      <% for(var i=0;i<data.length;i++){ %>\
+      <option value="<%=data[i][jsh.uimap.codeval]%>"><%=data[i][jsh.uimap.codetxt]%></option>\
+      <% } %>'
+      , { data: cLOV, jsh: jsh }
+    ));
+    //Apply prevval
+    var lov_matches = ctrl.children('option').filter(function () { return String($(this).val()).toUpperCase() == String(prevval).toUpperCase(); }).length;
+    if (lov_matches > 0) ctrl.val(prevval);
+  }
+
+  XExt.CancelBubble = function (e) {
+    if (!e) e = window.event;
+    if (e.stopPropagation) e.stopPropagation();
+    else e.cancelBubble = true;
+  }
+
+  XExt.ShowContextMenu = function (selector,context_item,data){
+    if (!selector) selector = '.xcontext_menu';
+    $('.xcontext_menu').hide();
+    $(selector).css('visibility', 'hidden');
+    $(selector).show();
+    var xtop = jsh.mouseY; var xleft = jsh.mouseX;
+    var offset = $(selector).offsetParent().offset();
+    xtop -= offset.top - 1;
+    xleft -= offset.left - 1;
+
+    var wwidth = $(window).width();
+    var wheight = $(window).height() - 20;
+    var dwidth = $(selector).outerWidth()+4;
+    var dheight = $(selector).outerHeight()+4;
+    if ((xtop + dheight) > wheight) xtop = wheight - dheight;
+    if ((xleft + dwidth) > wwidth) xleft = wwidth - dwidth;
+    if (xtop < 0) xtop = 0;
+    if (xleft < 0) xleft = 0;
+
+    $(selector).css({ 'top': xtop, 'left': xleft });
+    $(selector).css('visibility', 'visible');
+    if(jsh){
+      jsh.xContextMenuVisible = true;
+      jsh.xContextMenuItem = context_item;
+      jsh.xContentMenuItemData = data;
+    }
+  }
+
+  XExt.CallAppFunc = function (q, method, d, onComplete, onFail, options){
+    if(!XExt.jsh) throw new Error('XExt requires jsHarmony instance to run CallAppFunc');
+    if(!options) options = {};
+    var getVars = function () {
+      for (var dname in d) {
+        var dval = d[dname];
+        if (dval && (dval instanceof XExt.InputValue)) {
+          dval.Prompt(function (rslt) {
+            if (rslt) {
+              d[dname] = dval.Value;
+              getVars();
+            }
+          });
           return;
         }
       }
-      if (_this.PostProcess) rslt = _this.PostProcess(rslt);
-      _this.Value = rslt;
-      if (onComplete) onComplete(rslt);
-    }
-  });
-}
-exports.getLOVTxt = function (LOV, val) {
-  if (val) val = val.toString();
-  for (var i = 0; i < LOV.length; i++) {
-    if (LOV[i][window.jshuimap.codeval] == val) return LOV[i][window.jshuimap.codetxt];
-  }
-  return undefined;
-}
-exports.pushLOV = function (LOV, val, txt) {
-  var newlov = {};
-  newlov[window.jshuimap.codeval] = val;
-  newlov[window.jshuimap.codetxt] = txt;
-  LOV.push(newlov);
-}
-
-exports.endsWith = function (str, suffix) {
-  return str.match(suffix + "$") == suffix;
-}
-exports.beginsWith = function (str, prefix) {
-  return str.indexOf(prefix) === 0;
-}
-
-exports.HasAccess = function (access, perm) {
-  if (access === undefined) return false;
-  for (var i = 0; i < perm.length; i++) {
-    if (access.indexOf(perm[i]) > -1) return true;
-  }
-  return false;
-};
-
-exports.access = exports.HasAccess;
-
-exports.UndefinedBlank = function (val) {
-  if (typeof val == 'undefined') return '';
-  return val;
-}
-
-exports.ReplaceAll = function (val, find, replace) {
-  return val.split(find).join(replace);
-}
-
-exports.AddHistory = function (url, obj, title) {
-  if (!global.isHTML5) return;
-  if (typeof obj == 'undefined') obj = {};
-  if (typeof title == 'undefined') title = document.title;
-  window.history.pushState(obj, title, url);
-}
-
-exports.ReplaceHistory = function (url, obj, title) {
-  if (!global.isHTML5) return;
-  if (typeof obj == 'undefined') obj = {};
-  if (typeof title == 'undefined') title = document.title;
-  window.history.replaceState(obj, title, url);
-}
-
-exports.clearFileInput = function (id) {
-  var oldInput = document.getElementById(id);
-  var newInput = document.createElement("input");
-  newInput.type = "file";
-  newInput.id = oldInput.id;
-  newInput.name = oldInput.name;
-  newInput.className = oldInput.className;
-  newInput.style.cssText = oldInput.style.cssText;
-  oldInput.parentNode.replaceChild(newInput, oldInput);
-};
-
-exports.hideTab = function (modelid, tabname) {
-  $('.xtab' + modelid).each(function (i, obj) {
-    var jobj = $(obj);
-    if (jobj.html() == tabname) jobj.hide();
-  });
-}
-
-//Escape JavaScript string
-exports.escapeJS = function (q) {
-  return q.replace(/[\\'"]/g, "\\$&");
-}
-
-//Escape just quotes (for XML/HTML key-value pairs)
-exports.escapeHTMLQ = function (q) {
-  return q.replace(/["]/g, "&quot;");
-}
-
-//Escape while enabling escape characters in a string
-exports.escapeHTMLN = function (val) {
-  var rslt = exports.escapeHTML(val);
-  return String(val).replace(/&amp;([\w]+);/g, function (s,p1) {
-    return '&'+p1+';';
-  });
-}
-
-//Escape all HTML
-exports.escapeHTML = function (val) {
-  var entityMap = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': '&quot;',
-    "'": '&#39;',
-    "/": '&#x2F;',
-    '\u00A0':'&#xa0;'
-  };
-  
-  return String(val).replace(/[\u00A0&<>"'\/]/g, function (s) {
-    return entityMap[s];
-  });
-}
-//Escape HTML and replace line breaks with HTML line breaks
-exports.escapeHTMLBR = function (val) {
-  if((typeof val=='undefined')||(val===null)) return val;
-  return XExt.ReplaceAll(XExt.ReplaceAll(exports.escapeHTML(val.toString()), '\n', '<br/>'), '\r', '');
-}
-//Escape HTML and replace line breaks with spaces
-exports.escapeBRSpace = function (val) {
-  if((typeof val=='undefined')||(val===null)) return val;
-  return XExt.ReplaceAll(XExt.ReplaceAll(val.toString(), '\n', ' '), '\r', '');
-}
-//Escape string for regular expression matching
-exports.escapeRegEx = function (q) {
-  return q.replace(/[-[\]{}()*+?.,\\/^$|#\s]/g, "\\$&");
-}
-exports.pad = function (val, padding, length) {
-  var rslt = val.toString();
-  while (rslt.length < length) rslt = padding + rslt;
-  return rslt;
-}
-exports.getMargin = function(jctrl){
-  return {
-    top: parseInt(jctrl.css('margin-top')),
-    right: parseInt(jctrl.css('margin-right')),
-    bottom: parseInt(jctrl.css('margin-bottom')),
-    left: parseInt(jctrl.css('margin-left'))
-  };
-}
-exports.getPadding = function(jctrl){
-  return {
-    top: parseInt(jctrl.css('padding-top')),
-    right: parseInt(jctrl.css('padding-right')),
-    bottom: parseInt(jctrl.css('padding-bottom')),
-    left: parseInt(jctrl.css('padding-left'))
-  };
-}
-exports.getBorder = function(jctrl){
-  return {
-    top: parseInt(jctrl.css('border-top-width')),
-    right: parseInt(jctrl.css('border-right-width')),
-    bottom: parseInt(jctrl.css('border-bottom-width')),
-    left: parseInt(jctrl.css('border-left-width'))
-  };
-}
-exports.xejs = {
-  'escapeJS': function(val){ return exports.escapeJS(val); },
-  'escapeHTMLN': function(val){ return exports.escapeHTMLN(val); },
-  'escapeHTMLBR': function(val){ return exports.escapeHTMLBR(val); },
-  'iif': function (cond, tval, fval) {
-    if (cond) return tval;
-    if (fval !== undefined) return fval;
-    return '';
-  },
-  'ifnull': function (val, nullval) {
-    if (val) return val;
-    return nullval;
-  },
-  'case': function () {
-    var args = arguments;
-    if (args.length == 0) return '';
-    var i = 0;
-    while (i < args.length) {
-      if (i == (args.length - 1)) return args[i];
-      if (args[i]) return args[i + 1];
-      i += 2;
-    }
-    return '';
-  },
-  'visible': function (cond) {
-    try {
-      if (!cond) return 'display:none;';
-    } catch (ex) { }
-    return '';
-  },
-  'eachKey': function (fields, func) {
-    for (var i = 0; i < fields.length; i++) {
-      if (fields[i].key)
-        func(fields[i]);
-    }
-  },
-  'showProp': function (prop, val, unescaped) {
-    if (typeof val != 'undefined') {
-      if (unescaped) return prop + '="' + val + '"';
-      else return prop + '="' + exports.escapeHTML(val) + '"';
-    }
-    return '';
-  },
-  'showSystemButton': function (model, btn) {
-    if (model.hide_system_buttons) {
-      for (var i = 0; i < model.hide_system_buttons.length; i++) {
-        if (model.hide_system_buttons[i] == btn) return false;
-      }
-    }
-    return true;
-  },
-  'GetValue': function (field) {
-    if ('sample' in field) return field.sample;
-    return '';
-  },
-  'getInputType': function (field) {
-    if (field && field.validate) {
-      if (field.validate.indexOf('XValidate._v_IsEmail()') >= 0) return 'email';
-      if (field.validate.indexOf('XValidate._v_IsPhone()') >= 0) return 'tel';
-    }
-    if (field && field.type) {
-      if ((field.type == 'varchar') || (field.type == 'char')) return 'text';
-      //else if (_.includes(['bigint', 'int', 'smallint', 'tinyint', 'decimal', 'float', 'boolean'], field.type)) return 'number';
-      //else if ((field.type == 'datetime')) return 'number';// return 'datetime';
-      //else if ((field.type == 'date')) return 'number';// return 'date';
-      //else if ((field.type == 'time')) return 'number';// return 'time';
-    }
-    return 'text';
-  },
-  'getaccess': function () {
-    if (arguments.length == 0) return '';
-    var kfc = '';
-    var effperm = arguments[0];
-    for (var i = 0; i < arguments.length; i++) {
-      effperm = exports.xejs.intersectperm(effperm, arguments[i]);
-      kfc = exports.xejs.unionperm(kfc, this.intersectperm('KFC', arguments[i]));
-    }
-    return (effperm + kfc);
-  },
-  'intersectperm': function (perm1, perm2) {
-    if (typeof perm1 == 'undefined') perm1 = '';
-    if (typeof perm2 == 'undefined') perm2 = '';
-    var rslt = '';
-    if (perm1 == '*') return perm2;
-    if (perm2 == '*') return perm1;
-    for (var i = 0; i < perm1.length; i++) {
-      if (perm2.indexOf(perm1[i]) > -1) rslt += perm1[i];
-    }
-    return rslt;
-  },
-  'unionperm': function (perm1, perm2) {
-    if ((typeof perm1 == 'undefined') && (typeof perm2 == 'undefined')) return '';
-    if (typeof perm1 == 'undefined') return perm2;
-    if (typeof perm2 == 'undefined') return perm1;
-    if (perm1 == '*') return '*';
-    if (perm2 == '*') return '*';
-    var rslt = perm1;
-    for (var i = 0; i < perm2.length; i++) {
-      if (rslt.indexOf(perm2[i]) < 0) rslt += perm2[i];
-    }
-    return rslt;
-  },
-  'renderLOV': function (lov, selected_value) {
-    var rslt = '';
-    _.each(lov, function (lovval) {
-      rslt += '<option value="' + exports.escapeHTML(lovval[window.jshuimap.codeval]) + '" ' + ((lovval[window.jshuimap.codeval] == selected_value)?'selected':'') + '>' + exports.escapeHTML(lovval[window.jshuimap.codetxt]) + '</option>';
-    });
-    return rslt;
-  },
-  'onlyAlphaNum': function (val) {
-    if (!val) return '';
-    return val.toString().replace(/[^a-zA-Z0-9]+/g, '');
-  },
-  'is_add': function (_GET) {
-    return (_GET['action'] == 'add');
-  }
-};
-
-exports.CKEditor = function (id) {
-  if (CKEDITOR.instances[id]) return;
-  var elem = $('#' + id);
-  var orig_width = elem.outerWidth();
-  var orig_height = elem.outerHeight();
-  elem.wrap('<div id="' + id + '_container" style="width:' + orig_width + 'px;border:1px solid #999;display:inline-block;"></div>');
-  CKEDITOR.replace(id);
-}
-exports.notifyPopupComplete = function (id, rslt) {
-  if (window.opener) {
-    if ('XPopupComplete' in window.opener) window.opener.XPopupComplete(id, rslt);
-  }
-}
-exports.unescapeEJS = function (ejssrc) {
-  if (!ejssrc) return '';
-  var rslt = ejssrc;
-  rslt = XExt.ReplaceAll(rslt, '&lt;#', '<#');
-  rslt = XExt.ReplaceAll(rslt, '#&gt;', '#>');
-  return rslt;
-}
-exports.isOnePage = function () {
-  if ((typeof window['jsh_onepage'] != 'undefined') && (window.jsh_onepage)) return true;
-  return false;
-}
-exports.navTo = function (url) {
-  if (exports.isOnePage()) {
-    var a = exports.getURLObj(url);
-    if (!window.jshNavigate(a, undefined, undefined, undefined)) return false;
-  }
-  window.location.href = url;
-  return false;
-}
-exports.jumpAnchor = function (name) {
-  if (!name) return;
-  if (name[0] == '#') name = name.substring(1);
-  var jobj = $('a[name=' + name + ']');
-  if (jobj.size() == 0) return;
-  var elem = jobj.get(0);
-  var elemoff = $(elem).offset();
-  window.scrollTo(0, elemoff.top);
-}
-exports.getURLObj = function (url) {
-  var a = document.createElement('a');
-  a.href = url;
-  return a;
-};
-exports.aPhoneCheck = function (jobj, caption) {
-  var val = jobj.val()
-  if (val && (val == '1' || !val.match(/[0123456789]/))) {
-    jobj.addClass('xinputerror');
-    XExt.Alert('Invalid ' + caption);
-    return false;
-  }
-  return true;
-}
-exports.StripTags = function (val, ignore) {
-  if (!val) return val;
-  
-  ignore = (((ignore || '') + '').toLowerCase().match(/<[a-z][a-z0-9]*>/g) || []).join('')
-  var clienttags = /<\/?([a-z][a-z0-9]*)\b[^>]*>/gi
-  var servertags = /<!--[\s\S]*?-->|<\?(?:php)?[\s\S]*?\?>/gi
-  
-  return exports.unescapeHTMLEntity(val.replace(servertags, '').replace(clienttags, function ($0, $1) {
-    return ignore.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : ''
-  }));
-}
-exports.unescapeHTMLEntity = function(val){
-  var obj = document.createElement("textarea");
-  obj.innerHTML = val;
-  return obj.value;
-}
-exports.readCookie = function(id){
-  var rslt = [];
-  var cookies = document.cookie.split(';');
-  var rx=RegExp("^\\s*"+exports.escapeRegEx(id)+"=\\s*(.*?)\\s*$");
-  for(var i=0;i<cookies.length;i++){
-    var m = cookies[i].match(rx);
-    if(m) rslt.push(m[1]);
-  }
-  return rslt;
-}
-exports.currentURL = function(){
-  var rslt = window.location.href.toString().split(window.location.host)[1];
-  rslt = rslt.split('?')[0];
-  rslt = rslt.split('#')[0];
-  return rslt;
-}
-
-
-/******************
- * TREE RENDERING *
- ******************/
-
-function XTreeNode() {
-  this.Children = [];
-  this.ID = null;
-  this.Value = '';
-  this.Text = '';
-  this.Expanded = false;
-  this.Selected = false;
-  this.Icon = '';
-}
-
-exports.TreeRender = function (ctrl, LOV, field) {
-  //Create Cache of Opened Nodes
-  var expanded_nodes = exports.TreeGetExpandedNodes(ctrl);
-  var selected_nodes = exports.TreeGetSelectedNodes(ctrl);
-  
-  ctrl.empty();
-  if (LOV.length == 0) return;
-  
-  //Create Tree
-  var tree = [];
-  var nodes = {};
-  var sortednodes = [];
-  var has_seq = false;
-  for (var i = 0; i < LOV.length; i++) {
-    var iLOV = LOV[i];
-    var node = new XTreeNode();
-    node.ID = iLOV[window.jshuimap.codeid];
-    node.ParentID = iLOV[window.jshuimap.codeparentid];
-    node.Value = iLOV[window.jshuimap.codeval];
-    node.Text = iLOV[window.jshuimap.codetxt];
-    node.Icon = iLOV[window.jshuimap.codeicon];
-    node.Seq = iLOV[window.jshuimap.codeseq];
-    if (node.Seq) has_seq = true;
-    if (_.includes(expanded_nodes, node.Value)) node.Expanded = true;
-    if (_.includes(selected_nodes, node.Value)) node.Selected = true;
-    
-    if (!node.ParentID) tree.push(node);
-    nodes[node.ID] = node;
-    sortednodes.push(node);
-  }
-  for (var i = 0; i < sortednodes.length; i++) {
-    var node = sortednodes[i];
-    if (node.ParentID && (node.ParentID in nodes)) nodes[node.ParentID].Children.push(node);
-  }
-  if (has_seq) sortednodes = _.sortBy(sortednodes, [window.jshuimap.codeseq, window.jshuimap.codetxt]);
-  
-  var body = '';
-  for (var i = 0; i < tree.length; i++) {
-    body += exports.TreeRenderNode(ctrl, tree[i]);
-  }
-  ctrl.html(body);
-  if (field && field.controlparams) {
-    if (field.controlparams.expand_all) exports.TreeExpandAll(ctrl);
-    else if ((typeof field.controlparams.expand_to_selected == 'undefined') || (field.controlparams.expand_to_selected)) exports.TreeExpandToSelected(ctrl);
-  }
-}
-
-exports.TreeRenderNode = function (ctrl, n) {
-  var children = '';
-  for (var i = 0; i < n.Children.length; i++) {
-    children += exports.TreeRenderNode(ctrl, n.Children[i]);
-  }
-  var rslt = ejs.render('\
-    <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>" onclick=\'XExt.TreeSelectNode(this,<%-JSON.stringify(n.Value)%>); return false;\' ondblclick=\'XExt.TreeDoubleClickNode(this,<%-JSON.stringify(n.ID)%>); return false;\' oncontextmenu=\'return XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'XExt.CancelBubble(arguments[0]); XExt.TreeToggleNode($(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><img class="icon" src="/images/icon_<%=n.Icon%>.png"><span><%=n.Text%></span></a>\
-    <div class="children <%=(n.Expanded?"expanded":"")%> tree_item_<%=n.ID%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>"><%-children%></div>',
-    { n: n, children: children }
-  );
-  return rslt;
-}
-
-exports.TreeItemContextMenu = function (ctrl, n) {
-  var jctrl = $(ctrl);
-  var jtree = jctrl.closest('.xform_ctrl.tree');
-  var fieldname = exports.getFieldFromObject(ctrl);
-  var menuid = '#_item_context_menu_' + fieldname;
-  if(jtree.data('oncontextmenu')) { 
-    var f = (new Function('n', jtree.data('oncontextmenu'))); 
-    var frslt = f.call(ctrl, n);
-    if((frslt === false) || (frslt===true)) return frslt;
-  }
-  if ($(menuid).length) {
-    exports.ShowContextMenu(menuid, $(ctrl).data('value'), { id:n });
-    return false;
-  }
-  return true;
-}
-
-exports.TreeDoubleClickNode = function (ctrl, n) {
-  var jctrl = $(ctrl);
-  var jtree = jctrl.closest('.xform_ctrl.tree');
-  var fieldname = exports.getFieldFromObject(ctrl);
-  if(jtree.data('ondoubleclick')) { var rslt = (new Function('n', jtree.data('ondoubleclick'))); rslt.call(ctrl, n); }
-}
-
-exports.TreeGetSelectedNodes = function (ctrl) {
-  var rslt = [];
-  $(ctrl).find('.tree_item.selected').each(function () {
-    var val = $(this).data('value');
-    if (val) rslt.push(val.toString());
-  });
-  return rslt;
-}
-
-exports.TreeGetExpandedNodes = function (ctrl) {
-  var rslt = [];
-  $(ctrl).find('.tree_item.expanded').each(function () {
-    var val = $(this).data('value');
-    if (val) rslt.push(val.toString());
-  });
-  return rslt;
-}
-
-exports.TreeSelectNode = function (ctrl, nodevalue) {
-  var jctrl = $(ctrl);
-  
-  var xform = exports.getFormFromObject(ctrl);
-  var fieldname = exports.getFieldFromObject(ctrl);
-  var field = undefined;
-  if (xform && fieldname) field = xform.Data.Fields[fieldname];
-  
-  var jtree = jctrl.closest('.xform_ctrl.tree');
-  if (jtree.hasClass('uneditable')) return;
-
-  //Deselect previously selected value
-  jtree.find('.selected').removeClass('selected');
-
-  var nodeid = '';
-  if(nodevalue){
-    //Get nodeid from nodevalue
-    jtree.find('.tree_item').each(function(){
-      if($(this).data('value')==nodevalue) nodeid = $(this).data('id');
-    });
-    if(!nodeid){ return XExt.Alert('Tree node with value \'' + nodevalue + '\' not found'); }
-
-    jtree.find('.tree_item.tree_item_' + nodeid).addClass('selected');
-    if (field && field.controlparams) {
-      if ((typeof field.controlparams.expand_to_selected == 'undefined') || (field.controlparams.expand_to_selected)) exports.TreeExpandToSelected(ctrl);
-    }
-  }
-
-  //Fire events
-  if (field && init_complete) {
-    if ('onchange' in field) { var rslt = (new Function('obj', 'newval', 'e', field.onchange)); rslt.call(xform.Data, ctrl, xform.Data.GetValue(field), null); }
-  }
-  if(nodeid && jtree.data('onselected')) { var rslt = (new Function('nodeid', jtree.data('onselected'))); rslt.call(ctrl, nodeid); }
-}
-
-exports.TreeToggleNode = function (jctrl, nodeid) {
-  var jctrl = jctrl.closest('.xform_ctrl.tree');
-  if (jctrl.find('.children.tree_item_' + nodeid).hasClass('expanded'))
-    exports.TreeCollapseNode(jctrl, nodeid);
-  else
-    exports.TreeExpandNode(jctrl, nodeid);
-}
-
-exports.TreeCollapseNode = function (jctrl, nodeid) {
-  var jctrl = jctrl.closest('.xform_ctrl.tree');
-  jctrl.find('.tree_item_' + nodeid).removeClass('expanded');
-  jctrl.find('.tree_item.tree_item_' + nodeid + ' > .glyph').html('&#x25b7;');
-}
-
-exports.TreeExpandNode = function (jctrl, nodeid) {
-  var jctrl = jctrl.closest('.xform_ctrl.tree');
-  jctrl.find('.tree_item_' + nodeid).addClass('expanded');
-  jctrl.find('.tree_item.tree_item_' + nodeid + ' > .glyph').html('&#x25e2;');
-}
-
-exports.TreeExpandToSelected = function (ctrl) {
-  var toptree = $(ctrl).closest('.xform_ctrl.tree');
-  var rslt = [];
-  toptree.find('.tree_item.selected').each(function () {
-    var jctrl = $(this);
-    var jparent = jctrl.parent();
-    while (jparent.length && !jparent.is(toptree)) {
-      exports.TreeExpandNode(toptree, jparent.data('value'));
-      jparent = jparent.parent();
-    }
-  });
-  return rslt;
-}
-exports.TreeExpandAll = function (ctrl) {
-  var jctrl = $(ctrl).closest('.xform_ctrl.tree');
-  jctrl.find('.tree_item').addClass('expanded');
-  jctrl.find('.children').addClass('expanded');
-  jctrl.find('.glyph').html('&#x25e2;');
-}
-
-/*********************
- * GENERAL FUNCTIONS *
- *********************/
-
-exports.getMaxLength = function (field) {
-  var rslt = -1;
-  if ('type' in field) {
-    var ftype = field.type;
-    if ((ftype == 'varchar' || ftype == 'char') && ('length' in field)) rslt = field.length;
-    else if (ftype == 'bigint') rslt = 25;
-    else if (ftype == 'datetime') rslt = 50;
-    else if (ftype == 'time') rslt = 50;
-    else if (ftype == 'date') rslt = 50;
-    else if (ftype == 'decimal'){
-      rslt = 40;
-      var prec_h = 38;
-      var prec_l = 4;
-      if ('precision' in field) {
-        prec_h = field.precision[0];
-        prec_l = field.precision[1];
-      }
-      rslt = prec_h + 2;
-    }
-    else if (ftype == 'float'){ rslt = 128; }
-    else if (ftype == 'int') rslt = 15;
-    else if (ftype == 'smallint') rslt = 10;
-    else if (ftype == 'tinyint') rslt = 3;
-    else if (ftype == 'boolean') rslt = 5;
-    else if ((ftype == 'binary') && ('length' in field)) rslt = field.length * 2 + 2;
-
-  }
-  return rslt;
-}
-
-exports.XInputAction = function (_obj, _overrideFunc) {
-  if (_obj && (_obj instanceof jQuery) && (_obj.length)) this.obj = _obj[0];
-  else this.obj = _obj;
-  this.tstamp = Date.now();
-  this.mouseX = window.mouseX;
-  this.mouseY = window.mouseY;
-  this.mouseDown = window.mouseDown;
-  this.overrideFunc = _overrideFunc;
-}
-
-exports.XInputAction.prototype.Exec = function () {
-  var _this = this;
-  if (_this.obj) $(_this.obj).focus();
-  if (this.overrideFunc) this.overrideFunc();
-  else if (_this.obj && _this.mouseDown) {
-    exports.Click(_this.obj);
-  }
-}
-
-exports.XInputAction.prototype.IsExpired = function () {
-  return (new Date().getTime() - this.tstamp) > 100;
-}
-
-exports.getLastClicked = function () {
-  var is_recent_click = (new Date().getTime() - window.last_clicked_time) < 100;
-  if (window.last_clicked && is_recent_click) return window.last_clicked;
-  return undefined;
-}
-
-exports.Click = function (obj) {
-  var gevent = new MouseEvent("mousedown", {
-    bubbles: true,
-    cancelable: true,
-    view: window,
-  });
-  window.setTimeout(function () { obj.dispatchEvent(gevent); }, 1);
-}
-
-exports.isIOS = function () {
-  if ((navigator.userAgent.match(/iPhone/i)) || 
-      (navigator.userAgent.match(/iPod/i)) || 
-      (navigator.userAgent.match(/iPad/i))) {
-    return true;
-  }
-}
-
-exports.clearDialogs = function(){
-  window.xDialog = [];
-  $('#xdialogblock').children().hide();
-  $('#xdialogblock').hide();
-}
-
-exports.dialogButtonFunc = function (dialogClass, oldactive, onComplete, params) {
-  if (!params) params = {};
-  return function () {
-    //Delete duplicates from stack
-    for (var i = 0; i < window.xDialog.length; i++) {
-      for (var j = 0; j < i; j++) {
-        if (window.xDialog[j] == window.xDialog[i]) {
-          window.xDialog.splice(i, 1);
-          i--;
-          break;
+      //All variables ready, run main operation
+      var xpost = new jsh.XPost(q, '', '');
+      xpost.Data = d;
+      var dq = {}, dp = {};
+      if (method == 'get') dq = d;
+      else if (method == 'postq') { dq = d; method = 'post'; }
+      else if (method == 'putq') { dq = d; method = 'put'; if (options.post) { dp = options.post; } }
+      else dp = d;
+      xpost.qExecute(xpost.PrepExecute(method, xpost.q, dq, dp, function (rslt) {
+        if ('_success' in rslt) {
+          if (onComplete) onComplete(rslt);
+          else XExt.Alert('Operation completed successfully.');
         }
-      }
+      }, onFail));
     }
-    //Verify this is the topmost dialog
-    if ((window.xDialog.length > 0) && (window.xDialog[0] != dialogClass)) return;
-    $('#xdialogblock ' + dialogClass).hide();
-    if (window.xDialog.length == 1) { $('#xdialogblock').hide(); }
-    if (window.xDialog[0] != dialogClass) { alert('ERROR - Invalid Dialog Stack'); console.log(dialogClass); console.log(window.xDialog); }
-    if (oldactive) oldactive.focus();
-    window.setTimeout(function () { window.xDialog.shift(); if (onComplete) onComplete(); }, 1);
-    if (params.onCompleteImmediate) params.onCompleteImmediate();
+    getVars();
   }
-}
 
-exports.Alert = function (obj, onAccept, params) {
-  if (!params) params = {};
-  var msg = '';
-  if (obj && _.isString(obj)) msg = obj;
-  else msg = JSON.stringify(obj);
-  msg = XExt.escapeHTML(msg);
-  msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
-  //alert(msg);
-  window.xDialog.unshift('#xalertbox');
-  $('#xdialogblock #xalertbox').zIndex(window.xDialog.length);
-  
-  var oldactive = document.activeElement;
-  if (oldactive) $(oldactive).blur();
-  $('#xalertmessage').html(msg);
-  $('#xalertbox input').off('click');
-  $('#xalertbox input').off('keydown');
-  var acceptfunc = exports.dialogButtonFunc('#xalertbox', oldactive, onAccept, { onCompleteImmediate: params.onAcceptImmediate });
-  $('#xalertbox input').on('click', acceptfunc);
-  $('#xalertbox input').on('keydown', function (e) { if (e.keyCode == 27) { acceptfunc(); } });
-  
-  $('#xdialogblock,#xalertbox').show();
-  window.XWindowResize();
-  if (!exports.isIOS()) $('#xalertbox input').focus();
-}
-
-exports.Confirm = function (obj, onAccept, onCancel, options) {
-  if (!options) options = {};
-  var msg = '';
-  if (obj && _.isString(obj)) msg = obj;
-  else msg = JSON.stringify(obj);
-  msg = XExt.escapeHTML(msg);
-  msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
-  //if (window.confirm(msg)) { if (onAccept) onAccept(); }
-  //if (onCancel) onCancel(); 
-  window.xDialog.unshift('#xconfirmbox');
-  $('#xdialogblock #xconfirmbox').zIndex(window.xDialog.length);
-  
-  var oldactive = document.activeElement;
-  if (oldactive) $(oldactive).blur();
-  $('#xconfirmmessage').html(msg);
-  $('#xconfirmbox input').off('click');
-  $('#xconfirmbox input').off('keydown');
-  var cancelfunc = exports.dialogButtonFunc('#xconfirmbox', oldactive, onCancel);
-  if (options.button_no) {
-    $('#xconfirmbox input.button_no').show();
-    $('#xconfirmbox input.button_no').on('click', exports.dialogButtonFunc('#xconfirmbox', oldactive, options.button_no));
+  XExt.InputValue = function (_Caption, _Validation, _Default, _PostProcess){
+    this.Caption = _Caption;
+    this.Validation = _Validation;
+    this.Default = (_Default ? _Default : '');
+    this.PostProcess = _PostProcess;
+    this.Value = undefined;
   }
-  else $('#xconfirmbox input.button_no').hide();
-  if (options.button_ok_caption) $('#xconfirmbox input.button_ok').val(options.button_ok_caption);
-  if (options.button_no_caption) $('#xconfirmbox input.button_no').val(options.button_no_caption);
-  if (options.button_cancel_caption) $('#xconfirmbox input.button_cancel').val(options.button_cancel_caption);
-
-
-  $('#xconfirmbox input.button_ok').on('click', exports.dialogButtonFunc('#xconfirmbox', oldactive, onAccept));
-  $('#xconfirmbox input.button_cancel').on('click', cancelfunc);
-  $('#xconfirmbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-  $('#xdialogblock,#xconfirmbox').show();
-  window.XWindowResize();
-  if (!exports.isIOS()) $('#xconfirmbox input.button_ok').focus();
-}
-
-exports.Prompt = function (obj, dflt, onComplete) {
-  var msg = '';
-  if (obj && _.isString(obj)) msg = obj;
-  else msg = JSON.stringify(obj);
-  
-  if (!dflt) dflt = '';
-  if (!_.isString(dflt)) dflt = JSON.stringify(dflt);
-  
-  msg = XExt.escapeHTML(msg);
-  msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
-  //var rslt = window.prompt(msg, dflt);
-  //If cancel or close, rslt = null
-  //if (onComplete) onComplete(rslt);
-  window.xDialog.unshift('#xpromptbox');
-  $('#xdialogblock #xpromptbox').zIndex(window.xDialog.length);
-  
-  var oldactive = document.activeElement;
-  if (oldactive) $(oldactive).blur();
-  $('#xpromptmessage').html(msg);
-  $('#xpromptbox input').off('click');
-  $('#xpromptbox input').off('keydown');
-  $('#xpromptfield').val(dflt);
-  var cancelfunc = exports.dialogButtonFunc('#xpromptbox', oldactive, function () { if (onComplete) onComplete(null); });
-  var acceptfunc = exports.dialogButtonFunc('#xpromptbox', oldactive, function () { if (onComplete) onComplete($('#xpromptfield').val()); });
-  $('#xpromptbox input.button_ok').on('click', acceptfunc);
-  $('#xpromptbox input.button_cancel').on('click', cancelfunc);
-  $('#xpromptbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-  $('#xpromptfield').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
-  $('#xdialogblock,#xpromptbox').show();
-  window.XWindowResize();
-  $('#xpromptfield').focus();
-}
-
-exports.CustomPrompt = function (id, html, onInit, onAccept, onCancel, onClosed) {
-  //Classes - default_focus, button_ok, button_cancel
-  if ($('#xdialogblock #' + id).length) $('#xdialogblock #' + id).remove();
-  $('#xdialogblock').append(html);
-  
-  //ShowDialog
-  window.xDialog.unshift('#' + id);
-  $('#xdialogblock #' + id).zIndex(window.xDialog.length);
-  
-  var oldactive = document.activeElement;
-  if (oldactive) $(oldactive).blur();
-  
-  $('#' + id + ' input').off('click');
-  $('#' + id + ' input').off('keydown');
-  var cancelfunc = exports.dialogButtonFunc('#' + id, oldactive, function () { if (onCancel) onCancel(); if (onClosed) onClosed(); });
-  var acceptfunc_aftervalidate = exports.dialogButtonFunc('#' + id, oldactive, function () { if (onClosed) onClosed(); });
-  var acceptfunc = function () {
-    //Verify this is the topmost dialog
-    if ((window.xDialog.length > 0) && (window.xDialog[0] != ('#' + id))) return;
-    
-    if (onAccept) return onAccept(function () { acceptfunc_aftervalidate(); });
-    else acceptfunc_aftervalidate();
-  }
-  if (onInit) onInit(acceptfunc, cancelfunc);
-  $('#' + id + ' input.button_ok').on('click', acceptfunc);
-  $('#' + id + ' input.button_cancel').on('click', cancelfunc);
-  $('#' + id + ' input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-  $('#' + id + ' input:not(:checkbox):not(:button)').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
-  $('#xdialogblock,#' + id).show();
-  window.XWindowResize();
-  $('#' + id + ' .default_focus').focus();
-}
-
-exports.ZoomEdit = function (val, caption, options, onAccept, onCancel) {
-  if(!options) options = {};
-  if(!val) val = '';
-  val = val.toString();
-  window.xDialog.unshift('#xtextzoombox');
-  $('#xdialogblock #xtextzoombox').zIndex(window.xDialog.length);
-  
-  var oldactive = document.activeElement;
-  if (oldactive) $(oldactive).blur();
-  $('#xtextzoommessage').html(caption);
-  $('#xtextzoombox input').off('click');
-  $('#xtextzoombox input').off('keydown');
-  $('#xtextzoomfield').val(val);
-  
-  $('#xtextzoomfield').prop('readonly', (options.readonly?true:false));
-  if(options.readonly) $('#xtextzoomfield').removeClass('editable').addClass('uneditable');
-  else $('#xtextzoomfield').removeClass('uneditable').addClass('editable');
-
-  var cancelfunc = exports.dialogButtonFunc('#xtextzoombox', oldactive, function () { if (onCancel) onCancel(); });
-  var acceptfunc = exports.dialogButtonFunc('#xtextzoombox', oldactive, function () { if (onAccept) onAccept($('#xtextzoomfield').val()); });
-  $('#xtextzoombox input.button_ok').on('click', acceptfunc);
-  $('#xtextzoombox input.button_cancel').on('click', cancelfunc);
-  $('#xtextzoombox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-  $('#xdialogblock,#xtextzoombox').show();
-  window.XWindowResize();
-  $('#xtextzoomfield').focus();
-}
-
-var popupData = {};
-
-exports.popupShow = function (modelid, fieldid, title, parentobj, obj, options) {
-  if (typeof options == 'undefined') options = {};
-  var parentmodelid = $(obj).data('model');
-  var parentfield = null;
-  if (parentmodelid) parentfield = window['XForm' + parentmodelid].prototype.Fields[fieldid];
-  if (!parentobj) parentobj = $('#' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelid);
-  var numOpens = 0;
-  
-  popupData[modelid] = {};
-  exports.execif(parentfield && parentfield.controlparams && parentfield.controlparams.onpopup,
-    function (f) { parentfield.controlparams.onpopup(modelid, parentmodelid, fieldid, f); },
-    function () {
-    var codeval = $(obj).data('codeval');
-    if (codeval) popupData[modelid].codeval = codeval;
-    var xdata = window['xform_' + modelid];
-    xdata.RowCount = 0;
-    if (xdata.Prop) xdata.Prop.Enabled = true;
-    $(xdata.PlaceholderID).html('');
-    var orig_jsh_ignorefocusHandler = window.jsh_ignorefocusHandler;
-    window.jsh_ignorefocusHandler = true;
-    var popup_options = {};
-    popup_options = {
-      modelid: modelid,
-      href: "#popup_" + fieldid + '.xelem' + parentmodelid, inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, title: title, fixed: true,
-      fadeOut:0,
-      onOpen: function () {
-        //When nested popUps are called, onOpen is not called
-      },
-      onComplete: function () {
-        numOpens++;
-        if(numOpens==1) xdata.Select();
-        if ($('#popup_' + fieldid + '.xelem' + parentmodelid + ' .xfilter_value').first().is(':visible')) $('#popup_' + fieldid + ' .xfilter_value').first().focus();
-        else if ($('#popup_' + fieldid + '.xelem' + parentmodelid).find('td a').length) $('#popup_' + fieldid).find('td a').first().focus();
-          //else $('#popup_' + fieldid + '.xelem' + parentmodelid).find('input,select,textarea').first().focus();
-      },
-      onClosed: function () {
-        var found_popup = false;
-        for(var i=window.xPopupStack.length-1;i>=0;i--){
-          if(window.xPopupStack[i].modelid==modelid){ window.xPopupStack.splice(i,1); found_popup = true; break; }
-        }
-        if(!found_popup) { alert('ERROR - Invalid Popup Stack'); console.log(modelid); console.log(window.xPopupStack); };
-
-        if(window.xPopupStack.length) $.colorbox(window.xPopupStack[window.xPopupStack.length-1]);
-
-        if (typeof popupData[modelid].result !== 'undefined') {
-          parentobj.val(popupData[modelid].result);
-          if (popupData[modelid].resultrow && parentfield && parentfield.controlparams && parentfield.controlparams.popup_copy_results) {
-            for (var fname in parentfield.controlparams.popup_copy_results) {
-              exports.setFormField(XExt.getForm(parentmodelid), fname, popupData[modelid].resultrow[parentfield.controlparams.popup_copy_results[fname]])
-            }
+  XExt.InputValue.prototype.Prompt = function (onComplete) {
+    var _this = this;
+    XExt.Prompt(_this.Caption, _this.Default, function (rslt) {
+      if (rslt == null) {
+        if (onComplete) { onComplete(null); }
+        return;
+      }
+      else {
+        if (_this.Validation) {
+          var v = new XValidate(jsh);
+          v.AddValidator('_obj.Value', _this.Caption, 'BIUD', _this.Validation);
+          v.ResetValidation();
+          var verrors = v.Validate('BIUD', { Value: rslt });
+          if (!_.isEmpty(verrors)) {
+            XExt.Alert(verrors[''].join('\n'), function () { if (onComplete) onComplete(null); });
+            return;
           }
-          if (options.OnControlUpdate) options.OnControlUpdate(parentobj[0], popupData[modelid]);
         }
-        parentobj.focus();
-        window.jsh_ignorefocusHandler = orig_jsh_ignorefocusHandler;
+        if (_this.PostProcess) rslt = _this.PostProcess(rslt);
+        _this.Value = rslt;
+        if (onComplete) onComplete(rslt);
       }
+    });
+  }
+  XExt.getLOVTxt = function (LOV, val) {
+    if (val) val = val.toString();
+    for (var i = 0; i < LOV.length; i++) {
+      if (LOV[i][jsh.uimap.codeval] == val) return LOV[i][jsh.uimap.codetxt];
+    }
+    return undefined;
+  }
+  XExt.pushLOV = function (LOV, val, txt) {
+    var newlov = {};
+    newlov[jsh.uimap.codeval] = val;
+    newlov[jsh.uimap.codetxt] = txt;
+    LOV.push(newlov);
+  }
+
+  XExt.endsWith = function (str, suffix) {
+    return str.match(suffix + "$") == suffix;
+  }
+  XExt.beginsWith = function (str, prefix) {
+    return str.indexOf(prefix) === 0;
+  }
+
+  XExt.HasAccess = function (access, perm) {
+    if (access === undefined) return false;
+    for (var i = 0; i < perm.length; i++) {
+      if (access.indexOf(perm[i]) > -1) return true;
+    }
+    return false;
+  };
+
+  XExt.access = XExt.HasAccess;
+
+  XExt.UndefinedBlank = function (val) {
+    if (typeof val == 'undefined') return '';
+    return val;
+  }
+
+  XExt.ReplaceAll = function (val, find, replace) {
+    return val.split(find).join(replace);
+  }
+
+  XExt.AddHistory = function (url, obj, title) {
+    if (XExt.jsh && !jsh.isHTML5) return;
+    if (typeof obj == 'undefined') obj = {};
+    if (typeof title == 'undefined') title = document.title;
+    window.history.pushState(obj, title, url);
+  }
+
+  XExt.ReplaceHistory = function (url, obj, title) {
+    if (XExt.jsh && !jsh.isHTML5) return;
+    if (typeof obj == 'undefined') obj = {};
+    if (typeof title == 'undefined') title = document.title;
+    window.history.replaceState(obj, title, url);
+  }
+
+  XExt.clearFileInput = function (id) {
+    var oldInput = document.getElementById(id);
+    var newInput = document.createElement("input");
+    newInput.type = "file";
+    newInput.id = oldInput.id;
+    newInput.name = oldInput.name;
+    newInput.className = oldInput.className;
+    newInput.style.cssText = oldInput.style.cssText;
+    oldInput.parentNode.replaceChild(newInput, oldInput);
+  };
+
+  XExt.hideTab = function (modelid, tabname) {
+    $('.xtab' + modelid).each(function (i, obj) {
+      var jobj = $(obj);
+      if (jobj.html() == tabname) jobj.hide();
+    });
+  }
+
+  //Escape JavaScript string
+  XExt.escapeJS = function (q) {
+    return q.replace(/[\\'"]/g, "\\$&");
+  }
+
+  //Escape just quotes (for XML/HTML key-value pairs)
+  XExt.escapeHTMLQ = function (q) {
+    return q.replace(/["]/g, "&quot;");
+  }
+
+  //Escape while enabling escape characters in a string
+  XExt.escapeHTMLN = function (val) {
+    var rslt = XExt.escapeHTML(val);
+    return String(val).replace(/&amp;([\w]+);/g, function (s,p1) {
+      return '&'+p1+';';
+    });
+  }
+
+  //Escape all HTML
+  XExt.escapeHTML = function (val) {
+    var entityMap = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': '&quot;',
+      "'": '&#39;',
+      "/": '&#x2F;',
+      '\u00A0':'&#xa0;'
     };
-    xPopupStack.push(popup_options);
-    $.colorbox(popup_options);
-  });
-}
-
-exports.popupSelect = function (modelid, obj) {
-  var rslt = null;
-  var rowid = XExt.XForm.GetRowID(modelid, obj);
-  var xdata = window['xform_' + modelid];
-  var xpost = window['xform_post_' + modelid];
-  
-  if (popupData[modelid].codeval) rslt = xpost.DataSet[rowid][popupData[modelid].codeval];
-  if (!rslt) rslt = '';
-  popupData[modelid].result = rslt;
-  popupData[modelid].rowid = rowid;
-  popupData[modelid].resultrow = xpost.DataSet[rowid];
-  xdata.Prop.Enabled = false;
-  $.colorbox.close();
-}
-
-exports.popupClear = function (modelid, obj) {
-  var rslt = null;
-  var xdata = window['xform_' + modelid];
-  var xpost = window['xform_post_' + modelid];
-  
-  popupData[modelid].result = rslt;
-  popupData[modelid].rowid = -1;
-  popupData[modelid].resultrow = new xpost.DataType();
-  xdata.Prop.Enabled = false;
-  $.colorbox.close();
-}
-
-exports.AlertFocus = function (ctrl, msg) {
-  XExt.Alert(msg, function () { $(ctrl).focus().select(); });
-}
-
-exports.getModelId = function (obj) {
-  var xid = $(obj).closest('.xtbl').attr('id');
-  if (!xid) xid = $(obj).closest('.xform').attr('id');
-  if (!xid) return null;
-  return xid.substr(5);
-}
-
-exports.getModelMD5 = function (modelid) {
-  return Crypto.MD5(jsh_frontsalt + modelid).toString();
-}
-
-
-exports.numOccurrences = function (val, find) {
-  if (!val) return 0;
-  if (!find) return (val.length + 1);
-  
-  var rslt = 0;
-  var pos = 0;
-  var step = find.length;
-  
-  while (true) {
-    pos = val.indexOf(find, pos);
-    if (pos >= 0) { rslt++; pos += step; } 
-    else break;
-  }
-  return rslt;
-}
-
-exports.ItemContextMenu = function (ctrl) {
-  var parent = $(ctrl).closest('.xcontext_parent');
-  if (!parent.length) return true;
-  var menuid = '#_item_context_menu_' + parent.attr('id');
-  if (!$(menuid).length) return true;
-  exports.ShowContextMenu(menuid, $(ctrl).data('value'));
-  return false;
-}
-
-exports.basename = function (fname) {
-  var rslt = fname;
-  if (rslt.lastIndexOf('/') > 0) rslt = rslt.substr(rslt.lastIndexOf('/') + 1);
-  if (rslt.lastIndexOf('\\') > 0) rslt = rslt.substr(rslt.lastIndexOf('\\') + 1);
-  return rslt;
-}
-
-exports.dirname = function (path) {
-  return path.replace(/\\/g, '/').replace(/\/[^\/]*\/?$/, '');
-}
-
-exports.cleanFileName = function (fname) {
-  if (typeof fname === undefined) return '';
-  if (fname === null) return '';
-  
-  fname = fname.toString();
-  if (fname.length > 247) fname = fname.substr(0, 247);
-  return fname.replace(/[\/\?<>\\:\*\|":]/g, '').replace(/[\x00-\x1f\x80-\x9f]/g, '').replace(/^\.+$/, '').replace(/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i, '');
-}
-
-exports.utf8_base64 = function (str) { return window.btoa(unescape(encodeURIComponent(str))); }
-exports.base64_utf8 = function (str) { return decodeURIComponent(escape(window.atob(str))); }
-
-exports.chainObj = function (obj, p, f) {
-  if (!(obj[p])) obj[p] = f;
-  else {
-    var oldf = obj[p];
-    obj[p] = function () { f(); oldf(); };
-  }
-}
-
-exports.chain = function (obj, f) {
-  if (!obj) return f;
-  return function () { f(); obj(); };
-}
-
-exports.execif = function (cond, apply, f) {
-  if (cond) apply(f);
-  else f();
-}
-
-exports.findClosest = function (elem, sel) {
-  var jobj = $(elem).find(sel);
-  if (jobj.length) return jobj;
-  var parent = $(elem).parent();
-  if (!parent.length) return $();
-  return exports.findClosest(parent, sel);
-}
-
-exports.getToken = function (onComplete, onFail) {
-  XPost.prototype.XExecute('../_token', {}, onComplete, onFail);
-}
-
-/*************************/
-/* Form Helper Functions */
-/*************************/
-exports.isGridControl = function (ctrl) {
-  return ($('.SQ_CARRIER_PRO').closest('.xtbl').length > 0);
-}
-exports.getFormBase = function (id) {
-  if (!XBase[id]) { XExt.Alert('ERROR: Base form ' + id + ' not found.'); return; }
-  var fname = XBase[id][0];
-  if (fname) return window['xform_' + fname];
-  return undefined;
-}
-exports.getForm = function (id) {
-  if (!(id in XForms)) { XExt.Alert('ERROR: Form ' + id + ' not found.'); return; }
-  if (XForms[id]._layout == 'grid') return window['xform_post_' + id];
-  return window['xform_' + id];
-}
-exports.getFormFromObject = function (ctrl) {
-  var fname = $(ctrl).closest('.xform').attr('id');
-  if (fname) return window['xform_' + fname.substr(5)];
-  return undefined;
-}
-exports.getModelIdFromObject = function (ctrl) {
-  var fname = $(ctrl).closest('.xform').attr('id');
-  if (fname) return fname.substr(5);;
-  return undefined;
-}
-exports.getFieldFromObject = function (ctrl) {
-  return $(ctrl).closest('.xform_ctrl').attr('id');
-}
-exports.getFormField = function (xform, fieldname) {
-  if (!xform) { XExt.Alert('ERROR: Cannot read field ' + fieldname + ' - Parent form not found.'); return; }
-  if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
-  return xform.Data.GetValue(xform.Data.Fields[fieldname]);
-}
-exports.formatField = function (xform, fieldname, fieldval) {
-  if (!xform) { XExt.Alert('ERROR: Cannot read field ' + fieldname + ' - Parent form not found.'); return; }
-  if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
-  return XFormat.Apply(xform.Data.Fields[fieldname].format, fieldval);
-}
-exports.setFormField = function (xform, fieldname, fieldval) {
-  if (!xform) { XExt.Alert('ERROR: Cannot set field ' + fieldname + ' - Parent form not found.'); return; }
-  if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
-  exports.XForm.SetFieldValue(xform.Data, xform.Data.Fields[fieldname], fieldval);
-}
-exports.setFormControl = function (xform, fieldname, fieldval) { //Set fieldval to undefined for refresh
-  if (!xform) { XExt.Alert('ERROR: Cannot set field ' + fieldname + ' - Parent form not found.'); return; }
-  if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
-  exports.XForm.SetControlValue(xform.Data, xform.Data.Fields[fieldname], fieldval);
-}
-/***********************/
-/* UI Helper Functions */
-/***********************/
-exports.popupForm = function (modelid, action, params, windowparams, win) {
-  if (!params) params = {};
-  if (action) params.action = action;
-  var url = _BASEURL + modelid;
-  var dfltwindowparams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
-  var modelmd5 = exports.getModelMD5(modelid);
-  if (modelmd5 in jsh_popups) {
-    default_popup_size = jsh_popups[modelmd5];
-    dfltwindowparams.width = default_popup_size[0];
-    dfltwindowparams.height = default_popup_size[1];
-  }
-  if (!windowparams) windowparams = {};
-  if (params) url += '?' + $.param(params);
-  var windowstr = '';
-  for (var p in dfltwindowparams) { if (!(p in windowparams)) windowparams[p] = dfltwindowparams[p]; }
-  for (var p in windowparams) { windowstr += ',' + p + '=' + windowparams[p]; }
-  if (windowstr) windowstr = windowstr.substr(1);
-  if (win) { win.location = url; win.focus(); }
-  else return window.open(url, '_blank', windowstr);
-}
-exports.popupReport = function (modelid, params, windowparams, win) {
-  var url = _BASEURL + '_d/_report/' + modelid + '/';
-  var dfltwindowparams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
-  var modelmd5 = exports.getModelMD5('_report_' + modelid);
-  if (modelmd5 in jsh_popups) {
-    default_popup_size = jsh_popups[modelmd5];
-    dfltwindowparams.width = default_popup_size[0];
-    dfltwindowparams.height = default_popup_size[1];
-  }
-  if (!windowparams) windowparams = {};
-  if (params) url += '?' + $.param(params);
-  var windowstr = '';
-  for (var p in dfltwindowparams) { if (!(p in windowparams)) windowparams[p] = dfltwindowparams[p]; }
-  for (var p in windowparams) { windowstr += ',' + p + '=' + windowparams[p]; }
-  if (windowstr) windowstr = windowstr.substr(1);
-  if (win) { win.location = url; win.focus(); }
-  else return window.open(url, '_blank', windowstr);
-}
-exports.renderCanvasCheckboxes = function () {
-  $('canvas.checkbox.checked').each(function () {
-    var obj = this;
-    var w = obj.width;
-    var h = obj.height;
-    var ctx = obj.getContext("2d");
     
-    ctx.beginPath();
-    ctx.lineWidth = 1;
-    ctx.moveTo(0, 0);
-    ctx.lineTo(w, 0);
-    ctx.lineTo(w, h);
-    ctx.lineTo(0, h);
-    ctx.lineTo(0, 0);
+    return String(val).replace(/[\u00A0&<>"'\/]/g, function (s) {
+      return entityMap[s];
+    });
+  }
+  //Escape HTML and replace line breaks with HTML line breaks
+  XExt.escapeHTMLBR = function (val) {
+    if((typeof val=='undefined')||(val===null)) return val;
+    return XExt.ReplaceAll(XExt.ReplaceAll(XExt.escapeHTML(val.toString()), '\n', '<br/>'), '\r', '');
+  }
+  //Escape HTML and replace line breaks with spaces
+  XExt.escapeBRSpace = function (val) {
+    if((typeof val=='undefined')||(val===null)) return val;
+    return XExt.ReplaceAll(XExt.ReplaceAll(val.toString(), '\n', ' '), '\r', '');
+  }
+  //Escape string for regular expression matching
+  XExt.escapeRegEx = function (q) {
+    return q.replace(/[-[\]{}()*+?.,\\/^$|#\s]/g, "\\$&");
+  }
+  XExt.pad = function (val, padding, length) {
+    var rslt = val.toString();
+    while (rslt.length < length) rslt = padding + rslt;
+    return rslt;
+  }
+  XExt.getMargin = function(jctrl){
+    return {
+      top: parseInt(jctrl.css('margin-top')),
+      right: parseInt(jctrl.css('margin-right')),
+      bottom: parseInt(jctrl.css('margin-bottom')),
+      left: parseInt(jctrl.css('margin-left'))
+    };
+  }
+  XExt.getPadding = function(jctrl){
+    return {
+      top: parseInt(jctrl.css('padding-top')),
+      right: parseInt(jctrl.css('padding-right')),
+      bottom: parseInt(jctrl.css('padding-bottom')),
+      left: parseInt(jctrl.css('padding-left'))
+    };
+  }
+  XExt.getBorder = function(jctrl){
+    return {
+      top: parseInt(jctrl.css('border-top-width')),
+      right: parseInt(jctrl.css('border-right-width')),
+      bottom: parseInt(jctrl.css('border-bottom-width')),
+      left: parseInt(jctrl.css('border-left-width'))
+    };
+  }
+  XExt.xejs = {
+    'escapeJS': function(val){ return XExt.escapeJS(val); },
+    'escapeHTMLN': function(val){ return XExt.escapeHTMLN(val); },
+    'escapeHTMLBR': function(val){ return XExt.escapeHTMLBR(val); },
+    'iif': function (cond, tval, fval) {
+      if (cond) return tval;
+      if (fval !== undefined) return fval;
+      return '';
+    },
+    'ifnull': function (val, nullval) {
+      if (val) return val;
+      return nullval;
+    },
+    'case': function () {
+      var args = arguments;
+      if (args.length == 0) return '';
+      var i = 0;
+      while (i < args.length) {
+        if (i == (args.length - 1)) return args[i];
+        if (args[i]) return args[i + 1];
+        i += 2;
+      }
+      return '';
+    },
+    'visible': function (cond) {
+      try {
+        if (!cond) return 'display:none;';
+      } catch (ex) { }
+      return '';
+    },
+    'eachKey': function (fields, func) {
+      for (var i = 0; i < fields.length; i++) {
+        if (fields[i].key)
+          func(fields[i]);
+      }
+    },
+    'showProp': function (prop, val, unescaped, pre, post) {
+      if(!pre) pre = '';
+      if(!post) post = '';
+      if (typeof val != 'undefined') {
+        if (unescaped) return prop + '="' + pre+val+post + '"';
+        else return prop + '="' + XExt.escapeHTML(pre+val+post) + '"';
+      }
+      return '';
+    },
+    'showSystemButton': function (model, btn) {
+      if (model.hide_system_buttons) {
+        for (var i = 0; i < model.hide_system_buttons.length; i++) {
+          if (model.hide_system_buttons[i] == btn) return false;
+        }
+      }
+      return true;
+    },
+    'GetValue': function (field) {
+      if ('sample' in field) return field.sample;
+      return '';
+    },
+    'getInputType': function (field) {
+      if (field && field.validate) {
+        if (field.validate.indexOf('XValidate._v_IsEmail()') >= 0) return 'email';
+        if (field.validate.indexOf('XValidate._v_IsPhone()') >= 0) return 'tel';
+      }
+      if (field && field.type) {
+        if ((field.type == 'varchar') || (field.type == 'char')) return 'text';
+        //else if (_.includes(['bigint', 'int', 'smallint', 'tinyint', 'decimal', 'float', 'boolean'], field.type)) return 'number';
+        //else if ((field.type == 'datetime')) return 'number';// return 'datetime';
+        //else if ((field.type == 'date')) return 'number';// return 'date';
+        //else if ((field.type == 'time')) return 'number';// return 'time';
+      }
+      return 'text';
+    },
+    'getaccess': function () {
+      if (arguments.length == 0) return '';
+      var kfc = '';
+      var effperm = arguments[0];
+      for (var i = 0; i < arguments.length; i++) {
+        effperm = XExt.xejs.intersectperm(effperm, arguments[i]);
+        kfc = XExt.xejs.unionperm(kfc, this.intersectperm('KFC', arguments[i]));
+      }
+      return (effperm + kfc);
+    },
+    'intersectperm': function (perm1, perm2) {
+      if (typeof perm1 == 'undefined') perm1 = '';
+      if (typeof perm2 == 'undefined') perm2 = '';
+      var rslt = '';
+      if (perm1 == '*') return perm2;
+      if (perm2 == '*') return perm1;
+      for (var i = 0; i < perm1.length; i++) {
+        if (perm2.indexOf(perm1[i]) > -1) rslt += perm1[i];
+      }
+      return rslt;
+    },
+    'unionperm': function (perm1, perm2) {
+      if ((typeof perm1 == 'undefined') && (typeof perm2 == 'undefined')) return '';
+      if (typeof perm1 == 'undefined') return perm2;
+      if (typeof perm2 == 'undefined') return perm1;
+      if (perm1 == '*') return '*';
+      if (perm2 == '*') return '*';
+      var rslt = perm1;
+      for (var i = 0; i < perm2.length; i++) {
+        if (rslt.indexOf(perm2[i]) < 0) rslt += perm2[i];
+      }
+      return rslt;
+    },
+    'renderLOV': function (lov, selected_value) {
+      var rslt = '';
+      _.each(lov, function (lovval) {
+        rslt += '<option value="' + XExt.escapeHTML(lovval[jsh.uimap.codeval]) + '" ' + ((lovval[jsh.uimap.codeval] == selected_value)?'selected':'') + '>' + XExt.escapeHTML(lovval[jsh.uimap.codetxt]) + '</option>';
+      });
+      return rslt;
+    },
+    'onlyAlphaNum': function (val) {
+      if (!val) return '';
+      return val.toString().replace(/[^a-zA-Z0-9]+/g, '');
+    },
+    'is_add': function (_GET) {
+      return (_GET['action'] == 'add');
+    }
+  };
+
+  XExt.CKEditor = function (id) {
+    if (CKEDITOR.instances[id]) return;
+    var elem = $('#' + id);
+    var orig_width = elem.outerWidth();
+    var orig_height = elem.outerHeight();
+    elem.wrap('<div id="' + id + '_container" style="width:' + orig_width + 'px;border:1px solid #999;display:inline-block;"></div>');
+    CKEDITOR.replace(id);
+  }
+  XExt.getOpenerJSH = function(){
+    if (window.opener) {
+      return window.opener[jsh.getInstance()];
+    }
+  }
+  XExt.notifyPopupComplete = function (id, rslt) {
+    var jshOpener = XExt.getOpenerJSH();
+    if (jshOpener) {
+      jshOpener.XPopupComplete(id, rslt);
+    }
+  }
+  XExt.unescapeEJS = function (ejssrc) {
+    if (!ejssrc) return '';
+    var rslt = ejssrc;
+    rslt = XExt.ReplaceAll(rslt, '&lt;#', '<#');
+    rslt = XExt.ReplaceAll(rslt, '#&gt;', '#>');
+    return rslt;
+  }
+  XExt.isOnePage = function () {
+    if (jsh.onepage) return true;
+    return false;
+  }
+  XExt.navTo = function (url) {
+    if (XExt.isOnePage()) {
+      var a = XExt.getURLObj(url);
+      if (!jsh.Navigate(a, undefined, undefined, undefined)) return false;
+    }
+    window.location.href = url;
+    return false;
+  }
+  XExt.jumpAnchor = function (name) {
+    if (!name) return;
+    if (name[0] == '#') name = name.substring(1);
+    var jobj = $('a[name=' + name + ']');
+    if (jobj.size() == 0) return;
+    var elem = jobj.get(0);
+    var elemoff = $(elem).offset();
+    window.scrollTo(0, elemoff.top);
+  }
+  XExt.getURLObj = function (url) {
+    var a = document.createElement('a');
+    a.href = url;
+    return a;
+  };
+  XExt.aPhoneCheck = function (jobj, caption) {
+    var val = jobj.val()
+    if (val && (val == '1' || !val.match(/[0123456789]/))) {
+      jobj.addClass('xinputerror');
+      XExt.Alert('Invalid ' + caption);
+      return false;
+    }
+    return true;
+  }
+  XExt.StripTags = function (val, ignore) {
+    if (!val) return val;
     
-    ctx.beginPath();
-    ctx.lineWidth = 1.5;
-    ctx.moveTo(0, 0);
-    ctx.lineTo(w, h);
-    ctx.moveTo(w, 0);
-    ctx.lineTo(0, h);
-    ctx.stroke();
-  });
-}
-exports.DataBinding = function(data){
-  this.Bindings = [];
-  this.Data = data;
-}
-exports.DataBinding.prototype.Bind = function(obj){
-  if(!obj.OnUpdate) throw new Error('Binding missing OnUpdate handler');
-  if(!_.includes(this.Bindings,obj)){
-    this.Bindings.push(obj);
-    obj.OnUpdate(this.Data);
+    ignore = (((ignore || '') + '').toLowerCase().match(/<[a-z][a-z0-9]*>/g) || []).join('')
+    var clienttags = /<\/?([a-z][a-z0-9]*)\b[^>]*>/gi
+    var servertags = /<!--[\s\S]*?-->|<\?(?:php)?[\s\S]*?\?>/gi
+    
+    return XExt.unescapeHTMLEntity(val.replace(servertags, '').replace(clienttags, function ($0, $1) {
+      return ignore.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : ''
+    }));
   }
-}
-exports.DataBinding.prototype.Unbind = function(obj){
-  var found = false;
-  for(var i=0;i<this.Bindings.length;i++){
-    if(this.Bindings[i]==obj){
-      found = true;
-      this.Bindings.splice(i,1);
-      i--;
+  XExt.unescapeHTMLEntity = function(val){
+    var obj = document.createElement("textarea");
+    obj.innerHTML = val;
+    return obj.value;
+  }
+  XExt.readCookie = function(id){
+    var rslt = [];
+    var cookies = document.cookie.split(';');
+    var rx=RegExp("^\\s*"+XExt.escapeRegEx(id)+"=\\s*(.*?)\\s*$");
+    for(var i=0;i<cookies.length;i++){
+      var m = cookies[i].match(rx);
+      if(m) rslt.push(m[1]);
+    }
+    return rslt;
+  }
+  XExt.currentURL = function(){
+    var rslt = window.location.href.toString().split(window.location.host)[1];
+    rslt = rslt.split('?')[0];
+    rslt = rslt.split('#')[0];
+    return rslt;
+  }
+
+
+  /******************
+   * TREE RENDERING *
+   ******************/
+
+  function XTreeNode() {
+    this.Children = [];
+    this.ID = null;
+    this.Value = '';
+    this.Text = '';
+    this.Expanded = false;
+    this.Selected = false;
+    this.Icon = '';
+  }
+
+  XExt.TreeRender = function (ctrl, LOV, field) {
+    //Create Cache of Opened Nodes
+    var expanded_nodes = XExt.TreeGetExpandedNodes(ctrl);
+    var selected_nodes = XExt.TreeGetSelectedNodes(ctrl);
+    
+    ctrl.empty();
+    if (LOV.length == 0) return;
+    
+    //Create Tree
+    var tree = [];
+    var nodes = {};
+    var sortednodes = [];
+    var has_seq = false;
+    for (var i = 0; i < LOV.length; i++) {
+      var iLOV = LOV[i];
+      var node = new XTreeNode();
+      node.ID = iLOV[jsh.uimap.codeid];
+      node.ParentID = iLOV[jsh.uimap.codeparentid];
+      node.Value = iLOV[jsh.uimap.codeval];
+      node.Text = iLOV[jsh.uimap.codetxt];
+      node.Icon = iLOV[jsh.uimap.codeicon];
+      node.Seq = iLOV[jsh.uimap.codeseq];
+      if (node.Seq) has_seq = true;
+      if (_.includes(expanded_nodes, node.Value)) node.Expanded = true;
+      if (_.includes(selected_nodes, node.Value)) node.Selected = true;
+      
+      if (!node.ParentID) tree.push(node);
+      nodes[node.ID] = node;
+      sortednodes.push(node);
+    }
+    for (var i = 0; i < sortednodes.length; i++) {
+      var node = sortednodes[i];
+      if (node.ParentID && (node.ParentID in nodes)) nodes[node.ParentID].Children.push(node);
+    }
+    if (has_seq) sortednodes = _.sortBy(sortednodes, [jsh.uimap.codeseq, jsh.uimap.codetxt]);
+    
+    var body = '';
+    for (var i = 0; i < tree.length; i++) {
+      body += XExt.TreeRenderNode(ctrl, tree[i]);
+    }
+    ctrl.html(body);
+    if (field && field.controlparams) {
+      if (field.controlparams.expand_all) XExt.TreeExpandAll(ctrl);
+      else if ((typeof field.controlparams.expand_to_selected == 'undefined') || (field.controlparams.expand_to_selected)) XExt.TreeExpandToSelected(ctrl);
     }
   }
-  if(!found) throw new Error('Binding not found');
-}
-exports.DataBinding.prototype.Update = function(data){
-  var _this = this;
-  _this.Data = data;
-  for(var i=0;i<_this.Bindings.length;i++){
-    var binding = _this.Bindings[i];
-    binding.OnUpdate(_this.Data);
-  }
-}
-exports.insertTextAtCursor = function(txt,className){
-  if(window.getSelection){
-    var s = document.createElement('SPAN');
-    s.innerText = txt;
-    if(className) s.className = className;
-    var sel = window.getSelection();
-    if(!sel || !sel.rangeCount) return null;// throw new Error('Control does not have an available');
-    sel.getRangeAt(0).insertNode(s); 
-    return s;
-  }
-  else if(document.selection && document.selection.createRange){ 
-    document.selection.createRange().text = txt;
-    return null;
-  }
-  else throw new Error('Inserting text into contenteditable not supported.');
-}
-exports.selectionIsChildOf = function(jobj){
-  if(window.getSelection){
-    var sel = window.getSelection();
-    if(!sel || !sel.rangeCount) return false;
-    var rstart = sel.getRangeAt(0);
-    if(jobj[0] == rstart.startContainer) return true;
-    return $.contains(jobj[0],rstart.startContainer);
-  }
-  else throw new Error('Inserting text into contenteditable not supported.');
-}
-exports.hasSelection = function(){
-  if (window.getSelection) {
-    var sel = window.getSelection();
-    if(!sel || !sel.rangeCount) return false;
-    var r = sel.getRangeAt(0);
-    if(!r) return false;
-    return !r.collapsed;
-  }
-  return false;
-}
-exports.clearSelection = function(){
-  if(!exports.hasSelection()) return;
-  if (window.getSelection) {
-    if (window.getSelection().empty) {  // Chrome
-      window.getSelection().empty();
-    } else if (window.getSelection().removeAllRanges) {  // Firefox
-      window.getSelection().removeAllRanges();
+
+  XExt.TreeRenderNode = function (ctrl, n) {
+    var children = '';
+    for (var i = 0; i < n.Children.length; i++) {
+      children += XExt.TreeRenderNode(ctrl, n.Children[i]);
     }
-  } else if (document.selection) {  // IE
-    document.selection.empty();
+    var rslt = jsh.ejs.render('\
+      <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>" onclick=\'<%-instance%>.XExt.TreeSelectNode(this,<%-JSON.stringify(n.Value)%>); return false;\' ondblclick=\'<%-instance%>.XExt.TreeDoubleClickNode(this,<%-JSON.stringify(n.ID)%>); return false;\' oncontextmenu=\'return <%-instance%>.XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'<%-instance%>.XExt.CancelBubble(arguments[0]); <%-instance%>.XExt.TreeToggleNode(<%-instance%>.$(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><img class="icon" src="/images/icon_<%=n.Icon%>.png"><span><%=n.Text%></span></a>\
+      <div class="children <%=(n.Expanded?"expanded":"")%> tree_item_<%=n.ID%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>"><%-children%></div>',
+      { n: n, children: children, jsh: jsh, instance: jsh.getInstance() }
+    );
+    return rslt;
   }
-}
-exports.Tick = function(f){
-  window.setTimeout(f,1);
-}
-exports.scrollIntoView = function(jcontainer, pos, h){
-  if(!jcontainer.length) return;
-  var sTop = jcontainer.scrollTop();
-  var sLeft = jcontainer.scrollLeft();
-  var cW = jcontainer[0].clientWidth;
-  var cH = jcontainer[0].clientHeight;
-  var minV = sTop;
-  var maxV = sTop + cH;
-  var minH = sLeft;
-  var maxH = sLeft + cW;
-  var posbottom = pos.top + h;
-  if((pos.left < minH) || (pos.left > maxH)) jcontainer.scrollLeft(pos.left);
-  if((posbottom < minV) || (posbottom > maxV)){
-    if(posbottom < minV) jcontainer.scrollTop(pos.top);
-    else { 
-      var newscrollTop = posbottom - cH;
-      if(newscrollTop < 0) newscrollTop = 0;
-      jcontainer.scrollTop(newscrollTop);
+
+  XExt.getJSLocals = function(){
+    return 'var jsh = '+jsh.getInstance()+';var $ = jsh.$;var _ = jsh._;var async = jsh.async;var moment=jsh.moment;var ejs = jsh.ejs;var XExt = jsh.XExt;var XPost = jsh.XPost;var XValidate = jsh.XValidate;var _GET = jsh._GET;var XBase = jsh.XBase; var XForms = jsh.XForms;'
+  }
+
+  XExt.JSEval = function(str,_thisobj){
+    if(!_thisobj) thisobj = jsh;
+    var jscmd = '(function(){'+XExt.getJSLocals()+'return '+str+'}).call(_thisobj)';
+    return eval(jscmd);
+  }
+
+  XExt.TreeItemContextMenu = function (ctrl, n) {
+    var jctrl = $(ctrl);
+    var jtree = jctrl.closest('.xform_ctrl.tree');
+    var fieldname = XExt.getFieldFromObject(ctrl);
+    var menuid = '#_item_context_menu_' + fieldname;
+    if(jtree.data('oncontextmenu')) { 
+      var f = (new Function('n', jtree.data('oncontextmenu'))); 
+      var frslt = f.call(ctrl, n);
+      if((frslt === false) || (frslt===true)) return frslt;
+    }
+    if ($(menuid).length) {
+      XExt.ShowContextMenu(menuid, $(ctrl).data('value'), { id:n });
+      return false;
+    }
+    return true;
+  }
+
+  XExt.TreeDoubleClickNode = function (ctrl, n) {
+    var jctrl = $(ctrl);
+    var jtree = jctrl.closest('.xform_ctrl.tree');
+    var fieldname = XExt.getFieldFromObject(ctrl);
+    if(jtree.data('ondoubleclick')) { var rslt = (new Function('n', jtree.data('ondoubleclick'))); rslt.call(ctrl, n); }
+  }
+
+  XExt.TreeGetSelectedNodes = function (ctrl) {
+    var rslt = [];
+    $(ctrl).find('.tree_item.selected').each(function () {
+      var val = $(this).data('value');
+      if (val) rslt.push(val.toString());
+    });
+    return rslt;
+  }
+
+  XExt.TreeGetExpandedNodes = function (ctrl) {
+    var rslt = [];
+    $(ctrl).find('.tree_item.expanded').each(function () {
+      var val = $(this).data('value');
+      if (val) rslt.push(val.toString());
+    });
+    return rslt;
+  }
+
+  XExt.TreeSelectNode = function (ctrl, nodevalue) {
+    var jctrl = $(ctrl);
+    
+    var xform = XExt.getFormFromObject(ctrl);
+    var fieldname = XExt.getFieldFromObject(ctrl);
+    var field = undefined;
+    if (xform && fieldname) field = xform.Data.Fields[fieldname];
+    
+    var jtree = jctrl.closest('.xform_ctrl.tree');
+    if (jtree.hasClass('uneditable')) return;
+
+    //Deselect previously selected value
+    jtree.find('.selected').removeClass('selected');
+
+    var nodeid = '';
+    if(nodevalue){
+      //Get nodeid from nodevalue
+      jtree.find('.tree_item').each(function(){
+        if($(this).data('value')==nodevalue) nodeid = $(this).data('id');
+      });
+      if(!nodeid){ return XExt.Alert('Tree node with value \'' + nodevalue + '\' not found'); }
+
+      jtree.find('.tree_item.tree_item_' + nodeid).addClass('selected');
+      if (field && field.controlparams) {
+        if ((typeof field.controlparams.expand_to_selected == 'undefined') || (field.controlparams.expand_to_selected)) XExt.TreeExpandToSelected(ctrl);
+      }
+    }
+
+    //Fire events
+    if (field && jsh.init_complete) {
+      if ('onchange' in field) { var rslt = (new Function('obj', 'newval', 'e', field.onchange)); rslt.call(xform.Data, ctrl, xform.Data.GetValue(field), null); }
+    }
+    if(nodeid && jtree.data('onselected')) { var rslt = (new Function('nodeid', jtree.data('onselected'))); rslt.call(ctrl, nodeid); }
+  }
+
+  XExt.TreeToggleNode = function (jctrl, nodeid) {
+    var jctrl = jctrl.closest('.xform_ctrl.tree');
+    if (jctrl.find('.children.tree_item_' + nodeid).hasClass('expanded'))
+      XExt.TreeCollapseNode(jctrl, nodeid);
+    else
+      XExt.TreeExpandNode(jctrl, nodeid);
+  }
+
+  XExt.TreeCollapseNode = function (jctrl, nodeid) {
+    var jctrl = jctrl.closest('.xform_ctrl.tree');
+    jctrl.find('.tree_item_' + nodeid).removeClass('expanded');
+    jctrl.find('.tree_item.tree_item_' + nodeid + ' > .glyph').html('&#x25b7;');
+  }
+
+  XExt.TreeExpandNode = function (jctrl, nodeid) {
+    var jctrl = jctrl.closest('.xform_ctrl.tree');
+    jctrl.find('.tree_item_' + nodeid).addClass('expanded');
+    jctrl.find('.tree_item.tree_item_' + nodeid + ' > .glyph').html('&#x25e2;');
+  }
+
+  XExt.TreeExpandToSelected = function (ctrl) {
+    var toptree = $(ctrl).closest('.xform_ctrl.tree');
+    var rslt = [];
+    toptree.find('.tree_item.selected').each(function () {
+      var jctrl = $(this);
+      var jparent = jctrl.parent();
+      while (jparent.length && !jparent.is(toptree)) {
+        XExt.TreeExpandNode(toptree, jparent.data('value'));
+        jparent = jparent.parent();
+      }
+    });
+    return rslt;
+  }
+  XExt.TreeExpandAll = function (ctrl) {
+    var jctrl = $(ctrl).closest('.xform_ctrl.tree');
+    jctrl.find('.tree_item').addClass('expanded');
+    jctrl.find('.children').addClass('expanded');
+    jctrl.find('.glyph').html('&#x25e2;');
+  }
+
+  /*********************
+   * GENERAL FUNCTIONS *
+   *********************/
+
+  XExt.getMaxLength = function (field) {
+    var rslt = -1;
+    if ('type' in field) {
+      var ftype = field.type;
+      if ((ftype == 'varchar' || ftype == 'char') && ('length' in field)) rslt = field.length;
+      else if (ftype == 'bigint') rslt = 25;
+      else if (ftype == 'datetime') rslt = 50;
+      else if (ftype == 'time') rslt = 50;
+      else if (ftype == 'date') rslt = 50;
+      else if (ftype == 'decimal'){
+        rslt = 40;
+        var prec_h = 38;
+        var prec_l = 4;
+        if ('precision' in field) {
+          prec_h = field.precision[0];
+          prec_l = field.precision[1];
+        }
+        rslt = prec_h + 2;
+      }
+      else if (ftype == 'float'){ rslt = 128; }
+      else if (ftype == 'int') rslt = 15;
+      else if (ftype == 'smallint') rslt = 10;
+      else if (ftype == 'tinyint') rslt = 3;
+      else if (ftype == 'boolean') rslt = 5;
+      else if ((ftype == 'binary') && ('length' in field)) rslt = field.length * 2 + 2;
+
+    }
+    return rslt;
+  }
+
+  XExt.XInputAction = function (_obj, _overrideFunc) {
+    if (_obj && (_obj instanceof $) && (_obj.length)) this.obj = _obj[0];
+    else this.obj = _obj;
+    this.tstamp = Date.now();
+    this.mouseX = jsh.mouseX;
+    this.mouseY = jsh.mouseY;
+    this.mouseDown = jsh.mouseDown;
+    this.overrideFunc = _overrideFunc;
+  }
+
+  XExt.XInputAction.prototype.Exec = function () {
+    var _this = this;
+    if (_this.obj) $(_this.obj).focus();
+    if (this.overrideFunc) this.overrideFunc();
+    else if (_this.obj && _this.mouseDown) {
+      XExt.Click(_this.obj);
     }
   }
-  else if(pos.top < minV){
-    jcontainer.scrollTop(pos.top);
+
+  XExt.XInputAction.prototype.IsExpired = function () {
+    return (new Date().getTime() - this.tstamp) > 100;
   }
+
+  XExt.getLastClicked = function () {
+    var is_recent_click = (new Date().getTime() - jsh.last_clicked_time) < 100;
+    if (jsh.last_clicked && is_recent_click) return jsh.last_clicked;
+    return undefined;
+  }
+
+  XExt.Click = function (obj) {
+    var gevent = new MouseEvent("mousedown", {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+    });
+    window.setTimeout(function () { obj.dispatchEvent(gevent); }, 1);
+  }
+
+  XExt.isIOS = function () {
+    if ((navigator.userAgent.match(/iPhone/i)) || 
+        (navigator.userAgent.match(/iPod/i)) || 
+        (navigator.userAgent.match(/iPad/i))) {
+      return true;
+    }
+  }
+
+  XExt.clearDialogs = function(){
+    jsh.xDialog = [];
+    $('#xdialogblock').children().hide();
+    $('#xdialogblock').hide();
+  }
+
+  XExt.dialogButtonFunc = function (dialogClass, oldactive, onComplete, params) {
+    if (!params) params = {};
+    return function () {
+      //Delete duplicates from stack
+      for (var i = 0; i < jsh.xDialog.length; i++) {
+        for (var j = 0; j < i; j++) {
+          if (jsh.xDialog[j] == jsh.xDialog[i]) {
+            jsh.xDialog.splice(i, 1);
+            i--;
+            break;
+          }
+        }
+      }
+      //Verify this is the topmost dialog
+      if ((jsh.xDialog.length > 0) && (jsh.xDialog[0] != dialogClass)) return;
+      $('#xdialogblock ' + dialogClass).hide();
+      if (jsh.xDialog.length == 1) { $('#xdialogblock').hide(); }
+      if (jsh.xDialog[0] != dialogClass) { alert('ERROR - Invalid Dialog Stack'); console.log(dialogClass); console.log(jsh.xDialog); }
+      if (oldactive) oldactive.focus();
+      window.setTimeout(function () { jsh.xDialog.shift(); if (onComplete) onComplete(); }, 1);
+      if (params.onCompleteImmediate) params.onCompleteImmediate();
+    }
+  }
+
+  XExt.Alert = function (obj, onAccept, params) {
+    if (!params) params = {};
+    var msg = '';
+    if (obj && _.isString(obj)) msg = obj;
+    else msg = JSON.stringify(obj);
+    msg = XExt.escapeHTML(msg);
+    msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
+    //alert(msg);
+    jsh.xDialog.unshift('#xalertbox');
+    $('#xdialogblock #xalertbox').zIndex(jsh.xDialog.length);
+    
+    var oldactive = document.activeElement;
+    if (oldactive) $(oldactive).blur();
+    $('#xalertmessage').html(msg);
+    $('#xalertbox input').off('click');
+    $('#xalertbox input').off('keydown');
+    var acceptfunc = XExt.dialogButtonFunc('#xalertbox', oldactive, onAccept, { onCompleteImmediate: params.onAcceptImmediate });
+    $('#xalertbox input').on('click', acceptfunc);
+    $('#xalertbox input').on('keydown', function (e) { if (e.keyCode == 27) { acceptfunc(); } });
+    
+    $('#xdialogblock,#xalertbox').show();
+    jsh.XWindowResize();
+    if (!XExt.isIOS()) $('#xalertbox input').focus();
+  }
+
+  XExt.Confirm = function (obj, onAccept, onCancel, options) {
+    if (!options) options = {};
+    var msg = '';
+    if (obj && _.isString(obj)) msg = obj;
+    else msg = JSON.stringify(obj);
+    msg = XExt.escapeHTML(msg);
+    msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
+    //if (window.confirm(msg)) { if (onAccept) onAccept(); }
+    //if (onCancel) onCancel(); 
+    jsh.xDialog.unshift('#xconfirmbox');
+    $('#xdialogblock #xconfirmbox').zIndex(jsh.xDialog.length);
+    
+    var oldactive = document.activeElement;
+    if (oldactive) $(oldactive).blur();
+    $('#xconfirmmessage').html(msg);
+    $('#xconfirmbox input').off('click');
+    $('#xconfirmbox input').off('keydown');
+    var cancelfunc = XExt.dialogButtonFunc('#xconfirmbox', oldactive, onCancel);
+    if (options.button_no) {
+      $('#xconfirmbox input.button_no').show();
+      $('#xconfirmbox input.button_no').on('click', XExt.dialogButtonFunc('#xconfirmbox', oldactive, options.button_no));
+    }
+    else $('#xconfirmbox input.button_no').hide();
+    if (options.button_ok_caption) $('#xconfirmbox input.button_ok').val(options.button_ok_caption);
+    if (options.button_no_caption) $('#xconfirmbox input.button_no').val(options.button_no_caption);
+    if (options.button_cancel_caption) $('#xconfirmbox input.button_cancel').val(options.button_cancel_caption);
+
+
+    $('#xconfirmbox input.button_ok').on('click', XExt.dialogButtonFunc('#xconfirmbox', oldactive, onAccept));
+    $('#xconfirmbox input.button_cancel').on('click', cancelfunc);
+    $('#xconfirmbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    $('#xdialogblock,#xconfirmbox').show();
+    jsh.XWindowResize();
+    if (!XExt.isIOS()) $('#xconfirmbox input.button_ok').focus();
+  }
+
+  XExt.Prompt = function (obj, dflt, onComplete) {
+    var msg = '';
+    if (obj && _.isString(obj)) msg = obj;
+    else msg = JSON.stringify(obj);
+    
+    if (!dflt) dflt = '';
+    if (!_.isString(dflt)) dflt = JSON.stringify(dflt);
+    
+    msg = XExt.escapeHTML(msg);
+    msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
+    //var rslt = window.prompt(msg, dflt);
+    //If cancel or close, rslt = null
+    //if (onComplete) onComplete(rslt);
+    jsh.xDialog.unshift('#xpromptbox');
+    $('#xdialogblock #xpromptbox').zIndex(jsh.xDialog.length);
+    
+    var oldactive = document.activeElement;
+    if (oldactive) $(oldactive).blur();
+    $('#xpromptmessage').html(msg);
+    $('#xpromptbox input').off('click');
+    $('#xpromptbox input').off('keydown');
+    $('#xpromptfield').val(dflt);
+    var cancelfunc = XExt.dialogButtonFunc('#xpromptbox', oldactive, function () { if (onComplete) onComplete(null); });
+    var acceptfunc = XExt.dialogButtonFunc('#xpromptbox', oldactive, function () { if (onComplete) onComplete($('#xpromptfield').val()); });
+    $('#xpromptbox input.button_ok').on('click', acceptfunc);
+    $('#xpromptbox input.button_cancel').on('click', cancelfunc);
+    $('#xpromptbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    $('#xpromptfield').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
+    $('#xdialogblock,#xpromptbox').show();
+    jsh.XWindowResize();
+    $('#xpromptfield').focus();
+  }
+
+  XExt.CustomPrompt = function (id, html, onInit, onAccept, onCancel, onClosed) {
+    //Classes - default_focus, button_ok, button_cancel
+    if ($('#xdialogblock #' + id).length) $('#xdialogblock #' + id).remove();
+    $('#xdialogblock').append(html);
+    
+    //ShowDialog
+    jsh.xDialog.unshift('#' + id);
+    $('#xdialogblock #' + id).zIndex(jsh.xDialog.length);
+    
+    var oldactive = document.activeElement;
+    if (oldactive) $(oldactive).blur();
+    
+    $('#' + id + ' input').off('click');
+    $('#' + id + ' input').off('keydown');
+    var cancelfunc = XExt.dialogButtonFunc('#' + id, oldactive, function () { if (onCancel) onCancel(); if (onClosed) onClosed(); });
+    var acceptfunc_aftervalidate = XExt.dialogButtonFunc('#' + id, oldactive, function () { if (onClosed) onClosed(); });
+    var acceptfunc = function () {
+      //Verify this is the topmost dialog
+      if ((jsh.xDialog.length > 0) && (jsh.xDialog[0] != ('#' + id))) return;
+      
+      if (onAccept) return onAccept(function () { acceptfunc_aftervalidate(); });
+      else acceptfunc_aftervalidate();
+    }
+    if (onInit) onInit(acceptfunc, cancelfunc);
+    $('#' + id + ' input.button_ok').on('click', acceptfunc);
+    $('#' + id + ' input.button_cancel').on('click', cancelfunc);
+    $('#' + id + ' input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    $('#' + id + ' input:not(:checkbox):not(:button)').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
+    $('#xdialogblock,#' + id).show();
+    jsh.XWindowResize();
+    $('#' + id + ' .default_focus').focus();
+  }
+
+  XExt.ZoomEdit = function (val, caption, options, onAccept, onCancel) {
+    if(!options) options = {};
+    if(!val) val = '';
+    val = val.toString();
+    jsh.xDialog.unshift('#xtextzoombox');
+    $('#xdialogblock #xtextzoombox').zIndex(jsh.xDialog.length);
+    
+    var oldactive = document.activeElement;
+    if (oldactive) $(oldactive).blur();
+    $('#xtextzoommessage').html(caption);
+    $('#xtextzoombox input').off('click');
+    $('#xtextzoombox input').off('keydown');
+    $('#xtextzoomfield').val(val);
+    
+    $('#xtextzoomfield').prop('readonly', (options.readonly?true:false));
+    if(options.readonly) $('#xtextzoomfield').removeClass('editable').addClass('uneditable');
+    else $('#xtextzoomfield').removeClass('uneditable').addClass('editable');
+
+    var cancelfunc = XExt.dialogButtonFunc('#xtextzoombox', oldactive, function () { if (onCancel) onCancel(); });
+    var acceptfunc = XExt.dialogButtonFunc('#xtextzoombox', oldactive, function () { if (onAccept) onAccept($('#xtextzoomfield').val()); });
+    $('#xtextzoombox input.button_ok').on('click', acceptfunc);
+    $('#xtextzoombox input.button_cancel').on('click', cancelfunc);
+    $('#xtextzoombox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    $('#xdialogblock,#xtextzoombox').show();
+    jsh.XWindowResize();
+    $('#xtextzoomfield').focus();
+  }
+
+  var popupData = {};
+
+  XExt.popupShow = function (modelid, fieldid, title, parentobj, obj, options) {
+    if (typeof options == 'undefined') options = {};
+    var parentmodelid = $(obj).data('model');
+    var parentfield = null;
+    if (parentmodelid) parentfield = jsh.App['XForm' + parentmodelid].prototype.Fields[fieldid];
+    if (!parentobj) parentobj = $('#' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelid);
+    var numOpens = 0;
+    
+    popupData[modelid] = {};
+    XExt.execif(parentfield && parentfield.controlparams && parentfield.controlparams.onpopup,
+      function (f) { parentfield.controlparams.onpopup(modelid, parentmodelid, fieldid, f); },
+      function () {
+      var codeval = $(obj).data('codeval');
+      if (codeval) popupData[modelid].codeval = codeval;
+      var xdata = jsh.App['xform_' + modelid];
+      xdata.RowCount = 0;
+      if (xdata.Prop) xdata.Prop.Enabled = true;
+      $(xdata.PlaceholderID).html('');
+      var orig_jsh_ignorefocusHandler = jsh.ignorefocusHandler;
+      jsh.ignorefocusHandler = true;
+      var popup_options = {};
+      popup_options = {
+        modelid: modelid,
+        href: "#popup_" + fieldid + '.xelem' + parentmodelid, inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, title: title, fixed: true,
+        fadeOut:0,
+        onOpen: function () {
+          //When nested popUps are called, onOpen is not called
+        },
+        onComplete: function () {
+          numOpens++;
+          if(numOpens==1) xdata.Select();
+          if ($('#popup_' + fieldid + '.xelem' + parentmodelid + ' .xfilter_value').first().is(':visible')) $('#popup_' + fieldid + ' .xfilter_value').first().focus();
+          else if ($('#popup_' + fieldid + '.xelem' + parentmodelid).find('td a').length) $('#popup_' + fieldid).find('td a').first().focus();
+            //else $('#popup_' + fieldid + '.xelem' + parentmodelid).find('input,select,textarea').first().focus();
+        },
+        onClosed: function () {
+          var found_popup = false;
+          for(var i=jsh.xPopupStack.length-1;i>=0;i--){
+            if(jsh.xPopupStack[i].modelid==modelid){ jsh.xPopupStack.splice(i,1); found_popup = true; break; }
+          }
+          if(!found_popup) { alert('ERROR - Invalid Popup Stack'); console.log(modelid); console.log(jsh.xPopupStack); };
+
+          if(jsh.xPopupStack.length) $.colorbox(jsh.xPopupStack[jsh.xPopupStack.length-1]);
+
+          if (typeof popupData[modelid].result !== 'undefined') {
+            parentobj.val(popupData[modelid].result);
+            if (popupData[modelid].resultrow && parentfield && parentfield.controlparams && parentfield.controlparams.popup_copy_results) {
+              for (var fname in parentfield.controlparams.popup_copy_results) {
+                XExt.setFormField(XExt.getForm(parentmodelid), fname, popupData[modelid].resultrow[parentfield.controlparams.popup_copy_results[fname]])
+              }
+            }
+            if (options.OnControlUpdate) options.OnControlUpdate(parentobj[0], popupData[modelid]);
+          }
+          parentobj.focus();
+          jsh.ignorefocusHandler = orig_jsh_ignorefocusHandler;
+        }
+      };
+      jsh.xPopupStack.push(popup_options);
+      $.colorbox(popup_options);
+    });
+  }
+
+  XExt.popupSelect = function (modelid, obj) {
+    var rslt = null;
+    var rowid = XExt.XForm.GetRowID(modelid, obj);
+    var xdata = jsh.App['xform_' + modelid];
+    var xpost = jsh.App['xform_post_' + modelid];
+    
+    if (popupData[modelid].codeval) rslt = xpost.DataSet[rowid][popupData[modelid].codeval];
+    if (!rslt) rslt = '';
+    popupData[modelid].result = rslt;
+    popupData[modelid].rowid = rowid;
+    popupData[modelid].resultrow = xpost.DataSet[rowid];
+    xdata.Prop.Enabled = false;
+    $.colorbox.close();
+  }
+
+  XExt.popupClear = function (modelid, obj) {
+    var rslt = null;
+    var xdata = jsh.App['xform_' + modelid];
+    var xpost = jsh.App['xform_post_' + modelid];
+    
+    popupData[modelid].result = rslt;
+    popupData[modelid].rowid = -1;
+    popupData[modelid].resultrow = new xpost.DataType();
+    xdata.Prop.Enabled = false;
+    $.colorbox.close();
+  }
+
+  XExt.AlertFocus = function (ctrl, msg) {
+    XExt.Alert(msg, function () { $(ctrl).focus().select(); });
+  }
+
+  XExt.getModelId = function (obj) {
+    var xid = $(obj).closest('.xtbl').attr('id');
+    if (!xid) xid = $(obj).closest('.xform').attr('id');
+    if (!xid) return null;
+    return xid.substr(5);
+  }
+
+  XExt.getModelMD5 = function (modelid) {
+    return Crypto.MD5(jsh.frontsalt + modelid).toString();
+  }
+
+
+  XExt.numOccurrences = function (val, find) {
+    if (!val) return 0;
+    if (!find) return (val.length + 1);
+    
+    var rslt = 0;
+    var pos = 0;
+    var step = find.length;
+    
+    while (true) {
+      pos = val.indexOf(find, pos);
+      if (pos >= 0) { rslt++; pos += step; } 
+      else break;
+    }
+    return rslt;
+  }
+
+  XExt.ItemContextMenu = function (ctrl) {
+    var parent = $(ctrl).closest('.xcontext_parent');
+    if (!parent.length) return true;
+    var menuid = '#_item_context_menu_' + parent.attr('id');
+    if (!$(menuid).length) return true;
+    XExt.ShowContextMenu(menuid, $(ctrl).data('value'));
+    return false;
+  }
+
+  XExt.basename = function (fname) {
+    var rslt = fname;
+    if (rslt.lastIndexOf('/') > 0) rslt = rslt.substr(rslt.lastIndexOf('/') + 1);
+    if (rslt.lastIndexOf('\\') > 0) rslt = rslt.substr(rslt.lastIndexOf('\\') + 1);
+    return rslt;
+  }
+
+  XExt.dirname = function (path) {
+    return path.replace(/\\/g, '/').replace(/\/[^\/]*\/?$/, '');
+  }
+
+  XExt.cleanFileName = function (fname) {
+    if (typeof fname === undefined) return '';
+    if (fname === null) return '';
+    
+    fname = fname.toString();
+    if (fname.length > 247) fname = fname.substr(0, 247);
+    return fname.replace(/[\/\?<>\\:\*\|":]/g, '').replace(/[\x00-\x1f\x80-\x9f]/g, '').replace(/^\.+$/, '').replace(/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i, '');
+  }
+
+  XExt.utf8_base64 = function (str) { return window.btoa(unescape(encodeURIComponent(str))); }
+  XExt.base64_utf8 = function (str) { return decodeURIComponent(escape(window.atob(str))); }
+
+  XExt.chainObj = function (obj, p, f) {
+    if (!(obj[p])) obj[p] = f;
+    else {
+      var oldf = obj[p];
+      obj[p] = function () { f(); oldf(); };
+    }
+  }
+
+  XExt.chain = function (obj, f) {
+    if (!obj) return f;
+    return function () { f(); obj(); };
+  }
+
+  XExt.execif = function (cond, apply, f) {
+    if (cond) apply(f);
+    else f();
+  }
+
+  XExt.findClosest = function (elem, sel) {
+    var jobj = $(elem).find(sel);
+    if (jobj.length) return jobj;
+    var parent = $(elem).parent();
+    if (!parent.length) return $();
+    return XExt.findClosest(parent, sel);
+  }
+
+  XExt.getToken = function (onComplete, onFail) {
+    if(!jsh) throw new Error('XExt requires jsHarmony instance to run getToken');
+    jsh.XPost.prototype.XExecute('../_token', {}, onComplete, onFail);
+  }
+
+  /*************************/
+  /* Form Helper Functions */
+  /*************************/
+  XExt.isGridControl = function (ctrl) {
+    return ($('.SQ_CARRIER_PRO').closest('.xtbl').length > 0);
+  }
+  XExt.getFormBase = function (id) {
+    if (!jsh.XBase[id]) { XExt.Alert('ERROR: Base form ' + id + ' not found.'); return; }
+    var fname = jsh.XBase[id][0];
+    if (fname) return jsh.App['xform_' + fname];
+    return undefined;
+  }
+  XExt.getForm = function (id) {
+    if (!(id in jsh.XForms)) { XExt.Alert('ERROR: Form ' + id + ' not found.'); return; }
+    if (jsh.XForms[id]._layout == 'grid') return jsh.App['xform_post_' + id];
+    return jsh.App['xform_' + id];
+  }
+  XExt.getFormFromObject = function (ctrl) {
+    var fname = $(ctrl).closest('.xform').attr('id');
+    if (fname) return jsh.App['xform_' + fname.substr(5)];
+    return undefined;
+  }
+  XExt.getModelIdFromObject = function (ctrl) {
+    var fname = $(ctrl).closest('.xform').attr('id');
+    if (fname) return fname.substr(5);;
+    return undefined;
+  }
+  XExt.getFieldFromObject = function (ctrl) {
+    return $(ctrl).closest('.xform_ctrl').attr('id');
+  }
+  XExt.getFormField = function (xform, fieldname) {
+    if (!xform) { XExt.Alert('ERROR: Cannot read field ' + fieldname + ' - Parent form not found.'); return; }
+    if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
+    return xform.Data.GetValue(xform.Data.Fields[fieldname]);
+  }
+  XExt.formatField = function (xform, fieldname, fieldval) {
+    if (!xform) { XExt.Alert('ERROR: Cannot read field ' + fieldname + ' - Parent form not found.'); return; }
+    if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
+    return jsh.XFormat.Apply(xform.Data.Fields[fieldname].format, fieldval);
+  }
+  XExt.setFormField = function (xform, fieldname, fieldval) {
+    if (!xform) { XExt.Alert('ERROR: Cannot set field ' + fieldname + ' - Parent form not found.'); return; }
+    if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
+    XExt.XForm.SetFieldValue(xform.Data, xform.Data.Fields[fieldname], fieldval);
+  }
+  XExt.setFormControl = function (xform, fieldname, fieldval) { //Set fieldval to undefined for refresh
+    if (!xform) { XExt.Alert('ERROR: Cannot set field ' + fieldname + ' - Parent form not found.'); return; }
+    if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
+    XExt.XForm.SetControlValue(xform.Data, xform.Data.Fields[fieldname], fieldval);
+  }
+  /***********************/
+  /* UI Helper Functions */
+  /***********************/
+  XExt.popupForm = function (modelid, action, params, windowparams, win) {
+    if (!params) params = {};
+    if (action) params.action = action;
+    var url = jsh._BASEURL + modelid;
+    var dfltwindowparams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
+    var modelmd5 = XExt.getModelMD5(modelid);
+    if (modelmd5 in jsh.popups) {
+      default_popup_size = jsh.popups[modelmd5];
+      dfltwindowparams.width = default_popup_size[0];
+      dfltwindowparams.height = default_popup_size[1];
+    }
+    if (!windowparams) windowparams = {};
+    if (params) url += '?' + $.param(params);
+    var windowstr = '';
+    for (var p in dfltwindowparams) { if (!(p in windowparams)) windowparams[p] = dfltwindowparams[p]; }
+    for (var p in windowparams) { windowstr += ',' + p + '=' + windowparams[p]; }
+    if (windowstr) windowstr = windowstr.substr(1);
+    if (win) { win.location = url; win.focus(); }
+    else return window.open(url, '_blank', windowstr);
+  }
+  XExt.popupReport = function (modelid, params, windowparams, win) {
+    var url = jsh._BASEURL + '_d/_report/' + modelid + '/';
+    var dfltwindowparams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
+    var modelmd5 = XExt.getModelMD5('_report_' + modelid);
+    if (modelmd5 in jsh.popups) {
+      default_popup_size = jsh.popups[modelmd5];
+      dfltwindowparams.width = default_popup_size[0];
+      dfltwindowparams.height = default_popup_size[1];
+    }
+    if (!windowparams) windowparams = {};
+    if (params) url += '?' + $.param(params);
+    var windowstr = '';
+    for (var p in dfltwindowparams) { if (!(p in windowparams)) windowparams[p] = dfltwindowparams[p]; }
+    for (var p in windowparams) { windowstr += ',' + p + '=' + windowparams[p]; }
+    if (windowstr) windowstr = windowstr.substr(1);
+    if (win) { win.location = url; win.focus(); }
+    else return window.open(url, '_blank', windowstr);
+  }
+  XExt.renderCanvasCheckboxes = function () {
+    $('canvas.checkbox.checked').each(function () {
+      var obj = this;
+      var w = obj.width;
+      var h = obj.height;
+      var ctx = obj.getContext("2d");
+      
+      ctx.beginPath();
+      ctx.lineWidth = 1;
+      ctx.moveTo(0, 0);
+      ctx.lineTo(w, 0);
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
+      ctx.lineTo(0, 0);
+      
+      ctx.beginPath();
+      ctx.lineWidth = 1.5;
+      ctx.moveTo(0, 0);
+      ctx.lineTo(w, h);
+      ctx.moveTo(w, 0);
+      ctx.lineTo(0, h);
+      ctx.stroke();
+    });
+  }
+  XExt.DataBinding = function(data){
+    this.Bindings = [];
+    this.Data = data;
+  }
+  XExt.DataBinding.prototype.Bind = function(obj){
+    if(!obj.OnUpdate) throw new Error('Binding missing OnUpdate handler');
+    if(!_.includes(this.Bindings,obj)){
+      this.Bindings.push(obj);
+      obj.OnUpdate(this.Data);
+    }
+  }
+  XExt.DataBinding.prototype.Unbind = function(obj){
+    var found = false;
+    for(var i=0;i<this.Bindings.length;i++){
+      if(this.Bindings[i]==obj){
+        found = true;
+        this.Bindings.splice(i,1);
+        i--;
+      }
+    }
+    if(!found) throw new Error('Binding not found');
+  }
+  XExt.DataBinding.prototype.Update = function(data){
+    var _this = this;
+    _this.Data = data;
+    for(var i=0;i<_this.Bindings.length;i++){
+      var binding = _this.Bindings[i];
+      binding.OnUpdate(_this.Data);
+    }
+  }
+  XExt.insertTextAtCursor = function(txt,className){
+    if(window.getSelection){
+      var s = document.createElement('SPAN');
+      s.innerText = txt;
+      if(className) s.className = className;
+      var sel = window.getSelection();
+      if(!sel || !sel.rangeCount) return null;// throw new Error('Control does not have an available');
+      sel.getRangeAt(0).insertNode(s); 
+      return s;
+    }
+    else if(document.selection && document.selection.createRange){ 
+      document.selection.createRange().text = txt;
+      return null;
+    }
+    else throw new Error('Inserting text into contenteditable not supported.');
+  }
+  XExt.selectionIsChildOf = function(jobj){
+    if(window.getSelection){
+      var sel = window.getSelection();
+      if(!sel || !sel.rangeCount) return false;
+      var rstart = sel.getRangeAt(0);
+      if(jobj[0] == rstart.startContainer) return true;
+      return $.contains(jobj[0],rstart.startContainer);
+    }
+    else throw new Error('Inserting text into contenteditable not supported.');
+  }
+  XExt.hasSelection = function(){
+    if (window.getSelection) {
+      var sel = window.getSelection();
+      if(!sel || !sel.rangeCount) return false;
+      var r = sel.getRangeAt(0);
+      if(!r) return false;
+      return !r.collapsed;
+    }
+    return false;
+  }
+  XExt.clearSelection = function(){
+    if(!XExt.hasSelection()) return;
+    if (window.getSelection) {
+      if (window.getSelection().empty) {  // Chrome
+        window.getSelection().empty();
+      } else if (window.getSelection().removeAllRanges) {  // Firefox
+        window.getSelection().removeAllRanges();
+      }
+    } else if (document.selection) {  // IE
+      document.selection.empty();
+    }
+  }
+  XExt.Tick = function(f){
+    window.setTimeout(f,1);
+  }
+  XExt.scrollIntoView = function(jcontainer, pos, h){
+    if(!jcontainer.length) return;
+    var sTop = jcontainer.scrollTop();
+    var sLeft = jcontainer.scrollLeft();
+    var cW = jcontainer[0].clientWidth;
+    var cH = jcontainer[0].clientHeight;
+    var minV = sTop;
+    var maxV = sTop + cH;
+    var minH = sLeft;
+    var maxH = sLeft + cW;
+    var posbottom = pos.top + h;
+    if((pos.left < minH) || (pos.left > maxH)) jcontainer.scrollLeft(pos.left);
+    if((posbottom < minV) || (posbottom > maxV)){
+      if(posbottom < minV) jcontainer.scrollTop(pos.top);
+      else { 
+        var newscrollTop = posbottom - cH;
+        if(newscrollTop < 0) newscrollTop = 0;
+        jcontainer.scrollTop(newscrollTop);
+      }
+    }
+    else if(pos.top < minV){
+      jcontainer.scrollTop(pos.top);
+    }
+  }
+  XExt.scrollObjIntoView = function(jcontainer, jobj){
+    var jobjpos = jobj.offset();
+    var jcontainerpos = jcontainer.offset();
+    jobjpos.top -= jcontainerpos.top - jcontainer.scrollTop();
+    jobjpos.left -= jcontainerpos.left - jcontainer.scrollLeft();
+    XExt.scrollIntoView(jcontainer, jobjpos, jobj.height());
+  }
+
+  return XExt;
 }
-exports.scrollObjIntoView = function(jcontainer, jobj){
-  var jobjpos = jobj.offset();
-  var jcontainerpos = jcontainer.offset();
-  jobjpos.top -= jcontainerpos.top - jcontainer.scrollTop();
-  jobjpos.left -= jcontainerpos.left - jcontainer.scrollLeft();
-  exports.scrollIntoView(jcontainer, jobjpos, jobj.height());
-}
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./XExt.XForm.js":9}],11:[function(require,module,exports){
+},{"./XExt.XForm.js":9,"./jquery-1.11.2":21,"lodash":28}],11:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -3230,6 +3286,10 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+var $ = require('./jquery-1.11.2');
+var _ = require('lodash');
+var moment = require('moment');
 
 exports = module.exports = {};
 
@@ -3418,7 +3478,7 @@ exports.Apply = function(format,val){
 	return val;
 }
 
-},{}],12:[function(require,module,exports){
+},{"./jquery-1.11.2":21,"lodash":28,"moment":29}],12:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -3438,293 +3498,298 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-function XGrid(_modelid, _CommitLevel, _ValidationLevel) {
-  this.modelid = _modelid;
-  this.ErrorClass = 'xinputerror';
-  this.CommitLevel = _CommitLevel;
-  this.ValidationLevel = _ValidationLevel;
-  this.CurrentCell = null;
-  this.Debug = false;
-  this.OnCellEnter = null; //(obj,e)
-  this.OnCellLeave = null; //(oldobj,newobj,e)
-  this.OnRowEnter = null; //(rowid)
-  this.OnRowLeave = null; //(rowid)
-  this.OnGridEnter = null; //()
-  this.OnGridLeave = null; //(oldobj)
-  this.OnControlUpdate = null; //(obj,e)
-  this.OnValiding = null; //(rowid,obj,oncancel) return true/false
-  this.OnCommit = null; //(rowid,obj,onsuccess,oncancel) return true (if no commit required, or immediate result)/false (if delay commit)    newobj,oldobj,onsuccess,oncancel,oldrowid
-  this.IsDirty = null; //return true/false
-  this.OnCancelEdit = null; //(rowid,obj)
-  this.SaveBeforeUpdate = false;
-  this.Init();
-}
-XGrid.prototype.CellEnter = function (obj, e) {
-  this.DebugLog('Enter Cell ' + $(obj).data('id'));
-  this.CurrentCell = obj;
-  if (this.OnCellEnter) this.OnCellEnter(obj, e);
-}
+var $ = require('./jquery-1.11.2');
 
-XGrid.prototype.CellLeave = function (oldobj, newobj, e) {
-  this.DebugLog('Leave Cell ' + $(oldobj).data('id'));
-  if (this.OnCellLeave) this.OnCellLeave(obj, e);
-}
+exports = module.exports = function(jsh){
 
-XGrid.prototype.RowEnter = function (rowid) {
-  this.DebugLog('Enter Row ' + rowid);
-  if (this.OnRowEnter) this.OnRowEnter(rowid);
-}
-
-XGrid.prototype.RowLeave = function (rowid) {
-  this.DebugLog('Leave Row ' + rowid);
-  if (this.OnRowLeave) this.OnRowLeave(rowid);
-}
-
-XGrid.prototype.GridEnter = function () {
-  this.DebugLog('Enter Grid');
-  if (this.OnGridEnter) this.OnGridEnter();
-}
-
-XGrid.prototype.GridLeave = function (oldobj) {
-  this.DebugLog('Leave Grid');
-  this.CurrentCell = undefined;
-  if (this.OnGridLeave) this.OnGridLeave(oldobj);
-}
-
-XGrid.prototype.CellChange = function (oldobj, newobj, e) {
-  var oldrowid = -1;
-  var newrowid = -1;
-  if (oldobj) {
-    oldrowid = XExt.XForm.GetRowID(this.modelid, oldobj);
-    this.CellLeave(oldobj, newobj, e);
+  function XGrid(_modelid, _CommitLevel, _ValidationLevel) {
+    this.modelid = _modelid;
+    this.ErrorClass = 'xinputerror';
+    this.CommitLevel = _CommitLevel;
+    this.ValidationLevel = _ValidationLevel;
+    this.CurrentCell = null;
+    this.Debug = false;
+    this.OnCellEnter = null; //(obj,e)
+    this.OnCellLeave = null; //(oldobj,newobj,e)
+    this.OnRowEnter = null; //(rowid)
+    this.OnRowLeave = null; //(rowid)
+    this.OnGridEnter = null; //()
+    this.OnGridLeave = null; //(oldobj)
+    this.OnControlUpdate = null; //(obj,e)
+    this.OnValiding = null; //(rowid,obj,oncancel) return true/false
+    this.OnCommit = null; //(rowid,obj,onsuccess,oncancel) return true (if no commit required, or immediate result)/false (if delay commit)    newobj,oldobj,onsuccess,oncancel,oldrowid
+    this.IsDirty = null; //return true/false
+    this.OnCancelEdit = null; //(rowid,obj)
+    this.SaveBeforeUpdate = false;
+    this.Init();
   }
-  if (newobj) newrowid = XExt.XForm.GetRowID(this.modelid, newobj);
-  if (oldrowid != newrowid) {
-    if (oldobj) this.RowLeave(oldrowid);
-    if (newobj) {
-      if (!oldobj) this.GridEnter();
-      this.RowEnter(newrowid);
-    }
-    else {
-      this.GridLeave(oldobj);
-    }
+  XGrid.prototype.CellEnter = function (obj, e) {
+    this.DebugLog('Enter Cell ' + $(obj).data('id'));
+    this.CurrentCell = obj;
+    if (this.OnCellEnter) this.OnCellEnter(obj, e);
   }
-  if (newobj) {
-    this.CellEnter(newobj, e);
-  }
-}
 
-XGrid.prototype.Init = function () {
-  //Global Focus Change
-  var _this = this;
-  jsh_focusHandler.push(function (newobj) {
-    if (window.xLoader.IsLoading) { return; }
-    var newrowid = -1;
+  XGrid.prototype.CellLeave = function (oldobj, newobj, e) {
+    this.DebugLog('Leave Cell ' + $(oldobj).data('id'));
+    if (this.OnCellLeave) this.OnCellLeave(obj, e);
+  }
+
+  XGrid.prototype.RowEnter = function (rowid) {
+    this.DebugLog('Enter Row ' + rowid);
+    if (this.OnRowEnter) this.OnRowEnter(rowid);
+  }
+
+  XGrid.prototype.RowLeave = function (rowid) {
+    this.DebugLog('Leave Row ' + rowid);
+    if (this.OnRowLeave) this.OnRowLeave(rowid);
+  }
+
+  XGrid.prototype.GridEnter = function () {
+    this.DebugLog('Enter Grid');
+    if (this.OnGridEnter) this.OnGridEnter();
+  }
+
+  XGrid.prototype.GridLeave = function (oldobj) {
+    this.DebugLog('Leave Grid');
+    this.CurrentCell = undefined;
+    if (this.OnGridLeave) this.OnGridLeave(oldobj);
+  }
+
+  XGrid.prototype.CellChange = function (oldobj, newobj, e) {
     var oldrowid = -1;
-    var oldobj = _this.CurrentCell;
-    if (!oldobj) return; //Return if user was not previously in grid
-    if ($.datepicker && $.datepicker._datepickerShowing) {
-      if (newobj == $('body')[0]) return;
-      else if ($('.ui-datepicker').has(newobj).length) return;
+    var newrowid = -1;
+    if (oldobj) {
+      oldrowid = jsh.XExt.XForm.GetRowID(this.modelid, oldobj);
+      this.CellLeave(oldobj, newobj, e);
     }
-    if (newobj) newrowid = XExt.XForm.GetRowID(_this.modelid, newobj);
-    if (newrowid >= 0) return; //Return if current control is in grid
-    _this.DebugLog('FocusHandler Triggered');
-    _this.CellLeaving(oldobj, undefined, undefined, function () {
-      //Success
-      _this.CellChange(_this.CurrentCell);
-    });
-  });
-}
-
-XGrid.prototype.DebugLog = function (obj) {
-  if (this.Debug) console.log(obj);
-}
-
-XGrid.prototype.ControlEnter = function (obj, e) {
-  var _this = this;
-  if (this.CurrentCell == obj) return;
-  if (this.ErrorClass) if ($(obj).hasClass(this.ErrorClass)) { this.CurrentCell = obj; return; }
-  
-  //Reset old value
-  var immediate_result = this.ControlLeaving(obj, e, function (_immediate_result) {
-    //On success
-    _this.CellChange(_this.CurrentCell, obj, e);
-    if (!_immediate_result) {
+    if (newobj) newrowid = jsh.XExt.XForm.GetRowID(this.modelid, newobj);
+    if (oldrowid != newrowid) {
+      if (oldobj) this.RowLeave(oldrowid);
+      if (newobj) {
+        if (!oldobj) this.GridEnter();
+        this.RowEnter(newrowid);
+      }
+      else {
+        this.GridLeave(oldobj);
+      }
     }
-  }, function (_immediate_result) {
-    //On failure
-    if (_immediate_result) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  });
-  if (!immediate_result) {
-    //Do not change value until database execution complete
-    e.preventDefault();
-    e.stopPropagation();
-    window.setTimeout(function () { $(obj).blur(); }, 1);
-  }
-  return;
-}
-
-XGrid.prototype.CheckboxUpdate = function (obj, e) {
-  var _this = this;
-  var obj_changed = (this.CurrentCell != obj);
-  //if(!obj_changed) return;
-  if (this.ErrorClass) if ($(obj).hasClass(this.ErrorClass)) { this.CurrentCell = obj; return; }
-  var ischecked = obj.checked;
-  obj.checked = !ischecked;
-  //Do not change checkbox until database execution complete
-  $(obj).prop('disabled', true);
-  
-  var immediate_result = this.ControlLeaving(obj, e, function () {
-    //On success
-    _this.CellChange(_this.CurrentCell, obj, e);
-    $(obj).prop('disabled', false);
-    obj.checked = ischecked;
-    $(obj).focus();
-    _this.ControlUpdate(obj, e);
-    if (true && (_this.CommitLevel == 'cell')) { _this.ControlLeaving(obj, e); }
-  }, function (_immediate_result) {
-    //On failure
-    $(obj).prop('disabled', false);
-    if (_immediate_result) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  });
-  
-  if (!immediate_result) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-}
-//----------------
-//OnControlLeaving
-//----------------
-//Return true if immediate result
-//Return false if needs to wait
-XGrid.prototype.ControlLeaving = function (obj, e, onsuccess, oncancel) {
-  var _this = this;
-  var rslt = this.CellLeaving(this.CurrentCell, obj, e, onsuccess, oncancel);
-  if (rslt === true) return true;
-  else if (rslt === false) return true;
-  return false;
-}
-XGrid.prototype.ControlUpdate = function (obj, e) {
-  this.DebugLog('Update ' + $(obj).data('id'));
-  if (this.OnControlUpdate) this.OnControlUpdate(obj, e);
-}
-XGrid.prototype.ControlKeyDown = function (obj, e) {
-  if (e.keyCode == 27) { //Escape key pressed
-    //Get current Rowid
-    var rowid = -1;
-    var obj = this.CurrentCell;
-    if (obj) rowid = XExt.XForm.GetRowID(this.modelid, obj);
-    if (rowid < 0) return;
-    if (this.OnCancelEdit) this.OnCancelEdit(rowid, obj);
-  }
-}
-
-XGrid.prototype.CellLeaving = function (oldobj, newobj, e, onsuccess, oncancel) {
-  var oldrowid = -1;
-  var newrowid = -1;
-  if (oldobj) oldrowid = XExt.XForm.GetRowID(this.modelid, oldobj);
-  if (newobj) newrowid = XExt.XForm.GetRowID(this.modelid, newobj);
-
-  var rowchange = (oldrowid != newrowid);
-  
-  if ((this.ValidationLevel == 'cell') || (this.CommitLevel == 'cell')) {
-    //Validate Cell, if applicable
-    if (this.OnValidating && !this.OnValidating(oldrowid, oldobj)) {
-      if (oncancel) oncancel(true);
-      return true;
-    }
-  }
-  else if (rowchange && ((this.ValidationLevel == 'row') || (this.CommitLevel == 'row'))) {
-    //Validate Row, if applicable
-    if (this.OnValidating && !this.OnValidating(oldrowid, oldobj)) {
-      if (oncancel) oncancel(true);
-      return true;
+    if (newobj) {
+      this.CellEnter(newobj, e);
     }
   }
 
-  
-  if(this.SaveBeforeUpdate && ((this.CommitLevel == 'row') || (this.CommitLevel == 'cell')) && !oldobj && rowchange && (!this.IsDirty || !this.IsDirty())){
-    if (XForm_GetChanges().length > 0) {
-      XExt.Alert('Please save all changes before updating the grid.',function(){
-        $(document.activeElement).blur();
+  XGrid.prototype.Init = function () {
+    //Global Focus Change
+    var _this = this;
+    jsh.focusHandler.push(function (newobj) {
+      if (jsh.xLoader.IsLoading) { return; }
+      var newrowid = -1;
+      var oldrowid = -1;
+      var oldobj = _this.CurrentCell;
+      if (!oldobj) return; //Return if user was not previously in grid
+      if ($.datepicker && $.datepicker._datepickerShowing) {
+        if (newobj == $('body')[0]) return;
+        else if ($('.ui-datepicker').has(newobj).length) return;
+      }
+      if (newobj) newrowid = jsh.XExt.XForm.GetRowID(_this.modelid, newobj);
+      if (newrowid >= 0) return; //Return if current control is in grid
+      _this.DebugLog('FocusHandler Triggered');
+      _this.CellLeaving(oldobj, undefined, undefined, function () {
+        //Success
+        _this.CellChange(_this.CurrentCell);
       });
-      if(oncancel) oncancel(true);
-      return true;
-    }
+    });
   }
-  
-  //Commit Cell/Row
-  if (this.IsDirty && this.IsDirty() && this.OnCommit && (
-    (this.CommitLevel == 'cell') || 
-    ((this.CommitLevel == 'cell') && (newobj && $(newobj).is(':checkbox'))) || 
-    (rowchange && (this.CommitLevel == 'row'))
-)) {
-    
-    if (newobj) window.jsh_qInputAction = new XExt.XInputAction(newobj);
-    else if (window.jsh_qInputAction && !(window.jsh_qInputAction.IsExpired())) { }
-    else window.jsh_qInputAction = null;
-    
-    window.jsh_ignorefocusHandler = true;
-    window.setTimeout(function () {
-      $(document.activeElement).blur();
-      $(oldobj).focus();
-      window.setTimeout(function () {
-        window.jsh_ignorefocusHandler = false;
-        if ($(oldobj).data('datepicker')) $(oldobj).datepicker('hide');
-      }, 1);
-    }, 1);
-    
-    var onsuccess_override = function () {
-      if (onsuccess) onsuccess(false);
-      if (window.jsh_qInputAction) window.jsh_qInputAction.Exec();
-    }
-    
-    if (!this.OnCommit(oldrowid, oldobj, onsuccess_override, oncancel)) return false;
-  }
-  
-  if (onsuccess) onsuccess();
-  return true;
-}
 
-XGrid.prototype.BindRow = function (jobj) {
-  var _this = this;
-  var modelid = _this.modelid;
-  var xform = (modelid ? window['XForm'+modelid] : null);
-  var xfields = (xform ? xform.prototype.Fields : []);
-  jobj.find('.xelem' + this.modelid).not('.xelem' + this.modelid + '.checkbox').keyup(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
-  jobj.find('.xelem' + this.modelid).change(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
-  jobj.find('.xelem' + this.modelid + '.checkbox').click(function (e) { if (!$(this).hasClass('editable')) return; return _this.CheckboxUpdate(this, e); });
-  jobj.find('.xelem' + this.modelid + '.datepicker').each(function () {
-    if (!$(this).hasClass('editable')) return;
-    var ctrl = this;
-    var dateformat = JSH_DEFAULT_DATEFORMAT;
-    var fname = $(this).data('id');
-    var xfield = xfields[fname];
-    if (xfield && xfield.controlparams) dateformat = xfield.controlparams.dateformat;
-    $(this).datepicker({
-      changeMonth: true, changeYear: true, dateFormat: dateformat, duration: '', showAnim: '', onSelect: function () {
-        window.jsh_ignorefocusHandler = true;
-        window.setTimeout(function () {
-          window.setTimeout(function () { window.jsh_ignorefocusHandler = false; _this.ControlUpdate(ctrl); }, 1);
-        }, 1);
+  XGrid.prototype.DebugLog = function (obj) {
+    if (this.Debug) console.log(obj);
+  }
+
+  XGrid.prototype.ControlEnter = function (obj, e) {
+    var _this = this;
+    if (this.CurrentCell == obj) return;
+    if (this.ErrorClass) if ($(obj).hasClass(this.ErrorClass)) { this.CurrentCell = obj; return; }
+    
+    //Reset old value
+    var immediate_result = this.ControlLeaving(obj, e, function (_immediate_result) {
+      //On success
+      _this.CellChange(_this.CurrentCell, obj, e);
+      if (!_immediate_result) {
+      }
+    }, function (_immediate_result) {
+      //On failure
+      if (_immediate_result) {
+        e.preventDefault();
+        e.stopPropagation();
       }
     });
-  });
-  jobj.find('.xelem' + this.modelid).not('.xelem' + this.modelid + '.checkbox').focus(function (e) { if (window.xDialog.length) return; if (!$(this).hasClass('editable')) return; return _this.ControlEnter(this, e); });
-  jobj.find('.xelem' + this.modelid + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e) })
-  jobj.find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; if (window.xDialog.length) return; if (!$(ctrl).hasClass('editable')) return; return _this.ControlEnter(ctrl, e); });
-}
+    if (!immediate_result) {
+      //Do not change value until database execution complete
+      e.preventDefault();
+      e.stopPropagation();
+      window.setTimeout(function () { $(obj).blur(); }, 1);
+    }
+    return;
+  }
 
-exports = module.exports = XGrid;
-},{}],13:[function(require,module,exports){
+  XGrid.prototype.CheckboxUpdate = function (obj, e) {
+    var _this = this;
+    var obj_changed = (this.CurrentCell != obj);
+    //if(!obj_changed) return;
+    if (this.ErrorClass) if ($(obj).hasClass(this.ErrorClass)) { this.CurrentCell = obj; return; }
+    var ischecked = obj.checked;
+    obj.checked = !ischecked;
+    //Do not change checkbox until database execution complete
+    $(obj).prop('disabled', true);
+    
+    var immediate_result = this.ControlLeaving(obj, e, function () {
+      //On success
+      _this.CellChange(_this.CurrentCell, obj, e);
+      $(obj).prop('disabled', false);
+      obj.checked = ischecked;
+      $(obj).focus();
+      _this.ControlUpdate(obj, e);
+      if (true && (_this.CommitLevel == 'cell')) { _this.ControlLeaving(obj, e); }
+    }, function (_immediate_result) {
+      //On failure
+      $(obj).prop('disabled', false);
+      if (_immediate_result) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+    
+    if (!immediate_result) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }
+  //----------------
+  //OnControlLeaving
+  //----------------
+  //Return true if immediate result
+  //Return false if needs to wait
+  XGrid.prototype.ControlLeaving = function (obj, e, onsuccess, oncancel) {
+    var _this = this;
+    var rslt = this.CellLeaving(this.CurrentCell, obj, e, onsuccess, oncancel);
+    if (rslt === true) return true;
+    else if (rslt === false) return true;
+    return false;
+  }
+  XGrid.prototype.ControlUpdate = function (obj, e) {
+    this.DebugLog('Update ' + $(obj).data('id'));
+    if (this.OnControlUpdate) this.OnControlUpdate(obj, e);
+  }
+  XGrid.prototype.ControlKeyDown = function (obj, e) {
+    if (e.keyCode == 27) { //Escape key pressed
+      //Get current Rowid
+      var rowid = -1;
+      var obj = this.CurrentCell;
+      if (obj) rowid = jsh.XExt.XForm.GetRowID(this.modelid, obj);
+      if (rowid < 0) return;
+      if (this.OnCancelEdit) this.OnCancelEdit(rowid, obj);
+    }
+  }
+
+  XGrid.prototype.CellLeaving = function (oldobj, newobj, e, onsuccess, oncancel) {
+    var oldrowid = -1;
+    var newrowid = -1;
+    if (oldobj) oldrowid = jsh.XExt.XForm.GetRowID(this.modelid, oldobj);
+    if (newobj) newrowid = jsh.XExt.XForm.GetRowID(this.modelid, newobj);
+
+    var rowchange = (oldrowid != newrowid);
+    
+    if ((this.ValidationLevel == 'cell') || (this.CommitLevel == 'cell')) {
+      //Validate Cell, if applicable
+      if (this.OnValidating && !this.OnValidating(oldrowid, oldobj)) {
+        if (oncancel) oncancel(true);
+        return true;
+      }
+    }
+    else if (rowchange && ((this.ValidationLevel == 'row') || (this.CommitLevel == 'row'))) {
+      //Validate Row, if applicable
+      if (this.OnValidating && !this.OnValidating(oldrowid, oldobj)) {
+        if (oncancel) oncancel(true);
+        return true;
+      }
+    }
+
+    
+    if(this.SaveBeforeUpdate && ((this.CommitLevel == 'row') || (this.CommitLevel == 'cell')) && !oldobj && rowchange && (!this.IsDirty || !this.IsDirty())){
+      if (jsh.XForm_GetChanges().length > 0) {
+        jsh.XExt.Alert('Please save all changes before updating the grid.',function(){
+          $(document.activeElement).blur();
+        });
+        if(oncancel) oncancel(true);
+        return true;
+      }
+    }
+    
+    //Commit Cell/Row
+    if (this.IsDirty && this.IsDirty() && this.OnCommit && (
+      (this.CommitLevel == 'cell') || 
+      ((this.CommitLevel == 'cell') && (newobj && $(newobj).is(':checkbox'))) || 
+      (rowchange && (this.CommitLevel == 'row'))
+  )) {
+      
+      if (newobj) jsh.qInputAction = new jsh.XExt.XInputAction(newobj);
+      else if (jsh.qInputAction && !(jsh.qInputAction.IsExpired())) { }
+      else jsh.qInputAction = null;
+      
+      jsh.ignorefocusHandler = true;
+      window.setTimeout(function () {
+        $(document.activeElement).blur();
+        $(oldobj).focus();
+        window.setTimeout(function () {
+          jsh.ignorefocusHandler = false;
+          if ($(oldobj).data('datepicker')) $(oldobj).datepicker('hide');
+        }, 1);
+      }, 1);
+      
+      var onsuccess_override = function () {
+        if (onsuccess) onsuccess(false);
+        if (jsh.qInputAction) jsh.qInputAction.Exec();
+      }
+      
+      if (!this.OnCommit(oldrowid, oldobj, onsuccess_override, oncancel)) return false;
+    }
+    
+    if (onsuccess) onsuccess();
+    return true;
+  }
+
+  XGrid.prototype.BindRow = function (jobj) {
+    var _this = this;
+    var modelid = _this.modelid;
+    var xform = (modelid ? jsh.App['XForm'+modelid] : null);
+    var xfields = (xform ? xform.prototype.Fields : []);
+    jobj.find('.xelem' + this.modelid).not('.xelem' + this.modelid + '.checkbox').keyup(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
+    jobj.find('.xelem' + this.modelid).change(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
+    jobj.find('.xelem' + this.modelid + '.checkbox').click(function (e) { if (!$(this).hasClass('editable')) return; return _this.CheckboxUpdate(this, e); });
+    jobj.find('.xelem' + this.modelid + '.datepicker').each(function () {
+      if (!$(this).hasClass('editable')) return;
+      var ctrl = this;
+      var dateformat = jsh.DEFAULT_DATEFORMAT;
+      var fname = $(this).data('id');
+      var xfield = xfields[fname];
+      if (xfield && xfield.controlparams) dateformat = xfield.controlparams.dateformat;
+      $(this).datepicker({
+        changeMonth: true, changeYear: true, dateFormat: dateformat, duration: '', showAnim: '', onSelect: function () {
+          jsh.ignorefocusHandler = true;
+          window.setTimeout(function () {
+            window.setTimeout(function () { jsh.ignorefocusHandler = false; _this.ControlUpdate(ctrl); }, 1);
+          }, 1);
+        }
+      });
+    });
+    jobj.find('.xelem' + this.modelid).not('.xelem' + this.modelid + '.checkbox').focus(function (e) { if (jsh.xDialog.length) return; if (!$(this).hasClass('editable')) return; return _this.ControlEnter(this, e); });
+    jobj.find('.xelem' + this.modelid + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e) })
+    jobj.find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; if (jsh.xDialog.length) return; if (!$(ctrl).hasClass('editable')) return; return _this.ControlEnter(ctrl, e); });
+  }
+
+  return XGrid;
+}
+},{"./jquery-1.11.2":21}],13:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -3743,6 +3808,8 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+var $ = require('./jquery-1.11.2');
 
 function XImageLoader () {
   this.loadqueue = [];
@@ -3805,7 +3872,7 @@ function XImageLoader () {
 }
 
 exports = module.exports = XImageLoader;
-},{}],14:[function(require,module,exports){
+},{"./jquery-1.11.2":21}],14:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -3824,6 +3891,9 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+var $ = require('./jquery-1.11.2');
+var _ = require('lodash');
 
 function XLoader(){
 	this.IsLoading = false;
@@ -3873,8 +3943,7 @@ function GetOpacity(elem) {
 }
 
 exports = module.exports = XLoader;
-},{}],15:[function(require,module,exports){
-(function (global){
+},{"./jquery-1.11.2":21,"lodash":28}],15:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -3894,300 +3963,200 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-exports = module.exports = {};
+var $ = require('./jquery-1.11.2');
 
-var XMenuItems = [];
-var XMenuLeft = 0;
-var XMenuMoreWidth = 0;
+exports = module.exports = function(jsh){
 
-var XSubMenuItems = [];
-var XSubMenuLeft = 0;
-var XSubMenuMoreWidth = 0;
-var curSubMenuSel = '';
+  var XMenu = function(){ }
 
-var isXMenuInit = false;
-function XMenuInit() {
-  if (isXMenuInit) return;
-  //Set up Top Menu Sidebar
-  if ($('#xmenu').size() > 0) {
-    $('#xmenu a').each(function (i, obj) {
-      if (obj.id == 'xmenu_more') return;
-      XMenuItems.push($(obj));
-    });
-    XMenuCalcDimensions(true);
-    
-    $('#xmenu_more').click(function () {
+  var XMenuItems = [];
+  var XMenuLeft = 0;
+  var XMenuMoreWidth = 0;
+
+  var XSubMenuItems = [];
+  var XSubMenuLeft = 0;
+  var XSubMenuMoreWidth = 0;
+  var curSubMenuSel = '';
+
+  var isXMenuInit = false;
+  function XMenuInit() {
+    if (isXMenuInit) return;
+    //Set up Top Menu Sidebar
+    if ($('#xmenu').size() > 0) {
+      $('#xmenu a').each(function (i, obj) {
+        if (obj.id == 'xmenu_more') return;
+        XMenuItems.push($(obj));
+      });
+      XMenuCalcDimensions(true);
+      
+      $('#xmenu_more').click(function () {
+        var xmenuside = $('#xmenuside');
+        $('#xsubmenuside').hide();
+        if (!xmenuside.is(":visible")) xmenuside.show();
+        else xmenuside.hide();
+        return false;
+      });
+      
+      //Create xmenuside
       var xmenuside = $('#xmenuside');
-      $('#xsubmenuside').hide();
-      if (!xmenuside.is(":visible")) xmenuside.show();
-      else xmenuside.hide();
-      return false;
-    });
-    
-    //Create xmenuside
-    var xmenuside = $('#xmenuside');
-    if (xmenuside.size() > 0) {
-      for (var i = 0; i < XMenuItems.length; i++) {
-        var xmenuitem = XMenuItems[i];
-        var htmlobj = '<a id="side' + xmenuitem[0].id + '" href="' + xmenuitem.attr('href') + '" onclick="' + xmenuitem.attr('onclick') + '" class="' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
-        xmenuside.append(htmlobj);
+      if (xmenuside.size() > 0) {
+        for (var i = 0; i < XMenuItems.length; i++) {
+          var xmenuitem = XMenuItems[i];
+          var htmlobj = '<a id="side' + xmenuitem[0].id + '" href="' + xmenuitem.attr('href') + '" onclick="' + xmenuitem.attr('onclick') + '" class="' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
+          xmenuside.append(htmlobj);
+        }
       }
     }
+    isXMenuInit = true;
   }
-  isXMenuInit = true;
-}
 
-function XMenuCalcDimensions(force){
-  if(!force && (XMenuItems.length > 0)){
-    var jobj = XMenuItems[0];
-    if(jobj.outerWidth(true).toString() == jobj.data('width')) return;
-  }
-  for(var i=0;i<XMenuItems.length;i++){
-    var jobj = XMenuItems[i];
-    var jwidth = jobj.outerWidth(true);
-    jobj.data('width', jwidth);
-  }
-  XMenuLeft = $('#xmenu').offset().left + parseInt($('#xmenu').css('padding-left').replace(/\D/g, ''));
-  if (isNaN(XMenuLeft)) XMenuLeft = 0;
-}
-
-exports.XSubMenuInit = function (menuid){
-  global.curSubMenu = menuid;
-  var selsubmenu = '#xsubmenu_' + String(menuid).toUpperCase();
-  curSubMenuSel = selsubmenu;
-
-  //Set up Side Menu Sidebar
-  XSubMenuItems = [];
-  XSubMenuLeft = 0;
-  XSubMenuMoreWidth = 0;
-  $('.xsubmenu').hide();
-  $('#xsubmenuside').hide().empty();
-
-  if ($(selsubmenu).size() > 0) {
-    $(selsubmenu).show();
-    $(selsubmenu + ' a, ' + selsubmenu + ' div').each(function (i, obj) {
-      if ($(obj).hasClass('xsubmenu_more')) return;
-      var jobj = $(obj);
+  function XMenuCalcDimensions(force){
+    if(!force && (XMenuItems.length > 0)){
+      var jobj = XMenuItems[0];
+      if(jobj.outerWidth(true).toString() == jobj.data('width')) return;
+    }
+    for(var i=0;i<XMenuItems.length;i++){
+      var jobj = XMenuItems[i];
       var jwidth = jobj.outerWidth(true);
       jobj.data('width', jwidth);
-      XSubMenuItems.push(jobj);
-    });
-    XSubMenuLeft = $(selsubmenu).offset().left + parseInt($(selsubmenu).css('padding-left').replace(/\D/g, ''));
-    //Add .head width to XSubMenuLeft
-    if (isNaN(XSubMenuLeft)) XSubMenuLeft = 0;
-    
-    $(selsubmenu + ' .xsubmenu_more').off('click');
-    $(selsubmenu + ' .xsubmenu_more').on('click', function () {
-      var xsubmenuside = $('#xsubmenuside');
-      if (!xsubmenuside.is(":visible")) xsubmenuside.show();
-      else xsubmenuside.hide();
-      return false;
-    });
+    }
+    XMenuLeft = $('#xmenu').offset().left + parseInt($('#xmenu').css('padding-left').replace(/\D/g, ''));
+    if (isNaN(XMenuLeft)) XMenuLeft = 0;
   }
-  //Initialize xsubmenuside for this submenu
-  var xsubmenuside = $('#xsubmenuside');
-  if (xsubmenuside.size() > 0) {
+
+  XMenu.XSubMenuInit = function (menuid){
+    jsh.curSubMenu = menuid;
+    var selsubmenu = '#xsubmenu_' + String(menuid).toUpperCase();
+    curSubMenuSel = selsubmenu;
+
+    //Set up Side Menu Sidebar
+    XSubMenuItems = [];
+    XSubMenuLeft = 0;
+    XSubMenuMoreWidth = 0;
+    $('.xsubmenu').hide();
+    $('#xsubmenuside').hide().empty();
+
+    if ($(selsubmenu).size() > 0) {
+      $(selsubmenu).show();
+      $(selsubmenu + ' a, ' + selsubmenu + ' div').each(function (i, obj) {
+        if ($(obj).hasClass('xsubmenu_more')) return;
+        var jobj = $(obj);
+        var jwidth = jobj.outerWidth(true);
+        jobj.data('width', jwidth);
+        XSubMenuItems.push(jobj);
+      });
+      XSubMenuLeft = $(selsubmenu).offset().left + parseInt($(selsubmenu).css('padding-left').replace(/\D/g, ''));
+      //Add .head width to XSubMenuLeft
+      if (isNaN(XSubMenuLeft)) XSubMenuLeft = 0;
+      
+      $(selsubmenu + ' .xsubmenu_more').off('click');
+      $(selsubmenu + ' .xsubmenu_more').on('click', function () {
+        var xsubmenuside = $('#xsubmenuside');
+        if (!xsubmenuside.is(":visible")) xsubmenuside.show();
+        else xsubmenuside.hide();
+        return false;
+      });
+    }
+    //Initialize xsubmenuside for this submenu
+    var xsubmenuside = $('#xsubmenuside');
+    if (xsubmenuside.size() > 0) {
+      for (var i = 0; i < XSubMenuItems.length; i++) {
+        var xsubmenuitem = XSubMenuItems[i];
+        if ($(xsubmenuitem).is('a')) {
+          var link_onclick = xsubmenuitem.attr('onclick');
+          if(link_onclick){
+            link_onclick = 'onclick="'+jsh.getInstance()+'.$(\'#xsubmenuside\').hide(); ' + link_onclick + '"';
+          }
+          var htmlobj = '<a id="side' + xsubmenuitem[0].id + '" href="' + xsubmenuitem.attr('href') + '" ' + link_onclick + ' class="' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
+          xsubmenuside.append(htmlobj);
+        }
+      }
+    }
+    XMenu.XMenuResize();
+  }
+
+  XMenu.XMenuResize = function() {
+    if ($('#xmenu').size() == 0) return;
+    if (!isXMenuInit) XMenuInit();
+    var maxw = $(window).width()-1;
+    
+    //Refresh dimensions, if necessary
+    XMenuCalcDimensions();
+
+    var showmore = false;
+    //Find out if we need to show "more" menu
+    var curleft = XMenuLeft;
+    for (var i = 0; i < XMenuItems.length; i++) { curleft += XMenuItems[i].data('width'); }
+    if (curleft > maxw) showmore = true;
+    
+    var jmore = $('#xmenu_more');
+    if (jmore.size() > 0) {
+      if (showmore) {
+        if (!jmore.is(":visible")) jmore.show();
+        if (XMenuMoreWidth <= 0) { XMenuMoreWidth = jmore.outerWidth(true); }
+        maxw -= XMenuMoreWidth;
+      }
+      else {
+        if (jmore.is(":visible")) { jmore.hide(); $('#xmenuside').hide(); }
+      }
+    }
+    
+    var curleft = XMenuLeft;
+    for (var i = 0; i < XMenuItems.length; i++) {
+      var xmenuitem = XMenuItems[i];
+      curleft += xmenuitem.data('width');
+      if (curleft > maxw) {
+        if (xmenuitem.is(":visible")) xmenuitem.hide();
+      }
+      else {
+        if (!xmenuitem.is(":visible")) xmenuitem.show();
+      }
+    }
+    XSubMenuResize();
+  }
+
+  function XSubMenuResize() {
+    if(!curSubMenuSel || ($(curSubMenuSel).size() == 0)) return;
+    var maxw = $(window).width()-1;
+    
+    var showmore = false;
+    //Find out if we need to show "more" menu
+    var curleft = XSubMenuLeft;
+    //$('.dev_marker').remove();
+    for (var i = 0; i < XSubMenuItems.length; i++) {
+      curleft += XSubMenuItems[i].data('width');
+      //$('body').prepend('<div class="dev_marker" style="background-color:red;width:1px;height:120px;position:absolute;top:0px;left:'+curleft+'px;z-index:9999;"></div>');
+    }
+    if (curleft > maxw) showmore = true;
+    
+    var jmore = $(curSubMenuSel + ' .xsubmenu_more');
+    if (jmore.size() > 0) {
+      if (showmore) {
+        if (!jmore.is(":visible")) jmore.show();
+        if (XSubMenuMoreWidth <= 0) { XSubMenuMoreWidth = jmore.outerWidth(true); }
+        maxw -= XSubMenuMoreWidth;
+      }
+      else {
+        if (jmore.is(":visible")) { jmore.hide(); $(curSubMenuSel + ' .xsubmenu_more').hide(); }
+      }
+    }
+    
+    var curleft = XSubMenuLeft;
     for (var i = 0; i < XSubMenuItems.length; i++) {
       var xsubmenuitem = XSubMenuItems[i];
-      if ($(xsubmenuitem).is('a')) {
-        var link_onclick = xsubmenuitem.attr('onclick');
-        if(link_onclick){
-          link_onclick = 'onclick="$(\'#xsubmenuside\').hide(); ' + link_onclick + '"';
-        }
-        var htmlobj = '<a id="side' + xsubmenuitem[0].id + '" href="' + xsubmenuitem.attr('href') + '" ' + link_onclick + ' class="' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
-        xsubmenuside.append(htmlobj);
-      }
-    }
-  }
-  exports.XMenuResize();
-}
-
-exports.XMenuResize = function() {
-  if ($('#xmenu').size() == 0) return;
-  if (!isXMenuInit) XMenuInit();
-  var maxw = $(window).width()-1;
-  
-  //Refresh dimensions, if necessary
-  XMenuCalcDimensions();
-
-  var showmore = false;
-  //Find out if we need to show "more" menu
-  var curleft = XMenuLeft;
-  for (var i = 0; i < XMenuItems.length; i++) { curleft += XMenuItems[i].data('width'); }
-  if (curleft > maxw) showmore = true;
-  
-  var jmore = $('#xmenu_more');
-  if (jmore.size() > 0) {
-    if (showmore) {
-      if (!jmore.is(":visible")) jmore.show();
-      if (XMenuMoreWidth <= 0) { XMenuMoreWidth = jmore.outerWidth(true); }
-      maxw -= XMenuMoreWidth;
-    }
-    else {
-      if (jmore.is(":visible")) { jmore.hide(); $('#xmenuside').hide(); }
-    }
-  }
-  
-  var curleft = XMenuLeft;
-  for (var i = 0; i < XMenuItems.length; i++) {
-    var xmenuitem = XMenuItems[i];
-    curleft += xmenuitem.data('width');
-    if (curleft > maxw) {
-      if (xmenuitem.is(":visible")) xmenuitem.hide();
-    }
-    else {
-      if (!xmenuitem.is(":visible")) xmenuitem.show();
-    }
-  }
-  XSubMenuResize();
-}
-
-function XSubMenuResize() {
-  if(!curSubMenuSel || ($(curSubMenuSel).size() == 0)) return;
-  var maxw = $(window).width()-1;
-  
-  var showmore = false;
-  //Find out if we need to show "more" menu
-  var curleft = XSubMenuLeft;
-  //$('.dev_marker').remove();
-  for (var i = 0; i < XSubMenuItems.length; i++) {
-    curleft += XSubMenuItems[i].data('width');
-    //$('body').prepend('<div class="dev_marker" style="background-color:red;width:1px;height:120px;position:absolute;top:0px;left:'+curleft+'px;z-index:9999;"></div>');
-  }
-  if (curleft > maxw) showmore = true;
-  
-  var jmore = $(curSubMenuSel + ' .xsubmenu_more');
-  if (jmore.size() > 0) {
-    if (showmore) {
-      if (!jmore.is(":visible")) jmore.show();
-      if (XSubMenuMoreWidth <= 0) { XSubMenuMoreWidth = jmore.outerWidth(true); }
-      maxw -= XSubMenuMoreWidth;
-    }
-    else {
-      if (jmore.is(":visible")) { jmore.hide(); $(curSubMenuSel + ' .xsubmenu_more').hide(); }
-    }
-  }
-  
-  var curleft = XSubMenuLeft;
-  for (var i = 0; i < XSubMenuItems.length; i++) {
-    var xsubmenuitem = XSubMenuItems[i];
-    curleft += xsubmenuitem.data('width');
-    if (curleft > maxw) {
-      if (xsubmenuitem.is(":visible")) xsubmenuitem.hide();
-    }
-    else {
-      if (!xsubmenuitem.is(":visible")) xsubmenuitem.show();
-    }
-  }
-}
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],16:[function(require,module,exports){
-/*
-Copyright 2017 apHarmony
-
-This file is part of jsHarmony.
-
-jsHarmony is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-jsHarmony is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License
-along with this package.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-function XPayment() {
-  this.Loader = {};
-  this.Initialized = false;
-  this.Init();
-}
-
-XPayment.prototype.Init = function () {
-  if (this.Initialized) return;
-  var _this = this;
-  window.onPaymentProxyComplete = function (obj) {
-    if (!('payment_proxy' in window) || !(window.payment_proxy)) return;
-    xLoader.StopLoading(_this.Loader);
-    _this.Result();
-  };
-  $("body").append('\
-    <iframe id="xpaymentproxy" name="xpaymentproxy" src="about:blank" onload="onPaymentProxyComplete(this);" style="width:0;height:0;border:0px solid #fff;"></iframe>\
-    <div id="xpaymentformcontainer" style="position:absolute;top:0px;left:0px;width:1px;height:1px;overflow:hidden;"></div>\
-  ');
-  this.Initialized = true;
-}
-XPayment.prototype.Submit = function(fp_data, payment_data, _payment_result_url, onComplete, onFail) {
-  window.payment_id = fp_data.payment_id;
-  window.payment_result_url = _payment_result_url;
-  window.payment_onComplete = onComplete;
-  window.payment_onFail = onFail;
-  window.payment_proxy = true;
-  window.fp_hash = fp_data.fp_hash;
-  var d = {
-    x_fp_hash : fp_data.fp_hash,
-    x_fp_sequence : fp_data.fp_sequence,
-    x_fp_timestamp : fp_data.fp_timestamp,
-    x_login: fp_data.fp_login,
-    x_type: 'AUTH_CAPTURE',
-    x_amount: fp_data.fp_amount,
-    x_relay_response: 'TRUE',
-    x_relay_always: 'TRUE',
-    x_version: '3.1',
-    x_method: 'CC',
-    x_invoice_num: fp_data.fp_invoice_id,
-    x_po_num: fp_data.fp_invoice_id,
-    x_description: fp_data.fp_description,
-    x_cust_id: fp_data.fp_cust_id,
-    x_card_num: payment_data.CC_NO,
-    x_card_code: payment_data.CC_CVV,
-    x_exp_date: payment_data.CC_EXPD_MM.toString() + payment_data.CC_EXPD_YYYY.toString(),
-    x_first_name: payment_data.PACC_FName,
-    x_last_name: payment_data.PACC_LName,
-    x_address: (payment_data.PACC_Addr || ''),
-    x_city: (payment_data.PACC_City || ''),
-    x_state: payment_data.PACC_STATE,
-    x_zip: payment_data.PACC_Zip,
-    x_country: 'US'
-  };
-  var formhtml = '<form id="xpaymentform" method="post" target="xpaymentproxy">';
-  _.each(d, function (val, key) {
-    if (typeof val == 'undefined') return;
-    formhtml += '<INPUT TYPE="HIDDEN" NAME="' + XExt.escapeHTML(key) + '" VALUE="' + XExt.escapeHTML(val) + '" />';
-  });
-  formhtml += '</form>';
-  $('#xpaymentformcontainer').html(formhtml);
-  $('#xpaymentform').attr('action', fp_data.fp_url);
-  xLoader.StartLoading(this.Loader);
-  $('#xpaymentform').submit();
-}
-XPayment.prototype.Result = function() {
-  //Verify Payment Result
-  XPost.prototype.XExecutePost(window.payment_result_url, { 'payment_id': window.payment_id, 'fp_hash': window.fp_hash }, function (rslt) {
-    if ('_success' in rslt) {
-      var PACC_STS = rslt['PACC_STS'];
-      var PACC_PP_Result = rslt['PACC_PP_Result'];
-      
-      //Process result
-      if (PACC_STS == 'PENDING') {
-        XExt.Alert('Transaction Failed: ' + PACC_PP_Result + '\nPlease verify your credit card information and try again.', function (){
-          if (typeof window.payment_onFail != 'undefined') window.payment_onFail(rslt);
-        });
+      curleft += xsubmenuitem.data('width');
+      if (curleft > maxw) {
+        if (xsubmenuitem.is(":visible")) xsubmenuitem.hide();
       }
       else {
-        if (typeof window.payment_onComplete != 'undefined') window.payment_onComplete(rslt);
+        if (!xsubmenuitem.is(":visible")) xsubmenuitem.show();
       }
     }
-  });
-}
+  }
 
-exports = module.exports = XPayment;
-},{}],17:[function(require,module,exports){
-(function (global){
+  return XMenu;
+}
+},{"./jquery-1.11.2":21}],16:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -4207,583 +4176,107 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-exports = module.exports = {};
+var $ = require('./jquery-1.11.2');
+var _ = require('lodash');
 
-function XPost(_q,_TemplateID,_PlaceholderID){
-	this._this = this;
-	this.q = _q;
-	this.TemplateID = _TemplateID;
-	this.PlaceholderID = _PlaceholderID;
-	this.DataType = Object;
-	this.Data = new this.DataType();
-	this.DataSet = null;
-	this.DeleteSet = [];
-	this.GetSelectParams = function(){ return this.GetKeys(); };
-	this.GetReselectParams = function(){ return this.GetKeys(); };
-	this.GetUpdateParams = function(){ return this.GetFieldParams('U'); };
-	this.GetInsertParams = function(){ return this.GetFieldParams('I'); };
-	this.GetDeleteParams = function(){ return this.GetKeys(); };
-	this.GetKeys = function(){ return {}; }
-	this.async = true;
-  this.Index = 0;
-  this.xData = null;
-  this.IsDirty = false;
-  this.DBTaskRows = {};
-  this.OnBeforeRender = null;
-  this.OnAfterRender = null;
-}
-XPost.prototype.Render = function(){
-	if(!this.Data) return;
-  this.ResetValidation();
+exports = module.exports = function(jsh){
 
-  if (this.OnBeforeRender) this.OnBeforeRender();
-	if(this.Data.OnRender)
-		this.Data.OnRender.apply(this.Data,arguments);
-  else if(this.TemplateID){
-		var ejssource = $(this.TemplateID).html();
-		ejssource = ejssource.replace(/<#/g,'<%').replace(/#>/g,'%>')
-	  $(this.PlaceholderID).html(ejs.render(ejssource,{data:this.Data,xejs:XExt.xejs}));
-  }
-  if (this.OnAfterRender) this.OnAfterRender();
-};
-XPost.prototype.GetValues = function(){
-	if(!this.Data) return;
-  this.Data.GetValues(this.PlaceholderID);
-};
-XPost.prototype.HasUpdates = function (){
-  if (this.IsDirty) return true;
-	if(_.isArray(this.DataSet)){
-		if(this.DeleteSet.length > 0) return true;
-		if(this.Count() == 0) return false;
-		//If current num rows == 0
-		if(this.Data._is_new) return true;
-		for(var i= 0; i< this.DataSet.length; i++){
-			if(this.DataSet[i]._is_new) return true;
-		}
-	}
-	if(!this.Data) return false;
-	return this.Data.HasUpdates(this.PlaceholderID);
-};
-XPost.prototype.Validate = function(perms,obj){
-	obj = obj || this.Data;
-	if(!obj) return;
-	var validator;
-	if(this.Data && this.Data.xvalidate) validator = this.Data.xvalidate;
-	else if(obj.xvalidate) validator = obj.xvalidate;
-  else return;
-  var parentobj = undefined;
-  if (this.xData) parentobj = this.Data._jrow;
-	return validator.ValidateControls(perms,obj,'',parentobj);
-}
-XPost.prototype.ResetValidation = function(obj){
-	obj = obj || this.Data;
-	if(!obj) return;
-	if(!obj.xvalidate) return;
-	return obj.xvalidate.ResetValidation();
-}
-XPost.prototype.RecheckDirty = function () {
-  var rsltDirty = false;
-  if (this.DeleteSet.length > 0) rsltDirty = true;
-  if (_.isArray(this.DataSet)) {
-    for (var i = 0; i < this.DataSet.length; i++) {
-      if(this.DataSet[i]._is_dirty) rsltDirty = true;
-      if(this.DataSet[i]._is_new) rsltDirty = true;
-    }
-    if(this.Data._is_dirty) rsltDirty = true;
-    if(this.Data._is_new) rsltDirty = true;
-  }
-  this.IsDirty = rsltDirty;
-}
-XPost.prototype.ResetDirty = function () {
-  if (_.isArray(this.DataSet)) {
-    this.DeleteSet = [];
-    for (var i = 0; i < this.DataSet.length; i++) {
-      this.DataSet[i]._is_dirty = false;
-      this.DataSet[i]._is_new = false;
-      this.DataSet[i]._orig = null;
-    }
-    this.Data._is_dirty = false;
-    this.Data._is_new = false;
-    this.Data._orig = null;
-  }
-  if (this.xData) {
-    $(this.xData.PlaceholderID).find('.xform_ctrl.updated').removeClass('updated');
-  }
-  this.IsDirty = false;
-}
-XPost.prototype.Count = function(){
-	if(!_.isArray(this.DataSet)) return 1;
-	return this.DataSet.length;
-}
-XPost.prototype.NavNext = function(){
-	if(this.Count() == 0) return;
-	if(this.Index == (this.Count()-1)) return;
-	this.NavTo(this.Index+1);
-}
-XPost.prototype.NavPrev = function(){
-	if(this.Count() == 0) return;
-	if(this.Index == 0) return;
-	this.NavTo(this.Index-1);
-}
-XPost.prototype.NavFirst = function(){
-	if(this.Count() == 0) return;
-	if(this.Index == 0) return;
-	this.NavTo(0);
-}
-XPost.prototype.NavLast = function(){
-	if(this.Count() == 0) return;
-	if(this.Index == (this.Count()-1)) return;
-	this.NavTo(this.Count()-1);
-}
-XPost.prototype.SetIndex = function (_index, saveold) {
-  if (typeof saveold == 'undefined') saveold = true;
-  if (_index > this.Count()) { XExt.Alert('Cannot navigate - Index greater than size of collection'); return false; }
-  else if (_index < 0) { XExt.Alert('Cannot navigate - Index less than zero'); return false; }
-  delete this.Data._LOVs;
-  delete this.Data._defaults;
-  delete this.Data._bcrumbs;
-  delete this.Data._title;
-  if (saveold) {
-    if (!this.CommitRow()) return false;
-  }
-  this.Index = _index;
-  this.Data = _.extend(this.Data, this.DataSet[this.Index]);
-  this.Data._LOVs = this._LOVs;
-  this.Data._defaults = this._defaults;
-  this.Data._bcrumbs = this._bcrumbs;
-  this.Data._title = this._title;
-  if (this.xData) {
-    this.Data._jrow = $(this.xData.PlaceholderID).find("tr[data-id='" + this.Index + "']");
-  }
-  return true;
-}
-XPost.prototype.NavTo = function (_index, saveold){
-  if (!this.SetIndex(_index, saveold)) return;
-	this.Render();
-}
-XPost.prototype.NavAdd = function(){
-  if(!this.Data.Commit()) return;
-	this.NewRow();
-	if(this.Index==-1){ this.NavTo(0,false); }
-  else this.NavLast();
-}
-XPost.prototype.NavDelete = function(){
-	if(this.Count() == 0) return;
-	this.DataSet[this.Index] = _.extend(this.DataSet[this.Index],this.Data);
-	if(!this.Data._is_new) this.DeleteSet.push(this.DataSet[this.Index]);
-	this.DataSet.splice(this.Index,1);
-	if(this.Count() == 0){
-		this.Index = -1;
-		this.Render();
-	}
-	else{
-		if(this.Index >= this.Count()) this.Index--;
-		this.NavTo(this.Index,false);
-	}
-}
-XPost.prototype.NewRow = function (){
-  var rslt = this.ApplyDefaults(new this.DataType());
-  this.DataSet.push(rslt);
-  this.IsDirty = true;
-  return rslt;
-}
-XPost.prototype.Select = function(onComplete){
-  var _this = this;
+  function XPayment() {
+    this.Loader = {};
+    this.Initialized = false;
+    this.Init();
 
-  this.qExecute(this.PrepExecute('get', this.q, this.GetSelectParams(), {}, function (rslt){
-    _this.DataSet = null;
-    //Load LOVs
-		for(var tbl in rslt){
-			if(tbl.indexOf('_LOV_')==0){
-				if(!('_LOVs' in _this.Data)) _this.Data._LOVs = {};
-				_this.Data._LOVs[tbl.substring(5)] = rslt[tbl];
-			}
-		}
-    if ('_defaults' in rslt) { _this.Data['_defaults'] = rslt['_defaults']; }
-    if ('_bcrumbs' in rslt) { _this.Data['_bcrumbs'] = rslt['_bcrumbs']; }
-    if ('_title' in rslt) { _this.Data['_title'] = rslt['_title']; }
-		_this._LOVs = _this.Data._LOVs;
-    _this._defaults = _this.Data._defaults;
-    _this._bcrumbs = _this.Data._bcrumbs;
-    _this._title = _this.Data._title;
-		//Load Data
-		if(_this.q in rslt){
-			if(_.isArray(rslt[_this.q])){
-				_this.DataSet = rslt[_this.q];
-        for (var i = 0; i < _this.DataSet.length; i++) {
-          _this.DataSet[i]['_is_new'] = false;
-          _this.DataSet[i]['_is_dirty'] = false;
-          _this.DataSet[i]['_is_deleted'] = false;
-          _this.DataSet[i]['_orig'] = null;
-        }
-        _this.DeleteSet = [];
-        _this.ResetDirty();
-				if(_this.DataSet.length == 0){
-					_this.Index = -1;
-					_this.Render();
-				}
-				else{
-					_this.Index = 0;
-					_this.NavTo(0,false);
-        }
-			}
-      else {
-				_this.Data = _.extend(_this.Data,rslt[_this.q]);
-        _this.Data._is_new = false;
-        _this.Data._is_dirty = false;
-        _this.Data._is_deleted = false;
-        _this.Data._orig = null;
-			}
-		}
-		else if(_this.Data._is_new) _this.Data = _this.ApplyDefaults(_this.Data);
-		//NavTo already calls render
-    if (_this.DataSet == null) _this.Render();
-		if(onComplete) onComplete(rslt);
-	}));
-}
-XPost.prototype.ApplyDefaults = function(data){
-	var rslt = data;
-  if(rslt._is_new && ('_defaults' in this)){
-    _.each(this._defaults, function (val, fieldname){
-      if(rslt[fieldname]) return; //If field is set via GET, do not overwrite
-			if(fieldname in rslt){
-				if(val.indexOf('js:')==0){
-					var js = val.substr(3);
-					//Evaluate JS
-					val = eval(js);
-				}
-        rslt[fieldname] = val;
-			}
-		});
+    this.payment_id = '';
+    this.payment_result_url = '';
+    this.payment_onComplete = undefined;
+    this.payment_onFail = undefined;
+    this.payment_proxy = false;
+    this.payment_result_url = '';
+    this.fp_hash = '';
   }
-	return rslt;
-}
-XPost.prototype.PrepExecute = function(_method,_model,_query,_post,onComplete,onFail){
-	var rslt = { 
-		'method':_method,
-		'model':_model,
-		'query':_query,
-		'post':_post,
-		'onComplete':onComplete
-  };
-  if (typeof onFail != 'undefined') rslt.onFail = onFail;
-	if(_method=='get'){
-		rslt.post = _query;
-		rslt.query = {};
-	}
-	return rslt;
-}
-XPost.prototype.CommitRow = function (){
-  if (!this.Data.Commit()) return false;
-  this.DataSet[this.Index] = _.extend(this.DataSet[this.Index], this.Data);
-  if (this.Data._is_dirty) this.IsDirty = true;
-  return true;
-}
-XPost.prototype.PrepSaveDataSet = function(ignorecommit){
-  if(!ignorecommit && !this.CommitRow()) return;
-  
-  var dbtasks = [];
-  this.DBTaskRows = {};
-	var curdata = this.Data;
-	this.Data = new this.DataType();
-	
-	for(var i = 0; i < this.DeleteSet.length; i++){
-		this.Data = _.extend(this.Data,this.DeleteSet[i]);
-    dbtasks.push(this.PrepDelete());
-    this.DBTaskRows['delete_' + dbtasks.length] = i;
-	}
-	
-	for(var i = 0; i < this.DataSet.length; i++){
-    this.Data = _.extend(this.Data, this.DataSet[i]);
-    if (this.Data._is_deleted) continue;
-    if (this.DataSet[i] in this.DeleteSet) continue;
-    if (this.Data._is_new) {
-      dbtasks.push(this.PrepInsert());
-      this.DBTaskRows['insert_' + dbtasks.length] = i;
-    }
-    else {
-      if (this.xData && !this.Data._is_dirty) continue;
-      dbtasks.push(this.PrepUpdate());
-      this.DBTaskRows['update_' + dbtasks.length] = i;
-    }
-	}
-	
-	this.Data = curdata;
-	return dbtasks;
-}
-XPost.prototype.PrepUpdate = function(onComplete,onFail){ 
-  return this.PrepExecute('post',this.q,this.GetKeys(),this.GetUpdateParams(),onComplete,onFail); 
-}
-XPost.prototype.Update = function(onComplete,onFail){ this.qExecute(this.PrepUpdate(onComplete,onFail)); }
-XPost.prototype.PrepInsert = function(onComplete,onFail){ 
-  return this.PrepExecute('put',this.q,{},this.GetInsertParams(),onComplete,onFail); 
-}
-XPost.prototype.Insert = function(onComplete,onFail){ this.qExecute(this.PrepInsert(onComplete,onFail)); }
-XPost.prototype.PrepDelete = function(onComplete,onFail){ 
-  return this.PrepExecute('delete',this.q,this.GetDeleteParams(),{},onComplete,onFail); 
-}
-XPost.prototype.Delete = function(onComplete,onFail){ this.qExecute(this.PrepDelete(onComplete,onFail)); }
-XPost.prototype.Execute = function(onComplete,onFail){ 
-  this.qExecute(this.PrepExecute('get',this.q,this.Data,{},onComplete,onFail)); 
-}
-XPost.prototype.ExecuteTrans = function (DBTasks, onComplete, onFail) {
-  var execdata = [];
-  for (var i = 0; i < DBTasks.length; i++) {
-    var dbtask = DBTasks[i];
-    execdata.push({
-      method: dbtask.method,
-      model: dbtask.model,
-      query: $.param(dbtask.query),
-      post: $.param(dbtask.post)
+
+  XPayment.prototype.Init = function () {
+    if (this.Initialized) return;
+    var _this = this;
+    jsh.onPaymentProxyComplete = function (obj) {
+      if (!_this.payment_proxy) return;
+      jsh.xLoader.StopLoading(_this.Loader);
+      _this.Result();
+    };
+    $("body").append('\
+      <iframe id="xpaymentproxy" name="xpaymentproxy" src="about:blank" onload="'+jsh.getInstance()+'.onPaymentProxyComplete(this);" style="width:0;height:0;border:0px solid #fff;"></iframe>\
+      <div id="xpaymentformcontainer" style="position:absolute;top:0px;left:0px;width:1px;height:1px;overflow:hidden;"></div>\
+    ');
+    this.Initialized = true;
+  }
+  XPayment.prototype.Submit = function(fp_data, payment_data, _payment_result_url, onComplete, onFail) {
+    this.payment_id = fp_data.payment_id;
+    this.payment_result_url = _payment_result_url;
+    this.payment_onComplete = onComplete;
+    this.payment_onFail = onFail;
+    this.payment_proxy = true;
+    this.fp_hash = fp_data.fp_hash;
+    var d = {
+      x_fp_hash : fp_data.fp_hash,
+      x_fp_sequence : fp_data.fp_sequence,
+      x_fp_timestamp : fp_data.fp_timestamp,
+      x_login: fp_data.fp_login,
+      x_type: 'AUTH_CAPTURE',
+      x_amount: fp_data.fp_amount,
+      x_relay_response: 'TRUE',
+      x_relay_always: 'TRUE',
+      x_version: '3.1',
+      x_method: 'CC',
+      x_invoice_num: fp_data.fp_invoice_id,
+      x_po_num: fp_data.fp_invoice_id,
+      x_description: fp_data.fp_description,
+      x_cust_id: fp_data.fp_cust_id,
+      x_card_num: payment_data.CC_NO,
+      x_card_code: payment_data.CC_CVV,
+      x_exp_date: payment_data.CC_EXPD_MM.toString() + payment_data.CC_EXPD_YYYY.toString(),
+      x_first_name: payment_data.PACC_FName,
+      x_last_name: payment_data.PACC_LName,
+      x_address: (payment_data.PACC_Addr || ''),
+      x_city: (payment_data.PACC_City || ''),
+      x_state: payment_data.PACC_STATE,
+      x_zip: payment_data.PACC_Zip,
+      x_country: 'US'
+    };
+    var formhtml = '<form id="xpaymentform" method="post" target="xpaymentproxy">';
+    _.each(d, function (val, key) {
+      if (typeof val == 'undefined') return;
+      formhtml += '<INPUT TYPE="HIDDEN" NAME="' + jsh.XExt.escapeHTML(key) + '" VALUE="' + jsh.XExt.escapeHTML(val) + '" />';
     });
+    formhtml += '</form>';
+    $('#xpaymentformcontainer').html(formhtml);
+    $('#xpaymentform').attr('action', fp_data.fp_url);
+    jsh.xLoader.StartLoading(this.Loader);
+    $('#xpaymentform').submit();
   }
-  var final_onComplete = function (rslt) {
-    for (var i = 0; i < DBTasks.length; i++) {
-      var dbtask = DBTasks[i];
-      if (dbtask.onComplete) dbtask.onComplete(rslt);
-    }
-    if (onComplete) onComplete(rslt);
-  }
-  var execparams = {
-    'method': 'post',
-    'model': '_transaction',
-    'query': {},
-    'post': $.param({ data: JSON.stringify(execdata) }),
-    'onComplete': final_onComplete
-  };
-  if (onFail) execparams.onFail = onFail;
-	this.qExecute(execparams);
-}
-XPost.prototype.qExecute = function (ExecParams) {
-  ExecParams.url = global._BASEURL + '_d/' + ExecParams.model + '/';
-  this.qExecuteBase(ExecParams);
-}
-XPost.prototype.qExecuteBase = function(ExecParams){
-	var _this = this;
-  var url = ExecParams.url;
-	if(!_.isEmpty(ExecParams.query)) url += '?'+$.param(ExecParams.query);
-  global.xLoader.StartLoading(_this);
-	$.ajax({
-		type:ExecParams.method.toUpperCase(),
-    url: url,
-		data: ExecParams.post,
-		async: _this.async,
-		dataType: 'json',
-		success:function(data){
-      global.xLoader.StopLoading(_this);
-      if ((data instanceof Object) && ('_error' in data)) {
-				if(DefaultErrorHandler(data._error.Number,data._error.Message)) { }
-				else if(!(_this.OnDBError(data._error))) { }
-				else if((data._error.Number == -9) || (data._error.Number == -5)){ XExt.Alert(data._error.Message); }
-        else { XExt.Alert('Error #' + data._error.Number + ': ' + data._error.Message); }
-        if ('onFail' in ExecParams) ExecParams.onFail(data._error);
-				return;
-			}
-			if((ExecParams.method != 'get') && (data instanceof Object) && ('_success' in data)){
-				_this.OnSuccess(data);
-				if(ExecParams.onComplete) ExecParams.onComplete(data);
-			}
-			else if((ExecParams.method == 'get') && (data instanceof Object)){
-				_this.OnSuccess(data);
-				if(ExecParams.onComplete) ExecParams.onComplete(data);
-			}
-			else {
-        _this.OnUndefined(data);
-        if ('onFail' in ExecParams) ExecParams.onFail(data);
-			}
-		},
-		error:function(data){
-      global.xLoader.StopLoading(_this);
-      var jdata = data.responseJSON;
-      if ((jdata instanceof Object) && ('_error' in jdata)) {
-        if (DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { }
-        else if (!(_this.OnDBError(jdata._error))) { }
-        else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { XExt.Alert(jdata._error.Message); }
-        else { XExt.Alert('Error #' + jdata._error.Number + ': ' + jdata._error.Message); }
-        if ('onFail' in ExecParams) ExecParams.onFail(jdata._error);
-        return;
-      }
-      if (('onFail' in ExecParams) && (ExecParams.onFail(data))){ }
-      else if(('status' in data) && (data.status == '404')){ XExt.Alert('(404) The requested page was not found.'); }
-			else if(_debug) XExt.Alert('An error has occurred: ' + data.responseText);
-      else XExt.Alert('An error has occurred.  If the problem continues, please contact the system administrator for assistance.');
-		}
-	});
-};
-XPost.prototype.OnDBError = function (error){
-  if (error && error.Message && XExt.beginsWith(error.Message, "Execute Form - ")) {
-    var dbaction = error.Message.substr(("Execute Form - ").length);
-    var dbmessage = dbaction.substr(0, dbaction.indexOf('//')).trim();
-    var url = dbaction.substr(dbaction.indexOf('//')+2);
-    if (url.indexOf(' - ') >= 0) url = url.substr(0, url.indexOf(' - '));
-    var modelid = url.trim();
-    var params = {};
-    if (url.indexOf('?') >= 0) {
-      modelid = url.substr(0, url.indexOf('?'));
-      params = XExt.parseGET(url.substr(url.indexOf('?')));
-    }
-    if (!dbmessage) dbmessage = 'Save operation did not complete.  Press OK to view details.';
-    XExt.Alert(dbmessage,undefined, {
-      onAcceptImmediate: function () {
-        XExt.popupForm(modelid, undefined, params);
-      }
-    });
-    return false;
-  }
-
-	if(!this.Data) return true;
-	
-	if(this.Data.OnDBError){
-		if(this.Data.OnDBError(error)===false) return false;
-		return true;
-	}
-  else 
-	  return true;
-};
-XPost.prototype.OnSuccess = function(rslt){
-	if(!this.Data) return true;
-	
-	if(this.Data.OnSuccess){
-		this.Data.OnSuccess(rslt);
-	}
-};
-XPost.prototype.OnUndefined = function(data){
-	if(this.Data && (this.Data.OnUndefined)) this.Data.OnUndefined(data);
-	else XExt.Alert("Undefined: " + JSON.stringify(data));
-}
-XPost.prototype.GetFieldParams = function(action){
-	var _this = this;
-  var rslt = {};
-	_.each(_this.Data.Fields,function(field){
-    if (!XExt.HasAccess(field.actions, action)) return;
-		if((typeof _this.Data[field.name] == 'undefined') && _.includes(XForms[_this.q]._bindings,field.name)){
-			rslt[field.name] = '%%%'+field.name+'%%%';
-		}
-    else {
-      if (('control' in field) && (field.control == 'file_upload')) {
-        var fval = _this.Data[field.name];
-        if (_.isString(fval)) {
-          if (fval != '') fval = '_temp/' + fval;
-          rslt[field.name] = fval;
-        }
-      }
-			else rslt[field.name] = _this.Data[field.name];
-		}
-  });
-	return rslt;
-}
-
-XPost.prototype.XExecute = function(q,d,onComplete,onFail){
-	var xpost = new XPost(q,'','');
-	xpost.Data = d;
-	xpost.Execute(onComplete,onFail);
-}
-
-XPost.prototype.XExecuteBlock = function(q,d,onComplete,onFail){
-	var xpost = new XPost(q,'','');
-	xpost.Data = d;
-	xpost.async = false;
-	xpost.Execute(onComplete,onFail);
-}
-
-XPost.prototype.XExecutePost = function (q, d, onComplete, onFail, options){
-  if(!options) options = {};
-  var xpost = new XPost(q, '', '');
-  if(options.OnDBError) xpost.Data.OnDBError = options.OnDBError;
-  xpost.qExecute(xpost.PrepExecute('post', xpost.q, {}, d, onComplete, onFail)); 
-}
-
-module.exports = XPost;
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],18:[function(require,module,exports){
-/*
-Copyright 2017 apHarmony
-
-This file is part of jsHarmony.
-
-jsHarmony is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-jsHarmony is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License
-along with this package.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-function XScanner(_Func, _Server, _Params) {
-  this.Func = _Func;
-  this.Server = jsh_global.global_params.scanner_server;
-  if (_Server) this.Server = _Server;
-  if (_Params) this.Params = _Params;
-  else this.Params = {};
-}
-
-var XScanner_Timer = null;
-
-function XScanner_SetLoadEvents(onFail) {
-  XScanner_Timer = setTimeout(function () { XScanner_Timeout(onFail); }, 120000);
-}
-function XScanner_ClearLoadEvents() {
-  xLoader.StopLoading(xfileuploadLoader);
-  if (XScanner_Timer) { clearTimeout(XScanner_Timer); XScanner_Timer = null; }
-}
-function XScanner_Timeout(onFail) {
-  XScanner_ClearLoadEvents();
-  XExt.Alert('Scan Failed: Could not connect to Scanner Server.', onFail);
-}
-
-XScanner.prototype.Scan = function (_Params, onComplete, onFail) {
-  if (!this.Server) return XExt.Alert('Scan server not defined.');
-  var _this = this;
-  var params = {};
-  if (_Params) params = _.extend(this.Params, _Params);
-  XScanner_ClearLoadEvents();
-  XScanner_SetLoadEvents(onFail);
-  
-  //Make this a post request
-  //Add document.cookie
-  
-  xLoader.StartLoading(xfileuploadLoader);
-  
-  XExt.getToken(function (token) {
-    params = _.extend(params, token);
-    params._func = _this.Func;
-    var url = _this.Server + '/scan/?' + $.param(params);
-    $.ajax({
-      url: url,
-      jsonp: 'callback',
-      dataType: 'jsonp',
-      complete: function (data) {
-        XScanner_ClearLoadEvents();
-        var jdata = data.responseJSON;
-        if ((jdata instanceof Object) && ('_error' in jdata)) {
-          if (DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { }
-          else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { XExt.Alert(jdata._error.Message); }
-          else { XExt.Alert('Error #' + jdata._error.Number + ': ' + jdata._error.Message); }
-          if (onFail) onFail(jdata._error);
-          return;
-        }
-        else if ((jdata instanceof Object) && ('_success' in jdata)) {
-          if (onComplete) onComplete(jdata);
+  XPayment.prototype.Result = function() {
+    var _this = this;
+    //Verify Payment Result
+    jsh.XPost.prototype.XExecutePost(_this.payment_result_url, { 'payment_id': _this.payment_id, 'fp_hash': _this.fp_hash }, function (rslt) {
+      if ('_success' in rslt) {
+        var PACC_STS = rslt['PACC_STS'];
+        var PACC_PP_Result = rslt['PACC_PP_Result'];
+        
+        //Process result
+        if (PACC_STS == 'PENDING') {
+          jsh.XExt.Alert('Transaction Failed: ' + PACC_PP_Result + '\nPlease verify your credit card information and try again.', function (){
+            if (typeof _this.payment_onFail != 'undefined') _this.payment_onFail(rslt);
+          });
         }
         else {
-          XExt.Alert('Error Scanning: ' + JSON.stringify(data.responseJSON ? data.responseJSON : ''), onFail);
+          if (typeof _this.payment_onComplete != 'undefined') _this.payment_onComplete(rslt);
         }
-      },
-      error: function (err) { XScanner_Timeout(onFail); }
+      }
     });
-  }, function () { //Token Generation Error
-    XScanner_Timeout(onFail);
-  });
-}
+  }
 
-exports = module.exports = XScanner;
-},{}],19:[function(require,module,exports){
+  return XPayment;
+}
+},{"./jquery-1.11.2":21,"lodash":28}],17:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -4803,74 +4296,690 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-exports = module.exports = {};
+var $ = require('./jquery-1.11.2');
+var _ = require('lodash');
+var async = require('async');
 
-//-----------
-//SEARCHQUERY
-//-----------
-function SearchQuery(model) {
-  this.Items = [];
-  this.Fields = [];
-  if (typeof model !== 'undefined') {
+exports = module.exports = function(jsh){
+
+  function XPost(_q,_TemplateID,_PlaceholderID){
+    this._this = this;
+    this.q = _q;
+    this.TemplateID = _TemplateID;
+    this.PlaceholderID = _PlaceholderID;
+    this.DataType = Object;
+    this.Data = new this.DataType();
+    this.DataSet = null;
+    this.DeleteSet = [];
+    this.GetSelectParams = function(){ return this.GetKeys(); };
+    this.GetReselectParams = function(){ return this.GetKeys(); };
+    this.GetUpdateParams = function(){ return this.GetFieldParams('U'); };
+    this.GetInsertParams = function(){ return this.GetFieldParams('I'); };
+    this.GetDeleteParams = function(){ return this.GetKeys(); };
+    this.GetKeys = function(){ return {}; }
+    this.async = true;
+    this.Index = 0;
+    this.xData = null;
+    this.IsDirty = false;
+    this.DBTaskRows = {};
+    this.OnBeforeRender = null;
+    this.OnAfterRender = null;
+  }
+
+  XPost.prototype.Render = function(){
+    if(!this.Data) return;
+    this.ResetValidation();
+
+    if (this.OnBeforeRender) this.OnBeforeRender();
+    if(this.Data.OnRender)
+      this.Data.OnRender.apply(this.Data,arguments);
+    else if(this.TemplateID){
+      var ejssource = $(this.TemplateID).html();
+      ejssource = ejssource.replace(/<#/g,'<%').replace(/#>/g,'%>')
+      $(this.PlaceholderID).html(jsh.ejs.render(ejssource,{data:this.Data,xejs:jsh.XExt.xejs,jsh:jsh}));
+    }
+    if (this.OnAfterRender) this.OnAfterRender();
+  };
+  XPost.prototype.GetValues = function(){
+    if(!this.Data) return;
+    this.Data.GetValues(this.PlaceholderID);
+  };
+  XPost.prototype.HasUpdates = function (){
+    if (this.IsDirty) return true;
+    if(_.isArray(this.DataSet)){
+      if(this.DeleteSet.length > 0) return true;
+      if(this.Count() == 0) return false;
+      //If current num rows == 0
+      if(this.Data._is_new) return true;
+      for(var i= 0; i< this.DataSet.length; i++){
+        if(this.DataSet[i]._is_new) return true;
+      }
+    }
+    if(!this.Data) return false;
+    return this.Data.HasUpdates(this.PlaceholderID);
+  };
+  XPost.prototype.Validate = function(perms,obj){
+    obj = obj || this.Data;
+    if(!obj) return;
+    var validator;
+    if(this.Data && this.Data.xvalidate) validator = this.Data.xvalidate;
+    else if(obj.xvalidate) validator = obj.xvalidate;
+    else return;
+    var parentobj = undefined;
+    if (this.xData) parentobj = this.Data._jrow;
+    return validator.ValidateControls(perms,obj,'',parentobj);
+  }
+  XPost.prototype.ResetValidation = function(obj){
+    obj = obj || this.Data;
+    if(!obj) return;
+    if(!obj.xvalidate) return;
+    return obj.xvalidate.ResetValidation();
+  }
+  XPost.prototype.RecheckDirty = function () {
+    var rsltDirty = false;
+    if (this.DeleteSet.length > 0) rsltDirty = true;
+    if (_.isArray(this.DataSet)) {
+      for (var i = 0; i < this.DataSet.length; i++) {
+        if(this.DataSet[i]._is_dirty) rsltDirty = true;
+        if(this.DataSet[i]._is_new) rsltDirty = true;
+      }
+      if(this.Data._is_dirty) rsltDirty = true;
+      if(this.Data._is_new) rsltDirty = true;
+    }
+    this.IsDirty = rsltDirty;
+  }
+  XPost.prototype.ResetDirty = function () {
+    if (_.isArray(this.DataSet)) {
+      this.DeleteSet = [];
+      for (var i = 0; i < this.DataSet.length; i++) {
+        this.DataSet[i]._is_dirty = false;
+        this.DataSet[i]._is_new = false;
+        this.DataSet[i]._orig = null;
+      }
+      this.Data._is_dirty = false;
+      this.Data._is_new = false;
+      this.Data._orig = null;
+    }
+    if (this.xData) {
+      $(this.xData.PlaceholderID).find('.xform_ctrl.updated').removeClass('updated');
+    }
+    this.IsDirty = false;
+  }
+  XPost.prototype.Count = function(){
+    if(!_.isArray(this.DataSet)) return 1;
+    return this.DataSet.length;
+  }
+  XPost.prototype.NavNext = function(){
+    if(this.Count() == 0) return;
+    if(this.Index == (this.Count()-1)) return;
+    this.NavTo(this.Index+1);
+  }
+  XPost.prototype.NavPrev = function(){
+    if(this.Count() == 0) return;
+    if(this.Index == 0) return;
+    this.NavTo(this.Index-1);
+  }
+  XPost.prototype.NavFirst = function(){
+    if(this.Count() == 0) return;
+    if(this.Index == 0) return;
+    this.NavTo(0);
+  }
+  XPost.prototype.NavLast = function(){
+    if(this.Count() == 0) return;
+    if(this.Index == (this.Count()-1)) return;
+    this.NavTo(this.Count()-1);
+  }
+  XPost.prototype.SetIndex = function (_index, saveold) {
+    if (typeof saveold == 'undefined') saveold = true;
+    if (_index > this.Count()) { jsh.XExt.Alert('Cannot navigate - Index greater than size of collection'); return false; }
+    else if (_index < 0) { jsh.XExt.Alert('Cannot navigate - Index less than zero'); return false; }
+    delete this.Data._LOVs;
+    delete this.Data._defaults;
+    delete this.Data._bcrumbs;
+    delete this.Data._title;
+    if (saveold) {
+      if (!this.CommitRow()) return false;
+    }
+    this.Index = _index;
+    this.Data = _.extend(this.Data, this.DataSet[this.Index]);
+    this.Data._LOVs = this._LOVs;
+    this.Data._defaults = this._defaults;
+    this.Data._bcrumbs = this._bcrumbs;
+    this.Data._title = this._title;
+    if (this.xData) {
+      this.Data._jrow = $(this.xData.PlaceholderID).find("tr[data-id='" + this.Index + "']");
+    }
+    return true;
+  }
+  XPost.prototype.NavTo = function (_index, saveold){
+    if (!this.SetIndex(_index, saveold)) return;
+    this.Render();
+  }
+  XPost.prototype.NavAdd = function(){
+    if(!this.Data.Commit()) return;
+    this.NewRow();
+    if(this.Index==-1){ this.NavTo(0,false); }
+    else this.NavLast();
+  }
+  XPost.prototype.NavDelete = function(){
+    if(this.Count() == 0) return;
+    this.DataSet[this.Index] = _.extend(this.DataSet[this.Index],this.Data);
+    if(!this.Data._is_new) this.DeleteSet.push(this.DataSet[this.Index]);
+    this.DataSet.splice(this.Index,1);
+    if(this.Count() == 0){
+      this.Index = -1;
+      this.Render();
+    }
+    else{
+      if(this.Index >= this.Count()) this.Index--;
+      this.NavTo(this.Index,false);
+    }
+  }
+  XPost.prototype.NewRow = function (){
+    var rslt = this.ApplyDefaults(new this.DataType());
+    this.DataSet.push(rslt);
+    this.IsDirty = true;
+    return rslt;
+  }
+  XPost.prototype.Select = function(onComplete){
     var _this = this;
-    _.each(model.Fields, function (field) {
-      if (XExt.HasAccess(field.actions, 'BS') && !field.disable_search) {
-        var comparison_type = 'none';
-        if ('lov' in field) comparison_type = 'lov';
-        else if ('type' in field) {
-          if ((field.type == 'varchar') || (field.type == 'char') || (field.type == 'binary')) comparison_type = 'string';
-          else if (_.includes(['bigint', 'int', 'smallint', 'tinyint', 'decimal', 'float', 'time'], field.type)) comparison_type = 'numeric';
-          else if (_.includes(['datetime', 'date'], field.type)) comparison_type = 'date';
-          else if (_.includes(['hash', 'boolean'], field.type)) comparison_type = 'object';
+
+    this.qExecute(this.PrepExecute('get', this.q, this.GetSelectParams(), {}, function (rslt){
+      _this.DataSet = null;
+      //Load LOVs
+      for(var tbl in rslt){
+        if(tbl.indexOf('_LOV_')==0){
+          if(!('_LOVs' in _this.Data)) _this.Data._LOVs = {};
+          _this.Data._LOVs[tbl.substring(5)] = rslt[tbl];
         }
-        var sfield = { "name": field.name, "caption": field.caption, "comparison_type": comparison_type };
-        if (field.search_sound) sfield.search_sound = 1;
-        _this.Fields.push(sfield);
+      }
+      if ('_defaults' in rslt) { _this.Data['_defaults'] = rslt['_defaults']; }
+      if ('_bcrumbs' in rslt) { _this.Data['_bcrumbs'] = rslt['_bcrumbs']; }
+      if ('_title' in rslt) { _this.Data['_title'] = rslt['_title']; }
+      _this._LOVs = _this.Data._LOVs;
+      _this._defaults = _this.Data._defaults;
+      _this._bcrumbs = _this.Data._bcrumbs;
+      _this._title = _this.Data._title;
+      //Load Data
+      if(_this.q in rslt){
+        if(_.isArray(rslt[_this.q])){
+          _this.DataSet = rslt[_this.q];
+          for (var i = 0; i < _this.DataSet.length; i++) {
+            _this.DataSet[i]['_is_new'] = false;
+            _this.DataSet[i]['_is_dirty'] = false;
+            _this.DataSet[i]['_is_deleted'] = false;
+            _this.DataSet[i]['_orig'] = null;
+          }
+          _this.DeleteSet = [];
+          _this.ResetDirty();
+          if(_this.DataSet.length == 0){
+            _this.Index = -1;
+            _this.Render();
+          }
+          else{
+            _this.Index = 0;
+            _this.NavTo(0,false);
+          }
+        }
+        else {
+          _this.Data = _.extend(_this.Data,rslt[_this.q]);
+          _this.Data._is_new = false;
+          _this.Data._is_dirty = false;
+          _this.Data._is_deleted = false;
+          _this.Data._orig = null;
+        }
+      }
+      else if(_this.Data._is_new) _this.Data = _this.ApplyDefaults(_this.Data);
+      //NavTo already calls render
+      if (_this.DataSet == null) _this.Render();
+      if(onComplete) onComplete(rslt);
+    }));
+  }
+  XPost.prototype.ApplyDefaults = function(data){
+    var rslt = data;
+    if(rslt._is_new && ('_defaults' in this)){
+      _.each(this._defaults, function (val, fieldname){
+        if(rslt[fieldname]) return; //If field is set via GET, do not overwrite
+        if(fieldname in rslt){
+          if(val.indexOf('js:')==0){
+            var js = val.substr(3);
+            //Evaluate JS
+            val = jsh.XExt.JSEval(js,this);
+          }
+          rslt[fieldname] = val;
+        }
+      });
+    }
+    return rslt;
+  }
+  XPost.prototype.PrepExecute = function(_method,_model,_query,_post,onComplete,onFail){
+    var rslt = { 
+      'method':_method,
+      'model':_model,
+      'query':_query,
+      'post':_post,
+      'onComplete':onComplete
+    };
+    if (typeof onFail != 'undefined') rslt.onFail = onFail;
+    if(_method=='get'){
+      rslt.post = _query;
+      rslt.query = {};
+    }
+    return rslt;
+  }
+  XPost.prototype.CommitRow = function (){
+    if (!this.Data.Commit()) return false;
+    this.DataSet[this.Index] = _.extend(this.DataSet[this.Index], this.Data);
+    if (this.Data._is_dirty) this.IsDirty = true;
+    return true;
+  }
+  XPost.prototype.PrepSaveDataSet = function(ignorecommit){
+    if(!ignorecommit && !this.CommitRow()) return;
+    
+    var dbtasks = [];
+    this.DBTaskRows = {};
+    var curdata = this.Data;
+    this.Data = new this.DataType();
+    
+    for(var i = 0; i < this.DeleteSet.length; i++){
+      this.Data = _.extend(this.Data,this.DeleteSet[i]);
+      dbtasks.push(this.PrepDelete());
+      this.DBTaskRows['delete_' + dbtasks.length] = i;
+    }
+    
+    for(var i = 0; i < this.DataSet.length; i++){
+      this.Data = _.extend(this.Data, this.DataSet[i]);
+      if (this.Data._is_deleted) continue;
+      if (this.DataSet[i] in this.DeleteSet) continue;
+      if (this.Data._is_new) {
+        dbtasks.push(this.PrepInsert());
+        this.DBTaskRows['insert_' + dbtasks.length] = i;
+      }
+      else {
+        if (this.xData && !this.Data._is_dirty) continue;
+        dbtasks.push(this.PrepUpdate());
+        this.DBTaskRows['update_' + dbtasks.length] = i;
+      }
+    }
+    
+    this.Data = curdata;
+    return dbtasks;
+  }
+  XPost.prototype.PrepUpdate = function(onComplete,onFail){ 
+    return this.PrepExecute('post',this.q,this.GetKeys(),this.GetUpdateParams(),onComplete,onFail); 
+  }
+  XPost.prototype.Update = function(onComplete,onFail){ this.qExecute(this.PrepUpdate(onComplete,onFail)); }
+  XPost.prototype.PrepInsert = function(onComplete,onFail){ 
+    return this.PrepExecute('put',this.q,{},this.GetInsertParams(),onComplete,onFail); 
+  }
+  XPost.prototype.Insert = function(onComplete,onFail){ this.qExecute(this.PrepInsert(onComplete,onFail)); }
+  XPost.prototype.PrepDelete = function(onComplete,onFail){ 
+    return this.PrepExecute('delete',this.q,this.GetDeleteParams(),{},onComplete,onFail); 
+  }
+  XPost.prototype.Delete = function(onComplete,onFail){ this.qExecute(this.PrepDelete(onComplete,onFail)); }
+  XPost.prototype.Execute = function(onComplete,onFail){ 
+    this.qExecute(this.PrepExecute('get',this.q,this.Data,{},onComplete,onFail)); 
+  }
+  XPost.prototype.ExecuteTrans = function (DBTasks, onComplete, onFail) {
+    var execdata = [];
+    for (var i = 0; i < DBTasks.length; i++) {
+      var dbtask = DBTasks[i];
+      execdata.push({
+        method: dbtask.method,
+        model: dbtask.model,
+        query: $.param(dbtask.query),
+        post: $.param(dbtask.post)
+      });
+    }
+    var final_onComplete = function (rslt) {
+      for (var i = 0; i < DBTasks.length; i++) {
+        var dbtask = DBTasks[i];
+        if (dbtask.onComplete) dbtask.onComplete(rslt);
+      }
+      if (onComplete) onComplete(rslt);
+    }
+    var execparams = {
+      'method': 'post',
+      'model': '_transaction',
+      'query': {},
+      'post': $.param({ data: JSON.stringify(execdata) }),
+      'onComplete': final_onComplete
+    };
+    if (onFail) execparams.onFail = onFail;
+    this.qExecute(execparams);
+  }
+  XPost.prototype.qExecute = function (ExecParams) {
+    ExecParams.url = jsh._BASEURL + '_d/' + ExecParams.model + '/';
+    this.qExecuteBase(ExecParams);
+  }
+  XPost.prototype.qExecuteBase = function(ExecParams){
+    var _this = this;
+    var url = ExecParams.url;
+    if(!_.isEmpty(ExecParams.query)) url += '?'+$.param(ExecParams.query);
+    var loader = jsh.xLoader;
+    if(loader) loader.StartLoading(_this);
+    $.ajax({
+      type:ExecParams.method.toUpperCase(),
+      url: url,
+      data: ExecParams.post,
+      async: _this.async,
+      dataType: 'json',
+      success:function(data){
+        if(loader) loader.StopLoading(_this);
+        if ((data instanceof Object) && ('_error' in data)) {
+          if(jsh.DefaultErrorHandler(data._error.Number,data._error.Message)) { }
+          else if(!(_this.OnDBError(data._error))) { }
+          else if((data._error.Number == -9) || (data._error.Number == -5)){ jsh.XExt.Alert(data._error.Message); }
+          else { jsh.XExt.Alert('Error #' + data._error.Number + ': ' + data._error.Message); }
+          if ('onFail' in ExecParams) ExecParams.onFail(data._error);
+          return;
+        }
+        if((ExecParams.method != 'get') && (data instanceof Object) && ('_success' in data)){
+          _this.OnSuccess(data);
+          if(ExecParams.onComplete) ExecParams.onComplete(data);
+        }
+        else if((ExecParams.method == 'get') && (data instanceof Object)){
+          _this.OnSuccess(data);
+          if(ExecParams.onComplete) ExecParams.onComplete(data);
+        }
+        else {
+          _this.OnUndefined(data);
+          if ('onFail' in ExecParams) ExecParams.onFail(data);
+        }
+      },
+      error:function(data){
+        if(loader) loader.StopLoading(_this);
+        var jdata = data.responseJSON;
+        if ((jdata instanceof Object) && ('_error' in jdata)) {
+          if (jsh.DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { }
+          else if (!(_this.OnDBError(jdata._error))) { }
+          else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { jsh.XExt.Alert(jdata._error.Message); }
+          else { jsh.XExt.Alert('Error #' + jdata._error.Number + ': ' + jdata._error.Message); }
+          if ('onFail' in ExecParams) ExecParams.onFail(jdata._error);
+          return;
+        }
+        if (('onFail' in ExecParams) && (ExecParams.onFail(data))){ }
+        else if(('status' in data) && (data.status == '404')){ jsh.XExt.Alert('(404) The requested page was not found.'); }
+        else if(jsh._debug) jsh.XExt.Alert('An error has occurred: ' + data.responseText);
+        else jsh.XExt.Alert('An error has occurred.  If the problem continues, please contact the system administrator for assistance.');
       }
     });
+  };
+  XPost.prototype.OnDBError = function (error){
+    if (error && error.Message && jsh.XExt.beginsWith(error.Message, "Execute Form - ")) {
+      var dbaction = error.Message.substr(("Execute Form - ").length);
+      var dbmessage = dbaction.substr(0, dbaction.indexOf('//')).trim();
+      var url = dbaction.substr(dbaction.indexOf('//')+2);
+      if (url.indexOf(' - ') >= 0) url = url.substr(0, url.indexOf(' - '));
+      var modelid = url.trim();
+      var params = {};
+      if (url.indexOf('?') >= 0) {
+        modelid = url.substr(0, url.indexOf('?'));
+        params = jsh.XExt.parseGET(url.substr(url.indexOf('?')));
+      }
+      if (!dbmessage) dbmessage = 'Save operation did not complete.  Press OK to view details.';
+      jsh.XExt.Alert(dbmessage,undefined, {
+        onAcceptImmediate: function () {
+          jsh.XExt.popupForm(modelid, undefined, params);
+        }
+      });
+      return false;
+    }
+
+    if(!this.Data) return true;
+    
+    if(this.Data.OnDBError){
+      if(this.Data.OnDBError(error)===false) return false;
+      return true;
+    }
+    else 
+      return true;
+  };
+  XPost.prototype.OnSuccess = function(rslt){
+    if(!this.Data) return true;
+    
+    if(this.Data.OnSuccess){
+      this.Data.OnSuccess(rslt);
+    }
+  };
+  XPost.prototype.OnUndefined = function(data){
+    if(this.Data && (this.Data.OnUndefined)) this.Data.OnUndefined(data);
+    else jsh.XExt.Alert("Undefined: " + JSON.stringify(data));
   }
+  XPost.prototype.GetFieldParams = function(action){
+    var _this = this;
+    var rslt = {};
+    _.each(_this.Data.Fields,function(field){
+      if (!jsh.XExt.HasAccess(field.actions, action)) return;
+      if((typeof _this.Data[field.name] == 'undefined') && _.includes(jsh.XForms[_this.q]._bindings,field.name)){
+        rslt[field.name] = '%%%'+field.name+'%%%';
+      }
+      else {
+        if (('control' in field) && (field.control == 'file_upload')) {
+          var fval = _this.Data[field.name];
+          if (_.isString(fval)) {
+            if (fval != '') fval = '_temp/' + fval;
+            rslt[field.name] = fval;
+          }
+        }
+        else rslt[field.name] = _this.Data[field.name];
+      }
+    });
+    return rslt;
+  }
+
+  XPost.prototype.XExecute = function(q,d,onComplete,onFail){
+    var xpost = new XPost(q,'','');
+    xpost.Data = d;
+    xpost.Execute(onComplete,onFail);
+  }
+
+  XPost.prototype.XExecuteBlock = function(q,d,onComplete,onFail){
+    var xpost = new XPost(q,'','');
+    xpost.Data = d;
+    xpost.async = false;
+    xpost.Execute(onComplete,onFail);
+  }
+
+  XPost.prototype.XExecutePost = function (q, d, onComplete, onFail, options){
+    if(!options) options = {};
+    var xpost = new XPost(q, '', '');
+    if(options.OnDBError) xpost.Data.OnDBError = options.OnDBError;
+    xpost.qExecute(xpost.PrepExecute('post', xpost.q, {}, d, onComplete, onFail)); 
+  }
+
+  return XPost;
 }
-SearchQuery.prototype.GetValues = function (_PlaceholderID) {
-  _this = this;
-  _this.Items = [];
-  $(_PlaceholderID + ' div.xfilter_expression').each(function (i, obj) {
-    var v_column = $(obj).find('select.xfilter_column').val();
-    var v_value = $(obj).find('input.xfilter_value').val();
-    var v_join = $(obj).find('input.xfilter_join').val();
-    var v_comparison = $(obj).find('select.xfilter_comparison').val();
-    if ((v_column==='ALL') || !v_comparison) v_comparison = 'contains';
-    _this.Items.push(new SearchItem(v_column, v_value, v_join, v_comparison));
-  });
-};
-SearchQuery.prototype.HasUpdates = function (_PlaceholderID) {
-  _this = this;
-  var newitems = [];
-  $(_PlaceholderID + ' div').each(function (i, obj) {
-    var v_value = $(obj).find('input.xfilter_value').val();
-    var v_join = $(obj).find('input.xfilter_join').val();
-    var v_comparison = $(obj).find('select.xfilter_comparison').val();
-    newitems.push(new SearchItem($(obj).find('select.xfilter_column').val(), v_value, v_join, v_comparison));
-  });
-  if (newitems.length != _this.Items.length) return true;
-  for (var i = 0; i < newitems.length; i++) {
-    if (newitems[i].Column != _this.Items[i].Column) return true;
-    if (newitems[i].Value != _this.Items[i].Value) return true;
-    if (newitems[i].Join != _this.Items[i].Join) return true;
-    if (newitems[i].Comparison != _this.Items[i].Comparison) return true;
+},{"./jquery-1.11.2":21,"async":24,"lodash":28}],18:[function(require,module,exports){
+/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+var $ = require('./jquery-1.11.2');
+var _ = require('lodash');
+
+exports = module.exports = function(jsh){
+
+  function XScanner(_Func, _Server, _Params) {
+    this.Func = _Func;
+    this.Server = jsh.globalparams.scanner_server;
+    if (_Server) this.Server = _Server;
+    if (_Params) this.Params = _Params;
+    else this.Params = {};
   }
-  return false;
-};
 
-function SearchItem(_Column, _Value, _Join, _Comparison) {
-  this.Column = _Column;
-  this.Value = _Value;
-  this.Join = _Join;
-  this.Comparison = _Comparison;
-};
+  var XScanner_Timer = null;
 
-exports.SearchQuery = SearchQuery;
-exports.SearchItem = SearchItem;
-},{}],20:[function(require,module,exports){
+  function XScanner_SetLoadEvents(onFail) {
+    XScanner_Timer = setTimeout(function () { XScanner_Timeout(onFail); }, 120000);
+  }
+  function XScanner_ClearLoadEvents() {
+    jsh.xLoader.StopLoading(jsh.xfileuploadLoader);
+    if (XScanner_Timer) { clearTimeout(XScanner_Timer); XScanner_Timer = null; }
+  }
+  function XScanner_Timeout(onFail) {
+    XScanner_ClearLoadEvents();
+    jsh.XExt.Alert('Scan Failed: Could not connect to Scanner Server.', onFail);
+  }
+
+  XScanner.prototype.Scan = function (_Params, onComplete, onFail) {
+    if (!this.Server) return jsh.XExt.Alert('Scan server not defined.');
+    var _this = this;
+    var params = {};
+    if (_Params) params = _.extend(this.Params, _Params);
+    XScanner_ClearLoadEvents();
+    XScanner_SetLoadEvents(onFail);
+    
+    //Make this a post request
+    //Add document.cookie
+    
+    jsh.xLoader.StartLoading(jsh.xfileuploadLoader);
+    
+    jsh.XExt.getToken(function (token) {
+      params = _.extend(params, token);
+      params._func = _this.Func;
+      var url = _this.Server + '/scan/?' + $.param(params);
+      $.ajax({
+        url: url,
+        jsonp: 'callback',
+        dataType: 'jsonp',
+        complete: function (data) {
+          XScanner_ClearLoadEvents();
+          var jdata = data.responseJSON;
+          if ((jdata instanceof Object) && ('_error' in jdata)) {
+            if (jsh.DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { }
+            else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { jsh.XExt.Alert(jdata._error.Message); }
+            else { jsh.XExt.Alert('Error #' + jdata._error.Number + ': ' + jdata._error.Message); }
+            if (onFail) onFail(jdata._error);
+            return;
+          }
+          else if ((jdata instanceof Object) && ('_success' in jdata)) {
+            if (onComplete) onComplete(jdata);
+          }
+          else {
+            jsh.XExt.Alert('Error Scanning: ' + JSON.stringify(data.responseJSON ? data.responseJSON : ''), onFail);
+          }
+        },
+        error: function (err) { XScanner_Timeout(onFail); }
+      });
+    }, function () { //Token Generation Error
+      XScanner_Timeout(onFail);
+    });
+  }
+
+  return XScanner;
+}
+},{"./jquery-1.11.2":21,"lodash":28}],19:[function(require,module,exports){
+/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+var $ = require('./jquery-1.11.2');
+var _ = require('lodash');
+
+exports = module.exports = function(jsh){
+
+  var XSearch = function(){ }
+
+  //-----------
+  //SEARCHQUERY
+  //-----------
+  function SearchQuery(model) {
+    this.Items = [];
+    this.Fields = [];
+    if (typeof model !== 'undefined') {
+      var _this = this;
+      _.each(model.Fields, function (field) {
+        if (jsh.XExt.HasAccess(field.actions, 'BS') && !field.disable_search) {
+          var comparison_type = 'none';
+          if ('lov' in field) comparison_type = 'lov';
+          else if ('type' in field) {
+            if ((field.type == 'varchar') || (field.type == 'char') || (field.type == 'binary')) comparison_type = 'string';
+            else if (_.includes(['bigint', 'int', 'smallint', 'tinyint', 'decimal', 'float', 'time'], field.type)) comparison_type = 'numeric';
+            else if (_.includes(['datetime', 'date'], field.type)) comparison_type = 'date';
+            else if (_.includes(['hash', 'boolean'], field.type)) comparison_type = 'object';
+          }
+          var sfield = { "name": field.name, "caption": field.caption, "comparison_type": comparison_type };
+          if (field.search_sound) sfield.search_sound = 1;
+          _this.Fields.push(sfield);
+        }
+      });
+    }
+  }
+  SearchQuery.prototype.GetValues = function (_PlaceholderID) {
+    _this = this;
+    _this.Items = [];
+    $(_PlaceholderID + ' div.xfilter_expression').each(function (i, obj) {
+      var v_column = $(obj).find('select.xfilter_column').val();
+      var v_value = $(obj).find('input.xfilter_value').val();
+      var v_join = $(obj).find('input.xfilter_join').val();
+      var v_comparison = $(obj).find('select.xfilter_comparison').val();
+      if ((v_column==='ALL') || !v_comparison) v_comparison = 'contains';
+      _this.Items.push(new SearchItem(v_column, v_value, v_join, v_comparison));
+    });
+  };
+  SearchQuery.prototype.HasUpdates = function (_PlaceholderID) {
+    _this = this;
+    var newitems = [];
+    $(_PlaceholderID + ' div').each(function (i, obj) {
+      var v_value = $(obj).find('input.xfilter_value').val();
+      var v_join = $(obj).find('input.xfilter_join').val();
+      var v_comparison = $(obj).find('select.xfilter_comparison').val();
+      newitems.push(new SearchItem($(obj).find('select.xfilter_column').val(), v_value, v_join, v_comparison));
+    });
+    if (newitems.length != _this.Items.length) return true;
+    for (var i = 0; i < newitems.length; i++) {
+      if (newitems[i].Column != _this.Items[i].Column) return true;
+      if (newitems[i].Value != _this.Items[i].Value) return true;
+      if (newitems[i].Join != _this.Items[i].Join) return true;
+      if (newitems[i].Comparison != _this.Items[i].Comparison) return true;
+    }
+    return false;
+  };
+
+  function SearchItem(_Column, _Value, _Join, _Comparison) {
+    this.Column = _Column;
+    this.Value = _Value;
+    this.Join = _Join;
+    this.Comparison = _Comparison;
+  };
+
+  XSearch.SearchQuery = SearchQuery;
+  XSearch.SearchItem = SearchItem;
+
+  return XSearch;
+}
+},{"./jquery-1.11.2":21,"lodash":28}],20:[function(require,module,exports){
 /*
  * Crypto-JS v2.5.3
  * http://code.google.com/p/crypto-js/
@@ -4878,17 +4987,17 @@ exports.SearchItem = SearchItem;
  * http://code.google.com/p/crypto-js/wiki/License
  */
 (typeof Crypto=="undefined"||!Crypto.util)&&function(){var m=window.Crypto={},o=m.util={rotl:function(h,g){return h<<g|h>>>32-g},rotr:function(h,g){return h<<32-g|h>>>g},endian:function(h){if(h.constructor==Number)return o.rotl(h,8)&16711935|o.rotl(h,24)&4278255360;for(var g=0;g<h.length;g++)h[g]=o.endian(h[g]);return h},randomBytes:function(h){for(var g=[];h>0;h--)g.push(Math.floor(Math.random()*256));return g},bytesToWords:function(h){for(var g=[],i=0,a=0;i<h.length;i++,a+=8)g[a>>>5]|=(h[i]&255)<<
-24-a%32;return g},wordsToBytes:function(h){for(var g=[],i=0;i<h.length*32;i+=8)g.push(h[i>>>5]>>>24-i%32&255);return g},bytesToHex:function(h){for(var g=[],i=0;i<h.length;i++)g.push((h[i]>>>4).toString(16)),g.push((h[i]&15).toString(16));return g.join("")},hexToBytes:function(h){for(var g=[],i=0;i<h.length;i+=2)g.push(parseInt(h.substr(i,2),16));return g},bytesToBase64:function(h){if(typeof btoa=="function")return btoa(n.bytesToString(h));for(var g=[],i=0;i<h.length;i+=3)for(var a=h[i]<<16|h[i+1]<<
-8|h[i+2],b=0;b<4;b++)i*8+b*6<=h.length*8?g.push("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".charAt(a>>>6*(3-b)&63)):g.push("=");return g.join("")},base64ToBytes:function(h){if(typeof atob=="function")return n.stringToBytes(atob(h));for(var h=h.replace(/[^A-Z0-9+\/]/ig,""),g=[],i=0,a=0;i<h.length;a=++i%4)a!=0&&g.push(("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".indexOf(h.charAt(i-1))&Math.pow(2,-2*a+8)-1)<<a*2|"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".indexOf(h.charAt(i))>>>
-6-a*2);return g}},m=m.charenc={};m.UTF8={stringToBytes:function(h){return n.stringToBytes(unescape(encodeURIComponent(h)))},bytesToString:function(h){return decodeURIComponent(escape(n.bytesToString(h)))}};var n=m.Binary={stringToBytes:function(h){for(var g=[],i=0;i<h.length;i++)g.push(h.charCodeAt(i)&255);return g},bytesToString:function(h){for(var g=[],i=0;i<h.length;i++)g.push(String.fromCharCode(h[i]));return g.join("")}}}();
-(function(){var m=Crypto,o=m.util,n=m.charenc,h=n.UTF8,g=n.Binary,i=m.MD5=function(a,b){var h=o.wordsToBytes(i._md5(a));return b&&b.asBytes?h:b&&b.asString?g.bytesToString(h):o.bytesToHex(h)};i._md5=function(a){a.constructor==String&&(a=h.stringToBytes(a));for(var b=o.bytesToWords(a),g=a.length*8,a=1732584193,d=-271733879,e=-1732584194,c=271733878,f=0;f<b.length;f++)b[f]=(b[f]<<8|b[f]>>>24)&16711935|(b[f]<<24|b[f]>>>8)&4278255360;b[g>>>5]|=128<<g%32;b[(g+64>>>9<<4)+14]=g;for(var g=i._ff,j=i._gg,k=
-i._hh,l=i._ii,f=0;f<b.length;f+=16)var m=a,n=d,p=e,q=c,a=g(a,d,e,c,b[f+0],7,-680876936),c=g(c,a,d,e,b[f+1],12,-389564586),e=g(e,c,a,d,b[f+2],17,606105819),d=g(d,e,c,a,b[f+3],22,-1044525330),a=g(a,d,e,c,b[f+4],7,-176418897),c=g(c,a,d,e,b[f+5],12,1200080426),e=g(e,c,a,d,b[f+6],17,-1473231341),d=g(d,e,c,a,b[f+7],22,-45705983),a=g(a,d,e,c,b[f+8],7,1770035416),c=g(c,a,d,e,b[f+9],12,-1958414417),e=g(e,c,a,d,b[f+10],17,-42063),d=g(d,e,c,a,b[f+11],22,-1990404162),a=g(a,d,e,c,b[f+12],7,1804603682),c=g(c,a,
-d,e,b[f+13],12,-40341101),e=g(e,c,a,d,b[f+14],17,-1502002290),d=g(d,e,c,a,b[f+15],22,1236535329),a=j(a,d,e,c,b[f+1],5,-165796510),c=j(c,a,d,e,b[f+6],9,-1069501632),e=j(e,c,a,d,b[f+11],14,643717713),d=j(d,e,c,a,b[f+0],20,-373897302),a=j(a,d,e,c,b[f+5],5,-701558691),c=j(c,a,d,e,b[f+10],9,38016083),e=j(e,c,a,d,b[f+15],14,-660478335),d=j(d,e,c,a,b[f+4],20,-405537848),a=j(a,d,e,c,b[f+9],5,568446438),c=j(c,a,d,e,b[f+14],9,-1019803690),e=j(e,c,a,d,b[f+3],14,-187363961),d=j(d,e,c,a,b[f+8],20,1163531501),
-a=j(a,d,e,c,b[f+13],5,-1444681467),c=j(c,a,d,e,b[f+2],9,-51403784),e=j(e,c,a,d,b[f+7],14,1735328473),d=j(d,e,c,a,b[f+12],20,-1926607734),a=k(a,d,e,c,b[f+5],4,-378558),c=k(c,a,d,e,b[f+8],11,-2022574463),e=k(e,c,a,d,b[f+11],16,1839030562),d=k(d,e,c,a,b[f+14],23,-35309556),a=k(a,d,e,c,b[f+1],4,-1530992060),c=k(c,a,d,e,b[f+4],11,1272893353),e=k(e,c,a,d,b[f+7],16,-155497632),d=k(d,e,c,a,b[f+10],23,-1094730640),a=k(a,d,e,c,b[f+13],4,681279174),c=k(c,a,d,e,b[f+0],11,-358537222),e=k(e,c,a,d,b[f+3],16,-722521979),
-d=k(d,e,c,a,b[f+6],23,76029189),a=k(a,d,e,c,b[f+9],4,-640364487),c=k(c,a,d,e,b[f+12],11,-421815835),e=k(e,c,a,d,b[f+15],16,530742520),d=k(d,e,c,a,b[f+2],23,-995338651),a=l(a,d,e,c,b[f+0],6,-198630844),c=l(c,a,d,e,b[f+7],10,1126891415),e=l(e,c,a,d,b[f+14],15,-1416354905),d=l(d,e,c,a,b[f+5],21,-57434055),a=l(a,d,e,c,b[f+12],6,1700485571),c=l(c,a,d,e,b[f+3],10,-1894986606),e=l(e,c,a,d,b[f+10],15,-1051523),d=l(d,e,c,a,b[f+1],21,-2054922799),a=l(a,d,e,c,b[f+8],6,1873313359),c=l(c,a,d,e,b[f+15],10,-30611744),
-e=l(e,c,a,d,b[f+6],15,-1560198380),d=l(d,e,c,a,b[f+13],21,1309151649),a=l(a,d,e,c,b[f+4],6,-145523070),c=l(c,a,d,e,b[f+11],10,-1120210379),e=l(e,c,a,d,b[f+2],15,718787259),d=l(d,e,c,a,b[f+9],21,-343485551),a=a+m>>>0,d=d+n>>>0,e=e+p>>>0,c=c+q>>>0;return o.endian([a,d,e,c])};i._ff=function(a,b,g,d,e,c,f){a=a+(b&g|~b&d)+(e>>>0)+f;return(a<<c|a>>>32-c)+b};i._gg=function(a,b,g,d,e,c,f){a=a+(b&d|g&~d)+(e>>>0)+f;return(a<<c|a>>>32-c)+b};i._hh=function(a,b,g,d,e,c,f){a=a+(b^g^d)+(e>>>0)+f;return(a<<c|a>>>
-32-c)+b};i._ii=function(a,b,g,d,e,c,f){a=a+(g^(b|~d))+(e>>>0)+f;return(a<<c|a>>>32-c)+b};i._blocksize=16;i._digestsize=16})();
-
+  24-a%32;return g},wordsToBytes:function(h){for(var g=[],i=0;i<h.length*32;i+=8)g.push(h[i>>>5]>>>24-i%32&255);return g},bytesToHex:function(h){for(var g=[],i=0;i<h.length;i++)g.push((h[i]>>>4).toString(16)),g.push((h[i]&15).toString(16));return g.join("")},hexToBytes:function(h){for(var g=[],i=0;i<h.length;i+=2)g.push(parseInt(h.substr(i,2),16));return g},bytesToBase64:function(h){if(typeof btoa=="function")return btoa(n.bytesToString(h));for(var g=[],i=0;i<h.length;i+=3)for(var a=h[i]<<16|h[i+1]<<
+  8|h[i+2],b=0;b<4;b++)i*8+b*6<=h.length*8?g.push("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".charAt(a>>>6*(3-b)&63)):g.push("=");return g.join("")},base64ToBytes:function(h){if(typeof atob=="function")return n.stringToBytes(atob(h));for(var h=h.replace(/[^A-Z0-9+\/]/ig,""),g=[],i=0,a=0;i<h.length;a=++i%4)a!=0&&g.push(("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".indexOf(h.charAt(i-1))&Math.pow(2,-2*a+8)-1)<<a*2|"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".indexOf(h.charAt(i))>>>
+  6-a*2);return g}},m=m.charenc={};m.UTF8={stringToBytes:function(h){return n.stringToBytes(unescape(encodeURIComponent(h)))},bytesToString:function(h){return decodeURIComponent(escape(n.bytesToString(h)))}};var n=m.Binary={stringToBytes:function(h){for(var g=[],i=0;i<h.length;i++)g.push(h.charCodeAt(i)&255);return g},bytesToString:function(h){for(var g=[],i=0;i<h.length;i++)g.push(String.fromCharCode(h[i]));return g.join("")}}}();
+  (function(){var m=Crypto,o=m.util,n=m.charenc,h=n.UTF8,g=n.Binary,i=m.MD5=function(a,b){var h=o.wordsToBytes(i._md5(a));return b&&b.asBytes?h:b&&b.asString?g.bytesToString(h):o.bytesToHex(h)};i._md5=function(a){a.constructor==String&&(a=h.stringToBytes(a));for(var b=o.bytesToWords(a),g=a.length*8,a=1732584193,d=-271733879,e=-1732584194,c=271733878,f=0;f<b.length;f++)b[f]=(b[f]<<8|b[f]>>>24)&16711935|(b[f]<<24|b[f]>>>8)&4278255360;b[g>>>5]|=128<<g%32;b[(g+64>>>9<<4)+14]=g;for(var g=i._ff,j=i._gg,k=
+  i._hh,l=i._ii,f=0;f<b.length;f+=16)var m=a,n=d,p=e,q=c,a=g(a,d,e,c,b[f+0],7,-680876936),c=g(c,a,d,e,b[f+1],12,-389564586),e=g(e,c,a,d,b[f+2],17,606105819),d=g(d,e,c,a,b[f+3],22,-1044525330),a=g(a,d,e,c,b[f+4],7,-176418897),c=g(c,a,d,e,b[f+5],12,1200080426),e=g(e,c,a,d,b[f+6],17,-1473231341),d=g(d,e,c,a,b[f+7],22,-45705983),a=g(a,d,e,c,b[f+8],7,1770035416),c=g(c,a,d,e,b[f+9],12,-1958414417),e=g(e,c,a,d,b[f+10],17,-42063),d=g(d,e,c,a,b[f+11],22,-1990404162),a=g(a,d,e,c,b[f+12],7,1804603682),c=g(c,a,
+  d,e,b[f+13],12,-40341101),e=g(e,c,a,d,b[f+14],17,-1502002290),d=g(d,e,c,a,b[f+15],22,1236535329),a=j(a,d,e,c,b[f+1],5,-165796510),c=j(c,a,d,e,b[f+6],9,-1069501632),e=j(e,c,a,d,b[f+11],14,643717713),d=j(d,e,c,a,b[f+0],20,-373897302),a=j(a,d,e,c,b[f+5],5,-701558691),c=j(c,a,d,e,b[f+10],9,38016083),e=j(e,c,a,d,b[f+15],14,-660478335),d=j(d,e,c,a,b[f+4],20,-405537848),a=j(a,d,e,c,b[f+9],5,568446438),c=j(c,a,d,e,b[f+14],9,-1019803690),e=j(e,c,a,d,b[f+3],14,-187363961),d=j(d,e,c,a,b[f+8],20,1163531501),
+  a=j(a,d,e,c,b[f+13],5,-1444681467),c=j(c,a,d,e,b[f+2],9,-51403784),e=j(e,c,a,d,b[f+7],14,1735328473),d=j(d,e,c,a,b[f+12],20,-1926607734),a=k(a,d,e,c,b[f+5],4,-378558),c=k(c,a,d,e,b[f+8],11,-2022574463),e=k(e,c,a,d,b[f+11],16,1839030562),d=k(d,e,c,a,b[f+14],23,-35309556),a=k(a,d,e,c,b[f+1],4,-1530992060),c=k(c,a,d,e,b[f+4],11,1272893353),e=k(e,c,a,d,b[f+7],16,-155497632),d=k(d,e,c,a,b[f+10],23,-1094730640),a=k(a,d,e,c,b[f+13],4,681279174),c=k(c,a,d,e,b[f+0],11,-358537222),e=k(e,c,a,d,b[f+3],16,-722521979),
+  d=k(d,e,c,a,b[f+6],23,76029189),a=k(a,d,e,c,b[f+9],4,-640364487),c=k(c,a,d,e,b[f+12],11,-421815835),e=k(e,c,a,d,b[f+15],16,530742520),d=k(d,e,c,a,b[f+2],23,-995338651),a=l(a,d,e,c,b[f+0],6,-198630844),c=l(c,a,d,e,b[f+7],10,1126891415),e=l(e,c,a,d,b[f+14],15,-1416354905),d=l(d,e,c,a,b[f+5],21,-57434055),a=l(a,d,e,c,b[f+12],6,1700485571),c=l(c,a,d,e,b[f+3],10,-1894986606),e=l(e,c,a,d,b[f+10],15,-1051523),d=l(d,e,c,a,b[f+1],21,-2054922799),a=l(a,d,e,c,b[f+8],6,1873313359),c=l(c,a,d,e,b[f+15],10,-30611744),
+  e=l(e,c,a,d,b[f+6],15,-1560198380),d=l(d,e,c,a,b[f+13],21,1309151649),a=l(a,d,e,c,b[f+4],6,-145523070),c=l(c,a,d,e,b[f+11],10,-1120210379),e=l(e,c,a,d,b[f+2],15,718787259),d=l(d,e,c,a,b[f+9],21,-343485551),a=a+m>>>0,d=d+n>>>0,e=e+p>>>0,c=c+q>>>0;return o.endian([a,d,e,c])};i._ff=function(a,b,g,d,e,c,f){a=a+(b&g|~b&d)+(e>>>0)+f;return(a<<c|a>>>32-c)+b};i._gg=function(a,b,g,d,e,c,f){a=a+(b&d|g&~d)+(e>>>0)+f;return(a<<c|a>>>32-c)+b};i._hh=function(a,b,g,d,e,c,f){a=a+(b^g^d)+(e>>>0)+f;return(a<<c|a>>>
+  32-c)+b};i._ii=function(a,b,g,d,e,c,f){a=a+(g^(b|~d))+(e>>>0)+f;return(a<<c|a>>>32-c)+b};i._blocksize=16;i._digestsize=16})();
+  
 },{}],21:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v1.11.2
@@ -15259,48 +15368,215 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 require('./polyfill.js');
-global.$ = global.jQuery = require('./jquery-1.11.2');
 require('./crypto-md5-2.5.3.js');
-global._ = require('lodash');
-global.ejs = require('ejs');
-global.async = require('async');
-global.moment = require('moment');
-global.XData = require('./XData.js');
-global.XPost = require('./XPost.js');
-global.XExt = require('./XExt.js');
-global.XFormat = require('./XFormat.js');
-global.XValidate = require('jsharmony-validate');
-global.XSearch = require('./XSearch.js');
-global.XPayment = require('./XPayment.js');
-global.XBarcode = require('./XBarcode.js');
-global.XScanner = require('./XScanner.js');
-global.XGrid = require('./XGrid.js');
-global.XMenu = require('./XMenu.js');
-global.JSHFind = require('./JSHFind.js');
+
+//Libraries
+var $ = require('./jquery-1.11.2');
+var jQuery = $;
+require('../public/jquery-ui/js/jquery-ui-1.10.3.custom-aspa.min.js')(jQuery);
+require('../public/js/jquery.colorbox-min.js')(jQuery);
+var _ = require('lodash');
+var ejs = require('ejs');
+var async = require('async');
+var moment = require('moment');
+var XData = require('./XData.js');
+var XPost = require('./XPost.js');
+var XExt = require('./XExt.js');
+var XFormat = require('./XFormat.js');
+var XValidate = require('jsharmony-validate');
+var XSearch = require('./XSearch.js');
+var XPayment = require('./XPayment.js');
+var XBarcode = require('./XBarcode.js');
+var XScanner = require('./XScanner.js');
+var XGrid = require('./XGrid.js');
+var XMenu = require('./XMenu.js');
+var JSHFind = require('./JSHFind.js');
 var XLoader = require('./XLoader.js');
 var XImageLoader = require('./XImageLoader.js');
-global._GET = XExt.parseGET();
-_.extend(global._GET, global.forcequery);
-global.XForms = [];
-global.isHTML5 = (document.createElement('canvas').getContext);
-global.xContextMenuVisible = false;
-global.xContextMenuItem = undefined;
-global.xContentMenuItemData = undefined;
-global.mouseX = 0;
-global.mouseY = 0;
-global.mouseDown = false;
-global.curSubMenu = '';
-global.JSH_DEFAULT_DATEFORMAT = 'mm/dd/yy';
 
-global.DefaultErrorHandler = function(num,txt){
+
+//jsHarmony Core Client-side Object
+var jsHarmony = function(options){
+  if(!options) options = {};
+  var _this = this;
+
+  //Options
+  this.forceQuery = {};
+  this._BASEURL = '/';
+  this._debug = false;
+  this.home_url = '';
+  this.uimap = {};
+  this.google_api_key = '';
+  this.isAuthenticated = false;
+  for(var key in options) this[key] = options[key];
+
+  //Libraries
+  this.$ = $;
+  this._ = _;
+  this.ejs = ejs;
+  this.async = async;
+  this.moment = moment;
+  this.XData = XData(this);
+  this.XPost = XPost(this);
+  this.XExt = XExt(this);
+  this.XFormat = XFormat;
+  this.XValidate = XValidate;
+  this.XValidate.jsh = this;
+  this.XSearch = XSearch(this);
+  this.XPayment = XPayment(this);
+  this.XBarcode = XBarcode(this);
+  this.XScanner = XScanner(this);
+  this.XGrid = XGrid(this);
+  this.XMenu = XMenu(this);
+  this.JSHFind = JSHFind;
+  this.XLoader = XLoader;
+  this.XImageLoader = XImageLoader;
+
+  //jsh_client_embed
+  this.App = {};
+  this.XForms = {};
+  this.XBase = {};
+  this.XForms_root = '';
+  this.XPopups = {};
+  this.is_popup = false;
+
+  //global
+  this.isHTML5 = (document.createElement('canvas').getContext);
+  this.xContextMenuVisible = false;
+  this.xContextMenuItem = undefined;
+  this.xContentMenuItemData = undefined;
+  this.mouseX = 0;
+  this.mouseY = 0;
+  this.mouseDown = false;
+  this.last_clicked_time = undefined;
+  this.last_clicked = undefined;
+  this.curSubMenu = '';
+  this.DEFAULT_DATEFORMAT = 'mm/dd/yy';
+  this.onPaymentProxyComplete = function(){};
+
+  this.imageLoader = null;
+  this.xLoader = null;
+  this.xDialog = [];
+  this.xPopupStack = [];
+  this.xfileuploadLoader = null;
+
+  //jsh_client_topmost
+  this.is_add = false;
+  this.init_complete = false;
+  this.delete_target = null;
+  this.xfileupload_ctrl = null;
+  this._bcrumbs = {};
+  this.orig_title = '';
+  this.orig_bcrumbs = '';
+  this.jsproxy_hooks = {};
+  this.intervals = [];
+  this.cur_history_url = ''; //Last URL, to check if link is an anchor # or regular link
+  window.onbeforeunload = function(){ if(_this.XForm_OnExit) return _this.XForm_OnExit(); };
+  this.cancelExit = false;
+  this.XForm_CustomShortcutKeys = function(e){ return false; /*  Return true if the shortcut key is handled */ };
+
+  //onepage
+  this._instance = '';
+  this.root = $(document);
+  this.cur_model = null;
+  this.state = {};
+  this.globalparams = {};
+  this.Config = {
+    max_filesize: 50000000,
+    require_html5_after_login: true
+  };
+  this.onepage = false;
+  this.prev_title = '';
+  this.prev_title_src = '';
+  this.prev_bcrumbs = '';
+  this.prev_bcrumbs_src = '';
+  this.focusHandler = [];
+  this.ignorefocusHandler = false;
+  this.qInputAction = null;
+  this.static_paths = [];
+  this.title_html = '';
+  this.html_title = '';
+  this.frontsalt = '';
+  this.app_errors = [];
+  this.popups = {};
+  this.srcfiles = {};
+
+  this._GET = this.XExt.parseGET();
+  _.extend(this._GET, this.forcequery);
+  this.is_add = (this._GET['action'] == 'add');
+
+  this.BindEvents();
+  jsHarmony.Instances.push(this);
+}
+
+jsHarmony.prototype.$root = function(sel){
+  return this.root.find(sel);
+}
+
+jsHarmony.prototype.getInstance = function(){
+  if(!this._instance) throw new Error('jsHarmony._instance is required');
+  return this._instance;
+}
+
+jsHarmony.prototype.BindEvents = function(){
+  var _this = this;
+  $(document).ready(function(){ _this.Init(); });
+  $(document).ready(function () { _this.XWindowResize(); });
+  $(window).resize(function () { _this.XWindowResize(); });
+  $(window).scroll(function () { _this.XWindowResize('scroll'); });
+  $(document).keydown(function (e) { if(_this.XForm_ShortcutKeys) _this.XForm_ShortcutKeys(e); })
+}
+
+jsHarmony.prototype.Init = function(){
+  var _this = this;
+  if(_this.root.find('body').length) _this.root = _this.root.find('body');
+  this.imageLoader = new XImageLoader();
+	this.imageLoader.loadqueue = new Array(
+		'/images/loading.gif',
+		'/images/arrow_down.png',
+		'/images/arrow_down_over.png',
+		'/images/arrow_up.png',
+		'/images/arrow_up_over.png'
+  );
+  this.imageLoader.StartLoad();
+	this.xLoader = new XLoader();
+  $('html').click(function () {
+    if (_this.xContextMenuVisible) {
+      _this.xContextMenuVisible = false;
+      _this.xContextMenuItem = undefined;
+      _this.xContentMenuItemData = undefined;
+      _this.$root('.xcontext_menu').hide();
+    }
+  });
+  _this.InitDialogs();
+  $(document).mousemove(function (e) {
+    _this.mouseX = e.pageX;
+    _this.mouseY = e.pageY;
+  }).mousedown(function (e) {
+    _this.mouseDown = true;
+  }).mouseup(function (e) {
+    _this.mouseDown = false;
+  }).mouseleave(function (e) {
+    _this.mouseDown = false;
+  });
+  this.$root('a').on('click', function () {
+    _this.last_clicked_time = new Date().getTime();
+    _this.last_clicked = $(this);
+  });
+  if(this.isAuthenticated && this.Config.require_html5_after_login){
+    this.requireHTML5();
+  }
+}
+
+jsHarmony.prototype.DefaultErrorHandler = function(num,txt){
 	if(num == -9) { 
 		//Custom Error Message
-    XExt.Alert(txt);
+    this.XExt.Alert(txt);
     return true; 
 	}
 	else if(num == -10) { 
 		//User not logged in
-    XExt.Confirm('Your session has timed out or you have logged out of the system.  Proceed to login page?  You will lose any pending changes.', function () {
+    this.XExt.Confirm('Your session has timed out or you have logged out of the system.  Proceed to login page?  You will lose any pending changes.', function () {
       location.reload(true);
     });
 		return true; 
@@ -15308,52 +15584,13 @@ global.DefaultErrorHandler = function(num,txt){
 	return false;
 }
 
-$(document).ready(function(){
-	global.imageLoader = new XImageLoader();
-	global.imageLoader.loadqueue = new Array(
-		'/images/loading.gif',
-		'/images/arrow_down.png',
-		'/images/arrow_down_over.png',
-		'/images/arrow_up.png',
-		'/images/arrow_up_over.png'
-  );
-  global.imageLoader.StartLoad();
-	global.xLoader = new XLoader();
-  if (typeof global._BASEURL == 'undefined') global._BASEURL = '/';
-  $('html').click(function () {
-    if (global.xContextMenuVisible) {
-      global.xContextMenuVisible = false;
-      global.xContextMenuItem = undefined;
-      global.xContentMenuItemData = undefined;
-      $('.xcontext_menu').hide();
-    }
-  });
-  global.init_dialogs();
-  $(document).mousemove(function (e) {
-    global.mouseX = e.pageX;
-    global.mouseY = e.pageY;
-  }).mousedown(function (e) {
-    global.mouseDown = true;
-  }).mouseup(function (e) {
-    global.mouseDown = false;
-  }).mouseleave(function (e) {
-    global.mouseDown = false;
-  });
-  $('a').on('click', function () {
-    window.last_clicked_time = new Date().getTime();
-    window.last_clicked = $(this);
-  });
-});
-
-global.xDialog = [];
-global.xPopupStack = [];
-global.debugConsole = function (txt,clear) {
-  $('#xdebugconsole').show();
-  if(clear) $('#xdebugconsole').empty();
-  $('#xdebugconsole').prepend(txt+'<br/>');
+jsHarmony.prototype.debugConsole = function (txt,clear) {
+  this.$root('#xdebugconsole').show();
+  if(clear) this.$root('#xdebugconsole').empty();
+  this.$root('#xdebugconsole').prepend(txt+'<br/>');
 }
-global.init_dialogs = function () {
-  $("body").append($('\
+jsHarmony.prototype.InitDialogs = function () {
+  this.root.append($('\
     <div id="xdialogblock" style="display:none;">\
     <div id="xalertbox" class="xdialogbox"><div id="xalertmessage"></div><div align="center"><input type="button" value="OK" /></div></div>\
     <div id="xconfirmbox" class="xdialogbox"><div id="xconfirmmessage"></div><div align="center"><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="No" class="button_no" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
@@ -15364,7 +15601,7 @@ global.init_dialogs = function () {
     <div id="xloadingblock" style="display:none;"><div><div id="xloadingbox">Loading<br/><img src="/images/loading.gif" alt="Loading" title="Loading" /></div></div></div>\
   '));
 };
-global.XWindowResize = function (source) {
+jsHarmony.prototype.XWindowResize = function (source) {
   var ww = $(window).width();
   var wh = $(window).height();
   var sleft = $(window).scrollLeft();
@@ -15374,22 +15611,22 @@ global.XWindowResize = function (source) {
   var pw = ((docw > ww) ? docw : ww);
   var ph = ((doch > wh) ? doch : wh);
   var params = { ww: ww, wh: wh, sleft: sleft, stop: stop, docw: docw, doch: doch, pw: pw, ph: ph };
-  if ($('.xbodyhead').length) {
-    var bodyhead_width = (ww - $('.xbodyhead').offset().left - 10 + sleft);
-    $('.xbodyhead').css('max-width', bodyhead_width + 'px');
+  if (this.$root('.xbodyhead').length) {
+    var bodyhead_width = (ww - this.$root('.xbodyhead').offset().left - 10 + sleft);
+    this.$root('.xbodyhead').css('max-width', bodyhead_width + 'px');
   }
-  global.XDialogResize(source, params);
-  global.XMenu.XMenuResize();
+  this.XDialogResize(source, params);
+  this.XMenu.XMenuResize();
 }
-global.XDialogResize = function (source, params) {
-  $('#xdialogblock').css('width', params.pw + 'px');
-  $('#xdialogblock').css('height', params.ph + 'px');
+jsHarmony.prototype.XDialogResize = function (source, params) {
+  this.$root('#xdialogblock').css('width', params.pw + 'px');
+  this.$root('#xdialogblock').css('height', params.ph + 'px');
 
-  $('#xdebugconsole').css('top', params.stop + 'px');
-  $('#xdebugconsole').css('left', params.sleft + 'px');
-  $('#xdebugconsole').css('width', params.ww + 'px');
+  this.$root('#xdebugconsole').css('top', params.stop + 'px');
+  this.$root('#xdebugconsole').css('left', params.sleft + 'px');
+  this.$root('#xdebugconsole').css('width', params.ww + 'px');
 
-  $('#xdialogblock .xdialogbox').each(function () {
+  this.$root('#xdialogblock .xdialogbox').each(function () {
     var jobj = $(this);
     if (!jobj.is(':visible')) return;
     if (document.activeElement && $(document.activeElement).is('input,select,textarea') && $(document.activeElement).parents(jobj).length) {
@@ -15416,20 +15653,15 @@ global.XDialogResize = function (source, params) {
     jobj.css('max-width', (params.docw - dpadleft - dpadright - dborderleft - dborderright) + 'px');
   });
 }
-$(document).ready(function () { global.XWindowResize(); });
-$(window).resize(function () { global.XWindowResize(); });
-$(window).scroll(function () { global.XWindowResize('scroll'); });
-$(document).keydown(function (e) { if(window.XForm_ShortcutKeys) window.XForm_ShortcutKeys(e); })
 
-global.xfileuploadLoader = null;
-global.init_xfileupload = function () {
-  if (xfileuploadLoader != null) return;
-  xfileuploadLoader = new Object();
+jsHarmony.prototype.InitXFileUpload = function () {
+  if (this.xfileuploadLoader != null) return;
+  this.xfileuploadLoader = new Object();
   document.write('\
     <div style="display:none;">\
 	    <div id="xfileuploader" class="colorbox_inline" align="center" style="height:80px;"><div style="position:relative;">\
         <form id="xfileuploader_form" enctype="multipart/form-data" method="post" target="xfileproxy">\
-          <input type="hidden" name="MAX_FILE_SIZE" value="<%=global.max_filesize%>" />\
+          <input type="hidden" name="MAX_FILE_SIZE" value="'+this.Config.max_filesize+'" />\
           <input type="hidden" name="prevtoken" id="xfileuploader_prevtoken" value="" />\
           <table cellspacing="3">\
             <tr>\
@@ -15439,7 +15671,7 @@ global.init_xfileupload = function () {
             <tr>\
               <td></td>\
               <td style="padding-top:10px;">\
-                <a class="linkbutton" style="padding-right:15px;" href="#" onClick="XUpload_submit();return false;"><img src="/images/icon_ok.png" alt="Upload" title="Upload" />Upload</a>\
+                <a class="linkbutton" style="padding-right:15px;" href="#" onClick="'+this.getInstance()+'.XUpload_submit();return false;"><img src="/images/icon_ok.png" alt="Upload" title="Upload" />Upload</a>\
                 <a class="linkbutton" href="javascript:$.colorbox.close()"><img src="/images/icon_cancel.png" alt="Cancel" title="Cancel" />Cancel</a></td>\
             </tr>\
           </table>\
@@ -15449,10 +15681,10 @@ global.init_xfileupload = function () {
     </div>');
 };
 
-global.SelectMenu = function (menuid) {
-  $('#xmenu').children('a').each(function (i, obj) {
+jsHarmony.prototype.SelectMenu = function (menuid) {
+  this.$root('#xmenu').children('a').each(function (i, obj) {
     var jobj = $(obj);
-    var jsideobj =$('#side'+obj.id);
+    var jsideobj =this.$root('#side'+obj.id);
     if (obj.id == 'menu_' + String(menuid).toUpperCase()) {
       if (!jobj.hasClass('selected')) jobj.addClass('selected');
       if (!jsideobj.hasClass('selected')) jsideobj.addClass('selected');
@@ -15463,10 +15695,47 @@ global.SelectMenu = function (menuid) {
     }
   });
   //Deal with xmenuside
-  XMenu.XSubMenuInit(menuid);
+  this.XMenu.XSubMenuInit(menuid);
 };
+
+jsHarmony.prototype.requireHTML5 = function(){
+  var _this = this;
+  $(document).ready(function() {
+    if (!document.createElement('canvas').getContext) {
+      var content = '\
+      <div id="browser_upgrade_msg" style="height: 120px; text-align: center; width: 450px;">\
+        <p>In order to use this system, you will need to upgrade your web browser to a modern version that supports HTML5.  Please click "Upgrade" to view supported browsers.</p>\
+        <div>\
+        <input style="padding:2px 6px;" type="button" value="Upgrade" onclick="window.location.href=\'http://www.browsehappy.com\';" />\
+        <input style="padding:2px 6px;" type="button" value="Logout" onclick="window.location.href=\''+_this._BASEURL+'logout\';" />\
+        </div>\
+      </div>\
+      ';
+      $.colorbox({ 
+        html: content, 
+        closeButton: false, 
+        arrowKey: false, 
+        preloading: false, 
+        overlayClose: false, 
+        escKey: false,
+        opacity: 0.5, 
+        title: 'Did you know that your browser is out of date?' 
+      });
+    }
+  });
+}
+
+var jsHarmonyGlobal = { };
+
+var instances = [];
+if(global.jsHarmony) instances = global.jsHarmony.instances;
+if(window.jsHarmony) instances = window.jsHarmony.instances;
+jsHarmony.Instances = instances;
+jsHarmony.jQuery = $;
+
+global.jsHarmony = jsHarmony;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./JSHFind.js":6,"./XBarcode.js":7,"./XData.js":8,"./XExt.js":10,"./XFormat.js":11,"./XGrid.js":12,"./XImageLoader.js":13,"./XLoader.js":14,"./XMenu.js":15,"./XPayment.js":16,"./XPost.js":17,"./XScanner.js":18,"./XSearch.js":19,"./crypto-md5-2.5.3.js":20,"./jquery-1.11.2":21,"./polyfill.js":23,"async":24,"ejs":25,"jsharmony-validate":4,"lodash":28,"moment":29}],23:[function(require,module,exports){
+},{"../public/jquery-ui/js/jquery-ui-1.10.3.custom-aspa.min.js":30,"../public/js/jquery.colorbox-min.js":31,"./JSHFind.js":6,"./XBarcode.js":7,"./XData.js":8,"./XExt.js":10,"./XFormat.js":11,"./XGrid.js":12,"./XImageLoader.js":13,"./XLoader.js":14,"./XMenu.js":15,"./XPayment.js":16,"./XPost.js":17,"./XScanner.js":18,"./XSearch.js":19,"./crypto-md5-2.5.3.js":20,"./jquery-1.11.2":21,"./polyfill.js":23,"async":24,"ejs":25,"jsharmony-validate":4,"lodash":28,"moment":29}],23:[function(require,module,exports){
 if (!String.prototype.trim) {
   (function () {
     // Make sure we trim BOM and NBSP
@@ -22332,7 +22601,7 @@ module.exports={
   var undefined;
 
   /** Used as the semantic version number. */
-  var VERSION = '4.17.10';
+  var VERSION = '4.17.11';
 
   /** Used as the size to enable large array optimizations. */
   var LARGE_ARRAY_SIZE = 200;
@@ -22596,7 +22865,7 @@ module.exports={
   var reHasUnicode = RegExp('[' + rsZWJ + rsAstralRange  + rsComboRange + rsVarRange + ']');
 
   /** Used to detect strings that need a more robust regexp to match words. */
-  var reHasUnicodeWord = /[a-z][A-Z]|[A-Z]{2,}[a-z]|[0-9][a-zA-Z]|[a-zA-Z][0-9]|[^a-zA-Z0-9 ]/;
+  var reHasUnicodeWord = /[a-z][A-Z]|[A-Z]{2}[a-z]|[0-9][a-zA-Z]|[a-zA-Z][0-9]|[^a-zA-Z0-9 ]/;
 
   /** Used to assign default `context` object properties. */
   var contextProps = [
@@ -23542,20 +23811,6 @@ module.exports={
       }
     }
     return result;
-  }
-
-  /**
-   * Gets the value at `key`, unless `key` is "__proto__".
-   *
-   * @private
-   * @param {Object} object The object to query.
-   * @param {string} key The key of the property to get.
-   * @returns {*} Returns the property value.
-   */
-  function safeGet(object, key) {
-    return key == '__proto__'
-      ? undefined
-      : object[key];
   }
 
   /**
@@ -26015,7 +26270,7 @@ module.exports={
           if (isArguments(objValue)) {
             newValue = toPlainObject(objValue);
           }
-          else if (!isObject(objValue) || (srcIndex && isFunction(objValue))) {
+          else if (!isObject(objValue) || isFunction(objValue)) {
             newValue = initCloneObject(srcValue);
           }
         }
@@ -28936,6 +29191,22 @@ module.exports={
         array[length] = isIndex(index, arrLength) ? oldArray[index] : undefined;
       }
       return array;
+    }
+
+    /**
+     * Gets the value at `key`, unless `key` is "__proto__".
+     *
+     * @private
+     * @param {Object} object The object to query.
+     * @param {string} key The key of the property to get.
+     * @returns {*} Returns the property value.
+     */
+    function safeGet(object, key) {
+      if (key == '__proto__') {
+        return;
+      }
+
+      return object[key];
     }
 
     /**
@@ -43933,4 +44204,25 @@ module.exports={
 
 })));
 
+},{}],30:[function(require,module,exports){
+/*! jQuery UI - v1.10.3 - 2013-09-27
+* http://jqueryui.com
+* Includes: jquery.ui.core.js, jquery.ui.datepicker.js
+* Copyright 2013 jQuery Foundation and other contributors; Licensed MIT */
+
+/*
+* ASPA CHANGELOG
+*
+* 3/21/2014 - Disable ENTER ("case 13:" code) on datepicker
+*/
+
+exports = module.exports = function(jQuery){ (function(e,t){function i(t,i){var s,a,o,r=t.nodeName.toLowerCase();return"area"===r?(s=t.parentNode,a=s.name,t.href&&a&&"map"===s.nodeName.toLowerCase()?(o=e("img[usemap=#"+a+"]")[0],!!o&&n(o)):!1):(/input|select|textarea|button|object/.test(r)?!t.disabled:"a"===r?t.href||i:i)&&n(t)}function n(t){return e.expr.filters.visible(t)&&!e(t).parents().addBack().filter(function(){return"hidden"===e.css(this,"visibility")}).length}var s=0,a=/^ui-id-\d+$/;e.ui=e.ui||{},e.extend(e.ui,{version:"1.10.3",keyCode:{BACKSPACE:8,COMMA:188,DELETE:46,DOWN:40,END:35,ENTER:13,ESCAPE:27,HOME:36,LEFT:37,NUMPAD_ADD:107,NUMPAD_DECIMAL:110,NUMPAD_DIVIDE:111,NUMPAD_ENTER:108,NUMPAD_MULTIPLY:106,NUMPAD_SUBTRACT:109,PAGE_DOWN:34,PAGE_UP:33,PERIOD:190,RIGHT:39,SPACE:32,TAB:9,UP:38}}),e.fn.extend({focus:function(t){return function(i,n){return"number"==typeof i?this.each(function(){var t=this;setTimeout(function(){e(t).focus(),n&&n.call(t)},i)}):t.apply(this,arguments)}}(e.fn.focus),scrollParent:function(){var t;return t=e.ui.ie&&/(static|relative)/.test(this.css("position"))||/absolute/.test(this.css("position"))?this.parents().filter(function(){return/(relative|absolute|fixed)/.test(e.css(this,"position"))&&/(auto|scroll)/.test(e.css(this,"overflow")+e.css(this,"overflow-y")+e.css(this,"overflow-x"))}).eq(0):this.parents().filter(function(){return/(auto|scroll)/.test(e.css(this,"overflow")+e.css(this,"overflow-y")+e.css(this,"overflow-x"))}).eq(0),/fixed/.test(this.css("position"))||!t.length?e(document):t},zIndex:function(i){if(i!==t)return this.css("zIndex",i);if(this.length)for(var n,s,a=e(this[0]);a.length&&a[0]!==document;){if(n=a.css("position"),("absolute"===n||"relative"===n||"fixed"===n)&&(s=parseInt(a.css("zIndex"),10),!isNaN(s)&&0!==s))return s;a=a.parent()}return 0},uniqueId:function(){return this.each(function(){this.id||(this.id="ui-id-"+ ++s)})},removeUniqueId:function(){return this.each(function(){a.test(this.id)&&e(this).removeAttr("id")})}}),e.extend(e.expr[":"],{data:e.expr.createPseudo?e.expr.createPseudo(function(t){return function(i){return!!e.data(i,t)}}):function(t,i,n){return!!e.data(t,n[3])},focusable:function(t){return i(t,!isNaN(e.attr(t,"tabindex")))},tabbable:function(t){var n=e.attr(t,"tabindex"),s=isNaN(n);return(s||n>=0)&&i(t,!s)}}),e("<a>").outerWidth(1).jquery||e.each(["Width","Height"],function(i,n){function s(t,i,n,s){return e.each(a,function(){i-=parseFloat(e.css(t,"padding"+this))||0,n&&(i-=parseFloat(e.css(t,"border"+this+"Width"))||0),s&&(i-=parseFloat(e.css(t,"margin"+this))||0)}),i}var a="Width"===n?["Left","Right"]:["Top","Bottom"],o=n.toLowerCase(),r={innerWidth:e.fn.innerWidth,innerHeight:e.fn.innerHeight,outerWidth:e.fn.outerWidth,outerHeight:e.fn.outerHeight};e.fn["inner"+n]=function(i){return i===t?r["inner"+n].call(this):this.each(function(){e(this).css(o,s(this,i)+"px")})},e.fn["outer"+n]=function(t,i){return"number"!=typeof t?r["outer"+n].call(this,t):this.each(function(){e(this).css(o,s(this,t,!0,i)+"px")})}}),e.fn.addBack||(e.fn.addBack=function(e){return this.add(null==e?this.prevObject:this.prevObject.filter(e))}),e("<a>").data("a-b","a").removeData("a-b").data("a-b")&&(e.fn.removeData=function(t){return function(i){return arguments.length?t.call(this,e.camelCase(i)):t.call(this)}}(e.fn.removeData)),e.ui.ie=!!/msie [\w.]+/.exec(navigator.userAgent.toLowerCase()),e.support.selectstart="onselectstart"in document.createElement("div"),e.fn.extend({disableSelection:function(){return this.bind((e.support.selectstart?"selectstart":"mousedown")+".ui-disableSelection",function(e){e.preventDefault()})},enableSelection:function(){return this.unbind(".ui-disableSelection")}}),e.extend(e.ui,{plugin:{add:function(t,i,n){var s,a=e.ui[t].prototype;for(s in n)a.plugins[s]=a.plugins[s]||[],a.plugins[s].push([i,n[s]])},call:function(e,t,i){var n,s=e.plugins[t];if(s&&e.element[0].parentNode&&11!==e.element[0].parentNode.nodeType)for(n=0;s.length>n;n++)e.options[s[n][0]]&&s[n][1].apply(e.element,i)}},hasScroll:function(t,i){if("hidden"===e(t).css("overflow"))return!1;var n=i&&"left"===i?"scrollLeft":"scrollTop",s=!1;return t[n]>0?!0:(t[n]=1,s=t[n]>0,t[n]=0,s)}})})(jQuery);(function(e,t){function i(){this._curInst=null,this._keyEvent=!1,this._disabledInputs=[],this._datepickerShowing=!1,this._inDialog=!1,this._mainDivId="ui-datepicker-div",this._inlineClass="ui-datepicker-inline",this._appendClass="ui-datepicker-append",this._triggerClass="ui-datepicker-trigger",this._dialogClass="ui-datepicker-dialog",this._disableClass="ui-datepicker-disabled",this._unselectableClass="ui-datepicker-unselectable",this._currentClass="ui-datepicker-current-day",this._dayOverClass="ui-datepicker-days-cell-over",this.regional=[],this.regional[""]={closeText:"Done",prevText:"Prev",nextText:"Next",currentText:"Today",monthNames:["January","February","March","April","May","June","July","August","September","October","November","December"],monthNamesShort:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],dayNames:["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],dayNamesShort:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],dayNamesMin:["Su","Mo","Tu","We","Th","Fr","Sa"],weekHeader:"Wk",dateFormat:"mm/dd/yy",firstDay:0,isRTL:!1,showMonthAfterYear:!1,yearSuffix:""},this._defaults={showOn:"focus",showAnim:"fadeIn",showOptions:{},defaultDate:null,appendText:"",buttonText:"...",buttonImage:"",buttonImageOnly:!1,hideIfNoPrevNext:!1,navigationAsDateFormat:!1,gotoCurrent:!1,changeMonth:!1,changeYear:!1,yearRange:"c-10:c+10",showOtherMonths:!1,selectOtherMonths:!1,showWeek:!1,calculateWeek:this.iso8601Week,shortYearCutoff:"+10",minDate:null,maxDate:null,duration:"fast",beforeShowDay:null,beforeShow:null,onSelect:null,onChangeMonthYear:null,onClose:null,numberOfMonths:1,showCurrentAtPos:0,stepMonths:1,stepBigMonths:12,altField:"",altFormat:"",constrainInput:!0,showButtonPanel:!1,autoSize:!1,disabled:!1},e.extend(this._defaults,this.regional[""]),this.dpDiv=a(e("<div id='"+this._mainDivId+"' class='ui-datepicker ui-widget ui-widget-content ui-helper-clearfix ui-corner-all'></div>"))}function a(t){var i="button, .ui-datepicker-prev, .ui-datepicker-next, .ui-datepicker-calendar td a";return t.delegate(i,"mouseout",function(){e(this).removeClass("ui-state-hover"),-1!==this.className.indexOf("ui-datepicker-prev")&&e(this).removeClass("ui-datepicker-prev-hover"),-1!==this.className.indexOf("ui-datepicker-next")&&e(this).removeClass("ui-datepicker-next-hover")}).delegate(i,"mouseover",function(){e.datepicker._isDisabledDatepicker(n.inline?t.parent()[0]:n.input[0])||(e(this).parents(".ui-datepicker-calendar").find("a").removeClass("ui-state-hover"),e(this).addClass("ui-state-hover"),-1!==this.className.indexOf("ui-datepicker-prev")&&e(this).addClass("ui-datepicker-prev-hover"),-1!==this.className.indexOf("ui-datepicker-next")&&e(this).addClass("ui-datepicker-next-hover"))})}function s(t,i){e.extend(t,i);for(var a in i)null==i[a]&&(t[a]=i[a]);return t}e.extend(e.ui,{datepicker:{version:"1.10.3"}});var n,r="datepicker";e.extend(i.prototype,{markerClassName:"hasDatepicker",maxRows:4,_widgetDatepicker:function(){return this.dpDiv},setDefaults:function(e){return s(this._defaults,e||{}),this},_attachDatepicker:function(t,i){var a,s,n;a=t.nodeName.toLowerCase(),s="div"===a||"span"===a,t.id||(this.uuid+=1,t.id="dp"+this.uuid),n=this._newInst(e(t),s),n.settings=e.extend({},i||{}),"input"===a?this._connectDatepicker(t,n):s&&this._inlineDatepicker(t,n)},_newInst:function(t,i){var s=t[0].id.replace(/([^A-Za-z0-9_\-])/g,"\\\\$1");return{id:s,input:t,selectedDay:0,selectedMonth:0,selectedYear:0,drawMonth:0,drawYear:0,inline:i,dpDiv:i?a(e("<div class='"+this._inlineClass+" ui-datepicker ui-widget ui-widget-content ui-helper-clearfix ui-corner-all'></div>")):this.dpDiv}},_connectDatepicker:function(t,i){var a=e(t);i.append=e([]),i.trigger=e([]),a.hasClass(this.markerClassName)||(this._attachments(a,i),a.addClass(this.markerClassName).keydown(this._doKeyDown).keypress(this._doKeyPress).keyup(this._doKeyUp),this._autoSize(i),e.data(t,r,i),i.settings.disabled&&this._disableDatepicker(t))},_attachments:function(t,i){var a,s,n,r=this._get(i,"appendText"),o=this._get(i,"isRTL");i.append&&i.append.remove(),r&&(i.append=e("<span class='"+this._appendClass+"'>"+r+"</span>"),t[o?"before":"after"](i.append)),t.unbind("focus",this._showDatepicker),i.trigger&&i.trigger.remove(),a=this._get(i,"showOn"),("focus"===a||"both"===a)&&t.focus(this._showDatepicker),("button"===a||"both"===a)&&(s=this._get(i,"buttonText"),n=this._get(i,"buttonImage"),i.trigger=e(this._get(i,"buttonImageOnly")?e("<img/>").addClass(this._triggerClass).attr({src:n,alt:s,title:s}):e("<button type='button'></button>").addClass(this._triggerClass).html(n?e("<img/>").attr({src:n,alt:s,title:s}):s)),t[o?"before":"after"](i.trigger),i.trigger.click(function(){return e.datepicker._datepickerShowing&&e.datepicker._lastInput===t[0]?e.datepicker._hideDatepicker():e.datepicker._datepickerShowing&&e.datepicker._lastInput!==t[0]?(e.datepicker._hideDatepicker(),e.datepicker._showDatepicker(t[0])):e.datepicker._showDatepicker(t[0]),!1}))},_autoSize:function(e){if(this._get(e,"autoSize")&&!e.inline){var t,i,a,s,n=new Date(2009,11,20),r=this._get(e,"dateFormat");r.match(/[DM]/)&&(t=function(e){for(i=0,a=0,s=0;e.length>s;s++)e[s].length>i&&(i=e[s].length,a=s);return a},n.setMonth(t(this._get(e,r.match(/MM/)?"monthNames":"monthNamesShort"))),n.setDate(t(this._get(e,r.match(/DD/)?"dayNames":"dayNamesShort"))+20-n.getDay())),e.input.attr("size",this._formatDate(e,n).length)}},_inlineDatepicker:function(t,i){var a=e(t);a.hasClass(this.markerClassName)||(a.addClass(this.markerClassName).append(i.dpDiv),e.data(t,r,i),this._setDate(i,this._getDefaultDate(i),!0),this._updateDatepicker(i),this._updateAlternate(i),i.settings.disabled&&this._disableDatepicker(t),i.dpDiv.css("display","block"))},_dialogDatepicker:function(t,i,a,n,o){var u,c,l,h,d,p=this._dialogInst;return p||(this.uuid+=1,u="dp"+this.uuid,this._dialogInput=e("<input type='text' id='"+u+"' style='position: absolute; top: -100px; width: 0px;'/>"),this._dialogInput.keydown(this._doKeyDown),e("body").append(this._dialogInput),p=this._dialogInst=this._newInst(this._dialogInput,!1),p.settings={},e.data(this._dialogInput[0],r,p)),s(p.settings,n||{}),i=i&&i.constructor===Date?this._formatDate(p,i):i,this._dialogInput.val(i),this._pos=o?o.length?o:[o.pageX,o.pageY]:null,this._pos||(c=document.documentElement.clientWidth,l=document.documentElement.clientHeight,h=document.documentElement.scrollLeft||document.body.scrollLeft,d=document.documentElement.scrollTop||document.body.scrollTop,this._pos=[c/2-100+h,l/2-150+d]),this._dialogInput.css("left",this._pos[0]+20+"px").css("top",this._pos[1]+"px"),p.settings.onSelect=a,this._inDialog=!0,this.dpDiv.addClass(this._dialogClass),this._showDatepicker(this._dialogInput[0]),e.blockUI&&e.blockUI(this.dpDiv),e.data(this._dialogInput[0],r,p),this},_destroyDatepicker:function(t){var i,a=e(t),s=e.data(t,r);a.hasClass(this.markerClassName)&&(i=t.nodeName.toLowerCase(),e.removeData(t,r),"input"===i?(s.append.remove(),s.trigger.remove(),a.removeClass(this.markerClassName).unbind("focus",this._showDatepicker).unbind("keydown",this._doKeyDown).unbind("keypress",this._doKeyPress).unbind("keyup",this._doKeyUp)):("div"===i||"span"===i)&&a.removeClass(this.markerClassName).empty())},_enableDatepicker:function(t){var i,a,s=e(t),n=e.data(t,r);s.hasClass(this.markerClassName)&&(i=t.nodeName.toLowerCase(),"input"===i?(t.disabled=!1,n.trigger.filter("button").each(function(){this.disabled=!1}).end().filter("img").css({opacity:"1.0",cursor:""})):("div"===i||"span"===i)&&(a=s.children("."+this._inlineClass),a.children().removeClass("ui-state-disabled"),a.find("select.ui-datepicker-month, select.ui-datepicker-year").prop("disabled",!1)),this._disabledInputs=e.map(this._disabledInputs,function(e){return e===t?null:e}))},_disableDatepicker:function(t){var i,a,s=e(t),n=e.data(t,r);s.hasClass(this.markerClassName)&&(i=t.nodeName.toLowerCase(),"input"===i?(t.disabled=!0,n.trigger.filter("button").each(function(){this.disabled=!0}).end().filter("img").css({opacity:"0.5",cursor:"default"})):("div"===i||"span"===i)&&(a=s.children("."+this._inlineClass),a.children().addClass("ui-state-disabled"),a.find("select.ui-datepicker-month, select.ui-datepicker-year").prop("disabled",!0)),this._disabledInputs=e.map(this._disabledInputs,function(e){return e===t?null:e}),this._disabledInputs[this._disabledInputs.length]=t)},_isDisabledDatepicker:function(e){if(!e)return!1;for(var t=0;this._disabledInputs.length>t;t++)if(this._disabledInputs[t]===e)return!0;return!1},_getInst:function(t){try{return e.data(t,r)}catch(i){throw"Missing instance data for this datepicker"}},_optionDatepicker:function(i,a,n){var r,o,u,c,l=this._getInst(i);return 2===arguments.length&&"string"==typeof a?"defaults"===a?e.extend({},e.datepicker._defaults):l?"all"===a?e.extend({},l.settings):this._get(l,a):null:(r=a||{},"string"==typeof a&&(r={},r[a]=n),l&&(this._curInst===l&&this._hideDatepicker(),o=this._getDateDatepicker(i,!0),u=this._getMinMaxDate(l,"min"),c=this._getMinMaxDate(l,"max"),s(l.settings,r),null!==u&&r.dateFormat!==t&&r.minDate===t&&(l.settings.minDate=this._formatDate(l,u)),null!==c&&r.dateFormat!==t&&r.maxDate===t&&(l.settings.maxDate=this._formatDate(l,c)),"disabled"in r&&(r.disabled?this._disableDatepicker(i):this._enableDatepicker(i)),this._attachments(e(i),l),this._autoSize(l),this._setDate(l,o),this._updateAlternate(l),this._updateDatepicker(l)),t)},_changeDatepicker:function(e,t,i){this._optionDatepicker(e,t,i)},_refreshDatepicker:function(e){var t=this._getInst(e);t&&this._updateDatepicker(t)},_setDateDatepicker:function(e,t){var i=this._getInst(e);i&&(this._setDate(i,t),this._updateDatepicker(i),this._updateAlternate(i))},_getDateDatepicker:function(e,t){var i=this._getInst(e);return i&&!i.inline&&this._setDateFromField(i,t),i?this._getDate(i):null},_doKeyDown:function(t){var i,a,s,n=e.datepicker._getInst(t.target),r=!0,o=n.dpDiv.is(".ui-datepicker-rtl");if(n._keyEvent=!0,e.datepicker._datepickerShowing)switch(t.keyCode){case 9:e.datepicker._hideDatepicker(),r=!1;break;/*case 13:return s=e("td."+e.datepicker._dayOverClass+":not(."+e.datepicker._currentClass+")",n.dpDiv),s[0]&&e.datepicker._selectDay(t.target,n.selectedMonth,n.selectedYear,s[0]),i=e.datepicker._get(n,"onSelect"),i?(a=e.datepicker._formatDate(n),i.apply(n.input?n.input[0]:null,[a,n])):e.datepicker._hideDatepicker(),!1;*/case 27:e.datepicker._hideDatepicker();break;case 33:e.datepicker._adjustDate(t.target,t.ctrlKey?-e.datepicker._get(n,"stepBigMonths"):-e.datepicker._get(n,"stepMonths"),"M");break;case 34:e.datepicker._adjustDate(t.target,t.ctrlKey?+e.datepicker._get(n,"stepBigMonths"):+e.datepicker._get(n,"stepMonths"),"M");break;case 35:(t.ctrlKey||t.metaKey)&&e.datepicker._clearDate(t.target),r=t.ctrlKey||t.metaKey;break;case 36:(t.ctrlKey||t.metaKey)&&e.datepicker._gotoToday(t.target),r=t.ctrlKey||t.metaKey;break;case 37:(t.ctrlKey||t.metaKey)&&e.datepicker._adjustDate(t.target,o?1:-1,"D"),r=t.ctrlKey||t.metaKey,t.originalEvent.altKey&&e.datepicker._adjustDate(t.target,t.ctrlKey?-e.datepicker._get(n,"stepBigMonths"):-e.datepicker._get(n,"stepMonths"),"M");break;case 38:(t.ctrlKey||t.metaKey)&&e.datepicker._adjustDate(t.target,-7,"D"),r=t.ctrlKey||t.metaKey;break;case 39:(t.ctrlKey||t.metaKey)&&e.datepicker._adjustDate(t.target,o?-1:1,"D"),r=t.ctrlKey||t.metaKey,t.originalEvent.altKey&&e.datepicker._adjustDate(t.target,t.ctrlKey?+e.datepicker._get(n,"stepBigMonths"):+e.datepicker._get(n,"stepMonths"),"M");break;case 40:(t.ctrlKey||t.metaKey)&&e.datepicker._adjustDate(t.target,7,"D"),r=t.ctrlKey||t.metaKey;break;default:r=!1}else 36===t.keyCode&&t.ctrlKey?e.datepicker._showDatepicker(this):r=!1;r&&(t.preventDefault(),t.stopPropagation())},_doKeyPress:function(i){var a,s,n=e.datepicker._getInst(i.target);return e.datepicker._get(n,"constrainInput")?(a=e.datepicker._possibleChars(e.datepicker._get(n,"dateFormat")),s=String.fromCharCode(null==i.charCode?i.keyCode:i.charCode),i.ctrlKey||i.metaKey||" ">s||!a||a.indexOf(s)>-1):t},_doKeyUp:function(t){var i,a=e.datepicker._getInst(t.target);if(a.input.val()!==a.lastVal)try{i=e.datepicker.parseDate(e.datepicker._get(a,"dateFormat"),a.input?a.input.val():null,e.datepicker._getFormatConfig(a)),i&&(e.datepicker._setDateFromField(a),e.datepicker._updateAlternate(a),e.datepicker._updateDatepicker(a))}catch(s){}return!0},_showDatepicker:function(t){if(t=t.target||t,"input"!==t.nodeName.toLowerCase()&&(t=e("input",t.parentNode)[0]),!e.datepicker._isDisabledDatepicker(t)&&e.datepicker._lastInput!==t){var i,a,n,r,o,u,c;i=e.datepicker._getInst(t),e.datepicker._curInst&&e.datepicker._curInst!==i&&(e.datepicker._curInst.dpDiv.stop(!0,!0),i&&e.datepicker._datepickerShowing&&e.datepicker._hideDatepicker(e.datepicker._curInst.input[0])),a=e.datepicker._get(i,"beforeShow"),n=a?a.apply(t,[t,i]):{},n!==!1&&(s(i.settings,n),i.lastVal=null,e.datepicker._lastInput=t,e.datepicker._setDateFromField(i),e.datepicker._inDialog&&(t.value=""),e.datepicker._pos||(e.datepicker._pos=e.datepicker._findPos(t),e.datepicker._pos[1]+=t.offsetHeight),r=!1,e(t).parents().each(function(){return r|="fixed"===e(this).css("position"),!r}),o={left:e.datepicker._pos[0],top:e.datepicker._pos[1]},e.datepicker._pos=null,i.dpDiv.empty(),i.dpDiv.css({position:"absolute",display:"block",top:"-1000px"}),e.datepicker._updateDatepicker(i),o=e.datepicker._checkOffset(i,o,r),i.dpDiv.css({position:e.datepicker._inDialog&&e.blockUI?"static":r?"fixed":"absolute",display:"none",left:o.left+"px",top:o.top+"px"}),i.inline||(u=e.datepicker._get(i,"showAnim"),c=e.datepicker._get(i,"duration"),i.dpDiv.zIndex(e(t).zIndex()+1),e.datepicker._datepickerShowing=!0,e.effects&&e.effects.effect[u]?i.dpDiv.show(u,e.datepicker._get(i,"showOptions"),c):i.dpDiv[u||"show"](u?c:null),e.datepicker._shouldFocusInput(i)&&i.input.focus(),e.datepicker._curInst=i))}},_updateDatepicker:function(t){this.maxRows=4,n=t,t.dpDiv.empty().append(this._generateHTML(t)),this._attachHandlers(t),t.dpDiv.find("."+this._dayOverClass+" a").mouseover();var i,a=this._getNumberOfMonths(t),s=a[1],r=17;t.dpDiv.removeClass("ui-datepicker-multi-2 ui-datepicker-multi-3 ui-datepicker-multi-4").width(""),s>1&&t.dpDiv.addClass("ui-datepicker-multi-"+s).css("width",r*s+"em"),t.dpDiv[(1!==a[0]||1!==a[1]?"add":"remove")+"Class"]("ui-datepicker-multi"),t.dpDiv[(this._get(t,"isRTL")?"add":"remove")+"Class"]("ui-datepicker-rtl"),t===e.datepicker._curInst&&e.datepicker._datepickerShowing&&e.datepicker._shouldFocusInput(t)&&t.input.focus(),t.yearshtml&&(i=t.yearshtml,setTimeout(function(){i===t.yearshtml&&t.yearshtml&&t.dpDiv.find("select.ui-datepicker-year:first").replaceWith(t.yearshtml),i=t.yearshtml=null},0))},_shouldFocusInput:function(e){return e.input&&e.input.is(":visible")&&!e.input.is(":disabled")&&!e.input.is(":focus")},_checkOffset:function(t,i,a){var s=t.dpDiv.outerWidth(),n=t.dpDiv.outerHeight(),r=t.input?t.input.outerWidth():0,o=t.input?t.input.outerHeight():0,u=document.documentElement.clientWidth+(a?0:e(document).scrollLeft()),c=document.documentElement.clientHeight+(a?0:e(document).scrollTop());return i.left-=this._get(t,"isRTL")?s-r:0,i.left-=a&&i.left===t.input.offset().left?e(document).scrollLeft():0,i.top-=a&&i.top===t.input.offset().top+o?e(document).scrollTop():0,i.left-=Math.min(i.left,i.left+s>u&&u>s?Math.abs(i.left+s-u):0),i.top-=Math.min(i.top,i.top+n>c&&c>n?Math.abs(n+o):0),i},_findPos:function(t){for(var i,a=this._getInst(t),s=this._get(a,"isRTL");t&&("hidden"===t.type||1!==t.nodeType||e.expr.filters.hidden(t));)t=t[s?"previousSibling":"nextSibling"];return i=e(t).offset(),[i.left,i.top]},_hideDatepicker:function(t){var i,a,s,n,o=this._curInst;!o||t&&o!==e.data(t,r)||this._datepickerShowing&&(i=this._get(o,"showAnim"),a=this._get(o,"duration"),s=function(){e.datepicker._tidyDialog(o)},e.effects&&(e.effects.effect[i]||e.effects[i])?o.dpDiv.hide(i,e.datepicker._get(o,"showOptions"),a,s):o.dpDiv["slideDown"===i?"slideUp":"fadeIn"===i?"fadeOut":"hide"](i?a:null,s),i||s(),this._datepickerShowing=!1,n=this._get(o,"onClose"),n&&n.apply(o.input?o.input[0]:null,[o.input?o.input.val():"",o]),this._lastInput=null,this._inDialog&&(this._dialogInput.css({position:"absolute",left:"0",top:"-100px"}),e.blockUI&&(e.unblockUI(),e("body").append(this.dpDiv))),this._inDialog=!1)},_tidyDialog:function(e){e.dpDiv.removeClass(this._dialogClass).unbind(".ui-datepicker-calendar")},_checkExternalClick:function(t){if(e.datepicker._curInst){var i=e(t.target),a=e.datepicker._getInst(i[0]);(i[0].id!==e.datepicker._mainDivId&&0===i.parents("#"+e.datepicker._mainDivId).length&&!i.hasClass(e.datepicker.markerClassName)&&!i.closest("."+e.datepicker._triggerClass).length&&e.datepicker._datepickerShowing&&(!e.datepicker._inDialog||!e.blockUI)||i.hasClass(e.datepicker.markerClassName)&&e.datepicker._curInst!==a)&&e.datepicker._hideDatepicker()}},_adjustDate:function(t,i,a){var s=e(t),n=this._getInst(s[0]);this._isDisabledDatepicker(s[0])||(this._adjustInstDate(n,i+("M"===a?this._get(n,"showCurrentAtPos"):0),a),this._updateDatepicker(n))},_gotoToday:function(t){var i,a=e(t),s=this._getInst(a[0]);this._get(s,"gotoCurrent")&&s.currentDay?(s.selectedDay=s.currentDay,s.drawMonth=s.selectedMonth=s.currentMonth,s.drawYear=s.selectedYear=s.currentYear):(i=new Date,s.selectedDay=i.getDate(),s.drawMonth=s.selectedMonth=i.getMonth(),s.drawYear=s.selectedYear=i.getFullYear()),this._notifyChange(s),this._adjustDate(a)},_selectMonthYear:function(t,i,a){var s=e(t),n=this._getInst(s[0]);n["selected"+("M"===a?"Month":"Year")]=n["draw"+("M"===a?"Month":"Year")]=parseInt(i.options[i.selectedIndex].value,10),this._notifyChange(n),this._adjustDate(s)},_selectDay:function(t,i,a,s){var n,r=e(t);e(s).hasClass(this._unselectableClass)||this._isDisabledDatepicker(r[0])||(n=this._getInst(r[0]),n.selectedDay=n.currentDay=e("a",s).html(),n.selectedMonth=n.currentMonth=i,n.selectedYear=n.currentYear=a,this._selectDate(t,this._formatDate(n,n.currentDay,n.currentMonth,n.currentYear)))},_clearDate:function(t){var i=e(t);this._selectDate(i,"")},_selectDate:function(t,i){var a,s=e(t),n=this._getInst(s[0]);i=null!=i?i:this._formatDate(n),n.input&&n.input.val(i),this._updateAlternate(n),a=this._get(n,"onSelect"),a?a.apply(n.input?n.input[0]:null,[i,n]):n.input&&n.input.trigger("change"),n.inline?this._updateDatepicker(n):(this._hideDatepicker(),this._lastInput=n.input[0],"object"!=typeof n.input[0]&&n.input.focus(),this._lastInput=null)},_updateAlternate:function(t){var i,a,s,n=this._get(t,"altField");n&&(i=this._get(t,"altFormat")||this._get(t,"dateFormat"),a=this._getDate(t),s=this.formatDate(i,a,this._getFormatConfig(t)),e(n).each(function(){e(this).val(s)}))},noWeekends:function(e){var t=e.getDay();return[t>0&&6>t,""]},iso8601Week:function(e){var t,i=new Date(e.getTime());return i.setDate(i.getDate()+4-(i.getDay()||7)),t=i.getTime(),i.setMonth(0),i.setDate(1),Math.floor(Math.round((t-i)/864e5)/7)+1},parseDate:function(i,a,s){if(null==i||null==a)throw"Invalid arguments";if(a="object"==typeof a?""+a:a+"",""===a)return null;var n,r,o,u,c=0,l=(s?s.shortYearCutoff:null)||this._defaults.shortYearCutoff,h="string"!=typeof l?l:(new Date).getFullYear()%100+parseInt(l,10),d=(s?s.dayNamesShort:null)||this._defaults.dayNamesShort,p=(s?s.dayNames:null)||this._defaults.dayNames,g=(s?s.monthNamesShort:null)||this._defaults.monthNamesShort,m=(s?s.monthNames:null)||this._defaults.monthNames,f=-1,_=-1,v=-1,k=-1,b=!1,y=function(e){var t=i.length>n+1&&i.charAt(n+1)===e;return t&&n++,t},D=function(e){var t=y(e),i="@"===e?14:"!"===e?20:"y"===e&&t?4:"o"===e?3:2,s=RegExp("^\\d{1,"+i+"}"),n=a.substring(c).match(s);if(!n)throw"Missing number at position "+c;return c+=n[0].length,parseInt(n[0],10)},w=function(i,s,n){var r=-1,o=e.map(y(i)?n:s,function(e,t){return[[t,e]]}).sort(function(e,t){return-(e[1].length-t[1].length)});if(e.each(o,function(e,i){var s=i[1];return a.substr(c,s.length).toLowerCase()===s.toLowerCase()?(r=i[0],c+=s.length,!1):t}),-1!==r)return r+1;throw"Unknown name at position "+c},M=function(){if(a.charAt(c)!==i.charAt(n))throw"Unexpected literal at position "+c;c++};for(n=0;i.length>n;n++)if(b)"'"!==i.charAt(n)||y("'")?M():b=!1;else switch(i.charAt(n)){case"d":v=D("d");break;case"D":w("D",d,p);break;case"o":k=D("o");break;case"m":_=D("m");break;case"M":_=w("M",g,m);break;case"y":f=D("y");break;case"@":u=new Date(D("@")),f=u.getFullYear(),_=u.getMonth()+1,v=u.getDate();break;case"!":u=new Date((D("!")-this._ticksTo1970)/1e4),f=u.getFullYear(),_=u.getMonth()+1,v=u.getDate();break;case"'":y("'")?M():b=!0;break;default:M()}if(a.length>c&&(o=a.substr(c),!/^\s+/.test(o)))throw"Extra/unparsed characters found in date: "+o;if(-1===f?f=(new Date).getFullYear():100>f&&(f+=(new Date).getFullYear()-(new Date).getFullYear()%100+(h>=f?0:-100)),k>-1)for(_=1,v=k;;){if(r=this._getDaysInMonth(f,_-1),r>=v)break;_++,v-=r}if(u=this._daylightSavingAdjust(new Date(f,_-1,v)),u.getFullYear()!==f||u.getMonth()+1!==_||u.getDate()!==v)throw"Invalid date";return u},ATOM:"yy-mm-dd",COOKIE:"D, dd M yy",ISO_8601:"yy-mm-dd",RFC_822:"D, d M y",RFC_850:"DD, dd-M-y",RFC_1036:"D, d M y",RFC_1123:"D, d M yy",RFC_2822:"D, d M yy",RSS:"D, d M y",TICKS:"!",TIMESTAMP:"@",W3C:"yy-mm-dd",_ticksTo1970:1e7*60*60*24*(718685+Math.floor(492.5)-Math.floor(19.7)+Math.floor(4.925)),formatDate:function(e,t,i){if(!t)return"";var a,s=(i?i.dayNamesShort:null)||this._defaults.dayNamesShort,n=(i?i.dayNames:null)||this._defaults.dayNames,r=(i?i.monthNamesShort:null)||this._defaults.monthNamesShort,o=(i?i.monthNames:null)||this._defaults.monthNames,u=function(t){var i=e.length>a+1&&e.charAt(a+1)===t;return i&&a++,i},c=function(e,t,i){var a=""+t;if(u(e))for(;i>a.length;)a="0"+a;return a},l=function(e,t,i,a){return u(e)?a[t]:i[t]},h="",d=!1;if(t)for(a=0;e.length>a;a++)if(d)"'"!==e.charAt(a)||u("'")?h+=e.charAt(a):d=!1;else switch(e.charAt(a)){case"d":h+=c("d",t.getDate(),2);break;case"D":h+=l("D",t.getDay(),s,n);break;case"o":h+=c("o",Math.round((new Date(t.getFullYear(),t.getMonth(),t.getDate()).getTime()-new Date(t.getFullYear(),0,0).getTime())/864e5),3);break;case"m":h+=c("m",t.getMonth()+1,2);break;case"M":h+=l("M",t.getMonth(),r,o);break;case"y":h+=u("y")?t.getFullYear():(10>t.getYear()%100?"0":"")+t.getYear()%100;break;case"@":h+=t.getTime();break;case"!":h+=1e4*t.getTime()+this._ticksTo1970;break;case"'":u("'")?h+="'":d=!0;break;default:h+=e.charAt(a)}return h},_possibleChars:function(e){var t,i="",a=!1,s=function(i){var a=e.length>t+1&&e.charAt(t+1)===i;return a&&t++,a};for(t=0;e.length>t;t++)if(a)"'"!==e.charAt(t)||s("'")?i+=e.charAt(t):a=!1;else switch(e.charAt(t)){case"d":case"m":case"y":case"@":i+="0123456789";break;case"D":case"M":return null;case"'":s("'")?i+="'":a=!0;break;default:i+=e.charAt(t)}return i},_get:function(e,i){return e.settings[i]!==t?e.settings[i]:this._defaults[i]},_setDateFromField:function(e,t){if(e.input.val()!==e.lastVal){var i=this._get(e,"dateFormat"),a=e.lastVal=e.input?e.input.val():null,s=this._getDefaultDate(e),n=s,r=this._getFormatConfig(e);try{n=this.parseDate(i,a,r)||s}catch(o){a=t?"":a}e.selectedDay=n.getDate(),e.drawMonth=e.selectedMonth=n.getMonth(),e.drawYear=e.selectedYear=n.getFullYear(),e.currentDay=a?n.getDate():0,e.currentMonth=a?n.getMonth():0,e.currentYear=a?n.getFullYear():0,this._adjustInstDate(e)}},_getDefaultDate:function(e){return this._restrictMinMax(e,this._determineDate(e,this._get(e,"defaultDate"),new Date))},_determineDate:function(t,i,a){var s=function(e){var t=new Date;return t.setDate(t.getDate()+e),t},n=function(i){try{return e.datepicker.parseDate(e.datepicker._get(t,"dateFormat"),i,e.datepicker._getFormatConfig(t))}catch(a){}for(var s=(i.toLowerCase().match(/^c/)?e.datepicker._getDate(t):null)||new Date,n=s.getFullYear(),r=s.getMonth(),o=s.getDate(),u=/([+\-]?[0-9]+)\s*(d|D|w|W|m|M|y|Y)?/g,c=u.exec(i);c;){switch(c[2]||"d"){case"d":case"D":o+=parseInt(c[1],10);break;case"w":case"W":o+=7*parseInt(c[1],10);break;case"m":case"M":r+=parseInt(c[1],10),o=Math.min(o,e.datepicker._getDaysInMonth(n,r));break;case"y":case"Y":n+=parseInt(c[1],10),o=Math.min(o,e.datepicker._getDaysInMonth(n,r))}c=u.exec(i)}return new Date(n,r,o)},r=null==i||""===i?a:"string"==typeof i?n(i):"number"==typeof i?isNaN(i)?a:s(i):new Date(i.getTime());return r=r&&"Invalid Date"==""+r?a:r,r&&(r.setHours(0),r.setMinutes(0),r.setSeconds(0),r.setMilliseconds(0)),this._daylightSavingAdjust(r)},_daylightSavingAdjust:function(e){return e?(e.setHours(e.getHours()>12?e.getHours()+2:0),e):null},_setDate:function(e,t,i){var a=!t,s=e.selectedMonth,n=e.selectedYear,r=this._restrictMinMax(e,this._determineDate(e,t,new Date));e.selectedDay=e.currentDay=r.getDate(),e.drawMonth=e.selectedMonth=e.currentMonth=r.getMonth(),e.drawYear=e.selectedYear=e.currentYear=r.getFullYear(),s===e.selectedMonth&&n===e.selectedYear||i||this._notifyChange(e),this._adjustInstDate(e),e.input&&e.input.val(a?"":this._formatDate(e))},_getDate:function(e){var t=!e.currentYear||e.input&&""===e.input.val()?null:this._daylightSavingAdjust(new Date(e.currentYear,e.currentMonth,e.currentDay));return t},_attachHandlers:function(t){var i=this._get(t,"stepMonths"),a="#"+t.id.replace(/\\\\/g,"\\");t.dpDiv.find("[data-handler]").map(function(){var t={prev:function(){e.datepicker._adjustDate(a,-i,"M")},next:function(){e.datepicker._adjustDate(a,+i,"M")},hide:function(){e.datepicker._hideDatepicker()},today:function(){e.datepicker._gotoToday(a)},selectDay:function(){return e.datepicker._selectDay(a,+this.getAttribute("data-month"),+this.getAttribute("data-year"),this),!1},selectMonth:function(){return e.datepicker._selectMonthYear(a,this,"M"),!1},selectYear:function(){return e.datepicker._selectMonthYear(a,this,"Y"),!1}};e(this).bind(this.getAttribute("data-event"),t[this.getAttribute("data-handler")])})},_generateHTML:function(e){var t,i,a,s,n,r,o,u,c,l,h,d,p,g,m,f,_,v,k,b,y,D,w,M,C,x,I,N,T,A,E,S,Y,F,P,O,j,K,R,H=new Date,W=this._daylightSavingAdjust(new Date(H.getFullYear(),H.getMonth(),H.getDate())),L=this._get(e,"isRTL"),U=this._get(e,"showButtonPanel"),B=this._get(e,"hideIfNoPrevNext"),z=this._get(e,"navigationAsDateFormat"),q=this._getNumberOfMonths(e),G=this._get(e,"showCurrentAtPos"),J=this._get(e,"stepMonths"),Q=1!==q[0]||1!==q[1],V=this._daylightSavingAdjust(e.currentDay?new Date(e.currentYear,e.currentMonth,e.currentDay):new Date(9999,9,9)),$=this._getMinMaxDate(e,"min"),X=this._getMinMaxDate(e,"max"),Z=e.drawMonth-G,et=e.drawYear;if(0>Z&&(Z+=12,et--),X)for(t=this._daylightSavingAdjust(new Date(X.getFullYear(),X.getMonth()-q[0]*q[1]+1,X.getDate())),t=$&&$>t?$:t;this._daylightSavingAdjust(new Date(et,Z,1))>t;)Z--,0>Z&&(Z=11,et--);for(e.drawMonth=Z,e.drawYear=et,i=this._get(e,"prevText"),i=z?this.formatDate(i,this._daylightSavingAdjust(new Date(et,Z-J,1)),this._getFormatConfig(e)):i,a=this._canAdjustMonth(e,-1,et,Z)?"<a class='ui-datepicker-prev ui-corner-all' data-handler='prev' data-event='click' title='"+i+"'><span class='ui-icon ui-icon-circle-triangle-"+(L?"e":"w")+"'>"+i+"</span></a>":B?"":"<a class='ui-datepicker-prev ui-corner-all ui-state-disabled' title='"+i+"'><span class='ui-icon ui-icon-circle-triangle-"+(L?"e":"w")+"'>"+i+"</span></a>",s=this._get(e,"nextText"),s=z?this.formatDate(s,this._daylightSavingAdjust(new Date(et,Z+J,1)),this._getFormatConfig(e)):s,n=this._canAdjustMonth(e,1,et,Z)?"<a class='ui-datepicker-next ui-corner-all' data-handler='next' data-event='click' title='"+s+"'><span class='ui-icon ui-icon-circle-triangle-"+(L?"w":"e")+"'>"+s+"</span></a>":B?"":"<a class='ui-datepicker-next ui-corner-all ui-state-disabled' title='"+s+"'><span class='ui-icon ui-icon-circle-triangle-"+(L?"w":"e")+"'>"+s+"</span></a>",r=this._get(e,"currentText"),o=this._get(e,"gotoCurrent")&&e.currentDay?V:W,r=z?this.formatDate(r,o,this._getFormatConfig(e)):r,u=e.inline?"":"<button type='button' class='ui-datepicker-close ui-state-default ui-priority-primary ui-corner-all' data-handler='hide' data-event='click'>"+this._get(e,"closeText")+"</button>",c=U?"<div class='ui-datepicker-buttonpane ui-widget-content'>"+(L?u:"")+(this._isInRange(e,o)?"<button type='button' class='ui-datepicker-current ui-state-default ui-priority-secondary ui-corner-all' data-handler='today' data-event='click'>"+r+"</button>":"")+(L?"":u)+"</div>":"",l=parseInt(this._get(e,"firstDay"),10),l=isNaN(l)?0:l,h=this._get(e,"showWeek"),d=this._get(e,"dayNames"),p=this._get(e,"dayNamesMin"),g=this._get(e,"monthNames"),m=this._get(e,"monthNamesShort"),f=this._get(e,"beforeShowDay"),_=this._get(e,"showOtherMonths"),v=this._get(e,"selectOtherMonths"),k=this._getDefaultDate(e),b="",D=0;q[0]>D;D++){for(w="",this.maxRows=4,M=0;q[1]>M;M++){if(C=this._daylightSavingAdjust(new Date(et,Z,e.selectedDay)),x=" ui-corner-all",I="",Q){if(I+="<div class='ui-datepicker-group",q[1]>1)switch(M){case 0:I+=" ui-datepicker-group-first",x=" ui-corner-"+(L?"right":"left");break;case q[1]-1:I+=" ui-datepicker-group-last",x=" ui-corner-"+(L?"left":"right");break;default:I+=" ui-datepicker-group-middle",x=""}I+="'>"}for(I+="<div class='ui-datepicker-header ui-widget-header ui-helper-clearfix"+x+"'>"+(/all|left/.test(x)&&0===D?L?n:a:"")+(/all|right/.test(x)&&0===D?L?a:n:"")+this._generateMonthYearHeader(e,Z,et,$,X,D>0||M>0,g,m)+"</div><table class='ui-datepicker-calendar'><thead>"+"<tr>",N=h?"<th class='ui-datepicker-week-col'>"+this._get(e,"weekHeader")+"</th>":"",y=0;7>y;y++)T=(y+l)%7,N+="<th"+((y+l+6)%7>=5?" class='ui-datepicker-week-end'":"")+">"+"<span title='"+d[T]+"'>"+p[T]+"</span></th>";for(I+=N+"</tr></thead><tbody>",A=this._getDaysInMonth(et,Z),et===e.selectedYear&&Z===e.selectedMonth&&(e.selectedDay=Math.min(e.selectedDay,A)),E=(this._getFirstDayOfMonth(et,Z)-l+7)%7,S=Math.ceil((E+A)/7),Y=Q?this.maxRows>S?this.maxRows:S:S,this.maxRows=Y,F=this._daylightSavingAdjust(new Date(et,Z,1-E)),P=0;Y>P;P++){for(I+="<tr>",O=h?"<td class='ui-datepicker-week-col'>"+this._get(e,"calculateWeek")(F)+"</td>":"",y=0;7>y;y++)j=f?f.apply(e.input?e.input[0]:null,[F]):[!0,""],K=F.getMonth()!==Z,R=K&&!v||!j[0]||$&&$>F||X&&F>X,O+="<td class='"+((y+l+6)%7>=5?" ui-datepicker-week-end":"")+(K?" ui-datepicker-other-month":"")+(F.getTime()===C.getTime()&&Z===e.selectedMonth&&e._keyEvent||k.getTime()===F.getTime()&&k.getTime()===C.getTime()?" "+this._dayOverClass:"")+(R?" "+this._unselectableClass+" ui-state-disabled":"")+(K&&!_?"":" "+j[1]+(F.getTime()===V.getTime()?" "+this._currentClass:"")+(F.getTime()===W.getTime()?" ui-datepicker-today":""))+"'"+(K&&!_||!j[2]?"":" title='"+j[2].replace(/'/g,"&#39;")+"'")+(R?"":" data-handler='selectDay' data-event='click' data-month='"+F.getMonth()+"' data-year='"+F.getFullYear()+"'")+">"+(K&&!_?"&#xa0;":R?"<span class='ui-state-default'>"+F.getDate()+"</span>":"<a class='ui-state-default"+(F.getTime()===W.getTime()?" ui-state-highlight":"")+(F.getTime()===V.getTime()?" ui-state-active":"")+(K?" ui-priority-secondary":"")+"' href='#'>"+F.getDate()+"</a>")+"</td>",F.setDate(F.getDate()+1),F=this._daylightSavingAdjust(F);I+=O+"</tr>"}Z++,Z>11&&(Z=0,et++),I+="</tbody></table>"+(Q?"</div>"+(q[0]>0&&M===q[1]-1?"<div class='ui-datepicker-row-break'></div>":""):""),w+=I}b+=w}return b+=c,e._keyEvent=!1,b},_generateMonthYearHeader:function(e,t,i,a,s,n,r,o){var u,c,l,h,d,p,g,m,f=this._get(e,"changeMonth"),_=this._get(e,"changeYear"),v=this._get(e,"showMonthAfterYear"),k="<div class='ui-datepicker-title'>",b="";if(n||!f)b+="<span class='ui-datepicker-month'>"+r[t]+"</span>";else{for(u=a&&a.getFullYear()===i,c=s&&s.getFullYear()===i,b+="<select class='ui-datepicker-month' data-handler='selectMonth' data-event='change'>",l=0;12>l;l++)(!u||l>=a.getMonth())&&(!c||s.getMonth()>=l)&&(b+="<option value='"+l+"'"+(l===t?" selected='selected'":"")+">"+o[l]+"</option>");b+="</select>"}if(v||(k+=b+(!n&&f&&_?"":"&#xa0;")),!e.yearshtml)if(e.yearshtml="",n||!_)k+="<span class='ui-datepicker-year'>"+i+"</span>";else{for(h=this._get(e,"yearRange").split(":"),d=(new Date).getFullYear(),p=function(e){var t=e.match(/c[+\-].*/)?i+parseInt(e.substring(1),10):e.match(/[+\-].*/)?d+parseInt(e,10):parseInt(e,10);
+return isNaN(t)?d:t},g=p(h[0]),m=Math.max(g,p(h[1]||"")),g=a?Math.max(g,a.getFullYear()):g,m=s?Math.min(m,s.getFullYear()):m,e.yearshtml+="<select class='ui-datepicker-year' data-handler='selectYear' data-event='change'>";m>=g;g++)e.yearshtml+="<option value='"+g+"'"+(g===i?" selected='selected'":"")+">"+g+"</option>";e.yearshtml+="</select>",k+=e.yearshtml,e.yearshtml=null}return k+=this._get(e,"yearSuffix"),v&&(k+=(!n&&f&&_?"":"&#xa0;")+b),k+="</div>"},_adjustInstDate:function(e,t,i){var a=e.drawYear+("Y"===i?t:0),s=e.drawMonth+("M"===i?t:0),n=Math.min(e.selectedDay,this._getDaysInMonth(a,s))+("D"===i?t:0),r=this._restrictMinMax(e,this._daylightSavingAdjust(new Date(a,s,n)));e.selectedDay=r.getDate(),e.drawMonth=e.selectedMonth=r.getMonth(),e.drawYear=e.selectedYear=r.getFullYear(),("M"===i||"Y"===i)&&this._notifyChange(e)},_restrictMinMax:function(e,t){var i=this._getMinMaxDate(e,"min"),a=this._getMinMaxDate(e,"max"),s=i&&i>t?i:t;return a&&s>a?a:s},_notifyChange:function(e){var t=this._get(e,"onChangeMonthYear");t&&t.apply(e.input?e.input[0]:null,[e.selectedYear,e.selectedMonth+1,e])},_getNumberOfMonths:function(e){var t=this._get(e,"numberOfMonths");return null==t?[1,1]:"number"==typeof t?[1,t]:t},_getMinMaxDate:function(e,t){return this._determineDate(e,this._get(e,t+"Date"),null)},_getDaysInMonth:function(e,t){return 32-this._daylightSavingAdjust(new Date(e,t,32)).getDate()},_getFirstDayOfMonth:function(e,t){return new Date(e,t,1).getDay()},_canAdjustMonth:function(e,t,i,a){var s=this._getNumberOfMonths(e),n=this._daylightSavingAdjust(new Date(i,a+(0>t?t:s[0]*s[1]),1));return 0>t&&n.setDate(this._getDaysInMonth(n.getFullYear(),n.getMonth())),this._isInRange(e,n)},_isInRange:function(e,t){var i,a,s=this._getMinMaxDate(e,"min"),n=this._getMinMaxDate(e,"max"),r=null,o=null,u=this._get(e,"yearRange");return u&&(i=u.split(":"),a=(new Date).getFullYear(),r=parseInt(i[0],10),o=parseInt(i[1],10),i[0].match(/[+\-].*/)&&(r+=a),i[1].match(/[+\-].*/)&&(o+=a)),(!s||t.getTime()>=s.getTime())&&(!n||t.getTime()<=n.getTime())&&(!r||t.getFullYear()>=r)&&(!o||o>=t.getFullYear())},_getFormatConfig:function(e){var t=this._get(e,"shortYearCutoff");return t="string"!=typeof t?t:(new Date).getFullYear()%100+parseInt(t,10),{shortYearCutoff:t,dayNamesShort:this._get(e,"dayNamesShort"),dayNames:this._get(e,"dayNames"),monthNamesShort:this._get(e,"monthNamesShort"),monthNames:this._get(e,"monthNames")}},_formatDate:function(e,t,i,a){t||(e.currentDay=e.selectedDay,e.currentMonth=e.selectedMonth,e.currentYear=e.selectedYear);var s=t?"object"==typeof t?t:this._daylightSavingAdjust(new Date(a,i,t)):this._daylightSavingAdjust(new Date(e.currentYear,e.currentMonth,e.currentDay));return this.formatDate(this._get(e,"dateFormat"),s,this._getFormatConfig(e))}}),e.fn.datepicker=function(t){if(!this.length)return this;e.datepicker.initialized||(e(document).mousedown(e.datepicker._checkExternalClick),e.datepicker.initialized=!0),0===e("#"+e.datepicker._mainDivId).length&&e("body").append(e.datepicker.dpDiv);var i=Array.prototype.slice.call(arguments,1);return"string"!=typeof t||"isDisabled"!==t&&"getDate"!==t&&"widget"!==t?"option"===t&&2===arguments.length&&"string"==typeof arguments[1]?e.datepicker["_"+t+"Datepicker"].apply(e.datepicker,[this[0]].concat(i)):this.each(function(){"string"==typeof t?e.datepicker["_"+t+"Datepicker"].apply(e.datepicker,[this].concat(i)):e.datepicker._attachDatepicker(this,t)}):e.datepicker["_"+t+"Datepicker"].apply(e.datepicker,[this[0]].concat(i))},e.datepicker=new i,e.datepicker.initialized=!1,e.datepicker.uuid=(new Date).getTime(),e.datepicker.version="1.10.3"})(jQuery); }
+},{}],31:[function(require,module,exports){
+/*!
+	Colorbox 1.5.14
+	license: MIT
+	http://www.jacklmoore.com/colorbox
+*/
+exports = module.exports = function(jQuery){ (function(t,e,i){function n(i,n,o){var r=e.createElement(i);return n&&(r.id=Z+n),o&&(r.style.cssText=o),t(r)}function o(){return i.innerHeight?i.innerHeight:t(i).height()}function r(e,i){i!==Object(i)&&(i={}),this.cache={},this.el=e,this.value=function(e){var n;return void 0===this.cache[e]&&(n=t(this.el).attr("data-cbox-"+e),void 0!==n?this.cache[e]=n:void 0!==i[e]?this.cache[e]=i[e]:void 0!==X[e]&&(this.cache[e]=X[e])),this.cache[e]},this.get=function(e){var i=this.value(e);return t.isFunction(i)?i.call(this.el,this):i}}function h(t){var e=W.length,i=(z+t)%e;return 0>i?e+i:i}function a(t,e){return Math.round((/%/.test(t)?("x"===e?E.width():o())/100:1)*parseInt(t,10))}function s(t,e){return t.get("photo")||t.get("photoRegex").test(e)}function l(t,e){return t.get("retinaUrl")&&i.devicePixelRatio>1?e.replace(t.get("photoRegex"),t.get("retinaSuffix")):e}function d(t){"contains"in y[0]&&!y[0].contains(t.target)&&t.target!==v[0]&&(t.stopPropagation(),y.focus())}function c(t){c.str!==t&&(y.add(v).removeClass(c.str).addClass(t),c.str=t)}function g(e){z=0,e&&e!==!1&&"nofollow"!==e?(W=t("."+te).filter(function(){var i=t.data(this,Y),n=new r(this,i);return n.get("rel")===e}),z=W.index(_.el),-1===z&&(W=W.add(_.el),z=W.length-1)):W=t(_.el)}function u(i){t(e).trigger(i),ae.triggerHandler(i)}function f(i){var o;if(!G){if(o=t(i).data(Y),_=new r(i,o),g(_.get("rel")),!$){$=q=!0,c(_.get("className")),y.css({visibility:"hidden",display:"block",opacity:""}),L=n(se,"LoadedContent","width:0; height:0; overflow:hidden; visibility:hidden"),b.css({width:"",height:""}).append(L),D=T.height()+k.height()+b.outerHeight(!0)-b.height(),j=C.width()+H.width()+b.outerWidth(!0)-b.width(),A=L.outerHeight(!0),N=L.outerWidth(!0);var h=a(_.get("initialWidth"),"x"),s=a(_.get("initialHeight"),"y"),l=_.get("maxWidth"),f=_.get("maxHeight");_.w=(l!==!1?Math.min(h,a(l,"x")):h)-N-j,_.h=(f!==!1?Math.min(s,a(f,"y")):s)-A-D,L.css({width:"",height:_.h}),J.position(),u(ee),_.get("onOpen"),O.add(F).hide(),y.focus(),_.get("trapFocus")&&e.addEventListener&&(e.addEventListener("focus",d,!0),ae.one(re,function(){e.removeEventListener("focus",d,!0)})),_.get("returnFocus")&&ae.one(re,function(){t(_.el).focus()})}var p=parseFloat(_.get("opacity"));v.css({opacity:p===p?p:"",cursor:_.get("overlayClose")?"pointer":"",visibility:"visible"}).show(),_.get("closeButton")?B.html(_.get("close")).appendTo(b):B.appendTo("<div/>"),w()}}function p(){y||(V=!1,E=t(i),y=n(se).attr({id:Y,"class":t.support.opacity===!1?Z+"IE":"",role:"dialog",tabindex:"-1"}).hide(),v=n(se,"Overlay").hide(),S=t([n(se,"LoadingOverlay")[0],n(se,"LoadingGraphic")[0]]),x=n(se,"Wrapper"),b=n(se,"Content").append(F=n(se,"Title"),I=n(se,"Current"),P=t('<button type="button"/>').attr({id:Z+"Previous"}),K=t('<button type="button"/>').attr({id:Z+"Next"}),R=n("button","Slideshow"),S),B=t('<button type="button"/>').attr({id:Z+"Close"}),x.append(n(se).append(n(se,"TopLeft"),T=n(se,"TopCenter"),n(se,"TopRight")),n(se,!1,"clear:left").append(C=n(se,"MiddleLeft"),b,H=n(se,"MiddleRight")),n(se,!1,"clear:left").append(n(se,"BottomLeft"),k=n(se,"BottomCenter"),n(se,"BottomRight"))).find("div div").css({"float":"left"}),M=n(se,!1,"position:absolute; width:9999px; visibility:hidden; display:none; max-width:none;"),O=K.add(P).add(I).add(R)),e.body&&!y.parent().length&&t(e.body).append(v,y.append(x,M))}function m(){function i(t){t.which>1||t.shiftKey||t.altKey||t.metaKey||t.ctrlKey||(t.preventDefault(),f(this))}return y?(V||(V=!0,K.click(function(){J.next()}),P.click(function(){J.prev()}),B.click(function(){J.close()}),v.click(function(){_.get("overlayClose")&&J.close()}),t(e).bind("keydown."+Z,function(t){var e=t.keyCode;$&&_.get("escKey")&&27===e&&(t.preventDefault(),J.close()),$&&_.get("arrowKey")&&W[1]&&!t.altKey&&(37===e?(t.preventDefault(),P.click()):39===e&&(t.preventDefault(),K.click()))}),t.isFunction(t.fn.on)?t(e).on("click."+Z,"."+te,i):t("."+te).live("click."+Z,i)),!0):!1}function w(){var e,o,r,h=J.prep,d=++le;if(q=!0,U=!1,u(he),u(ie),_.get("onLoad"),_.h=_.get("height")?a(_.get("height"),"y")-A-D:_.get("innerHeight")&&a(_.get("innerHeight"),"y"),_.w=_.get("width")?a(_.get("width"),"x")-N-j:_.get("innerWidth")&&a(_.get("innerWidth"),"x"),_.mw=_.w,_.mh=_.h,_.get("maxWidth")&&(_.mw=a(_.get("maxWidth"),"x")-N-j,_.mw=_.w&&_.w<_.mw?_.w:_.mw),_.get("maxHeight")&&(_.mh=a(_.get("maxHeight"),"y")-A-D,_.mh=_.h&&_.h<_.mh?_.h:_.mh),e=_.get("href"),Q=setTimeout(function(){S.show()},100),_.get("inline")){var c=t(e);r=t("<div>").hide().insertBefore(c),ae.one(he,function(){r.replaceWith(c)}),h(c)}else _.get("iframe")?h(" "):_.get("html")?h(_.get("html")):s(_,e)?(e=l(_,e),U=new Image,t(U).addClass(Z+"Photo").bind("error",function(){h(n(se,"Error").html(_.get("imgError")))}).one("load",function(){d===le&&setTimeout(function(){var e;t.each(["alt","longdesc","aria-describedby"],function(e,i){var n=t(_.el).attr(i)||t(_.el).attr("data-"+i);n&&U.setAttribute(i,n)}),_.get("retinaImage")&&i.devicePixelRatio>1&&(U.height=U.height/i.devicePixelRatio,U.width=U.width/i.devicePixelRatio),_.get("scalePhotos")&&(o=function(){U.height-=U.height*e,U.width-=U.width*e},_.mw&&U.width>_.mw&&(e=(U.width-_.mw)/U.width,o()),_.mh&&U.height>_.mh&&(e=(U.height-_.mh)/U.height,o())),_.h&&(U.style.marginTop=Math.max(_.mh-U.height,0)/2+"px"),W[1]&&(_.get("loop")||W[z+1])&&(U.style.cursor="pointer",U.onclick=function(){J.next()}),U.style.width=U.width+"px",U.style.height=U.height+"px",h(U)},1)}),U.src=e):e&&M.load(e,_.get("data"),function(e,i){d===le&&h("error"===i?n(se,"Error").html(_.get("xhrError")):t(this).contents())})}var v,y,x,b,T,C,H,k,W,E,L,M,S,F,I,R,K,P,B,O,_,D,j,A,N,z,U,$,q,G,Q,J,V,X={html:!1,photo:!1,iframe:!1,inline:!1,transition:"elastic",speed:300,fadeOut:300,width:!1,initialWidth:"600",innerWidth:!1,maxWidth:!1,height:!1,initialHeight:"450",innerHeight:!1,maxHeight:!1,scalePhotos:!0,scrolling:!0,opacity:.9,preloading:!0,className:!1,overlayClose:!0,escKey:!0,arrowKey:!0,top:!1,bottom:!1,left:!1,right:!1,fixed:!1,data:void 0,closeButton:!0,fastIframe:!0,open:!1,reposition:!0,loop:!0,slideshow:!1,slideshowAuto:!0,slideshowSpeed:2500,slideshowStart:"start slideshow",slideshowStop:"stop slideshow",photoRegex:/\.(gif|png|jp(e|g|eg)|bmp|ico|webp|jxr|svg)((#|\?).*)?$/i,retinaImage:!1,retinaUrl:!1,retinaSuffix:"@2x.$1",current:"image {current} of {total}",previous:"previous",next:"next",close:"close",xhrError:"This content failed to load.",imgError:"This image failed to load.",returnFocus:!0,trapFocus:!0,onOpen:!1,onLoad:!1,onComplete:!1,onCleanup:!1,onClosed:!1,rel:function(){return this.rel},href:function(){return t(this).attr("href")},title:function(){return this.title}},Y="colorbox",Z="cbox",te=Z+"Element",ee=Z+"_open",ie=Z+"_load",ne=Z+"_complete",oe=Z+"_cleanup",re=Z+"_closed",he=Z+"_purge",ae=t("<a/>"),se="div",le=0,de={},ce=function(){function t(){clearTimeout(h)}function e(){(_.get("loop")||W[z+1])&&(t(),h=setTimeout(J.next,_.get("slideshowSpeed")))}function i(){R.html(_.get("slideshowStop")).unbind(s).one(s,n),ae.bind(ne,e).bind(ie,t),y.removeClass(a+"off").addClass(a+"on")}function n(){t(),ae.unbind(ne,e).unbind(ie,t),R.html(_.get("slideshowStart")).unbind(s).one(s,function(){J.next(),i()}),y.removeClass(a+"on").addClass(a+"off")}function o(){r=!1,R.hide(),t(),ae.unbind(ne,e).unbind(ie,t),y.removeClass(a+"off "+a+"on")}var r,h,a=Z+"Slideshow_",s="click."+Z;return function(){r?_.get("slideshow")||(ae.unbind(oe,o),o()):_.get("slideshow")&&W[1]&&(r=!0,ae.one(oe,o),_.get("slideshowAuto")?i():n(),R.show())}}();t[Y]||(t(p),J=t.fn[Y]=t[Y]=function(e,i){var n,o=this;if(e=e||{},t.isFunction(o))o=t("<a/>"),e.open=!0;else if(!o[0])return o;return o[0]?(p(),m()&&(i&&(e.onComplete=i),o.each(function(){var i=t.data(this,Y)||{};t.data(this,Y,t.extend(i,e))}).addClass(te),n=new r(o[0],e),n.get("open")&&f(o[0])),o):o},J.position=function(e,i){function n(){T[0].style.width=k[0].style.width=b[0].style.width=parseInt(y[0].style.width,10)-j+"px",b[0].style.height=C[0].style.height=H[0].style.height=parseInt(y[0].style.height,10)-D+"px"}var r,h,s,l=0,d=0,c=y.offset();if(E.unbind("resize."+Z),y.css({top:-9e4,left:-9e4}),h=E.scrollTop(),s=E.scrollLeft(),_.get("fixed")?(c.top-=h,c.left-=s,y.css({position:"fixed"})):(l=h,d=s,y.css({position:"absolute"})),d+=_.get("right")!==!1?Math.max(E.width()-_.w-N-j-a(_.get("right"),"x"),0):_.get("left")!==!1?a(_.get("left"),"x"):Math.round(Math.max(E.width()-_.w-N-j,0)/2),l+=_.get("bottom")!==!1?Math.max(o()-_.h-A-D-a(_.get("bottom"),"y"),0):_.get("top")!==!1?a(_.get("top"),"y"):Math.round(Math.max(o()-_.h-A-D,0)/2),y.css({top:c.top,left:c.left,visibility:"visible"}),x[0].style.width=x[0].style.height="9999px",r={width:_.w+N+j,height:_.h+A+D,top:l,left:d},e){var g=0;t.each(r,function(t){return r[t]!==de[t]?(g=e,void 0):void 0}),e=g}de=r,e||y.css(r),y.dequeue().animate(r,{duration:e||0,complete:function(){n(),q=!1,x[0].style.width=_.w+N+j+"px",x[0].style.height=_.h+A+D+"px",_.get("reposition")&&setTimeout(function(){E.bind("resize."+Z,J.position)},1),t.isFunction(i)&&i()},step:n})},J.resize=function(t){var e;$&&(t=t||{},t.width&&(_.w=a(t.width,"x")-N-j),t.innerWidth&&(_.w=a(t.innerWidth,"x")),L.css({width:_.w}),t.height&&(_.h=a(t.height,"y")-A-D),t.innerHeight&&(_.h=a(t.innerHeight,"y")),t.innerHeight||t.height||(e=L.scrollTop(),L.css({height:"auto"}),_.h=L.height()),L.css({height:_.h}),e&&L.scrollTop(e),J.position("none"===_.get("transition")?0:_.get("speed")))},J.prep=function(i){function o(){return _.w=_.w||L.width(),_.w=_.mw&&_.mw<_.w?_.mw:_.w,_.w}function a(){return _.h=_.h||L.height(),_.h=_.mh&&_.mh<_.h?_.mh:_.h,_.h}if($){var d,g="none"===_.get("transition")?0:_.get("speed");L.remove(),L=n(se,"LoadedContent").append(i),L.hide().appendTo(M.show()).css({width:o(),overflow:_.get("scrolling")?"auto":"hidden"}).css({height:a()}).prependTo(b),M.hide(),t(U).css({"float":"none"}),c(_.get("className")),d=function(){function i(){t.support.opacity===!1&&y[0].style.removeAttribute("filter")}var n,o,a=W.length;$&&(o=function(){clearTimeout(Q),S.hide(),u(ne),_.get("onComplete")},F.html(_.get("title")).show(),L.show(),a>1?("string"==typeof _.get("current")&&I.html(_.get("current").replace("{current}",z+1).replace("{total}",a)).show(),K[_.get("loop")||a-1>z?"show":"hide"]().html(_.get("next")),P[_.get("loop")||z?"show":"hide"]().html(_.get("previous")),ce(),_.get("preloading")&&t.each([h(-1),h(1)],function(){var i,n=W[this],o=new r(n,t.data(n,Y)),h=o.get("href");h&&s(o,h)&&(h=l(o,h),i=e.createElement("img"),i.src=h)})):O.hide(),_.get("iframe")?(n=e.createElement("iframe"),"frameBorder"in n&&(n.frameBorder=0),"allowTransparency"in n&&(n.allowTransparency="true"),_.get("scrolling")||(n.scrolling="no"),t(n).attr({src:_.get("href"),name:(new Date).getTime(),"class":Z+"Iframe",allowFullScreen:!0}).one("load",o).appendTo(L),ae.one(he,function(){n.src="//about:blank"}),_.get("fastIframe")&&t(n).trigger("load")):o(),"fade"===_.get("transition")?y.fadeTo(g,1,i):i())},"fade"===_.get("transition")?y.fadeTo(g,0,function(){J.position(0,d)}):J.position(g,d)}},J.next=function(){!q&&W[1]&&(_.get("loop")||W[z+1])&&(z=h(1),f(W[z]))},J.prev=function(){!q&&W[1]&&(_.get("loop")||z)&&(z=h(-1),f(W[z]))},J.close=function(){$&&!G&&(G=!0,$=!1,u(oe),_.get("onCleanup"),E.unbind("."+Z),v.fadeTo(_.get("fadeOut")||0,0),y.stop().fadeTo(_.get("fadeOut")||0,0,function(){y.hide(),v.hide(),u(he),L.remove(),setTimeout(function(){G=!1,u(re),_.get("onClosed")},1)}))},J.remove=function(){y&&(y.stop(),t[Y].close(),y.stop(!1,!0).remove(),v.remove(),G=!1,y=null,t("."+te).removeData(Y).removeClass(te),t(e).unbind("click."+Z).unbind("keydown."+Z))},J.element=function(){return t(_.el)},J.settings=X)})(jQuery,document,window); };
 },{}]},{},[22]);

@@ -26,25 +26,25 @@
       <td colspan="2" align="center"><a href="login/forgot_password">Forgot password?</a></td>
     </tr>
     <tr>
-      <td colspan="2" align="center"><a href="#" onclick="XExt.Alert('Please contact us at <%=jsh.Config.support_email%> for assistance in retrieving your email login.'); return false;">Forgot email address?</a></td>
+      <td colspan="2" align="center"><a href="#" onclick="<%-req.jshsite.instance%>.XExt.Alert('Please contact us at <%=jsh.Config.support_email%> for assistance in retrieving your email login.'); return false;">Forgot email address?</a></td>
     </tr>
     <% } %>
   </table>
 </form>
 <script type="text/javascript">
-$(document).ready(function() {
-  if($("#username").val() != ''){
-    $("#password").focus().addClass('inputfocus');
+jsHarmony.jQuery(document).ready(function() {
+  if(jsHarmony.jQuery("#username").val() != ''){
+    jsHarmony.jQuery("#password").focus().addClass('inputfocus');
   }
   else{
-    $("#username").focus().addClass('inputfocus');
+    jsHarmony.jQuery("#username").focus().addClass('inputfocus');
   }
 
-  jQuery('input')
+  jsHarmony.jQuery('input')
     .bind('focus', function() {
-      $(this).addClass('inputfocus');
+      jsHarmony.jQuery(this).addClass('inputfocus');
     }).bind('blur', function() {
-      $(this).removeClass('inputfocus');
+      jsHarmony.jQuery(this).removeClass('inputfocus');
     });
 });
 </script>

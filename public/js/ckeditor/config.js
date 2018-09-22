@@ -7,6 +7,10 @@ CKEDITOR.editorConfig = function( config ) {
 	// Define changes to default configuration here. For example:
 	// config.language = 'fr';
   // config.uiColor = '#AADC6E';
+  var _BASEURL = '';
+  for(var i=0;i<window.jsHarmony.Instances.length;i++){
+    _BASEURL = window.jsHarmony.Instances[i]._BASEURL;
+  }
   config.filebrowserUploadUrl = _BASEURL + '_ul/ckeditor';
   config.extraPlugins = 'pastebase64';
 

@@ -1,12 +1,9 @@
-window.xform_<%=model.id%> = undefined;
 //var is_admin = <?=(has_role('ISADMIN')?'true':'false')?>;
 
 <% if(model.layout=='form'){ %>
-  <%-jshRenderEJS('jsh_form.js.single',ejsparams)%>
+  <%-jsh.RenderEJS('jsh_form.js.single',ejsparams)%>
 <% } else if(model.layout=='form-m') { %>
-  <%-jshRenderEJS('jsh_form.js.multiple',ejsparams)%>
+  <%-jsh.RenderEJS('jsh_form.js.multiple',ejsparams)%>
 <% } %>
 
-<%-jshRenderEJS('jsh_form.js.datamodel',ejsparams)%>
-
-jsh_heap.push('xform_<%=model.id%>');
+<%-jsh.RenderEJS('jsh_form.js.datamodel',ejsparams)%>

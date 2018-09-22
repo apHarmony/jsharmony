@@ -40,6 +40,7 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
   if (encryptedfields.length > 0) throw new Error('Encrypted fields not supported on GRID');
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'S');
   if ((encryptedfields.length > 0) && !(req.secure) && (!_this.jsh.Config.system_settings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
+  var db = _this.jsh.getModelDB(req, modelid);
   if ('d' in Q) P = JSON.parse(Q.d);
   
   if (!_this.ParamCheck('Q', Q, ['|rowstart', '|rowcount', '|sort', '|search', '|searchjson', '|d', '|meta', '|getcount'])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
@@ -122,7 +123,7 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
           var searchlistfields = this.getFieldsByName(model.fields, searchlist);
           _.each(searchlistfields, function (field) {
             if(field.disable_search_all) return;
-            var searchtermsql = _this.addSearchTerm(field, i, search_value, search_comparison, sql_ptypes, sql_params, verrors, { search_all: true });
+            var searchtermsql = _this.addSearchTerm(req, model, field, i, search_value, search_comparison, sql_ptypes, sql_params, verrors, { search_all: true });
             if (searchtermsql) {
               if (searchall.length) searchall.push('or');
               searchall.push(searchtermsql);
@@ -135,7 +136,7 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
         }
         else {
           var field = this.getFieldByName(model.fields, search_column);
-          var searchtermsql = this.addSearchTerm(field, i, search_value, search_comparison, sql_ptypes, sql_params, verrors);
+          var searchtermsql = this.addSearchTerm(req, model, field, i, search_value, search_comparison, sql_ptypes, sql_params, verrors);
           if (searchtermsql) {
             if (searchfields.length) searchfields.push(search_join);
             searchfields.push(searchtermsql);
@@ -179,14 +180,14 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
   verrors = _.merge(verrors, model.xvalidate.Validate('BFK', sql_params, undefined, undefined, undefined, { ignoreUndefined: true }));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   
-  var dbsql = _this.db.sql.getModelRecordset(_this.jsh, model, sql_filterfields, allfields, sortfields, searchfields, datalockqueries, rowstart, rowcount + 1);
+  var dbsql = db.sql.getModelRecordset(_this.jsh, model, sql_filterfields, allfields, sortfields, searchfields, datalockqueries, rowstart, rowcount + 1);
   
   //Add dynamic parameters from query string
   var dbtasks = {};
   var dbtaskname = modelid;
   if (!is_new) {
     dbtasks[dbtaskname] = function (dbtans, callback) {
-      _this.db.Recordset(req._DBContext, dbsql.sql, sql_ptypes, sql_params, dbtans, function (err, rslt) {
+      db.Recordset(req._DBContext, dbsql.sql, sql_ptypes, sql_params, dbtans, function (err, rslt) {
         if (err != null) { err.model = model; err.sql = dbsql.sql; }
         else {
           if ((rslt != null) && (rslt.length > rowcount)) {
@@ -208,7 +209,7 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
   
   if ('getcount' in Q) {
     dbtasks['_count_' + dbtaskname] = function (dbtrans, callback) {
-      _this.db.Row(req._DBContext, dbsql.rowcount_sql, sql_ptypes, sql_params, dbtrans, function (err, rslt) {
+      db.Row(req._DBContext, dbsql.rowcount_sql, sql_ptypes, sql_params, dbtrans, function (err, rslt) {
         if ((err == null) && (rslt == null)) err = Helper.NewError('Count not found', -14);
         if (err != null) { err.model = model; err.sql = dbsql.rowcount_sql; }
         callback(err, rslt);
@@ -229,8 +230,9 @@ exports.exportCSV = function (req, res, dbtasks, modelid) {
   var jsh = _this.jsh;
   if (!jsh.hasModel(req, modelid)) throw new Error('Model not found');
   var model = jsh.getModel(req, modelid);
+  var db = _this.jsh.getModelDB(req, modelid);
   dbtasks = _.reduce(dbtasks, function (rslt, dbtask, key) { rslt[key] = async.apply(dbtask, undefined); return rslt; }, {});
-  _this.db.ExecTasks(dbtasks, function (err, rslt) {
+  db.ExecTasks(dbtasks, function (err, rslt) {
     if (err != null) { _this.AppDBError(req, res, err); return; }
     if (!modelid in rslt) throw new Error('DB result missing model.');
     var eof = false;

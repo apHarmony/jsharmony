@@ -57,8 +57,9 @@ AppSrvRpt.prototype.queueReport = function (req, res, modelid, Q, P, params, onC
   var thisapp = this.AppSrv;
   var jsh = thisapp.jsh;
   var _this = this;
-  var model = thisapp.jsh.getModel(req, modelid);
+  var model = jsh.getModel(req, modelid);
   if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
+  var db = jsh.getModelDB(req, modelid);
   //Validate Parameters
   var fieldlist = thisapp.getFieldNames(req, model.fields, 'B');
   _.map(fieldlist, function (field) { if (!(field in Q)) Q[field] = ''; });
@@ -89,7 +90,7 @@ AppSrvRpt.prototype.queueReport = function (req, res, modelid, Q, P, params, onC
 
   this.parseReportSQLData(req, res, model, sql_ptypes, sql_params, verrors, dbtasks, model.reportdata);
   
-  thisapp.db.ExecTasks(dbtasks, function (err, rslt) {
+  db.ExecTasks(dbtasks, function (err, rslt) {
     if (err != null) { thisapp.AppDBError(req, res, err); return; }
     if (rslt == null) rslt = {};
     _this.MergeReportData(rslt, model.reportdata, null);
@@ -104,7 +105,9 @@ AppSrvRpt.prototype.queueReport = function (req, res, modelid, Q, P, params, onC
 
 AppSrvRpt.prototype.parseReportSQLData = function (req, res, model, sql_ptypes, sql_params, verrors, dbtasks, rdata) {
   var thisapp = this.AppSrv;
+  var jsh = thisapp.jsh;
   var _this = this;
+  var db = jsh.getModelDB(req, model.id);
   _.each(rdata, function (dparams, dname) {
     if (!('sql' in dparams)) throw new Error(dname + ' missing sql');
     //Add DataLock parameters to SQL 
@@ -113,15 +116,15 @@ AppSrvRpt.prototype.parseReportSQLData = function (req, res, model, sql_ptypes, 
     var skipdatalock = false;
     if ('nodatalock' in dparams) {
       var skipdatalock = true;
-      for (datalockid in req.jshconfig.datalock) {
-        if (Helper.arrayIndexOf(dparams.nodatalock,datalockid,{caseInsensitive:thisapp.jsh.Config.system_settings.case_insensitive_datalocks}) < 0) skipdatalock = false;
+      for (datalockid in req.jshsite.datalock) {
+        if (Helper.arrayIndexOf(dparams.nodatalock,datalockid,{caseInsensitive:jsh.Config.system_settings.case_insensitive_datalocks}) < 0) skipdatalock = false;
       }
     }
     
-    var sql = thisapp.db.sql.parseReportSQLData(thisapp.jsh, dname, dparams, skipdatalock, datalockqueries);
+    var sql = db.sql.parseReportSQLData(jsh, dname, dparams, skipdatalock, datalockqueries);
     
     dbtasks[dname] = function (callback) {
-      thisapp.db.Recordset(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt) {
+      db.Recordset(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt) {
         if ((err == null) && (rslt == null)) err = Helper.NewError('Record not found', -1);
         if (err != null) { err.model = model; err.sql = sql; }
         callback(err, rslt);
@@ -288,7 +291,7 @@ AppSrvRpt.prototype.genReport = function (req, res, modelid, params, data, done)
   var report_folder = jsh.Config.datadir + 'temp/report/';
   if (modelid.indexOf('_report_') != 0) throw new Error('Model is not a report');
   var reportid = modelid.substr(8);
-  var model = _this.AppSrv.jsh.getModel(req, modelid);
+  var model = jsh.getModel(req, modelid);
 
   HelperFS.createFolderIfNotExists(report_folder, function (err) {
     if (err) throw err;
@@ -501,8 +504,9 @@ AppSrvRpt.prototype.getPhantom = function (callback) {
 
 AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete) {
   var thisapp = this.AppSrv;
+  var jsh = thisapp.jsh;
   var _this = this;
-  var model = thisapp.jsh.getModel(req, modelid);
+  var model = jsh.getModel(req, modelid);
   if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
   if (!('jobqueue' in model)) throw new Error(modelid + ' job queue not enabled');
   if (!thisapp.JobProc) throw new Error('Job Processor not configured');
@@ -519,6 +523,7 @@ AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete
   var sql_ptypes = [];
   var sql_params = {};
   var verrors = {};
+  var db = jsh.getModelDB(req, modelid);
   
   var fields = thisapp.getFieldsByName(model.fields, fieldlist);
   if (fields.length == 0) return onComplete(null, {});
@@ -543,18 +548,18 @@ AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete
   var datalockqueries = [];
   thisapp.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
   
-  var sql = thisapp.db.sql.runReportJob(thisapp.jsh, model, datalockqueries);
+  var sql = db.sql.runReportJob(jsh, model, datalockqueries);
   
   var dbtasks = {};
   dbtasks['jobqueue'] = function (callback) {
-    thisapp.db.Recordset(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt) {
+    db.Recordset(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt) {
       if ((err == null) && (rslt == null)) err = Helper.NewError('Record not found', -1);
       if (err != null) { err.model = model; err.sql = sql; }
       callback(err, rslt);
     });
   }
   
-  thisapp.db.ExecTasks(dbtasks, function (err, rslt) {
+  db.ExecTasks(dbtasks, function (err, rslt) {
     if (err != null) { thisapp.AppDBError(req, res, err); return; }
     if (rslt == null) rslt = {};
     if (('_test' in Q) && (Q._test == 1)) {
@@ -596,7 +601,7 @@ AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete
         
         if(!thisapp.JobProc.AddDBJob(req, res, jobtasks, i, jrow, reportid, rparams)) return;
       }
-      thisapp.db.ExecTransTasks(jobtasks, function (err, rslt) {
+      thisapp.JobProc.db.ExecTransTasks(jobtasks, function (err, rslt) {
         if (err != null) { thisapp.AppDBError(req, res, err); return; }
         else rslt = { '_success': _.size(jobtasks) };
         res.send(JSON.stringify(rslt));

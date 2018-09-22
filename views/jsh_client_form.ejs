@@ -3,34 +3,34 @@
 <% } %>
 <% if(model.topmost){ %>
 <div class="xactions top xelem<%=model.id%>">
-  <%-jshRenderEJS('jsh_buttons',ejsparams)%>
-  <a href="#" class="save" onclick="XForm_Save();return false;" style="display:none;"><img src="/images/icon_save.png" alt="Save" title="Save" />Save</a>
-  <a href="#" class="delete" onclick="XForm_Delete();return false;" style="display:none;"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a>
-  <a href="#" onclick="XPrint(); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'print'))%>"><img src="/images/icon_print.png" alt="Print" title="Print" />Print</a>
+  <%-jsh.RenderEJS('jsh_buttons',ejsparams)%>
+  <a href="#" class="save" onclick="<%-instance%>.XForm_Save();return false;" style="display:none;"><img src="/images/icon_save.png" alt="Save" title="Save" />Save</a>
+  <a href="#" class="delete" onclick="<%-instance%>.XForm_Delete();return false;" style="display:none;"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a>
+  <a href="#" onclick="<%-instance%>.XPrint(); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'print'))%>"><img src="/images/icon_print.png" alt="Print" title="Print" />Print</a>
   <a href="<%-model.helpurl%>" onclick="<%-model.helpurl_onclick%>" style="<%-xejs.visible(xejs.showSystemButton(model,'help'))%>"><img src="/images/icon_help.png" alt="Help" title="Help" />Help</a>
 </div><div class="xactions_spacer"></div>
 <% } else if(model.layout == 'form-m') { %>
 <div class="xactions xelem<%=model.id%>">
-  <a href="#" onclick="xform_<%=model.id%>.NavFirst(); return false;" class="navbar"><img src="/images/icon_first.png" alt="First" title="First" /></a>
-  <a href="#" onclick="xform_<%=model.id%>.NavPrev(); return false;" class="navbar"><img src="/images/icon_prev.png" alt="Prev" title="Prev" /></a>
+  <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavFirst(); return false;" class="navbar"><img src="/images/icon_first.png" alt="First" title="First" /></a>
+  <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavPrev(); return false;" class="navbar"><img src="/images/icon_prev.png" alt="Prev" title="Prev" /></a>
   <div class="navtext" id="navtext_<%=model.id%>">1 of 1</div>
-  <a href="#" onclick="xform_<%=model.id%>.NavNext(); return false;" class="navbar"><img src="/images/icon_next.png" alt="Next" title="Next" /></a>
-  <a href="#" onclick="xform_<%=model.id%>.NavLast(); return false;" class="navbar"><img src="/images/icon_last.png" alt="Last" title="Last" /></a>
-  <a href="#" onclick="xform_<%=model.id%>.NavAdd(); return false;" style="<%-xejs.visible(XExt.access(model.actions,'IU'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a>
-  <a href="#" onclick="xform_<%=model.id%>.NavDelete(); return false;" style="<%-xejs.visible(XExt.access(model.actions,'D'))%>"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a>
-  <%-jshRenderEJS('jsh_buttons',ejsparams)%>
+  <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavNext(); return false;" class="navbar"><img src="/images/icon_next.png" alt="Next" title="Next" /></a>
+  <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavLast(); return false;" class="navbar"><img src="/images/icon_last.png" alt="Last" title="Last" /></a>
+  <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavAdd(); return false;" style="<%-xejs.visible(XExt.access(model.actions,'IU'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a>
+  <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavDelete(); return false;" style="<%-xejs.visible(XExt.access(model.actions,'D'))%>"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a>
+  <%-jsh.RenderEJS('jsh_buttons',ejsparams)%>
 </div>
 <div class="clear"></div>
 <div class="xnorecords xelem<%=model.id%>" style="display:none;">No <%=model.caption[1]%> Records</div>
 <div class="xformcontainer xelem<%=model.id%>">
 <% } else if(model.buttons || model.duplicate) { %>
 <div class="xactions secondaryform xelem<%=model.id%>">
-  <%-jshRenderEJS('jsh_buttons',ejsparams)%>
+  <%-jsh.RenderEJS('jsh_buttons',ejsparams)%>
 </div>
 <% } %>
 <div class="xform xelem<%=model.id%>" id="xform<%=model.id%>" style="<%=model.formstyle%>">
-<%-jshRenderEJS('jsh_embed.js',ejsparams)%>
-<%-jshRenderEJS('jsh_controls',ejsparams)%>
+<%-jsh.RenderEJS('jsh_embed.js',ejsparams)%>
+<%-jsh.RenderEJS('jsh_controls',ejsparams)%>
 <% if(model.duplicate){
   var popup_model = _.extend({},model.duplicate.model);
   popup_model.hide_system_buttons = _.union(popup_model.hide_system_buttons,['export']); 
@@ -39,10 +39,10 @@
   <div style="display:none;">
     <div class="xsubform xpopup xelem<%=model.id%>" class="colorbox_inline" id="popup_<%=model.id%>_duplicate">
       <div class="xpanel" style="<%=model.duplicate.popupstyle%>">
-        <%-jshRender(popup_model,model)%>
+        <%-jsh.Render(popup_model,model)%>
         <div style="text-align:center;padding-top:8px;">
-          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.id%> style="padding:3px 8px;" value="Duplicate" onclick="XForm_Duplicate('<%=popup_model.id%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link))%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link_options))%>'); return false;" />
-          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.id%> style="padding:3px 8px;" value="Cancel" onclick="$.colorbox.close(); return false;" />
+          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.id%> style="padding:3px 8px;" value="Duplicate" onclick="<%-instance%>.XForm_Duplicate('<%=popup_model.id%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link))%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link_options))%>'); return false;" />
+          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.id%> style="padding:3px 8px;" value="Cancel" onclick="<%-instance%>.$.colorbox.close(); return false;" />
         </div>
       </div>
     </div>

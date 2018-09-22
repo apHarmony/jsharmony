@@ -32,6 +32,7 @@ function jsHarmonyServer(serverConfig, jsh){
   this.app = null;  //Express Server
   this.running = false;
   this.serverConfig = serverConfig||{};
+  this.servers = [];
   if(!('add_default_routes' in serverConfig)) serverConfig.add_default_routes = true;
   /*
   {
@@ -91,7 +92,7 @@ jsHarmonyServer.prototype.addDefaultRoutes = function () {
   /// error handlers
   _this.app.use(function (err, req, res, next) {
     var errorpage = 'error';
-    if (req.jshconfig && req.jshconfig.show_system_errors) errorpage = 'error_debug';
+    if (req.jshsite && req.jshsite.show_system_errors) errorpage = 'error_debug';
     _this.jsh.Log.error(err);
     _this.jsh.Log.info(err.stack);
     res.status(err.status || 500);
@@ -170,6 +171,7 @@ jsHarmonyServer.prototype.Run = function(cb){
 
   if(http_server){
     var server = http.createServer(_this.app);
+    _this.servers.push(server);
     server.timeout = _this.serverConfig.request_timeout;
     _this.ListenPort(server, _this.serverConfig.http_port, _this.serverConfig.http_ip, function(){
       _this.jsh.Log.info('Listening on HTTP port ' + server.address().port);
@@ -198,6 +200,7 @@ jsHarmonyServer.prototype.Run = function(cb){
     };
     if(f_ca) https_options.ca = f_ca;
     var server = https.createServer(https_options, _this.app);
+    _this.servers.push(server);
     server.timeout = _this.serverConfig.request_timeout;
     var new_http_port = 0;
     var new_https_port = 0; 
@@ -239,6 +242,7 @@ jsHarmonyServer.prototype.Run = function(cb){
         res.redirect('https://' + hostname + ':' + new_https_port + req.url);
       })
       var redirect_server = http.createServer(redirect_app);
+      _this.servers.push(redirect_server);
       redirect_server.timeout = _this.serverConfig.request_timeout;
       _this.ListenPort(redirect_server, _this.serverConfig.http_port, _this.serverConfig.http_ip, function(){
         new_http_port = redirect_server.address().port;
@@ -254,6 +258,14 @@ jsHarmonyServer.prototype.Run = function(cb){
       });
     }
   }
+}
+
+jsHarmonyServer.prototype.Close = function(cb){
+  var _this = this;
+  for(var i=0;i<_this.servers.length;i++) _this.servers[i].close();
+  _this.servers = [];
+  _this.running = false;
+  if(cb) return cb();
 }
 
 exports = module.exports = jsHarmonyServer;

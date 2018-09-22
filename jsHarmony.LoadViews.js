@@ -84,7 +84,7 @@ exports.LoadViews = function(){
 
 exports.getView = function (req, tmpl, options){
   if(!options) options = {};
-  if(!tmpl) tmpl = req.jshconfig.basetemplate;
+  if(!tmpl) tmpl = req.jshsite.basetemplate;
   if(!options.disable_override && req._override_basetemplate) tmpl = req._override_basetemplate;
   if (tmpl in this.Views) return this.Views[tmpl];
   return tmpl;

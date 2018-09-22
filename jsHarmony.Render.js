@@ -50,17 +50,19 @@ exports.RenderListing = function () {
 }
 
 //Get global variables inserted into client window context
-exports.getBaseJS = function (req, jsh) {
+exports.getJSClientParams = function (req, jsh) {
   var _this = this;
-  var rslt = '';
-  rslt += '_debug = ' + (req.jshconfig.show_system_errors?'true':'false') + ';';
-  rslt += '_BASEURL = \'' + req.baseurl + '\';';
-  rslt += 'forcequery = ' + JSON.stringify(req.forcequery) + ';';
-  rslt += 'home_url = ' + JSON.stringify(jsh.Config.home_url) + ';';
-  rslt += 'jshuimap = ' + JSON.stringify(jsh.uimap) + ';';
+  var rslt = '{';
+  rslt += '_debug: ' + (req.jshsite.show_system_errors?'true':'false') + ',';
+  rslt += '_BASEURL: \'' + req.baseurl + '\',';
+  rslt += 'forcequery: ' + JSON.stringify(req.forcequery) + ',';
+  rslt += 'home_url: ' + JSON.stringify(jsh.Config.home_url) + ',';
+  rslt += 'uimap: ' + JSON.stringify(jsh.uimap) + ',';
   if (req.isAuthenticated) {
-    if (_this.Config.google_settings && _this.Config.google_settings.API_KEY) rslt += 'window.google_api_key = ' + JSON.stringify(_this.Config.google_settings.API_KEY) + ';';
+    if (_this.Config.google_settings && _this.Config.google_settings.API_KEY) rslt += 'google_api_key: ' + JSON.stringify(_this.Config.google_settings.API_KEY) + ',';
+    rslt += 'isAuthenticated: true,';
   }
+  rslt += '}';
   return rslt;
 }
 

@@ -17,898 +17,904 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var is_add = (_GET['action'] == 'add');
-var ignore_changes = false;
-var init_complete = false;
-var delete_target = null;
-var xfileupload_ctrl = null;
-var _bcrumbs = {};
-var orig_title = '';
-var orig_bcrumbs = '';
-if (!XExt.isOnePage()) {
-  orig_title = RemoveEJSTags($('#xform_title'));
-  if (orig_title.indexOf('<#') > 0) document.title = XExt.StripTags($('#xform_title').html());
-  orig_bcrumbs = RemoveEJSTags($('div.bcrumbs'));
-}
-var jsproxy_hooks = {};
-var jsh_heap = [];
-var jsh_intervals = [];
-var cur_history_url = ''; //Last URL, to check if link is an anchor # or regular link
+(function(){
 
-function XForm_OnExit() {
-  if (!init_complete) return;
+  $(document).on('jsh_ready', function(){ jsh.topmost_jsh_ready(); });
 
-  var foundchanges = XForm_GetChanges();
+  window.onpopstate = function(event) {
+    var state = event.state;
+    jsh._GET = XExt.parseGET();
 
-  if (foundchanges.length > 0) {
-    var msg = 'You have unsaved changes to ';
-    for (var i = 0; i < foundchanges.length; i++) {
-      msg += foundchanges[i];
-      if (i < foundchanges.length - 2) msg += ', ';
-      else if (i == foundchanges.length - 2) msg += ' and ';
-    }
-    msg += ' data.';
-    return msg;
-  }
-}
-window.onbeforeunload = XForm_OnExit;
-window.jsh_cancelExit = false;
+    var f = function () {
+      if (!jsh.XForm_LoadState(state, {addBackHistoryOnCancel: true})) return;
+      jsh.XForm_Select(function () { });
+    };
 
-function XForm_GetChanges() {  //Returns array of form names that have changed
-  var foundchanges = [];
-  _.each(XForms, function (xform) {
-    if (!XExt.HasAccess(xform._actions, 'IUD')) return;
-    if (window['xform_' + xform._id].HasUpdates()) { foundchanges.push(xform._caption[1]); }
-    else if ((window['xform_' + xform._id].Data) && (window['xform_' + xform._id].Data._is_dirty)) { foundchanges.push(xform._caption[1]); }
-  });
-  return foundchanges;
-}
-
-function XForm_Save(options) {
-  if (!options) options = {};
-  if (!options.onFail) options.onFail = function () { };
-  var dbtasks = [];
-  var valid = true;
-  XFormTree(null, function (xform) {
-    if (!valid) return;
-    var xformid = xform._id;
-    if (XExt.HasAccess(xform._actions, 'IU')) {
-      var access = 'U';
-      if (xform._layout == 'multisel') access = 'U';
-      else if (xform._layout == 'grid') access = 'IU';
-      else if (window['xform_' + xformid].Data._is_new) access = 'I';
-      if (XExt.HasAccess(xform._actions, access)) {
-        var ftasks = window['XForm' + xformid + '_Save']();
-        if (typeof ftasks == 'undefined') { valid = false; return; }
-        dbtasks = _.union(dbtasks, ftasks);
+    if (_.isObject(state)) {
+      var drslt = jsh.XForm_OnExit();
+      if (drslt) {
+        XExt.Confirm(drslt + '\r\n\r\nAre you sure you want to leave this page?', function(){
+          jsh.cancelExit = true;
+          f();
+        }, function () {
+          jsh.XForm_AddHistory(jsh.state, true);
+        });
+        return;
       }
     }
-  });
-  if (!valid) return options.onFail('validation');
-  XFormAsyncTree(XForms_root, function (xform, done) {
-    if (!valid) return;
-    if (typeof xform._onvalidate != 'undefined') xform._onvalidate(xform, function (rslt) { valid = (rslt === true); done(); });
-    else done();
-  }, function () {
-    if (!valid) return options.onFail('form_validation');
-    XForm_Save_Operation(dbtasks,options);
-  }, { series: true });
-}
-function XForm_Save_Operation(dbtasks, options) {
-  if (!options) options = {};
-  if (!options.onFail) options.onFail = function () { };
-  //Handle async validation, if applicable
-  var rootxform = window['xform_' + XForms_root];
-  if (XForms[XForms_root]._layout == 'grid') rootxform = window['xform_post_' + XForms_root]
-  rootxform.ExecuteTrans(dbtasks, function (rslt) {
-    if (options.onComplete && (options.onComplete(rslt) === false)) return;
-    XForm_RefreshParent();
-    if (is_add) {
-      var url = XExt.currentURL() + '?action=edit';
-      var urlkeys = {};
-      //Scan results for key
-      _.each(XForms[XForms_root]._keys, function (key) {
-        //Find keys in results
-        var foundkey = false;
-        _.each(rslt, function (mrslt, modelid) {
-          if (_.isObject(mrslt)) {
-            if (key in mrslt) {
-              var keyval = mrslt[key];
-              XForms[XForms_root][key] = function () { return keyval; }
-              rootxform.Data[key] = keyval;
-              urlkeys[key] = keyval;
-              foundkey = true;
+    f();
+  };
+
+  jsh.XForm_OnExit = function() {
+    if (!jsh.init_complete) return;
+
+    var foundchanges = jsh.XForm_GetChanges();
+
+    if (foundchanges.length > 0) {
+      var msg = 'You have unsaved changes to ';
+      for (var i = 0; i < foundchanges.length; i++) {
+        msg += foundchanges[i];
+        if (i < foundchanges.length - 2) msg += ', ';
+        else if (i == foundchanges.length - 2) msg += ' and ';
+      }
+      msg += ' data.';
+      return msg;
+    }
+  }
+
+  jsh.XForm_GetChanges = function() {  //Returns array of form names that have changed
+    var foundchanges = [];
+    _.each(jsh.XForms, function (xform) {
+      if (!jsh.XExt.HasAccess(xform._actions, 'IUD')) return;
+      if (jsh.App['xform_' + xform._id].HasUpdates()) { foundchanges.push(xform._caption[1]); }
+      else if ((jsh.App['xform_' + xform._id].Data) && (jsh.App['xform_' + xform._id].Data._is_dirty)) { foundchanges.push(xform._caption[1]); }
+    });
+    return foundchanges;
+  }
+
+  jsh.XForm_Save = function(options) {
+    if (!options) options = {};
+    if (!options.onFail) options.onFail = function () { };
+    var dbtasks = [];
+    var valid = true;
+    jsh.XFormTree(null, function (xform) {
+      if (!valid) return;
+      var xformid = xform._id;
+      if (XExt.HasAccess(xform._actions, 'IU')) {
+        var access = 'U';
+        if (xform._layout == 'multisel') access = 'U';
+        else if (xform._layout == 'grid') access = 'IU';
+        else if (jsh.App['xform_' + xformid].Data._is_new) access = 'I';
+        if (XExt.HasAccess(xform._actions, access)) {
+          var ftasks = jsh.App['XForm' + xformid + '_Save']();
+          if (typeof ftasks == 'undefined') { valid = false; return; }
+          dbtasks = _.union(dbtasks, ftasks);
+        }
+      }
+    });
+    if (!valid) return options.onFail('validation');
+    jsh.XFormAsyncTree(jsh.XForms_root, function (xform, done) {
+      if (!valid) return;
+      if (typeof xform._onvalidate != 'undefined') xform._onvalidate(xform, function (rslt) { valid = (rslt === true); done(); });
+      else done();
+    }, function () {
+      if (!valid) return options.onFail('form_validation');
+      jsh.XForm_Save_Operation(dbtasks,options);
+    }, { series: true });
+  }
+
+  jsh.XForm_Save_Operation = function(dbtasks, options) {
+    if (!options) options = {};
+    if (!options.onFail) options.onFail = function () { };
+    //Handle async validation, if applicable
+    var rootxform = jsh.App['xform_' + jsh.XForms_root];
+    if (jsh.XForms[jsh.XForms_root]._layout == 'grid') rootxform = jsh.App['xform_post_' + jsh.XForms_root]
+    rootxform.ExecuteTrans(dbtasks, function (rslt) {
+      if (options.onComplete && (options.onComplete(rslt) === false)) return;
+      jsh.XForm_RefreshParent();
+      if (jsh.is_add) {
+        var url = XExt.currentURL() + '?action=edit';
+        var urlkeys = {};
+        //Scan results for key
+        _.each(jsh.XForms[jsh.XForms_root]._keys, function (key) {
+          //Find keys in results
+          var foundkey = false;
+          _.each(rslt, function (mrslt, modelid) {
+            if (_.isObject(mrslt)) {
+              if (key in mrslt) {
+                var keyval = mrslt[key];
+                jsh.XForms[jsh.XForms_root][key] = function () { return keyval; }
+                rootxform.Data[key] = keyval;
+                urlkeys[key] = keyval;
+                foundkey = true;
+              }
+            }
+          });
+          if (!foundkey) urlkeys[key] = jsh.XForms[jsh.XForms_root][key]();
+        });
+        jsh.is_add = false;
+        if (!_.isEmpty(urlkeys)) url = url + '&' + $.param(urlkeys, false);
+        window.onbeforeunload = null;
+        jsh.cancelExit = true;
+        //Execute oninsert Handler
+        var bubble = true;
+        jsh.XFormTree(null, function (xform) {
+          if (!bubble) return;
+          if (typeof xform._oninsert != 'undefined') if (xform._oninsert(xform, urlkeys, url) === false) bubble = false;
+        });
+        if (!bubble) return;
+
+        XExt.navTo(url);
+        return;
+      }
+
+      //Execute onupdate Handler
+      var bubble = true;
+      jsh.XFormTree(null, function (xform) {
+        if (!bubble) return;
+        if (typeof xform._onupdate != 'undefined') if (xform._onupdate(xform) === false) bubble = false;
+      });
+      if (!bubble) return;
+
+      console.log('Save complete');
+      jsh.XForm_Select(function () {
+        console.log('Reselect complete');
+      });
+    }, options.onFail);
+  }
+
+  jsh.XForm_SaveNew = function(add_url) {
+    jsh.XForm_Save({
+      onComplete: function () {
+        jsh.XForm_RefreshParent();
+        window.onbeforeunload = null;
+        jsh.cancelExit = true;
+        window.location.href = add_url;
+        return false;
+      }
+    });
+  }
+
+  jsh.XForm_Delete = function() {
+    jsh.App['XForm' + jsh.delete_target + '_Delete'](function () {
+      jsh.XForm_RefreshParent();
+      window.onbeforeunload = null;
+      jsh.cancelExit = true;
+      if (jsh.is_popup) {
+        if (window.opener) {
+          window.close();
+        }
+        else {
+          //window.open('', '_parent', '');  //Possibly needed for firefox
+          window.close();
+        }
+      }
+      else {
+        var target = jsh._BASEURL;
+        var bcrumbobj = $('div.bcrumbs');
+        if (bcrumbobj.size() > 0) {
+          target = bcrumbobj.children('a').last().prop('href');
+        }
+        XExt.navTo(target);
+      }
+    });
+  }
+
+  jsh.topmost_jsh_ready = function() {
+    jsh.XForms_Hide();
+    if (!jsh.XForms[jsh.XForms_root]._actions) { jsh.XExt.Alert('ERROR - No effective access to root form'); return; }
+
+    //  jsh.XFormTree(null,function(xform){ console.log(xform._id); },function(){ $('.xelemX').show(); });
+    //  jsh.XFormAsyncTree(jsh.XForms_root,function(xform,done){ done(); },function(){ $('.xelemX').show(); console.log('all done'); });
+    var enable_save = false;
+    var enable_delete = false;
+    jsh.XFormTree(null, function (xform) {
+      if ((xform._layout == 'form') || (xform._layout == 'multisel')) {
+        if (jsh.XExt.HasAccess(xform._actions, 'IU')) enable_save = true;
+        if ((xform._id == jsh.XForms_root) || (xform._parent == jsh.XForms_root))
+          if (jsh.XExt.HasAccess(xform._actions, 'D')) { enable_delete = true; jsh.delete_target = xform._id; }
+      }
+      else if ((xform._layout == 'grid') && (xform._commitlevel) && (xform._commitlevel != 'none')) {
+        if (jsh.XExt.HasAccess(xform._actions, 'IUD')) enable_save = true;
+      }
+    });
+
+    jsh.XFormAsyncTree(jsh.XForms_root,
+      function (xform, done) {
+        jsh.App['XForm' + xform._id + '_Init'](done);
+      },
+      function () {
+        if ('state' in jsh._GET) jsh.XForm_LoadState(JSON.parse(jsh._GET.state));
+        var button_groups = {};
+        $('.xform_button').each(function () {
+          var jbtn = $(this);
+          var btnaccess = jbtn.data('actions');
+          if (jsh.is_add && !jsh.XExt.HasAccess(btnaccess, 'I')) jbtn.hide();
+          else {
+            if(jbtn.is(':visible') && jbtn.hasClass('grouped')){
+              var modelid = jbtn.data('model');
+              var group = jbtn.data('group');
+              var button_group_name = modelid+'_'+group;
+              if(!(button_group_name in button_groups)) button_groups[button_group_name] = {
+                modelid: modelid,
+                group: group,
+                jbutton: []
+              };
+              button_groups[button_group_name].jbutton.push(jbtn);
             }
           }
         });
-        if (!foundkey) urlkeys[key] = XForms[XForms_root][key]();
+        for(var button_group_name in button_groups){
+          var button_group = button_groups[button_group_name];
+          $('#xbody').append('<div class="xactions_group xcontext_menu xelem'+button_group.modelid+'" data-group="'+button_group.group+'" style="display:none;"></div>');
+          var jgroup = $('.xactions_group.xelem'+button_group.modelid+'[data-group="'+button_group.group+'"]');
+          _.each(button_group.jbutton,function(jbutton){
+            jgroup.append(jbutton);
+          });
+        }
+        jsh.XFormTree(null, function (xform) {
+          if (typeof xform._oninit != 'undefined') xform._oninit(xform);
+        });
+        jsh.XForm_Select(function () {
+          jsh.XForms_Show();
+          jsh.XWindowResize();
+          if (enable_save) $('.xactions.top .save').show();
+          if (enable_delete) $('.xactions.top .delete').show();
+          jsh.XFormTree(null, function (xform) {
+            if (!jsh.is_add && jsh.XExt.HasAccess(xform._actions, 'I')) $('.xactions.xelem' + xform._id + ' .duplicate').show();
+          });
+          jsh.init_complete = true;
+          //Update Browser History with URL/state
+          if (jsh.XExt.isOnePage()) {
+            var new_url = jsh.state.fullpath + jsh.state.QS + jsh.state.hash;
+            jsh.XExt.ReplaceHistory(new_url, jsh.XForm_GetState(new_url));
+            if (jsh.state.hash) {
+              jsh.XExt.jumpAnchor(jsh.state.hash);
+            }
+          }
+          else jsh.XExt.ReplaceHistory(window.location.href.toString(), jsh.XForm_GetState());
+
+          //Select first Filter by default, if form is open
+          $('.xfilter_value:visible').first().select().focus();
+
+          console.log('Initialization Complete');
+        }, jsh.XForms_root);
       });
-      is_add = false;
-      if (!_.isEmpty(urlkeys)) url = url + '&' + $.param(urlkeys, false);
-      window.onbeforeunload = null;
-      window.jsh_cancelExit = true;
-      //Execute oninsert Handler
-      var bubble = true;
-      XFormTree(null, function (xform) {
-        if (!bubble) return;
-        if (typeof xform._oninsert != 'undefined') if (xform._oninsert(xform, urlkeys, url) === false) bubble = false;
-      });
-      if (!bubble) return;
+  }
 
-      XExt.navTo(url);
-      return;
+  jsh.XForm_Refresh = function(modelid) {
+    //Handle modelid
+    if (jsh.XForm_OnGridExit(null, function () { jsh.XForm_Refresh(modelid); })) return;
+    //Modify grid refresh to load multiple pages
+    var foundchanges = jsh.XForm_GetChanges();
+    if (foundchanges.length > 0) return;
+
+    jsh.XForm_Select(function () { jsh.XForm_RefreshParent(modelid); console.log('Reselect complete'); }, modelid);
+  }
+
+  jsh.XForm_RefreshParent = function(modelid) {
+    var jshOpener = XExt.getOpenerJSH();
+    if (jshOpener) {
+      jshOpener.XForm_Refresh(modelid);
     }
+  }
 
-    //Execute onupdate Handler
-    var bubble = true;
-    XFormTree(null, function (xform) {
-      if (!bubble) return;
-      if (typeof xform._onupdate != 'undefined') if (xform._onupdate(xform) === false) bubble = false;
+  jsh.XForm_Reload = function() {
+    XExt.navTo(window.location.href.toString() + '&tstmp=' + Date.now());
+  }
+
+  jsh.XForm_PreDestroy = function() {
+    //Call OnDestroy Handlers
+    _.each(jsh.XForms, function (xform) {
+      if (typeof xform._ondestroy != 'undefined') xform._ondestroy(xform);
     });
-    if (!bubble) return;
-
-    console.log('Save complete');
-    XForm_Select(function () {
-      console.log('Reselect complete');
-    });
-  }, options.onFail);
-}
-function XForm_SaveNew(add_url) {
-  XForm_Save({
-    onComplete: function () {
-      XForm_RefreshParent();
-      window.onbeforeunload = null;
-      window.jsh_cancelExit = true;
-      window.location.href = add_url;
-      return false;
-    }
-  });
-}
-
-function XForm_Delete() {
-  window['XForm' + delete_target + '_Delete'](function () {
-    XForm_RefreshParent();
-    window.onbeforeunload = null;
-    window.jsh_cancelExit = true;
-    if (is_popup) {
-      if (window.opener) {
-        window.close();
+    //Clear CKEDITORs
+    if ((typeof CKEDITOR != 'undefined') && (CKEDITOR.instances)) {
+      for (var name in CKEDITOR.instances) {
+        CKEDITOR.instances[name].destroy();
       }
+    }
+  }
+
+  jsh.XForm_Destroy = function() {
+    $(document).off('jsh_ready');
+    for(var key in jsh.App){
+      var elem = jsh.App[key];
+      if (elem instanceof jsh.XData) elem.Destroy();
+      delete jsh.App[key];
+    }
+    for (var i = 0; i < jsh.intervals.length; i++) {
+      try { window.clearInterval(jsh.intervals[i]); } catch (e) { }
+    }
+    jsh.App = {};
+    jsh.intervals = [];
+    $(document).on('jsh_ready', function(){ jsh.topmost_jsh_ready(); });
+  }
+
+  jsh.forEachModelTree = function(model,modelParent,modelEach,onComplete,options){ //modelcb(model,modelParent)
+    if(!options) options = { ignoreFields: false, ignoreTabs: false };
+    if(!model) return;
+    modelEach(model,modelParent);
+    if(!options.ignoreTabs && model.curtabmodel) jsh.forEachModelTree(model.curtabmodel,model,modelEach,undefined,options);
+    if(!options.ignoreFields && model.fields) for(var i=0;i<model.fields.length;i++){
+      if(model.fields[i].model) jsh.forEachModelTree(model.fields[i].model,model,modelEach,undefined,options);
+    }
+    if(onComplete) onComplete();
+  }
+
+  //Calling XForm_Select with a null root model will check the model definition for updates
+  jsh.XForm_Select = function(callback, root) {
+    //If the Model itself is dynamic, reload the model definition before reloading the data
+    if (typeof root == 'undefined'){
+      var isDynamic = false;
+      jsh.forEachModelTree(jsh.cur_model, null, function (model, modelParent) {
+        if(model.modeltype=='dynamic') isDynamic = true;
+      });
+      if(isDynamic) return jsh.Load({ addHistory: false, onRefreshNoChange: function(){ jsh.XForm_Select(callback, jsh.XForms_root); } });
+      else root = jsh.XForms_root;
+    }
+    //Call Select on each model
+    jsh.XFormAsyncTree(root,
+      function (xform, done) {
+        var onDone = function () {
+          if (typeof xform._onloadimmediate != 'undefined') xform._onloadimmediate(xform);
+          done();
+        };
+        if (jsh.is_add && (!jsh.XExt.HasAccess(xform._actions, 'I')) && (xform._layout != 'multisel') && (xform._layout != 'exec')) { return done(); }
+        jsh.App['xform_' + xform._id].Select(onDone);
+      },
+      function () {
+        //Update title and other dynamic elements with in-place EJS
+        jsh.XFormsParseEJS(function () {
+          //Trigger the onload event for each model
+          var bubble = true;
+          jsh.XFormTree(null, function (xform) {
+            if (!bubble) return;
+            if (typeof xform._onload != 'undefined') if (xform._onload(xform, callback) === false) bubble = false;
+          });
+          if (bubble && callback) callback();
+          if (jsh.XExt.isOnePage()) jsh.ResetLinks();
+        });
+      });
+  }
+
+  jsh.XFormsParseEJS = function(onComplete) {
+    //Get breadcrumbs
+    var root_data = jsh.App['xform_' + jsh.XForms_root];
+    if ('_bcrumbs' in root_data) jsh._bcrumbs = root_data._bcrumbs;
+
+    //Check for new titles in returned data
+    jsh.XFormTree(null, function(xform) {
+      if(!jsh.App['xform_' + xform._id]) return;
+      var title = jsh.App['xform_' + xform._id]._title||'';
+      if(title != xform._title){
+        xform._title = title;
+        if(xform._id==jsh.XForms_root){
+          jsh.orig_title = XExt.unescapeEJS(title);
+        }
+      }
+    });
+
+    //Update title
+    if (jsh.orig_title.indexOf('<#') >= 0) {
+      var new_title = jsh.ParseEJS(jsh.orig_title, jsh.XForms_root);
+      $('#xform_title').html(new_title);
+      var window_title = XExt.StripTags(new_title).trim();
+      //If Title = blank, pull title from Tabs
+      var curform = jsh.XForms[jsh.XForms_root];
+      //Apply child tab's title to window if the form's title is blank
+      while(!window_title && curform){
+        if(curform._title){
+          window_title = jsh.ParseEJS(curform._title,curform._id);
+          window_title = XExt.StripTags(window_title).trim();
+        }
+        curform = jsh.XForms[curform._curtab];
+      }
+      document.title = window_title;
+    }
+    else {
+      $('#xform_title').html(jsh.orig_title);
+      document.title = XExt.StripTags(jsh.html_title.replace('%%%PAGETITLE%%%',jsh.orig_title));
+    }
+
+    //Update Breadcrumbs
+    if (jsh.orig_bcrumbs.indexOf('<#') >= 0) {
+      $('div.bcrumbs').html(jsh.ParseEJS(jsh.orig_bcrumbs, jsh.XForms_root));
+    }
+
+    jsh.XFormTree(null, function (xform) {
+      $(".xtitle.xelem" + xform._id).each(function () {
+        //Update each form title
+        var title_text = xform._title;
+        if (title_text.indexOf('<#') >= 0) $(this).html(jsh.ParseEJS(title_text, xform._id));
+        else $(this).html(title_text);
+      });
+      $(".xform_button.xelem" + xform._id).each(function () {
+        var href = $(this).attr('href');
+        //Store / retrieve original URL
+        if ($(this).data('orighref')) href = $(this).data('orighref');
+        else $(this).data('orighref', href);
+        //Parse URL EJS
+        if (href.indexOf('<#') >= 0) {
+          /* Resolve EJS */
+          $(this).attr('href', jsh.ParseEJS(href, xform._id));
+        }
+      });
+    }, onComplete);
+  }
+
+  jsh.RemoveEJSTags = function(jobj) {
+    if (jobj.size() == 0) return '';
+    var rslt = jsh.getObjEJS(jobj);
+    if (rslt.indexOf('<#') >= 0) {
+      //jobj.html(rslt.replace(/<#(.*?)#>/g,''));
+      jobj.html('');
+    }
+    return rslt;
+  }
+
+  jsh.getObjEJS = function(jobj) {
+    if (jobj.size() == 0) return '';
+    var rslt = jobj.html();
+    rslt = XExt.ReplaceAll(rslt, '&lt;#', '<#');
+    rslt = XExt.ReplaceAll(rslt, '#&gt;', '#>');
+    return rslt;
+  }
+
+  jsh.XFormTree = function(parentid, callback, oncomplete, options) {
+    if(!options) options = {};
+    _.each(jsh.XForms, function (xform, xformid) {
+      if (xform._parent == parentid) {
+        callback(xform);
+        if(!options.childrenOnly) jsh.XFormTree(xform._id, callback, undefined, options);
+      }
+    });
+    if (typeof oncomplete != 'undefined') oncomplete();
+  }
+
+  jsh.XFormAsyncTree = function(rootid, xformfunc, done, options) {
+    if (!options) options = { };
+    xformfunc(jsh.XForms[rootid], function () {
+      jsh.XFormAsyncTreeWorker(rootid, xformfunc, done, options);
+    });
+  }
+
+  jsh.XFormAsyncTreeWorker = function(parentid, xformfunc, done, options) {
+    var childf = [];
+    _.each(jsh.XForms, function (xform, xformid) {
+      if (xform._parent == parentid) {
+        childf.push(function (cb) {
+          xformfunc(xform, function () { jsh.XFormAsyncTreeWorker(xform._id, xformfunc, cb, options); });
+        });
+      }
+    });
+
+    if (childf.length == 0) { return done(); }
+
+    if (options.series) jsh.async.series(childf, done);
+    else jsh.async.parallel(childf, done);
+  }
+
+  jsh.LiteralOrCollection = function(str, col, funccol) {
+    //console.log("Evaluating: "+str);
+    var rslt = undefined;
+    if (!isNaN(str)) rslt = str;
+    else if ((str.length > 2) && (str[0] == "'") && (str[str.length - 1] == "'")) rslt = str.substr(1, str.length - 2);
+    else if ((typeof funccol !== 'undefined') && (str in funccol)) rslt = funccol[str]();
+    else {
+      //console.log('Array check'); console.log(col);
+      if (_.isArray(col)) {
+        for (var i = 0; i < col.length; i++) {
+          if (str in col[i]) return col[i][str];
+        }
+      }
+      else rslt = col[str];
+    }
+    //console.log('Result: '+rslt);
+    return rslt;
+  }
+
+  jsh.XBCrumbs = function(){
+    var rslt = {};
+    for(var f in jsh.XForms){
+      var xform = jsh.App['xform_'+f];
+      if(xform && xform._bcrumbs) rslt = _.extend(rslt, xform._bcrumbs);
+    }
+    var root_data = jsh.App['xform_' + jsh.XForms_root];
+    rslt = _.extend(rslt, jsh._bcrumbs);
+    return rslt;
+  }
+
+  jsh.ParseEJS = function(_ejssrc, modelid) {
+    var ejssrc = _ejssrc;
+    var data = {};
+    if (!(modelid in jsh.XForms)) { XExt.Alert('Error: Model ' + modelid + ' not found.'); return; }
+    _.merge(data, jsh.forcequery, jsh.App['xform_' + modelid].Data);
+    //_.extend(data, jsh.forcequery, jsh.App['xform_' + modelid].Data); //Previously
+    _.each(jsh.XForms[modelid]._bindings, function (binding) {
+      data[binding] = jsh.XForms[modelid][binding]();
+    });
+    ejssrc = ejssrc.replace(/<#/g, '<' + '%').replace(/#>/g, '%' + '>');
+
+    var ejsrslt = jsh.ejs.render(ejssrc, {
+      data: data,
+      LiteralOrCollection: jsh.LiteralOrCollection,
+      bcrumbs: jsh.XBCrumbs(),
+      jsh: jsh
+    });
+    return ejsrslt;
+  }
+
+  jsh.XForms_Hide = function() {
+    _.each(jsh.XForms, function (xform, xformid) {
+      if (xform._layout == 'grid') $('.xtbl.xelem' + xformid + ',.xbodyhead.xelem' + xformid).hide();
       else {
-        //window.open('', '_parent', '');  //Possibly needed for firefox
-        window.close();
+        //$('#xform'+xformid).hide(); 
+        //$('#xtabcontrol'+xformid).hide(); 
       }
+    });
+  }
+
+  jsh.XForms_Show = function() {
+    _.each(jsh.XForms, function (xform, xformid) {
+      if (xform._layout == 'grid') $('.xtbl.xelem' + xformid + ',.xbodyhead.xelem' + xformid).show();
+      else {
+        $('#xform' + xformid).show();
+        $('#xtabcontrol' + xformid).show();
+      }
+    });
+  }
+
+  jsh.XForm_GetState = function(url) {
+    var rslt = {};
+    _.each(jsh.XForms, function (xform) {
+      if (!XExt.HasAccess(xform._actions, 'B')) return;
+      if (xform._layout != 'grid') return;
+      rslt[xform._id] = jsh.App['XForm' + xform._id + '_GetState']();
+    });
+    if ((typeof url != 'undefined') && (url != '')) rslt['_url'] = url;
+    return rslt;
+  }
+
+  jsh.XForm_AddHistory = function(new_jsh_state, use_cur_state) {
+    //Add Full URL to history (PATH+GET+HASH)
+    var url = '';
+    var state = undefined;
+    if ((typeof new_jsh_state != 'undefined') && new_jsh_state) {
+      url = new_jsh_state.fullpath + new_jsh_state.QS + new_jsh_state.hash;//$.param(JSON.parse(JSON.stringify(new_jsh_state.GET)));
+      jsh.cur_history_url = url;
+      if (use_cur_state) state = jsh.XForm_GetState(jsh.cur_history_url);
     }
     else {
-      var target = _BASEURL;
-      var bcrumbobj = $('div.bcrumbs');
-      if (bcrumbobj.size() > 0) {
-        target = bcrumbobj.children('a').last().prop('href');
+      url = window.location.href.toString().split(window.location.host)[1];
+      url = url.split('?')[0];
+      url = url.split('#')[0];
+      var nget = JSON.parse(JSON.stringify(jsh._GET));
+
+      state = jsh.XForm_GetState(jsh.cur_history_url);
+      var nget_state = JSON.parse(JSON.stringify(state));
+      if ('_url' in nget_state) delete nget_state._url;
+
+      nget.state = JSON.stringify(nget_state);
+      if (!_.isEmpty(nget)) url += '?' + $.param(nget);
+    }
+    XExt.AddHistory(url, state);
+  }
+
+  jsh.XForm_LoadState = function(state, options) {
+    if(!options) options = { addBackHistoryOnCancel: false };
+    if (!_.isObject(state)) return;
+
+    if ('_url' in state) {
+      //Get Base URL (PATH+GET)
+      //var base_url = a.pathname + a.search;
+
+      if (state._url != jsh.cur_history_url) {
+        jsh._GET.state = JSON.stringify(state);
+        var a = jsh.XExt.getURLObj(state._url);
+        var orig_a = jsh.XExt.getURLObj(jsh.cur_history_url);
+        var orig_url = orig_a.pathname + orig_a.search;
+        jsh.cur_history_url = state._url;
+        jsh.Navigate(a, false, orig_url, function () {
+          if (options.addBackHistoryOnCancel) {
+            jsh.XForm_AddHistory(jsh.state, true);
+          }
+        });
+        return false;
       }
-      XExt.navTo(target);
     }
-  });
-}
+    _.each(jsh.XForms, function (xform) {
+      if (!jsh.XExt.HasAccess(xform._actions, 'B')) return;
+      if (xform._onloadstate) return xform._onloadstate(xform, state[xform._id]);
+      if (xform._layout != 'grid') return;
+      if (xform._id in state) {
+        jsh.App['XForm' + xform._id + '_LoadState'](state[xform._id]);
+      }
+    });
+    if ('state' in jsh._GET) delete jsh._GET.state;
+    return true;
+  }
 
-function topmost_jsh_ready() {
-  XForms_Hide();
-  if (!XForms[XForms_root]._actions) { XExt.Alert('ERROR - No effective access to root form'); return; }
-
-  //  XFormTree(null,function(xform){ console.log(xform._id); },function(){ $('.xelemX').show(); });
-  //  XFormAsyncTree(XForms_root,function(xform,done){ done(); },function(){ $('.xelemX').show(); console.log('all done'); });
-  var enable_save = false;
-  var enable_delete = false;
-  XFormTree(null, function (xform) {
-    if ((xform._layout == 'form') || (xform._layout == 'multisel')) {
-      if (XExt.HasAccess(xform._actions, 'IU')) enable_save = true;
-      if ((xform._id == XForms_root) || (xform._parent == XForms_root))
-        if (XExt.HasAccess(xform._actions, 'D')) { enable_delete = true; delete_target = xform._id; }
+  jsh.XFileDownload = function(model, field, title) {
+    var jctrl_token = $('.xelem' + model + ' #' + field + '_token');
+    var file_token = jctrl_token.val();
+    var url = '';
+    if (file_token) url = jsh._BASEURL + '_dl/_temp/' + file_token;
+    else {
+      var keys = jsh.App['xform_' + model].GetKeys();
+      if (jsh.XForms[model]._keys.length != 1) { throw new Error('File models require one key.'); }
+      url = jsh._BASEURL + '_dl/' + model + '/' + keys[jsh.XForms[model]._keys[0]] + '/' + field;
     }
-    else if ((xform._layout == 'grid') && (xform._commitlevel) && (xform._commitlevel != 'none')) {
-      if (XExt.HasAccess(xform._actions, 'IUD')) enable_save = true;
-    }
-  });
+    $('#xfileproxy').prop('src', url);
+    //window.open(url,'_blank'); 
+  }
 
-  XFormAsyncTree(XForms_root,
-    function (xform, done) {
-      window['XForm' + xform._id + '_Init'](done);
-    },
-    function () {
-      if ('state' in _GET) XForm_LoadState(JSON.parse(_GET.state));
-      var button_groups = {};
-      $('.xform_button').each(function () {
-        var jbtn = $(this);
-        var btnaccess = jbtn.data('actions');
-        if (is_add && !XExt.HasAccess(btnaccess, 'I')) jbtn.hide();
-        else {
-          if(jbtn.is(':visible') && jbtn.hasClass('grouped')){
-            var modelid = jbtn.data('model');
-            var group = jbtn.data('group');
-            var button_group_name = modelid+'_'+group;
-            if(!(button_group_name in button_groups)) button_groups[button_group_name] = {
-              modelid: modelid,
-              group: group,
-              jbutton: []
-            };
-            button_groups[button_group_name].jbutton.push(jbtn);
+  jsh.XFilePreview = function(model, field, title) {
+    var jctrl_token = $('.xelem' + model + ' #' + field + '_token');
+    var file_token = jctrl_token.val();
+    var url = '';
+    if (file_token) url = jsh._BASEURL + '_dl/_temp/' + file_token + '?view=1';
+    else {
+      var keys = jsh.App['xform_' + model].GetKeys();
+      if (jsh.XForms[model]._keys.length != 1) { throw new Error('File models require one key.'); }
+      url = jsh._BASEURL + '_dl/' + model + '/' + keys[jsh.XForms[model]._keys[0]] + '/' + field + '?view=1';
+      url += '&_=' + (new Date().getTime());
+    }
+    //$('#xfileproxy').prop('src', url);
+    window.open(url,'_blank',"height=600, width=800"); 
+  }
+
+  jsh.XFileDelete = function(model, field, title) {
+    var jctrl_token = $('.xelem' + model + ' #' + field + '_token');
+    var jctrl_dbexists = $('.xelem' + model + ' #' + field + '_dbexists');
+    var jctrl_dbdelete = $('.xelem' + model + ' #' + field + '_dbdelete');
+    var jctrl = $('#' + field + '.xelem' + model);
+    if (jctrl_dbexists.val() == '1') jctrl_dbdelete.val('1');
+    jctrl_token.val('');
+    jctrl.addClass('nodocument');
+  }
+
+  jsh.XFileUpload = function(model, field, title) {
+    //Get PrevToken, if Applicable
+    jsh.xfileupload_ctrl = $('#' + field + '.xelem' + model);
+    if (jsh.xfileupload_ctrl.size() != 1) return;
+    $.colorbox({
+      href: "#xfileuploader", inline: true, closeButton: false, arrowKey: false, preloading: false, overlayClose: false, title: title, fixed: true,
+      onOpen: function () {
+        $('#xfileuploader_prevtoken').val(jsh.xfileupload_ctrl.children('.xform_file_token').val());
+        $('#xfileuploader_form').attr('action', jsh._BASEURL + '_ul/');
+        XExt.clearFileInput('xfileuploader_file');
+      },
+      onComplete: function () { /* Optionally set element focus */ }
+    });
+  }
+
+  jsh.XUpload_submit = function() {
+    //Validate file selected
+    if (!$("#xfileuploader_file").val()) { XExt.Alert('Please select a file and then click Upload.'); return; }
+    jsh.xLoader.StartLoading(jsh.xfileuploadLoader)
+    //Submit form
+    $('#xfileuploader_form').submit();
+    //Associate file_token, prevtoken with single field
+    //Submit that field to the server on update/insert
+  }
+
+  jsh.XUpload_complete = function(rslt) {
+    $.colorbox.close();
+    if (!('FILE_TOKEN' in rslt)) return;
+    jsh.xfileupload_ctrl.children('.xform_file_token').val(rslt.FILE_TOKEN);
+    jsh.xfileupload_ctrl.children('.xform_file_dbdelete').val('0');
+    jsh.xfileupload_ctrl.removeClass('nodocument');
+    //Rerender Control
+    var val = XExt.getFormField(XExt.getFormFromObject(jsh.xfileupload_ctrl), jsh.xfileupload_ctrl[0].id);
+    XExt.setFormControl(XExt.getFormFromObject(jsh.xfileupload_ctrl), jsh.xfileupload_ctrl[0].id, val);
+  }
+
+  jsh.js_proxy_complete = function(id, data) {
+    var _this = this;
+    jsh.xLoader.StopLoading(jsh.xfileuploadLoader);
+    if ((typeof data) == 'object'){
+      if ('_error' in data) {
+        if (id in jsh.jsproxy_hooks) { jsh.jsproxy_hooks[id](data._error,null); }
+        else if (jsh.DefaultErrorHandler(data._error.Number, data._error.Message)) { }
+        else if ((data._error.Number == -9) || (data._error.Number == -5)) { XExt.Alert(data._error.Message); }
+        else { XExt.Alert('Error #' + data._error.Number + ': ' + data._error.Message); }
+        return;
+      }
+      else if ('_success' in data) {
+        if (id == 'xfileuploader') jsh.XUpload_complete(data);
+        else if (id in jsh.jsproxy_hooks) { jsh.jsproxy_hooks[id](null,data); }
+        else XExt.Alert(JSON.stringify(data));
+        return;
+      }
+    }
+    XExt.Alert(JSON.stringify(data));
+  }
+
+  jsh.XRunReport = function() {
+    var rpt = jsh.XForms[jsh.XForms_root];
+    if (!(rpt._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+    jsh.App['XForm' + rpt._id + '_RunReport']();
+  }
+
+  jsh.XRunReportHTML = function() {
+    var rpt = jsh.XForms[jsh.XForms_root];
+    if (!(rpt._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+    jsh.App['XForm' + rpt._id + '_RunReport'](undefined,{output:'html'});
+  }
+
+  jsh.XTestQueue = function() {
+    var rpt = jsh.XForms[jsh.XForms_root];
+    if (!(rpt._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+    jsh.App['XForm' + rpt._id + '_TestQueue']();
+  }
+
+  jsh.XRunQueue = function() {
+    var rpt = jsh.XForms[jsh.XForms_root];
+    if (!(rpt._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+
+    XExt.Confirm("Are you sure you want to start the Report Job?", function () {
+      jsh.App['XForm' + rpt._id + '_RunQueue']();
+    });
+  }
+
+  jsh.XRunDBFunc = function() {
+    var cb = arguments[0];
+    var xform = jsh.XForms[jsh.XForms_root];
+    if(arguments.length==2){
+      xform = jsh.XForms[XExt.getModelIdFromObject(arguments[0])];
+      cb = arguments[1];
+    }
+    
+    if (!(xform._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+    jsh.App['XForm' + xform._id + '_RunDBFunc'](cb);
+  }
+
+  jsh.XDisable = function(jctrl,show_lookup) {
+    jctrl.removeClass('editable');
+    jctrl.addClass('uneditable');
+
+    if (jctrl.hasClass('dropdown')) jctrl.prop('disabled', true);
+    else if (jctrl.hasClass('checkbox')) jctrl.prop('disabled', true);
+    else jctrl.prop('readonly', true);
+    if (!show_lookup && jctrl.next().hasClass('xlookup')) jctrl.next().hide();
+  }
+
+  jsh.XEnable = function(jctrl) {
+    jctrl.removeClass('uneditable');
+    jctrl.addClass('editable');
+
+    if (jctrl.hasClass('dropdown')) jctrl.prop('disabled', false);
+    else if (jctrl.hasClass('checkbox')) jctrl.prop('disabled', false);
+    else jctrl.prop('readonly', false);
+    if (jctrl.next().hasClass('xlookup')) jctrl.next().show();
+  }
+
+  jsh.XPrint = function() {
+    window.print();
+  }
+
+  //Clear Popups on Reset
+  jsh.XPopupCreate = function(onComplete) {
+    var popup_id = '';
+    do {
+      popup_id = 'P' + Math.floor(Math.random() * 100000);
+    } while (popup_id in jsh.XPopups);
+    jsh.XPopups[popup_id] = onComplete;
+    return popup_id;
+  }
+
+  jsh.XPopupComplete = function(id, rslt) {
+    if (!(id in jsh.XPopups)) return;
+    jsh.XPopups[id](rslt);
+  }
+
+  jsh.XForm_OnGridExit = function(obj, f) {
+    var has_changes = false;
+    jsh.XFormTree(null, function (xform) {
+      if (has_changes) return;
+      if ((xform._layout == 'grid') && (xform._commitlevel) && (xform._commitlevel != 'none')) {
+        if (xform._commitlevel == 'page') {
+          if (jsh.App['xform_post_' + xform._id].IsDirty) {
+            XExt.Alert('Please save changes before performing grid operations.');
+            has_changes = true;
+            return;
           }
         }
-      });
-      for(var button_group_name in button_groups){
-        var button_group = button_groups[button_group_name];
-        $('#xbody').append('<div class="xactions_group xcontext_menu xelem'+button_group.modelid+'" data-group="'+button_group.group+'" style="display:none;"></div>');
-        var jgroup = $('.xactions_group.xelem'+button_group.modelid+'[data-group="'+button_group.group+'"]');
-        _.each(button_group.jbutton,function(jbutton){
-          jgroup.append(jbutton);
-        });
-      }
-      XFormTree(null, function (xform) {
-        if (typeof xform._oninit != 'undefined') xform._oninit(xform);
-      });
-      XForm_Select(function () {
-        XForms_Show();
-        XWindowResize();
-        if (enable_save) $('.xactions.top .save').show();
-        if (enable_delete) $('.xactions.top .delete').show();
-        XFormTree(null, function (xform) {
-          if (!is_add && XExt.HasAccess(xform._actions, 'I')) $('.xactions.xelem' + xform._id + ' .duplicate').show();
-        });
-        init_complete = true;
-        //Update Browser History with URL/state
-        if (XExt.isOnePage()) {
-          var new_url = jsh_state.fullpath + jsh_state.QS + jsh_state.hash;
-          XExt.ReplaceHistory(new_url, XForm_GetState(new_url));
-          if (jsh_state.hash) {
-            XExt.jumpAnchor(jsh_state.hash);
-          }
-        }
-        else XExt.ReplaceHistory(window.location.href.toString(), XForm_GetState());
-
-        //Select first Filter by default, if form is open
-        $('.xfilter_value:visible').first().select().focus();
-
-        console.log('Initialization Complete');
-      }, XForms_root);
-    });
-}
-$(document).on('jsh_ready', topmost_jsh_ready);
-
-function XForm_Refresh(modelid) {
-  //Handle modelid
-  if (XForm_OnGridExit(null, function () { XForm_Refresh(modelid); })) return;
-  //Modify grid refresh to load multiple pages
-  var foundchanges = XForm_GetChanges();
-  if (foundchanges.length > 0) return;
-
-  XForm_Select(function () { XForm_RefreshParent(modelid); console.log('Reselect complete'); }, modelid);
-}
-
-function XForm_RefreshParent(modelid) {
-  if (window.opener) {
-    if ('XForm_Refresh' in window.opener) window.opener.XForm_Refresh(modelid);
-  }
-}
-
-function XForm_Reload() {
-  XExt.navTo(window.location.href.toString() + '&tstmp=' + Date.now());
-}
-
-function XForm_PreDestroy() {
-  //Call OnDestroy Handlers
-  _.each(XForms, function (xform) {
-    if (typeof xform._ondestroy != 'undefined') xform._ondestroy(xform);
-  });
-  //Clear CKEDITORs
-  if ((typeof CKEDITOR != 'undefined') && (CKEDITOR.instances)) {
-    for (name in CKEDITOR.instances) {
-      CKEDITOR.instances[name].destroy()
-    }
-  }
-}
-
-function XForm_Destroy() {
-  $(document).off('jsh_ready');
-  for (var i = 0; i < jsh_heap.length; i++) {
-    if (window[jsh_heap[i]] instanceof XData) window[jsh_heap[i]].Destroy();
-    window[jsh_heap[i]] = undefined;
-    try { delete window[jsh_heap[i]]; } catch (e) { }
-  }
-  for (var i = 0; i < jsh_intervals.length; i++) {
-    try { window.clearInterval(jsh_intervals[i]); } catch (e) { }
-  }
-  jsh_heap = [];
-  jsh_intervals = [];
-  $(document).on('jsh_ready', topmost_jsh_ready);
-}
-
-//Calling XForm_Select with a null root model will check the model definition for updates
-function XForm_Select(callback, root) {
-  //If the Model itself is dynamic, reload the model definition before reloading the data
-  if (typeof root == 'undefined'){
-    var isDynamic = false;
-    jshModelTree(jsh_cur_model, null, function (model, modelParent) {
-      if(model.modeltype=='dynamic') isDynamic = true;
-    });
-    if(isDynamic) return jshLoad({ addHistory: false, onRefreshNoChange: function(){ XForm_Select(callback, XForms_root); } });
-    else root = XForms_root;
-  }
-  //Call Select on each model
-  XFormAsyncTree(root,
-    function (xform, done) {
-      var onDone = function () {
-        if (typeof xform._onloadimmediate != 'undefined') xform._onloadimmediate(xform);
-        done();
-      };
-      if (is_add && (!XExt.HasAccess(xform._actions, 'I')) && (xform._layout != 'multisel') && (xform._layout != 'exec')) { return done(); }
-      window['xform_' + xform._id].Select(onDone);
-    },
-    function () {
-      //Update title and other dynamic elements with in-place EJS
-      XFormsParseEJS(function () {
-        //Trigger the onload event for each model
-        var bubble = true;
-        XFormTree(null, function (xform) {
-          if (!bubble) return;
-          if (typeof xform._onload != 'undefined') if (xform._onload(xform, callback) === false) bubble = false;
-        });
-        if (bubble && callback) callback();
-        if (XExt.isOnePage()) jshResetLinks();
-      });
-    });
-}
-
-function XFormsParseEJS(onComplete) {
-  //Get breadcrumbs
-  var root_data = window['xform_' + XForms_root];
-  if ('_bcrumbs' in root_data) _bcrumbs = root_data._bcrumbs;
-
-  //Check for new titles in returned data
-  XFormTree(null, function(xform) {
-    if(!window['xform_' + xform._id]) return;
-    var title = window['xform_' + xform._id]._title||'';
-    if(title != xform._title){
-      xform._title = title;
-      if(xform._id==XForms_root){
-        orig_title = XExt.unescapeEJS(title);
-      }
-    }
-  });
-
-  //Update title
-  if (orig_title.indexOf('<#') >= 0) {
-    var new_title = ParseEJS(orig_title, XForms_root);
-    $('#xform_title').html(new_title);
-    var window_title = XExt.StripTags(new_title).trim();
-    //If Title = blank, pull title from Tabs
-    var curform = XForms[XForms_root];
-    //Apply child tab's title to window if the form's title is blank
-    while(!window_title && curform){
-      if(curform._title){
-        window_title = ParseEJS(curform._title,curform._id);
-        window_title = XExt.StripTags(window_title).trim();
-      }
-      curform = XForms[curform._curtab];
-    }
-    document.title = window_title;
-  }
-  else {
-    $('#xform_title').html(orig_title);
-    document.title = XExt.StripTags(jsh_html_title.replace('%%%PAGETITLE%%%',orig_title));
-  }
-
-  //Update Breadcrumbs
-  if (orig_bcrumbs.indexOf('<#') >= 0) {
-    $('div.bcrumbs').html(ParseEJS(orig_bcrumbs, XForms_root));
-  }
-
-  XFormTree(null, function (xform) {
-    $(".xtitle.xelem" + xform._id).each(function () {
-      //Update each form title
-      var title_text = xform._title;
-      if (title_text.indexOf('<#') >= 0) $(this).html(ParseEJS(title_text, xform._id));
-      else $(this).html(title_text);
-    });
-    $(".xform_button.xelem" + xform._id).each(function () {
-      var href = $(this).attr('href');
-      //Store / retrieve original URL
-      if ($(this).data('orighref')) href = $(this).data('orighref');
-      else $(this).data('orighref', href);
-      //Parse URL EJS
-      if (href.indexOf('<#') >= 0) {
-        /* Resolve EJS */
-        $(this).attr('href', ParseEJS(href, xform._id));
-      }
-    });
-  }, onComplete);
-}
-
-function RemoveEJSTags(jobj) {
-  if (jobj.size() == 0) return '';
-  var rslt = getObjEJS(jobj);
-  if (rslt.indexOf('<#') >= 0) {
-    //jobj.html(rslt.replace(/<#(.*?)#>/g,''));
-    jobj.html('');
-  }
-  return rslt;
-}
-
-function getObjEJS(jobj) {
-  if (jobj.size() == 0) return '';
-  var rslt = jobj.html();
-  rslt = XExt.ReplaceAll(rslt, '&lt;#', '<#');
-  rslt = XExt.ReplaceAll(rslt, '#&gt;', '#>');
-  return rslt;
-}
-
-function XFormTree(parentid, callback, oncomplete, options) {
-  if(!options) options = {};
-  _.each(XForms, function (xform, xformid) {
-    if (xform._parent == parentid) {
-      callback(xform);
-      if(!options.childrenOnly) XFormTree(xform._id, callback, undefined, options);
-    }
-  });
-  if (typeof oncomplete != 'undefined') oncomplete();
-}
-
-function XFormAsyncTree(rootid, xformfunc, done, options) {
-  if (!options) options = { };
-  xformfunc(XForms[rootid], function () {
-    XFormAsyncTreeWorker(rootid, xformfunc, done, options);
-  });
-}
-
-function XFormAsyncTreeWorker(parentid, xformfunc, done, options) {
-  var childf = [];
-  _.each(XForms, function (xform, xformid) {
-    if (xform._parent == parentid) {
-      childf.push(function (cb) {
-        xformfunc(xform, function () { XFormAsyncTreeWorker(xform._id, xformfunc, cb, options); });
-      });
-    }
-  });
-
-  if (childf.length == 0) { return done(); }
-
-  if (options.series) async.series(childf, done);
-  else async.parallel(childf, done);
-}
-
-function LiteralOrCollection(str, col, funccol) {
-  //console.log("Evaluating: "+str);
-  var rslt = undefined;
-  if (!isNaN(str)) rslt = str;
-  else if ((str.length > 2) && (str[0] == "'") && (str[str.length - 1] == "'")) rslt = str.substr(1, str.length - 2);
-  else if ((typeof funccol !== 'undefined') && (str in funccol)) rslt = funccol[str]();
-  else {
-    //console.log('Array check'); console.log(col);
-    if (_.isArray(col)) {
-      for (var i = 0; i < col.length; i++) {
-        if (str in col[i]) return col[i][str];
-      }
-    }
-    else rslt = col[str];
-  }
-  //console.log('Result: '+rslt);
-  return rslt;
-}
-
-function XBCrumbs(){
-  var rslt = {};
-  for(var f in XForms){
-    var xform = window['xform_'+f];
-    if(xform && xform._bcrumbs) rslt = _.extend(rslt, xform._bcrumbs);
-  }
-  var root_data = window['xform_' + XForms_root];
-  rslt = _.extend(rslt, _bcrumbs);
-  return rslt;
-}
-
-function ParseEJS(_ejssrc, modelid) {
-  var ejssrc = _ejssrc;
-  var data = {};
-  if (!(modelid in XForms)) { XExt.Alert('Error: Model ' + modelid + ' not found.'); return; }
-  _.merge(data, forcequery, window['xform_' + modelid].Data);
-  //_.extend(data, forcequery, window['xform_' + modelid].Data); //Previously
-  _.each(XForms[modelid]._bindings, function (binding) {
-    data[binding] = XForms[modelid][binding]();
-  });
-  ejssrc = ejssrc.replace(/<#/g, '<' + '%').replace(/#>/g, '%' + '>');
-
-  var ejsrslt = ejs.render(ejssrc, {
-    data: data,
-    LiteralOrCollection: LiteralOrCollection,
-    bcrumbs: XBCrumbs()
-  });
-  return ejsrslt;
-}
-
-function XForms_Hide() {
-  _.each(XForms, function (xform, xformid) {
-    if (xform._layout == 'grid') $('.xtbl.xelem' + xformid + ',.xbodyhead.xelem' + xformid).hide();
-    else {
-      //$('#xform'+xformid).hide(); 
-      //$('#xtabcontrol'+xformid).hide(); 
-    }
-  });
-}
-
-function XForms_Show() {
-  _.each(XForms, function (xform, xformid) {
-    if (xform._layout == 'grid') $('.xtbl.xelem' + xformid + ',.xbodyhead.xelem' + xformid).show();
-    else {
-      $('#xform' + xformid).show();
-      $('#xtabcontrol' + xformid).show();
-    }
-  });
-}
-
-function XForm_GetState(url) {
-  var rslt = {};
-  _.each(XForms, function (xform) {
-    if (!XExt.HasAccess(xform._actions, 'B')) return;
-    if (xform._layout != 'grid') return;
-    rslt[xform._id] = window['XForm' + xform._id + '_GetState']();
-  });
-  if ((typeof url != 'undefined') && (url != '')) rslt['_url'] = url;
-  return rslt;
-}
-
-function XForm_AddHistory(new_jsh_state, use_cur_state) {
-  //Add Full URL to history (PATH+GET+HASH)
-  var url = '';
-  var state = undefined;
-  if ((typeof new_jsh_state != 'undefined') && new_jsh_state) {
-    url = new_jsh_state.fullpath + new_jsh_state.QS + new_jsh_state.hash;//$.param(JSON.parse(JSON.stringify(new_jsh_state.GET)));
-    cur_history_url = url;
-    if (use_cur_state) state = XForm_GetState(cur_history_url);
-  }
-  else {
-    url = window.location.href.toString().split(window.location.host)[1];
-    url = url.split('?')[0];
-    url = url.split('#')[0];
-    var nget = JSON.parse(JSON.stringify(_GET));
-
-    state = XForm_GetState(cur_history_url);
-    var nget_state = JSON.parse(JSON.stringify(state));
-    if ('_url' in nget_state) delete nget_state._url;
-
-    nget.state = JSON.stringify(nget_state);
-    if (!_.isEmpty(nget)) url += '?' + $.param(nget);
-  }
-  XExt.AddHistory(url, state);
-}
-
-function XForm_LoadState(state, options) {
-  if(!options) options = { addBackHistoryOnCancel: false };
-  if (!_.isObject(state)) return;
-
-  if ('_url' in state) {
-    //Get Base URL (PATH+GET)
-    //var base_url = a.pathname + a.search;
-
-    if (state._url != cur_history_url) {
-      _GET.state = JSON.stringify(state);
-      var a = XExt.getURLObj(state._url);
-      var orig_a = XExt.getURLObj(cur_history_url);
-      var orig_url = orig_a.pathname + orig_a.search;
-      cur_history_url = state._url;
-      jshNavigate(a, false, orig_url, function () {
-        if (options.addBackHistoryOnCancel) {
-          XForm_AddHistory(jsh_state, true);
-        }
-      });
-      return false;
-    }
-  }
-  _.each(XForms, function (xform) {
-    if (!XExt.HasAccess(xform._actions, 'B')) return;
-    if (xform._onloadstate) return xform._onloadstate(xform, state[xform._id]);
-    if (xform._layout != 'grid') return;
-    if (xform._id in state) {
-      window['XForm' + xform._id + '_LoadState'](state[xform._id]);
-    }
-  });
-  if ('state' in _GET) delete _GET.state;
-  return true;
-}
-
-window.onpopstate = function (event) {
-  var state = event.state;
-  _GET = XExt.parseGET();
-
-  var f = function () {
-    if (!XForm_LoadState(state, {addBackHistoryOnCancel: true})) return;
-    XForm_Select(function () { });
-  };
-
-  if (_.isObject(state)) {
-    var drslt = XForm_OnExit();
-    if (drslt) {
-      XExt.Confirm(drslt + '\r\n\r\nAre you sure you want to leave this page?', function(){
-        window.jsh_cancelExit = true;
-        f();
-      }, function () {
-        XForm_AddHistory(jsh_state, true);
-      });
-      return;
-    }
-  }
-  f();
-};
-
-function XFileDownload(model, field, title) {
-  var jctrl_token = $('.xelem' + model + ' #' + field + '_token');
-  var file_token = jctrl_token.val();
-  var url = '';
-  if (file_token) url = _BASEURL + '_dl/_temp/' + file_token;
-  else {
-    var keys = window['xform_' + model].GetKeys();
-    if (XForms[model]._keys.length != 1) { throw new Error('File models require one key.'); }
-    url = _BASEURL + '_dl/' + model + '/' + keys[XForms[model]._keys[0]] + '/' + field;
-  }
-  $('#xfileproxy').prop('src', url);
-  //window.open(url,'_blank'); 
-}
-function XFilePreview(model, field, title) {
-  var jctrl_token = $('.xelem' + model + ' #' + field + '_token');
-  var file_token = jctrl_token.val();
-  var url = '';
-  if (file_token) url = _BASEURL + '_dl/_temp/' + file_token + '?view=1';
-  else {
-    var keys = window['xform_' + model].GetKeys();
-    if (XForms[model]._keys.length != 1) { throw new Error('File models require one key.'); }
-    url = _BASEURL + '_dl/' + model + '/' + keys[XForms[model]._keys[0]] + '/' + field + '?view=1';
-    url += '&_=' + (new Date().getTime());
-  }
-  //$('#xfileproxy').prop('src', url);
-  window.open(url,'_blank',"height=600, width=800"); 
-}
-function XFileDelete(model, field, title) {
-  var jctrl_token = $('.xelem' + model + ' #' + field + '_token');
-  var jctrl_dbexists = $('.xelem' + model + ' #' + field + '_dbexists');
-  var jctrl_dbdelete = $('.xelem' + model + ' #' + field + '_dbdelete');
-  var jctrl = $('#' + field + '.xelem' + model);
-  if (jctrl_dbexists.val() == '1') jctrl_dbdelete.val('1');
-  jctrl_token.val('');
-  jctrl.addClass('nodocument');
-}
-function XFileUpload(model, field, title) {
-  //Get PrevToken, if Applicable
-  xfileupload_ctrl = $('#' + field + '.xelem' + model);
-  if (xfileupload_ctrl.size() != 1) return;
-  $.colorbox({
-    href: "#xfileuploader", inline: true, closeButton: false, arrowKey: false, preloading: false, overlayClose: false, title: title, fixed: true,
-    onOpen: function () {
-      $('#xfileuploader_prevtoken').val(xfileupload_ctrl.children('.xform_file_token').val());
-      $('#xfileuploader_form').attr('action', _BASEURL + '_ul/');
-      XExt.clearFileInput('xfileuploader_file');
-    },
-    onComplete: function () { /* Optionally set element focus */ }
-  });
-}
-function XUpload_submit() {
-  //Validate file selected
-  if (!$("#xfileuploader_file").val()) { XExt.Alert('Please select a file and then click Upload.'); return; }
-  xLoader.StartLoading(xfileuploadLoader)
-  //Submit form
-  $('#xfileuploader_form').submit();
-  //Associate file_token, prevtoken with single field
-  //Submit that field to the server on update/insert
-}
-function XUpload_complete(rslt) {
-  $.colorbox.close();
-  if (!('FILE_TOKEN' in rslt)) return;
-  xfileupload_ctrl.children('.xform_file_token').val(rslt.FILE_TOKEN);
-  xfileupload_ctrl.children('.xform_file_dbdelete').val('0');
-  xfileupload_ctrl.removeClass('nodocument');
-  //Rerender Control
-  var val = XExt.getFormField(XExt.getFormFromObject(xfileupload_ctrl), xfileupload_ctrl[0].id);
-  XExt.setFormControl(XExt.getFormFromObject(xfileupload_ctrl), xfileupload_ctrl[0].id, val);
-}
-function js_proxy_complete(id, data) {
-  var _this = this;
-  xLoader.StopLoading(xfileuploadLoader);
-  if ((typeof data) == 'object'){
-    if ('_error' in data) {
-      if (id in jsproxy_hooks) { jsproxy_hooks[id](data._error,null); }
-      else if (DefaultErrorHandler(data._error.Number, data._error.Message)) { }
-      else if ((data._error.Number == -9) || (data._error.Number == -5)) { XExt.Alert(data._error.Message); }
-      else { XExt.Alert('Error #' + data._error.Number + ': ' + data._error.Message); }
-      return;
-    }
-    else if ('_success' in data) {
-      if (id == 'xfileuploader') XUpload_complete(data);
-      else if (id in jsproxy_hooks) { jsproxy_hooks[id](null,data); }
-      else XExt.Alert(JSON.stringify(data));
-      return;
-    }
-  }
-  XExt.Alert(JSON.stringify(data));
-}
-
-
-
-function XRunReport() {
-  var rpt = XForms[XForms_root];
-  if (!(rpt._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
-  window['XForm' + rpt._id + '_RunReport']();
-}
-
-function XRunReportHTML() {
-  var rpt = XForms[XForms_root];
-  if (!(rpt._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
-  window['XForm' + rpt._id + '_RunReport'](undefined,{output:'html'});
-}
-
-function XTestQueue() {
-  var rpt = XForms[XForms_root];
-  if (!(rpt._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
-  window['XForm' + rpt._id + '_TestQueue']();
-}
-
-function XRunQueue() {
-  var rpt = XForms[XForms_root];
-  if (!(rpt._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
-
-  XExt.Confirm("Are you sure you want to start the Report Job?", function () {
-    window['XForm' + rpt._id + '_RunQueue']();
-  });
-}
-
-function XRunDBFunc() {
-  var cb = arguments[0];
-  var xform = XForms[XForms_root];
-  if(arguments.length==2){
-    xform = XForms[XExt.getModelIdFromObject(arguments[0])];
-    cb = arguments[1];
-  }
-  
-  if (!(xform._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
-  window['XForm' + xform._id + '_RunDBFunc'](cb);
-}
-
-function XDisable(jctrl,show_lookup) {
-  jctrl.removeClass('editable');
-  jctrl.addClass('uneditable');
-
-  if (jctrl.hasClass('dropdown')) jctrl.prop('disabled', true);
-  else if (jctrl.hasClass('checkbox')) jctrl.prop('disabled', true);
-  else jctrl.prop('readonly', true);
-  if (!show_lookup && jctrl.next().hasClass('xlookup')) jctrl.next().hide();
-}
-
-function XEnable(jctrl) {
-  jctrl.removeClass('uneditable');
-  jctrl.addClass('editable');
-
-  if (jctrl.hasClass('dropdown')) jctrl.prop('disabled', false);
-  else if (jctrl.hasClass('checkbox')) jctrl.prop('disabled', false);
-  else jctrl.prop('readonly', false);
-  if (jctrl.next().hasClass('xlookup')) jctrl.next().show();
-}
-
-function XPrint() {
-  window.print();
-}
-
-//Clear Popups on Reset
-function XPopupCreate(onComplete) {
-  var popup_id = '';
-  do {
-    popup_id = 'P' + Math.floor(Math.random() * 100000);
-  } while (popup_id in XPopups);
-  XPopups[popup_id] = onComplete;
-  return popup_id;
-}
-
-function XPopupComplete(id, rslt) {
-  if (!(id in XPopups)) return;
-  XPopups[id](rslt);
-}
-
-function XForm_OnGridExit(obj, f) {
-  var has_changes = false;
-  XFormTree(null, function (xform) {
-    if (has_changes) return;
-    if ((xform._layout == 'grid') && (xform._commitlevel) && (xform._commitlevel != 'none')) {
-      if (xform._commitlevel == 'page') {
-        if (window['xform_post_' + xform._id].IsDirty) {
-          XExt.Alert('Please save changes before performing grid operations.');
+        if (jsh.App['xgrid_' + xform._id] && jsh.App['xgrid_' + xform._id].CurrentCell) {
+          jsh.qInputAction = new XExt.XInputAction(obj, f);
           has_changes = true;
           return;
         }
       }
-      if (window['xgrid_' + xform._id] && window['xgrid_' + xform._id].CurrentCell) {
-        window.jsh_qInputAction = new XExt.XInputAction(obj, f);
-        has_changes = true;
-        return;
+    });
+    return has_changes;
+  }
+
+  jsh.XForm_OpenDataURL = function(win, modelid, url, options) {
+    var model = jsh.XForms[modelid];
+    if (!win) win = window.open('', '_blank', options);
+    if ((model._layout == 'form') || (model._layout == 'form-m') || (model._layout == 'exec')) {
+      url = XExt.ReplaceAll(url, 'data[j]', 'data');
+    }
+    url = jsh.ParseEJS(url, modelid);
+    win.location = url;
+    win.focus();
+  }
+
+  jsh.XForm_Duplicate = function(modelid, link, link_options) {
+    var win = null;
+    jsh.App['XForm' + modelid + '_RunDBFunc'](function (rslt) {
+      //On success
+      if(link){
+        jsh.XForm_OpenDataURL(win, modelid, link, link_options, rslt);
+        win.opener = window.opener;
       }
-    }
-  });
-  return has_changes;
-}
+      jsh.XForm_RefreshParent();
+      $.colorbox.close();
+      jsh.XForm_Refresh();
+    }, {
+      onBeforeUpdate: function () {
+        if(link) win = window.open('', '_blank', link_options);
+      },
+      noMessage: true,
+      onFail: function (err) { if(win) win.close(); }
+    });
+  }
+  jsh.XForm_HasUpdates = function() {
+    var rslt = false;
+    _.each(jsh.XForms, function (xform) {
+      if (!XExt.HasAccess(xform._actions, 'IUD')) return;
+      if (jsh.App['xform_' + xform._id].HasUpdates()) { rslt = true; }
+    });
+    return rslt;
+  }
 
-function XForm_OpenDataURL(win, modelid, url, options) {
-  var model = XForms[modelid];
-  if (!win) win = window.open('', '_blank', options);
-  if ((model._layout == 'form') || (model._layout == 'form-m') || (model._layout == 'exec')) {
-    url = XExt.ReplaceAll(url, 'data[j]', 'data');
-  }
-  url = ParseEJS(url, modelid);
-  win.location = url;
-  win.focus();
-}
-
-function XForm_Duplicate(modelid, link, link_options) {
-  var win = null;
-  window['XForm' + modelid + '_RunDBFunc'](function (rslt) {
-    //On success
-    if(link){
-      XForm_OpenDataURL(win, modelid, link, link_options, rslt);
-      win.opener = window.opener;
+  jsh.XForm_ShortcutKeys = function(e) {
+    var handled = false;
+    if (jsh.XForm_CustomShortcutKeys && jsh.XForm_CustomShortcutKeys(e)) {
+      handled = true;
     }
-    XForm_RefreshParent();
-    $.colorbox.close();
-    XForm_Refresh();
-  }, {
-    onBeforeUpdate: function () {
-      if(link) win = window.open('', '_blank', link_options);
-    },
-    noMessage: true,
-    onFail: function (err) { if(win) win.close(); }
-  });
-}
-function XForm_HasUpdates() {
-  var rslt = false;
-  _.each(XForms, function (xform) {
-    if (!XExt.HasAccess(xform._actions, 'IUD')) return;
-    if (window['xform_' + xform._id].HasUpdates()) { rslt = true; }
-  });
-  return rslt;
-}
-function XForm_ShortcutKeys(e) {
-  var handled = false;
-  if (window.XForm_CustomShortcutKeys && window.XForm_CustomShortcutKeys(e)) {
-    handled = true;
+    else if ((e.which == 83) && (e.altKey)) {//ALT+S = SAVE
+      $('.save:visible').first().trigger('click');
+      handled = true;
+    }
+    else if ((e.which == 78) && (e.altKey)) {//ALT+N = NEW
+      XExt.findClosest(e.target, '.xbuttonadd:visible').first().trigger('click');
+      handled = true;
+    }
+    else if ((e.which == 70) && (e.altKey)) {//ALT+F = FILTER
+      $('.xfilterbutton:visible').first().trigger('click');
+      handled = true;
+    }
+    else if ((e.which == 80) && (e.altKey)) {//ALT+P = PRINT
+      jsh.XPrint();
+      handled = true;
+    }
+    if (handled) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
   }
-  else if ((e.which == 83) && (e.altKey)) {//ALT+S = SAVE
-    $('.save:visible').first().trigger('click');
-    handled = true;
+
+  jsh.XForm_ShowButtonGroup = function(e,obj){
+    var jobj = $(obj);
+    var modelid = $(jobj).data('model');
+    var group = $(jobj).data('group');
+    var jgroup = $('.xactions_group.xelem'+modelid+'[data-group="'+group+'"]');
+    
+    $('.xcontext_menu').hide();
+    jgroup.css('visibility', 'hidden');
+    jgroup.show();
+    var xtop = jobj.offset().top + jobj.outerHeight(); var xleft = jobj.offset().left;
+    var offset = jgroup.offsetParent().offset();
+    xtop -= offset.top + 1;
+    xleft -= offset.left;
+    jgroup.css({ 'top': xtop, 'left': xleft });
+    jgroup.css('visibility', 'visible');
+    jsh.xContextMenuVisible = true;
+    jsh.xContextMenuItem = modelid;
+    XExt.CancelBubble(e);
   }
-  else if ((e.which == 78) && (e.altKey)) {//ALT+N = NEW
-    XExt.findClosest(e.target, '.xbuttonadd:visible').first().trigger('click');
-    handled = true;
-  }
-  else if ((e.which == 70) && (e.altKey)) {//ALT+F = FILTER
-    $('.xfilterbutton:visible').first().trigger('click');
-    handled = true;
-  }
-  else if ((e.which == 80) && (e.altKey)) {//ALT+P = PRINT
-    XPrint();
-    handled = true;
-  }
-  if (handled) {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-  }
-}
-function XForm_ShowButtonGroup(e,obj){
-  var jobj = $(obj);
-  var modelid = $(jobj).data('model');
-  var group = $(jobj).data('group');
-  var jgroup = $('.xactions_group.xelem'+modelid+'[data-group="'+group+'"]');
-  
-  $('.xcontext_menu').hide();
-  jgroup.css('visibility', 'hidden');
-  jgroup.show();
-  var xtop = jobj.offset().top + jobj.outerHeight(); var xleft = jobj.offset().left;
-  var offset = jgroup.offsetParent().offset();
-  xtop -= offset.top + 1;
-  xleft -= offset.left;
-  jgroup.css({ 'top': xtop, 'left': xleft });
-  jgroup.css('visibility', 'visible');
-  window.xContextMenuVisible = true;
-  window.xContextMenuItem = modelid;
-  XExt.CancelBubble(e);
-}
+
+})();

@@ -127,10 +127,12 @@ exports.UploadCKEditor = function (req, res) {
       else {
         var rslt = "\
           <script type='text/javascript'>\
-            var funcNum = " + req.query.CKEditorFuncNum + ";\
-            var url = \"" + Helper.getFullURL(req, req.baseurl) + "cmsfiles/" + file_origname + "\";\
-            var message = \"Uploaded file successfully\";\
-            window.parent.CKEDITOR.tools.callFunction(funcNum, url, message);\
+            (function(){\
+              var funcNum = " + req.query.CKEditorFuncNum + ";\
+              var url = \"" + Helper.getFullURL(req, req.baseurl) + "cmsfiles/" + file_origname + "\";\
+              var message = \"Uploaded file successfully\";\
+              window.parent.CKEDITOR.tools.callFunction(funcNum, url, message);\
+            })();\
           </script>";
         return res.end(rslt);
       }
@@ -177,6 +179,7 @@ exports.Download = function (req, res, modelid, keyid, fieldid, options) {
   else {
     if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
     var model = this.jsh.getModel(req, modelid);
+    var db = this.jsh.getModelDB(req, modelid);
     //Verify model access
     if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
     if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
@@ -212,7 +215,7 @@ exports.Download = function (req, res, modelid, keyid, fieldid, options) {
     verrors = _.merge(verrors, model.xvalidate.Validate('K', sql_params));
     if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
     
-    var sql = _this.db.sql.Download(_this.jsh, model, fields, keys, datalockqueries);
+    var sql = db.sql.Download(_this.jsh, model, fields, keys, datalockqueries);
     
     this.ExecRow(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt) {
       //Get extension, filename
@@ -229,7 +232,7 @@ exports.Download = function (req, res, modelid, keyid, fieldid, options) {
         }
       }
       serveFile(req, res, fpath, fname, fname);
-    });
+    }, undefined, db);
   }
 };
 
@@ -245,17 +248,17 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
     if ('FILE_EXT' in field.controlparams.sqlparams) { fieldlist.push(field.controlparams.sqlparams.FILE_EXT); if (!this.getFieldByName(model.fields, field.controlparams.sqlparams.FILE_EXT)) throw new Error(file + ' FILE_EXT parameter not defined as a field'); }
     if ('FILE_UTSTMP' in field.controlparams.sqlparams) {
       sql_extfields.push(field.controlparams.sqlparams.FILE_UTSTMP);
-      if (!('sqlparams' in req.jshconfig)) { throw new Error('Config missing sqlparams'); }
-      if (!('TSTMP' in req.jshconfig.sqlparams)) { throw new Error('No TSTMP in sqlparams'); }
+      if (!('sqlparams' in req.jshsite)) { throw new Error('Config missing sqlparams'); }
+      if (!('TSTMP' in req.jshsite.sqlparams)) { throw new Error('No TSTMP in sqlparams'); }
       if (!this.getFieldByName(model.fields, field.controlparams.sqlparams.FILE_UTSTMP)) throw new Error(file + ' FILE_UTSTMP parameter not defined as a field');
-      sql_extvalues.push(_this.getSQL(model, req.jshconfig.sqlparams.TSTMP));
+      sql_extvalues.push(_this.getSQL(model, req.jshsite.sqlparams.TSTMP));
     }
     if ('FILE_UU' in field.controlparams.sqlparams) {
       sql_extfields.push(field.controlparams.sqlparams.FILE_UU);
-      if (!('sqlparams' in req.jshconfig)) { throw new Error('Config missing sqlparams'); }
-      if (!('CUSER' in req.jshconfig.sqlparams)) { throw new Error('No CUSER in sqlparams'); }
+      if (!('sqlparams' in req.jshsite)) { throw new Error('Config missing sqlparams'); }
+      if (!('CUSER' in req.jshsite.sqlparams)) { throw new Error('No CUSER in sqlparams'); }
       if (!this.getFieldByName(model.fields, field.controlparams.sqlparams.FILE_UU)) throw new Error(file + ' FILE_UU parameter not defined as a field');
-      sql_extvalues.push(_this.getSQL(model, req.jshconfig.sqlparams.CUSER));
+      sql_extvalues.push(_this.getSQL(model, req.jshsite.sqlparams.CUSER));
     }
     if (!('_DBContext' in req) || (req._DBContext == '') || (req._DBContext == null)) { return filecallback(Helper.GenError(req, res, -10, 'Invalid Login / Not Authenticated')); }
     var filedest = jsh.Config.datadir + field.controlparams.data_folder + '/' + file + '_%%%KEY%%%';

@@ -17,70 +17,78 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-exports = module.exports = {};
+var $ = require('./jquery-1.11.2');
+var _ = require('lodash');
 
-//-----------
-//SEARCHQUERY
-//-----------
-function SearchQuery(model) {
-  this.Items = [];
-  this.Fields = [];
-  if (typeof model !== 'undefined') {
-    var _this = this;
-    _.each(model.Fields, function (field) {
-      if (XExt.HasAccess(field.actions, 'BS') && !field.disable_search) {
-        var comparison_type = 'none';
-        if ('lov' in field) comparison_type = 'lov';
-        else if ('type' in field) {
-          if ((field.type == 'varchar') || (field.type == 'char') || (field.type == 'binary')) comparison_type = 'string';
-          else if (_.includes(['bigint', 'int', 'smallint', 'tinyint', 'decimal', 'float', 'time'], field.type)) comparison_type = 'numeric';
-          else if (_.includes(['datetime', 'date'], field.type)) comparison_type = 'date';
-          else if (_.includes(['hash', 'boolean'], field.type)) comparison_type = 'object';
+exports = module.exports = function(jsh){
+
+  var XSearch = function(){ }
+
+  //-----------
+  //SEARCHQUERY
+  //-----------
+  function SearchQuery(model) {
+    this.Items = [];
+    this.Fields = [];
+    if (typeof model !== 'undefined') {
+      var _this = this;
+      _.each(model.Fields, function (field) {
+        if (jsh.XExt.HasAccess(field.actions, 'BS') && !field.disable_search) {
+          var comparison_type = 'none';
+          if ('lov' in field) comparison_type = 'lov';
+          else if ('type' in field) {
+            if ((field.type == 'varchar') || (field.type == 'char') || (field.type == 'binary')) comparison_type = 'string';
+            else if (_.includes(['bigint', 'int', 'smallint', 'tinyint', 'decimal', 'float', 'time'], field.type)) comparison_type = 'numeric';
+            else if (_.includes(['datetime', 'date'], field.type)) comparison_type = 'date';
+            else if (_.includes(['hash', 'boolean'], field.type)) comparison_type = 'object';
+          }
+          var sfield = { "name": field.name, "caption": field.caption, "comparison_type": comparison_type };
+          if (field.search_sound) sfield.search_sound = 1;
+          _this.Fields.push(sfield);
         }
-        var sfield = { "name": field.name, "caption": field.caption, "comparison_type": comparison_type };
-        if (field.search_sound) sfield.search_sound = 1;
-        _this.Fields.push(sfield);
-      }
+      });
+    }
+  }
+  SearchQuery.prototype.GetValues = function (_PlaceholderID) {
+    _this = this;
+    _this.Items = [];
+    $(_PlaceholderID + ' div.xfilter_expression').each(function (i, obj) {
+      var v_column = $(obj).find('select.xfilter_column').val();
+      var v_value = $(obj).find('input.xfilter_value').val();
+      var v_join = $(obj).find('input.xfilter_join').val();
+      var v_comparison = $(obj).find('select.xfilter_comparison').val();
+      if ((v_column==='ALL') || !v_comparison) v_comparison = 'contains';
+      _this.Items.push(new SearchItem(v_column, v_value, v_join, v_comparison));
     });
-  }
+  };
+  SearchQuery.prototype.HasUpdates = function (_PlaceholderID) {
+    _this = this;
+    var newitems = [];
+    $(_PlaceholderID + ' div').each(function (i, obj) {
+      var v_value = $(obj).find('input.xfilter_value').val();
+      var v_join = $(obj).find('input.xfilter_join').val();
+      var v_comparison = $(obj).find('select.xfilter_comparison').val();
+      newitems.push(new SearchItem($(obj).find('select.xfilter_column').val(), v_value, v_join, v_comparison));
+    });
+    if (newitems.length != _this.Items.length) return true;
+    for (var i = 0; i < newitems.length; i++) {
+      if (newitems[i].Column != _this.Items[i].Column) return true;
+      if (newitems[i].Value != _this.Items[i].Value) return true;
+      if (newitems[i].Join != _this.Items[i].Join) return true;
+      if (newitems[i].Comparison != _this.Items[i].Comparison) return true;
+    }
+    return false;
+  };
+
+  function SearchItem(_Column, _Value, _Join, _Comparison) {
+    this.Column = _Column;
+    this.Value = _Value;
+    this.Join = _Join;
+    this.Comparison = _Comparison;
+  };
+
+  XSearch.SearchQuery = SearchQuery;
+  XSearch.SearchItem = SearchItem;
+
+  return XSearch;
 }
-SearchQuery.prototype.GetValues = function (_PlaceholderID) {
-  _this = this;
-  _this.Items = [];
-  $(_PlaceholderID + ' div.xfilter_expression').each(function (i, obj) {
-    var v_column = $(obj).find('select.xfilter_column').val();
-    var v_value = $(obj).find('input.xfilter_value').val();
-    var v_join = $(obj).find('input.xfilter_join').val();
-    var v_comparison = $(obj).find('select.xfilter_comparison').val();
-    if ((v_column==='ALL') || !v_comparison) v_comparison = 'contains';
-    _this.Items.push(new SearchItem(v_column, v_value, v_join, v_comparison));
-  });
-};
-SearchQuery.prototype.HasUpdates = function (_PlaceholderID) {
-  _this = this;
-  var newitems = [];
-  $(_PlaceholderID + ' div').each(function (i, obj) {
-    var v_value = $(obj).find('input.xfilter_value').val();
-    var v_join = $(obj).find('input.xfilter_join').val();
-    var v_comparison = $(obj).find('select.xfilter_comparison').val();
-    newitems.push(new SearchItem($(obj).find('select.xfilter_column').val(), v_value, v_join, v_comparison));
-  });
-  if (newitems.length != _this.Items.length) return true;
-  for (var i = 0; i < newitems.length; i++) {
-    if (newitems[i].Column != _this.Items[i].Column) return true;
-    if (newitems[i].Value != _this.Items[i].Value) return true;
-    if (newitems[i].Join != _this.Items[i].Join) return true;
-    if (newitems[i].Comparison != _this.Items[i].Comparison) return true;
-  }
-  return false;
-};
-
-function SearchItem(_Column, _Value, _Join, _Comparison) {
-  this.Column = _Column;
-  this.Value = _Value;
-  this.Join = _Join;
-  this.Comparison = _Comparison;
-};
-
-exports.SearchQuery = SearchQuery;
-exports.SearchItem = SearchItem;

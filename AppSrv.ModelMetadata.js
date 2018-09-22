@@ -32,6 +32,7 @@ exports.getTabCode = function (req, res, modelid, onComplete) {
   var _this = this;
   var keylist = this.getKeyNames(model.fields);
   var tabcodelist = [model.tabcode];
+  var db = _this.jsh.getModelDB(req, modelid);
   
   if (req.query.action == 'add') { return onComplete(); }
   else if (req.query.action != 'edit') { Helper.GenError(req, res, -9, 'Action not supported'); return; }
@@ -62,7 +63,7 @@ exports.getTabCode = function (req, res, modelid, onComplete) {
   verrors = _.merge(verrors, model.xvalidate.Validate('K', sql_params));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   
-  var sql = _this.db.sql.getTabCode(_this.jsh, model, selectfields, keys, datalockqueries);
+  var sql = db.sql.getTabCode(_this.jsh, model, selectfields, keys, datalockqueries);
   
   this.ExecScalar(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt) {
     if (err) { _this.jsh.Log.error(err); Helper.GenError(req, res, -99999, "An unexpected error has occurred"); return; }
@@ -70,7 +71,7 @@ exports.getTabCode = function (req, res, modelid, onComplete) {
       return onComplete(rslt[0]);
     }
     else { Helper.GenError(req, res, -1, "Record not found"); return; }
-  });
+  }, undefined, db);
 }
 
 exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
@@ -79,6 +80,7 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
   var sql = '';
   var fieldlist = [];
   var nodatalock = null;
+  var db = this.jsh.getModelDB(req, model.id);
   if (model.title){
     if(_.isString(model.title)) title = model.title;
     else if(model.title.add && Helper.access(targetperm,'I')){
@@ -122,14 +124,14 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
   verrors = _.merge(verrors, model.xvalidate.Validate('*', sql_params, undefined, undefined, undefined, { ignoreUndefined: true }));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return false; }
   
-  var sql = _this.db.sql.getTitle(_this.jsh, model, sql, datalockqueries);
+  var sql = db.sql.getTitle(_this.jsh, model, sql, datalockqueries);
 
   //Add parameters from querystring
   _this.ApplyQueryParameters(Q, sql, sql_ptypes, sql_params, model);
   
   dbtasks['_title'] = function (dbtrans, callback, transtbl) {
     _this.ApplyTransTblChainedParameters(transtbl, sql, sql_ptypes, sql_params, model.fields);
-    _this.db.Scalar(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, title) {
+    db.Scalar(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, title) {
       if (err) { _this.jsh.Log.error(err); Helper.GenError(req, res, -99999, "An unexpected error has occurred"); return; }
       if(title) title = Helper.ResolveParams(req, title);
       return callback(null, title);
@@ -150,6 +152,7 @@ exports.getTitle = function (req, res, modelid, targetperm, onComplete) {
 exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
   var _this = this;
   var _defaults = {};
+  var db = _this.jsh.getModelDB(req, model.id);
   
   //Prepare Default Values Query
   var dflt_ptypes = [];
@@ -203,7 +206,7 @@ exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
     }
   }
   
-  var dflt_sql = _this.db.sql.getDefaultTasks(_this.jsh, dflt_sql_fields);
+  var dflt_sql = db.sql.getDefaultTasks(_this.jsh, dflt_sql_fields);
 
   //Add parameters from querystring
   _this.ApplyQueryParameters(Q, dflt_sql, dflt_ptypes, dflt_params, model);
@@ -212,7 +215,7 @@ exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
   dbtasks['_defaults'] = function (dbtrans, callback, transtbl) {
     _this.ApplyTransTblChainedParameters(transtbl, dflt_sql, dflt_ptypes, dflt_params, model.fields);
     if (dflt_sql) {
-      _this.db.Row(req._DBContext, dflt_sql, dflt_ptypes, dflt_params, dbtrans, function (err, rslt) {
+      db.Row(req._DBContext, dflt_sql, dflt_ptypes, dflt_params, dbtrans, function (err, rslt) {
         if (err == null) {
           for (var f in rslt) {
             if (rslt[f] == null) _defaults[f] = '';
@@ -230,6 +233,7 @@ exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks) {
   var _this = this;
   var _defaults = {};
   var verrors = {};
+  var db = _this.jsh.getModelDB(req, model.id);
   
   if (!('breadcrumbs' in model) || !('sql' in model.breadcrumbs)) return;
   
@@ -255,10 +259,10 @@ exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks) {
     }
   }
   var bcrumb_sql_fields = _this.getFieldsByName(model.fields, bcrumb_sql_fieldlist);
-  var bcrumb_sql = _this.db.sql.getBreadcrumbTasks(_this.jsh, model, datalockqueries, bcrumb_sql_fields);
+  var bcrumb_sql = db.sql.getBreadcrumbTasks(_this.jsh, model, datalockqueries, bcrumb_sql_fields);
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return false; }
   dbtasks['_bcrumbs'] = function (dbtrans, callback) {
-    _this.db.Row(req._DBContext, bcrumb_sql, bcrumb_ptypes, bcrumb_params, dbtrans, function (err, rslt) {
+    db.Row(req._DBContext, bcrumb_sql, bcrumb_ptypes, bcrumb_params, dbtrans, function (err, rslt) {
       if ((err == null) && (rslt == null)) err = Helper.NewError('Breadcrumbs not found', -14);
       if (err != null) { err.model = model; err.sql = bcrumb_sql; }
       callback(err, rslt);
@@ -270,6 +274,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
   options = _.extend({ action: '' }, options);
   var _this = this;
   var jsh = _this.jsh;
+  var modeldb = _this.jsh.getModelDB(req, model.id);
   var fatalError = false;
   //Use function loop so that dbtasks works for multiple LOVs
   _.each(model.fields, function (field) {
@@ -285,6 +290,11 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
       var no_lov_required = false;
       var can_optimize = false;
       var codeval = null;
+      var lovdb = modeldb;
+
+      if(lov && lov.db){
+        lovdb = jsh.getDB(lov.db);
+      }
 
       //If form and access="B", do not get the full LOV
       var tgtaccess = ejsext.getaccess(req, model, field.actions, options.action);
@@ -355,14 +365,14 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
         lov_params[codevalpname] = _this.DeformatParam(field, codeval, lov_verrors);
       }
       if (!_.isEmpty(lov_verrors)) { Helper.GenError(req, res, -2, lov_verrors[''].join('\n')); fatalError = true; return; }
-      var sql = _this.db.sql.getLOV(_this.jsh, field.name, lov, datalockqueries, param_datalocks, { truncate_lov: truncate_lov });
+      var sql = lovdb.sql.getLOV(_this.jsh, field.name, lov, datalockqueries, param_datalocks, { truncate_lov: truncate_lov });
 
       //Add parameters from querystring
       _this.ApplyQueryParameters(Q, sql, lov_ptypes, lov_params, model);
 
       dbtasks['_LOV_' + field.name] = function (dbtrans, callback, transtbl) {
         _this.ApplyTransTblChainedParameters(transtbl, sql, lov_ptypes, lov_params, model.fields);
-        _this.db.Recordset(req._DBContext, sql, lov_ptypes, lov_params, dbtrans, function (err, rslt) {
+        lovdb.Recordset(req._DBContext, sql, lov_ptypes, lov_params, dbtrans, function (err, rslt) {
           if (err == null) {
             //Generate warning if the LOV options are too long, and sqlselect is not defined for the field
             if(can_optimize && (rslt.length > 1000)){

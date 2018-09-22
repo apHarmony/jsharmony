@@ -21,69 +21,75 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 var no_B = true;
 _.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field.control != 'html') && (field.name) && (field.control != 'subform') && (field.control != 'button')) no_B = false; });
 %>
-function XForm<%=model.id%>_Init(callback){
-	xform_<%=model.id%> = new XPost('<%=model.id%>','','');
-	xform_<%=model.id%>.Data = new XForm<%=model.id%>();
 
-  <% xejs.eachKey(model.fields,function(field){  if(!field.name) return; %>xform_<%=model.id%>.Data.<%=field['name']%> = XForms['<%=model.id%>'].<%=field['name']%>();<%}); %>
-	xform_<%=model.id%>.GetKeys = function(){
-    var rslt = new Object();
-    if(!is_add){
-      _.each(XForms['<%=model.id%>']._bindings,function(binding){
-      	xform_<%=model.id%>.Data[binding] = XForms['<%=model.id%>'][binding]();
-      });
-      <% xejs.eachKey(model.fields,function(field){  if(!field.name) return; %>rslt.<%=field['name']%> = this.Data.<%=field['name']%>;<%}); %>
+(function(jsh){
+  var _ = jsh._;
+  var $ = jsh.$;
+  var XExt = jsh.XExt;
+
+  jsh.App.XForm<%=model.id%>_Init = function(callback){
+    var xform_<%=model.id%> = jsh.App.xform_<%=model.id%> = new jsh.XPost('<%=model.id%>','','');
+    xform_<%=model.id%>.Data = new jsh.App.XForm<%=model.id%>();
+
+    <% xejs.eachKey(model.fields,function(field){  if(!field.name) return; %>xform_<%=model.id%>.Data.<%=field['name']%> = jsh.XForms['<%=model.id%>'].<%=field['name']%>();<%}); %>
+    xform_<%=model.id%>.GetKeys = function(){
+      var rslt = new Object();
+      if(!jsh.is_add){
+        _.each(jsh.XForms['<%=model.id%>']._bindings,function(binding){
+          xform_<%=model.id%>.Data[binding] = jsh.XForms['<%=model.id%>'][binding]();
+        });
+        <% xejs.eachKey(model.fields,function(field){  if(!field.name) return; %>rslt.<%=field['name']%> = this.Data.<%=field['name']%>;<%}); %>
+        }
+      else {
+        //Add parameters for breadcrumbs
+        <% _.each(model.fields,function(field){ if(!field.name) return; if(XExt.access(field.actions,'C')) { %>rslt.<%=field['name']%> = jsh.LiteralOrCollection('<%=field['name']%>',[jsh._GET,this.Data]);<% } }); %>
+        <% _.each(model.fields,function(field){ if(!field.name) return; if(field.lovkey){ %>rslt.<%=field['name']%> = jsh.LiteralOrCollection('<%=field['name']%>',[jsh._GET,this.Data]);<% } }); %>
+        }
+      return rslt; 
+    };
+    <%-xejs.iif(no_B,'xform_'+model.id+'.Select = function(onComplete){ if(onComplete) onComplete(); }; //No data to select')%>
+
+    //Pull keys from parent
+    //Get recordset
+
+    $('.xelem<%=model.id%>').keyup(function(){ if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
+    $('.xelem<%=model.id%>.dropdown').change(function(){ if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
+    $('.xelem<%=model.id%>.checkbox').change(function(){ if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
+
+    <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if((field.control=='date') && (XExt.access(field.actions,'IU'))) {%>
+    $("#<%=field.name%>.xelem<%=model.id%>").datepicker({ changeMonth: true, changeYear: true, dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||jsh.DEFAULT_DATEFORMAT), onSelect: function(){ if(jsh.is_add) return; xform_<%=model.id%>.Data.OnControlUpdate(this); } });
+    <% } }); %>  
+    callback();
+  }
+
+  jsh.App.XForm<%=model.id%>_Save = function(){
+    var data = jsh.App.xform_<%=model.id%>.Data;
+    if(!data.Commit()) return;
+
+    var q;
+    if(data._is_new) q = jsh.App.xform_<%=model.id%>.PrepInsert;
+    else q = jsh.App.xform_<%=model.id%>.PrepUpdate;
+    
+    var dbtask = q.call(jsh.App.xform_<%=model.id%>,function(rslt){
+      if(data._is_new){
+        //Pull keys
+        data._is_new = false;
       }
-    else {
-      //Add parameters for breadcrumbs
-      <% _.each(model.fields,function(field){ if(!field.name) return; if(XExt.access(field.actions,'C')) { %>rslt.<%=field['name']%> = LiteralOrCollection('<%=field['name']%>',[_GET,this.Data]);<% } }); %>
-      <% _.each(model.fields,function(field){ if(!field.name) return; if(field.lovkey){ %>rslt.<%=field['name']%> = LiteralOrCollection('<%=field['name']%>',[_GET,this.Data]);<% } }); %>
+    });
+    return [dbtask];
+  }
+  
+  jsh.App.XForm<%=model.id%>_Delete = function(callback){
+    var is_new =  jsh.App.xform_<%=model.id%>.Data._is_new;
+    
+    XExt.Confirm("Are you sure you want to delete this "+(is_new ? 'new ':'')+"<%=model.caption[1]%>?",function(){
+      if(!is_new){
+        jsh.App.xform_<%=model.id%>.Delete.call(jsh.App.xform_<%=model.id%>,function(rslt){
+          callback();
+        });
       }
-    return rslt; 
-  };
-  <%-xejs.iif(no_B,'xform_'+model.id+'.Select = function(onComplete){ if(onComplete) onComplete(); }; //No data to select')%>
+      else callback();
+    });
+  }
 
-  //Pull keys from parent
-  //Get recordset
-
-  $('.xelem<%=model.id%>').keyup(function(){ if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
-  $('.xelem<%=model.id%>.dropdown').change(function(){ if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
-  $('.xelem<%=model.id%>.checkbox').change(function(){ if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
-
-  <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if((field.control=='date') && (XExt.access(field.actions,'IU'))) {%>
-  $("#<%=field.name%>.xelem<%=model.id%>").datepicker({ changeMonth: true, changeYear: true, dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||JSH_DEFAULT_DATEFORMAT), onSelect: function(){ if(is_add) return; xform_<%=model.id%>.Data.OnControlUpdate(this); } });
-  <% } }); %>  
-  callback();
-}
-function XForm<%=model.id%>_Save(){
-  var data = xform_<%=model.id%>.Data;
-  if(!data.Commit()) return;
-
-	var q;
-	if(data._is_new) q = xform_<%=model.id%>.PrepInsert;
-	else q = xform_<%=model.id%>.PrepUpdate;
-  
-  var dbtask = q.call(xform_<%=model.id%>,function(rslt){
-    if(data._is_new){
-    	//Pull keys
-      data._is_new = false;
-    }
-  });
-  return [dbtask];
-}
-function XForm<%=model.id%>_Delete(callback){
-  var is_new =  xform_<%=model.id%>.Data._is_new;
-  
-  XExt.Confirm("Are you sure you want to delete this "+(is_new ? 'new ':'')+"<%=model.caption[1]%>?",function(){
-    if(!is_new){
-      xform_<%=model.id%>.Delete.call(xform_<%=model.id%>,function(rslt){
-        callback();
-      });
-    }
-    else callback();
-  });
-}
-
-jsh_heap.push('XForm<%=model.id%>_Init');
-jsh_heap.push('XForm<%=model.id%>_Save');
-jsh_heap.push('XForm<%=model.id%>_Delete');
+})(<%-instance%>);

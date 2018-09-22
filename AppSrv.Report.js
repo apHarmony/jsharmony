@@ -74,7 +74,7 @@ exports.getReportHTML = function (req, res, modelid, Q, P, callback) {
 
     rslt = rslt.replace(/(file:\/\/[^"'>]*)/gi,function(match,p1){ 
       p1 = p1.replace(_this.jsh.Config.datadir,'');
-      if(Helper.endsWith(p1,'/node_modules/jsharmony/public/js/main.js')) return '/js/main.js';
+      if(Helper.endsWith(p1,'/node_modules/jsharmony/public/js/jsHarmony.js')) return '/js/jsHarmony.js';
       if(p1.lastIndexOf('/public/') >= 0) return p1.substr(p1.lastIndexOf('/public/')+7);
       return ''; 
     });

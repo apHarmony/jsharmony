@@ -1,91 +1,91 @@
-<%-jshRenderEJS('jsh_embed.js',ejsparams)%>
+<%-jsh.RenderEJS('jsh_embed.js',ejsparams)%>
 <div class="xbodyhead xelem<%=model.id%>">
 <% if(model.topmost) { %><!--%%%EJSPREPEND%%%--><% } %>
 <% if(!model.topmost && (model.title !== undefined)) { %>
 <h1 id="xtitle<%=model.id%>" class="xtitle xelem<%=model.id%>" style="display:inline-block;padding:0px 0 0px 0;"><%=model.title%></h1>
 <% }
 
-xactiontype = 'secondarygrid';
+var xactiontype = 'secondarygrid';
 if(model.topmost) xactiontype = 'top';
 else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in parent) && (parent.tabpos=='top')) xactiontype = 'auxtop';
 %>
-<h1 id="xtitlecaption<%=model.id%>" class="xtitlecaption" style="display:inline-block;"><a href="#" onclick="$('#xfilter_<%=model.id%>').slideToggle(); return false;">(filtered)</a></h1>
+<h1 id="xtitlecaption<%=model.id%>" class="xtitlecaption" style="display:inline-block;"><a href="#" onclick="<%-instance%>.$('#xfilter_<%=model.id%>').slideToggle(); return false;">(filtered)</a></h1>
 <div class="xactions <%=xactiontype%> xelem<%=model.id%>">
-  <%-jshRenderEJS('jsh_buttons',ejsparams)%>
-  <% if(model.inlinepopup){ %><a href="#" onclick="XExt.popupClear('<%=model.id%>',this); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'clear'))%>"><img src="/images/icon_delete.png" alt="Clear" title="Clear" />Clear</a><% } %>
-  <% if(model.topmost && (model.commitlevel) && (model.commitlevel != 'none')){ %><a href="#" class="save" onclick="XForm_Save();return false;" style="display:none;"><img src="/images/icon_save.png" alt="Save" title="Save" />Save</a><% } %>
-  <% if(!model.templates.grid){ %><a href="#" onclick="XForm<%=model.id%>_AddRow(); return false;" class="xbuttonadd" style="<%-xejs.visible(!model.nogridadd && model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'I'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a><% } %>
-  <a href="#" id="xfilterbutton<%=model.id%>" class="xfilterbutton" onclick="XForm<%=model.id%>_FilterButton(); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'filter'))%>"><img src="/images/icon_filter.png" alt="Filter" title="Filter" /><span>Filter</span></a>
-  <a href="/" onclick="XPrint(); return false;" style="<%-xejs.visible(model.topmost && xejs.showSystemButton(model,'print'))%>"><img src="/images/icon_print.png" alt="Print" title="Print" />Print</a>
-  <a href="#" onclick="XForm<%=model.id%>_Export(); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'export'))%>"><img src="/images/icon_export.png" alt="Export" title="Export" />Export</a>
+  <%-jsh.RenderEJS('jsh_buttons',ejsparams)%>
+  <% if(model.inlinepopup){ %><a href="#" onclick="<%-instance%>.XExt.popupClear('<%=model.id%>',this); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'clear'))%>"><img src="/images/icon_delete.png" alt="Clear" title="Clear" />Clear</a><% } %>
+  <% if(model.topmost && (model.commitlevel) && (model.commitlevel != 'none')){ %><a href="#" class="save" onclick="<%-instance%>.XForm_Save();return false;" style="display:none;"><img src="/images/icon_save.png" alt="Save" title="Save" />Save</a><% } %>
+  <% if(!model.templates.grid){ %><a href="#" onclick="<%-instance%>.App.XForm<%=model.id%>_AddRow(); return false;" class="xbuttonadd" style="<%-xejs.visible(!model.nogridadd && model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'I'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a><% } %>
+  <a href="#" id="xfilterbutton<%=model.id%>" class="xfilterbutton" onclick="<%-instance%>.App.XForm<%=model.id%>_FilterButton(); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'filter'))%>"><img src="/images/icon_filter.png" alt="Filter" title="Filter" /><span>Filter</span></a>
+  <a href="/" onclick="<%-instance%>.XPrint(); return false;" style="<%-xejs.visible(model.topmost && xejs.showSystemButton(model,'print'))%>"><img src="/images/icon_print.png" alt="Print" title="Print" />Print</a>
+  <a href="#" onclick="<%-instance%>.App.XForm<%=model.id%>_Export(); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'export'))%>"><img src="/images/icon_export.png" alt="Export" title="Export" />Export</a>
   <a href="<%-model.helpurl%>" onclick="<%-model.helpurl_onclick%>" style="<%-xejs.visible(model.topmost && xejs.showSystemButton(model,'help'))%>"><img src="/images/icon_help.png" alt="Help" title="Help" />Help</a>
 </div>
 <div id="xfilter_<%=model.id%>" class="xfilter"></div>
 <script id="xfilter_template_<%=model.id%>" type="text/x-ejs-template">
   <# 
     var comparison_string = [];
-    XExt.pushLOV(comparison_string,'contains','Contains');
-    XExt.pushLOV(comparison_string,'notcontains','Does Not Contain');
-    XExt.pushLOV(comparison_string,'=','Equals');
-    XExt.pushLOV(comparison_string,'<>','Does Not Equal');
-    XExt.pushLOV(comparison_string,'beginswith','Begins With');
-    XExt.pushLOV(comparison_string,'endswith','Ends With');
-    XExt.pushLOV(comparison_string,'null','Is Blank');
-    XExt.pushLOV(comparison_string,'notnull','Is Not Blank');
+    <%-instance%>.XExt.pushLOV(comparison_string,'contains','Contains');
+    <%-instance%>.XExt.pushLOV(comparison_string,'notcontains','Does Not Contain');
+    <%-instance%>.XExt.pushLOV(comparison_string,'=','Equals');
+    <%-instance%>.XExt.pushLOV(comparison_string,'<>','Does Not Equal');
+    <%-instance%>.XExt.pushLOV(comparison_string,'beginswith','Begins With');
+    <%-instance%>.XExt.pushLOV(comparison_string,'endswith','Ends With');
+    <%-instance%>.XExt.pushLOV(comparison_string,'null','Is Blank');
+    <%-instance%>.XExt.pushLOV(comparison_string,'notnull','Is Not Blank');
     var comparison_numeric = [];
-    XExt.pushLOV(comparison_numeric,'=','Equals');
-    XExt.pushLOV(comparison_numeric,'<>','Does Not Equal');
-    XExt.pushLOV(comparison_numeric,'>','>');
-    XExt.pushLOV(comparison_numeric,'>=','>=');
-    XExt.pushLOV(comparison_numeric,'<','<');
-    XExt.pushLOV(comparison_numeric,'<=','<=');
-    XExt.pushLOV(comparison_numeric,'null','Is Blank');
-    XExt.pushLOV(comparison_numeric,'notnull','Is Not Blank');
+    <%-instance%>.XExt.pushLOV(comparison_numeric,'=','Equals');
+    <%-instance%>.XExt.pushLOV(comparison_numeric,'<>','Does Not Equal');
+    <%-instance%>.XExt.pushLOV(comparison_numeric,'>','>');
+    <%-instance%>.XExt.pushLOV(comparison_numeric,'>=','>=');
+    <%-instance%>.XExt.pushLOV(comparison_numeric,'<','<');
+    <%-instance%>.XExt.pushLOV(comparison_numeric,'<=','<=');
+    <%-instance%>.XExt.pushLOV(comparison_numeric,'null','Is Blank');
+    <%-instance%>.XExt.pushLOV(comparison_numeric,'notnull','Is Not Blank');
     var comparison_date = comparison_numeric;
     var comparison_object = [];
-    XExt.pushLOV(comparison_object,'=','Equals');
-    XExt.pushLOV(comparison_object,'<>','Does Not Equal');
-    XExt.pushLOV(comparison_object,'null','Is Blank');
-    XExt.pushLOV(comparison_object,'notnull','Is Not Blank');
+    <%-instance%>.XExt.pushLOV(comparison_object,'=','Equals');
+    <%-instance%>.XExt.pushLOV(comparison_object,'<>','Does Not Equal');
+    <%-instance%>.XExt.pushLOV(comparison_object,'null','Is Blank');
+    <%-instance%>.XExt.pushLOV(comparison_object,'notnull','Is Not Blank');
     var comparison_sound = function(comparison,search_sound){
       var rslt = comparison.slice(0);
-      if(search_sound){ XExt.pushLOV(comparison_object,'soundslike','Sounds Like'); }
+      if(search_sound){ <%-instance%>.XExt.pushLOV(comparison_object,'soundslike','Sounds Like'); }
       return rslt;
     }
     #>
     <# for(var i=0;i<data.Items.length;i++){ var selected_column = null; #>
     <div class="xfilter_expression">
-      Filter Column: &nbsp;<select class="xfilter_column" onchange="XForm<%=model.id%>_FilterColumnChange();"><option value="ALL">Any...</option><# for(var j=0;j<data.Fields.length;j++){ if(!data.Fields[j].caption) continue; #><option value="<#=data.Fields[j].name#>" <# if(data.Fields[j].name==data.Items[i].Column){ selected_column = data.Fields[j]; #>selected="Selected"<# } #>><#=data.Fields[j].caption#></option><# } #></select>&nbsp; 
+      Filter Column: &nbsp;<select class="xfilter_column" onchange="<%-instance%>.App.XForm<%=model.id%>_FilterColumnChange();"><option value="ALL">Any...</option><# for(var j=0;j<data.Fields.length;j++){ if(!data.Fields[j].caption) continue; #><option value="<#=data.Fields[j].name#>" <# if(data.Fields[j].name==data.Items[i].Column){ selected_column = data.Fields[j]; #>selected="Selected"<# } #>><#=data.Fields[j].caption#></option><# } #></select>&nbsp; 
       <div class="xfilter_comparison_div" style="display:inline-block;width:140px;">
         <# if(selected_column && (selected_column.comparison_type=='string')){ #>
-          <select class="xfilter_comparison" onchange="XForm<%=model.id%>_FilterComparisonChange();">
+          <select class="xfilter_comparison" onchange="<%-instance%>.App.XForm<%=model.id%>_FilterComparisonChange();">
             <#-xejs.renderLOV(comparison_sound(comparison_string,selected_column.search_sound),data.Items[i].Comparison)#>
           </select>
         <# } else if(selected_column && (selected_column.comparison_type=='numeric')){ #>
-          <select class="xfilter_comparison" onchange="XForm<%=model.id%>_FilterComparisonChange();">
+          <select class="xfilter_comparison" onchange="<%-instance%>.App.XForm<%=model.id%>_FilterComparisonChange();">
             <#-xejs.renderLOV(comparison_numeric,data.Items[i].Comparison)#>
           </select>
         <# } else if(selected_column && (selected_column.comparison_type=='date')){ #>
-          <select class="xfilter_comparison" onchange="XForm<%=model.id%>_FilterComparisonChange();">
+          <select class="xfilter_comparison" onchange="<%-instance%>.App.XForm<%=model.id%>_FilterComparisonChange();">
             <#-xejs.renderLOV(comparison_date,data.Items[i].Comparison)#>
           </select>
         <# } else if(selected_column && (selected_column.comparison_type=='object')){ #>
-          <select class="xfilter_comparison" onchange="XForm<%=model.id%>_FilterComparisonChange();">
+          <select class="xfilter_comparison" onchange="<%-instance%>.App.XForm<%=model.id%>_FilterComparisonChange();">
             <#-xejs.renderLOV(comparison_object,data.Items[i].Comparison)#>
           </select>
         <# } else { #>
         containing the value
-          <select class="xfilter_comparison" onchange="XForm<%=model.id%>_FilterComparisonChange();" style="display:none;">
+          <select class="xfilter_comparison" onchange="<%-instance%>.App.XForm<%=model.id%>_FilterComparisonChange();" style="display:none;">
           </select>
         <# } #>
       </div>&nbsp; 
-      <input type="text" class="xfilter_value <#=xejs.iif((selected_column && (selected_column.comparison_type=='date')),'datepicker')#>" value="<#=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'',data.Items[i].Value)#>" onkeyup="XForm<%=model.id%>_FilterKeyUp(event);" style="<#=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'visibility:hidden;')#>" /> 
+      <input type="text" class="xfilter_value <#=xejs.iif((selected_column && (selected_column.comparison_type=='date')),'datepicker')#>" value="<#=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'',data.Items[i].Value)#>" onkeyup="<%-instance%>.App.XForm<%=model.id%>_FilterKeyUp(event);" style="<#=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'visibility:hidden;')#>" /> 
         <# if(i==(data.Items.length-1)){ #>
-        <a href="#" style="width:80px;" onclick="XForm<%=model.id%>_FilterApply(); return false;"><img src="/images/icon_search.png" alt="Apply Filter" title="Apply Filter" />GO</a>
-        <a href="#" style="width:130px;text-align:right;" onclick="XForm<%=model.id%>_FilterAdd(); return false;">Add Criteria<img src="/images/icon_add.png" alt="Add Criteria" title="Add Criteria" /></a>
+        <a href="#" style="width:80px;" onclick="<%-instance%>.App.XForm<%=model.id%>_FilterApply(); return false;"><img src="/images/icon_search.png" alt="Apply Filter" title="Apply Filter" />GO</a>
+        <a href="#" style="width:130px;text-align:right;" onclick="<%-instance%>.App.XForm<%=model.id%>_FilterAdd(); return false;">Add Criteria<img src="/images/icon_add.png" alt="Add Criteria" title="Add Criteria" /></a>
         <# } else { #>
-        <span style="display:inline-block;width:80px;">&nbsp; <a style="display:inline-block;cursor:hand;cursor:pointer;" class="xfilter_join_lbl" onclick="XForm<%=model.id%>_FilterJoinChange(); return false;"><#=data.Items[i].Join#></a> </span>
-        <a href="#" style="width:130px;text-align:right;" onclick="XForm<%=model.id%>_FilterRemove(this); return false;">Remove Criteria<img src="/images/icon_remove.png" alt="Remove Criteria" title="Remove Criteria" /></a>
+        <span style="display:inline-block;width:80px;">&nbsp; <a style="display:inline-block;cursor:hand;cursor:pointer;" class="xfilter_join_lbl" onclick="<%-instance%>.App.XForm<%=model.id%>_FilterJoinChange(); return false;"><#=data.Items[i].Join#></a> </span>
+        <a href="#" style="width:130px;text-align:right;" onclick="<%-instance%>.App.XForm<%=model.id%>_FilterRemove(this); return false;">Remove Criteria<img src="/images/icon_remove.png" alt="Remove Criteria" title="Remove Criteria" /></a>
         <input type="hidden" class="xfilter_join" value="<#=data.Items[i].Join#>">
         <# } #>
     </div>
@@ -106,7 +106,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           var fieldclass = '';
           if(field.control && (field.control=='hidden')) fieldclass += 'tdhidden';
           %>
-        <th nowrap class="<%=field.sortclass%> thead<%=field.name%> <%=field.captionclass%> <%=fieldclass%>" style="<%=field.captionstyle%>"><% if(field.disable_sort){ %><%=field.caption%><% } else { %><a href="#" onClick="return XForm<%=model.id%>_Sort(this,'<%=field.name%>')"><%=field.caption%></a><% } %></th>
+        <th nowrap class="<%=field.sortclass%> thead<%=field.name%> <%=field.captionclass%> <%=fieldclass%>" style="<%=field.captionstyle%>"><% if(field.disable_sort){ %><%=field.caption%><% } else { %><a href="#" onClick="return <%-instance%>.App.XForm<%=model.id%>_Sort(this,'<%=field.name%>')"><%=field.caption%></a><% } %></th>
         <% } %>
         <%-xejs.iif(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'I'),'<th></th>')%>
         <%-xejs.iif(model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'D'),'<th></th>')%>
@@ -116,7 +116,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
     <script id="xgrid_<%=model.id%>_template" type="text/x-ejs-template" data-target="#xgrid_<%=model.id%>_placeholder">
       <# for(var j=0;j<data.length;j++){ var datarow=data[j]; if(!rowid) rowid = j; #>
       <tr class="<#=(rowid%2==1?'even':'odd')#> <%-model.rowclass%> xrow_<%=model.id%> xrow" style="<%-model.rowstyle%>" data-id="<#=rowid#>">
-        <% if(model.inlinepopup){ %><td align="center"><a href="#" onclick="XExt.popupSelect('<%=model.id%>',this); return false;">Select</a></td><% } %>
+        <% if(model.inlinepopup){ %><td align="center"><a href="#" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this); return false;">Select</a></td><% } %>
         <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
           if(!('caption' in field)) continue;
           if(('actions' in field) && (field.actions != '')){ 
@@ -132,8 +132,8 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           <td style="<%=field.cellstyle%>" class="<%=field.cellclass%> <%=xejs.iif(field.control=='checkbox','xcheckbox_column')%> <%=xejs.iif(field.popuplov,'xpopuplov_column')%> <%=fieldclass%>"><% 
             if(!('control' in field) || (field.control=='label') || (field.control=='html')){
               %><div data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.controlclass%> <%if(!('link' in field) && !('html' in field)){%><%=field.name%> xform_ctrl xelem<%=model.id%> xform_label<% } %>">
-                <% if(('link' in field) && (XExt.beginsWith(field.link,'#select'))){ %><a href="<%-field.link%>" onclick="XExt.popupSelect('<%=model.id%>',this);return false;" >
-                <% } else if('link' in field){ %><a href="<%-field.link%>" class="<%=field.name%> xform_ctrl xelem<%=model.id%> xform_label" <%-xejs.showProp('onclick',field.link_onclick,field.link=='#')%> ><% if(field.name && (field.control != 'html')){  %><# if(data[j]['<%=field.name%>']){ #><% } } %>
+                <% if(('link' in field) && (XExt.beginsWith(field.link,'#select'))){ %><a href="<%-field.link%>" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this);return false;" >
+                <% } else if('link' in field){ %><a href="<%-field.link%>" class="<%=field.name%> xform_ctrl xelem<%=model.id%> xform_label" <%-xejs.showProp('onclick',field.link_onclick,field.link=='#','return (function(){'+jslocals,'}).call(this);')%> ><% if(field.name && (field.control != 'html')){  %><# if(data[j]['<%=field.name%>']){ #><% } } %>
                 <% if('html' in field){ %>
                   <%-field.html%>
                 <% } else if('value' in field){ %>
@@ -141,22 +141,22 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
                 <% } else if(field.control=='html'){ %>
                   <#-data[j]['<%=field.name%>']#>
                 <% } else { %>
-                  <#=XFormat.Apply(<%-format%>,data[j]['<%=field.name%>'])#>
+                  <#=<%-instance%>.XFormat.Apply(<%-format%>,data[j]['<%=field.name%>'])#>
                 <% } %>
                 <% if('link' in field){ if(!(XExt.beginsWith(field.link,'#select')) && field.name && (field.control != 'html')){ %><# } #><% } %></a><% } %>
               </div><%
                 }
         else if(field.control=='textbox'){ %><input type="<%=xejs.getInputType(field)%>" data-id="<%=field.name%>" value="<%=xejs.GetValue(field)%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.id%> <%=field.controlclass%>" <%-xejs.iif(maxlength >= 0,'maxlength="'+maxlength+'"')%> /><% }
-        else if(field.control=='textzoom'){ %><div class="nobr"><textarea data-id="<%=field.name%>" name="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xform_ctrl_textzoom xelem<%=model.id%> <%=field.controlclass%>"><%=xejs.GetValue(field)%></textarea><a href="#" class="xform_ctrl xtextzoom icon" onclick="var jctrl = $(this).prev('.<%=field.name%>'); XExt.ZoomEdit(jctrl.val(),'<%=field.caption_ext||field.caption%>',{readonly:!jctrl.hasClass('editable')},function(rslt){ XExt.setFormControl(XExt.getForm('<%=model.id%>'),'<%=field.name%>',rslt); jctrl.focus(); }); return false;"><img src="/images/icon_search.png" height="14" /></a></div><% }
+        else if(field.control=='textzoom'){ %><div class="nobr"><textarea data-id="<%=field.name%>" name="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xform_ctrl_textzoom xelem<%=model.id%> <%=field.controlclass%>"><%=xejs.GetValue(field)%></textarea><a href="#" class="xform_ctrl xtextzoom icon" onclick="var jctrl = <%-instance%>.$(this).prev('.<%=field.name%>'); <%-instance%>.XExt.ZoomEdit(jctrl.val(),'<%=field.caption_ext||field.caption%>',{readonly:!jctrl.hasClass('editable')},function(rslt){ <%-instance%>.XExt.setFormControl(<%-instance%>.XExt.getForm('<%=model.id%>'),'<%=field.name%>',rslt); jctrl.focus(); }); return false;"><img src="/images/icon_search.png" height="14" /></a></div><% }
         else if(field.control=='date'){ %><input data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.id%> datepicker <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" maxlength="10" /><% }
         else if(field.control=='dropdown'){ %><select data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.id%> dropdown <%=field.controlclass%>"><option><%=xejs.GetValue(field)%></option></select><% }
         else if(field.control=='hidden'){ %><input type="hidden" data-id="<%=field.name%>" value="<%=xejs.GetValue(field)%>" class="<%=field.name%> xform_ctrl xelem<%=model.id%> <%=field.controlclass%>" /><% }
         else if(field.control=='checkbox'){ %><div class="xform_ctrl checkbox_container xelem<%=model.id%>"><input data-id="<%=field.name%>" type="checkbox" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl checkbox xelem<%=model.id%> <%=field.controlclass%>" /></div><% }
-          if(field.popuplov){ %><a href="#" data-id="<%=field.name%>_xlookup" class="xform_ctrl xlookup icon <%=field.name%>_xlookup" data-codeval="<%=field.controlparams.codeval%>" data-model="<%=model.id%>" onclick="XExt.popupShow('<%=field.model.id%>','<%=field.name%>','<%=field.caption_ext||field.caption%> Selection',$(this).prev('.<%=field.name%>'),this,{OnControlUpdate:function(obj,e){ xgrid_<%=model.id%>.ControlUpdate(obj,e); }})"><img src="/images/icon_search.png" height="14" style="position:relative;top:-1px;" /></a><% }
+          if(field.popuplov){ %><a href="#" data-id="<%=field.name%>_xlookup" class="xform_ctrl xlookup icon <%=field.name%>_xlookup" data-codeval="<%=field.controlparams.codeval%>" data-model="<%=model.id%>" onclick="<%-instance%>.XExt.popupShow('<%=field.model.id%>','<%=field.name%>','<%=field.caption_ext||field.caption%> Selection',<%-instance%>.$(this).prev('.<%=field.name%>'),this,{OnControlUpdate:function(obj,e){ <%-instance%>.App.xgrid_<%=model.id%>.ControlUpdate(obj,e); }})"><img src="/images/icon_search.png" height="14" style="position:relative;top:-1px;" /></a><% }
             %></td>
           <% } %>
-        <% if(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'I')){ %><td align="center"><a href="#" data-model="<%=model.id%>" data-actions="I" class="row_independent" onclick="XForm<%=model.id%>_DuplicateRow('<%=model.duplicate.model.id%>',<#=rowid#>, this, <%=(model.duplicate.bindings?JSON.stringify(model.duplicate.bindings):'{}')%>); return false;" style="<%-xejs.visible(XExt.access(model.actions,'I'))%>"><img src="/images/icon_copy.png" height="14" alt="Duplicate" title="Duplicate" /></a></td><%}%>
-        <% if(model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'D')){%><td align="center"><a href="#" onclick="XForm<%=model.id%>_DeleteRow(<#=rowid#>); return false;" style="<%-xejs.visible(XExt.access(model.actions,'D'))%>"><img src="/images/icon_delete2.png" height="14" alt="Delete" title="Delete" /></a></td><%}%>
+        <% if(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'I')){ %><td align="center"><a href="#" data-model="<%=model.id%>" data-actions="I" class="row_independent" onclick="<%-instance%>.App.XForm<%=model.id%>_DuplicateRow('<%=model.duplicate.model.id%>',<#=rowid#>, this, <%=(model.duplicate.bindings?JSON.stringify(model.duplicate.bindings):'{}')%>); return false;" style="<%-xejs.visible(XExt.access(model.actions,'I'))%>"><img src="/images/icon_copy.png" height="14" alt="Duplicate" title="Duplicate" /></a></td><%}%>
+        <% if(model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'D')){%><td align="center"><a href="#" onclick="<%-instance%>.App.XForm<%=model.id%>_DeleteRow(<#=rowid#>); return false;" style="<%-xejs.visible(XExt.access(model.actions,'D'))%>"><img src="/images/icon_delete2.png" height="14" alt="Delete" title="Delete" /></a></td><%}%>
       </tr>
       <# } #>
     </script>
@@ -172,7 +172,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
       <div style="display:none;">
         <div class="xsubform xpopup xelem<%=model.id%>" id="popup_<%=field.name%>">
           <div class="xpanel" style="<%=field.controlparams.popupstyle%>">
-            <%-jshRender(popup_model,model)%>
+            <%-jsh.Render(popup_model,model)%>
           </div>
         </div>
       </div>
@@ -188,10 +188,10 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
   <div style="display:none;">
     <div class="xsubform xpopup xelem<%=model.id%>" class="colorbox_inline" id="popup_<%=model.id%>_duplicate">
       <div class="xpanel" style="<%=model.duplicate.popupstyle%>">
-        <%-jshRender(popup_model,model)%>
+        <%-jsh.Render(popup_model,model)%>
         <div style="text-align:center;padding-top:8px;">
-          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.id%> style="padding:3px 8px;" value="Duplicate" onclick="XForm_Duplicate('<%=popup_model.id%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link||''))%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link_options||''))%>'); return false;" />
-          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.id%> style="padding:3px 8px;" value="Cancel" onclick="$.colorbox.close(); return false;" />
+          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.id%> style="padding:3px 8px;" value="Duplicate" onclick="<%-instance%>.XForm_Duplicate('<%=popup_model.id%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link||''))%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link_options||''))%>'); return false;" />
+          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.id%> style="padding:3px 8px;" value="Cancel" onclick="<%-instance%>.$.colorbox.close(); return false;" />
         </div>
       </div>
     </div>

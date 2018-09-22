@@ -30,93 +30,93 @@ for(var i=0;i<model.fields.length;i++){
 if(lovfield == '') throw new Error('Multisel requires one LOV.');
 %>
 
-var xform_<%=model.id%>;
+(function(jsh){
+  var _ = jsh._;
+  var $ = jsh.$;
 
-function XForm<%=model.id%>_Init(callback){
-  xform_<%=model.id%> = new XData('<%=model.id%>');
-  xform_<%=model.id%>.HasUpdates = function(){ return false; };
-  xform_<%=model.id%>.Data = {};
-  xform_<%=model.id%>.PlaceholderID = '#xmultisel_<%=model.id%>_placeholder';
-  xform_<%=model.id%>.TemplateID = '#xmultisel_<%=model.id%>_template';
+  jsh.App.XForm<%=model.id%>_Init = function(callback){
+    var xform_<%=model.id%> = jsh.App.xform_<%=model.id%> = new jsh.XData('<%=model.id%>');
+    xform_<%=model.id%>.HasUpdates = function(){ return false; };
+    xform_<%=model.id%>.Data = {};
+    xform_<%=model.id%>.PlaceholderID = '#xmultisel_<%=model.id%>_placeholder';
+    xform_<%=model.id%>.TemplateID = '#xmultisel_<%=model.id%>_template';
 
-  xform_<%=model.id%>.Select = function(onComplete){
-    var execparams = {};
-    if(!is_add){
-      _.each(XForms['<%=model.id%>']._bindings,function(binding){
-        var bfield = XForm<%=model.id%>.prototype.Fields[binding];
-        if((typeof bfield != 'undefined') && (XExt.HasAccess(bfield.actions,'F'))){
-          execparams[binding] = XForms['<%=model.id%>'][binding]();
+    xform_<%=model.id%>.Select = function(onComplete){
+      var execparams = {};
+      if(!jsh.is_add){
+        _.each(jsh.XForms['<%=model.id%>']._bindings,function(binding){
+          var bfield = jsh.App.XForm<%=model.id%>.prototype.Fields[binding];
+          if((typeof bfield != 'undefined') && (jsh.XExt.HasAccess(bfield.actions,'F'))){
+            execparams[binding] = jsh.XForms['<%=model.id%>'][binding]();
+          }
+        });
+      }
+      else{
+        _.each(jsh.XForms['<%=model.id%>']._bindings,function(binding){
+          var bfield = jsh.App.XForm<%=model.id%>.prototype.Fields[binding];
+          if((typeof bfield != 'undefined') && (bfield.lovkey)){
+            execparams[binding] = jsh.XForms['<%=model.id%>'][binding]();
+          }
+        });
+      }
+      jsh.xLoader.StartLoading(xform_<%=model.id%>);
+      var _query = '';
+      if(!_.isEmpty(execparams)) _query = '?'+$.param(execparams);
+      $.ajax({
+        type:"GET",
+        url:jsh._BASEURL+'_d/'+xform_<%=model.id%>.q+'/'+_query,
+        dataType: 'json',
+        success:function(data){
+          if((data instanceof Object) && ('_error' in data)){
+            if(jsh.DefaultErrorHandler(data['_error'].Number,data['_error'].Message)) { }
+            else if(data._error.Number == -9){ jsh.XExt.Alert(data._error.Message); }
+            else { jsh.XExt.Alert('Error #'+data._error.Number+': '+data._error.Message); }
+          }
+          else{
+            var ejssource = $(xform_<%=model.id%>.TemplateID).html();
+            ejssource = ejssource.replace(/<#/g,'<'+'%').replace(/#>/g,'%'+'>')
+            var ejsrslt = jsh.ejs.render(ejssource,{
+              data:data[xform_<%=model.id%>.q],
+              jsh: jsh
+            });
+            $(xform_<%=model.id%>.PlaceholderID).empty();
+            $(xform_<%=model.id%>.PlaceholderID).append(ejsrslt);
+          }
+          jsh.xLoader.StopLoading(xform_<%=model.id%>);
+          if(onComplete) onComplete();
         }
       });
-    }
-    else{
-      _.each(XForms['<%=model.id%>']._bindings,function(binding){
-        var bfield = XForm<%=model.id%>.prototype.Fields[binding];
-        if((typeof bfield != 'undefined') && (bfield.lovkey)){
-          execparams[binding] = XForms['<%=model.id%>'][binding]();
-        }
-      });
-    }
-    xLoader.StartLoading(xform_<%=model.id%>);
-    var _query = '';
-    if(!_.isEmpty(execparams)) _query = '?'+$.param(execparams);
-    $.ajax({
-      type:"GET",
-      url:_BASEURL+'_d/'+xform_<%=model.id%>.q+'/'+_query,
-      dataType: 'json',
-      success:function(data){
-        if((data instanceof Object) && ('_error' in data)){
-          if(DefaultErrorHandler(data['_error'].Number,data['_error'].Message)) { }
-          else if(data._error.Number == -9){ XExt.Alert(data._error.Message); }
-          else { XExt.Alert('Error #'+data._error.Number+': '+data._error.Message); }
-        }
-        else{
-          var ejssource = $(xform_<%=model.id%>.TemplateID).html();
-          ejssource = ejssource.replace(/<#/g,'<'+'%').replace(/#>/g,'%'+'>')
-          var ejsrslt = ejs.render(ejssource,{
-            data:data[xform_<%=model.id%>.q]
-          });
-          $(xform_<%=model.id%>.PlaceholderID).empty();
-          $(xform_<%=model.id%>.PlaceholderID).append(ejsrslt);
-        }
-        xLoader.StopLoading(xform_<%=model.id%>);
-        if(onComplete) onComplete();
+    };
+
+    callback();
+  }
+
+  jsh.App.XForm<%=model.id%>_Save = function(){
+    var selected_values = [];
+    $(jsh.App.xform_<%=model.id%>.PlaceholderID+' input.xselitem').each(function(i,obj){
+      if($(obj).is(':checked')){
+        selected_values.push($(obj).val());
       }
     });
-  };
+    var _query = {};
+    _.each(jsh.XForms['<%=model.id%>']._bindings,function(binding){
+      var bfield = jsh.App.XForm<%=model.id%>.prototype.Fields[binding];
+      if((typeof bfield != 'undefined') && !(jsh.XExt.HasAccess(bfield.actions,'F'))) return;
+      _query[binding] = jsh.XForms['<%=model.id%>'][binding]();
+      if(jsh.is_add && (typeof  _query[binding] == 'undefined')){
+        _query[binding] = '%%%'+binding+'%%%';
+      }
+    });
+    var rslt = { 
+      'method':'post',
+      'model':jsh.App.xform_<%=model.id%>.q,
+      'query':_query,
+      'post':{'<%=lovfield%>':JSON.stringify(selected_values)},
+      'onComplete':undefined
+    };
+    return [rslt];
+  }
 
-  callback();
-}
+})(<%-instance%>);
 
-function XForm<%=model.id%>_Save(){
-  var selected_values = [];
-  $(xform_<%=model.id%>.PlaceholderID+' input.xselitem').each(function(i,obj){
-    if($(obj).is(':checked')){
-      selected_values.push($(obj).val());
-    }
-  });
-  var _query = {};
-  _.each(XForms['<%=model.id%>']._bindings,function(binding){
-    var bfield = XForm<%=model.id%>.prototype.Fields[binding];
-    if((typeof bfield != 'undefined') && !(XExt.HasAccess(bfield.actions,'F'))) return;
-    _query[binding] = XForms['<%=model.id%>'][binding]();
-    if(is_add && (typeof  _query[binding] == 'undefined')){
-      _query[binding] = '%%%'+binding+'%%%';
-    }
-  });
-  var rslt = { 
-    'method':'post',
-    'model':xform_<%=model.id%>.q,
-    'query':_query,
-    'post':{'<%=lovfield%>':JSON.stringify(selected_values)},
-    'onComplete':undefined
-  };
-  return [rslt];
-}
-
-jsh_heap.push('xform_<%=model.id%>');
-
-jsh_heap.push('XForm<%=model.id%>_Init');
-jsh_heap.push('XForm<%=model.id%>_Save');
-
-<%-jshRenderEJS('jsh_multisel.js.datamodel',ejsparams)%>
+<%-jsh.RenderEJS('jsh_multisel.js.datamodel',ejsparams)%>

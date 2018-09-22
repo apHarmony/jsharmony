@@ -58,6 +58,7 @@ exports.postModelExec = function (req, res, modelid, Q, P, onComplete) {
   if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
   var model = this.jsh.getModel(req, modelid);
   if (!Helper.HasModelAccess(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
+  var db = _this.jsh.getModelDB(req, modelid);
   
   var fieldlist = this.getFieldNames(req, model.fields, 'U');
   
@@ -98,14 +99,14 @@ exports.postModelExec = function (req, res, modelid, Q, P, onComplete) {
   verrors = _.merge(verrors, model.xvalidate.Validate('UK', sql_params));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   
-  var sql = _this.db.sql.postModelExec(_this.jsh, model, param_datalocks, datalockqueries);
+  var sql = db.sql.postModelExec(_this.jsh, model, param_datalocks, datalockqueries);
   
   var dbtasks = {};
   dbtasks[modelid] = function (dbtrans, callback, transtbl) {
     sql_params = _this.ApplyTransTblEscapedParameters(sql_params, transtbl);
-    var dbfunc = _this.db.Recordset;
-    if (model.sqltype && (model.sqltype == 'multirecordset')) dbfunc = _this.db.MultiRecordset;
-    dbfunc.call(_this.db, req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt) {
+    var dbfunc = db.Recordset;
+    if (model.sqltype && (model.sqltype == 'multirecordset')) dbfunc = db.MultiRecordset;
+    dbfunc.call(db, req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt) {
       if (err != null) { err.model = model; err.sql = sql; }
       callback(err, rslt);
     });

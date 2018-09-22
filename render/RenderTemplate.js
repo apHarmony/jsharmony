@@ -24,7 +24,7 @@ exports = module.exports = {};
 
 exports = module.exports = function(req,res,basetemplate,params){
   var jsh = this;
-	req.jshconfig.menu(req,res,jsh,params,function(){
+	req.jshsite.menu(req,res,jsh,params,function(){
 		if(req._override_title) params.title = req._override_title;
 		res.render(jsh.getView(req, basetemplate),params);
 	});

@@ -6,13 +6,10 @@
 <title><%=jsh.Config.site_title%> - <%= title %></title>
 <link href='https://fonts.googleapis.com/css?family=Droid+Sans|Material+Icons|PT+Sans' rel='stylesheet' type='text/css' />
 <link rel="stylesheet" type="text/css" href="/system.css" />
-<script type="text/javascript"><%-req.getBaseJS()%></script>
-<script type="text/javascript" src="/js/main.js"></script>
-<% if(req.isAuthenticated){ %><script type="text/javascript" src="/js/browser.update.js"></script><% } %>
+<script type="text/javascript" src="/js/jsHarmony.js"></script>
+<script type="text/javascript">var <%-req.jshsite.instance%> = new jsHarmony(<%-req.getJSClientParams()%>);</script>
 <script type="text/javascript" src="/system.js"></script>
-<script type="text/javascript" src="/jquery-ui/js/jquery-ui-1.10.3.custom-aspa.min.js"></script>
 <link rel="stylesheet" href="/jquery-ui/css/jquery-ui-1.10.3.custom.min.css" />
-<script type="text/javascript" src="/js/jquery.colorbox-min.js"></script>
 <link rel="stylesheet" href="/js/colorbox/colorbox.css" />
 </head>
 

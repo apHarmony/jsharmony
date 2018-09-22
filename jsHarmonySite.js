@@ -27,6 +27,7 @@ function jsHarmonySite(config){
   this.id = "default";
   this.basetemplate = "index";
   this.baseurl = '/';
+  this.instance = "jshInstance";
   this.show_system_errors = true;
   this.cookiesalt = '';
   this.router = undefined;
@@ -122,23 +123,23 @@ jsHarmonySite.prototype.Validate = function(){
 
   if(_this.auth){
     if(Helper.notset(_this.auth.on_login)) _this.auth.on_login = function(req, jsh, params, cb){ //cb(err, rslt)
-      jsh.AppSrv.ExecRecordset('login', req.jshconfig.auth.sql_login, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
+      jsh.AppSrv.ExecRecordset('login', req.jshsite.auth.sql_login, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
     };
     if(Helper.notset(_this.auth.on_superlogin)) _this.auth.on_superlogin = function(req, jsh, params, cb){ //cb(err, rslt)
-      jsh.AppSrv.ExecRecordset('login', req.jshconfig.auth.sql_superlogin, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
+      jsh.AppSrv.ExecRecordset('login', req.jshsite.auth.sql_superlogin, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
     };
     if(Helper.notset(_this.auth.on_loginsuccess)) _this.auth.on_loginsuccess = function(req, jsh, params, cb){ //cb(err, rslt)
       var context = params[jsh.map.user_id];
       if(_this.auth.getContextUser) context = _this.auth.getContextUser(context, jsh);
-      jsh.AppSrv.ExecRow(context, req.jshconfig.auth.sql_loginsuccess, [jsh.AppSrv.DB.types.VarChar(255), jsh.AppSrv.DB.types.BigInt, jsh.AppSrv.DB.types.DateTime(7)], params, cb);
+      jsh.AppSrv.ExecRow(context, req.jshsite.auth.sql_loginsuccess, [jsh.AppSrv.DB.types.VarChar(255), jsh.AppSrv.DB.types.BigInt, jsh.AppSrv.DB.types.DateTime(7)], params, cb);
     };
     if(Helper.notset(_this.auth.on_passwordreset)) _this.auth.on_passwordreset = function(req, jsh, params, cb){ //cb(err, rslt)
       var context = params[jsh.map.user_id];
       if(_this.auth.getContextUser) context = _this.auth.getContextUser(context, jsh);
-      jsh.AppSrv.ExecRow(context, req.jshconfig.auth.sql_passwordreset, [jsh.AppSrv.DB.types.VarBinary(200), jsh.AppSrv.DB.types.VarChar(255), jsh.AppSrv.DB.types.BigInt, jsh.AppSrv.DB.types.DateTime(7)], params, cb);
+      jsh.AppSrv.ExecRow(context, req.jshsite.auth.sql_passwordreset, [jsh.AppSrv.DB.types.VarBinary(200), jsh.AppSrv.DB.types.VarChar(255), jsh.AppSrv.DB.types.BigInt, jsh.AppSrv.DB.types.DateTime(7)], params, cb);
     };
     if(Helper.notset(_this.auth.on_auth)) _this.auth.on_auth = function(req, jsh, params, cb){ //cb(err, rslt)
-      jsh.AppSrv.ExecMultiRecordset('login', req.jshconfig.auth.sql_auth, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
+      jsh.AppSrv.ExecMultiRecordset('login', req.jshsite.auth.sql_auth, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
     };
   }
 }

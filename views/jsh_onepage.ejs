@@ -24,358 +24,365 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
-var jsh_state = { GET:{},QS:'',fullpath:'',fullurl:_BASEURL,hash:'',modelid:'',path:'' };
-var jsh_global = {
-  max_filesize: <%-JSON.stringify(jsh.Config.max_filesize)%>,
-  global_params: <%-(('globalparams' in req.jshconfig) ? JSON.stringify(_.mapValues(req.jshconfig.globalparams,function(val,key){ if(_.isFunction(val)) return val(req); return val; })) : '{}')%>,
-  baseurl:<%-JSON.stringify(req.baseurl)%>
-};
-var jsh_onepage = true;
-var jsh_prev_title = '';
-var jsh_prev_title_src = '';
-var jsh_prev_bcrumbs = '';
-var jsh_prev_bcrumbs_src = '';
-var jsh_prev_state = null;
-var jsh_cancelExit = false;
-var jsh_focusHandler = [];
-var jsh_ignorefocusHandler = false;
-var jsh_qInputAction = null;
-var CODE_EJSPREPEND = '<!--'+'%%%EJSPREPEND%%%'+'-->';
-var jsh_static_paths = ['logout'];
-var jsh_cur_model = null;
+(function(jsh){
+  var $ = jsh.$;
+  var jQuery = $;
+  var _ = jsh._;
+  var ejs = jsh.ejs;
+  var async = jsh.async;
+  var moment = jsh.moment;
+  var XData = jsh.XData;
+  var XPost = jsh.XPost;
+  var XExt = jsh.XExt;
+  var XFormat = jsh.XFormat;
+  var XValidate = jsh.XValidate;
+  var XSearch = jsh.XSearch;
+  var XPayment = jsh.XPayment;
+  var XBarcode = jsh.XBarcode;
+  var XScanner = jsh.XScanner;
+  var XGrid = jsh.XGrid;
+  var XMenu = jsh.XMenu;
+  var JSHFind = jsh.JSHFind;
+  var XLoader = jsh.XLoader;
+  var XImageLoader = jsh.XImageLoader;
+  var CODE_EJSPREPEND = '<!--'+'%%%EJSPREPEND%%%'+'-->';
 
-init_xfileupload();
-var jsh_title_html = '';
-var jsh_html_title = '<%=jsh.Config.site_title%> - %%%PAGETITLE%%%';
-var jsh_frontsalt = <%-JSON.stringify(jsh.Config.frontsalt)%>;
-var jsh_app_errors = [];
-<% if(jsh.Config.debug_params.web_detailed_errors && jsh.SystemErrors){ %>
-jsh_app_errors = <%-JSON.stringify(jsh.SystemErrors)%>;
+  jsh._instance = <%-JSON.stringify(req.jshsite.instance)%>;
+  jsh.state = { GET:{},QS:'',fullpath:'',fullurl:jsh._BASEURL,hash:'',modelid:'',path:'' };
+  jsh.Config.max_filesize = <%-JSON.stringify(jsh.Config.max_filesize)%>;
+  jsh.Config.require_html5_after_login = <%-JSON.stringify(jsh.Config.require_html5_after_login)%>;
+  jsh.globalparams = <%-(('globalparams' in req.jshsite) ? JSON.stringify(_.mapValues(req.jshsite.globalparams,function(val,key){ if(_.isFunction(val)) return val(req); return val; })) : '{}')%>;
+  jsh.onepage = true;
+  jsh.prev_title = '';
+  jsh.prev_title_src = '';
+  jsh.prev_bcrumbs = '';
+  jsh.prev_bcrumbs_src = '';
+  jsh.focusHandler = [];
+  jsh.ignorefocusHandler = false;
+  jsh.qInputAction = null;
+  jsh.static_paths = ['logout'];
+
+  jsh.InitXFileUpload();
+  jsh.title_html = '';
+  jsh.html_title = '<%=jsh.Config.site_title%> - %%%PAGETITLE%%%';
+  jsh.frontsalt = <%-JSON.stringify(jsh.Config.frontsalt)%>;
+  jsh.app_errors = [];
+
+  <% if(jsh.Config.debug_params.web_detailed_errors && jsh.SystemErrors){ %>
+    jsh.app_errors = <%-JSON.stringify(jsh.SystemErrors)%>;
   <% } %>
 
   $(document).ready(function(){
-    jsh_title_html = "\r\n"+'<h1 style="display:inline-block;" id="xform_title">&nbsp;</h1>' + "\r\n";
-    jsh_state = jshGetState();
-    if(!jsh_state) return;
-    jshLoad();
-    if(jsh_app_errors.length){
-      XExt.Alert("The following jsHarmony errors have occurred:\r\n"+jsh_app_errors.join("\r\n"));
+    jsh.title_html = "\r\n"+'<h1 style="display:inline-block;" id="xform_title">&nbsp;</h1>' + "\r\n";
+    jsh.state = jsh.GetState();
+    if(!jsh.state) return;
+    jsh.Load();
+    if(jsh.app_errors.length){
+      XExt.Alert("The following jsHarmony errors have occurred:\r\n"+jsh.app_errors.join("\r\n"));
     }
   });
 
-$(document).focusin(function(){
-  if(window.xDialog.length){
-    var newobj = document.activeElement;
-    if(newobj && !($(newobj).closest(window.xDialog[0]).length)){
-      window.setTimeout(function(){ $(window.xDialog[0] + ' input').first().focus(); },1);
+  $(document).focusin(function(){
+    if(jsh.xDialog.length){
+      var newobj = document.activeElement;
+      if(newobj && !($(newobj).closest(jsh.xDialog[0]).length)){
+        window.setTimeout(function(){ $(jsh.xDialog[0] + ' input').first().focus(); },1);
+      }
+      return;
     }
-    return;
-  }
-});
+  });
 
-$(document).focusout(function(){
-  if(window.jsh_ignorefocusHandler || window.xDialog.length) return;
-  window.setTimeout(function(){
-    if(window.jsh_ignorefocusHandler || window.xDialog.length) return;
-    for(var i=0;i<jsh_focusHandler.length;i++) jsh_focusHandler[i](document.activeElement);
-  },1);
-});
+  $(document).focusout(function(){
+    if(jsh.ignorefocusHandler || jsh.xDialog.length) return;
+    window.setTimeout(function(){
+      if(jsh.ignorefocusHandler || jsh.xDialog.length) return;
+      for(var i=0;i<jsh.focusHandler.length;i++) jsh.focusHandler[i](document.activeElement);
+    },1);
+  });
 
-function jshModelTree(model,modelParent,modelEach,onComplete,options){ //modelcb(model,modelParent)
-  if(!options) options = { ignoreFields: false, ignoreTabs: false };
-  if(!model) return;
-  modelEach(model,modelParent);
-  if(!options.ignoreTabs && model.curtabmodel) jshModelTree(model.curtabmodel,model,modelEach,undefined,options);
-  if(!options.ignoreFields && model.fields) for(var i=0;i<model.fields.length;i++){
-    if(model.fields[i].model) jshModelTree(model.fields[i].model,model,modelEach,undefined,options);
-  }
-  if(onComplete) onComplete();
-}
+  jsh.Load = function(options){
+    if(!options) options = {
+      //addHistory: false, if we should not add history to the browser state
+      //onRefreshNoChange: function(){ /* If unchanged */ }, if we should only render if the model is different from the cached model
+    };
 
-function jshLoad(options){
-  if(!options) options = {
-    //addHistory: false, if we should not add history to the browser state
-    //onRefreshNoChange: function(){ /* If unchanged */ }, if we should only render if the model is different from the cached model
-  };
+    //Clear Previous Loaders
+    jsh.xLoader.ClearLoading();
 
-  //Clear Previous Loaders
-  xLoader.ClearLoading();
+    if(_.includes(jsh.static_paths,jsh.state.path)) { window.location.href = jsh.state.fullurl; return; }
 
-  if(_.includes(jsh_static_paths,jsh_state.path)) { window.location.href = jsh_state.fullurl; return; }
+    //Get Model
+    jsh.GetModel(jsh.state.modelid,jsh.state.GET,function(rslt){//On Success
+      var model = rslt;
+      //Do not reload if performing a refresh, and the model is the same as the previous model
+      if(options.onRefreshNoChange && jsh.cur_model && model && (JSON.stringify(model)==JSON.stringify(jsh.cur_model))){ options.onRefreshNoChange(); return; }
 
-  //Get Model
-  jshGetModel(jsh_state.modelid,jsh_state.GET,function(rslt){//On Success
-    var model = rslt;
-    //Do not reload if performing a refresh, and the model is the same as the previous model
-    if(options.onRefreshNoChange && jsh_cur_model && model && (JSON.stringify(model)==JSON.stringify(jsh_cur_model))){ options.onRefreshNoChange(); return; }
+      jsh.prev_title = $('#xform_title').html();
+      if(!jsh.prev_title) jsh.prev_title = '';
+      jsh.prev_bcrumbs = $('div.bcrumbs').html();
+      if(!jsh.prev_bcrumbs) jsh.prev_bcrumbs = '';
 
-    jsh_prev_title = $('#xform_title').html();
-    if(!jsh_prev_title) jsh_prev_title = '';
-    jsh_prev_bcrumbs = $('div.bcrumbs').html();
-    if(!jsh_prev_bcrumbs) jsh_prev_bcrumbs = '';
-
-    //Update tab in state, if applicable
-    if(jsh_state.GET && jsh_state.GET.tabs){
-      var tabs = jsh_state.GET.tabs;
-      var tabsChanged = false;
-      try{ if(tabs) tabs = JSON.parse(tabs); }
-      catch(ex){ tabs = null; }
-      if(tabs){
-        //Check if any of the tabs need to be updated
-        jshModelTree(model, null, function (model, modelParent) {
-          if(modelParent && modelParent.curtabmodel){
-            if((modelParent.id in tabs) && (tabs[modelParent.id] != model.id)){
-              tabs[modelParent.id] = model.id;
-              tabsChanged = true;
+      //Update tab in state, if applicable
+      if(jsh.state.GET && jsh.state.GET.tabs){
+        var tabs = jsh.state.GET.tabs;
+        var tabsChanged = false;
+        try{ if(tabs) tabs = JSON.parse(tabs); }
+        catch(ex){ tabs = null; }
+        if(tabs){
+          //Check if any of the tabs need to be updated
+          jsh.forEachModelTree(model, null, function (model, modelParent) {
+            if(modelParent && modelParent.curtabmodel){
+              if((modelParent.id in tabs) && (tabs[modelParent.id] != model.id)){
+                tabs[modelParent.id] = model.id;
+                tabsChanged = true;
+              }
             }
+          }, undefined, { ignoreFields: true });
+          if(tabsChanged){
+            //Recalculate jsh.state
+            jsh.state.GET.tabs = JSON.stringify(tabs);
+            jsh.state.QS = '?'+$.param(jsh.state.GET);
+            jsh.state.fullurl = jsh.state.fullpath + jsh.state.QS + jsh.state.hash;
           }
-        }, undefined, { ignoreFields: true });
-        if(tabsChanged){
-          //Recalculate jsh_state
-          jsh_state.GET.tabs = JSON.stringify(tabs);
-          jsh_state.QS = '?'+$.param(jsh_state.GET);
-          jsh_state.fullurl = jsh_state.fullpath + jsh_state.QS + jsh_state.hash;
         }
       }
-    }
-    if((typeof options.addHistory == 'undefined') || options.addHistory) XForm_AddHistory(jsh_state);
+      if((typeof options.addHistory == 'undefined') || options.addHistory) jsh.XForm_AddHistory(jsh.state);
 
-    var ejsrslt = jshRender(model);
-    //console.log(ejsrslt); //Show Full Source
-    XForm_PreDestroy();
-    $('#xbody').html('');
-    XForm_Destroy();
+      var ejsrslt = jsh.Render(model);
+      //console.log(ejsrslt); //Show Full Source
+      jsh.XForm_PreDestroy();
+      $('#xbody').html('');
+      jsh.XForm_Destroy();
 
-    //Initialize GET/forcequery
-    _GET = XExt.parseGET();
-    forcequery = rslt.forcequery;
-    _.extend(_GET, forcequery);
+      //Initialize GET/forcequery
+      jsh._GET = XExt.parseGET();
+      jsh.forcequery = rslt.forcequery;
+      _.extend(jsh._GET, jsh.forcequery);
 
-    //Setup TopMost Variables
-    window.onbeforeunload = XForm_OnExit;
-    window.jsh_cancelExit = false;
-    window.jsh_focusHandler = [];
-    window.jsh_ignorefocusHandler = false;
-    window.jsh_qInputAction = null;
-    is_add =  (_GET['action']=='add');
-    ignore_changes = false;
-    init_complete = false;
-    delete_target = null;
-    _bcrumbs = {};
-    window.xPopupStack = [];
-    jsh_cur_model = model;
+      //Setup TopMost Variables
+      window.onbeforeunload = function(){ return jsh.XForm_OnExit(); };
+      jsh.cancelExit = false;
+      jsh.focusHandler = [];
+      jsh.ignorefocusHandler = false;
+      jsh.qInputAction = null;
+      jsh.is_add =  (jsh._GET['action']=='add');
+      jsh.init_complete = false;
+      jsh.delete_target = null;
+      jsh._bcrumbs = {};
+      jsh.xPopupStack = [];
+      jsh.cur_model = model;
 
-    var ejsprepend = '';
-    if(rslt.breadcrumbs) ejsprepend += rslt.breadcrumbs;
-    //if(ejsrslt) ejsrslt = ejsrslt.trim();
-    ejsprepend += jsh_title_html;
-    if(ejsrslt.indexOf(CODE_EJSPREPEND)>=0) ejsrslt = ejsrslt.replace(CODE_EJSPREPEND,ejsprepend)
-    else ejsrslt = ejsprepend + ejsrslt;
-    //console.log(ejsrslt); //Debug EJS output
-    $('#xbody').html(ejsrslt);
-    var model_class = 'xbody_'+jsh_state.modelid;
-    if(model._basemodel) model_class += ' xbody_'+ model._basemodel;
-    $('#xbody').attr('class',model_class);
-    //Handle Title
-    if(!model.toptitle) model.toptitle = '';
-    orig_title = XExt.unescapeEJS(model.toptitle);
-    if (orig_title.indexOf('<#') < 0){
-      $('#xform_title').html(orig_title);
-      document.title = XExt.StripTags(jsh_html_title.replace('%%%PAGETITLE%%%',orig_title));
-    }
-    else if(jsh_prev_title_src == model.toptitle) $('#xform_title').html(jsh_prev_title);
-    else $('#xform_title').html('&nbsp;');
-    jsh_prev_title_src = model.toptitle;
-  
-    //Handle breadcrumbs
-    orig_bcrumbs = XExt.unescapeEJS($('div.bcrumbs').html());
-    if (orig_bcrumbs.indexOf('<#') < 0) $('div.bcrumbs').html(orig_bcrumbs);
-    else if(jsh_prev_bcrumbs_src == orig_bcrumbs) $('div.bcrumbs').html(jsh_prev_bcrumbs);
-    else $('div.bcrumbs').html('&nbsp;'); 
-    jsh_prev_bcrumbs_src = orig_bcrumbs;
+      var ejsprepend = '';
+      if(rslt.breadcrumbs) ejsprepend += rslt.breadcrumbs;
+      //if(ejsrslt) ejsrslt = ejsrslt.trim();
+      ejsprepend += jsh.title_html;
+      if(ejsrslt.indexOf(CODE_EJSPREPEND)>=0) ejsrslt = ejsrslt.replace(CODE_EJSPREPEND,ejsprepend)
+      else ejsrslt = ejsprepend + ejsrslt;
+      //console.log(ejsrslt); //Debug EJS output
+      $('#xbody').html(ejsrslt);
+      var model_class = 'xbody_'+jsh.state.modelid;
+      if(model._basemodel) model_class += ' xbody_'+ model._basemodel;
+      $('#xbody').attr('class',model_class);
+      //Handle Title
+      if(!model.toptitle) model.toptitle = '';
+      jsh.orig_title = XExt.unescapeEJS(model.toptitle);
+      if (jsh.orig_title.indexOf('<#') < 0){
+        $('#xform_title').html(jsh.orig_title);
+        document.title = XExt.StripTags(jsh.html_title.replace('%%%PAGETITLE%%%',jsh.orig_title));
+      }
+      else if(jsh.prev_title_src == model.toptitle) $('#xform_title').html(jsh.prev_title);
+      else $('#xform_title').html('&nbsp;');
+      jsh.prev_title_src = model.toptitle;
+    
+      //Handle breadcrumbs
+      jsh.orig_bcrumbs = XExt.unescapeEJS($('div.bcrumbs').html());
+      if (jsh.orig_bcrumbs.indexOf('<#') < 0) $('div.bcrumbs').html(jsh.orig_bcrumbs);
+      else if(jsh.prev_bcrumbs_src == jsh.orig_bcrumbs) $('div.bcrumbs').html(jsh.prev_bcrumbs);
+      else $('div.bcrumbs').html('&nbsp;'); 
+      jsh.prev_bcrumbs_src = jsh.orig_bcrumbs;
 
-    $('#toplink_help').not('.static').attr('href',model.helpurl);
-    $('#toplink_help').not('.static').attr('onclick',model.helpurl_onclick);
-    if(model.topmenu){ SelectMenu(model.topmenu); }
-    jshResetLinks();
-    jsh_prev_state = jsh_state;
-    $(document).trigger('jsh_ready');
-    return;
-  }, function(data){//On Fail
-    var closeIfPopup = function(){
-      if(history.length==1) window.close();
-    }
-    if(data.status == 404){ window.location.href = jsh_state.fullurl; return true; }
-    else if(data.status == 302){ window.location.href = jsh_state.fullurl; return true; }
-    else if(data.status == 301){ window.location.href = jsh_state.fullurl; return true; }
-    else if(data.responseText && data.responseText.indexOf('***ACCOUNT_UNPAID_BALANCE***')>=0){ window.location.href = _BASEURL+'C_PA_CC'; return true; }
-    else if(data.responseText && data.responseText.indexOf('***JSHARMONY_LOGIN***')>=0){ window.location.href = jsh_state.fullurl; return true; }
-    else if ((data instanceof Object) && ('Number' in data)){ 
-      if(data.Number == -11){ XExt.Alert(data.Message?data.Message:'Invalid Model Access'); return true; }
-      else if(_.includes([-1,-2],data.Number)){ XExt.Alert(data.Message,null,{ onAcceptImmediate:closeIfPopup }); return true; }
-    }
-    var msg = 'Failed to load state';
-    <% if(req._web_detailed_errors){ %>msg += ': ' + JSON.stringify(data);<% } %>
-    XExt.Alert(msg);
-  });
-}
-
-function jshResetLinks(){
-  $('a').each(function(i,obj){
-    var jobj = $(obj);
-    if(jobj.attr('onclick')) return;
-    jobj.attr('onclick','return jshNavigate(this);');
-  });
-}
-
-function jshNavigate(a,addHistory,orig_url,onCancel){
-  var apath = a.pathname;
-  var aqs = a.search;
-  var ahash = a.hash;
-  var amodelid = '';
-
-  if(a.id != 'xmenu_more') $('#xmenuside').hide();
-  if(!$(a).hasClass('xsubmenu_more')) $('#xsubmenuside').hide();
-
-  if(apath.indexOf(_BASEURL)==0) apath = apath.substr(_BASEURL.length);
-  if(apath.indexOf('_report/')==0) amodelid = '_report_'+apath.substr(8);
-  else amodelid = apath;
-  if((amodelid.length > 0) && (amodelid[amodelid.length-1] == '/')) amodelid = amodelid.substr(0,amodelid.length-1);
-
-  if(window.location.host != a.host) return true;
-  
-  if(amodelid.indexOf('/') >= 0) return true;
-  var new_jsh_state = {
-    GET : XExt.parseGET(aqs),
-    QS : aqs,
-    fullpath : a.pathname,
-    fullurl : a.href,
-    hash: ahash,
-    modelid : amodelid,
-    path : apath,
-  }
-  
-  //Check if this is an anchor link to the same page
-  if(!orig_url) orig_url = window.location.pathname+window.location.search;
-  var new_url = new_jsh_state.fullpath+new_jsh_state.QS;
-  if(orig_url == new_url){
-    if(new_jsh_state.hash){ 
-      if((typeof addHistory == 'undefined') || addHistory) XForm_AddHistory(new_jsh_state,true);
-      XExt.jumpAnchor(new_jsh_state.hash); 
-    }
-    return false;
-  }
-  
-  var exec_navigate = function(){
-    jsh_state = new_jsh_state;
-    jshLoad({addHistory: addHistory});
-  }
-
-  //Try to exit, show message if changes on the page
-  if(!window.jsh_cancelExit){
-    var exit_rslt = XForm_OnExit();
-    if(exit_rslt){
-      XExt.Confirm(exit_rslt + "\n\nAre you sure you want to leave this page?",exec_navigate,function(){
-        if(typeof onCancel != 'undefined') onCancel();
-      });
-      return false;
-    }
-  }
-  exec_navigate();
-  return false;
-}
-
-function jshRender(model,parent){
-  if(_.isString(model)) return model;
-  if(!('layout' in model)) throw new Error("Model "+model.id+" layout not defined.");
-  var layout = model['layout'];
-  if(layout=='grid') return jshRenderGrid(model,parent);
-  else if(layout=='form') return jshRenderForm(model,parent);
-  else if(layout=='form-m') return jshRenderForm(model,parent);
-  else if (layout == 'multisel') return jshRenderMultisel(model,parent);
-  else if (layout == 'exec') return jshRenderForm(model,parent);
-  else throw new Error("Layout "+layout+" not defined");
-}
-
-function jshRenderGrid(model,parent){
-  return jshRenderBase(model,'jsh_grid',parent,{data:[]});
-}
-
-function jshRenderMultisel(model,parent){
-  return jshRenderBase(model,'jsh_multisel',parent,{data:[]});
-}
-
-function jshRenderForm(model,parent){
-  var rslt = jshRenderBase(model,'jsh_form',parent);
-  if('tabpos' in model){
-    var tabbody = jshRender(model.curtabmodel,model);
-    var tab_view = 'jsh_tabs_bottom';
-    if(model.tabpos == 'top') tab_view = 'jsh_tabs_top';
-    rslt = jshRenderBase(model,tab_view,parent,{
-      head:rslt, body:tabbody
+      $('#toplink_help').not('.static').attr('href',model.helpurl);
+      $('#toplink_help').not('.static').attr('onclick',model.helpurl_onclick);
+      if(model.topmenu){ jsh.SelectMenu(model.topmenu); }
+      jsh.ResetLinks();
+      $(document).trigger('jsh_ready');
+      return;
+    }, function(data){//On Fail
+      var closeIfPopup = function(){
+        if(history.length==1) window.close();
+      }
+      if(data.status == 404){ window.location.href = jsh.state.fullurl; return true; }
+      else if(data.status == 302){ window.location.href = jsh.state.fullurl; return true; }
+      else if(data.status == 301){ window.location.href = jsh.state.fullurl; return true; }
+      else if(data.responseText && data.responseText.indexOf('***ACCOUNT_UNPAID_BALANCE***')>=0){ window.location.href = jsh._BASEURL+'C_PA_CC'; return true; }
+      else if(data.responseText && data.responseText.indexOf('***JSHARMONY_LOGIN***')>=0){ window.location.href = jsh.state.fullurl; return true; }
+      else if ((data instanceof Object) && ('Number' in data)){ 
+        if(data.Number == -11){ XExt.Alert(data.Message?data.Message:'Invalid Model Access'); return true; }
+        else if(_.includes([-1,-2],data.Number)){ XExt.Alert(data.Message,null,{ onAcceptImmediate:closeIfPopup }); return true; }
+      }
+      var msg = 'Failed to load state';
+      <% if(req._web_detailed_errors){ %>msg += ': ' + JSON.stringify(data);<% } %>
+      XExt.Alert(msg);
     });
   }
-  return rslt;
-}
 
-function jshRenderBase(model,view,parent,params){
-  if (typeof params == 'undefined') params = {};
-  var ejsparams = _.extend({
-    model: model,
-    topmost: (('topmost' in model) && (model.topmost)),
-    parent: parent,
-    bindings: model.bindings,
-    ejs: ejs,
-    XExt: XExt,
-    xejs: XExt.xejs,
-    _: _,
-    jshRenderEJS:jshRenderEJS,
-    jshRender:jshRender,
-    jsh_global:jsh_global,
-    _GET: _GET
-  }, params);
-  ejsparams.ejsparams = ejsparams;
-  return ejs.render(jshGetEJS(view), ejsparams);
-}
+  jsh.ResetLinks = function(){
+    $('a').each(function(i,obj){
+      var jobj = $(obj);
+      if(jobj.attr('onclick')) return;
+      jobj.attr('onclick','return <%-req.jshsite.instance%>.Navigate(this);');
+    });
+  }
 
-function jshRenderEJS(view,ejsparams){
-  return ejs.render(jshGetEJS(view),ejsparams);
-}
+  jsh.Navigate = function(a,addHistory,orig_url,onCancel){
+    var apath = a.pathname;
+    var aqs = a.search;
+    var ahash = a.hash;
+    var amodelid = '';
 
-function jshGetModel(modelid,d,onComplete,onFail){
-  XPost.prototype.XExecute('../_model/'+jsh_state.modelid,d, function (rslt) {
-    onComplete(rslt);
-  },onFail);
-}
+    if(a.id != 'xmenu_more') $('#xmenuside').hide();
+    if(!$(a).hasClass('xsubmenu_more')) $('#xsubmenuside').hide();
 
-function jshGetEJS(view){
-  if(view in srcfiles) return srcfiles[view];
-  jshError(-99999,'View "'+view+'" not found.');
-}
+    if(apath.indexOf(jsh._BASEURL)==0) apath = apath.substr(jsh._BASEURL.length);
+    if(apath.indexOf('_report/')==0) amodelid = '_report_'+apath.substr(8);
+    else amodelid = apath;
+    if((amodelid.length > 0) && (amodelid[amodelid.length-1] == '/')) amodelid = amodelid.substr(0,amodelid.length-1);
 
-function jshGetState(){
-  var rslt = {};
-  rslt.GET = XExt.parseGET();
-  rslt.fullpath = window.location.pathname;
-  rslt.path = rslt.fullpath;
-  rslt.QS = window.location.search;
-  rslt.hash = window.location.hash;
-  if(rslt.path.indexOf(_BASEURL)==0) rslt.path = rslt.path.substr(_BASEURL.length);
-  if(rslt.path.indexOf('_report/')==0) rslt.modelid = '_report_'+rslt.path.substr(8);
-  else rslt.modelid = rslt.path;
-  if((rslt.modelid.length > 0) && (rslt.modelid[rslt.modelid.length-1] == '/')) rslt.modelid = rslt.modelid.substr(0,rslt.modelid.length-1);
-  
-  if(rslt.modelid.indexOf('/') >= 0){ jshError(-99999,'Invalid Model ID'); return; }
-  return rslt;
-}
+    if(window.location.host != a.host) return true;
+    
+    if(amodelid.indexOf('/') >= 0) return true;
+    var new_jsh_state = {
+      GET : XExt.parseGET(aqs),
+      QS : aqs,
+      fullpath : a.pathname,
+      fullurl : a.href,
+      hash: ahash,
+      modelid : amodelid,
+      path : apath,
+    }
+    
+    //Check if this is an anchor link to the same page
+    if(!orig_url) orig_url = window.location.pathname+window.location.search;
+    var new_url = new_jsh_state.fullpath+new_jsh_state.QS;
+    if(orig_url == new_url){
+      if(new_jsh_state.hash){ 
+        if((typeof addHistory == 'undefined') || addHistory) jsh.XForm_AddHistory(new_jsh_state,true);
+        XExt.jumpAnchor(new_jsh_state.hash); 
+      }
+      return false;
+    }
+    
+    var exec_navigate = function(){
+      jsh.state = new_jsh_state;
+      jsh.Load({addHistory: addHistory});
+    }
 
-function jshError(num,txt){
-  console.log('Error #'+num+': '+txt);
-  $('#xbody').html('<h3>Error #'+num+': '+txt+'</h3>');
-}
+    //Try to exit, show message if changes on the page
+    if(!jsh.cancelExit){
+      var exit_rslt = jsh.XForm_OnExit();
+      if(exit_rslt){
+        XExt.Confirm(exit_rslt + "\n\nAre you sure you want to leave this page?",exec_navigate,function(){
+          if(typeof onCancel != 'undefined') onCancel();
+        });
+        return false;
+      }
+    }
+    exec_navigate();
+    return false;
+  }
 
-//Array of source HTML
-var jsh_popups = <%-JSON.stringify(popups)%>;
-var srcfiles = <%-ejsext.json_encode_ejs(srcfiles)%>;
-<%-srcfiles['jsh_topmost.js']%>
+  jsh.Render = function(model,parent){
+    if(_.isString(model)) return model;
+    if(!('layout' in model)) throw new Error("Model "+model.id+" layout not defined.");
+    var layout = model['layout'];
+    if(layout=='grid') return jsh.RenderGrid(model,parent);
+    else if(layout=='form') return jsh.RenderForm(model,parent);
+    else if(layout=='form-m') return jsh.RenderForm(model,parent);
+    else if (layout == 'multisel') return jsh.RenderMultisel(model,parent);
+    else if (layout == 'exec') return jsh.RenderForm(model,parent);
+    else throw new Error("Layout "+layout+" not defined");
+  }
+
+  jsh.RenderGrid = function(model,parent){
+    return jsh.RenderBase(model,'jsh_grid',parent,{data:[]});
+  }
+
+  jsh.RenderMultisel = function(model,parent){
+    return jsh.RenderBase(model,'jsh_multisel',parent,{data:[]});
+  }
+
+  jsh.RenderForm = function(model,parent){
+    var rslt = jsh.RenderBase(model,'jsh_form',parent);
+    if('tabpos' in model){
+      var tabbody = jsh.Render(model.curtabmodel,model);
+      var tab_view = 'jsh_tabs_bottom';
+      if(model.tabpos == 'top') tab_view = 'jsh_tabs_top';
+      rslt = jsh.RenderBase(model,tab_view,parent,{
+        head:rslt, body:tabbody
+      });
+    }
+    return rslt;
+  }
+
+  jsh.RenderBase = function(model,view,parent,params){
+    if (typeof params == 'undefined') params = {};
+    var ejsparams = _.extend({
+      model: model,
+      topmost: (('topmost' in model) && (model.topmost)),
+      parent: parent,
+      bindings: model.bindings,
+      ejs: ejs,
+      XExt: XExt,
+      xejs: XExt.xejs,
+      _: _,
+      jsh: jsh,
+      _GET: jsh._GET,
+      instance: <%-JSON.stringify(req.jshsite.instance)%>,
+      jslocals: XExt.getJSLocals(),
+    }, params);
+    ejsparams.ejsparams = ejsparams;
+    return jsh.ejs.render(jsh.GetEJS(view), ejsparams);
+  }
+
+  jsh.RenderEJS = function(view,ejsparams){
+    return jsh.ejs.render(jsh.GetEJS(view),ejsparams);
+  }
+
+  jsh.GetModel = function(modelid,d,onComplete,onFail){
+    XPost.prototype.XExecute('../_model/'+jsh.state.modelid,d, function (rslt) {
+      onComplete(rslt);
+    },onFail);
+  }
+
+  jsh.GetEJS = function(view){
+    if(view in jsh.srcfiles) return jsh.srcfiles[view];
+    jsh.Error(-99999,'View "'+view+'" not found.');
+  }
+
+  jsh.GetState = function(){
+    var rslt = {};
+    rslt.GET = XExt.parseGET();
+    rslt.fullpath = window.location.pathname;
+    rslt.path = rslt.fullpath;
+    rslt.QS = window.location.search;
+    rslt.hash = window.location.hash;
+    if(rslt.path.indexOf(jsh._BASEURL)==0) rslt.path = rslt.path.substr(jsh._BASEURL.length);
+    if(rslt.path.indexOf('_report/')==0) rslt.modelid = '_report_'+rslt.path.substr(8);
+    else rslt.modelid = rslt.path;
+    if((rslt.modelid.length > 0) && (rslt.modelid[rslt.modelid.length-1] == '/')) rslt.modelid = rslt.modelid.substr(0,rslt.modelid.length-1);
+    
+    if(rslt.modelid.indexOf('/') >= 0){ jsh.Error(-99999,'Invalid Model ID'); return; }
+    return rslt;
+  }
+
+  jsh.Error = function(num,txt){
+    console.log('Error #'+num+': '+txt);
+    $('#xbody').html('<h3>Error #'+num+': '+txt+'</h3>');
+  }
+
+  //Array of source HTML
+  jsh.popups = <%-JSON.stringify(popups)%>;
+  jsh.srcfiles = <%-ejsext.json_encode_ejs(srcfiles)%>;
+  <%-srcfiles['jsh_topmost.js']%>
+})(<%-req.jshsite.instance%>);
 </script>
