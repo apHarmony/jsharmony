@@ -1192,7 +1192,7 @@ exports = module.exports = function(jsh){
         _this.EOF = true;
         var noresultsmessage = _this.NoResultsMessage.replace(/%%%FORSEARCHPHRASE%%%/g, (($.trim(_this.Search) != '')?'for selected search phrase':''));
         if (_this.RequireFilter && !reqdata.search && !reqdata.searchjson) noresultsmessage = _this.RequireFilterMessage;
-        $(_this.PlaceholderID).html('<tr class="xtbl_noresults"><td colspan="' + _this.ColSpan + '" align="center" class="xtbl_noresults">' + noresultsmessage + '</td></tr>');
+        jsh.$root(_this.PlaceholderID).html('<tr class="xtbl_noresults"><td colspan="' + _this.ColSpan + '" align="center" class="xtbl_noresults">' + noresultsmessage + '</td></tr>');
         _this.RowCount = 0;
         if (_this.OnResetDataSet) _this.OnResetDataSet(data);
       }
@@ -1208,10 +1208,10 @@ exports = module.exports = function(jsh){
             return;
           }
         }
-        else ejssource = $(_this.TemplateID).html();
+        else ejssource = jsh.$root(_this.TemplateID).html();
         
         if (rowstart == 0) {
-          $(_this.PlaceholderID).empty();
+          jsh.$root(_this.PlaceholderID).empty();
           _this.RowCount = 0;
           if (_this.OnResetDataSet) _this.OnResetDataSet(data);
         }
@@ -1225,21 +1225,21 @@ exports = module.exports = function(jsh){
               xejs: jsh.XExt.xejs,
               jsh: jsh
             });
-            $(_this.PlaceholderID).append(ejsrslt);
-            _this.RowCount = $(_this.PlaceholderID).find('tr').length;
+            jsh.$root(_this.PlaceholderID).append(ejsrslt);
+            _this.RowCount = jsh.$root(_this.PlaceholderID).find('tr').length;
           }
         }
         _this.EOF = data['_eof_' + this.q];
         if ((_this.Paging) && (!_this.EOF)) {
-          $(_this.PlaceholderID).append('<tr class="xtbl_loadmore"><td colspan="' + _this.ColSpan + '"><a href="#">Load More Data</div></td></tr>');
-          $(_this.PlaceholderID).find('.xtbl_loadmore').click(function () {
+          jsh.$root(_this.PlaceholderID).append('<tr class="xtbl_loadmore"><td colspan="' + _this.ColSpan + '"><a href="#">Load More Data</div></td></tr>');
+          jsh.$root(_this.PlaceholderID).find('.xtbl_loadmore').click(function () {
             if (_this.OnLoadMoreData) { _this.OnLoadMoreData(); return false; }
             _this.Load(_this.RowCount);
             return false;
           });
         }
         if (_this.CustomScroll != '') {
-          $(_this.CustomScroll).mCustomScrollbar("update");
+          jsh.$root(_this.CustomScroll).mCustomScrollbar("update");
         }
       }
     }
@@ -1304,7 +1304,7 @@ exports = module.exports = function(jsh){
       }
       _this.scrollPrevious = $(window).scrollTop();
     };
-    $(_this.ScrollControl).scroll(_this.scrollFunc);
+    jsh.$root(_this.ScrollControl).scroll(_this.scrollFunc);
   }
   XData.prototype._getDocumentHeight = function() {
     return Math.max(
@@ -1316,17 +1316,17 @@ exports = module.exports = function(jsh){
   XData.prototype._ControlOnScrollBottom = function(callback){
     var _this = this;
     _this.scrollFunc = function () {
-      var pastBottom = (($(_this.ScrollControl).outerHeight() + $(_this.ScrollControl).scrollTop()) >= $(_this.ScrollControl).get(0).scrollHeight);
-      //console.log(($(_this.ScrollControl).outerHeight()+$(_this.ScrollControl).scrollTop()) + ">=" + $(_this.ScrollControl).get(0).scrollHeight);
+      var pastBottom = ((jsh.$root(_this.ScrollControl).outerHeight() + jsh.$root(_this.ScrollControl).scrollTop()) >= jsh.$root(_this.ScrollControl).get(0).scrollHeight);
+      //console.log((jsh.$root(_this.ScrollControl).outerHeight()+jsh.$root(_this.ScrollControl).scrollTop()) + ">=" + jsh.$root(_this.ScrollControl).get(0).scrollHeight);
       if (!_this.scrolledPastBottom && pastBottom) {
-        callback($(_this.ScrollControl).height() + $(_this.ScrollControl).scrollTop());
+        callback(jsh.$root(_this.ScrollControl).height() + jsh.$root(_this.ScrollControl).scrollTop());
         _this.scrolledPastBottom = true;
       } else {
         if (!pastBottom) _this.scrolledPastBottom = false;
       }
-      _this.scrollPrevious = $(_this.ScrollControl).scrollTop();
+      _this.scrollPrevious = jsh.$root(_this.ScrollControl).scrollTop();
     };
-    $(_this.ScrollControl).scroll(_this.scrollFunc);
+    jsh.$root(_this.ScrollControl).scroll(_this.scrollFunc);
   }
   XData.prototype.EnableScrollUpdate = function() {
     var _this = this;
@@ -1338,7 +1338,7 @@ exports = module.exports = function(jsh){
       }
     };
     if(_this.CustomScroll != ''){
-      $(_this.CustomScroll).mCustomScrollbar({
+      jsh.$root(_this.CustomScroll).mCustomScrollbar({
         theme:"dark",
         autoScrollOnFocus: false,
         scrollButtons:{ enable:true },
@@ -1353,8 +1353,8 @@ exports = module.exports = function(jsh){
   }
   XData.prototype.Destroy = function (){
     var _this = this;
-    if (_this.CustomScroll != '') { $(_this.CustomScroll).mCustomScrollbar("destroy"); }
-    else { $(_this.ScrollControl).unbind('scroll', _this.scrollFunc); }
+    if (_this.CustomScroll != '') { jsh.$root(_this.CustomScroll).mCustomScrollbar("destroy"); }
+    else { jsh.$root(_this.ScrollControl).unbind('scroll', _this.scrollFunc); }
   }
 
   return XData;
@@ -1399,7 +1399,7 @@ exports = module.exports = function(jsh){
   XExtXForm.OnRender = function (modelid) {
     return function(){
       var _this = this;
-      var parentobj = $(document);
+      var parentobj = jsh.root;
       if (this._jrow) parentobj = this._jrow;
       var isGrid = (jsh.XForms[modelid]._layout == 'grid');
       //Clear highlighted background of currently edited cells
@@ -1407,12 +1407,12 @@ exports = module.exports = function(jsh){
       
       if (jsh.XForms[modelid]._layout == 'form-m') {
         if (jsh.App['xform_'+modelid].Count()==0) {
-          $('.xelem'+modelid+'.xnorecords').show();
-          $('.xelem'+modelid+'.xformcontainer').css('visibility', 'hidden');
+          jsh.$root('.xelem'+modelid+'.xnorecords').show();
+          jsh.$root('.xelem'+modelid+'.xformcontainer').css('visibility', 'hidden');
         }
         else {
-          $('.xelem'+modelid+'.xnorecords').hide();
-          $('.xelem'+modelid+'.xformcontainer').css('visibility', 'visible');
+          jsh.$root('.xelem'+modelid+'.xnorecords').hide();
+          jsh.$root('.xelem'+modelid+'.xformcontainer').css('visibility', 'visible');
         }
       }
     
@@ -1442,20 +1442,20 @@ exports = module.exports = function(jsh){
         XExtXForm.RenderField(_this, parentobj, modelid, field);
       });
       if (jsh.XForms[modelid]._layout == 'form-m') {
-        $('#navtext_' + modelid).html((jsh.App['xform_' + modelid].Index + 1) + ' of ' + jsh.App['xform_' + modelid].Count());
+        jsh.$root('#navtext_' + modelid).html((jsh.App['xform_' + modelid].Index + 1) + ' of ' + jsh.App['xform_' + modelid].Count());
       }
     };
   };
 
   XExtXForm.SetFieldValue = function (xformdata, field, val){
     xformdata[field.name] = val;
-    var parentobj = $(document);
+    var parentobj = jsh.root;
     if (xformdata._jrow) parentobj = xformdata._jrow;
     XExtXForm.RenderField(xformdata, parentobj, xformdata._modelid, field, val);
   }
 
   XExtXForm.SetControlValue = function (xformdata, field, val) { //Leave val to "undefined" for refresh
-    var parentobj = $(document);
+    var parentobj = jsh.root;
     if (xformdata._jrow) parentobj = xformdata._jrow;
     var jctrl = XExtXForm.RenderField(xformdata, parentobj, xformdata._modelid, field, val);
     if(jctrl && jctrl.length) xformdata.OnControlUpdate(jctrl[0]);
@@ -1636,7 +1636,7 @@ exports = module.exports = function(jsh){
   XExtXForm.GetValue = function (modelid) {
     return function (field) {
       var _this = this;
-      var parentobj = $(document);
+      var parentobj = jsh.root;
       if (this._jrow) parentobj = this._jrow;
       var isGrid = (jsh.XForms[modelid]._layout == 'grid');
       
@@ -1748,7 +1748,7 @@ exports = module.exports = function(jsh){
   XExtXForm.Commit = function (modelid,xpostid) {
     return function (perm) {
       var _this = this;
-      var parentobj = $(document);
+      var parentobj = jsh.root;
       if (this._jrow) parentobj = this._jrow;
       if ((jsh.XForms[modelid]._layout == 'form-m') || (jsh.XForms[modelid]._layout == 'grid')) {
         if (jsh.App[xpostid].Count()==0) return true;
@@ -1797,7 +1797,7 @@ exports = module.exports = function(jsh){
 
   XExtXForm.BindLOV = function (modelid) {
     return function (xform, parentobj) {
-      if (!parentobj) parentobj = $(document);
+      if (!parentobj) parentobj = jsh.root;
       var isGrid = (jsh.XForms[modelid]._layout == 'grid');
       _.each(this.Fields, function (field) {
         if (!('control' in field)) return; if (field.control == 'subform') return;
@@ -1930,25 +1930,25 @@ exports = module.exports = function(jsh){
 
   XExt.ShowContextMenu = function (selector,context_item,data){
     if (!selector) selector = '.xcontext_menu';
-    $('.xcontext_menu').hide();
-    $(selector).css('visibility', 'hidden');
-    $(selector).show();
+    jsh.$root('.xcontext_menu').hide();
+    jsh.$root(selector).css('visibility', 'hidden');
+    jsh.$root(selector).show();
     var xtop = jsh.mouseY; var xleft = jsh.mouseX;
-    var offset = $(selector).offsetParent().offset();
+    var offset = jsh.$root(selector).offsetParent().offset();
     xtop -= offset.top - 1;
     xleft -= offset.left - 1;
 
     var wwidth = $(window).width();
     var wheight = $(window).height() - 20;
-    var dwidth = $(selector).outerWidth()+4;
-    var dheight = $(selector).outerHeight()+4;
+    var dwidth = jsh.$root(selector).outerWidth()+4;
+    var dheight = jsh.$root(selector).outerHeight()+4;
     if ((xtop + dheight) > wheight) xtop = wheight - dheight;
     if ((xleft + dwidth) > wwidth) xleft = wwidth - dwidth;
     if (xtop < 0) xtop = 0;
     if (xleft < 0) xleft = 0;
 
-    $(selector).css({ 'top': xtop, 'left': xleft });
-    $(selector).css('visibility', 'visible');
+    jsh.$root(selector).css({ 'top': xtop, 'left': xleft });
+    jsh.$root(selector).css('visibility', 'visible');
     if(jsh){
       jsh.xContextMenuVisible = true;
       jsh.xContextMenuItem = context_item;
@@ -2075,8 +2075,8 @@ exports = module.exports = function(jsh){
     window.history.replaceState(obj, title, url);
   }
 
-  XExt.clearFileInput = function (id) {
-    var oldInput = document.getElementById(id);
+  XExt.clearFileInput = function (obj) {
+    var oldInput = obj;
     var newInput = document.createElement("input");
     newInput.type = "file";
     newInput.id = oldInput.id;
@@ -2087,7 +2087,7 @@ exports = module.exports = function(jsh){
   };
 
   XExt.hideTab = function (modelid, tabname) {
-    $('.xtab' + modelid).each(function (i, obj) {
+    jsh.$root('.xtab' + modelid).each(function (i, obj) {
       var jobj = $(obj);
       if (jobj.html() == tabname) jobj.hide();
     });
@@ -2292,7 +2292,7 @@ exports = module.exports = function(jsh){
 
   XExt.CKEditor = function (id) {
     if (CKEDITOR.instances[id]) return;
-    var elem = $('#' + id);
+    var elem = jsh.$root('#' + id);
     var orig_width = elem.outerWidth();
     var orig_height = elem.outerHeight();
     elem.wrap('<div id="' + id + '_container" style="width:' + orig_width + 'px;border:1px solid #999;display:inline-block;"></div>');
@@ -2331,7 +2331,7 @@ exports = module.exports = function(jsh){
   XExt.jumpAnchor = function (name) {
     if (!name) return;
     if (name[0] == '#') name = name.substring(1);
-    var jobj = $('a[name=' + name + ']');
+    var jobj = jsh.$root('a[name=' + name + ']');
     if (jobj.size() == 0) return;
     var elem = jobj.get(0);
     var elemoff = $(elem).offset();
@@ -2479,7 +2479,7 @@ exports = module.exports = function(jsh){
       var frslt = f.call(ctrl, n);
       if((frslt === false) || (frslt===true)) return frslt;
     }
-    if ($(menuid).length) {
+    if (jsh.$root(menuid).length) {
       XExt.ShowContextMenu(menuid, $(ctrl).data('value'), { id:n });
       return false;
     }
@@ -2668,8 +2668,8 @@ exports = module.exports = function(jsh){
 
   XExt.clearDialogs = function(){
     jsh.xDialog = [];
-    $('#xdialogblock').children().hide();
-    $('#xdialogblock').hide();
+    jsh.$root('.xdialogblock').children().hide();
+    jsh.$root('.xdialogblock').hide();
   }
 
   XExt.dialogButtonFunc = function (dialogClass, oldactive, onComplete, params) {
@@ -2687,8 +2687,8 @@ exports = module.exports = function(jsh){
       }
       //Verify this is the topmost dialog
       if ((jsh.xDialog.length > 0) && (jsh.xDialog[0] != dialogClass)) return;
-      $('#xdialogblock ' + dialogClass).hide();
-      if (jsh.xDialog.length == 1) { $('#xdialogblock').hide(); }
+      jsh.$root('.xdialogblock ' + dialogClass).hide();
+      if (jsh.xDialog.length == 1) { jsh.$root('.xdialogblock').hide(); }
       if (jsh.xDialog[0] != dialogClass) { alert('ERROR - Invalid Dialog Stack'); console.log(dialogClass); console.log(jsh.xDialog); }
       if (oldactive) oldactive.focus();
       window.setTimeout(function () { jsh.xDialog.shift(); if (onComplete) onComplete(); }, 1);
@@ -2704,21 +2704,21 @@ exports = module.exports = function(jsh){
     msg = XExt.escapeHTML(msg);
     msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
     //alert(msg);
-    jsh.xDialog.unshift('#xalertbox');
-    $('#xdialogblock #xalertbox').zIndex(jsh.xDialog.length);
+    jsh.xDialog.unshift('.xalertbox');
+    jsh.$root('.xdialogblock .xalertbox').zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
-    $('#xalertmessage').html(msg);
-    $('#xalertbox input').off('click');
-    $('#xalertbox input').off('keydown');
-    var acceptfunc = XExt.dialogButtonFunc('#xalertbox', oldactive, onAccept, { onCompleteImmediate: params.onAcceptImmediate });
-    $('#xalertbox input').on('click', acceptfunc);
-    $('#xalertbox input').on('keydown', function (e) { if (e.keyCode == 27) { acceptfunc(); } });
+    jsh.$root('.xalertmessage').html(msg);
+    jsh.$root('.xalertbox input').off('click');
+    jsh.$root('.xalertbox input').off('keydown');
+    var acceptfunc = XExt.dialogButtonFunc('.xalertbox', oldactive, onAccept, { onCompleteImmediate: params.onAcceptImmediate });
+    jsh.$root('.xalertbox input').on('click', acceptfunc);
+    jsh.$root('.xalertbox input').on('keydown', function (e) { if (e.keyCode == 27) { acceptfunc(); } });
     
-    $('#xdialogblock,#xalertbox').show();
+    jsh.$root('.xdialogblock,.xalertbox').show();
     jsh.XWindowResize();
-    if (!XExt.isIOS()) $('#xalertbox input').focus();
+    if (!XExt.isIOS()) jsh.$root('.xalertbox input').focus();
   }
 
   XExt.Confirm = function (obj, onAccept, onCancel, options) {
@@ -2730,31 +2730,31 @@ exports = module.exports = function(jsh){
     msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
     //if (window.confirm(msg)) { if (onAccept) onAccept(); }
     //if (onCancel) onCancel(); 
-    jsh.xDialog.unshift('#xconfirmbox');
-    $('#xdialogblock #xconfirmbox').zIndex(jsh.xDialog.length);
+    jsh.xDialog.unshift('.xconfirmbox');
+    jsh.$root('.xdialogblock .xconfirmbox').zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
-    $('#xconfirmmessage').html(msg);
-    $('#xconfirmbox input').off('click');
-    $('#xconfirmbox input').off('keydown');
-    var cancelfunc = XExt.dialogButtonFunc('#xconfirmbox', oldactive, onCancel);
+    jsh.$root('.xconfirmmessage').html(msg);
+    jsh.$root('.xconfirmbox input').off('click');
+    jsh.$root('.xconfirmbox input').off('keydown');
+    var cancelfunc = XExt.dialogButtonFunc('.xconfirmbox', oldactive, onCancel);
     if (options.button_no) {
-      $('#xconfirmbox input.button_no').show();
-      $('#xconfirmbox input.button_no').on('click', XExt.dialogButtonFunc('#xconfirmbox', oldactive, options.button_no));
+      jsh.$root('.xconfirmbox input.button_no').show();
+      jsh.$root('.xconfirmbox input.button_no').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, options.button_no));
     }
-    else $('#xconfirmbox input.button_no').hide();
-    if (options.button_ok_caption) $('#xconfirmbox input.button_ok').val(options.button_ok_caption);
-    if (options.button_no_caption) $('#xconfirmbox input.button_no').val(options.button_no_caption);
-    if (options.button_cancel_caption) $('#xconfirmbox input.button_cancel').val(options.button_cancel_caption);
+    else jsh.$root('.xconfirmbox input.button_no').hide();
+    if (options.button_ok_caption) jsh.$root('.xconfirmbox input.button_ok').val(options.button_ok_caption);
+    if (options.button_no_caption) jsh.$root('.xconfirmbox input.button_no').val(options.button_no_caption);
+    if (options.button_cancel_caption) jsh.$root('.xconfirmbox input.button_cancel').val(options.button_cancel_caption);
 
 
-    $('#xconfirmbox input.button_ok').on('click', XExt.dialogButtonFunc('#xconfirmbox', oldactive, onAccept));
-    $('#xconfirmbox input.button_cancel').on('click', cancelfunc);
-    $('#xconfirmbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    $('#xdialogblock,#xconfirmbox').show();
+    jsh.$root('.xconfirmbox input.button_ok').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, onAccept));
+    jsh.$root('.xconfirmbox input.button_cancel').on('click', cancelfunc);
+    jsh.$root('.xconfirmbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    jsh.$root('.xdialogblock,.xconfirmbox').show();
     jsh.XWindowResize();
-    if (!XExt.isIOS()) $('#xconfirmbox input.button_ok').focus();
+    if (!XExt.isIOS()) jsh.$root('.xconfirmbox input.button_ok').focus();
   }
 
   XExt.Prompt = function (obj, dflt, onComplete) {
@@ -2770,40 +2770,40 @@ exports = module.exports = function(jsh){
     //var rslt = window.prompt(msg, dflt);
     //If cancel or close, rslt = null
     //if (onComplete) onComplete(rslt);
-    jsh.xDialog.unshift('#xpromptbox');
-    $('#xdialogblock #xpromptbox').zIndex(jsh.xDialog.length);
+    jsh.xDialog.unshift('.xpromptbox');
+    jsh.$root('.xdialogblock .xpromptbox').zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
-    $('#xpromptmessage').html(msg);
-    $('#xpromptbox input').off('click');
-    $('#xpromptbox input').off('keydown');
-    $('#xpromptfield').val(dflt);
-    var cancelfunc = XExt.dialogButtonFunc('#xpromptbox', oldactive, function () { if (onComplete) onComplete(null); });
-    var acceptfunc = XExt.dialogButtonFunc('#xpromptbox', oldactive, function () { if (onComplete) onComplete($('#xpromptfield').val()); });
-    $('#xpromptbox input.button_ok').on('click', acceptfunc);
-    $('#xpromptbox input.button_cancel').on('click', cancelfunc);
-    $('#xpromptbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    $('#xpromptfield').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
-    $('#xdialogblock,#xpromptbox').show();
+    jsh.$root('.xpromptmessage').html(msg);
+    jsh.$root('.xpromptbox input').off('click');
+    jsh.$root('.xpromptbox input').off('keydown');
+    jsh.$root('.xpromptfield').val(dflt);
+    var cancelfunc = XExt.dialogButtonFunc('.xpromptbox', oldactive, function () { if (onComplete) onComplete(null); });
+    var acceptfunc = XExt.dialogButtonFunc('.xpromptbox', oldactive, function () { if (onComplete) onComplete(jsh.$root('.xpromptfield').val()); });
+    jsh.$root('.xpromptbox input.button_ok').on('click', acceptfunc);
+    jsh.$root('.xpromptbox input.button_cancel').on('click', cancelfunc);
+    jsh.$root('.xpromptbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    jsh.$root('.xpromptfield').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
+    jsh.$root('.xdialogblock,.xpromptbox').show();
     jsh.XWindowResize();
-    $('#xpromptfield').focus();
+    jsh.$root('.xpromptfield').focus();
   }
 
   XExt.CustomPrompt = function (id, html, onInit, onAccept, onCancel, onClosed) {
     //Classes - default_focus, button_ok, button_cancel
-    if ($('#xdialogblock #' + id).length) $('#xdialogblock #' + id).remove();
-    $('#xdialogblock').append(html);
+    if (jsh.$root('.xdialogblock #' + id).length) jsh.$root('.xdialogblock #' + id).remove();
+    jsh.$root('.xdialogblock').append(html);
     
     //ShowDialog
     jsh.xDialog.unshift('#' + id);
-    $('#xdialogblock #' + id).zIndex(jsh.xDialog.length);
+    jsh.$root('.xdialogblock #' + id).zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
     
-    $('#' + id + ' input').off('click');
-    $('#' + id + ' input').off('keydown');
+    jsh.$root('#' + id + ' input').off('click');
+    jsh.$root('#' + id + ' input').off('keydown');
     var cancelfunc = XExt.dialogButtonFunc('#' + id, oldactive, function () { if (onCancel) onCancel(); if (onClosed) onClosed(); });
     var acceptfunc_aftervalidate = XExt.dialogButtonFunc('#' + id, oldactive, function () { if (onClosed) onClosed(); });
     var acceptfunc = function () {
@@ -2814,41 +2814,41 @@ exports = module.exports = function(jsh){
       else acceptfunc_aftervalidate();
     }
     if (onInit) onInit(acceptfunc, cancelfunc);
-    $('#' + id + ' input.button_ok').on('click', acceptfunc);
-    $('#' + id + ' input.button_cancel').on('click', cancelfunc);
-    $('#' + id + ' input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    $('#' + id + ' input:not(:checkbox):not(:button)').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
-    $('#xdialogblock,#' + id).show();
+    jsh.$root('#' + id + ' input.button_ok').on('click', acceptfunc);
+    jsh.$root('#' + id + ' input.button_cancel').on('click', cancelfunc);
+    jsh.$root('#' + id + ' input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    jsh.$root('#' + id + ' input:not(:checkbox):not(:button)').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
+    jsh.$root('.xdialogblock,#' + id).show();
     jsh.XWindowResize();
-    $('#' + id + ' .default_focus').focus();
+    jsh.$root('#' + id + ' .default_focus').focus();
   }
 
   XExt.ZoomEdit = function (val, caption, options, onAccept, onCancel) {
     if(!options) options = {};
     if(!val) val = '';
     val = val.toString();
-    jsh.xDialog.unshift('#xtextzoombox');
-    $('#xdialogblock #xtextzoombox').zIndex(jsh.xDialog.length);
+    jsh.xDialog.unshift('.xtextzoombox');
+    jsh.$root('.xdialogblock .xtextzoombox').zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
-    $('#xtextzoommessage').html(caption);
-    $('#xtextzoombox input').off('click');
-    $('#xtextzoombox input').off('keydown');
-    $('#xtextzoomfield').val(val);
+    jsh.$root('.xtextzoommessage').html(caption);
+    jsh.$root('.xtextzoombox input').off('click');
+    jsh.$root('.xtextzoombox input').off('keydown');
+    jsh.$root('.xtextzoomfield').val(val);
     
-    $('#xtextzoomfield').prop('readonly', (options.readonly?true:false));
-    if(options.readonly) $('#xtextzoomfield').removeClass('editable').addClass('uneditable');
-    else $('#xtextzoomfield').removeClass('uneditable').addClass('editable');
+    jsh.$root('.xtextzoomfield').prop('readonly', (options.readonly?true:false));
+    if(options.readonly) jsh.$root('.xtextzoomfield').removeClass('editable').addClass('uneditable');
+    else jsh.$root('.xtextzoomfield').removeClass('uneditable').addClass('editable');
 
-    var cancelfunc = XExt.dialogButtonFunc('#xtextzoombox', oldactive, function () { if (onCancel) onCancel(); });
-    var acceptfunc = XExt.dialogButtonFunc('#xtextzoombox', oldactive, function () { if (onAccept) onAccept($('#xtextzoomfield').val()); });
-    $('#xtextzoombox input.button_ok').on('click', acceptfunc);
-    $('#xtextzoombox input.button_cancel').on('click', cancelfunc);
-    $('#xtextzoombox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    $('#xdialogblock,#xtextzoombox').show();
+    var cancelfunc = XExt.dialogButtonFunc('.xtextzoombox', oldactive, function () { if (onCancel) onCancel(); });
+    var acceptfunc = XExt.dialogButtonFunc('.xtextzoombox', oldactive, function () { if (onAccept) onAccept(jsh.$root('.xtextzoomfield').val()); });
+    jsh.$root('.xtextzoombox input.button_ok').on('click', acceptfunc);
+    jsh.$root('.xtextzoombox input.button_cancel').on('click', cancelfunc);
+    jsh.$root('.xtextzoombox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    jsh.$root('.xdialogblock,.xtextzoombox').show();
     jsh.XWindowResize();
-    $('#xtextzoomfield').focus();
+    jsh.$root('.xtextzoomfield').focus();
   }
 
   var popupData = {};
@@ -2858,7 +2858,7 @@ exports = module.exports = function(jsh){
     var parentmodelid = $(obj).data('model');
     var parentfield = null;
     if (parentmodelid) parentfield = jsh.App['XForm' + parentmodelid].prototype.Fields[fieldid];
-    if (!parentobj) parentobj = $('#' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelid);
+    if (!parentobj) parentobj = jsh.$root('#' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelid);
     var numOpens = 0;
     
     popupData[modelid] = {};
@@ -2870,7 +2870,7 @@ exports = module.exports = function(jsh){
       var xdata = jsh.App['xform_' + modelid];
       xdata.RowCount = 0;
       if (xdata.Prop) xdata.Prop.Enabled = true;
-      $(xdata.PlaceholderID).html('');
+      jsh.$root(xdata.PlaceholderID).html('');
       var orig_jsh_ignorefocusHandler = jsh.ignorefocusHandler;
       jsh.ignorefocusHandler = true;
       var popup_options = {};
@@ -2884,9 +2884,9 @@ exports = module.exports = function(jsh){
         onComplete: function () {
           numOpens++;
           if(numOpens==1) xdata.Select();
-          if ($('#popup_' + fieldid + '.xelem' + parentmodelid + ' .xfilter_value').first().is(':visible')) $('#popup_' + fieldid + ' .xfilter_value').first().focus();
-          else if ($('#popup_' + fieldid + '.xelem' + parentmodelid).find('td a').length) $('#popup_' + fieldid).find('td a').first().focus();
-            //else $('#popup_' + fieldid + '.xelem' + parentmodelid).find('input,select,textarea').first().focus();
+          if (jsh.$root('#popup_' + fieldid + '.xelem' + parentmodelid + ' .xfilter_value').first().is(':visible')) jsh.$root('#popup_' + fieldid + ' .xfilter_value').first().focus();
+          else if (jsh.$root('#popup_' + fieldid + '.xelem' + parentmodelid).find('td a').length) jsh.$root('#popup_' + fieldid).find('td a').first().focus();
+            //else jsh.$root('#popup_' + fieldid + '.xelem' + parentmodelid).find('input,select,textarea').first().focus();
         },
         onClosed: function () {
           var found_popup = false;
@@ -2974,11 +2974,21 @@ exports = module.exports = function(jsh){
     return rslt;
   }
 
+  XExt.getClasses = function(obj){
+    var jobj = $(obj);
+    var rslt = [];
+    var classes = jobj.attr('class').split(/\s+/);
+    for(var i=0;i<classes.length;i++){
+      if(classes[i].trim()) rslt.push(classes[i].trim());
+    }
+    return rslt;
+  }
+
   XExt.ItemContextMenu = function (ctrl) {
     var parent = $(ctrl).closest('.xcontext_parent');
     if (!parent.length) return true;
     var menuid = '#_item_context_menu_' + parent.attr('id');
-    if (!$(menuid).length) return true;
+    if (!jsh.$root(menuid).length) return true;
     XExt.ShowContextMenu(menuid, $(ctrl).data('value'));
     return false;
   }
@@ -3041,7 +3051,7 @@ exports = module.exports = function(jsh){
   /* Form Helper Functions */
   /*************************/
   XExt.isGridControl = function (ctrl) {
-    return ($('.SQ_CARRIER_PRO').closest('.xtbl').length > 0);
+    return (jsh.$root('.SQ_CARRIER_PRO').closest('.xtbl').length > 0);
   }
   XExt.getFormBase = function (id) {
     if (!jsh.XBase[id]) { XExt.Alert('ERROR: Base form ' + id + ' not found.'); return; }
@@ -3129,7 +3139,7 @@ exports = module.exports = function(jsh){
     else return window.open(url, '_blank', windowstr);
   }
   XExt.renderCanvasCheckboxes = function () {
-    $('canvas.checkbox.checked').each(function () {
+    jsh.$root('canvas.checkbox.checked').each(function () {
       var obj = this;
       var w = obj.width;
       var h = obj.height;
@@ -3589,7 +3599,7 @@ exports = module.exports = function(jsh){
       if (!oldobj) return; //Return if user was not previously in grid
       if ($.datepicker && $.datepicker._datepickerShowing) {
         if (newobj == $('body')[0]) return;
-        else if ($('.ui-datepicker').has(newobj).length) return;
+        else if (jsh.$root('.ui-datepicker').has(newobj).length) return;
       }
       if (newobj) newrowid = jsh.XExt.XForm.GetRowID(_this.modelid, newobj);
       if (newrowid >= 0) return; //Return if current control is in grid
@@ -3811,67 +3821,70 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 var $ = require('./jquery-1.11.2');
 
-function XImageLoader () {
-  this.loadqueue = [];
-  
-  this.loaded = new Array();
-  
-  $('body').append('<img id="XImageLoader" style="position:absolute;top:0px;left:0px;z-index:0;visibility:hidden;" />');
-  this.loaderimg = $('#XImageLoader');
-  
-  this.PrependImages = function(imgarray){
-    //Prepend array of images
-    for(var i=0; i<imgarray.length; i++){
-      this.loadqueue.unshift(imgarray[i]);
-    }
-    
-  };
-  
-  this.PrependImage = function(img){
-    //Append image
-    this.loadqueue.unshift(img);
-  };
-  
-  this.IsLoaded = function(img){
-    //Check if slide is in loaded array, return true if yes, false if no
-    if($.inArray(img,this.loaded) != -1) return true;
-    return false;
-  };
-  
-  this.StartLoad = function(){
-    if(this.IsLoading) return;
-    this.IsLoading = true;
-    this.LoadNext();
-  };
-  
-  this.IsLoading = false;
-  
-  this.LoadNext = function(){
-    var me = this;
-    //If Queue is empty, sleep for 1 second and run again
-    if(this.loadqueue.length == 0){ this.IsLoading = false; return; }
-    
-    //Remove next slide from queue
-    var img = this.loadqueue.shift();
-    
-    //Check if it already loaded
-    if(this.IsLoaded(img)){
-      this.LoadNext();
-      return;
-    }
-    
-    this.loaderimg.unbind('load');
-    //Load next slide
-    this.loaderimg.load(function(){
-      //Possibly for the future - add it to the scene, hidden
-      me.loaded.push(img);
-      me.LoadNext();
-    });
-    this.loaderimg.attr('src',img);
-  };
-}
+exports = module.exports = function(jsh){
 
-exports = module.exports = XImageLoader;
+  function XImageLoader () {
+    this.loadqueue = [];
+    
+    this.loaded = new Array();
+    
+    jsh.root.append('<img class="XImageLoader" style="position:absolute;top:0px;left:0px;z-index:0;visibility:hidden;" />');
+    this.loaderimg = jsh.$root('.XImageLoader');
+    
+    this.PrependImages = function(imgarray){
+      //Prepend array of images
+      for(var i=0; i<imgarray.length; i++){
+        this.loadqueue.unshift(imgarray[i]);
+      }
+      
+    };
+    
+    this.PrependImage = function(img){
+      //Append image
+      this.loadqueue.unshift(img);
+    };
+    
+    this.IsLoaded = function(img){
+      //Check if slide is in loaded array, return true if yes, false if no
+      if($.inArray(img,this.loaded) != -1) return true;
+      return false;
+    };
+    
+    this.StartLoad = function(){
+      if(this.IsLoading) return;
+      this.IsLoading = true;
+      this.LoadNext();
+    };
+    
+    this.IsLoading = false;
+    
+    this.LoadNext = function(){
+      var me = this;
+      //If Queue is empty, sleep for 1 second and run again
+      if(this.loadqueue.length == 0){ this.IsLoading = false; return; }
+      
+      //Remove next slide from queue
+      var img = this.loadqueue.shift();
+      
+      //Check if it already loaded
+      if(this.IsLoaded(img)){
+        this.LoadNext();
+        return;
+      }
+      
+      this.loaderimg.unbind('load');
+      //Load next slide
+      this.loaderimg.load(function(){
+        //Possibly for the future - add it to the scene, hidden
+        me.loaded.push(img);
+        me.LoadNext();
+      });
+      this.loaderimg.attr('src',img);
+    };
+  }
+
+  return XImageLoader;
+}
 },{"./jquery-1.11.2":21}],14:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
@@ -3895,54 +3908,58 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 var $ = require('./jquery-1.11.2');
 var _ = require('lodash');
 
-function XLoader(){
-	this.IsLoading = false;
-	this.LoadQueue = new Array();
-}
+exports = module.exports = function(jsh){
 
-XLoader.prototype.StartLoading = function(obj){
-	if(!_.includes(this.LoadQueue,obj)) this.LoadQueue.push(obj);
-	if(this.IsLoading) return;
-	$('body').css('cursor','wait');
-	this.IsLoading = true;
-	$('input').blur();
-	$('#xloadingbox').stop().fadeTo(0,0);
-	$('#xloadingblock').show();
-	$('#xloadingbox').fadeTo(2000,1);
-}
-
-XLoader.prototype.StopLoading = function (obj){
-  _.remove(this.LoadQueue, function (val) { return obj == val; });
-	if(this.LoadQueue.length != 0) return;
-  this.StopLoadingBase();
-}
-
-XLoader.prototype.ClearLoading = function () {
-  this.LoadQueue = [];
-  this.StopLoadingBase();
-};
-
-XLoader.prototype.StopLoadingBase = function () {
-  this.IsLoading = false;
-  $('#xloadingbox').stop();
-  var curfade = GetOpacity(document.getElementById('xloadingbox'));
-  $('#xloadingbox').fadeTo(500 * curfade, 0, function () { if (!this.IsLoading) { $('#xloadingblock').hide(); } });
-  $('body').css('cursor', '');
-}
-
-function GetOpacity(elem) {
-  var ori = $(elem).css('opacity');
-  var ori2 = $(elem).css('filter');
-  if (ori2) {
-    ori2 = parseInt( ori2.replace(')','').replace('alpha(opacity=','') ) / 100;
-    if (!isNaN(ori2) && ori2 != '') {
-      ori = ori2;
-    }
+  function XLoader(){
+    this.IsLoading = false;
+    this.LoadQueue = new Array();
   }
-  return ori;
+
+  XLoader.prototype.StartLoading = function(obj){
+    if(!_.includes(this.LoadQueue,obj)) this.LoadQueue.push(obj);
+    if(this.IsLoading) return;
+    jsh.root.css('cursor','wait');
+    this.IsLoading = true;
+    jsh.$root('input').blur();
+    jsh.$root('.xloadingbox').stop().fadeTo(0,0);
+    jsh.$root('.xloadingblock').show();
+    jsh.$root('.xloadingbox').fadeTo(2000,1);
+  }
+
+  XLoader.prototype.StopLoading = function (obj){
+    _.remove(this.LoadQueue, function (val) { return obj == val; });
+    if(this.LoadQueue.length != 0) return;
+    this.StopLoadingBase();
+  }
+
+  XLoader.prototype.ClearLoading = function () {
+    this.LoadQueue = [];
+    this.StopLoadingBase();
+  };
+
+  XLoader.prototype.StopLoadingBase = function () {
+    this.IsLoading = false;
+    jsh.$root('.xloadingbox').stop();
+    var curfade = GetOpacity(jsh.$root('.xloadingbox')[0]);
+    jsh.$root('.xloadingbox').fadeTo(500 * curfade, 0, function () { if (!this.IsLoading) { jsh.$root('.xloadingblock').hide(); } });
+    jsh.root.css('cursor', '');
+  }
+
+  function GetOpacity(elem) {
+    var ori = $(elem).css('opacity');
+    var ori2 = $(elem).css('filter');
+    if (ori2) {
+      ori2 = parseInt( ori2.replace(')','').replace('alpha(opacity=','') ) / 100;
+      if (!isNaN(ori2) && ori2 != '') {
+        ori = ori2;
+      }
+    }
+    return ori;
+  }
+
+  return XLoader;
 }
 
-exports = module.exports = XLoader;
 },{"./jquery-1.11.2":21,"lodash":28}],15:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
@@ -3982,27 +3999,27 @@ exports = module.exports = function(jsh){
   function XMenuInit() {
     if (isXMenuInit) return;
     //Set up Top Menu Sidebar
-    if ($('#xmenu').size() > 0) {
-      $('#xmenu a').each(function (i, obj) {
-        if (obj.id == 'xmenu_more') return;
+    if (jsh.$root('.xmenu').size() > 0) {
+      jsh.$root('.xmenu a').each(function (i, obj) {
+        if ($(obj).hasClass('xmenu_more')) return;
         XMenuItems.push($(obj));
       });
       XMenuCalcDimensions(true);
       
-      $('#xmenu_more').click(function () {
-        var xmenuside = $('#xmenuside');
-        $('#xsubmenuside').hide();
+      jsh.$root('.xmenu_more').click(function () {
+        var xmenuside = jsh.$root('.xmenuside');
+        jsh.$root('.xsubmenuside').hide();
         if (!xmenuside.is(":visible")) xmenuside.show();
         else xmenuside.hide();
         return false;
       });
       
       //Create xmenuside
-      var xmenuside = $('#xmenuside');
+      var xmenuside = jsh.$root('.xmenuside');
       if (xmenuside.size() > 0) {
         for (var i = 0; i < XMenuItems.length; i++) {
           var xmenuitem = XMenuItems[i];
-          var htmlobj = '<a id="side' + xmenuitem[0].id + '" href="' + xmenuitem.attr('href') + '" onclick="' + xmenuitem.attr('onclick') + '" class="' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
+          var htmlobj = '<a href="' + xmenuitem.attr('href') + '" onclick="' + xmenuitem.attr('onclick') + '" class="side' + xmenuitem[0].id + ' ' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
           xmenuside.append(htmlobj);
         }
       }
@@ -4020,54 +4037,54 @@ exports = module.exports = function(jsh){
       var jwidth = jobj.outerWidth(true);
       jobj.data('width', jwidth);
     }
-    XMenuLeft = $('#xmenu').offset().left + parseInt($('#xmenu').css('padding-left').replace(/\D/g, ''));
+    XMenuLeft = jsh.$root('.xmenu').offset().left + parseInt(jsh.$root('.xmenu').css('padding-left').replace(/\D/g, ''));
     if (isNaN(XMenuLeft)) XMenuLeft = 0;
   }
 
   XMenu.XSubMenuInit = function (menuid){
     jsh.curSubMenu = menuid;
-    var selsubmenu = '#xsubmenu_' + String(menuid).toUpperCase();
+    var selsubmenu = '.xsubmenu_' + String(menuid).toUpperCase();
     curSubMenuSel = selsubmenu;
 
     //Set up Side Menu Sidebar
     XSubMenuItems = [];
     XSubMenuLeft = 0;
     XSubMenuMoreWidth = 0;
-    $('.xsubmenu').hide();
-    $('#xsubmenuside').hide().empty();
+    jsh.$root('.xsubmenu').hide();
+    jsh.$root('.xsubmenuside').hide().empty();
 
-    if ($(selsubmenu).size() > 0) {
-      $(selsubmenu).show();
-      $(selsubmenu + ' a, ' + selsubmenu + ' div').each(function (i, obj) {
+    if (jsh.$root(selsubmenu).size() > 0) {
+      jsh.$root(selsubmenu).show();
+      jsh.$root(selsubmenu + ' a, ' + selsubmenu + ' div').each(function (i, obj) {
         if ($(obj).hasClass('xsubmenu_more')) return;
         var jobj = $(obj);
         var jwidth = jobj.outerWidth(true);
         jobj.data('width', jwidth);
         XSubMenuItems.push(jobj);
       });
-      XSubMenuLeft = $(selsubmenu).offset().left + parseInt($(selsubmenu).css('padding-left').replace(/\D/g, ''));
+      XSubMenuLeft = jsh.$root(selsubmenu).offset().left + parseInt(jsh.$root(selsubmenu).css('padding-left').replace(/\D/g, ''));
       //Add .head width to XSubMenuLeft
       if (isNaN(XSubMenuLeft)) XSubMenuLeft = 0;
       
-      $(selsubmenu + ' .xsubmenu_more').off('click');
-      $(selsubmenu + ' .xsubmenu_more').on('click', function () {
-        var xsubmenuside = $('#xsubmenuside');
+      jsh.$root(selsubmenu + ' .xsubmenu_more').off('click');
+      jsh.$root(selsubmenu + ' .xsubmenu_more').on('click', function () {
+        var xsubmenuside = jsh.$root('.xsubmenuside');
         if (!xsubmenuside.is(":visible")) xsubmenuside.show();
         else xsubmenuside.hide();
         return false;
       });
     }
     //Initialize xsubmenuside for this submenu
-    var xsubmenuside = $('#xsubmenuside');
+    var xsubmenuside = jsh.$root('.xsubmenuside');
     if (xsubmenuside.size() > 0) {
       for (var i = 0; i < XSubMenuItems.length; i++) {
         var xsubmenuitem = XSubMenuItems[i];
         if ($(xsubmenuitem).is('a')) {
           var link_onclick = xsubmenuitem.attr('onclick');
           if(link_onclick){
-            link_onclick = 'onclick="'+jsh.getInstance()+'.$(\'#xsubmenuside\').hide(); ' + link_onclick + '"';
+            link_onclick = 'onclick="'+jsh.getInstance()+'.$root(\'.xsubmenuside\').hide(); ' + link_onclick + '"';
           }
-          var htmlobj = '<a id="side' + xsubmenuitem[0].id + '" href="' + xsubmenuitem.attr('href') + '" ' + link_onclick + ' class="' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
+          var htmlobj = '<a href="' + xsubmenuitem.attr('href') + '" ' + link_onclick + ' class="side' + xsubmenuitem[0].id + ' ' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
           xsubmenuside.append(htmlobj);
         }
       }
@@ -4076,7 +4093,7 @@ exports = module.exports = function(jsh){
   }
 
   XMenu.XMenuResize = function() {
-    if ($('#xmenu').size() == 0) return;
+    if (jsh.$root('.xmenu').size() == 0) return;
     if (!isXMenuInit) XMenuInit();
     var maxw = $(window).width()-1;
     
@@ -4089,7 +4106,7 @@ exports = module.exports = function(jsh){
     for (var i = 0; i < XMenuItems.length; i++) { curleft += XMenuItems[i].data('width'); }
     if (curleft > maxw) showmore = true;
     
-    var jmore = $('#xmenu_more');
+    var jmore = jsh.$root('.xmenu_more');
     if (jmore.size() > 0) {
       if (showmore) {
         if (!jmore.is(":visible")) jmore.show();
@@ -4097,7 +4114,7 @@ exports = module.exports = function(jsh){
         maxw -= XMenuMoreWidth;
       }
       else {
-        if (jmore.is(":visible")) { jmore.hide(); $('#xmenuside').hide(); }
+        if (jmore.is(":visible")) { jmore.hide(); jsh.$root('.xmenuside').hide(); }
       }
     }
     
@@ -4116,20 +4133,20 @@ exports = module.exports = function(jsh){
   }
 
   function XSubMenuResize() {
-    if(!curSubMenuSel || ($(curSubMenuSel).size() == 0)) return;
+    if(!curSubMenuSel || (jsh.$root(curSubMenuSel).size() == 0)) return;
     var maxw = $(window).width()-1;
     
     var showmore = false;
     //Find out if we need to show "more" menu
     var curleft = XSubMenuLeft;
-    //$('.dev_marker').remove();
+    //jsh.$root('.dev_marker').remove();
     for (var i = 0; i < XSubMenuItems.length; i++) {
       curleft += XSubMenuItems[i].data('width');
-      //$('body').prepend('<div class="dev_marker" style="background-color:red;width:1px;height:120px;position:absolute;top:0px;left:'+curleft+'px;z-index:9999;"></div>');
+      //jsh.root.prepend('<div class="dev_marker" style="background-color:red;width:1px;height:120px;position:absolute;top:0px;left:'+curleft+'px;z-index:9999;"></div>');
     }
     if (curleft > maxw) showmore = true;
     
-    var jmore = $(curSubMenuSel + ' .xsubmenu_more');
+    var jmore = jsh.$root(curSubMenuSel + ' .xsubmenu_more');
     if (jmore.size() > 0) {
       if (showmore) {
         if (!jmore.is(":visible")) jmore.show();
@@ -4137,7 +4154,7 @@ exports = module.exports = function(jsh){
         maxw -= XSubMenuMoreWidth;
       }
       else {
-        if (jmore.is(":visible")) { jmore.hide(); $(curSubMenuSel + ' .xsubmenu_more').hide(); }
+        if (jmore.is(":visible")) { jmore.hide(); jsh.$root(curSubMenuSel + ' .xsubmenu_more').hide(); }
       }
     }
     
@@ -4203,9 +4220,9 @@ exports = module.exports = function(jsh){
       jsh.xLoader.StopLoading(_this.Loader);
       _this.Result();
     };
-    $("body").append('\
-      <iframe id="xpaymentproxy" name="xpaymentproxy" src="about:blank" onload="'+jsh.getInstance()+'.onPaymentProxyComplete(this);" style="width:0;height:0;border:0px solid #fff;"></iframe>\
-      <div id="xpaymentformcontainer" style="position:absolute;top:0px;left:0px;width:1px;height:1px;overflow:hidden;"></div>\
+    jsh.root.append('\
+      <iframe id="'+jsh.getInstance()+'_xpaymentproxy" name="'+jsh.getInstance()+'_xpaymentproxy" src="about:blank" onload="'+jsh.getInstance()+'.onPaymentProxyComplete(this);" style="width:0;height:0;border:0px solid #fff;"></iframe>\
+      <div class="xpaymentformcontainer" style="position:absolute;top:0px;left:0px;width:1px;height:1px;overflow:hidden;"></div>\
     ');
     this.Initialized = true;
   }
@@ -4242,16 +4259,16 @@ exports = module.exports = function(jsh){
       x_zip: payment_data.PACC_Zip,
       x_country: 'US'
     };
-    var formhtml = '<form id="xpaymentform" method="post" target="xpaymentproxy">';
+    var formhtml = '<form class="xpaymentform" method="post" target="'+jsh.getInstance()+'_xpaymentproxy">';
     _.each(d, function (val, key) {
       if (typeof val == 'undefined') return;
       formhtml += '<INPUT TYPE="HIDDEN" NAME="' + jsh.XExt.escapeHTML(key) + '" VALUE="' + jsh.XExt.escapeHTML(val) + '" />';
     });
     formhtml += '</form>';
-    $('#xpaymentformcontainer').html(formhtml);
-    $('#xpaymentform').attr('action', fp_data.fp_url);
+    jsh.$root('.xpaymentformcontainer').html(formhtml);
+    jsh.$root('.xpaymentform').attr('action', fp_data.fp_url);
     jsh.xLoader.StartLoading(this.Loader);
-    $('#xpaymentform').submit();
+    jsh.$root('.xpaymentform').submit();
   }
   XPayment.prototype.Result = function() {
     var _this = this;
@@ -4334,9 +4351,9 @@ exports = module.exports = function(jsh){
     if(this.Data.OnRender)
       this.Data.OnRender.apply(this.Data,arguments);
     else if(this.TemplateID){
-      var ejssource = $(this.TemplateID).html();
+      var ejssource = jsh.$root(this.TemplateID).html();
       ejssource = ejssource.replace(/<#/g,'<%').replace(/#>/g,'%>')
-      $(this.PlaceholderID).html(jsh.ejs.render(ejssource,{data:this.Data,xejs:jsh.XExt.xejs,jsh:jsh}));
+      jsh.$root(this.PlaceholderID).html(jsh.ejs.render(ejssource,{data:this.Data,xejs:jsh.XExt.xejs,jsh:jsh}));
     }
     if (this.OnAfterRender) this.OnAfterRender();
   };
@@ -4401,7 +4418,7 @@ exports = module.exports = function(jsh){
       this.Data._orig = null;
     }
     if (this.xData) {
-      $(this.xData.PlaceholderID).find('.xform_ctrl.updated').removeClass('updated');
+      jsh.$root(this.xData.PlaceholderID).find('.xform_ctrl.updated').removeClass('updated');
     }
     this.IsDirty = false;
   }
@@ -4447,7 +4464,7 @@ exports = module.exports = function(jsh){
     this.Data._bcrumbs = this._bcrumbs;
     this.Data._title = this._title;
     if (this.xData) {
-      this.Data._jrow = $(this.xData.PlaceholderID).find("tr[data-id='" + this.Index + "']");
+      this.Data._jrow = jsh.$root(this.xData.PlaceholderID).find("tr[data-id='" + this.Index + "']");
     }
     return true;
   }
@@ -4939,7 +4956,7 @@ exports = module.exports = function(jsh){
   SearchQuery.prototype.GetValues = function (_PlaceholderID) {
     _this = this;
     _this.Items = [];
-    $(_PlaceholderID + ' div.xfilter_expression').each(function (i, obj) {
+    jsh.$root(_PlaceholderID + ' div.xfilter_expression').each(function (i, obj) {
       var v_column = $(obj).find('select.xfilter_column').val();
       var v_value = $(obj).find('input.xfilter_value').val();
       var v_join = $(obj).find('input.xfilter_join').val();
@@ -4951,7 +4968,7 @@ exports = module.exports = function(jsh){
   SearchQuery.prototype.HasUpdates = function (_PlaceholderID) {
     _this = this;
     var newitems = [];
-    $(_PlaceholderID + ' div').each(function (i, obj) {
+    jsh.$root(_PlaceholderID + ' div').each(function (i, obj) {
       var v_value = $(obj).find('input.xfilter_value').val();
       var v_join = $(obj).find('input.xfilter_join').val();
       var v_comparison = $(obj).find('select.xfilter_comparison').val();
@@ -15429,8 +15446,8 @@ var jsHarmony = function(options){
   this.XGrid = XGrid(this);
   this.XMenu = XMenu(this);
   this.JSHFind = JSHFind;
-  this.XLoader = XLoader;
-  this.XImageLoader = XImageLoader;
+  this.XLoader = XLoader(this);
+  this.XImageLoader = XImageLoader(this);
 
   //jsh_client_embed
   this.App = {};
@@ -15518,6 +15535,11 @@ jsHarmony.prototype.getInstance = function(){
   return this._instance;
 }
 
+jsHarmony.prototype.getFileProxy = function(){
+  var _this = this;
+  return _this.$root('#'+_this.getInstance()+'_xfileproxy');
+}
+
 jsHarmony.prototype.BindEvents = function(){
   var _this = this;
   $(document).ready(function(){ _this.Init(); });
@@ -15530,7 +15552,7 @@ jsHarmony.prototype.BindEvents = function(){
 jsHarmony.prototype.Init = function(){
   var _this = this;
   if(_this.root.find('body').length) _this.root = _this.root.find('body');
-  this.imageLoader = new XImageLoader();
+  this.imageLoader = new this.XImageLoader();
 	this.imageLoader.loadqueue = new Array(
 		'/images/loading.gif',
 		'/images/arrow_down.png',
@@ -15539,7 +15561,7 @@ jsHarmony.prototype.Init = function(){
 		'/images/arrow_up_over.png'
   );
   this.imageLoader.StartLoad();
-	this.xLoader = new XLoader();
+	this.xLoader = new this.XLoader();
   $('html').click(function () {
     if (_this.xContextMenuVisible) {
       _this.xContextMenuVisible = false;
@@ -15585,20 +15607,20 @@ jsHarmony.prototype.DefaultErrorHandler = function(num,txt){
 }
 
 jsHarmony.prototype.debugConsole = function (txt,clear) {
-  this.$root('#xdebugconsole').show();
-  if(clear) this.$root('#xdebugconsole').empty();
-  this.$root('#xdebugconsole').prepend(txt+'<br/>');
+  this.$root('.xdebugconsole').show();
+  if(clear) this.$root('.xdebugconsole').empty();
+  this.$root('.xdebugconsole').prepend(txt+'<br/>');
 }
 jsHarmony.prototype.InitDialogs = function () {
   this.root.append($('\
-    <div id="xdialogblock" style="display:none;">\
-    <div id="xalertbox" class="xdialogbox"><div id="xalertmessage"></div><div align="center"><input type="button" value="OK" /></div></div>\
-    <div id="xconfirmbox" class="xdialogbox"><div id="xconfirmmessage"></div><div align="center"><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="No" class="button_no" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
-    <div id="xpromptbox" class="xdialogbox xpromptbox"><div id="xpromptmessage"></div><div align="right"><input id="xpromptfield" type="text"><br/><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
-    <div id="xtextzoombox" class="xdialogbox xtextzoombox"><div id="xtextzoommessage"></div><div align="right"><textarea id="xtextzoomfield"></textarea><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
+    <div class="xdialogblock" style="display:none;">\
+    <div class="xdialogbox xalertbox"><div class="xalertmessage"></div><div align="center"><input type="button" value="OK" /></div></div>\
+    <div class="xdialogbox xconfirmbox"><div class="xconfirmmessage"></div><div align="center"><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="No" class="button_no" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
+    <div class="xdialogbox xpromptbox"><div class="xpromptmessage"></div><div align="right"><input class="xpromptfield" type="text"><br/><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
+    <div class="xdialogbox xtextzoombox"><div class="xtextzoommessage"></div><div align="right"><textarea class="xtextzoomfield"></textarea><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
     </div>\
-    <div id="xdebugconsole"></div>\
-    <div id="xloadingblock" style="display:none;"><div><div id="xloadingbox">Loading<br/><img src="/images/loading.gif" alt="Loading" title="Loading" /></div></div></div>\
+    <div class="xdebugconsole"></div>\
+    <div class="xloadingblock" style="display:none;"><div><div class="xloadingbox">Loading<br/><img src="/images/loading.gif" alt="Loading" title="Loading" /></div></div></div>\
   '));
 };
 jsHarmony.prototype.XWindowResize = function (source) {
@@ -15619,14 +15641,14 @@ jsHarmony.prototype.XWindowResize = function (source) {
   this.XMenu.XMenuResize();
 }
 jsHarmony.prototype.XDialogResize = function (source, params) {
-  this.$root('#xdialogblock').css('width', params.pw + 'px');
-  this.$root('#xdialogblock').css('height', params.ph + 'px');
+  this.$root('.xdialogblock').css('width', params.pw + 'px');
+  this.$root('.xdialogblock').css('height', params.ph + 'px');
 
-  this.$root('#xdebugconsole').css('top', params.stop + 'px');
-  this.$root('#xdebugconsole').css('left', params.sleft + 'px');
-  this.$root('#xdebugconsole').css('width', params.ww + 'px');
+  this.$root('.xdebugconsole').css('top', params.stop + 'px');
+  this.$root('.xdebugconsole').css('left', params.sleft + 'px');
+  this.$root('.xdebugconsole').css('width', params.ww + 'px');
 
-  this.$root('#xdialogblock .xdialogbox').each(function () {
+  this.$root('.xdialogblock .xdialogbox').each(function () {
     var jobj = $(this);
     if (!jobj.is(':visible')) return;
     if (document.activeElement && $(document.activeElement).is('input,select,textarea') && $(document.activeElement).parents(jobj).length) {
@@ -15659,14 +15681,14 @@ jsHarmony.prototype.InitXFileUpload = function () {
   this.xfileuploadLoader = new Object();
   document.write('\
     <div style="display:none;">\
-	    <div id="xfileuploader" class="colorbox_inline" align="center" style="height:80px;"><div style="position:relative;">\
-        <form id="xfileuploader_form" enctype="multipart/form-data" method="post" target="xfileproxy">\
+	    <div class="xfileuploader colorbox_inline" align="center" style="height:80px;"><div style="position:relative;">\
+        <form class="xfileuploader_form" enctype="multipart/form-data" method="post" target="'+this.getInstance()+'_xfileproxy">\
           <input type="hidden" name="MAX_FILE_SIZE" value="'+this.Config.max_filesize+'" />\
-          <input type="hidden" name="prevtoken" id="xfileuploader_prevtoken" value="" />\
+          <input type="hidden" name="prevtoken" class="xfileuploader_prevtoken" value="" />\
           <table cellspacing="3">\
             <tr>\
               <td align="right">Upload File:</td>\
-              <td align="left"><input type="file" id="xfileuploader_file" name="file" /></td>\
+              <td align="left"><input type="file" class="xfileuploader_file" name="file" /></td>\
             </tr>\
             <tr>\
               <td></td>\
@@ -15677,14 +15699,15 @@ jsHarmony.prototype.InitXFileUpload = function () {
           </table>\
         </form>\
       </div></div>\
-      <iframe id="xfileproxy" name="xfileproxy" src="about:blank" style="width:0;height:0;border:0px solid #fff;"></iframe>\
+      <iframe id="'+this.getInstance()+'_xfileproxy" name="'+this.getInstance()+'_xfileproxy" src="about:blank" style="width:0;height:0;border:0px solid #fff;"></iframe>\
     </div>');
 };
 
 jsHarmony.prototype.SelectMenu = function (menuid) {
-  this.$root('#xmenu').children('a').each(function (i, obj) {
+  var _this = this;
+  _this.$root('.xmenu').children('a').each(function (i, obj) {
     var jobj = $(obj);
-    var jsideobj =this.$root('#side'+obj.id);
+    var jsideobj = _this.$root('.side'+obj.id);
     if (obj.id == 'menu_' + String(menuid).toUpperCase()) {
       if (!jobj.hasClass('selected')) jobj.addClass('selected');
       if (!jsideobj.hasClass('selected')) jsideobj.addClass('selected');
@@ -15703,7 +15726,7 @@ jsHarmony.prototype.requireHTML5 = function(){
   $(document).ready(function() {
     if (!document.createElement('canvas').getContext) {
       var content = '\
-      <div id="browser_upgrade_msg" style="height: 120px; text-align: center; width: 450px;">\
+      <div class="browser_upgrade_msg" style="height: 120px; text-align: center; width: 450px;">\
         <p>In order to use this system, you will need to upgrade your web browser to a modern version that supports HTML5.  Please click "Upgrade" to view supported browsers.</p>\
         <div>\
         <input style="padding:2px 6px;" type="button" value="Upgrade" onclick="window.location.href=\'http://www.browsehappy.com\';" />\

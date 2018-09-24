@@ -187,7 +187,7 @@ exports = module.exports = function(jsh){
         _this.EOF = true;
         var noresultsmessage = _this.NoResultsMessage.replace(/%%%FORSEARCHPHRASE%%%/g, (($.trim(_this.Search) != '')?'for selected search phrase':''));
         if (_this.RequireFilter && !reqdata.search && !reqdata.searchjson) noresultsmessage = _this.RequireFilterMessage;
-        $(_this.PlaceholderID).html('<tr class="xtbl_noresults"><td colspan="' + _this.ColSpan + '" align="center" class="xtbl_noresults">' + noresultsmessage + '</td></tr>');
+        jsh.$root(_this.PlaceholderID).html('<tr class="xtbl_noresults"><td colspan="' + _this.ColSpan + '" align="center" class="xtbl_noresults">' + noresultsmessage + '</td></tr>');
         _this.RowCount = 0;
         if (_this.OnResetDataSet) _this.OnResetDataSet(data);
       }
@@ -203,10 +203,10 @@ exports = module.exports = function(jsh){
             return;
           }
         }
-        else ejssource = $(_this.TemplateID).html();
+        else ejssource = jsh.$root(_this.TemplateID).html();
         
         if (rowstart == 0) {
-          $(_this.PlaceholderID).empty();
+          jsh.$root(_this.PlaceholderID).empty();
           _this.RowCount = 0;
           if (_this.OnResetDataSet) _this.OnResetDataSet(data);
         }
@@ -220,21 +220,21 @@ exports = module.exports = function(jsh){
               xejs: jsh.XExt.xejs,
               jsh: jsh
             });
-            $(_this.PlaceholderID).append(ejsrslt);
-            _this.RowCount = $(_this.PlaceholderID).find('tr').length;
+            jsh.$root(_this.PlaceholderID).append(ejsrslt);
+            _this.RowCount = jsh.$root(_this.PlaceholderID).find('tr').length;
           }
         }
         _this.EOF = data['_eof_' + this.q];
         if ((_this.Paging) && (!_this.EOF)) {
-          $(_this.PlaceholderID).append('<tr class="xtbl_loadmore"><td colspan="' + _this.ColSpan + '"><a href="#">Load More Data</div></td></tr>');
-          $(_this.PlaceholderID).find('.xtbl_loadmore').click(function () {
+          jsh.$root(_this.PlaceholderID).append('<tr class="xtbl_loadmore"><td colspan="' + _this.ColSpan + '"><a href="#">Load More Data</div></td></tr>');
+          jsh.$root(_this.PlaceholderID).find('.xtbl_loadmore').click(function () {
             if (_this.OnLoadMoreData) { _this.OnLoadMoreData(); return false; }
             _this.Load(_this.RowCount);
             return false;
           });
         }
         if (_this.CustomScroll != '') {
-          $(_this.CustomScroll).mCustomScrollbar("update");
+          jsh.$root(_this.CustomScroll).mCustomScrollbar("update");
         }
       }
     }
@@ -299,7 +299,7 @@ exports = module.exports = function(jsh){
       }
       _this.scrollPrevious = $(window).scrollTop();
     };
-    $(_this.ScrollControl).scroll(_this.scrollFunc);
+    jsh.$root(_this.ScrollControl).scroll(_this.scrollFunc);
   }
   XData.prototype._getDocumentHeight = function() {
     return Math.max(
@@ -311,17 +311,17 @@ exports = module.exports = function(jsh){
   XData.prototype._ControlOnScrollBottom = function(callback){
     var _this = this;
     _this.scrollFunc = function () {
-      var pastBottom = (($(_this.ScrollControl).outerHeight() + $(_this.ScrollControl).scrollTop()) >= $(_this.ScrollControl).get(0).scrollHeight);
-      //console.log(($(_this.ScrollControl).outerHeight()+$(_this.ScrollControl).scrollTop()) + ">=" + $(_this.ScrollControl).get(0).scrollHeight);
+      var pastBottom = ((jsh.$root(_this.ScrollControl).outerHeight() + jsh.$root(_this.ScrollControl).scrollTop()) >= jsh.$root(_this.ScrollControl).get(0).scrollHeight);
+      //console.log((jsh.$root(_this.ScrollControl).outerHeight()+jsh.$root(_this.ScrollControl).scrollTop()) + ">=" + jsh.$root(_this.ScrollControl).get(0).scrollHeight);
       if (!_this.scrolledPastBottom && pastBottom) {
-        callback($(_this.ScrollControl).height() + $(_this.ScrollControl).scrollTop());
+        callback(jsh.$root(_this.ScrollControl).height() + jsh.$root(_this.ScrollControl).scrollTop());
         _this.scrolledPastBottom = true;
       } else {
         if (!pastBottom) _this.scrolledPastBottom = false;
       }
-      _this.scrollPrevious = $(_this.ScrollControl).scrollTop();
+      _this.scrollPrevious = jsh.$root(_this.ScrollControl).scrollTop();
     };
-    $(_this.ScrollControl).scroll(_this.scrollFunc);
+    jsh.$root(_this.ScrollControl).scroll(_this.scrollFunc);
   }
   XData.prototype.EnableScrollUpdate = function() {
     var _this = this;
@@ -333,7 +333,7 @@ exports = module.exports = function(jsh){
       }
     };
     if(_this.CustomScroll != ''){
-      $(_this.CustomScroll).mCustomScrollbar({
+      jsh.$root(_this.CustomScroll).mCustomScrollbar({
         theme:"dark",
         autoScrollOnFocus: false,
         scrollButtons:{ enable:true },
@@ -348,8 +348,8 @@ exports = module.exports = function(jsh){
   }
   XData.prototype.Destroy = function (){
     var _this = this;
-    if (_this.CustomScroll != '') { $(_this.CustomScroll).mCustomScrollbar("destroy"); }
-    else { $(_this.ScrollControl).unbind('scroll', _this.scrollFunc); }
+    if (_this.CustomScroll != '') { jsh.$root(_this.CustomScroll).mCustomScrollbar("destroy"); }
+    else { jsh.$root(_this.ScrollControl).unbind('scroll', _this.scrollFunc); }
   }
 
   return XData;

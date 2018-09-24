@@ -35,11 +35,11 @@ div.nobr { white-space:nowrap; display:inline-block; }
 BODY
 ====
 */
-#xbody {
+.xbody {
 	position:relative;
 	display:inline-block;
 }
-body.popup #xbody {
+body.popup .xbody {
   display:block;
   padding-right:25px;
 }
@@ -428,7 +428,7 @@ a.linkbutton img {
 LOADING ANIMATION
 =================
 */
-#xloadingblock {
+.xloadingblock {
 	display:none;
 	position:fixed;
 	top:122px;
@@ -437,13 +437,13 @@ LOADING ANIMATION
 	z-index:99999;
 	text-align:center;
 }
-body.popup #xloadingblock { top:0px; }
-#xloadingblock div {
+body.popup .xloadingblock { top:0px; }
+.xloadingblock div {
 	position:absolute;
 	top:50%;
 	left:50%;
 }
-#xloadingblock div #xloadingbox {
+.xloadingblock div .xloadingbox {
 	display:none;
 	background-color:white;
 	border:3px solid #aaa;
@@ -464,8 +464,8 @@ body.popup #xloadingblock { top:0px; }
 	border-radius: 5px;
 	-moz-border-radius: 5px;
 }
-/*.uie8 #xloadingblock div #xloadingbox { font-family: 'Open Sans Bold', sans-serif; }*/
-#xloadingbox img {
+/*.uie8 .xloadingblock div .xloadingbox { font-family: 'Open Sans Bold', sans-serif; }*/
+.xloadingbox img {
 	padding-top:18px;
 }
 /*
@@ -473,7 +473,7 @@ body.popup #xloadingblock { top:0px; }
 DIALOG BOXES
 ============
 */
-#xdebugconsole {
+.xdebugconsole {
   display:none;
   position:absolute;
   top:0px;
@@ -482,7 +482,7 @@ DIALOG BOXES
   background-color:rgba(0,0,0,0.5);
   z-index:200000;
 }
-#xdialogblock {
+.xdialogblock {
 	position:fixed;
 	top:0px;
 	width:100%;
@@ -495,7 +495,7 @@ DIALOG BOXES
   -moz-transform-style: preserve-3d;
   transform-style: preserve-3d;
 }
-#xdialogblock .xdialogbox {
+.xdialogblock .xdialogbox {
   display:none;
 	position:absolute;
 	top:50%;
@@ -510,12 +510,12 @@ DIALOG BOXES
 	border-radius: 5px;
 	-moz-border-radius: 5px;
 }
-#xalertbox {
+.xalertbox {
 	width:370px;
 	min-height:60px;
 	text-align:left;
 }
-#xconfirmbox {
+.xconfirmbox {
 	width:370px;
 	min-height:60px;
 	text-align:center;
@@ -530,23 +530,23 @@ DIALOG BOXES
 	min-height:60px;
 	text-align:left;
 }
-#xalertmessage,#xconfirmmessage,#xpromptmessage {
+.xalertmessage,.xconfirmmessage,.xpromptmessage {
   max-height: 400px;
   overflow:auto;
 }
-#xalertbox input,
-#xconfirmbox input,
+.xalertbox input,
+.xconfirmbox input,
 .xdialogbox input.button_ok,
 .xdialogbox input.button_no,
 .xdialogbox input.button_cancel {
   margin: 20px 0 0px 0;
   padding:4px 15px;
 }
-#xpromptfield {
+.xpromptfield {
   margin: 20px 0 0px 0;
   width:100%;
 }
-#xtextzoomfield {
+.xtextzoomfield {
   margin: 20px 0 0px 0;
   width:100%;
   height:300px;
@@ -557,8 +557,8 @@ DIALOG BOXES
 }
 
 .xform_inputbutton { padding:3px 10px; }
-#xsubmenu_listing { padding-top:4px; }
-#xsubmenu_listing a {
+.xsubmenu_listing { padding-top:4px; }
+.xsubmenu_listing a {
   display:inline-block;
   padding-top:8px;
   font-size:15px;
@@ -571,7 +571,7 @@ DIALOG BOXES
 }
 
  
-#validatorErrors {
+.validatorErrors {
 	width: 400px;
 	border: 2px solid red;
 	padding: 7px;
@@ -580,7 +580,7 @@ DIALOG BOXES
 	background-color: #f0f0f0;
 }
 
-#validatorErrors h2 {
+.validatorErrors h2 {
 	text-align: left;
 	font-weight: bold;
 	padding: 5px 5px 5px 15px;
@@ -590,14 +590,14 @@ DIALOG BOXES
 	color: #fff;
 }
 
-#validatorErrors ul li {
+.validatorErrors ul li {
 	font-size: 12px;
 	list-style: square;
 }
 
  
 
-#notification {
+.notification {
 
   font-weight: bold;
 
@@ -605,11 +605,11 @@ DIALOG BOXES
 
 }
 
-#page {
+.page {
 	width: 600px;
 }
 
-#adminmenu {
+.adminmenu {
 	border: 1px solid black;
 }
 
@@ -623,7 +623,7 @@ NOTIFICATION BOXES
   background-color: red;
   /*display: table;*/
 }
-#errorExplanation {
+.errorExplanation {
   width: 400px;
   border: 2px solid red;
   padding: 7px;
@@ -631,7 +631,7 @@ NOTIFICATION BOXES
   margin-bottom: 20px;
   background-color: #f0f0f0;
 }
-#errorExplanation h2 {
+.errorExplanation h2 {
   text-align: left;
   font-weight: bold;
 	text-decoration:none;
@@ -641,22 +641,22 @@ NOTIFICATION BOXES
   background-color: #c00;
   color: #fff;
 }
-.uie8 #errorExplanation h2 { font-family: 'Open Sans Bold', sans-serif; }
-#errorExplanation p {
+.uie8 .errorExplanation h2 { font-family: 'Open Sans Bold', sans-serif; }
+.errorExplanation p {
 	margin-top:10px;
   color: #333;
   margin-bottom: 0;
   padding: 5px;
 }
-#errorExplanation ul li {
+.errorExplanation ul li {
   font-size: 12px;
   list-style: square;
 }
-#notification {
+.notification {
   font-weight: bold;
   color: #55832C;
 }
-.uie8 #notification { font-family: 'Open Sans Bold', sans-serif; }
+.uie8 .notification { font-family: 'Open Sans Bold', sans-serif; }
 
 /*
 ================
@@ -665,6 +665,6 @@ PRINT STYLESHEET
 */
 @media print {
   .xactions { display:none !important; visibility:hidden !important; }
-  #xhead { display:none; }
-  #xbody,#xmain { display:block !important; }
+  .xhead { display:none; }
+  .xbody,.xmain { display:block !important; }
 }

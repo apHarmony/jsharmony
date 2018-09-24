@@ -108,7 +108,7 @@ exports = module.exports = function(jsh){
       if (!oldobj) return; //Return if user was not previously in grid
       if ($.datepicker && $.datepicker._datepickerShowing) {
         if (newobj == $('body')[0]) return;
-        else if ($('.ui-datepicker').has(newobj).length) return;
+        else if (jsh.$root('.ui-datepicker').has(newobj).length) return;
       }
       if (newobj) newrowid = jsh.XExt.XForm.GetRowID(_this.modelid, newobj);
       if (newrowid >= 0) return; //Return if current control is in grid

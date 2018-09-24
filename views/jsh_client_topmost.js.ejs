@@ -191,7 +191,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       }
       else {
         var target = jsh._BASEURL;
-        var bcrumbobj = $('div.bcrumbs');
+        var bcrumbobj = jsh.$root('div.bcrumbs');
         if (bcrumbobj.size() > 0) {
           target = bcrumbobj.children('a').last().prop('href');
         }
@@ -204,8 +204,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     jsh.XForms_Hide();
     if (!jsh.XForms[jsh.XForms_root]._actions) { jsh.XExt.Alert('ERROR - No effective access to root form'); return; }
 
-    //  jsh.XFormTree(null,function(xform){ console.log(xform._id); },function(){ $('.xelemX').show(); });
-    //  jsh.XFormAsyncTree(jsh.XForms_root,function(xform,done){ done(); },function(){ $('.xelemX').show(); console.log('all done'); });
+    //  jsh.XFormTree(null,function(xform){ console.log(xform._id); },function(){ jsh.$root('.xelemX').show(); });
+    //  jsh.XFormAsyncTree(jsh.XForms_root,function(xform,done){ done(); },function(){ jsh.$root('.xelemX').show(); console.log('all done'); });
     var enable_save = false;
     var enable_delete = false;
     jsh.XFormTree(null, function (xform) {
@@ -226,7 +226,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       function () {
         if ('state' in jsh._GET) jsh.XForm_LoadState(JSON.parse(jsh._GET.state));
         var button_groups = {};
-        $('.xform_button').each(function () {
+        jsh.$root('.xform_button').each(function () {
           var jbtn = $(this);
           var btnaccess = jbtn.data('actions');
           if (jsh.is_add && !jsh.XExt.HasAccess(btnaccess, 'I')) jbtn.hide();
@@ -246,8 +246,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         });
         for(var button_group_name in button_groups){
           var button_group = button_groups[button_group_name];
-          $('#xbody').append('<div class="xactions_group xcontext_menu xelem'+button_group.modelid+'" data-group="'+button_group.group+'" style="display:none;"></div>');
-          var jgroup = $('.xactions_group.xelem'+button_group.modelid+'[data-group="'+button_group.group+'"]');
+          jsh.$root('.xbody').append('<div class="xactions_group xcontext_menu xelem'+button_group.modelid+'" data-group="'+button_group.group+'" style="display:none;"></div>');
+          var jgroup = jsh.$root('.xactions_group.xelem'+button_group.modelid+'[data-group="'+button_group.group+'"]');
           _.each(button_group.jbutton,function(jbutton){
             jgroup.append(jbutton);
           });
@@ -258,10 +258,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         jsh.XForm_Select(function () {
           jsh.XForms_Show();
           jsh.XWindowResize();
-          if (enable_save) $('.xactions.top .save').show();
-          if (enable_delete) $('.xactions.top .delete').show();
+          if (enable_save) jsh.$root('.xactions.top .save').show();
+          if (enable_delete) jsh.$root('.xactions.top .delete').show();
           jsh.XFormTree(null, function (xform) {
-            if (!jsh.is_add && jsh.XExt.HasAccess(xform._actions, 'I')) $('.xactions.xelem' + xform._id + ' .duplicate').show();
+            if (!jsh.is_add && jsh.XExt.HasAccess(xform._actions, 'I')) jsh.$root('.xactions.xelem' + xform._id + ' .duplicate').show();
           });
           jsh.init_complete = true;
           //Update Browser History with URL/state
@@ -275,7 +275,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           else jsh.XExt.ReplaceHistory(window.location.href.toString(), jsh.XForm_GetState());
 
           //Select first Filter by default, if form is open
-          $('.xfilter_value:visible').first().select().focus();
+          jsh.$root('.xfilter_value:visible').first().select().focus();
 
           console.log('Initialization Complete');
         }, jsh.XForms_root);
@@ -398,7 +398,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //Update title
     if (jsh.orig_title.indexOf('<#') >= 0) {
       var new_title = jsh.ParseEJS(jsh.orig_title, jsh.XForms_root);
-      $('#xform_title').html(new_title);
+      jsh.$root('.xform_title').html(new_title);
       var window_title = XExt.StripTags(new_title).trim();
       //If Title = blank, pull title from Tabs
       var curform = jsh.XForms[jsh.XForms_root];
@@ -413,23 +413,23 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       document.title = window_title;
     }
     else {
-      $('#xform_title').html(jsh.orig_title);
+      jsh.$root('.xform_title').html(jsh.orig_title);
       document.title = XExt.StripTags(jsh.html_title.replace('%%%PAGETITLE%%%',jsh.orig_title));
     }
 
     //Update Breadcrumbs
     if (jsh.orig_bcrumbs.indexOf('<#') >= 0) {
-      $('div.bcrumbs').html(jsh.ParseEJS(jsh.orig_bcrumbs, jsh.XForms_root));
+      jsh.$root('div.bcrumbs').html(jsh.ParseEJS(jsh.orig_bcrumbs, jsh.XForms_root));
     }
 
     jsh.XFormTree(null, function (xform) {
-      $(".xtitle.xelem" + xform._id).each(function () {
+      jsh.$root(".xtitle.xelem" + xform._id).each(function () {
         //Update each form title
         var title_text = xform._title;
         if (title_text.indexOf('<#') >= 0) $(this).html(jsh.ParseEJS(title_text, xform._id));
         else $(this).html(title_text);
       });
-      $(".xform_button.xelem" + xform._id).each(function () {
+      jsh.$root(".xform_button.xelem" + xform._id).each(function () {
         var href = $(this).attr('href');
         //Store / retrieve original URL
         if ($(this).data('orighref')) href = $(this).data('orighref');
@@ -547,20 +547,20 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.XForms_Hide = function() {
     _.each(jsh.XForms, function (xform, xformid) {
-      if (xform._layout == 'grid') $('.xtbl.xelem' + xformid + ',.xbodyhead.xelem' + xformid).hide();
+      if (xform._layout == 'grid') jsh.$root('.xtbl.xelem' + xformid + ',.xbodyhead.xelem' + xformid).hide();
       else {
-        //$('#xform'+xformid).hide(); 
-        //$('#xtabcontrol'+xformid).hide(); 
+        //jsh.$root('#xform'+xformid).hide(); 
+        //jsh.$root('#xtabcontrol'+xformid).hide(); 
       }
     });
   }
 
   jsh.XForms_Show = function() {
     _.each(jsh.XForms, function (xform, xformid) {
-      if (xform._layout == 'grid') $('.xtbl.xelem' + xformid + ',.xbodyhead.xelem' + xformid).show();
+      if (xform._layout == 'grid') jsh.$root('.xtbl.xelem' + xformid + ',.xbodyhead.xelem' + xformid).show();
       else {
-        $('#xform' + xformid).show();
-        $('#xtabcontrol' + xformid).show();
+        jsh.$root('#xform' + xformid).show();
+        jsh.$root('#xtabcontrol' + xformid).show();
       }
     });
   }
@@ -636,7 +636,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XFileDownload = function(model, field, title) {
-    var jctrl_token = $('.xelem' + model + ' #' + field + '_token');
+    var jctrl_token = jsh.$root('.xelem' + model + ' #' + field + '_token');
     var file_token = jctrl_token.val();
     var url = '';
     if (file_token) url = jsh._BASEURL + '_dl/_temp/' + file_token;
@@ -645,12 +645,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if (jsh.XForms[model]._keys.length != 1) { throw new Error('File models require one key.'); }
       url = jsh._BASEURL + '_dl/' + model + '/' + keys[jsh.XForms[model]._keys[0]] + '/' + field;
     }
-    $('#xfileproxy').prop('src', url);
+    jsh.$root('#xfileproxy').prop('src', url);
     //window.open(url,'_blank'); 
   }
 
   jsh.XFilePreview = function(model, field, title) {
-    var jctrl_token = $('.xelem' + model + ' #' + field + '_token');
+    var jctrl_token = jsh.$root('.xelem' + model + ' #' + field + '_token');
     var file_token = jctrl_token.val();
     var url = '';
     if (file_token) url = jsh._BASEURL + '_dl/_temp/' + file_token + '?view=1';
@@ -660,15 +660,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       url = jsh._BASEURL + '_dl/' + model + '/' + keys[jsh.XForms[model]._keys[0]] + '/' + field + '?view=1';
       url += '&_=' + (new Date().getTime());
     }
-    //$('#xfileproxy').prop('src', url);
+    //jsh.getFileProxy().prop('src', url);
     window.open(url,'_blank',"height=600, width=800"); 
   }
 
   jsh.XFileDelete = function(model, field, title) {
-    var jctrl_token = $('.xelem' + model + ' #' + field + '_token');
-    var jctrl_dbexists = $('.xelem' + model + ' #' + field + '_dbexists');
-    var jctrl_dbdelete = $('.xelem' + model + ' #' + field + '_dbdelete');
-    var jctrl = $('#' + field + '.xelem' + model);
+    var jctrl_token = jsh.$root('.xelem' + model + ' #' + field + '_token');
+    var jctrl_dbexists = jsh.$root('.xelem' + model + ' #' + field + '_dbexists');
+    var jctrl_dbdelete = jsh.$root('.xelem' + model + ' #' + field + '_dbdelete');
+    var jctrl = jsh.$root('#' + field + '.xelem' + model);
     if (jctrl_dbexists.val() == '1') jctrl_dbdelete.val('1');
     jctrl_token.val('');
     jctrl.addClass('nodocument');
@@ -676,14 +676,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.XFileUpload = function(model, field, title) {
     //Get PrevToken, if Applicable
-    jsh.xfileupload_ctrl = $('#' + field + '.xelem' + model);
+    jsh.xfileupload_ctrl = jsh.$root('#' + field + '.xelem' + model);
     if (jsh.xfileupload_ctrl.size() != 1) return;
     $.colorbox({
-      href: "#xfileuploader", inline: true, closeButton: false, arrowKey: false, preloading: false, overlayClose: false, title: title, fixed: true,
+      href: jsh.$root(".xfileuploader"), inline: true, closeButton: false, arrowKey: false, preloading: false, overlayClose: false, title: title, fixed: true,
       onOpen: function () {
-        $('#xfileuploader_prevtoken').val(jsh.xfileupload_ctrl.children('.xform_file_token').val());
-        $('#xfileuploader_form').attr('action', jsh._BASEURL + '_ul/');
-        XExt.clearFileInput('xfileuploader_file');
+        jsh.$root('.xfileuploader_prevtoken').val(jsh.xfileupload_ctrl.children('.xform_file_token').val());
+        jsh.$root('.xfileuploader_form').attr('action', jsh._BASEURL + '_ul/');
+        XExt.clearFileInput(jsh.$root('.xfileuploader_file')[0]);
       },
       onComplete: function () { /* Optionally set element focus */ }
     });
@@ -691,10 +691,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.XUpload_submit = function() {
     //Validate file selected
-    if (!$("#xfileuploader_file").val()) { XExt.Alert('Please select a file and then click Upload.'); return; }
+    if (!jsh.$root(".xfileuploader_file").val()) { XExt.Alert('Please select a file and then click Upload.'); return; }
     jsh.xLoader.StartLoading(jsh.xfileuploadLoader)
     //Submit form
-    $('#xfileuploader_form').submit();
+    jsh.$root('.xfileuploader_form').submit();
     //Associate file_token, prevtoken with single field
     //Submit that field to the server on update/insert
   }
@@ -876,7 +876,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       handled = true;
     }
     else if ((e.which == 83) && (e.altKey)) {//ALT+S = SAVE
-      $('.save:visible').first().trigger('click');
+      jsh.$root('.save:visible').first().trigger('click');
       handled = true;
     }
     else if ((e.which == 78) && (e.altKey)) {//ALT+N = NEW
@@ -884,7 +884,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       handled = true;
     }
     else if ((e.which == 70) && (e.altKey)) {//ALT+F = FILTER
-      $('.xfilterbutton:visible').first().trigger('click');
+      jsh.$root('.xfilterbutton:visible').first().trigger('click');
       handled = true;
     }
     else if ((e.which == 80) && (e.altKey)) {//ALT+P = PRINT
@@ -901,9 +901,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var jobj = $(obj);
     var modelid = $(jobj).data('model');
     var group = $(jobj).data('group');
-    var jgroup = $('.xactions_group.xelem'+modelid+'[data-group="'+group+'"]');
+    var jgroup = jsh.$root('.xactions_group.xelem'+modelid+'[data-group="'+group+'"]');
     
-    $('.xcontext_menu').hide();
+    jsh.$root('.xcontext_menu').hide();
     jgroup.css('visibility', 'hidden');
     jgroup.show();
     var xtop = jobj.offset().top + jobj.outerHeight(); var xleft = jobj.offset().left;

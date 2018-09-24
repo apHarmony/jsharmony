@@ -28,8 +28,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xfilter_<%=model.id%>.Data = new jsh.XSearch.SearchQuery(new jsh.App.XForm<%=model.id%>());
     xfilter_<%=model.id%>.Data.Items.unshift(new jsh.XSearch.SearchItem('ALL','','and','contains'));
     xfilter_<%=model.id%>.OnAfterRender = function(){ 
-      $('#xfilter_<%=model.id%> input.xfilter_value').each(function(){ jsh.XBarcode.EnableScanner($(this)); }); 
-      $('#xfilter_<%=model.id%> input.xfilter_value.datepicker').each(function(){ 
+      jsh.$root('#xfilter_<%=model.id%> input.xfilter_value').each(function(){ jsh.XBarcode.EnableScanner($(this)); }); 
+      jsh.$root('#xfilter_<%=model.id%> input.xfilter_value.datepicker').each(function(){ 
         $(this).datepicker({ constrainInput: false, changeMonth: true, changeYear: true, dateFormat: jsh.DEFAULT_DATEFORMAT });
       }); 
     };
@@ -42,8 +42,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
     var isInlinePopup = <%-xejs.iif(('inlinepopup' in model) && (model.inlinepopup),'true','false')%>;
     var grid_template = '<%=(model.templates.grid||'#xgrid_'+model.id+'_template')%>';
-    var grid_placeholder = $(grid_template).data('target');
-    var scrollControl = (isInlinePopup ? $(grid_placeholder).closest('.xpanel')[0] : window);
+    var grid_placeholder = jsh.$root(grid_template).data('target');
+    var scrollControl = (isInlinePopup ? jsh.$root(grid_placeholder).closest('.xpanel')[0] : window);
     var xform_<%=model.id%> = jsh.App.xform_<%=model.id%> = new jsh.XData('<%=model.id%>',grid_template,grid_placeholder,undefined,true,scrollControl);
     xform_<%=model.id%>.NoResultsMessage = '<%-xejs.iif(('noresultsmessage' in model) && (model.noresultsmessage || (model.noresultsmessage==='')),model.noresultsmessage,'No results found %%%FORSEARCHPHRASE%%%')%>';
     <% if(typeof model.sort != 'undefined'){ for(var i=0;i<model.sort.length;i++){ %> 
@@ -100,7 +100,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         for (var i = 0; i < data[this.q].length; i++) {
           var rowid = this.RowCount + i;
           var ejsrslt = jsh.ejs.render(ejssource, { rowid: rowid, data: [data[this.q][i]], xejs: XExt.xejs, jsh: jsh });
-          var jobj = $(ejsrslt).appendTo($(this.PlaceholderID));
+          var jobj = $(ejsrslt).appendTo(jsh.$root(this.PlaceholderID));
           xpost.NavTo(rowid, false);
           this.OnRowBind(jobj);
         }
@@ -115,7 +115,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           xform_meta: jsh.XForms['<%=model.id%>'],
           jsh: jsh
         });
-        var jobj = $(ejsrslt).appendTo($(this.PlaceholderID));
+        var jobj = $(ejsrslt).appendTo(jsh.$root(this.PlaceholderID));
       }
       $.colorbox.resize();
       this.RowCount += data[this.q].length;
@@ -132,10 +132,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xform_<%=model.id%>.OnBeforeSelect = function(){
       has_search_items = jsh.App.XForm<%=model.id%>_HasSearchItems(this.SearchJSON);
       if(has_search_items){ 
-        $('#xfilterbutton<%=model.id%> span').html('Remove Filter');
+        jsh.$root('#xfilterbutton<%=model.id%> span').html('Remove Filter');
       }
       else{
-        $('#xfilterbutton<%=model.id%> span').html('Filter');
+        jsh.$root('#xfilterbutton<%=model.id%> span').html('Filter');
       }
       jsh.App.XForm<%=model.id%>_UpdateTitleCaption();
     };
@@ -289,12 +289,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           _this.DataSet[rowid]['_is_dirty'] = false;
           _this.DataSet[rowid]['_orig'] = null;
 
-          var ejssource = $(xdata.TemplateID).html();
+          var ejssource = jsh.$root(xdata.TemplateID).html();
           ejssource = ejssource.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
           var ejsrslt = jsh.ejs.render(ejssource, { rowid: rowid, data: [_this.DataSet[rowid]], xejs: XExt.xejs, jsh: jsh });
-          var jobj = $(xdata.PlaceholderID).find("tr[data-id='" + rowid + "']");
+          var jobj = jsh.$root(xdata.PlaceholderID).find("tr[data-id='" + rowid + "']");
           jobj.replaceWith($(ejsrslt));
-          jobj = $(xdata.PlaceholderID).find("tr[data-id='" + rowid + "']");
+          jobj = jsh.$root(xdata.PlaceholderID).find("tr[data-id='" + rowid + "']");
           _this.SetIndex(rowid,false);
           _this.Render();
           xdata.OnRowBind(jobj);
@@ -358,7 +358,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     
     var ejssource = "";
     if (xdata.TemplateHTMLFunc != null) ejssource = xdata.TemplateHTMLFunc(data, xdata.RowCount);
-    else ejssource = $(xdata.TemplateID).html();
+    else ejssource = jsh.$root(xdata.TemplateID).html();
     ejssource = ejssource.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
     var ejsrslt = jsh.ejs.render(ejssource, {
       rowid: rowid,
@@ -368,16 +368,16 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     });
 
     var jobj;
-    if($(xdata.PlaceholderID).find('tr.xtbl_noresults').length){ $(xdata.PlaceholderID).find('tr.xtbl_noresults').remove(); }
+    if(jsh.$root(xdata.PlaceholderID).find('tr.xtbl_noresults').length){ jsh.$root(xdata.PlaceholderID).find('tr.xtbl_noresults').remove(); }
     if(xdata.Prop.NewRowPosition=='first'){
-      jobj = $(ejsrslt).prependTo($(xdata.PlaceholderID));
+      jobj = $(ejsrslt).prependTo(jsh.$root(xdata.PlaceholderID));
     }
-    else if($(xdata.PlaceholderID).find('.xtbl_loadmore').length){
+    else if(jsh.$root(xdata.PlaceholderID).find('.xtbl_loadmore').length){
       //Prepend
-      jobj = $(ejsrslt).insertBefore($(xdata.PlaceholderID).find('.xtbl_loadmore'));
+      jobj = $(ejsrslt).insertBefore(jsh.$root(xdata.PlaceholderID).find('.xtbl_loadmore'));
     }
     else {
-      jobj = $(ejsrslt).appendTo($(xdata.PlaceholderID));
+      jobj = $(ejsrslt).appendTo(jsh.$root(xdata.PlaceholderID));
     }
 
     var oldindex = xpost.Index;
@@ -422,7 +422,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         xpost.DataSet[rowid]._is_new = false;
         xpost.DataSet[rowid]._is_dirty = false;
         xpost.DataSet[rowid]._orig = null;
-        $(xdata.PlaceholderID).find("tr[data-id='" + rowid + "']").remove();
+        jsh.$root(xdata.PlaceholderID).find("tr[data-id='" + rowid + "']").remove();
         jsh.App.xgrid_<%=model.id%>.CurrentCell = null;
         if(xpost.Index==rowid){ 
           xpost.Data._is_new = false;
@@ -481,7 +481,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if('Sort' in state){
       jsh.App.xform_<%=model.id%>.State.Sort = state.Sort;
       jsh.App.xform_<%=model.id%>.Sort = state.Sort;
-      jsh.App.xform_<%=model.id%>.ResetSortGlyphs($('#xform<%=model.id%>'));
+      jsh.App.xform_<%=model.id%>.ResetSortGlyphs(jsh.$root('#xform<%=model.id%>'));
     }
     if('Search' in state){
       jsh.App.xform_<%=model.id%>.State.Search = state.Search;
@@ -542,26 +542,26 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.App.XForm<%=model.id%>_FilterExpand = function(timeout){
-    if($('#xfilter_<%=model.id%>').is(':visible')) return;
+    if(jsh.$root('#xfilter_<%=model.id%>').is(':visible')) return;
     if(jsh.App.xfilter_<%=model.id%>.Data.Items.length == 0){
       jsh.App.XForm<%=model.id%>_FilterAdd();
-      $('#xfilter_<%=model.id%>').slideDown(timeout,function(){ $('#xfilter_<%=model.id%> .xfilter_value').first().select().focus(); });
+      jsh.$root('#xfilter_<%=model.id%>').slideDown(timeout,function(){ jsh.$root('#xfilter_<%=model.id%> .xfilter_value').first().select().focus(); });
     }
     else {
-      $('#xfilter_<%=model.id%>').slideDown(timeout,function(){ $('#xfilter_<%=model.id%> .xfilter_value').first().select().focus(); });
+      jsh.$root('#xfilter_<%=model.id%>').slideDown(timeout,function(){ jsh.$root('#xfilter_<%=model.id%> .xfilter_value').first().select().focus(); });
     }
   }
 
   jsh.App.XForm<%=model.id%>_FilterButton = function(){
-    if($('#xfilterbutton<%=model.id%> span').html()=='Remove Filter'){
+    if(jsh.$root('#xfilterbutton<%=model.id%> span').html()=='Remove Filter'){
       jsh.App.xfilter_<%=model.id%>.Data.Items = [];
       jsh.App.xfilter_<%=model.id%>.Render();
-      $('#xfilter_<%=model.id%>').hide();
+      jsh.$root('#xfilter_<%=model.id%>').hide();
       jsh.App.XForm<%=model.id%>_FilterExpand(400);
       jsh.App.XForm<%=model.id%>_FilterApply();
     }
     else{
-      if($('#xfilter_<%=model.id%>').is(':visible')) $('#xfilter_<%=model.id%>').slideUp();
+      if(jsh.$root('#xfilter_<%=model.id%>').is(':visible')) jsh.$root('#xfilter_<%=model.id%>').slideUp();
       else jsh.App.XForm<%=model.id%>_FilterExpand(400);
     }
   }
@@ -571,7 +571,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.App.XForm<%=model.id%>_SetFilter = function(searchitems,hide){
-    if(hide) $('#xfilter_<%=model.id%>').hide();
+    if(hide) jsh.$root('#xfilter_<%=model.id%>').hide();
     jsh.App.xfilter_<%=model.id%>.Data.Items = searchitems;
     jsh.App.xfilter_<%=model.id%>.Render();
     jsh.App.xform_<%=model.id%>.State.Search = searchitems;
@@ -605,7 +605,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.App.XForm<%=model.id%>_FilterRemove = function(obj){
     jsh.App.xfilter_<%=model.id%>.GetValues();
-    var idx = $(jsh.App.xfilter_<%=model.id%>.PlaceholderID).children().index($(obj).parent());
+    var idx = jsh.$root(jsh.App.xfilter_<%=model.id%>.PlaceholderID).children().index($(obj).parent());
     jsh.App.xfilter_<%=model.id%>.Data.Items.splice(idx,1);
     jsh.App.xfilter_<%=model.id%>.Render();
   }
@@ -613,7 +613,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.App.XForm<%=model.id%>_Export = function(){
     if(!jsh.App.xform_<%=model.id%>.Prop.isInlinePopup) if(jsh.XForm_OnGridExit(null,function(){ jsh.App.XForm<%=model.id%>_Export(); })) return;
     jsh.App.xform_<%=model.id%>.Load(0,0,function(url){
-      $('#xfileproxy').prop('src', url);
+      jsh.getFileProxy().prop('src', url);
     },true);
   }
 
@@ -625,12 +625,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if(txt == '(') txt = '';
     else txt += ')';
     if(txt){
-      $('#xtitlecaption<%=model.id%>').show();
+      jsh.$root('#xtitlecaption<%=model.id%>').show();
     }
     else {
-      $('#xtitlecaption<%=model.id%>').hide();
+      jsh.$root('#xtitlecaption<%=model.id%>').hide();
     }
-    $('#xtitlecaption<%=model.id%> a').text(txt);
+    jsh.$root('#xtitlecaption<%=model.id%> a').text(txt);
   }
 
 })(<%-instance%>);

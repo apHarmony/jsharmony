@@ -20,51 +20,54 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 var $ = require('./jquery-1.11.2');
 var _ = require('lodash');
 
-function XLoader(){
-	this.IsLoading = false;
-	this.LoadQueue = new Array();
-}
+exports = module.exports = function(jsh){
 
-XLoader.prototype.StartLoading = function(obj){
-	if(!_.includes(this.LoadQueue,obj)) this.LoadQueue.push(obj);
-	if(this.IsLoading) return;
-	$('body').css('cursor','wait');
-	this.IsLoading = true;
-	$('input').blur();
-	$('#xloadingbox').stop().fadeTo(0,0);
-	$('#xloadingblock').show();
-	$('#xloadingbox').fadeTo(2000,1);
-}
-
-XLoader.prototype.StopLoading = function (obj){
-  _.remove(this.LoadQueue, function (val) { return obj == val; });
-	if(this.LoadQueue.length != 0) return;
-  this.StopLoadingBase();
-}
-
-XLoader.prototype.ClearLoading = function () {
-  this.LoadQueue = [];
-  this.StopLoadingBase();
-};
-
-XLoader.prototype.StopLoadingBase = function () {
-  this.IsLoading = false;
-  $('#xloadingbox').stop();
-  var curfade = GetOpacity(document.getElementById('xloadingbox'));
-  $('#xloadingbox').fadeTo(500 * curfade, 0, function () { if (!this.IsLoading) { $('#xloadingblock').hide(); } });
-  $('body').css('cursor', '');
-}
-
-function GetOpacity(elem) {
-  var ori = $(elem).css('opacity');
-  var ori2 = $(elem).css('filter');
-  if (ori2) {
-    ori2 = parseInt( ori2.replace(')','').replace('alpha(opacity=','') ) / 100;
-    if (!isNaN(ori2) && ori2 != '') {
-      ori = ori2;
-    }
+  function XLoader(){
+    this.IsLoading = false;
+    this.LoadQueue = new Array();
   }
-  return ori;
-}
 
-exports = module.exports = XLoader;
+  XLoader.prototype.StartLoading = function(obj){
+    if(!_.includes(this.LoadQueue,obj)) this.LoadQueue.push(obj);
+    if(this.IsLoading) return;
+    jsh.root.css('cursor','wait');
+    this.IsLoading = true;
+    jsh.$root('input').blur();
+    jsh.$root('.xloadingbox').stop().fadeTo(0,0);
+    jsh.$root('.xloadingblock').show();
+    jsh.$root('.xloadingbox').fadeTo(2000,1);
+  }
+
+  XLoader.prototype.StopLoading = function (obj){
+    _.remove(this.LoadQueue, function (val) { return obj == val; });
+    if(this.LoadQueue.length != 0) return;
+    this.StopLoadingBase();
+  }
+
+  XLoader.prototype.ClearLoading = function () {
+    this.LoadQueue = [];
+    this.StopLoadingBase();
+  };
+
+  XLoader.prototype.StopLoadingBase = function () {
+    this.IsLoading = false;
+    jsh.$root('.xloadingbox').stop();
+    var curfade = GetOpacity(jsh.$root('.xloadingbox')[0]);
+    jsh.$root('.xloadingbox').fadeTo(500 * curfade, 0, function () { if (!this.IsLoading) { jsh.$root('.xloadingblock').hide(); } });
+    jsh.root.css('cursor', '');
+  }
+
+  function GetOpacity(elem) {
+    var ori = $(elem).css('opacity');
+    var ori2 = $(elem).css('filter');
+    if (ori2) {
+      ori2 = parseInt( ori2.replace(')','').replace('alpha(opacity=','') ) / 100;
+      if (!isNaN(ori2) && ori2 != '') {
+        ori = ori2;
+      }
+    }
+    return ori;
+  }
+
+  return XLoader;
+}

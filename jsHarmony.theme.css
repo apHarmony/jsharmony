@@ -73,7 +73,7 @@ input {
 HEADER AND TOP BUTTONS
 ======================
 */
-#xmain{
+.xmain{
 	width:100%;
 	min-width:1024px;
 	position:relative;
@@ -83,7 +83,7 @@ HEADER AND TOP BUTTONS
 BODY
 ====
 */
-#xbody {
+.xbody {
 	padding-top:21px;
 	padding-left:29px;
 /*	min-height:300px;*/
@@ -171,16 +171,16 @@ a.xtab.disabled:hover{
 /***************************
 CUSTOM CONTROL STYLES
 ***************************/
-#xmain .xtbl tbody tr.xgrid_row_highlight { background-color:#ffff66; }
-#xmain .xtbl tbody tr.xgrid_row_error { background-color:#ffb8b8; }
-#xmain .xtbl tbody tr.xgrid_row_disabled,#xmain .xtbl tbody tr.xgrid_row_disabled a { background-color:#ddd; color:#777; }
-#xmain .xtbl tbody tr.xgrid_row_PREF { background-color:#c6d3ff; }
-#xmain .xtbl tbody tr.xgrid_row_none { background-color:#ffffff; }
+.xmain .xtbl tbody tr.xgrid_row_highlight { background-color:#ffff66; }
+.xmain .xtbl tbody tr.xgrid_row_error { background-color:#ffb8b8; }
+.xmain .xtbl tbody tr.xgrid_row_disabled,.xmain .xtbl tbody tr.xgrid_row_disabled a { background-color:#ddd; color:#777; }
+.xmain .xtbl tbody tr.xgrid_row_PREF { background-color:#c6d3ff; }
+.xmain .xtbl tbody tr.xgrid_row_none { background-color:#ffffff; }
 
-#xmain .xtbl tbody tr.xgrid_row_green { background-color:#c2ffb8; }
-#xmain .xtbl tbody tr.xgrid_row_yellow { background-color:#fffeb8; }
-#xmain .xtbl tbody tr.xgrid_row_red { background-color:#ffb8b8; }
-#xmain .xtbl tbody tr.xgrid_row_gray { background-color:#cccccc; }
+.xmain .xtbl tbody tr.xgrid_row_green { background-color:#c2ffb8; }
+.xmain .xtbl tbody tr.xgrid_row_yellow { background-color:#fffeb8; }
+.xmain .xtbl tbody tr.xgrid_row_red { background-color:#ffb8b8; }
+.xmain .xtbl tbody tr.xgrid_row_gray { background-color:#cccccc; }
 
 .xform_button { border:1px solid transparent; }
 .xform_button.highlighted { background-color:yellow; border:1px dashed #666; }
@@ -195,6 +195,6 @@ PRINT STYLESHEET
     color:#000000; 
     border:1px solid #000000;
   }
-  #xbody { padding:20px 0 0 15px; }
+  .xbody { padding:20px 0 0 15px; }
   .xtbl thead th a { color:#000000; }
 }

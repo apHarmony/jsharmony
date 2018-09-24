@@ -1,7 +1,7 @@
 </div><!-- end xbody -->
 <div style="display:none;">
 <style type="text/css">
-#xmain {
+.xmain {
   min-width:400px;
 }
 </style>
@@ -73,7 +73,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   <% } %>
 
   $(document).ready(function(){
-    jsh.title_html = "\r\n"+'<h1 style="display:inline-block;" id="xform_title">&nbsp;</h1>' + "\r\n";
+    jsh.title_html = "\r\n"+'<h1 style="display:inline-block;" class="xform_title">&nbsp;</h1>' + "\r\n";
     jsh.state = jsh.GetState();
     if(!jsh.state) return;
     jsh.Load();
@@ -86,7 +86,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if(jsh.xDialog.length){
       var newobj = document.activeElement;
       if(newobj && !($(newobj).closest(jsh.xDialog[0]).length)){
-        window.setTimeout(function(){ $(jsh.xDialog[0] + ' input').first().focus(); },1);
+        window.setTimeout(function(){ jsh.$root(jsh.xDialog[0] + ' input').first().focus(); },1);
       }
       return;
     }
@@ -117,9 +117,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       //Do not reload if performing a refresh, and the model is the same as the previous model
       if(options.onRefreshNoChange && jsh.cur_model && model && (JSON.stringify(model)==JSON.stringify(jsh.cur_model))){ options.onRefreshNoChange(); return; }
 
-      jsh.prev_title = $('#xform_title').html();
+      jsh.prev_title = jsh.$root('.xform_title').html();
       if(!jsh.prev_title) jsh.prev_title = '';
-      jsh.prev_bcrumbs = $('div.bcrumbs').html();
+      jsh.prev_bcrumbs = jsh.$root('div.bcrumbs').html();
       if(!jsh.prev_bcrumbs) jsh.prev_bcrumbs = '';
 
       //Update tab in state, if applicable
@@ -151,7 +151,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       var ejsrslt = jsh.Render(model);
       //console.log(ejsrslt); //Show Full Source
       jsh.XForm_PreDestroy();
-      $('#xbody').html('');
+      jsh.$root('.xbody').html('');
       jsh.XForm_Destroy();
 
       //Initialize GET/forcequery
@@ -179,30 +179,36 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if(ejsrslt.indexOf(CODE_EJSPREPEND)>=0) ejsrslt = ejsrslt.replace(CODE_EJSPREPEND,ejsprepend)
       else ejsrslt = ejsprepend + ejsrslt;
       //console.log(ejsrslt); //Debug EJS output
-      $('#xbody').html(ejsrslt);
+      jsh.$root('.xbody').html(ejsrslt);
       var model_class = 'xbody_'+jsh.state.modelid;
       if(model._basemodel) model_class += ' xbody_'+ model._basemodel;
-      $('#xbody').attr('class',model_class);
+      var prevClasses = XExt.getClasses(jsh.$root('.xbody'));
+      for(var i=0;i<prevClasses.length;i++){
+        if(XExt.beginsWith(prevClasses[i], 'xbody_')){
+          jsh.$root('.xbody').removeClass(prevClasses[i]);
+        }
+      }
+      jsh.$root('.xbody').addClass(model_class);
       //Handle Title
       if(!model.toptitle) model.toptitle = '';
       jsh.orig_title = XExt.unescapeEJS(model.toptitle);
       if (jsh.orig_title.indexOf('<#') < 0){
-        $('#xform_title').html(jsh.orig_title);
+        jsh.$root('.xform_title').html(jsh.orig_title);
         document.title = XExt.StripTags(jsh.html_title.replace('%%%PAGETITLE%%%',jsh.orig_title));
       }
-      else if(jsh.prev_title_src == model.toptitle) $('#xform_title').html(jsh.prev_title);
-      else $('#xform_title').html('&nbsp;');
+      else if(jsh.prev_title_src == model.toptitle) jsh.$root('.xform_title').html(jsh.prev_title);
+      else jsh.$root('.xform_title').html('&nbsp;');
       jsh.prev_title_src = model.toptitle;
     
       //Handle breadcrumbs
-      jsh.orig_bcrumbs = XExt.unescapeEJS($('div.bcrumbs').html());
-      if (jsh.orig_bcrumbs.indexOf('<#') < 0) $('div.bcrumbs').html(jsh.orig_bcrumbs);
-      else if(jsh.prev_bcrumbs_src == jsh.orig_bcrumbs) $('div.bcrumbs').html(jsh.prev_bcrumbs);
-      else $('div.bcrumbs').html('&nbsp;'); 
+      jsh.orig_bcrumbs = XExt.unescapeEJS(jsh.$root('div.bcrumbs').html());
+      if (jsh.orig_bcrumbs.indexOf('<#') < 0) jsh.$root('div.bcrumbs').html(jsh.orig_bcrumbs);
+      else if(jsh.prev_bcrumbs_src == jsh.orig_bcrumbs) jsh.$root('div.bcrumbs').html(jsh.prev_bcrumbs);
+      else jsh.$root('div.bcrumbs').html('&nbsp;'); 
       jsh.prev_bcrumbs_src = jsh.orig_bcrumbs;
 
-      $('#toplink_help').not('.static').attr('href',model.helpurl);
-      $('#toplink_help').not('.static').attr('onclick',model.helpurl_onclick);
+      jsh.$root('#toplink_help').not('.static').attr('href',model.helpurl);
+      jsh.$root('#toplink_help').not('.static').attr('onclick',model.helpurl_onclick);
       if(model.topmenu){ jsh.SelectMenu(model.topmenu); }
       jsh.ResetLinks();
       $(document).trigger('jsh_ready');
@@ -227,7 +233,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.ResetLinks = function(){
-    $('a').each(function(i,obj){
+    jsh.$root('a').each(function(i,obj){
       var jobj = $(obj);
       if(jobj.attr('onclick')) return;
       jobj.attr('onclick','return <%-req.jshsite.instance%>.Navigate(this);');
@@ -240,8 +246,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var ahash = a.hash;
     var amodelid = '';
 
-    if(a.id != 'xmenu_more') $('#xmenuside').hide();
-    if(!$(a).hasClass('xsubmenu_more')) $('#xsubmenuside').hide();
+    if(!$(a).hasClass('xmenu_more')) jsh.$root('.xmenuside').hide();
+    if(!$(a).hasClass('xsubmenu_more')) jsh.$root('.xsubmenuside').hide();
 
     if(apath.indexOf(jsh._BASEURL)==0) apath = apath.substr(jsh._BASEURL.length);
     if(apath.indexOf('_report/')==0) amodelid = '_report_'+apath.substr(8);
@@ -377,7 +383,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.Error = function(num,txt){
     console.log('Error #'+num+': '+txt);
-    $('#xbody').html('<h3>Error #'+num+': '+txt+'</h3>');
+    jsh.$root('.xbody').html('<h3>Error #'+num+': '+txt+'</h3>');
   }
 
   //Array of source HTML

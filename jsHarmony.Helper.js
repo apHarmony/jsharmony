@@ -70,7 +70,7 @@ exports.getAuxFields = function (req, res, model) {
       if (!Helper.HasModelAccess(req, link_model, 'BIU')) { rslt[i]['link_onclick'] = req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;"; }
       else {
         if(ptarget.action=='download'){
-          rslt[i]['link_onclick'] = "var url = "+req.jshsite.instance+".$(this).attr('href') + '?format=js'; "+req.jshsite.instance+".$('#xfileproxy').prop('src', url); return false;";
+          rslt[i]['link_onclick'] = "var url = "+req.jshsite.instance+".$(this).attr('href') + '?format=js'; "+req.jshsite.instance+".$root('#"+req.jshsite.instance+"_xfileproxy').prop('src', url); return false;";
         }
         else if ('popup' in link_model) {
           rslt[i]['link_onclick'] = "window.open("+req.jshsite.instance+".$(this).attr('href'),'_blank','width=" + link_model['popup'][0] + ",height=" + link_model['popup'][1] + ",resizable=1,scrollbars=1');return false;";
@@ -269,7 +269,7 @@ exports.getURL_onclick = function (req, field, model) {
     }
     var link_model = this.getModel(req, ptarget.modelid);
     if(ptarget.action=='download'){
-      rslt = "url += '?format=js'; "+req.jshsite.instance+".$('#xfileproxy').prop('src', url); return false;";
+      rslt = "url += '?format=js'; "+req.jshsite.instance+".$root('#"+req.jshsite.instance+"_xfileproxy').prop('src', url); return false;";
     }
     else if ('popup' in link_model) {
       rslt = "window.open(url,'_blank','width=" + link_model.popup[0] + ",height=" + link_model.popup[1] + ",resizable=1,scrollbars=1');return false;";

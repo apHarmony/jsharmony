@@ -26,7 +26,7 @@
     {"name":"c_email","type":"varchar","length":255,"actions":"BIU","control":"textbox",
      "validate": ["IsEmail"],"caption": "E-Mail Address","captionstyle": "width:176px;text-align:right;"},
     {"name":"c_email_compose","control": "linkbutton","caption": "","value": "Compose Email","actions":"B",
-      "onclick": "var email = $('#c_email').val().trim(); if(email){ url = 'mailto:'+email; $('#xfileproxy').prop('src', url); }"},
+      "onclick": "var email = jsh.$root('#c_email').val().trim(); if(email){ url = 'mailto:'+email; jsh.getFileProxy().prop('src', url); }"},
     {"name": "c_phtype1","type": "varchar","length": 8,"actions": "BIU","nl": 1,"control": "dropdown", 
      "lov":{ "UCOD":"C_PHTYPE","blank":""},"controlstyle":"width:82px;","caption": "PHONE 1 Type"},
     {"name": "c_phone1","type": "varchar","length": 20,"actions": "BIU","control": "textbox",
@@ -42,7 +42,7 @@
     {"name": "c_website","type": "varchar","length": 50,"actions": "BIU","control": "textbox",
      "caption": "Web Page","captionstyle": "width:126px;text-align:right;"},
     {"name":"c_website_view","control":"linkbutton","caption":"","value":"Open URL","actions":"B",
-     "onclick": "var url = $('#c_website').val().trim(); if(url){ if(url.indexOf(':/'+'/')<0) url = 'http:/'+'/'+url; window.open(url); }"},
+     "onclick": "var url = jsh.$root('#c_website').val().trim(); if(url){ if(url.indexOf(':/'+'/')<0) url = 'http:/'+'/'+url; window.open(url); }"},
     {"name":"c_id", "type": "bigint", "actions":"B", "control":"label", "key": 1, "caption":""}
   ]
 }

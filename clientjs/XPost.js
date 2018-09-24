@@ -55,9 +55,9 @@ exports = module.exports = function(jsh){
     if(this.Data.OnRender)
       this.Data.OnRender.apply(this.Data,arguments);
     else if(this.TemplateID){
-      var ejssource = $(this.TemplateID).html();
+      var ejssource = jsh.$root(this.TemplateID).html();
       ejssource = ejssource.replace(/<#/g,'<%').replace(/#>/g,'%>')
-      $(this.PlaceholderID).html(jsh.ejs.render(ejssource,{data:this.Data,xejs:jsh.XExt.xejs,jsh:jsh}));
+      jsh.$root(this.PlaceholderID).html(jsh.ejs.render(ejssource,{data:this.Data,xejs:jsh.XExt.xejs,jsh:jsh}));
     }
     if (this.OnAfterRender) this.OnAfterRender();
   };
@@ -122,7 +122,7 @@ exports = module.exports = function(jsh){
       this.Data._orig = null;
     }
     if (this.xData) {
-      $(this.xData.PlaceholderID).find('.xform_ctrl.updated').removeClass('updated');
+      jsh.$root(this.xData.PlaceholderID).find('.xform_ctrl.updated').removeClass('updated');
     }
     this.IsDirty = false;
   }
@@ -168,7 +168,7 @@ exports = module.exports = function(jsh){
     this.Data._bcrumbs = this._bcrumbs;
     this.Data._title = this._title;
     if (this.xData) {
-      this.Data._jrow = $(this.xData.PlaceholderID).find("tr[data-id='" + this.Index + "']");
+      this.Data._jrow = jsh.$root(this.xData.PlaceholderID).find("tr[data-id='" + this.Index + "']");
     }
     return true;
   }

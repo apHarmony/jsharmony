@@ -73,14 +73,14 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
             else { jsh.XExt.Alert('Error #'+data._error.Number+': '+data._error.Message); }
           }
           else{
-            var ejssource = $(xform_<%=model.id%>.TemplateID).html();
+            var ejssource = jsh.$root(xform_<%=model.id%>.TemplateID).html();
             ejssource = ejssource.replace(/<#/g,'<'+'%').replace(/#>/g,'%'+'>')
             var ejsrslt = jsh.ejs.render(ejssource,{
               data:data[xform_<%=model.id%>.q],
               jsh: jsh
             });
-            $(xform_<%=model.id%>.PlaceholderID).empty();
-            $(xform_<%=model.id%>.PlaceholderID).append(ejsrslt);
+            jsh.$root(xform_<%=model.id%>.PlaceholderID).empty();
+            jsh.$root(xform_<%=model.id%>.PlaceholderID).append(ejsrslt);
           }
           jsh.xLoader.StopLoading(xform_<%=model.id%>);
           if(onComplete) onComplete();
@@ -93,7 +93,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
 
   jsh.App.XForm<%=model.id%>_Save = function(){
     var selected_values = [];
-    $(jsh.App.xform_<%=model.id%>.PlaceholderID+' input.xselitem').each(function(i,obj){
+    jsh.$root(jsh.App.xform_<%=model.id%>.PlaceholderID+' input.xselitem').each(function(i,obj){
       if($(obj).is(':checked')){
         selected_values.push($(obj).val());
       }

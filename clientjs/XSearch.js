@@ -52,7 +52,7 @@ exports = module.exports = function(jsh){
   SearchQuery.prototype.GetValues = function (_PlaceholderID) {
     _this = this;
     _this.Items = [];
-    $(_PlaceholderID + ' div.xfilter_expression').each(function (i, obj) {
+    jsh.$root(_PlaceholderID + ' div.xfilter_expression').each(function (i, obj) {
       var v_column = $(obj).find('select.xfilter_column').val();
       var v_value = $(obj).find('input.xfilter_value').val();
       var v_join = $(obj).find('input.xfilter_join').val();
@@ -64,7 +64,7 @@ exports = module.exports = function(jsh){
   SearchQuery.prototype.HasUpdates = function (_PlaceholderID) {
     _this = this;
     var newitems = [];
-    $(_PlaceholderID + ' div').each(function (i, obj) {
+    jsh.$root(_PlaceholderID + ' div').each(function (i, obj) {
       var v_value = $(obj).find('input.xfilter_value').val();
       var v_join = $(obj).find('input.xfilter_join').val();
       var v_comparison = $(obj).find('select.xfilter_comparison').val();

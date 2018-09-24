@@ -37,7 +37,7 @@ exports = module.exports = function(jsh){
   XExtXForm.OnRender = function (modelid) {
     return function(){
       var _this = this;
-      var parentobj = $(document);
+      var parentobj = jsh.root;
       if (this._jrow) parentobj = this._jrow;
       var isGrid = (jsh.XForms[modelid]._layout == 'grid');
       //Clear highlighted background of currently edited cells
@@ -45,12 +45,12 @@ exports = module.exports = function(jsh){
       
       if (jsh.XForms[modelid]._layout == 'form-m') {
         if (jsh.App['xform_'+modelid].Count()==0) {
-          $('.xelem'+modelid+'.xnorecords').show();
-          $('.xelem'+modelid+'.xformcontainer').css('visibility', 'hidden');
+          jsh.$root('.xelem'+modelid+'.xnorecords').show();
+          jsh.$root('.xelem'+modelid+'.xformcontainer').css('visibility', 'hidden');
         }
         else {
-          $('.xelem'+modelid+'.xnorecords').hide();
-          $('.xelem'+modelid+'.xformcontainer').css('visibility', 'visible');
+          jsh.$root('.xelem'+modelid+'.xnorecords').hide();
+          jsh.$root('.xelem'+modelid+'.xformcontainer').css('visibility', 'visible');
         }
       }
     
@@ -80,20 +80,20 @@ exports = module.exports = function(jsh){
         XExtXForm.RenderField(_this, parentobj, modelid, field);
       });
       if (jsh.XForms[modelid]._layout == 'form-m') {
-        $('#navtext_' + modelid).html((jsh.App['xform_' + modelid].Index + 1) + ' of ' + jsh.App['xform_' + modelid].Count());
+        jsh.$root('#navtext_' + modelid).html((jsh.App['xform_' + modelid].Index + 1) + ' of ' + jsh.App['xform_' + modelid].Count());
       }
     };
   };
 
   XExtXForm.SetFieldValue = function (xformdata, field, val){
     xformdata[field.name] = val;
-    var parentobj = $(document);
+    var parentobj = jsh.root;
     if (xformdata._jrow) parentobj = xformdata._jrow;
     XExtXForm.RenderField(xformdata, parentobj, xformdata._modelid, field, val);
   }
 
   XExtXForm.SetControlValue = function (xformdata, field, val) { //Leave val to "undefined" for refresh
-    var parentobj = $(document);
+    var parentobj = jsh.root;
     if (xformdata._jrow) parentobj = xformdata._jrow;
     var jctrl = XExtXForm.RenderField(xformdata, parentobj, xformdata._modelid, field, val);
     if(jctrl && jctrl.length) xformdata.OnControlUpdate(jctrl[0]);
@@ -274,7 +274,7 @@ exports = module.exports = function(jsh){
   XExtXForm.GetValue = function (modelid) {
     return function (field) {
       var _this = this;
-      var parentobj = $(document);
+      var parentobj = jsh.root;
       if (this._jrow) parentobj = this._jrow;
       var isGrid = (jsh.XForms[modelid]._layout == 'grid');
       
@@ -386,7 +386,7 @@ exports = module.exports = function(jsh){
   XExtXForm.Commit = function (modelid,xpostid) {
     return function (perm) {
       var _this = this;
-      var parentobj = $(document);
+      var parentobj = jsh.root;
       if (this._jrow) parentobj = this._jrow;
       if ((jsh.XForms[modelid]._layout == 'form-m') || (jsh.XForms[modelid]._layout == 'grid')) {
         if (jsh.App[xpostid].Count()==0) return true;
@@ -435,7 +435,7 @@ exports = module.exports = function(jsh){
 
   XExtXForm.BindLOV = function (modelid) {
     return function (xform, parentobj) {
-      if (!parentobj) parentobj = $(document);
+      if (!parentobj) parentobj = jsh.root;
       var isGrid = (jsh.XForms[modelid]._layout == 'grid');
       _.each(this.Fields, function (field) {
         if (!('control' in field)) return; if (field.control == 'subform') return;

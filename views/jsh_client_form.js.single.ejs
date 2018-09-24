@@ -52,12 +52,12 @@ _.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field
     //Pull keys from parent
     //Get recordset
 
-    $('.xelem<%=model.id%>').keyup(function(){ if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
-    $('.xelem<%=model.id%>.dropdown').change(function(){ if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
-    $('.xelem<%=model.id%>.checkbox').change(function(){ if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
+    jsh.$root('.xelem<%=model.id%>').keyup(function(){ if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
+    jsh.$root('.xelem<%=model.id%>.dropdown').change(function(){ if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
+    jsh.$root('.xelem<%=model.id%>.checkbox').change(function(){ if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
 
     <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if((field.control=='date') && (XExt.access(field.actions,'IU'))) {%>
-    $("#<%=field.name%>.xelem<%=model.id%>").datepicker({ changeMonth: true, changeYear: true, dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||jsh.DEFAULT_DATEFORMAT), onSelect: function(){ if(jsh.is_add) return; xform_<%=model.id%>.Data.OnControlUpdate(this); } });
+    jsh.$root("#<%=field.name%>.xelem<%=model.id%>").datepicker({ changeMonth: true, changeYear: true, dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||jsh.DEFAULT_DATEFORMAT), onSelect: function(){ if(jsh.is_add) return; xform_<%=model.id%>.Data.OnControlUpdate(this); } });
     <% } }); %>  
     callback();
   }

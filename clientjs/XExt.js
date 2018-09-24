@@ -89,25 +89,25 @@ exports = module.exports = function(jsh){
 
   XExt.ShowContextMenu = function (selector,context_item,data){
     if (!selector) selector = '.xcontext_menu';
-    $('.xcontext_menu').hide();
-    $(selector).css('visibility', 'hidden');
-    $(selector).show();
+    jsh.$root('.xcontext_menu').hide();
+    jsh.$root(selector).css('visibility', 'hidden');
+    jsh.$root(selector).show();
     var xtop = jsh.mouseY; var xleft = jsh.mouseX;
-    var offset = $(selector).offsetParent().offset();
+    var offset = jsh.$root(selector).offsetParent().offset();
     xtop -= offset.top - 1;
     xleft -= offset.left - 1;
 
     var wwidth = $(window).width();
     var wheight = $(window).height() - 20;
-    var dwidth = $(selector).outerWidth()+4;
-    var dheight = $(selector).outerHeight()+4;
+    var dwidth = jsh.$root(selector).outerWidth()+4;
+    var dheight = jsh.$root(selector).outerHeight()+4;
     if ((xtop + dheight) > wheight) xtop = wheight - dheight;
     if ((xleft + dwidth) > wwidth) xleft = wwidth - dwidth;
     if (xtop < 0) xtop = 0;
     if (xleft < 0) xleft = 0;
 
-    $(selector).css({ 'top': xtop, 'left': xleft });
-    $(selector).css('visibility', 'visible');
+    jsh.$root(selector).css({ 'top': xtop, 'left': xleft });
+    jsh.$root(selector).css('visibility', 'visible');
     if(jsh){
       jsh.xContextMenuVisible = true;
       jsh.xContextMenuItem = context_item;
@@ -234,8 +234,8 @@ exports = module.exports = function(jsh){
     window.history.replaceState(obj, title, url);
   }
 
-  XExt.clearFileInput = function (id) {
-    var oldInput = document.getElementById(id);
+  XExt.clearFileInput = function (obj) {
+    var oldInput = obj;
     var newInput = document.createElement("input");
     newInput.type = "file";
     newInput.id = oldInput.id;
@@ -246,7 +246,7 @@ exports = module.exports = function(jsh){
   };
 
   XExt.hideTab = function (modelid, tabname) {
-    $('.xtab' + modelid).each(function (i, obj) {
+    jsh.$root('.xtab' + modelid).each(function (i, obj) {
       var jobj = $(obj);
       if (jobj.html() == tabname) jobj.hide();
     });
@@ -451,7 +451,7 @@ exports = module.exports = function(jsh){
 
   XExt.CKEditor = function (id) {
     if (CKEDITOR.instances[id]) return;
-    var elem = $('#' + id);
+    var elem = jsh.$root('#' + id);
     var orig_width = elem.outerWidth();
     var orig_height = elem.outerHeight();
     elem.wrap('<div id="' + id + '_container" style="width:' + orig_width + 'px;border:1px solid #999;display:inline-block;"></div>');
@@ -490,7 +490,7 @@ exports = module.exports = function(jsh){
   XExt.jumpAnchor = function (name) {
     if (!name) return;
     if (name[0] == '#') name = name.substring(1);
-    var jobj = $('a[name=' + name + ']');
+    var jobj = jsh.$root('a[name=' + name + ']');
     if (jobj.size() == 0) return;
     var elem = jobj.get(0);
     var elemoff = $(elem).offset();
@@ -638,7 +638,7 @@ exports = module.exports = function(jsh){
       var frslt = f.call(ctrl, n);
       if((frslt === false) || (frslt===true)) return frslt;
     }
-    if ($(menuid).length) {
+    if (jsh.$root(menuid).length) {
       XExt.ShowContextMenu(menuid, $(ctrl).data('value'), { id:n });
       return false;
     }
@@ -827,8 +827,8 @@ exports = module.exports = function(jsh){
 
   XExt.clearDialogs = function(){
     jsh.xDialog = [];
-    $('#xdialogblock').children().hide();
-    $('#xdialogblock').hide();
+    jsh.$root('.xdialogblock').children().hide();
+    jsh.$root('.xdialogblock').hide();
   }
 
   XExt.dialogButtonFunc = function (dialogClass, oldactive, onComplete, params) {
@@ -846,8 +846,8 @@ exports = module.exports = function(jsh){
       }
       //Verify this is the topmost dialog
       if ((jsh.xDialog.length > 0) && (jsh.xDialog[0] != dialogClass)) return;
-      $('#xdialogblock ' + dialogClass).hide();
-      if (jsh.xDialog.length == 1) { $('#xdialogblock').hide(); }
+      jsh.$root('.xdialogblock ' + dialogClass).hide();
+      if (jsh.xDialog.length == 1) { jsh.$root('.xdialogblock').hide(); }
       if (jsh.xDialog[0] != dialogClass) { alert('ERROR - Invalid Dialog Stack'); console.log(dialogClass); console.log(jsh.xDialog); }
       if (oldactive) oldactive.focus();
       window.setTimeout(function () { jsh.xDialog.shift(); if (onComplete) onComplete(); }, 1);
@@ -863,21 +863,21 @@ exports = module.exports = function(jsh){
     msg = XExt.escapeHTML(msg);
     msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
     //alert(msg);
-    jsh.xDialog.unshift('#xalertbox');
-    $('#xdialogblock #xalertbox').zIndex(jsh.xDialog.length);
+    jsh.xDialog.unshift('.xalertbox');
+    jsh.$root('.xdialogblock .xalertbox').zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
-    $('#xalertmessage').html(msg);
-    $('#xalertbox input').off('click');
-    $('#xalertbox input').off('keydown');
-    var acceptfunc = XExt.dialogButtonFunc('#xalertbox', oldactive, onAccept, { onCompleteImmediate: params.onAcceptImmediate });
-    $('#xalertbox input').on('click', acceptfunc);
-    $('#xalertbox input').on('keydown', function (e) { if (e.keyCode == 27) { acceptfunc(); } });
+    jsh.$root('.xalertmessage').html(msg);
+    jsh.$root('.xalertbox input').off('click');
+    jsh.$root('.xalertbox input').off('keydown');
+    var acceptfunc = XExt.dialogButtonFunc('.xalertbox', oldactive, onAccept, { onCompleteImmediate: params.onAcceptImmediate });
+    jsh.$root('.xalertbox input').on('click', acceptfunc);
+    jsh.$root('.xalertbox input').on('keydown', function (e) { if (e.keyCode == 27) { acceptfunc(); } });
     
-    $('#xdialogblock,#xalertbox').show();
+    jsh.$root('.xdialogblock,.xalertbox').show();
     jsh.XWindowResize();
-    if (!XExt.isIOS()) $('#xalertbox input').focus();
+    if (!XExt.isIOS()) jsh.$root('.xalertbox input').focus();
   }
 
   XExt.Confirm = function (obj, onAccept, onCancel, options) {
@@ -889,31 +889,31 @@ exports = module.exports = function(jsh){
     msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
     //if (window.confirm(msg)) { if (onAccept) onAccept(); }
     //if (onCancel) onCancel(); 
-    jsh.xDialog.unshift('#xconfirmbox');
-    $('#xdialogblock #xconfirmbox').zIndex(jsh.xDialog.length);
+    jsh.xDialog.unshift('.xconfirmbox');
+    jsh.$root('.xdialogblock .xconfirmbox').zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
-    $('#xconfirmmessage').html(msg);
-    $('#xconfirmbox input').off('click');
-    $('#xconfirmbox input').off('keydown');
-    var cancelfunc = XExt.dialogButtonFunc('#xconfirmbox', oldactive, onCancel);
+    jsh.$root('.xconfirmmessage').html(msg);
+    jsh.$root('.xconfirmbox input').off('click');
+    jsh.$root('.xconfirmbox input').off('keydown');
+    var cancelfunc = XExt.dialogButtonFunc('.xconfirmbox', oldactive, onCancel);
     if (options.button_no) {
-      $('#xconfirmbox input.button_no').show();
-      $('#xconfirmbox input.button_no').on('click', XExt.dialogButtonFunc('#xconfirmbox', oldactive, options.button_no));
+      jsh.$root('.xconfirmbox input.button_no').show();
+      jsh.$root('.xconfirmbox input.button_no').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, options.button_no));
     }
-    else $('#xconfirmbox input.button_no').hide();
-    if (options.button_ok_caption) $('#xconfirmbox input.button_ok').val(options.button_ok_caption);
-    if (options.button_no_caption) $('#xconfirmbox input.button_no').val(options.button_no_caption);
-    if (options.button_cancel_caption) $('#xconfirmbox input.button_cancel').val(options.button_cancel_caption);
+    else jsh.$root('.xconfirmbox input.button_no').hide();
+    if (options.button_ok_caption) jsh.$root('.xconfirmbox input.button_ok').val(options.button_ok_caption);
+    if (options.button_no_caption) jsh.$root('.xconfirmbox input.button_no').val(options.button_no_caption);
+    if (options.button_cancel_caption) jsh.$root('.xconfirmbox input.button_cancel').val(options.button_cancel_caption);
 
 
-    $('#xconfirmbox input.button_ok').on('click', XExt.dialogButtonFunc('#xconfirmbox', oldactive, onAccept));
-    $('#xconfirmbox input.button_cancel').on('click', cancelfunc);
-    $('#xconfirmbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    $('#xdialogblock,#xconfirmbox').show();
+    jsh.$root('.xconfirmbox input.button_ok').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, onAccept));
+    jsh.$root('.xconfirmbox input.button_cancel').on('click', cancelfunc);
+    jsh.$root('.xconfirmbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    jsh.$root('.xdialogblock,.xconfirmbox').show();
     jsh.XWindowResize();
-    if (!XExt.isIOS()) $('#xconfirmbox input.button_ok').focus();
+    if (!XExt.isIOS()) jsh.$root('.xconfirmbox input.button_ok').focus();
   }
 
   XExt.Prompt = function (obj, dflt, onComplete) {
@@ -929,40 +929,40 @@ exports = module.exports = function(jsh){
     //var rslt = window.prompt(msg, dflt);
     //If cancel or close, rslt = null
     //if (onComplete) onComplete(rslt);
-    jsh.xDialog.unshift('#xpromptbox');
-    $('#xdialogblock #xpromptbox').zIndex(jsh.xDialog.length);
+    jsh.xDialog.unshift('.xpromptbox');
+    jsh.$root('.xdialogblock .xpromptbox').zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
-    $('#xpromptmessage').html(msg);
-    $('#xpromptbox input').off('click');
-    $('#xpromptbox input').off('keydown');
-    $('#xpromptfield').val(dflt);
-    var cancelfunc = XExt.dialogButtonFunc('#xpromptbox', oldactive, function () { if (onComplete) onComplete(null); });
-    var acceptfunc = XExt.dialogButtonFunc('#xpromptbox', oldactive, function () { if (onComplete) onComplete($('#xpromptfield').val()); });
-    $('#xpromptbox input.button_ok').on('click', acceptfunc);
-    $('#xpromptbox input.button_cancel').on('click', cancelfunc);
-    $('#xpromptbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    $('#xpromptfield').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
-    $('#xdialogblock,#xpromptbox').show();
+    jsh.$root('.xpromptmessage').html(msg);
+    jsh.$root('.xpromptbox input').off('click');
+    jsh.$root('.xpromptbox input').off('keydown');
+    jsh.$root('.xpromptfield').val(dflt);
+    var cancelfunc = XExt.dialogButtonFunc('.xpromptbox', oldactive, function () { if (onComplete) onComplete(null); });
+    var acceptfunc = XExt.dialogButtonFunc('.xpromptbox', oldactive, function () { if (onComplete) onComplete(jsh.$root('.xpromptfield').val()); });
+    jsh.$root('.xpromptbox input.button_ok').on('click', acceptfunc);
+    jsh.$root('.xpromptbox input.button_cancel').on('click', cancelfunc);
+    jsh.$root('.xpromptbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    jsh.$root('.xpromptfield').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
+    jsh.$root('.xdialogblock,.xpromptbox').show();
     jsh.XWindowResize();
-    $('#xpromptfield').focus();
+    jsh.$root('.xpromptfield').focus();
   }
 
   XExt.CustomPrompt = function (id, html, onInit, onAccept, onCancel, onClosed) {
     //Classes - default_focus, button_ok, button_cancel
-    if ($('#xdialogblock #' + id).length) $('#xdialogblock #' + id).remove();
-    $('#xdialogblock').append(html);
+    if (jsh.$root('.xdialogblock #' + id).length) jsh.$root('.xdialogblock #' + id).remove();
+    jsh.$root('.xdialogblock').append(html);
     
     //ShowDialog
     jsh.xDialog.unshift('#' + id);
-    $('#xdialogblock #' + id).zIndex(jsh.xDialog.length);
+    jsh.$root('.xdialogblock #' + id).zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
     
-    $('#' + id + ' input').off('click');
-    $('#' + id + ' input').off('keydown');
+    jsh.$root('#' + id + ' input').off('click');
+    jsh.$root('#' + id + ' input').off('keydown');
     var cancelfunc = XExt.dialogButtonFunc('#' + id, oldactive, function () { if (onCancel) onCancel(); if (onClosed) onClosed(); });
     var acceptfunc_aftervalidate = XExt.dialogButtonFunc('#' + id, oldactive, function () { if (onClosed) onClosed(); });
     var acceptfunc = function () {
@@ -973,41 +973,41 @@ exports = module.exports = function(jsh){
       else acceptfunc_aftervalidate();
     }
     if (onInit) onInit(acceptfunc, cancelfunc);
-    $('#' + id + ' input.button_ok').on('click', acceptfunc);
-    $('#' + id + ' input.button_cancel').on('click', cancelfunc);
-    $('#' + id + ' input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    $('#' + id + ' input:not(:checkbox):not(:button)').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
-    $('#xdialogblock,#' + id).show();
+    jsh.$root('#' + id + ' input.button_ok').on('click', acceptfunc);
+    jsh.$root('#' + id + ' input.button_cancel').on('click', cancelfunc);
+    jsh.$root('#' + id + ' input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    jsh.$root('#' + id + ' input:not(:checkbox):not(:button)').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
+    jsh.$root('.xdialogblock,#' + id).show();
     jsh.XWindowResize();
-    $('#' + id + ' .default_focus').focus();
+    jsh.$root('#' + id + ' .default_focus').focus();
   }
 
   XExt.ZoomEdit = function (val, caption, options, onAccept, onCancel) {
     if(!options) options = {};
     if(!val) val = '';
     val = val.toString();
-    jsh.xDialog.unshift('#xtextzoombox');
-    $('#xdialogblock #xtextzoombox').zIndex(jsh.xDialog.length);
+    jsh.xDialog.unshift('.xtextzoombox');
+    jsh.$root('.xdialogblock .xtextzoombox').zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
-    $('#xtextzoommessage').html(caption);
-    $('#xtextzoombox input').off('click');
-    $('#xtextzoombox input').off('keydown');
-    $('#xtextzoomfield').val(val);
+    jsh.$root('.xtextzoommessage').html(caption);
+    jsh.$root('.xtextzoombox input').off('click');
+    jsh.$root('.xtextzoombox input').off('keydown');
+    jsh.$root('.xtextzoomfield').val(val);
     
-    $('#xtextzoomfield').prop('readonly', (options.readonly?true:false));
-    if(options.readonly) $('#xtextzoomfield').removeClass('editable').addClass('uneditable');
-    else $('#xtextzoomfield').removeClass('uneditable').addClass('editable');
+    jsh.$root('.xtextzoomfield').prop('readonly', (options.readonly?true:false));
+    if(options.readonly) jsh.$root('.xtextzoomfield').removeClass('editable').addClass('uneditable');
+    else jsh.$root('.xtextzoomfield').removeClass('uneditable').addClass('editable');
 
-    var cancelfunc = XExt.dialogButtonFunc('#xtextzoombox', oldactive, function () { if (onCancel) onCancel(); });
-    var acceptfunc = XExt.dialogButtonFunc('#xtextzoombox', oldactive, function () { if (onAccept) onAccept($('#xtextzoomfield').val()); });
-    $('#xtextzoombox input.button_ok').on('click', acceptfunc);
-    $('#xtextzoombox input.button_cancel').on('click', cancelfunc);
-    $('#xtextzoombox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    $('#xdialogblock,#xtextzoombox').show();
+    var cancelfunc = XExt.dialogButtonFunc('.xtextzoombox', oldactive, function () { if (onCancel) onCancel(); });
+    var acceptfunc = XExt.dialogButtonFunc('.xtextzoombox', oldactive, function () { if (onAccept) onAccept(jsh.$root('.xtextzoomfield').val()); });
+    jsh.$root('.xtextzoombox input.button_ok').on('click', acceptfunc);
+    jsh.$root('.xtextzoombox input.button_cancel').on('click', cancelfunc);
+    jsh.$root('.xtextzoombox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    jsh.$root('.xdialogblock,.xtextzoombox').show();
     jsh.XWindowResize();
-    $('#xtextzoomfield').focus();
+    jsh.$root('.xtextzoomfield').focus();
   }
 
   var popupData = {};
@@ -1017,7 +1017,7 @@ exports = module.exports = function(jsh){
     var parentmodelid = $(obj).data('model');
     var parentfield = null;
     if (parentmodelid) parentfield = jsh.App['XForm' + parentmodelid].prototype.Fields[fieldid];
-    if (!parentobj) parentobj = $('#' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelid);
+    if (!parentobj) parentobj = jsh.$root('#' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelid);
     var numOpens = 0;
     
     popupData[modelid] = {};
@@ -1029,7 +1029,7 @@ exports = module.exports = function(jsh){
       var xdata = jsh.App['xform_' + modelid];
       xdata.RowCount = 0;
       if (xdata.Prop) xdata.Prop.Enabled = true;
-      $(xdata.PlaceholderID).html('');
+      jsh.$root(xdata.PlaceholderID).html('');
       var orig_jsh_ignorefocusHandler = jsh.ignorefocusHandler;
       jsh.ignorefocusHandler = true;
       var popup_options = {};
@@ -1043,9 +1043,9 @@ exports = module.exports = function(jsh){
         onComplete: function () {
           numOpens++;
           if(numOpens==1) xdata.Select();
-          if ($('#popup_' + fieldid + '.xelem' + parentmodelid + ' .xfilter_value').first().is(':visible')) $('#popup_' + fieldid + ' .xfilter_value').first().focus();
-          else if ($('#popup_' + fieldid + '.xelem' + parentmodelid).find('td a').length) $('#popup_' + fieldid).find('td a').first().focus();
-            //else $('#popup_' + fieldid + '.xelem' + parentmodelid).find('input,select,textarea').first().focus();
+          if (jsh.$root('#popup_' + fieldid + '.xelem' + parentmodelid + ' .xfilter_value').first().is(':visible')) jsh.$root('#popup_' + fieldid + ' .xfilter_value').first().focus();
+          else if (jsh.$root('#popup_' + fieldid + '.xelem' + parentmodelid).find('td a').length) jsh.$root('#popup_' + fieldid).find('td a').first().focus();
+            //else jsh.$root('#popup_' + fieldid + '.xelem' + parentmodelid).find('input,select,textarea').first().focus();
         },
         onClosed: function () {
           var found_popup = false;
@@ -1133,11 +1133,21 @@ exports = module.exports = function(jsh){
     return rslt;
   }
 
+  XExt.getClasses = function(obj){
+    var jobj = $(obj);
+    var rslt = [];
+    var classes = jobj.attr('class').split(/\s+/);
+    for(var i=0;i<classes.length;i++){
+      if(classes[i].trim()) rslt.push(classes[i].trim());
+    }
+    return rslt;
+  }
+
   XExt.ItemContextMenu = function (ctrl) {
     var parent = $(ctrl).closest('.xcontext_parent');
     if (!parent.length) return true;
     var menuid = '#_item_context_menu_' + parent.attr('id');
-    if (!$(menuid).length) return true;
+    if (!jsh.$root(menuid).length) return true;
     XExt.ShowContextMenu(menuid, $(ctrl).data('value'));
     return false;
   }
@@ -1200,7 +1210,7 @@ exports = module.exports = function(jsh){
   /* Form Helper Functions */
   /*************************/
   XExt.isGridControl = function (ctrl) {
-    return ($('.SQ_CARRIER_PRO').closest('.xtbl').length > 0);
+    return (jsh.$root('.SQ_CARRIER_PRO').closest('.xtbl').length > 0);
   }
   XExt.getFormBase = function (id) {
     if (!jsh.XBase[id]) { XExt.Alert('ERROR: Base form ' + id + ' not found.'); return; }
@@ -1288,7 +1298,7 @@ exports = module.exports = function(jsh){
     else return window.open(url, '_blank', windowstr);
   }
   XExt.renderCanvasCheckboxes = function () {
-    $('canvas.checkbox.checked').each(function () {
+    jsh.$root('canvas.checkbox.checked').each(function () {
       var obj = this;
       var w = obj.width;
       var h = obj.height;

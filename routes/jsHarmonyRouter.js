@@ -82,18 +82,18 @@ var jsHarmonyRouter = function (jsh, siteid) {
   }
   router.get('/system.css', function (req, res) {
     //Concatenate jsh css with system css
-	var f = function(){ HelperFS.outputContent(req, res, jsh.Cache['jsHarmony.css'] + '\r\n' + jsh.Cache['system.css'],'text/css'); };
-	if(jsh.Cache['jsHarmony.css']) f();
-	else{
-		var jshDir = path.dirname(module.filename);
-		fs.readFile(jshDir + '/../jsHarmony.css','utf8',function(err,data){
-			if(err) console.log(err);
-			else{
-				jsh.Cache['jsHarmony.css'] = data;
-				f();
-			}
-		});
-	}
+    var f = function(){ HelperFS.outputContent(req, res, jsh.Cache['jsHarmony.css'] + '\r\n' + jsh.Cache['system.css'],'text/css'); };
+    if(jsh.Cache['jsHarmony.css']) f();
+    else{
+      var jshDir = path.dirname(module.filename);
+      fs.readFile(jshDir + '/../jsHarmony.css','utf8',function(err,data){
+        if(err) console.log(err);
+        else{
+          jsh.Cache['jsHarmony.css'] = data;
+          f();
+        }
+      });
+    }
   });
   router.all('*', function (req, res, next) {
     if(!siteConfig.auth){ return jsh.Auth.NoAuth(req, res, next); }

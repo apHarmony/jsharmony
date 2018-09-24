@@ -9,7 +9,7 @@ var xactiontype = 'secondarygrid';
 if(model.topmost) xactiontype = 'top';
 else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in parent) && (parent.tabpos=='top')) xactiontype = 'auxtop';
 %>
-<h1 id="xtitlecaption<%=model.id%>" class="xtitlecaption" style="display:inline-block;"><a href="#" onclick="<%-instance%>.$('#xfilter_<%=model.id%>').slideToggle(); return false;">(filtered)</a></h1>
+<h1 id="xtitlecaption<%=model.id%>" class="xtitlecaption" style="display:inline-block;"><a href="#" onclick="<%-instance%>.$root('#xfilter_<%=model.id%>').slideToggle(); return false;">(filtered)</a></h1>
 <div class="xactions <%=xactiontype%> xelem<%=model.id%>">
   <%-jsh.RenderEJS('jsh_buttons',ejsparams)%>
   <% if(model.inlinepopup){ %><a href="#" onclick="<%-instance%>.XExt.popupClear('<%=model.id%>',this); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'clear'))%>"><img src="/images/icon_delete.png" alt="Clear" title="Clear" />Clear</a><% } %>

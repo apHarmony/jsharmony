@@ -94,7 +94,7 @@ for(var i=0;i<model.fields.length;i++){
     if(('controlparams' in field) && ('item_context_menu' in field.controlparams)){
       %><div id="_item_context_menu_<%=field.name%>" class="xform_context_menu xcontext_menu"><%
       for(var j=0;j<field.controlparams.item_context_menu.length;j++){ var menu_item = field.controlparams.item_context_menu[j];
-        if(xejs.getaccess(model.actions,field.actions,menu_item.actions)){ %><a href="#" class="<%=menu_item.class%>" onclick="<%-instance%>.$('.xcontext_menu').hide(); var context_item = <%-instance%>.xContextMenuItem; return (function(){<%-jslocals%><%-menu_item.command%>}).call(this)||false;"><img src="/images/icon_<%=menu_item.icon%>.png" /><%=menu_item.text%></a><% }
+        if(xejs.getaccess(model.actions,field.actions,menu_item.actions)){ %><a href="#" class="<%=menu_item.class%>" onclick="<%-instance%>.$root('.xcontext_menu').hide(); var context_item = <%-instance%>.xContextMenuItem; return (function(){<%-jslocals%><%-menu_item.command%>}).call(this)||false;"><img src="/images/icon_<%=menu_item.icon%>.png" /><%=menu_item.text%></a><% }
       }
       %></div><%
     }

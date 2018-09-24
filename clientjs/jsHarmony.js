@@ -79,8 +79,8 @@ var jsHarmony = function(options){
   this.XGrid = XGrid(this);
   this.XMenu = XMenu(this);
   this.JSHFind = JSHFind;
-  this.XLoader = XLoader;
-  this.XImageLoader = XImageLoader;
+  this.XLoader = XLoader(this);
+  this.XImageLoader = XImageLoader(this);
 
   //jsh_client_embed
   this.App = {};
@@ -168,6 +168,11 @@ jsHarmony.prototype.getInstance = function(){
   return this._instance;
 }
 
+jsHarmony.prototype.getFileProxy = function(){
+  var _this = this;
+  return _this.$root('#'+_this.getInstance()+'_xfileproxy');
+}
+
 jsHarmony.prototype.BindEvents = function(){
   var _this = this;
   $(document).ready(function(){ _this.Init(); });
@@ -180,7 +185,7 @@ jsHarmony.prototype.BindEvents = function(){
 jsHarmony.prototype.Init = function(){
   var _this = this;
   if(_this.root.find('body').length) _this.root = _this.root.find('body');
-  this.imageLoader = new XImageLoader();
+  this.imageLoader = new this.XImageLoader();
 	this.imageLoader.loadqueue = new Array(
 		'/images/loading.gif',
 		'/images/arrow_down.png',
@@ -189,7 +194,7 @@ jsHarmony.prototype.Init = function(){
 		'/images/arrow_up_over.png'
   );
   this.imageLoader.StartLoad();
-	this.xLoader = new XLoader();
+	this.xLoader = new this.XLoader();
   $('html').click(function () {
     if (_this.xContextMenuVisible) {
       _this.xContextMenuVisible = false;
@@ -235,20 +240,20 @@ jsHarmony.prototype.DefaultErrorHandler = function(num,txt){
 }
 
 jsHarmony.prototype.debugConsole = function (txt,clear) {
-  this.$root('#xdebugconsole').show();
-  if(clear) this.$root('#xdebugconsole').empty();
-  this.$root('#xdebugconsole').prepend(txt+'<br/>');
+  this.$root('.xdebugconsole').show();
+  if(clear) this.$root('.xdebugconsole').empty();
+  this.$root('.xdebugconsole').prepend(txt+'<br/>');
 }
 jsHarmony.prototype.InitDialogs = function () {
   this.root.append($('\
-    <div id="xdialogblock" style="display:none;">\
-    <div id="xalertbox" class="xdialogbox"><div id="xalertmessage"></div><div align="center"><input type="button" value="OK" /></div></div>\
-    <div id="xconfirmbox" class="xdialogbox"><div id="xconfirmmessage"></div><div align="center"><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="No" class="button_no" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
-    <div id="xpromptbox" class="xdialogbox xpromptbox"><div id="xpromptmessage"></div><div align="right"><input id="xpromptfield" type="text"><br/><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
-    <div id="xtextzoombox" class="xdialogbox xtextzoombox"><div id="xtextzoommessage"></div><div align="right"><textarea id="xtextzoomfield"></textarea><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
+    <div class="xdialogblock" style="display:none;">\
+    <div class="xdialogbox xalertbox"><div class="xalertmessage"></div><div align="center"><input type="button" value="OK" /></div></div>\
+    <div class="xdialogbox xconfirmbox"><div class="xconfirmmessage"></div><div align="center"><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="No" class="button_no" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
+    <div class="xdialogbox xpromptbox"><div class="xpromptmessage"></div><div align="right"><input class="xpromptfield" type="text"><br/><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
+    <div class="xdialogbox xtextzoombox"><div class="xtextzoommessage"></div><div align="right"><textarea class="xtextzoomfield"></textarea><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
     </div>\
-    <div id="xdebugconsole"></div>\
-    <div id="xloadingblock" style="display:none;"><div><div id="xloadingbox">Loading<br/><img src="/images/loading.gif" alt="Loading" title="Loading" /></div></div></div>\
+    <div class="xdebugconsole"></div>\
+    <div class="xloadingblock" style="display:none;"><div><div class="xloadingbox">Loading<br/><img src="/images/loading.gif" alt="Loading" title="Loading" /></div></div></div>\
   '));
 };
 jsHarmony.prototype.XWindowResize = function (source) {
@@ -269,14 +274,14 @@ jsHarmony.prototype.XWindowResize = function (source) {
   this.XMenu.XMenuResize();
 }
 jsHarmony.prototype.XDialogResize = function (source, params) {
-  this.$root('#xdialogblock').css('width', params.pw + 'px');
-  this.$root('#xdialogblock').css('height', params.ph + 'px');
+  this.$root('.xdialogblock').css('width', params.pw + 'px');
+  this.$root('.xdialogblock').css('height', params.ph + 'px');
 
-  this.$root('#xdebugconsole').css('top', params.stop + 'px');
-  this.$root('#xdebugconsole').css('left', params.sleft + 'px');
-  this.$root('#xdebugconsole').css('width', params.ww + 'px');
+  this.$root('.xdebugconsole').css('top', params.stop + 'px');
+  this.$root('.xdebugconsole').css('left', params.sleft + 'px');
+  this.$root('.xdebugconsole').css('width', params.ww + 'px');
 
-  this.$root('#xdialogblock .xdialogbox').each(function () {
+  this.$root('.xdialogblock .xdialogbox').each(function () {
     var jobj = $(this);
     if (!jobj.is(':visible')) return;
     if (document.activeElement && $(document.activeElement).is('input,select,textarea') && $(document.activeElement).parents(jobj).length) {
@@ -309,14 +314,14 @@ jsHarmony.prototype.InitXFileUpload = function () {
   this.xfileuploadLoader = new Object();
   document.write('\
     <div style="display:none;">\
-	    <div id="xfileuploader" class="colorbox_inline" align="center" style="height:80px;"><div style="position:relative;">\
-        <form id="xfileuploader_form" enctype="multipart/form-data" method="post" target="xfileproxy">\
+	    <div class="xfileuploader colorbox_inline" align="center" style="height:80px;"><div style="position:relative;">\
+        <form class="xfileuploader_form" enctype="multipart/form-data" method="post" target="'+this.getInstance()+'_xfileproxy">\
           <input type="hidden" name="MAX_FILE_SIZE" value="'+this.Config.max_filesize+'" />\
-          <input type="hidden" name="prevtoken" id="xfileuploader_prevtoken" value="" />\
+          <input type="hidden" name="prevtoken" class="xfileuploader_prevtoken" value="" />\
           <table cellspacing="3">\
             <tr>\
               <td align="right">Upload File:</td>\
-              <td align="left"><input type="file" id="xfileuploader_file" name="file" /></td>\
+              <td align="left"><input type="file" class="xfileuploader_file" name="file" /></td>\
             </tr>\
             <tr>\
               <td></td>\
@@ -327,14 +332,15 @@ jsHarmony.prototype.InitXFileUpload = function () {
           </table>\
         </form>\
       </div></div>\
-      <iframe id="xfileproxy" name="xfileproxy" src="about:blank" style="width:0;height:0;border:0px solid #fff;"></iframe>\
+      <iframe id="'+this.getInstance()+'_xfileproxy" name="'+this.getInstance()+'_xfileproxy" src="about:blank" style="width:0;height:0;border:0px solid #fff;"></iframe>\
     </div>');
 };
 
 jsHarmony.prototype.SelectMenu = function (menuid) {
-  this.$root('#xmenu').children('a').each(function (i, obj) {
+  var _this = this;
+  _this.$root('.xmenu').children('a').each(function (i, obj) {
     var jobj = $(obj);
-    var jsideobj =this.$root('#side'+obj.id);
+    var jsideobj = _this.$root('.side'+obj.id);
     if (obj.id == 'menu_' + String(menuid).toUpperCase()) {
       if (!jobj.hasClass('selected')) jobj.addClass('selected');
       if (!jsideobj.hasClass('selected')) jsideobj.addClass('selected');
@@ -353,7 +359,7 @@ jsHarmony.prototype.requireHTML5 = function(){
   $(document).ready(function() {
     if (!document.createElement('canvas').getContext) {
       var content = '\
-      <div id="browser_upgrade_msg" style="height: 120px; text-align: center; width: 450px;">\
+      <div class="browser_upgrade_msg" style="height: 120px; text-align: center; width: 450px;">\
         <p>In order to use this system, you will need to upgrade your web browser to a modern version that supports HTML5.  Please click "Upgrade" to view supported browsers.</p>\
         <div>\
         <input style="padding:2px 6px;" type="button" value="Upgrade" onclick="window.location.href=\'http://www.browsehappy.com\';" />\

@@ -44,9 +44,9 @@ exports = module.exports = function(jsh){
       jsh.xLoader.StopLoading(_this.Loader);
       _this.Result();
     };
-    $("body").append('\
-      <iframe id="xpaymentproxy" name="xpaymentproxy" src="about:blank" onload="'+jsh.getInstance()+'.onPaymentProxyComplete(this);" style="width:0;height:0;border:0px solid #fff;"></iframe>\
-      <div id="xpaymentformcontainer" style="position:absolute;top:0px;left:0px;width:1px;height:1px;overflow:hidden;"></div>\
+    jsh.root.append('\
+      <iframe id="'+jsh.getInstance()+'_xpaymentproxy" name="'+jsh.getInstance()+'_xpaymentproxy" src="about:blank" onload="'+jsh.getInstance()+'.onPaymentProxyComplete(this);" style="width:0;height:0;border:0px solid #fff;"></iframe>\
+      <div class="xpaymentformcontainer" style="position:absolute;top:0px;left:0px;width:1px;height:1px;overflow:hidden;"></div>\
     ');
     this.Initialized = true;
   }
@@ -83,16 +83,16 @@ exports = module.exports = function(jsh){
       x_zip: payment_data.PACC_Zip,
       x_country: 'US'
     };
-    var formhtml = '<form id="xpaymentform" method="post" target="xpaymentproxy">';
+    var formhtml = '<form class="xpaymentform" method="post" target="'+jsh.getInstance()+'_xpaymentproxy">';
     _.each(d, function (val, key) {
       if (typeof val == 'undefined') return;
       formhtml += '<INPUT TYPE="HIDDEN" NAME="' + jsh.XExt.escapeHTML(key) + '" VALUE="' + jsh.XExt.escapeHTML(val) + '" />';
     });
     formhtml += '</form>';
-    $('#xpaymentformcontainer').html(formhtml);
-    $('#xpaymentform').attr('action', fp_data.fp_url);
+    jsh.$root('.xpaymentformcontainer').html(formhtml);
+    jsh.$root('.xpaymentform').attr('action', fp_data.fp_url);
     jsh.xLoader.StartLoading(this.Loader);
-    $('#xpaymentform').submit();
+    jsh.$root('.xpaymentform').submit();
   }
   XPayment.prototype.Result = function() {
     var _this = this;
