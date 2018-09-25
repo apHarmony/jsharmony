@@ -15505,7 +15505,10 @@ var jsHarmony = function(options){
   this.globalparams = {};
   this.Config = {
     max_filesize: 50000000,
-    require_html5_after_login: true
+    require_html5_after_login: true,
+    debug_params: {
+      ignore_globals: []
+    }
   };
   this.singlepage = false;
   this.prev_title = '';
@@ -15763,8 +15766,10 @@ jsHarmony.prototype.runGlobalsMonitor = function(){
     _this.globalsMonitorTimer = null;
     for(var id in window){
       if(!(id in _this.globalsMonitorCache)){
-        _this.XExt.Alert('New global variable: window.'+id);
         _this.globalsMonitorCache[id] = true;
+        if(_.includes(['google','_xdc_'],id)) continue;
+        if(_.includes(_this.Config.debug_params.ignore_globals,id)) continue;
+        _this.XExt.Alert('New global variable: window.'+id);
       }
     }
     _this.runGlobalsMonitor();

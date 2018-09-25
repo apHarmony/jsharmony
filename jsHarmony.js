@@ -149,9 +149,9 @@ jsHarmony.prototype.Init = function(init_cb){
       _this.ParsePopups();
 
       //Validate Configuration
-      _this.Config.Validate();
+      _this.Config.Validate(_this,'jsHarmony');
       for(var moduleName in _this.Modules){
-        _this.Modules[moduleName].Config.Validate();
+        _this.Modules[moduleName].Config.Validate(_this,'module '+moduleName);
       }
 
       _this.map = _this.Config.field_mapping;

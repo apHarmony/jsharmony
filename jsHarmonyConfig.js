@@ -25,7 +25,16 @@ var os = require('os');
 function jsHarmonyConfigBase(){
 }
 //Validate Configuration, if applicable
-jsHarmonyConfigBase.prototype.Validate = function(){
+jsHarmonyConfigBase.prototype.Validate = function(jsh, desc){
+  if(!jsh) throw new Error('jsHarmony object required for validation');
+  if('_validProperties' in this){
+    var props = _.keys(this);
+    var diff = _.difference(props,this._validProperties,['_validProperties']);
+    if(diff && diff.length){
+      jsh.LogInit_ERROR('Invalid setting'+((diff.length>1)?'s':'')+(desc?' in '+desc:'')+' config: '+diff.join(', '));
+    }  
+  }
+
   return true;
 }
 //Initialize Configuration - Apply Default Values
@@ -66,6 +75,8 @@ function jsHarmonyConfig(config){
     
     db_requests: false,        //Log every database request through DB.js
     db_error_sql_state: true,  //Log SQL state during DB error
+
+    ignore_globals: [],        //Ignore these global variables in the client-side global monitor
   };
   //Number of rows returned per grid load
   this.default_rowlimit = 50;
@@ -211,6 +222,8 @@ function jsHarmonyConfig(config){
 
   //Modules
   this.modules = {};
+
+  this._validProperties = _.keys(this);
 
   if(config) this.Merge(config);
 }
