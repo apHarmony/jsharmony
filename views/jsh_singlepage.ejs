@@ -47,7 +47,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var XImageLoader = jsh.XImageLoader;
   var CODE_EJSPREPEND = '<!--'+'%%%EJSPREPEND%%%'+'-->';
 
-  jsh._instance = <%-JSON.stringify(req.jshsite.instance)%>;
+  jsh.jslocals = <%-JSON.stringify(req.getJSLocals())%>;
   jsh.state = { GET:{},QS:'',fullpath:'',fullurl:jsh._BASEURL,hash:'',modelid:'',path:'' };
   jsh.Config.max_filesize = <%-JSON.stringify(jsh.Config.max_filesize)%>;
   jsh.Config.require_html5_after_login = <%-JSON.stringify(jsh.Config.require_html5_after_login)%>;

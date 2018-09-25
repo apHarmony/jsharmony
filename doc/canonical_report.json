@@ -34,7 +34,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     {"name":"C_ID","type":"bigint","datalock":{"C_ID":"client_C_C_ID"},"nl":1,
 	      "control":"dropdown_L","actions": "B",
         "lov": { "sql": "select C_ID as CODEVal,C_Name as CODETxt from C where 1=1 %%%DATALOCKS%%% order by C_Name", "datalock":{"C_ID":"client_C_ID"}, "blank": "(All)" },
-        "default": "js:XExt.UndefinedBlank(_GET['C_ID'])", //Set a default value for the field if in query string
+        "default": "js:XExt.UndefinedBlank(jsh._GET['C_ID'])", //Set a default value for the field if in query string
         "caption":"Company Name"},
     {"name": "MDate","type": "date","nl": 1,"actions": "B",
       "control": "date_mmddyy","sample": "01/28/11","validate": [ "Required" ],
@@ -50,7 +50,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     {"control":"button","value":"Email to Clients","controlstyle": "padding:3px 8px;", "onclick": "jsh.XRunQueue();"}
   ],
   //Code to disable an element if its value has been set in the query string
-  "onload": "if(xform__report_REPORTNAME.Data.C_ID){ jsh.XDisable(jsh.$root('.C_ID.xelem_report_REPORTNAME')); }",
+  "onload": "if(jsh.App.xform__report_REPORTNAME.Data.C_ID){ jsh.XDisable(jsh.$root('.C_ID.xelem_report_REPORTNAME')); }",
   //onload,oninit,oninsert
   //Page header can contain styles and images, and refer to the page number.  Any image used in the header must be also included in the report body.  Set body image style to "display:none" if necessary.
   "pageheader" : "<h3 style=\"font-size:20px;font-family:'Droid Sans';\"><center><%=data.GPP[0].GPP_NAME%><img width='200' style='position:fixed;right:-0px;top:-12px;' src='file:<%='/'+'/'+'/'%><%=jsh.Config.datadir%>../public/images/logo.png' align='right' /></center></h3>",

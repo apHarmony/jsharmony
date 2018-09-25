@@ -50,20 +50,25 @@ exports.RenderListing = function () {
 }
 
 //Get global variables inserted into client window context
-exports.getJSClientParams = function (req, jsh) {
+exports.getJSClientParams = function (req) {
   var _this = this;
   var rslt = '{';
   rslt += '_debug: ' + (req.jshsite.show_system_errors?'true':'false') + ',';
   rslt += '_BASEURL: \'' + req.baseurl + '\',';
   rslt += 'forcequery: ' + JSON.stringify(req.forcequery) + ',';
-  rslt += 'home_url: ' + JSON.stringify(jsh.Config.home_url) + ',';
-  rslt += 'uimap: ' + JSON.stringify(jsh.uimap) + ',';
+  rslt += 'home_url: ' + JSON.stringify(_this.Config.home_url) + ',';
+  rslt += 'uimap: ' + JSON.stringify(_this.uimap) + ',';
+  rslt += '_instance: ' + JSON.stringify(req.jshsite.instance) + ',';
   if (req.isAuthenticated) {
     if (_this.Config.google_settings && _this.Config.google_settings.API_KEY) rslt += 'google_api_key: ' + JSON.stringify(_this.Config.google_settings.API_KEY) + ',';
     rslt += 'isAuthenticated: true,';
   }
   rslt += '}';
   return rslt;
+}
+
+exports.getJSLocals = function(req){
+  return 'var jsh = '+req.jshsite.instance+';var $ = jsh.$;var _ = jsh._;var async = jsh.async;var moment=jsh.moment;var ejs = jsh.ejs;var XExt = jsh.XExt;var XPost = jsh.XPost;var XValidate = jsh.XValidate;var _GET = jsh._GET;var XBase = jsh.XBase; var XForms = jsh.XForms;'
 }
 
 //Return a 404 error page

@@ -116,7 +116,7 @@ exports = module.exports = function(jsh){
   }
 
   XExt.CallAppFunc = function (q, method, d, onComplete, onFail, options){
-    if(!XExt.jsh) throw new Error('XExt requires jsHarmony instance to run CallAppFunc');
+    if(!jsh) throw new Error('XExt requires jsHarmony instance to run CallAppFunc');
     if(!options) options = {};
     var getVars = function () {
       for (var dname in d) {
@@ -221,14 +221,14 @@ exports = module.exports = function(jsh){
   }
 
   XExt.AddHistory = function (url, obj, title) {
-    if (XExt.jsh && !jsh.isHTML5) return;
+    if (jsh && !jsh.isHTML5) return;
     if (typeof obj == 'undefined') obj = {};
     if (typeof title == 'undefined') title = document.title;
     window.history.pushState(obj, title, url);
   }
 
   XExt.ReplaceHistory = function (url, obj, title) {
-    if (XExt.jsh && !jsh.isHTML5) return;
+    if (jsh && !jsh.isHTML5) return;
     if (typeof obj == 'undefined') obj = {};
     if (typeof title == 'undefined') title = document.title;
     window.history.replaceState(obj, title, url);
@@ -620,7 +620,7 @@ exports = module.exports = function(jsh){
   }
 
   XExt.getJSLocals = function(){
-    return 'var jsh = '+jsh.getInstance()+';var $ = jsh.$;var _ = jsh._;var async = jsh.async;var moment=jsh.moment;var ejs = jsh.ejs;var XExt = jsh.XExt;var XPost = jsh.XPost;var XValidate = jsh.XValidate;var _GET = jsh._GET;var XBase = jsh.XBase; var XForms = jsh.XForms;'
+    return jsh.jslocals;
   }
 
   XExt.JSEval = function(str,_thisobj){

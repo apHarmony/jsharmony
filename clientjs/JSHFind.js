@@ -61,6 +61,7 @@ exports.search = function (data, q, fpath){
   var pos = -1;
   if (q instanceof RegExp) {
     //Regular Expression
+    var rm = null;
     while (rm = q.exec(data)) {
       m.push(rm.index);
       mlen.push(rm[0].length);

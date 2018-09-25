@@ -56,6 +56,7 @@ var jsHarmony = function(options){
   this._debug = false;
   this.home_url = '';
   this.uimap = {};
+  this._instance = '';
   this.google_api_key = '';
   this.isAuthenticated = false;
   for(var key in options) this[key] = options[key];
@@ -125,11 +126,10 @@ var jsHarmony = function(options){
   this.cancelExit = false;
   this.XForm_CustomShortcutKeys = function(e){ return false; /*  Return true if the shortcut key is handled */ };
 
-  
-  this._instance = '';
   this.root = $(document);
   this.globalsMonitorCache = {};
   this.globalsMonitorTimer = null;
+  this.jslocals = '';
 
   //singlepage
   this.cur_model = null;

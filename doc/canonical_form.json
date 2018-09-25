@@ -123,7 +123,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "class": "", 
       "roles": { "client": { "CLIENT": "*", "C_ADMIN": "B" } }, 
       "nl": 1 }, //or just put the link for add
-    {"link":"js:C_LOVBAR_Add(this,xformid);", "icon": "add", "text": "Add Customer", "actions": "B" },
+    {"link":"js:jsh.App.C_LOVBAR.Add(this,xformid);", "icon": "add", "text": "Add Customer", "actions": "B" },
     {"link": "savenew:", "icon": "add", "text": "Save and New", "actions": "IU" }
     {"link": "savenew:", "icon": "add", "text": "Save and New", "actions": "IU", "group":"Actions" }
     //Buttons without I actions will not show up on Insert
@@ -156,7 +156,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "key": 1, //If key exists, then this is a key field
       "lovkey": 1, //Used by Multisel to enable additional foreign key in LOV expression, without being a required parameter
       "virtual": 1, //Field is not bound on I/U, can be B, but will not pull updates or respond to HasUpdates
-      "static": "js:XExt.UndefinedBlank(_GET['J_ID'])", //Static binding, overwrite existing data from form
+      "static": "js:XExt.UndefinedBlank(jsh._GET['J_ID'])", //Static binding, overwrite existing data from form
       "unbound": 1, //Field is completely unbound, not added to Fields array
       "sqlselect": "@BXBUY_ID", //Override select sql for this field on Grid select
       "sqlupdate": "@BXBUY_ID+5",

@@ -48,7 +48,8 @@ var jsHarmonyRouter = function (jsh, siteid) {
       Models: { },
     };
     req.forcequery = {};
-    req.getJSClientParams = function () { return jsh.getJSClientParams(req, jsh); }
+    req.getJSClientParams = function () { return jsh.getJSClientParams(req); }
+    req.getJSLocals = function(){ return jsh.getJSLocals(req); }
     req.getJSH = function() { return jsh; };
     if (jsh.Config.debug_params.web_detailed_errors) req._web_detailed_errors = 1;
     setNoCache(req,res);
