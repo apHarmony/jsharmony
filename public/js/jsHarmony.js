@@ -468,7 +468,7 @@ XValidate.prototype.AddControlValidator = function (_control, _field, _caption, 
   this.Validators.push(new XValidator(_field, _caption, _actions, _funcs, _control));
 };
 XValidate.prototype.ResetValidation = function (field, parentobj) {
-  if (!parentobj) parentobj = this.jsh.$(document);
+  if (!parentobj) parentobj = this.jsh.root;
   this.Errors.length = 0;
   field = field || '';
   for (var i = 0; i < this.Validators.length; i++) {
@@ -484,7 +484,7 @@ XValidate.prototype.ValidateControls = function (perms, _obj, field, parentobj) 
   var _this = this;
   field = field || '';
   var firstErrorControl = '';
-  if (!parentobj) parentobj = _this.jsh.$(document);
+  if (!parentobj) parentobj = _this.jsh.root;
   this.ResetValidation(field, parentobj);
   var verrors = this.Validate(perms, _obj, field);
   if (!isEmpty(verrors)) {
@@ -504,12 +504,12 @@ XValidate.prototype.ValidateControls = function (perms, _obj, field, parentobj) 
     
     _this.jsh.XExt.Alert(errstr, function () {
       if (firstErrorControl != '') {
-        window.ent_ignorefocusHandler = true;
+        _this.jsh.ignorefocusHandler = true;
         window.setTimeout(function () {
           _this.jsh.$(document.activeElement).blur();
           parentobj.find(firstErrorControl).focus();
           parentobj.find(firstErrorControl).select();
-          window.setTimeout(function () { window.ent_ignorefocusHandler = false; }, 1);
+          window.setTimeout(function () { _this.jsh.ignorefocusHandler = false; }, 1);
         }, 1);
       }
     });
@@ -1127,7 +1127,7 @@ exports = module.exports = function(jsh){
       data: reqdata,
       dataType: 'json',
       success:function(data){
-        loadtime = ((new Date()).getTime() - starttime);
+        var loadtime = ((new Date()).getTime() - starttime);
         if((rowstart > 0) && (loadtime < 500)){
           window.setTimeout(function(){ _this.ProcessData(data,rowstart,onComplete,reqdata); },500-loadtime);
         }
@@ -1419,7 +1419,7 @@ exports = module.exports = function(jsh){
       //Set List of Values
       if ('_LOVs' in this) {
         for (var _LOV in this._LOVs) {
-          var lovselector = '#' + _LOV + '.xelem' + modelid;
+          var lovselector = '.' + _LOV + '.xelem' + modelid;
           if (isGrid) lovselector = '.' + _LOV + '.xelem' + modelid;
           var ctrl = parentobj.find(lovselector);
           if (('control' in this.Fields[_LOV]) && (this.Fields[_LOV].control == 'tree'))
@@ -1442,7 +1442,7 @@ exports = module.exports = function(jsh){
         XExtXForm.RenderField(_this, parentobj, modelid, field);
       });
       if (jsh.XForms[modelid]._layout == 'form-m') {
-        jsh.$root('#navtext_' + modelid).html((jsh.App['xform_' + modelid].Index + 1) + ' of ' + jsh.App['xform_' + modelid].Count());
+        jsh.$root('.navtext_' + modelid).html((jsh.App['xform_' + modelid].Index + 1) + ' of ' + jsh.App['xform_' + modelid].Count());
       }
     };
   };
@@ -1468,12 +1468,12 @@ exports = module.exports = function(jsh){
     if ((field.name in _this) && (typeof val == 'undefined')) val = '';
     else val = jsh.XFormat.Apply(field.format, val);
     
-    var fieldselector = '#' + field.name + '.xelem' + modelid;
+    var fieldselector = '.' + field.name + '.xelem' + modelid;
     if (isGrid) fieldselector = '.' + field.name + '.xelem' + modelid;
     var jctrl = parentobj.find(fieldselector);
     if (('control' in field) && (field.control == 'file_upload')) {
       //Show "Upload File" always
-      var filefieldselector = '.xelem' + modelid + ' #' + field.name;
+      var filefieldselector = '.xelem' + modelid + ' .' + field.name;
       if (isGrid) filefieldselector = '.xelem' + modelid + ' .' + field.name;
       var jctrl_download = parentobj.find(filefieldselector + '_download');
       var jctrl_upload = parentobj.find(filefieldselector + '_upload');
@@ -1600,7 +1600,6 @@ exports = module.exports = function(jsh){
     return function (obj, e) {
       var jobj = $(obj);
       var id = $(obj).data('id');
-      if(!id) id = $(obj).attr('id');
       var field = this.Fields[id];
       var _this = this;
       if (!jsh.is_add) {
@@ -1640,12 +1639,12 @@ exports = module.exports = function(jsh){
       if (this._jrow) parentobj = this._jrow;
       var isGrid = (jsh.XForms[modelid]._layout == 'grid');
       
-      var fieldselector = '#' + field.name + '.xelem' + modelid;
+      var fieldselector = '.' + field.name + '.xelem' + modelid;
       if (isGrid) fieldselector = '.' + field.name + '.xelem' + modelid;
       var jctrl = parentobj.find(fieldselector);
 
       if (('control' in field) && (field.control == 'file_upload')) {
-        var filefieldselector = '.xelem' + modelid + ' #' + field.name;
+        var filefieldselector = '.xelem' + modelid + ' .' + field.name;
         if (isGrid) filefieldselector = '.xelem' + modelid + ' .' + field.name;
 
         var jctrl_token = parentobj.find(filefieldselector + '_token');
@@ -1810,14 +1809,14 @@ exports = module.exports = function(jsh){
           if (lovparents.length == 0) return;
           var lovparents_val = '';
           for (var i = 0; i < lovparents.length; i++) {
-            var curselector = (isGrid?'.':'#') + lovparents[i] + '.xelem' + modelid;
+            var curselector = (isGrid?'.':'.') + lovparents[i] + '.xelem' + modelid;
             lovparents_selector += ((i > 0)?',':'') + curselector;
             lovparents_val += 'parentvals.push(parentobj.find("' + curselector + '").val()); ';
           }
           parentobj.find(lovparents_selector).change(function (evt) {
             var parentvals = [];
             //Narrow value of child LOV to values where CODVAL1 = that value
-            var ctrl = parentobj.find((isGrid?'.':'#') + field.name + '.xelem' + modelid);
+            var ctrl = parentobj.find((isGrid?'.':'.') + field.name + '.xelem' + modelid);
             jsh.XExt.JSEval(lovparents_val,this);
             jsh.XExt.RenderParentLOV(xform.Data, ctrl, parentvals, xform.Data._LOVs[field.name], xform.Data.Fields[field.name], ('lovparents' in field));
           });
@@ -2292,10 +2291,11 @@ exports = module.exports = function(jsh){
 
   XExt.CKEditor = function (id) {
     if (CKEDITOR.instances[id]) return;
-    var elem = jsh.$root('#' + id);
+    var elem = jsh.$root('.' + id+'.xform_ctrl');
+    if(!elem.length){ return XExt.Alert('Cound not initialize editor on '+id+': form control not found'); }
     var orig_width = elem.outerWidth();
     var orig_height = elem.outerHeight();
-    elem.wrap('<div id="' + id + '_container" style="width:' + orig_width + 'px;border:1px solid #999;display:inline-block;"></div>');
+    elem.wrap('<div class="' + id + '_container" style="width:' + orig_width + 'px;border:1px solid #999;display:inline-block;"></div>');
     CKEDITOR.replace(id);
   }
   XExt.getOpenerJSH = function(){
@@ -2316,12 +2316,12 @@ exports = module.exports = function(jsh){
     rslt = XExt.ReplaceAll(rslt, '#&gt;', '#>');
     return rslt;
   }
-  XExt.isOnePage = function () {
-    if (jsh.onepage) return true;
+  XExt.isSinglePage = function () {
+    if (jsh.singlepage) return true;
     return false;
   }
   XExt.navTo = function (url) {
-    if (XExt.isOnePage()) {
+    if (XExt.isSinglePage()) {
       var a = XExt.getURLObj(url);
       if (!jsh.Navigate(a, undefined, undefined, undefined)) return false;
     }
@@ -2473,7 +2473,7 @@ exports = module.exports = function(jsh){
     var jctrl = $(ctrl);
     var jtree = jctrl.closest('.xform_ctrl.tree');
     var fieldname = XExt.getFieldFromObject(ctrl);
-    var menuid = '#_item_context_menu_' + fieldname;
+    var menuid = '._item_context_menu_' + fieldname;
     if(jtree.data('oncontextmenu')) { 
       var f = (new Function('n', jtree.data('oncontextmenu'))); 
       var frslt = f.call(ctrl, n);
@@ -2790,37 +2790,37 @@ exports = module.exports = function(jsh){
     jsh.$root('.xpromptfield').focus();
   }
 
-  XExt.CustomPrompt = function (id, html, onInit, onAccept, onCancel, onClosed) {
+  XExt.CustomPrompt = function (sel, html, onInit, onAccept, onCancel, onClosed) {
     //Classes - default_focus, button_ok, button_cancel
-    if (jsh.$root('.xdialogblock #' + id).length) jsh.$root('.xdialogblock #' + id).remove();
+    if (jsh.$root('.xdialogblock ' + sel).length) jsh.$root('.xdialogblock ' + sel).remove();
     jsh.$root('.xdialogblock').append(html);
     
     //ShowDialog
-    jsh.xDialog.unshift('#' + id);
-    jsh.$root('.xdialogblock #' + id).zIndex(jsh.xDialog.length);
+    jsh.xDialog.unshift(sel);
+    jsh.$root('.xdialogblock ' + sel).zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
     
-    jsh.$root('#' + id + ' input').off('click');
-    jsh.$root('#' + id + ' input').off('keydown');
-    var cancelfunc = XExt.dialogButtonFunc('#' + id, oldactive, function () { if (onCancel) onCancel(); if (onClosed) onClosed(); });
-    var acceptfunc_aftervalidate = XExt.dialogButtonFunc('#' + id, oldactive, function () { if (onClosed) onClosed(); });
+    jsh.$root(sel + ' input').off('click');
+    jsh.$root(sel + ' input').off('keydown');
+    var cancelfunc = XExt.dialogButtonFunc(sel, oldactive, function () { if (onCancel) onCancel(); if (onClosed) onClosed(); });
+    var acceptfunc_aftervalidate = XExt.dialogButtonFunc(sel, oldactive, function () { if (onClosed) onClosed(); });
     var acceptfunc = function () {
       //Verify this is the topmost dialog
-      if ((jsh.xDialog.length > 0) && (jsh.xDialog[0] != ('#' + id))) return;
+      if ((jsh.xDialog.length > 0) && (jsh.xDialog[0] != (sel))) return;
       
       if (onAccept) return onAccept(function () { acceptfunc_aftervalidate(); });
       else acceptfunc_aftervalidate();
     }
     if (onInit) onInit(acceptfunc, cancelfunc);
-    jsh.$root('#' + id + ' input.button_ok').on('click', acceptfunc);
-    jsh.$root('#' + id + ' input.button_cancel').on('click', cancelfunc);
-    jsh.$root('#' + id + ' input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    jsh.$root('#' + id + ' input:not(:checkbox):not(:button)').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
-    jsh.$root('.xdialogblock,#' + id).show();
+    jsh.$root(sel + ' input.button_ok').on('click', acceptfunc);
+    jsh.$root(sel + ' input.button_cancel').on('click', cancelfunc);
+    jsh.$root(sel + ' input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    jsh.$root(sel + ' input:not(:checkbox):not(:button)').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
+    jsh.$root('.xdialogblock,' + sel).show();
     jsh.XWindowResize();
-    jsh.$root('#' + id + ' .default_focus').focus();
+    jsh.$root(sel + ' .default_focus').focus();
   }
 
   XExt.ZoomEdit = function (val, caption, options, onAccept, onCancel) {
@@ -2858,7 +2858,7 @@ exports = module.exports = function(jsh){
     var parentmodelid = $(obj).data('model');
     var parentfield = null;
     if (parentmodelid) parentfield = jsh.App['XForm' + parentmodelid].prototype.Fields[fieldid];
-    if (!parentobj) parentobj = jsh.$root('#' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelid);
+    if (!parentobj) parentobj = jsh.$root('.' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelid);
     var numOpens = 0;
     
     popupData[modelid] = {};
@@ -2876,7 +2876,7 @@ exports = module.exports = function(jsh){
       var popup_options = {};
       popup_options = {
         modelid: modelid,
-        href: "#popup_" + fieldid + '.xelem' + parentmodelid, inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, title: title, fixed: true,
+        href: ".popup_" + fieldid + '.xelem' + parentmodelid, inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, title: title, fixed: true,
         fadeOut:0,
         onOpen: function () {
           //When nested popUps are called, onOpen is not called
@@ -2884,9 +2884,9 @@ exports = module.exports = function(jsh){
         onComplete: function () {
           numOpens++;
           if(numOpens==1) xdata.Select();
-          if (jsh.$root('#popup_' + fieldid + '.xelem' + parentmodelid + ' .xfilter_value').first().is(':visible')) jsh.$root('#popup_' + fieldid + ' .xfilter_value').first().focus();
-          else if (jsh.$root('#popup_' + fieldid + '.xelem' + parentmodelid).find('td a').length) jsh.$root('#popup_' + fieldid).find('td a').first().focus();
-            //else jsh.$root('#popup_' + fieldid + '.xelem' + parentmodelid).find('input,select,textarea').first().focus();
+          if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelid + ' .xfilter_value').first().is(':visible')) jsh.$root('.popup_' + fieldid + ' .xfilter_value').first().focus();
+          else if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelid).find('td a').length) jsh.$root('.popup_' + fieldid).find('td a').first().focus();
+            //else jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelid).find('input,select,textarea').first().focus();
         },
         onClosed: function () {
           var found_popup = false;
@@ -2947,8 +2947,8 @@ exports = module.exports = function(jsh){
   }
 
   XExt.getModelId = function (obj) {
-    var xid = $(obj).closest('.xtbl').attr('id');
-    if (!xid) xid = $(obj).closest('.xform').attr('id');
+    var xid = $(obj).closest('.xtbl').data('id');
+    if (!xid) xid = $(obj).closest('.xform').data('id');
     if (!xid) return null;
     return xid.substr(5);
   }
@@ -2987,7 +2987,7 @@ exports = module.exports = function(jsh){
   XExt.ItemContextMenu = function (ctrl) {
     var parent = $(ctrl).closest('.xcontext_parent');
     if (!parent.length) return true;
-    var menuid = '#_item_context_menu_' + parent.attr('id');
+    var menuid = '._item_context_menu_' + parent.data('id');
     if (!jsh.$root(menuid).length) return true;
     XExt.ShowContextMenu(menuid, $(ctrl).data('value'));
     return false;
@@ -3065,17 +3065,17 @@ exports = module.exports = function(jsh){
     return jsh.App['xform_' + id];
   }
   XExt.getFormFromObject = function (ctrl) {
-    var fname = $(ctrl).closest('.xform').attr('id');
+    var fname = $(ctrl).closest('.xform').data('id');
     if (fname) return jsh.App['xform_' + fname.substr(5)];
     return undefined;
   }
   XExt.getModelIdFromObject = function (ctrl) {
-    var fname = $(ctrl).closest('.xform').attr('id');
-    if (fname) return fname.substr(5);;
+    var fname = $(ctrl).closest('.xform').data('id');
+    if (fname) return fname.substr(5);
     return undefined;
   }
   XExt.getFieldFromObject = function (ctrl) {
-    return $(ctrl).closest('.xform_ctrl').attr('id');
+    return $(ctrl).closest('.xform_ctrl').data('id');
   }
   XExt.getFormField = function (xform, fieldname) {
     if (!xform) { XExt.Alert('ERROR: Cannot read field ' + fieldname + ' - Parent form not found.'); return; }
@@ -4019,7 +4019,7 @@ exports = module.exports = function(jsh){
       if (xmenuside.size() > 0) {
         for (var i = 0; i < XMenuItems.length; i++) {
           var xmenuitem = XMenuItems[i];
-          var htmlobj = '<a href="' + xmenuitem.attr('href') + '" onclick="' + xmenuitem.attr('onclick') + '" class="side' + xmenuitem[0].id + ' ' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
+          var htmlobj = '<a href="' + xmenuitem.attr('href') + '" onclick="' + xmenuitem.attr('onclick') + '" class="side' + xmenuitem.data('id') + ' ' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
           xmenuside.append(htmlobj);
         }
       }
@@ -4084,7 +4084,7 @@ exports = module.exports = function(jsh){
           if(link_onclick){
             link_onclick = 'onclick="'+jsh.getInstance()+'.$root(\'.xsubmenuside\').hide(); ' + link_onclick + '"';
           }
-          var htmlobj = '<a href="' + xsubmenuitem.attr('href') + '" ' + link_onclick + ' class="side' + xsubmenuitem[0].id + ' ' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
+          var htmlobj = '<a href="' + xsubmenuitem.attr('href') + '" ' + link_onclick + ' class="' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
           xsubmenuside.append(htmlobj);
         }
       }
@@ -15418,7 +15418,7 @@ var jsHarmony = function(options){
   var _this = this;
 
   //Options
-  this.forceQuery = {};
+  this.forcequery = {};
   this._BASEURL = '/';
   this._debug = false;
   this.home_url = '';
@@ -15492,9 +15492,13 @@ var jsHarmony = function(options){
   this.cancelExit = false;
   this.XForm_CustomShortcutKeys = function(e){ return false; /*  Return true if the shortcut key is handled */ };
 
-  //onepage
+  
   this._instance = '';
   this.root = $(document);
+  this.globalsMonitorCache = {};
+  this.globalsMonitorTimer = null;
+
+  //singlepage
   this.cur_model = null;
   this.state = {};
   this.globalparams = {};
@@ -15502,7 +15506,7 @@ var jsHarmony = function(options){
     max_filesize: 50000000,
     require_html5_after_login: true
   };
-  this.onepage = false;
+  this.singlepage = false;
   this.prev_title = '';
   this.prev_title_src = '';
   this.prev_bcrumbs = '';
@@ -15588,6 +15592,7 @@ jsHarmony.prototype.Init = function(){
   if(this.isAuthenticated && this.Config.require_html5_after_login){
     this.requireHTML5();
   }
+  if(this._debug) this.runGlobalsMonitor();
 }
 
 jsHarmony.prototype.DefaultErrorHandler = function(num,txt){
@@ -15694,7 +15699,7 @@ jsHarmony.prototype.InitXFileUpload = function () {
               <td></td>\
               <td style="padding-top:10px;">\
                 <a class="linkbutton" style="padding-right:15px;" href="#" onClick="'+this.getInstance()+'.XUpload_submit();return false;"><img src="/images/icon_ok.png" alt="Upload" title="Upload" />Upload</a>\
-                <a class="linkbutton" href="javascript:$.colorbox.close()"><img src="/images/icon_cancel.png" alt="Cancel" title="Cancel" />Cancel</a></td>\
+                <a class="linkbutton" href="javascript:'+this.getInstance()+'.$.colorbox.close()"><img src="/images/icon_cancel.png" alt="Cancel" title="Cancel" />Cancel</a></td>\
             </tr>\
           </table>\
         </form>\
@@ -15707,8 +15712,8 @@ jsHarmony.prototype.SelectMenu = function (menuid) {
   var _this = this;
   _this.$root('.xmenu').children('a').each(function (i, obj) {
     var jobj = $(obj);
-    var jsideobj = _this.$root('.side'+obj.id);
-    if (obj.id == 'menu_' + String(menuid).toUpperCase()) {
+    var jsideobj = _this.$root('.side'+jobj.data('id'));
+    if (jobj.hasClass('menu_' + String(menuid).toUpperCase())) {
       if (!jobj.hasClass('selected')) jobj.addClass('selected');
       if (!jsideobj.hasClass('selected')) jsideobj.addClass('selected');
     }
@@ -15747,6 +15752,27 @@ jsHarmony.prototype.requireHTML5 = function(){
     }
   });
 }
+
+jsHarmony.prototype.runGlobalsMonitor = function(){
+  var _this = this;
+  _this.globalsMonitorCache = {};
+  for(var id in window) _this.globalsMonitorCache[id] = true;
+  if(_this.globalsMonitorTimer) window.clearTimeout(_this.globalsMonitorTimer);
+  _this.globalsMonitorTimer = window.setTimeout(function(){
+    _this.globalsMonitorTimer = null;
+    for(var id in window){
+      if(!(id in _this.globalsMonitorCache)){
+        _this.XExt.Alert('New global variable: window.'+id);
+        _this.globalsMonitorCache[id] = true;
+      }
+    }
+    _this.runGlobalsMonitor();
+  },1000);
+}
+
+jsHarmony.prototype.on = function(){ $(this).on.apply($(this), arguments); }
+jsHarmony.prototype.off = function(){ $(this).off.apply($(this), arguments); }
+jsHarmony.prototype.trigger = function(){ $(this).trigger.apply($(this), arguments); }
 
 var jsHarmonyGlobal = { };
 

@@ -52,7 +52,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.Config.max_filesize = <%-JSON.stringify(jsh.Config.max_filesize)%>;
   jsh.Config.require_html5_after_login = <%-JSON.stringify(jsh.Config.require_html5_after_login)%>;
   jsh.globalparams = <%-(('globalparams' in req.jshsite) ? JSON.stringify(_.mapValues(req.jshsite.globalparams,function(val,key){ if(_.isFunction(val)) return val(req); return val; })) : '{}')%>;
-  jsh.onepage = true;
+  jsh.singlepage = true;
   jsh.prev_title = '';
   jsh.prev_title_src = '';
   jsh.prev_bcrumbs = '';
@@ -207,11 +207,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       else jsh.$root('div.bcrumbs').html('&nbsp;'); 
       jsh.prev_bcrumbs_src = jsh.orig_bcrumbs;
 
-      jsh.$root('#toplink_help').not('.static').attr('href',model.helpurl);
-      jsh.$root('#toplink_help').not('.static').attr('onclick',model.helpurl_onclick);
+      jsh.$root('.toplink_help').not('.static').attr('href',model.helpurl);
+      jsh.$root('.toplink_help').not('.static').attr('onclick',model.helpurl_onclick);
       if(model.topmenu){ jsh.SelectMenu(model.topmenu); }
       jsh.ResetLinks();
-      $(document).trigger('jsh_ready');
+      jsh.trigger('jsh_ready');
       return;
     }, function(data){//On Fail
       var closeIfPopup = function(){

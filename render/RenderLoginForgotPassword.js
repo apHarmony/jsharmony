@@ -43,7 +43,7 @@ exports = module.exports = function (req, res, onComplete){
     var email = fdata.username;
     
     //Validate Email
-    if ((email == '') || XValidate.Vex(XValidate._v_IsEmail, email)) { verrors[''] = 'Invalid email address.'; onComplete(RenderPage(jsh, fdata, verrors)); return; }
+    if ((email == '') || XValidate.Vex(XValidate._v_IsEmail, email)) { verrors[''] = 'Invalid email address.'; onComplete(RenderPage(req, jsh, fdata, verrors)); return; }
 
     //Check User against database
     req._DBContext = 'loginforgotpassword';
@@ -65,7 +65,7 @@ exports = module.exports = function (req, res, onComplete){
             var reset_link = Helper.getFullURL(req, req.baseurl + 'login/forgot_password_reset?email=' + encodeURIComponent(email) + '&key=' + crypto.createHash('sha1').update(user_id + req.jshsite.auth.salt + PE_LL_Tstmp).digest('hex'));
             jsh.SendTXTEmail(req._DBContext, 'RESETPASS', PE_Email, null, null, null, { 'PE_NAME': PE_Name, 'SUPPORT_EMAIL': support_email, 'RESET_LINK': reset_link }, function (err) {
               if (err) { jsh.Log.error(err); res.end('An error occurred sending the password reset email.  Please contact support for assistance.'); }
-              else onComplete(RenderPage(jsh, fdata, verrors, "A link to reset your password has been sent to your email address."));
+              else onComplete(RenderPage(req, jsh, fdata, verrors, "A link to reset your password has been sent to your email address."));
             });
             return;
           }
@@ -73,19 +73,20 @@ exports = module.exports = function (req, res, onComplete){
         if(all_suspended) { verrors[''] = 'Your account has been suspended.  Please contact support at <a href="mailto:' + jsh.Config.support_email + '">' + jsh.Config.support_email + '</a> for more information'; }
       }
       else { verrors[''] = 'Invalid email address.'; }
-			onComplete(RenderPage(jsh,fdata,verrors));
+			onComplete(RenderPage(req, jsh,fdata,verrors));
 		});
 	}
-	else onComplete(RenderPage(jsh,fdata));
+	else onComplete(RenderPage(req,jsh,fdata));
 };
 
-function RenderPage(jsh, fdata, verrors, rslt){
+function RenderPage(req, jsh, fdata, verrors, rslt){
 	return ejs.render(jsh.getEJS('jsh_login.forgotpassword'),{ 
 		'fdata':fdata,
 	  'jsh': jsh,
     'verrors': verrors,
     'rslt': rslt,
-		'ejsext':ejsext
+		'ejsext':ejsext,
+    'req': req
 	});
 }
 

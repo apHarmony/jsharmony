@@ -27,7 +27,9 @@ function jsHarmonySite(config){
   this.id = "default";
   this.basetemplate = "index";
   this.baseurl = '/';
+  this.publicurl = '/';
   this.instance = "jshInstance";
+  this.rootcss = '';
   this.show_system_errors = true;
   this.cookiesalt = '';
   this.router = undefined;

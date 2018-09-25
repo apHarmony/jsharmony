@@ -51,7 +51,7 @@ var jsHarmony = function(options){
   var _this = this;
 
   //Options
-  this.forceQuery = {};
+  this.forcequery = {};
   this._BASEURL = '/';
   this._debug = false;
   this.home_url = '';
@@ -125,9 +125,13 @@ var jsHarmony = function(options){
   this.cancelExit = false;
   this.XForm_CustomShortcutKeys = function(e){ return false; /*  Return true if the shortcut key is handled */ };
 
-  //onepage
+  
   this._instance = '';
   this.root = $(document);
+  this.globalsMonitorCache = {};
+  this.globalsMonitorTimer = null;
+
+  //singlepage
   this.cur_model = null;
   this.state = {};
   this.globalparams = {};
@@ -135,7 +139,7 @@ var jsHarmony = function(options){
     max_filesize: 50000000,
     require_html5_after_login: true
   };
-  this.onepage = false;
+  this.singlepage = false;
   this.prev_title = '';
   this.prev_title_src = '';
   this.prev_bcrumbs = '';
@@ -221,6 +225,7 @@ jsHarmony.prototype.Init = function(){
   if(this.isAuthenticated && this.Config.require_html5_after_login){
     this.requireHTML5();
   }
+  if(this._debug) this.runGlobalsMonitor();
 }
 
 jsHarmony.prototype.DefaultErrorHandler = function(num,txt){
@@ -327,7 +332,7 @@ jsHarmony.prototype.InitXFileUpload = function () {
               <td></td>\
               <td style="padding-top:10px;">\
                 <a class="linkbutton" style="padding-right:15px;" href="#" onClick="'+this.getInstance()+'.XUpload_submit();return false;"><img src="/images/icon_ok.png" alt="Upload" title="Upload" />Upload</a>\
-                <a class="linkbutton" href="javascript:$.colorbox.close()"><img src="/images/icon_cancel.png" alt="Cancel" title="Cancel" />Cancel</a></td>\
+                <a class="linkbutton" href="javascript:'+this.getInstance()+'.$.colorbox.close()"><img src="/images/icon_cancel.png" alt="Cancel" title="Cancel" />Cancel</a></td>\
             </tr>\
           </table>\
         </form>\
@@ -340,8 +345,8 @@ jsHarmony.prototype.SelectMenu = function (menuid) {
   var _this = this;
   _this.$root('.xmenu').children('a').each(function (i, obj) {
     var jobj = $(obj);
-    var jsideobj = _this.$root('.side'+obj.id);
-    if (obj.id == 'menu_' + String(menuid).toUpperCase()) {
+    var jsideobj = _this.$root('.side'+jobj.data('id'));
+    if (jobj.hasClass('menu_' + String(menuid).toUpperCase())) {
       if (!jobj.hasClass('selected')) jobj.addClass('selected');
       if (!jsideobj.hasClass('selected')) jsideobj.addClass('selected');
     }
@@ -380,6 +385,27 @@ jsHarmony.prototype.requireHTML5 = function(){
     }
   });
 }
+
+jsHarmony.prototype.runGlobalsMonitor = function(){
+  var _this = this;
+  _this.globalsMonitorCache = {};
+  for(var id in window) _this.globalsMonitorCache[id] = true;
+  if(_this.globalsMonitorTimer) window.clearTimeout(_this.globalsMonitorTimer);
+  _this.globalsMonitorTimer = window.setTimeout(function(){
+    _this.globalsMonitorTimer = null;
+    for(var id in window){
+      if(!(id in _this.globalsMonitorCache)){
+        _this.XExt.Alert('New global variable: window.'+id);
+        _this.globalsMonitorCache[id] = true;
+      }
+    }
+    _this.runGlobalsMonitor();
+  },1000);
+}
+
+jsHarmony.prototype.on = function(){ $(this).on.apply($(this), arguments); }
+jsHarmony.prototype.off = function(){ $(this).off.apply($(this), arguments); }
+jsHarmony.prototype.trigger = function(){ $(this).trigger.apply($(this), arguments); }
 
 var jsHarmonyGlobal = { };
 

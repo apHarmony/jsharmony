@@ -65,10 +65,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   XForm<%=model.id%>.prototype.OnControlUpdate = XExt.XForm.OnControlUpdate();
   XForm<%=model.id%>.prototype.Commit = XExt.XForm.Commit('<%=model.id%>','xform_<%=model.id%>');
   XForm<%=model.id%>.prototype.BindLOV = XExt.XForm.BindLOV('<%=model.id%>');
-  $(document).on('jsh_ready', function(){ XForm<%=model.id%>.prototype.BindLOV(jsh.App.xform_<%=model.id%>); });
+  jsh.on('jsh_ready', function(){ XForm<%=model.id%>.prototype.BindLOV(jsh.App.xform_<%=model.id%>); });
 
   XForm<%=model.id%>.prototype.xvalidate = new XValidate(jsh);
   <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; %>
-  XForm<%=model.id%>.prototype.xvalidate.AddControlValidator('#<%=field.name%>.xelem<%=model.id%>','_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getaccess(model.actions,"BIU"):field.actions)%>',[<%-field.validate%>]);<%});%>
+  XForm<%=model.id%>.prototype.xvalidate.AddControlValidator('.<%=field.name%>.xelem<%=model.id%>','_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getaccess(model.actions,"BIU"):field.actions)%>',[<%-field.validate%>]);<%});%>
 
 })(<%-instance%>);

@@ -23,6 +23,7 @@ var _ = require('lodash');
 var path = require('path');
 var fs = require('fs');
 
+var ejs = require('ejs');
 var ejsext = require('../lib/ejsext.js');
 var Helper = require('../lib/Helper.js');
 var HelperFS = require('../lib/HelperFS.js');
@@ -55,19 +56,19 @@ var jsHarmonyRouter = function (jsh, siteid) {
     return next();
   });
   router.route('/login').all(function (req, res, next) {
-    if(!siteConfig.auth){ console.log('Auth not configured in config'); return next(); }
+    if(!siteConfig.auth){ jsh.Log.error('Auth not configured in config'); return next(); }
     (siteConfig.auth.onRenderLogin || jsh.RenderLogin).call(jsh, req, res, function (rslt) {
       if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Login', body: rslt, XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
   router.route('/login/forgot_password').all(function (req, res, next) {
-    if(!siteConfig.auth){ console.log('Auth not configured in config'); return next(); }
+    if(!siteConfig.auth){ jsh.Log.error('Auth not configured in config'); return next(); }
     (siteConfig.auth.onRenderLoginForgotPassword || jsh.RenderLoginForgotPassword).call(jsh, req, res, function (rslt) {
       if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Forgot Password', body: rslt, XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
   router.route('/login/forgot_password_reset').all(function (req, res, next) {
-    if(!siteConfig.auth){ console.log('Auth not configured in config'); return next(); }
+    if(!siteConfig.auth){ jsh.Log.error('Auth not configured in config'); return next(); }
     (siteConfig.auth.onRenderLoginForgotPasswordReset || jsh.RenderLoginForgotPasswordReset).call(jsh, req, res, function (rslt) {
       if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Reset Password', body: rslt, XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
@@ -80,17 +81,21 @@ var jsHarmonyRouter = function (jsh, siteid) {
     var app = siteConfig.public_apps[i];
     for (var j in app) router.all(j, app[j].bind(jsh.AppSrv));
   }
-  router.get('/system.css', function (req, res) {
+  router.get('/application.css', function (req, res) {
     //Concatenate jsh css with system css
-    var f = function(){ HelperFS.outputContent(req, res, jsh.Cache['jsHarmony.css'] + '\r\n' + jsh.Cache['system.css'],'text/css'); };
+    var f = function(){ HelperFS.outputContent(req, res, ejs.render(jsh.Cache['jsHarmony.css'] + '\r\n' + jsh.Cache['application.css'], { req: req, rootcss: req.jshsite.rootcss }),'text/css'); };
     if(jsh.Cache['jsHarmony.css']) f();
     else{
       var jshDir = path.dirname(module.filename);
       fs.readFile(jshDir + '/../jsHarmony.css','utf8',function(err,data){
-        if(err) console.log(err);
+        if(err) jsh.Log.error(err);
         else{
           jsh.Cache['jsHarmony.css'] = data;
-          f();
+          jsh.LoadFilesToString(jsh.Config.css_extensions, function(err,extdata){
+            if(err) jsh.Log.error(err);
+            jsh.Cache['jsHarmony.css'] += "\r\n" + extdata;
+            f();
+          });
         }
       });
     }
@@ -111,13 +116,13 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   router.get('/logout', function (req, res, next) {
-    if(!siteConfig.auth){ console.log('Auth not configured in config'); return next(); }
+    if(!siteConfig.auth){ jsh.Log.error('Auth not configured in config'); return next(); }
     jsh.RenderLogout(req, res, function (rslt) {
       if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Logout', body: rslt, XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
-  router.get('/system.js', function (req, res) {
-    HelperFS.outputContent(req, res, jsh.Cache['system.js'],'text/javascript');
+  router.get('/application.js', function (req, res) {
+    HelperFS.outputContent(req, res, jsh.Cache['application.js'],'text/javascript');
   });
   for (var i = 0; i < jsh.Config.private_apps.length; i++) {
     var app = jsh.Config.private_apps[i];
@@ -299,11 +304,11 @@ var jsHarmonyRouter = function (jsh, siteid) {
     if (!jsh.hasModel(req, modelid)) return next();
     processModelQuerystring(jsh, req, modelid);
     processCustomRouting('report', req, res, jsh, modelid, function(){
-      genOnePage(jsh, req, res, modelid);
+      genSinglePage(jsh, req, res, modelid);
     });
   });
   router.get('/_model/:modelid', function (req, res, next) {
-    //Return model meta-data for OnePage rendering
+    //Return model meta-data for SinglePage rendering
     var modelid = req.params.modelid;
     if (!jsh.hasModel(req, modelid)) return next();
     processModelQuerystring(jsh, req, modelid);
@@ -345,17 +350,17 @@ var jsHarmonyRouter = function (jsh, siteid) {
     var modelid = req.params.modelid;
     if (!jsh.hasModel(req, modelid)){ return next(); }
     processModelQuerystring(jsh, req, modelid);
-    processCustomRouting('onepage', req, res, jsh, modelid, function(){
-      genOnePage(jsh, req, res, modelid);
+    processCustomRouting('singlepage', req, res, jsh, modelid, function(){
+      genSinglePage(jsh, req, res, modelid);
     });
   });
   
   return router;
 };
 
-function genOnePage(jsh, req, res, modelid){
-  //Render OnePage body content
-  var ejsbody = require('ejs').render(jsh.getEJS('jsh_onepage'), {
+function genSinglePage(jsh, req, res, modelid){
+  //Render SinglePage body content
+  var ejsbody = require('ejs').render(jsh.getEJS('jsh_singlepage'), {
     req: req, _: _, ejsext: ejsext, jsh: jsh,
     srcfiles: jsh.AppSrv.modelsrv.srcfiles,
     popups: jsh.Popups

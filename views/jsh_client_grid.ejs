@@ -2,26 +2,26 @@
 <div class="xbodyhead xelem<%=model.id%>">
 <% if(model.topmost) { %><!--%%%EJSPREPEND%%%--><% } %>
 <% if(!model.topmost && (model.title !== undefined)) { %>
-<h1 id="xtitle<%=model.id%>" class="xtitle xelem<%=model.id%>" style="display:inline-block;padding:0px 0 0px 0;"><%=model.title%></h1>
+<h1 class="xtitle xelem<%=model.id%> xtitle<%=model.id%>" style="display:inline-block;padding:0px 0 0px 0;"><%=model.title%></h1>
 <% }
 
 var xactiontype = 'secondarygrid';
 if(model.topmost) xactiontype = 'top';
 else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in parent) && (parent.tabpos=='top')) xactiontype = 'auxtop';
 %>
-<h1 id="xtitlecaption<%=model.id%>" class="xtitlecaption" style="display:inline-block;"><a href="#" onclick="<%-instance%>.$root('#xfilter_<%=model.id%>').slideToggle(); return false;">(filtered)</a></h1>
+<h1 class="xtitlecaption xtitlecaption<%=model.id%>" style="display:inline-block;"><a href="#" onclick="<%-instance%>.$root('.xfilter_<%=model.id%>').slideToggle(); return false;">(filtered)</a></h1>
 <div class="xactions <%=xactiontype%> xelem<%=model.id%>">
   <%-jsh.RenderEJS('jsh_buttons',ejsparams)%>
   <% if(model.inlinepopup){ %><a href="#" onclick="<%-instance%>.XExt.popupClear('<%=model.id%>',this); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'clear'))%>"><img src="/images/icon_delete.png" alt="Clear" title="Clear" />Clear</a><% } %>
   <% if(model.topmost && (model.commitlevel) && (model.commitlevel != 'none')){ %><a href="#" class="save" onclick="<%-instance%>.XForm_Save();return false;" style="display:none;"><img src="/images/icon_save.png" alt="Save" title="Save" />Save</a><% } %>
   <% if(!model.templates.grid){ %><a href="#" onclick="<%-instance%>.App.XForm<%=model.id%>_AddRow(); return false;" class="xbuttonadd" style="<%-xejs.visible(!model.nogridadd && model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'I'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a><% } %>
-  <a href="#" id="xfilterbutton<%=model.id%>" class="xfilterbutton" onclick="<%-instance%>.App.XForm<%=model.id%>_FilterButton(); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'filter'))%>"><img src="/images/icon_filter.png" alt="Filter" title="Filter" /><span>Filter</span></a>
+  <a href="#" class="xfilterbutton xfilterbutton<%=model.id%>" onclick="<%-instance%>.App.XForm<%=model.id%>_FilterButton(); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'filter'))%>"><img src="/images/icon_filter.png" alt="Filter" title="Filter" /><span>Filter</span></a>
   <a href="/" onclick="<%-instance%>.XPrint(); return false;" style="<%-xejs.visible(model.topmost && xejs.showSystemButton(model,'print'))%>"><img src="/images/icon_print.png" alt="Print" title="Print" />Print</a>
   <a href="#" onclick="<%-instance%>.App.XForm<%=model.id%>_Export(); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'export'))%>"><img src="/images/icon_export.png" alt="Export" title="Export" />Export</a>
   <a href="<%-model.helpurl%>" onclick="<%-model.helpurl_onclick%>" style="<%-xejs.visible(model.topmost && xejs.showSystemButton(model,'help'))%>"><img src="/images/icon_help.png" alt="Help" title="Help" />Help</a>
 </div>
-<div id="xfilter_<%=model.id%>" class="xfilter"></div>
-<script id="xfilter_template_<%=model.id%>" type="text/x-ejs-template">
+<div data-id="xfilter_<%=model.id%>" class="xfilter xfilter_<%=model.id%>"></div>
+<script class="xfilter_template_<%=model.id%>" type="text/x-ejs-template">
   <# 
     var comparison_string = [];
     <%-instance%>.XExt.pushLOV(comparison_string,'contains','Contains');
@@ -93,7 +93,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
   </script>
   </div>
   <% if(!model.templates.grid){ %>
-  <table class="xtbl xelem<%=model.id%>" id="xform<%=model.id%>" style="<%=model.tablestyle%>">
+  <table class="xtbl xelem<%=model.id%> xform<%=model.id%>" data-id="xform<%=model.id%>" style="<%=model.tablestyle%>">
     <thead>
       <tr>
         <% if(model.inlinepopup){ %><th style="text-align:center;" nowrap>Select</th><% } %>
@@ -112,8 +112,8 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
         <%-xejs.iif(model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'D'),'<th></th>')%>
       </tr>
     </thead>
-    <tbody id="xgrid_<%=model.id%>_placeholder"></tbody>
-    <script id="xgrid_<%=model.id%>_template" type="text/x-ejs-template" data-target="#xgrid_<%=model.id%>_placeholder">
+    <tbody class="xgrid_<%=model.id%>_placeholder"></tbody>
+    <script class="xgrid_<%=model.id%>_template" type="text/x-ejs-template" data-target=".xgrid_<%=model.id%>_placeholder">
       <# for(var j=0;j<data.length;j++){ var datarow=data[j]; if(!rowid) rowid = j; #>
       <tr class="<#=(rowid%2==1?'even':'odd')#> <%-model.rowclass%> xrow_<%=model.id%> xrow" style="<%-model.rowstyle%>" data-id="<#=rowid#>">
         <% if(model.inlinepopup){ %><td align="center"><a href="#" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this); return false;">Select</a></td><% } %>
@@ -170,7 +170,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
       popup_model.inlinepopup = 1;
       %>
       <div style="display:none;">
-        <div class="xsubform xpopup xelem<%=model.id%>" id="popup_<%=field.name%>">
+        <div class="xsubform xpopup xelem<%=model.id%> popup_<%=field.name%>">
           <div class="xpanel" style="<%=field.controlparams.popupstyle%>">
             <%-jsh.Render(popup_model,model)%>
           </div>
@@ -186,7 +186,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
   popup_model.inlinepopup = 1;
   %>
   <div style="display:none;">
-    <div class="xsubform xpopup xelem<%=model.id%>" class="colorbox_inline" id="popup_<%=model.id%>_duplicate">
+    <div class="xsubform xpopup xelem<%=model.id%> colorbox_inline popup_<%=model.id%>_duplicate">
       <div class="xpanel" style="<%=model.duplicate.popupstyle%>">
         <%-jsh.Render(popup_model,model)%>
         <div style="text-align:center;padding-top:8px;">

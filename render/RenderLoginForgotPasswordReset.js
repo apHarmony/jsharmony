@@ -65,7 +65,7 @@ exports = module.exports = function (req, res, onComplete) {
                 return "";
               }, XValidate._v_MinLength(6), XValidate._v_MaxLength(50)]);
             verrors = xvalidate.Validate('IU', fdata);
-            if (!_.isEmpty(verrors)) { onComplete(RenderPage(jsh, fdata, verrors)); return; }
+            if (!_.isEmpty(verrors)) { onComplete(RenderPage(req, jsh, fdata, verrors)); return; }
             
             //Genereate new hash
             var PE_Hash = crypto.createHash('sha1').update(user_id + fdata.password + req.jshsite.auth.salt).digest();
@@ -94,14 +94,14 @@ exports = module.exports = function (req, res, onComplete) {
                 Helper.Redirect302(res, req.baseurl);
                 onComplete(false);
                 return;
-                //onComplete(RenderPage(jsh, fdata, verrors, 'Success')); return;
+                //onComplete(RenderPage(req, jsh, fdata, verrors, 'Success')); return;
               }
               else { verrors[''] = 'An unexpected error has occurred'; }
-              onComplete(RenderPage(jsh, account, verrors));
+              onComplete(RenderPage(req, jsh, account, verrors));
             });
             return;
           }
-          onComplete(RenderPage(jsh, fdata, verrors));
+          onComplete(RenderPage(req, jsh, fdata, verrors));
           return;
         }
       }
@@ -110,13 +110,14 @@ exports = module.exports = function (req, res, onComplete) {
   });
 };
 
-function RenderPage(jsh, fdata, verrors, rslt) {
+function RenderPage(req, jsh, fdata, verrors, rslt) {
   return ejs.render(jsh.getEJS('jsh_login.forgotpassword.reset'), {
     'fdata': fdata,
     'jsh': jsh,
     'verrors': verrors,
     'rslt': rslt,
-    'ejsext': ejsext
+    'ejsext': ejsext,
+    'req': req
   });
 }
 

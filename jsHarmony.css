@@ -22,28 +22,28 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 MAIN ELEMENTS
 =============
 */
-.hand { cursor:pointer; cursor:hand; }
-div.clear {
+<%-rootcss%> .hand { cursor:pointer; cursor:hand; }
+<%-rootcss%> div.clear {
 	clear:both;
 }
-a img {	border: none; }
-img a {	border:0; }
-div.nobr { white-space:nowrap; display:inline-block; }
+<%-rootcss%> a img {	border: none; }
+<%-rootcss%> img a {	border:0; }
+<%-rootcss%> div.nobr { white-space:nowrap; display:inline-block; }
 
 /*
 ====
 BODY
 ====
 */
-.xbody {
+<%-rootcss%> .xbody {
 	position:relative;
 	display:inline-block;
 }
-body.popup .xbody {
+<%-(rootcss||'body')%>.popup .xbody {
   display:block;
   padding-right:25px;
 }
-.xactions {
+<%-rootcss%> .xactions {
 	float:left;
 	padding-bottom:15px;
 	padding-left:15px;
@@ -51,7 +51,7 @@ body.popup .xbody {
 	display:inline-block;
 
 }
-.xactions.top {
+<%-rootcss%> .xactions.top {
 /*	position:absolute;*/
   position:relative;
 	padding-bottom:0px;
@@ -60,19 +60,19 @@ body.popup .xbody {
 	float:right;
 /*	left:638px;*/
 }
-.xactions.auxtop {
+<%-rootcss%> .xactions.auxtop {
 	position:relative;
 	top:-5px;
 	/*right:-15px;  Commented, did not look good on ECALW */ 
 	float:right;
 	padding-bottom:10px;
 }
-.xactions.secondarygrid {
+<%-rootcss%> .xactions.secondarygrid {
 	float:right;
 	padding-right:10px;
   min-height:16px;
 }
-.xactions.secondaryform {
+<%-rootcss%> .xactions.secondaryform {
 	float:right;
 	padding-right:10px;
   min-height:16px;
@@ -80,21 +80,23 @@ body.popup .xbody {
   position:relative;
   top:-5px;
 }
-.xactions a,.xactions a:visited {
+<%-rootcss%> .xactions a,
+<%-rootcss%> .xactions a:visited {
 	display:inline-block;
 	color:#000000;
 	text-decoration:none;
 	margin-left:15px;
 }
-.xactions a.first,.xactions a.first:visited {
+<%-rootcss%> .xactions a.first,
+<%-rootcss%> .xactions a.first:visited {
   margin-left:0px;
 }
-.xactions .xactions_dropdown {
+<%-rootcss%> .xactions .xactions_dropdown {
   border:1px solid #bababa;
   display:inline-block;
   padding:5px 10px 4px 14px;
 }
-.xactions .xactions_dropdown .down_arrow {
+<%-rootcss%> .xactions .xactions_dropdown .down_arrow {
   vertical-align:top;
   position:relative;
   top:2px;
@@ -103,106 +105,109 @@ body.popup .xbody {
   font-size:14px;
   color:#333;
 }
-.xactions .xactions_dropdown:hover {
+<%-rootcss%> .xactions .xactions_dropdown:hover {
   border:1px solid #bababa;
   text-decoration:none;
 }
-.xactions a:hover {
+<%-rootcss%> .xactions a:hover {
 	text-decoration:underline;
 }
-.xactions a img {
+<%-rootcss%> .xactions a img {
 	position:relative;
 	top:5px;
 	padding-right:6px;
 }
-.xactions a.navbar {
+<%-rootcss%> .xactions a.navbar {
 	margin-left:0;
 }
-.xactions .navtext {
+<%-rootcss%> .xactions .navtext {
 	display:inline-block;
 	padding-right:6px;
 }
-.xactions_spacer {
+<%-rootcss%> .xactions_spacer {
   width:1px;
   height:1px;
   display:inline-block;
 }
-.xtbl {
+<%-rootcss%> .xtbl {
 	border-spacing:0px;
 	position:relative;
 	border-collapse: collapse;
 	clear:both;
 }
-.xtbl th.sortAsc a {
+<%-rootcss%> .xtbl th.sortAsc a {
 	padding-right:20px;
-	background-image:url('/images/arrow_up.png');
+	background-image:url('<%-req.jshsite.publicurl%>images/arrow_up.png');
 	background-position:100% 6px;
 	background-repeat: no-repeat;
 }
-.xtbl th.sortAsc a:hover {
-/*	background-image:url('/images/arrow_up_over.png');*/
+<%-rootcss%> .xtbl th.sortAsc a:hover {
+/*	background-image:url('<%-req.jshsite.publicurl%>images/arrow_up_over.png');*/
 }
-.xtbl th.sortDesc a {
+<%-rootcss%> .xtbl th.sortDesc a {
 	padding-right:20px;
-	background-image:url('/images/arrow_down.png');
+	background-image:url('<%-req.jshsite.publicurl%>images/arrow_down.png');
 	background-position:100% 6px;
 	background-repeat: no-repeat;
 }
-.xtbl th.sortDesc a:hover {
-/*	background-image:url('/images/arrow_down_over.png');*/
+<%-rootcss%> .xtbl th.sortDesc a:hover {
+/*	background-image:url('<%-req.jshsite.publicurl%>images/arrow_down_over.png');*/
 }
-.xtbl td.xtbl_noresults {
+<%-rootcss%> .xtbl td.xtbl_noresults {
 	padding-top:5px;
 	padding-bottom:5px;
 }
-.xtbl .xtbl_loadmore td {
+<%-rootcss%> .xtbl .xtbl_loadmore td {
 	border-bottom:none;
 	border-right:none;
 	border-left:none;
 	padding:4px 0 0 1px;
 }
-a.xtab{
+<%-rootcss%> a.xtab{
 	display:inline-block;
 }
-.xtabcontrol {
+<%-rootcss%> .xtabcontrol {
 	display:block;
 }
-.xform_caption {
+<%-rootcss%> .xform_caption {
   display:inline-block;
 	padding-left:0px;
 	padding-right:5px;
 }
-.xform_label {
+<%-rootcss%> .xform_label {
   display:inline-block;
 }
-.xtbl td .xform_label {
+<%-rootcss%> .xtbl td .xform_label {
   display:block;
 }
-.xform_file_upload {
+<%-rootcss%> .xform_file_upload {
   display:inline-block;
 }
-.xform_file_upload .linkbutton img { padding-left:0px; }
-.xform_file_upload .xform_file_download { padding-right:25px; }
-.xform_file_upload .xform_file_preview { padding-right:25px; }
-.xform_file_upload .xform_file_upload { padding-right:25px; }
-.xform_file_upload .xform_file_thumbnail { display:block; padding-top:15px; padding-bottom:5px; }
-.xform_file_upload .xform_file_delete {  }
-.xform_file_upload.nodocument .xform_file_download { display:none; }
-.xform_file_upload.nodocument .xform_file_preview { display:none; }
-.xform_file_upload.nodocument .xform_file_delete { display:none; }
-.xform_file_upload.nodocument .xform_file_thumbnail { display:none; }
-.xform_file_upload.uneditable .xform_file_upload { display:none; }
-.xform_file_upload.uneditable .xform_file_delete { display:none; }
-.xform input,.xform select,.xform textarea {
+<%-rootcss%> .xform_file_upload .linkbutton img { padding-left:0px; }
+<%-rootcss%> .xform_file_upload .xform_file_download { padding-right:25px; }
+<%-rootcss%> .xform_file_upload .xform_file_preview { padding-right:25px; }
+<%-rootcss%> .xform_file_upload .xform_file_upload { padding-right:25px; }
+<%-rootcss%> .xform_file_upload .xform_file_thumbnail { display:block; padding-top:15px; padding-bottom:5px; }
+<%-rootcss%> .xform_file_upload .xform_file_delete {  }
+<%-rootcss%> .xform_file_upload.nodocument .xform_file_download { display:none; }
+<%-rootcss%> .xform_file_upload.nodocument .xform_file_preview { display:none; }
+<%-rootcss%> .xform_file_upload.nodocument .xform_file_delete { display:none; }
+<%-rootcss%> .xform_file_upload.nodocument .xform_file_thumbnail { display:none; }
+<%-rootcss%> .xform_file_upload.uneditable .xform_file_upload { display:none; }
+<%-rootcss%> .xform_file_upload.uneditable .xform_file_delete { display:none; }
+<%-rootcss%> .xform input,
+<%-rootcss%> .xform select,
+<%-rootcss%> .xform textarea {
 	margin:2px 10px 2px 0;
 }
-.xtbl td input,.xtbl td textarea {
+<%-rootcss%> .xtbl td input,
+<%-rootcss%> .xtbl td textarea {
   margin:0;
 }
-.xtbl td.xcheckbox_column {
+<%-rootcss%> .xtbl td.xcheckbox_column {
   text-align:center;
 }
-.xicon {
+<%-rootcss%> .xicon {
   display:block;
   margin:0 auto;
   text-align:center;
@@ -210,7 +215,7 @@ a.xtab{
   position:relative;
   top:2px;
 }
-.xform_ctrl_textzoom {
+<%-rootcss%> .xform_ctrl_textzoom {
   height:17px;
   display:inline-block;
   vertical-align:top;
@@ -218,56 +223,62 @@ a.xtab{
   padding-top:0px;
   padding-bottom:0px;
 }
-.xpopuplov_column {
+<%-rootcss%> .xpopuplov_column {
   white-space:nowrap;
 }
-.xinputerror {
+<%-rootcss%> .xinputerror {
 	border: 2px solid red !important;
 }
-.xnorecords {
+<%-rootcss%> .xnorecords {
 	text-align:center;
 	position:relative;
 	height:0px;
 }
-input.updated, select.updated, textarea.updated,
-input.uneditable.updated, select.uneditable.updated, textarea.uneditable.updated 
+<%-rootcss%> input.updated, 
+<%-rootcss%> select.updated, 
+<%-rootcss%> textarea.updated,
+<%-rootcss%> input.uneditable.updated, 
+<%-rootcss%> select.uneditable.updated, 
+<%-rootcss%> textarea.uneditable.updated 
 {
 	background-color:#faf8c2;
 }
-.checkbox_container {
+<%-rootcss%> .checkbox_container {
   display:inline-block;
   padding:4px;
 }
-.checkbox_container.updated {
+<%-rootcss%> .checkbox_container.updated {
   padding:3px;
   background-color:#faf8c2;
   border:1px dashed #aaa;
 }
-input.uneditable,select.uneditable,textarea.uneditable {
+<%-rootcss%> input.uneditable,
+<%-rootcss%> select.uneditable,
+<%-rootcss%> textarea.uneditable {
 	background-color:#f0f0f0;
 	border:1px solid #aaa;
 	color:#000;
 }
-.xcrumbs {
+<%-rootcss%> .xcrumbs {
 	font-size:12px;
 	color:#888888;
 	margin-bottom:12px;
 	margin-top:-8px;
 }
-.xcrumbs a {
+<%-rootcss%> .xcrumbs a {
 	color:#888888;
 }
-h1.xtitlefiltered {
+<%-rootcss%> h1.xtitlefiltered {
   padding-left:9px;
   display:none;
 }
-.xtitlefiltered a{
+<%-rootcss%> .xtitlefiltered a{
   color:#888;
 }
-.xtitlefiltered a:hover{
+<%-rootcss%> .xtitlefiltered a:hover{
   text-decoration:none;
 }
-.xfilter {
+<%-rootcss%> .xfilter {
   padding-bottom:11px;
   font-size:13px;
   display:none;
@@ -276,41 +287,41 @@ h1.xtitlefiltered {
   min-width:500px;
   clear:both;
 }
-.xfilter div {
+<%-rootcss%> .xfilter div {
   padding-bottom:2px;
 }
-.xfilter a {
+<%-rootcss%> .xfilter a {
   display:inline-block;
   color:#000000;
 }
-.xfilter a img {
+<%-rootcss%> .xfilter a img {
   position:relative;
   top:5px;
   padding-left:8px;
   padding-right:8px;
 }
-.xrowcount {
+<%-rootcss%> .xrowcount {
   float:right;
   clear:right;
   display:none;
 }
-a.linkbutton {
+<%-rootcss%> a.linkbutton {
   display:inline-block;
   color:#000000;
 }
-a.linkbutton img {
+<%-rootcss%> a.linkbutton img {
   position:relative;
   top:5px;
   padding-left:5px;
   padding-right:5px;
 }
-.colorbox_inline {
+<%-rootcss%> .colorbox_inline {
 	background-color:white;
 	width:400px;
 	padding-top:15px;
 	padding-bottom:15px;
 }
-.xform_ctrl.tree {
+<%-rootcss%> .xform_ctrl.tree {
   display:inline-block;
   border:1px solid #aaa;
   width:200px;
@@ -319,85 +330,88 @@ a.linkbutton img {
   overflow:auto;
   vertical-align:top;
 }
-.xform_ctrl.tree a.tree_item {
+<%-rootcss%> .xform_ctrl.tree a.tree_item {
   display:block;
   color:#000;
   border:1px solid #fff;
   padding-left:4px;
 }
-.xform_ctrl.tree.uneditable a.tree_item:hover {
+<%-rootcss%> .xform_ctrl.tree.uneditable a.tree_item:hover {
   text-decoration:none;
   cursor:default;
 }
-.xform_ctrl.tree.editable a.tree_item:hover {
+<%-rootcss%> .xform_ctrl.tree.editable a.tree_item:hover {
   background-color:#f5f5ff;
   border:1px solid #ccccff;
   text-decoration:none;
 }
-.xform_ctrl.tree .children {
+<%-rootcss%> .xform_ctrl.tree .children {
   padding-left:19px;
   display:none;
 }
-.xform_ctrl.tree .children.expanded {
+<%-rootcss%> .xform_ctrl.tree .children.expanded {
   display:block;
 }
-.xform_ctrl.tree a.tree_item.nochildren {
+<%-rootcss%> .xform_ctrl.tree a.tree_item.nochildren {
   padding-left:17px; /* Glyph + Standard Padding */
 }
-.xform_ctrl.tree a.tree_item.selected {
+<%-rootcss%> .xform_ctrl.tree a.tree_item.selected {
   font-weight:bold;
   background-color:#f5f5f5;
   border:1px solid #ddd;
 }
-.xform_ctrl.tree .nochildren .glyph {
+<%-rootcss%> .xform_ctrl.tree .nochildren .glyph {
   display:none;
 }
-.xform_ctrl.tree .glyph {
+<%-rootcss%> .xform_ctrl.tree .glyph {
   display:inline-block;
   width:13px;
   color:#aaa;
   cursor:pointer;
   cursor:hand;
 }
-.xform_ctrl.tree.editable a.tree_item:hover .glyph {
+<%-rootcss%> .xform_ctrl.tree.editable a.tree_item:hover .glyph {
   color:#aaccff;
 }
-.xform_ctrl.tree .icon {
+<%-rootcss%> .xform_ctrl.tree .icon {
   position:relative;
   top:4px;
   padding-left:1px;
   padding-right:5px;
   border:0;
 }
-.xform_ctrl.checkbox {
+<%-rootcss%> .xform_ctrl.checkbox {
   position:relative;
   top:2px;
 }
-.xtbl .xform_ctrl.checkbox {
+<%-rootcss%> .xtbl .xform_ctrl.checkbox {
   top:0px;
 }
-.xlookup.icon, .xtextzoom.icon {
+<%-rootcss%> .xlookup.icon, 
+<%-rootcss%> .xtextzoom.icon {
   position:relative;
   top:1px;
   left:-3px;
   margin-right:7px;
 }
-.xrow .xlookup.icon,.xrow .xtextzoom.icon {
+<%-rootcss%> .xrow .xlookup.icon,
+<%-rootcss%> .xrow .xtextzoom.icon {
   left:-1px;
   margin-right:0px;
   margin-left:7px;
 }
-.xpopup .xpanel {
+<%-rootcss%> .xpopup .xpanel {
   overflow:auto;
 }
-.xcontext_menu {
+<%-rootcss%> .xcontext_menu {
   display:none;
   position:absolute;
   top:0px;
   left:0px;
   border-bottom:1px solid #bababa;
 }
-.xcontext_menu a,.xcontext_menu a:visited {
+<%-rootcss%> .xcontext_menu a,
+<%-rootcss%> .xcontext_menu a:visited {
   display:block;
   border-top :1px solid #bababa;
   border-right :1px solid #bababa;
@@ -409,26 +423,26 @@ a.linkbutton img {
   position:relative;
   cursor:pointer; cursor:hand;
 }
-.xcontext_menu img {
+<%-rootcss%> .xcontext_menu img {
   height:12px;
   width:auto;
   position:absolute;
   top:7px;
   left:9px;
 }
-.xcontext_menu a:hover 
+<%-rootcss%> .xcontext_menu a:hover 
 {
   background-color:#ecf0f6;
   text-decoration:none;
 }
-.tdhidden { display:none; }
+<%-rootcss%> .tdhidden { display:none; }
 
 /*
 =================
 LOADING ANIMATION
 =================
 */
-.xloadingblock {
+<%-rootcss%> .xloadingblock {
 	display:none;
 	position:fixed;
 	top:122px;
@@ -437,13 +451,13 @@ LOADING ANIMATION
 	z-index:99999;
 	text-align:center;
 }
-body.popup .xloadingblock { top:0px; }
-.xloadingblock div {
+<%-(rootcss||'body')%>.popup .xloadingblock { top:0px; }
+<%-rootcss%> .xloadingblock div {
 	position:absolute;
 	top:50%;
 	left:50%;
 }
-.xloadingblock div .xloadingbox {
+<%-rootcss%> .xloadingblock div .xloadingbox {
 	display:none;
 	background-color:white;
 	border:3px solid #aaa;
@@ -464,8 +478,8 @@ body.popup .xloadingblock { top:0px; }
 	border-radius: 5px;
 	-moz-border-radius: 5px;
 }
-/*.uie8 .xloadingblock div .xloadingbox { font-family: 'Open Sans Bold', sans-serif; }*/
-.xloadingbox img {
+/*<%-rootcss%> .uie8 .xloadingblock div .xloadingbox { font-family: 'Open Sans Bold', sans-serif; }*/
+<%-rootcss%> .xloadingbox img {
 	padding-top:18px;
 }
 /*
@@ -473,7 +487,7 @@ body.popup .xloadingblock { top:0px; }
 DIALOG BOXES
 ============
 */
-.xdebugconsole {
+<%-rootcss%> .xdebugconsole {
   display:none;
   position:absolute;
   top:0px;
@@ -482,7 +496,7 @@ DIALOG BOXES
   background-color:rgba(0,0,0,0.5);
   z-index:200000;
 }
-.xdialogblock {
+<%-rootcss%> .xdialogblock {
 	position:fixed;
 	top:0px;
 	width:100%;
@@ -495,7 +509,7 @@ DIALOG BOXES
   -moz-transform-style: preserve-3d;
   transform-style: preserve-3d;
 }
-.xdialogblock .xdialogbox {
+<%-rootcss%> .xdialogblock .xdialogbox {
   display:none;
 	position:absolute;
 	top:50%;
@@ -510,68 +524,68 @@ DIALOG BOXES
 	border-radius: 5px;
 	-moz-border-radius: 5px;
 }
-.xalertbox {
+<%-rootcss%> .xalertbox {
 	width:370px;
 	min-height:60px;
 	text-align:left;
 }
-.xconfirmbox {
+<%-rootcss%> .xconfirmbox {
 	width:370px;
 	min-height:60px;
 	text-align:center;
 }
-.xpromptbox {
+<%-rootcss%> .xpromptbox {
 	width:310px;
 	min-height:60px;
 	text-align:left;
 }
-.xtextzoombox {
+<%-rootcss%> .xtextzoombox {
 	width:510px;
 	min-height:60px;
 	text-align:left;
 }
-.xalertmessage,.xconfirmmessage,.xpromptmessage {
+<%-rootcss%> .xalertmessage,
+<%-rootcss%> .xconfirmmessage,
+<%-rootcss%> .xpromptmessage {
   max-height: 400px;
   overflow:auto;
 }
-.xalertbox input,
-.xconfirmbox input,
-.xdialogbox input.button_ok,
-.xdialogbox input.button_no,
-.xdialogbox input.button_cancel {
+<%-rootcss%> .xalertbox input,
+<%-rootcss%> .xconfirmbox input,
+<%-rootcss%> .xdialogbox input.button_ok,
+<%-rootcss%> .xdialogbox input.button_no,
+<%-rootcss%> .xdialogbox input.button_cancel {
   margin: 20px 0 0px 0;
   padding:4px 15px;
 }
-.xpromptfield {
+<%-rootcss%> .xpromptfield {
   margin: 20px 0 0px 0;
   width:100%;
 }
-.xtextzoomfield {
+<%-rootcss%> .xtextzoomfield {
   margin: 20px 0 0px 0;
   width:100%;
   height:300px;
 }
-.xdialogbox h3 {
+<%-rootcss%> .xdialogbox h3 {
   margin-top:5px;
   margin-bottom:5px;
 }
 
-.xform_inputbutton { padding:3px 10px; }
-.xsubmenu_listing { padding-top:4px; }
-.xsubmenu_listing a {
+<%-rootcss%> .xform_inputbutton { padding:3px 10px; }
+<%-rootcss%> .xsubmenu_listing { padding-top:4px; }
+<%-rootcss%> .xsubmenu_listing a {
   display:inline-block;
   padding-top:8px;
   font-size:15px;
 }
 
-
-.formerror {
+<%-rootcss%> .formerror {
 	background-color: red;
 	color: white;
 }
 
- 
-.validatorErrors {
+<%-rootcss%> .validatorErrors {
 	width: 400px;
 	border: 2px solid red;
 	padding: 7px;
@@ -580,7 +594,7 @@ DIALOG BOXES
 	background-color: #f0f0f0;
 }
 
-.validatorErrors h2 {
+<%-rootcss%> .validatorErrors h2 {
 	text-align: left;
 	font-weight: bold;
 	padding: 5px 5px 5px 15px;
@@ -590,26 +604,21 @@ DIALOG BOXES
 	color: #fff;
 }
 
-.validatorErrors ul li {
+<%-rootcss%> .validatorErrors ul li {
 	font-size: 12px;
 	list-style: square;
 }
 
- 
-
-.notification {
-
+<%-rootcss%> .notification {
   font-weight: bold;
-
   color: green;
-
 }
 
-.page {
+<%-rootcss%> .page {
 	width: 600px;
 }
 
-.adminmenu {
+<%-rootcss%> .adminmenu {
 	border: 1px solid black;
 }
 
@@ -618,12 +627,12 @@ DIALOG BOXES
 NOTIFICATION BOXES
 ==================
 */
-.fieldWithErrors {
+<%-rootcss%> .fieldWithErrors {
   padding: 2px;
   background-color: red;
   /*display: table;*/
 }
-.errorExplanation {
+<%-rootcss%> .errorExplanation {
   width: 400px;
   border: 2px solid red;
   padding: 7px;
@@ -631,7 +640,7 @@ NOTIFICATION BOXES
   margin-bottom: 20px;
   background-color: #f0f0f0;
 }
-.errorExplanation h2 {
+<%-rootcss%> .errorExplanation h2 {
   text-align: left;
   font-weight: bold;
 	text-decoration:none;
@@ -641,22 +650,22 @@ NOTIFICATION BOXES
   background-color: #c00;
   color: #fff;
 }
-.uie8 .errorExplanation h2 { font-family: 'Open Sans Bold', sans-serif; }
-.errorExplanation p {
+<%-rootcss%> .uie8 .errorExplanation h2 { font-family: 'Open Sans Bold', sans-serif; }
+<%-rootcss%> .errorExplanation p {
 	margin-top:10px;
   color: #333;
   margin-bottom: 0;
   padding: 5px;
 }
-.errorExplanation ul li {
+<%-rootcss%> .errorExplanation ul li {
   font-size: 12px;
   list-style: square;
 }
-.notification {
+<%-rootcss%> .notification {
   font-weight: bold;
   color: #55832C;
 }
-.uie8 .notification { font-family: 'Open Sans Bold', sans-serif; }
+<%-rootcss%> .uie8 .notification { font-family: 'Open Sans Bold', sans-serif; }
 
 /*
 ================
@@ -664,7 +673,8 @@ PRINT STYLESHEET
 ================
 */
 @media print {
-  .xactions { display:none !important; visibility:hidden !important; }
-  .xhead { display:none; }
-  .xbody,.xmain { display:block !important; }
+  <%-rootcss%> .xactions { display:none !important; visibility:hidden !important; }
+  <%-rootcss%> .xhead { display:none; }
+  <%-rootcss%> .xbody,
+  <%-rootcss%> .xmain { display:block !important; }
 }

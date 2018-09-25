@@ -89,8 +89,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   //oncommit(xform, rowid, callback) (GRID ONLY) - Executes after db Update / Insert / Delete.
   //onloadstate(xform, state)
   //onrowbind(xform,jobj,datarow) (GRID ONLY)
-  //onroute (routetype ('onepage'), req, res, f, require, jsh, modelid, params) - Server-side reroute to different page if necessary, called before any ent data loaded - TOW
-  //    routetypes: onepage, model, d, d_transaction, csv, report, d_report, d_report_html, d_reportjob
+  //onroute (routetype ('singlepage'), req, res, f, require, jsh, modelid, params) - Server-side reroute to different page if necessary, called before any ent data loaded - TOW
+  //    routetypes: singlepage, model, d, d_transaction, csv, report, d_report, d_report_html, d_reportjob
   //    params = { query: {...}, post: {...} }
   "nokey": 1, //No primary key - only browse
   "nodatalock": ["C_ID"],
@@ -145,7 +145,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "grid_require_filter": 1, //Do not initially load results
   "grid_save_before_update": 1,
   "duplicate": {"target": "E_DUPLICATE", "bindings": {"E_ID":"E_ID", "C_ID": "C_ID"},"link":"edit:EW&E_ID=NEW_E_ID","link_text": "Duplicate Item"},
-  "templates": { "grid": "#xgrid_calendar_template" },
+  "templates": { "grid": ".xgrid_calendar_template" },
   "fields": [
     {
       "name": "E_Name",

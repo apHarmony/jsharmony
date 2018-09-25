@@ -57,7 +57,7 @@ exports = module.exports = function(jsh){
       //Set List of Values
       if ('_LOVs' in this) {
         for (var _LOV in this._LOVs) {
-          var lovselector = '#' + _LOV + '.xelem' + modelid;
+          var lovselector = '.' + _LOV + '.xelem' + modelid;
           if (isGrid) lovselector = '.' + _LOV + '.xelem' + modelid;
           var ctrl = parentobj.find(lovselector);
           if (('control' in this.Fields[_LOV]) && (this.Fields[_LOV].control == 'tree'))
@@ -80,7 +80,7 @@ exports = module.exports = function(jsh){
         XExtXForm.RenderField(_this, parentobj, modelid, field);
       });
       if (jsh.XForms[modelid]._layout == 'form-m') {
-        jsh.$root('#navtext_' + modelid).html((jsh.App['xform_' + modelid].Index + 1) + ' of ' + jsh.App['xform_' + modelid].Count());
+        jsh.$root('.navtext_' + modelid).html((jsh.App['xform_' + modelid].Index + 1) + ' of ' + jsh.App['xform_' + modelid].Count());
       }
     };
   };
@@ -106,12 +106,12 @@ exports = module.exports = function(jsh){
     if ((field.name in _this) && (typeof val == 'undefined')) val = '';
     else val = jsh.XFormat.Apply(field.format, val);
     
-    var fieldselector = '#' + field.name + '.xelem' + modelid;
+    var fieldselector = '.' + field.name + '.xelem' + modelid;
     if (isGrid) fieldselector = '.' + field.name + '.xelem' + modelid;
     var jctrl = parentobj.find(fieldselector);
     if (('control' in field) && (field.control == 'file_upload')) {
       //Show "Upload File" always
-      var filefieldselector = '.xelem' + modelid + ' #' + field.name;
+      var filefieldselector = '.xelem' + modelid + ' .' + field.name;
       if (isGrid) filefieldselector = '.xelem' + modelid + ' .' + field.name;
       var jctrl_download = parentobj.find(filefieldselector + '_download');
       var jctrl_upload = parentobj.find(filefieldselector + '_upload');
@@ -238,7 +238,6 @@ exports = module.exports = function(jsh){
     return function (obj, e) {
       var jobj = $(obj);
       var id = $(obj).data('id');
-      if(!id) id = $(obj).attr('id');
       var field = this.Fields[id];
       var _this = this;
       if (!jsh.is_add) {
@@ -278,12 +277,12 @@ exports = module.exports = function(jsh){
       if (this._jrow) parentobj = this._jrow;
       var isGrid = (jsh.XForms[modelid]._layout == 'grid');
       
-      var fieldselector = '#' + field.name + '.xelem' + modelid;
+      var fieldselector = '.' + field.name + '.xelem' + modelid;
       if (isGrid) fieldselector = '.' + field.name + '.xelem' + modelid;
       var jctrl = parentobj.find(fieldselector);
 
       if (('control' in field) && (field.control == 'file_upload')) {
-        var filefieldselector = '.xelem' + modelid + ' #' + field.name;
+        var filefieldselector = '.xelem' + modelid + ' .' + field.name;
         if (isGrid) filefieldselector = '.xelem' + modelid + ' .' + field.name;
 
         var jctrl_token = parentobj.find(filefieldselector + '_token');
@@ -448,14 +447,14 @@ exports = module.exports = function(jsh){
           if (lovparents.length == 0) return;
           var lovparents_val = '';
           for (var i = 0; i < lovparents.length; i++) {
-            var curselector = (isGrid?'.':'#') + lovparents[i] + '.xelem' + modelid;
+            var curselector = (isGrid?'.':'.') + lovparents[i] + '.xelem' + modelid;
             lovparents_selector += ((i > 0)?',':'') + curselector;
             lovparents_val += 'parentvals.push(parentobj.find("' + curselector + '").val()); ';
           }
           parentobj.find(lovparents_selector).change(function (evt) {
             var parentvals = [];
             //Narrow value of child LOV to values where CODVAL1 = that value
-            var ctrl = parentobj.find((isGrid?'.':'#') + field.name + '.xelem' + modelid);
+            var ctrl = parentobj.find((isGrid?'.':'.') + field.name + '.xelem' + modelid);
             jsh.XExt.JSEval(lovparents_val,this);
             jsh.XExt.RenderParentLOV(xform.Data, ctrl, parentvals, xform.Data._LOVs[field.name], xform.Data.Fields[field.name], ('lovparents' in field));
           });

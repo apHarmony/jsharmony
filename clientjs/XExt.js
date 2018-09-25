@@ -451,10 +451,11 @@ exports = module.exports = function(jsh){
 
   XExt.CKEditor = function (id) {
     if (CKEDITOR.instances[id]) return;
-    var elem = jsh.$root('#' + id);
+    var elem = jsh.$root('.' + id+'.xform_ctrl');
+    if(!elem.length){ return XExt.Alert('Cound not initialize editor on '+id+': form control not found'); }
     var orig_width = elem.outerWidth();
     var orig_height = elem.outerHeight();
-    elem.wrap('<div id="' + id + '_container" style="width:' + orig_width + 'px;border:1px solid #999;display:inline-block;"></div>');
+    elem.wrap('<div class="' + id + '_container" style="width:' + orig_width + 'px;border:1px solid #999;display:inline-block;"></div>');
     CKEDITOR.replace(id);
   }
   XExt.getOpenerJSH = function(){
@@ -475,12 +476,12 @@ exports = module.exports = function(jsh){
     rslt = XExt.ReplaceAll(rslt, '#&gt;', '#>');
     return rslt;
   }
-  XExt.isOnePage = function () {
-    if (jsh.onepage) return true;
+  XExt.isSinglePage = function () {
+    if (jsh.singlepage) return true;
     return false;
   }
   XExt.navTo = function (url) {
-    if (XExt.isOnePage()) {
+    if (XExt.isSinglePage()) {
       var a = XExt.getURLObj(url);
       if (!jsh.Navigate(a, undefined, undefined, undefined)) return false;
     }
@@ -632,7 +633,7 @@ exports = module.exports = function(jsh){
     var jctrl = $(ctrl);
     var jtree = jctrl.closest('.xform_ctrl.tree');
     var fieldname = XExt.getFieldFromObject(ctrl);
-    var menuid = '#_item_context_menu_' + fieldname;
+    var menuid = '._item_context_menu_' + fieldname;
     if(jtree.data('oncontextmenu')) { 
       var f = (new Function('n', jtree.data('oncontextmenu'))); 
       var frslt = f.call(ctrl, n);
@@ -949,37 +950,37 @@ exports = module.exports = function(jsh){
     jsh.$root('.xpromptfield').focus();
   }
 
-  XExt.CustomPrompt = function (id, html, onInit, onAccept, onCancel, onClosed) {
+  XExt.CustomPrompt = function (sel, html, onInit, onAccept, onCancel, onClosed) {
     //Classes - default_focus, button_ok, button_cancel
-    if (jsh.$root('.xdialogblock #' + id).length) jsh.$root('.xdialogblock #' + id).remove();
+    if (jsh.$root('.xdialogblock ' + sel).length) jsh.$root('.xdialogblock ' + sel).remove();
     jsh.$root('.xdialogblock').append(html);
     
     //ShowDialog
-    jsh.xDialog.unshift('#' + id);
-    jsh.$root('.xdialogblock #' + id).zIndex(jsh.xDialog.length);
+    jsh.xDialog.unshift(sel);
+    jsh.$root('.xdialogblock ' + sel).zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
     
-    jsh.$root('#' + id + ' input').off('click');
-    jsh.$root('#' + id + ' input').off('keydown');
-    var cancelfunc = XExt.dialogButtonFunc('#' + id, oldactive, function () { if (onCancel) onCancel(); if (onClosed) onClosed(); });
-    var acceptfunc_aftervalidate = XExt.dialogButtonFunc('#' + id, oldactive, function () { if (onClosed) onClosed(); });
+    jsh.$root(sel + ' input').off('click');
+    jsh.$root(sel + ' input').off('keydown');
+    var cancelfunc = XExt.dialogButtonFunc(sel, oldactive, function () { if (onCancel) onCancel(); if (onClosed) onClosed(); });
+    var acceptfunc_aftervalidate = XExt.dialogButtonFunc(sel, oldactive, function () { if (onClosed) onClosed(); });
     var acceptfunc = function () {
       //Verify this is the topmost dialog
-      if ((jsh.xDialog.length > 0) && (jsh.xDialog[0] != ('#' + id))) return;
+      if ((jsh.xDialog.length > 0) && (jsh.xDialog[0] != (sel))) return;
       
       if (onAccept) return onAccept(function () { acceptfunc_aftervalidate(); });
       else acceptfunc_aftervalidate();
     }
     if (onInit) onInit(acceptfunc, cancelfunc);
-    jsh.$root('#' + id + ' input.button_ok').on('click', acceptfunc);
-    jsh.$root('#' + id + ' input.button_cancel').on('click', cancelfunc);
-    jsh.$root('#' + id + ' input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    jsh.$root('#' + id + ' input:not(:checkbox):not(:button)').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
-    jsh.$root('.xdialogblock,#' + id).show();
+    jsh.$root(sel + ' input.button_ok').on('click', acceptfunc);
+    jsh.$root(sel + ' input.button_cancel').on('click', cancelfunc);
+    jsh.$root(sel + ' input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    jsh.$root(sel + ' input:not(:checkbox):not(:button)').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
+    jsh.$root('.xdialogblock,' + sel).show();
     jsh.XWindowResize();
-    jsh.$root('#' + id + ' .default_focus').focus();
+    jsh.$root(sel + ' .default_focus').focus();
   }
 
   XExt.ZoomEdit = function (val, caption, options, onAccept, onCancel) {
@@ -1017,7 +1018,7 @@ exports = module.exports = function(jsh){
     var parentmodelid = $(obj).data('model');
     var parentfield = null;
     if (parentmodelid) parentfield = jsh.App['XForm' + parentmodelid].prototype.Fields[fieldid];
-    if (!parentobj) parentobj = jsh.$root('#' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelid);
+    if (!parentobj) parentobj = jsh.$root('.' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelid);
     var numOpens = 0;
     
     popupData[modelid] = {};
@@ -1035,7 +1036,7 @@ exports = module.exports = function(jsh){
       var popup_options = {};
       popup_options = {
         modelid: modelid,
-        href: "#popup_" + fieldid + '.xelem' + parentmodelid, inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, title: title, fixed: true,
+        href: ".popup_" + fieldid + '.xelem' + parentmodelid, inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, title: title, fixed: true,
         fadeOut:0,
         onOpen: function () {
           //When nested popUps are called, onOpen is not called
@@ -1043,9 +1044,9 @@ exports = module.exports = function(jsh){
         onComplete: function () {
           numOpens++;
           if(numOpens==1) xdata.Select();
-          if (jsh.$root('#popup_' + fieldid + '.xelem' + parentmodelid + ' .xfilter_value').first().is(':visible')) jsh.$root('#popup_' + fieldid + ' .xfilter_value').first().focus();
-          else if (jsh.$root('#popup_' + fieldid + '.xelem' + parentmodelid).find('td a').length) jsh.$root('#popup_' + fieldid).find('td a').first().focus();
-            //else jsh.$root('#popup_' + fieldid + '.xelem' + parentmodelid).find('input,select,textarea').first().focus();
+          if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelid + ' .xfilter_value').first().is(':visible')) jsh.$root('.popup_' + fieldid + ' .xfilter_value').first().focus();
+          else if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelid).find('td a').length) jsh.$root('.popup_' + fieldid).find('td a').first().focus();
+            //else jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelid).find('input,select,textarea').first().focus();
         },
         onClosed: function () {
           var found_popup = false;
@@ -1106,8 +1107,8 @@ exports = module.exports = function(jsh){
   }
 
   XExt.getModelId = function (obj) {
-    var xid = $(obj).closest('.xtbl').attr('id');
-    if (!xid) xid = $(obj).closest('.xform').attr('id');
+    var xid = $(obj).closest('.xtbl').data('id');
+    if (!xid) xid = $(obj).closest('.xform').data('id');
     if (!xid) return null;
     return xid.substr(5);
   }
@@ -1146,7 +1147,7 @@ exports = module.exports = function(jsh){
   XExt.ItemContextMenu = function (ctrl) {
     var parent = $(ctrl).closest('.xcontext_parent');
     if (!parent.length) return true;
-    var menuid = '#_item_context_menu_' + parent.attr('id');
+    var menuid = '._item_context_menu_' + parent.data('id');
     if (!jsh.$root(menuid).length) return true;
     XExt.ShowContextMenu(menuid, $(ctrl).data('value'));
     return false;
@@ -1224,17 +1225,17 @@ exports = module.exports = function(jsh){
     return jsh.App['xform_' + id];
   }
   XExt.getFormFromObject = function (ctrl) {
-    var fname = $(ctrl).closest('.xform').attr('id');
+    var fname = $(ctrl).closest('.xform').data('id');
     if (fname) return jsh.App['xform_' + fname.substr(5)];
     return undefined;
   }
   XExt.getModelIdFromObject = function (ctrl) {
-    var fname = $(ctrl).closest('.xform').attr('id');
-    if (fname) return fname.substr(5);;
+    var fname = $(ctrl).closest('.xform').data('id');
+    if (fname) return fname.substr(5);
     return undefined;
   }
   XExt.getFieldFromObject = function (ctrl) {
-    return $(ctrl).closest('.xform_ctrl').attr('id');
+    return $(ctrl).closest('.xform_ctrl').data('id');
   }
   XExt.getFormField = function (xform, fieldname) {
     if (!xform) { XExt.Alert('ERROR: Cannot read field ' + fieldname + ' - Parent form not found.'); return; }

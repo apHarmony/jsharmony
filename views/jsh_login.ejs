@@ -2,16 +2,16 @@
 <!-- ***JSHARMONY_LOGIN*** -->
 <div style="padding-bottom:10px;">Please sign in to the system with your email and password below.</div>
 <%-ejsext.DisplayErrors(verrors)%>
-<form method="post" id="mlogin">
+<form method="post" class="<%=req.jshsite.instance%>_mlogin">
   <input type="hidden" name="source" value="<%=source%>" />
   <table>
     <tr>
       <td align="right">Email Address:</td>
-      <td align="left"><input type="text" style="width:150px;" id="username" name="username" value="<%=username%>" /></td>
+      <td align="left"><input type="text" style="width:150px;" class="username" name="username" value="<%=username%>" /></td>
     </tr>
     <tr>
       <td align="right">Password:</td>
-      <td align="left"><input type="password" style="width:150px;" id="password" name="password" /></td>
+      <td align="left"><input type="password" style="width:150px;" class="password" name="password" /></td>
     </tr>
     <tr>
       <td></td>
@@ -32,21 +32,27 @@
   </table>
 </form>
 <script type="text/javascript">
-jsHarmony.jQuery(document).ready(function() {
-  if(jsHarmony.jQuery("#username").val() != ''){
-    jsHarmony.jQuery("#password").focus().addClass('inputfocus');
-  }
-  else{
-    jsHarmony.jQuery("#username").focus().addClass('inputfocus');
-  }
+(function(jsh){
+  var $ = jsh.$;
+  var $form = jsh.$root('.<%=req.jshsite.instance%>_mlogin');
 
-  jsHarmony.jQuery('input')
-    .bind('focus', function() {
-      jsHarmony.jQuery(this).addClass('inputfocus');
-    }).bind('blur', function() {
-      jsHarmony.jQuery(this).removeClass('inputfocus');
-    });
-});
+  $(document).ready(function() {
+    if($form.find(".username").val() != ''){
+      $form.find(".password").focus().addClass('inputfocus');
+    }
+    else{
+      $form.find(".username").focus().addClass('inputfocus');
+    }
+
+    $form.find('input')
+      .bind('focus', function() {
+        $(this).addClass('inputfocus');
+      }).bind('blur', function() {
+        $(this).removeClass('inputfocus');
+      });
+  });
+  
+})(<%=req.jshsite.instance%>);
 </script>
 <style type="text/css">
 .inputfocus

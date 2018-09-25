@@ -24,12 +24,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var XExt = jsh.XExt;
 
   jsh.App.XForm<%=model.id%>_Init = function(callback){
-    var xfilter_<%=model.id%> = jsh.App.xfilter_<%=model.id%> = new jsh.XPost('','#xfilter_template_<%=model.id%>','#xfilter_<%=model.id%>');
+    var xfilter_<%=model.id%> = jsh.App.xfilter_<%=model.id%> = new jsh.XPost('','.xfilter_template_<%=model.id%>','.xfilter_<%=model.id%>');
     xfilter_<%=model.id%>.Data = new jsh.XSearch.SearchQuery(new jsh.App.XForm<%=model.id%>());
     xfilter_<%=model.id%>.Data.Items.unshift(new jsh.XSearch.SearchItem('ALL','','and','contains'));
     xfilter_<%=model.id%>.OnAfterRender = function(){ 
-      jsh.$root('#xfilter_<%=model.id%> input.xfilter_value').each(function(){ jsh.XBarcode.EnableScanner($(this)); }); 
-      jsh.$root('#xfilter_<%=model.id%> input.xfilter_value.datepicker').each(function(){ 
+      jsh.$root('.xfilter_<%=model.id%> input.xfilter_value').each(function(){ jsh.XBarcode.EnableScanner($(this)); }); 
+      jsh.$root('.xfilter_<%=model.id%> input.xfilter_value.datepicker').each(function(){ 
         $(this).datepicker({ constrainInput: false, changeMonth: true, changeYear: true, dateFormat: jsh.DEFAULT_DATEFORMAT });
       }); 
     };
@@ -41,7 +41,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xform_post_<%=model.id%>.DataType = jsh.App.XForm<%=model.id%>;
 
     var isInlinePopup = <%-xejs.iif(('inlinepopup' in model) && (model.inlinepopup),'true','false')%>;
-    var grid_template = '<%=(model.templates.grid||'#xgrid_'+model.id+'_template')%>';
+    var grid_template = '<%=(model.templates.grid||'.xgrid_'+model.id+'_template')%>';
     var grid_placeholder = jsh.$root(grid_template).data('target');
     var scrollControl = (isInlinePopup ? jsh.$root(grid_placeholder).closest('.xpanel')[0] : window);
     var xform_<%=model.id%> = jsh.App.xform_<%=model.id%> = new jsh.XData('<%=model.id%>',grid_template,grid_placeholder,undefined,true,scrollControl);
@@ -130,12 +130,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xform_<%=model.id%>.State.Sort = xform_<%=model.id%>.Sort;
     <%=xejs.iif(('disableautoload' in model) && (model.disableautoload),'xform_'+model.id+'.AutoLoadMore = false;') %>
     xform_<%=model.id%>.OnBeforeSelect = function(){
-      has_search_items = jsh.App.XForm<%=model.id%>_HasSearchItems(this.SearchJSON);
+      var has_search_items = jsh.App.XForm<%=model.id%>_HasSearchItems(this.SearchJSON);
       if(has_search_items){ 
-        jsh.$root('#xfilterbutton<%=model.id%> span').html('Remove Filter');
+        jsh.$root('.xfilterbutton<%=model.id%> span').html('Remove Filter');
       }
       else{
-        jsh.$root('#xfilterbutton<%=model.id%> span').html('Filter');
+        jsh.$root('.xfilterbutton<%=model.id%> span').html('Filter');
       }
       jsh.App.XForm<%=model.id%>_UpdateTitleCaption();
     };
@@ -481,7 +481,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if('Sort' in state){
       jsh.App.xform_<%=model.id%>.State.Sort = state.Sort;
       jsh.App.xform_<%=model.id%>.Sort = state.Sort;
-      jsh.App.xform_<%=model.id%>.ResetSortGlyphs(jsh.$root('#xform<%=model.id%>'));
+      jsh.App.xform_<%=model.id%>.ResetSortGlyphs(jsh.$root('.xform<%=model.id%>'));
     }
     if('Search' in state){
       jsh.App.xform_<%=model.id%>.State.Search = state.Search;
@@ -542,26 +542,26 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.App.XForm<%=model.id%>_FilterExpand = function(timeout){
-    if(jsh.$root('#xfilter_<%=model.id%>').is(':visible')) return;
+    if(jsh.$root('.xfilter_<%=model.id%>').is(':visible')) return;
     if(jsh.App.xfilter_<%=model.id%>.Data.Items.length == 0){
       jsh.App.XForm<%=model.id%>_FilterAdd();
-      jsh.$root('#xfilter_<%=model.id%>').slideDown(timeout,function(){ jsh.$root('#xfilter_<%=model.id%> .xfilter_value').first().select().focus(); });
+      jsh.$root('.xfilter_<%=model.id%>').slideDown(timeout,function(){ jsh.$root('.xfilter_<%=model.id%> .xfilter_value').first().select().focus(); });
     }
     else {
-      jsh.$root('#xfilter_<%=model.id%>').slideDown(timeout,function(){ jsh.$root('#xfilter_<%=model.id%> .xfilter_value').first().select().focus(); });
+      jsh.$root('.xfilter_<%=model.id%>').slideDown(timeout,function(){ jsh.$root('.xfilter_<%=model.id%> .xfilter_value').first().select().focus(); });
     }
   }
 
   jsh.App.XForm<%=model.id%>_FilterButton = function(){
-    if(jsh.$root('#xfilterbutton<%=model.id%> span').html()=='Remove Filter'){
+    if(jsh.$root('.xfilterbutton<%=model.id%> span').html()=='Remove Filter'){
       jsh.App.xfilter_<%=model.id%>.Data.Items = [];
       jsh.App.xfilter_<%=model.id%>.Render();
-      jsh.$root('#xfilter_<%=model.id%>').hide();
+      jsh.$root('.xfilter_<%=model.id%>').hide();
       jsh.App.XForm<%=model.id%>_FilterExpand(400);
       jsh.App.XForm<%=model.id%>_FilterApply();
     }
     else{
-      if(jsh.$root('#xfilter_<%=model.id%>').is(':visible')) jsh.$root('#xfilter_<%=model.id%>').slideUp();
+      if(jsh.$root('.xfilter_<%=model.id%>').is(':visible')) jsh.$root('.xfilter_<%=model.id%>').slideUp();
       else jsh.App.XForm<%=model.id%>_FilterExpand(400);
     }
   }
@@ -571,7 +571,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.App.XForm<%=model.id%>_SetFilter = function(searchitems,hide){
-    if(hide) jsh.$root('#xfilter_<%=model.id%>').hide();
+    if(hide) jsh.$root('.xfilter_<%=model.id%>').hide();
     jsh.App.xfilter_<%=model.id%>.Data.Items = searchitems;
     jsh.App.xfilter_<%=model.id%>.Render();
     jsh.App.xform_<%=model.id%>.State.Search = searchitems;
@@ -625,12 +625,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if(txt == '(') txt = '';
     else txt += ')';
     if(txt){
-      jsh.$root('#xtitlecaption<%=model.id%>').show();
+      jsh.$root('.xtitlecaption<%=model.id%>').show();
     }
     else {
-      jsh.$root('#xtitlecaption<%=model.id%>').hide();
+      jsh.$root('.xtitlecaption<%=model.id%>').hide();
     }
-    jsh.$root('#xtitlecaption<%=model.id%> a').text(txt);
+    jsh.$root('.xtitlecaption<%=model.id%> a').text(txt);
   }
 
 })(<%-instance%>);

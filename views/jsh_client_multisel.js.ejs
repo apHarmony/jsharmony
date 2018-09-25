@@ -38,8 +38,8 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
     var xform_<%=model.id%> = jsh.App.xform_<%=model.id%> = new jsh.XData('<%=model.id%>');
     xform_<%=model.id%>.HasUpdates = function(){ return false; };
     xform_<%=model.id%>.Data = {};
-    xform_<%=model.id%>.PlaceholderID = '#xmultisel_<%=model.id%>_placeholder';
-    xform_<%=model.id%>.TemplateID = '#xmultisel_<%=model.id%>_template';
+    xform_<%=model.id%>.PlaceholderID = '.xmultisel_<%=model.id%>_placeholder';
+    xform_<%=model.id%>.TemplateID = '.xmultisel_<%=model.id%>_template';
 
     xform_<%=model.id%>.Select = function(onComplete){
       var execparams = {};

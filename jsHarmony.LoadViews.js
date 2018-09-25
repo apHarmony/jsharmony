@@ -18,6 +18,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 var fs = require('fs');
 var path = require('path');
+var async = require('async');
 
 module.exports = exports = {};
 
@@ -81,6 +82,19 @@ exports.LoadViews = function(){
   }
 }
 
+exports.LoadFilesToString = function(files,cb){
+  var rslt = '';
+  async.eachSeries(files, function(file, file_cb){
+    fs.readFile(file,'utf8',function(err,data){
+      if(err) return file_cb(err);
+      rslt += data + "\r\n";
+      return file_cb(null);
+    });
+  }, function(err){
+    if(err) return cb(err);
+    return cb(null, rslt);
+  });
+}
 
 exports.getView = function (req, tmpl, options){
   if(!options) options = {};

@@ -21,7 +21,7 @@ for(var i=0;i<model.fields.length;i++){
 }
 if(lovfield == '') throw new Error('Multisel requires one LOV.');
 %>
-<table class="xtbl xelem<%=model.id%>" id="xform<%=model.id%>">
+<table class="xtbl xelem<%=model.id%> xform<%=model.id%>" data-id="xform<%=model.id%>">
 	<thead>
   	<tr>
       <th>Select</th>
@@ -34,7 +34,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
       <% } %>
 		</tr>
 	</thead>
-	<tbody id="xmultisel_<%=model.id%>_placeholder">
+	<tbody class="xmultisel_<%=model.id%>_placeholder">
     <% for(var j=0;j<data.length;j++){ %>
     <tr class="<%=(j%2==1?'even':'odd')%>">
       <td align="center"><input type="checkbox" /></td>
@@ -44,7 +44,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
     </tr>
     <% } %>
 	</tbody>
-  <script id="xmultisel_<%=model.id%>_template" type="text/x-ejs-template">
+  <script class="xmultisel_<%=model.id%>_template" type="text/x-ejs-template">
     <# for(var j=0;j<data.length;j++){ var datarow=data[j]; #>
     <tr class="<#=(j%2==1?'even':'odd')#>">
       <td align="center" style="vertical-align:middle;"><input type="checkbox" class="xselitem" value="<#=data[j][jsh.uimap.codeval]#>" <%-xejs.iif(!XExt.access(model.actions,'IU'),'disabled="disabled"')%> <# if(data[j]['<%=lovfield%>']!==null){ #>checked="checked"<# } #> /></td>

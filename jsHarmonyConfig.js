@@ -198,6 +198,14 @@ function jsHarmonyConfig(config){
   //Private routes (to be removed / moved to Site Config)
   this.private_apps = [];
 
+  //Additional CSS files for jsHarmony.css
+  this.css_extensions = [
+    path.dirname(module.filename) + '/public/jquery-ui/css/jquery-ui-1.10.3.custom.min.css',
+    path.dirname(module.filename) + '/public/js/colorbox/colorbox.css',
+  ];
+  //Additional JS files for jsHarmony.js
+  this.js_extensions = [];
+
   //Load jsHarmony in Silent Mode
   this.silentStart = false;
 
@@ -231,7 +239,7 @@ jsHarmonyConfig.prototype.Merge = function(config){
         }
       }
       //Merge arrays
-      else if(_.includes(['public_apps','private_apps','schema_replacement'],prop)) this[prop] = this[prop].concat(config[prop]);
+      else if(_.includes(['public_apps','private_apps','schema_replacement','css_extensions','js_extensions'],prop)) this[prop] = this[prop].concat(config[prop]);
       //Replace objects
       else if(_.includes(['valid_extensions','supported_images','server'],prop)) this[prop] = config[prop];
       //Merge first level objects

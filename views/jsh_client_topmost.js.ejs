@@ -19,7 +19,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 (function(){
 
-  $(document).on('jsh_ready', function(){ jsh.topmost_jsh_ready(); });
+  jsh.on('jsh_ready', function(){ jsh.topmost_jsh_ready(); });
 
   window.onpopstate = function(event) {
     var state = event.state;
@@ -265,7 +265,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           });
           jsh.init_complete = true;
           //Update Browser History with URL/state
-          if (jsh.XExt.isOnePage()) {
+          if (jsh.XExt.isSinglePage()) {
             var new_url = jsh.state.fullpath + jsh.state.QS + jsh.state.hash;
             jsh.XExt.ReplaceHistory(new_url, jsh.XForm_GetState(new_url));
             if (jsh.state.hash) {
@@ -317,7 +317,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XForm_Destroy = function() {
-    $(document).off('jsh_ready');
+    jsh.off('jsh_ready');
     for(var key in jsh.App){
       var elem = jsh.App[key];
       if (elem instanceof jsh.XData) elem.Destroy();
@@ -328,7 +328,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     jsh.App = {};
     jsh.intervals = [];
-    $(document).on('jsh_ready', function(){ jsh.topmost_jsh_ready(); });
+    jsh.on('jsh_ready', function(){ jsh.topmost_jsh_ready(); });
   }
 
   jsh.forEachModelTree = function(model,modelParent,modelEach,onComplete,options){ //modelcb(model,modelParent)
@@ -373,7 +373,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
             if (typeof xform._onload != 'undefined') if (xform._onload(xform, callback) === false) bubble = false;
           });
           if (bubble && callback) callback();
-          if (jsh.XExt.isOnePage()) jsh.ResetLinks();
+          if (jsh.XExt.isSinglePage()) jsh.ResetLinks();
         });
       });
   }
@@ -549,8 +549,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     _.each(jsh.XForms, function (xform, xformid) {
       if (xform._layout == 'grid') jsh.$root('.xtbl.xelem' + xformid + ',.xbodyhead.xelem' + xformid).hide();
       else {
-        //jsh.$root('#xform'+xformid).hide(); 
-        //jsh.$root('#xtabcontrol'+xformid).hide(); 
+        //jsh.$root('.xform'+xformid).hide(); 
+        //jsh.$root('.xtabcontrol'+xformid).hide(); 
       }
     });
   }
@@ -559,8 +559,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     _.each(jsh.XForms, function (xform, xformid) {
       if (xform._layout == 'grid') jsh.$root('.xtbl.xelem' + xformid + ',.xbodyhead.xelem' + xformid).show();
       else {
-        jsh.$root('#xform' + xformid).show();
-        jsh.$root('#xtabcontrol' + xformid).show();
+        jsh.$root('.xform' + xformid).show();
+        jsh.$root('.xtabcontrol' + xformid).show();
       }
     });
   }
@@ -636,7 +636,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XFileDownload = function(model, field, title) {
-    var jctrl_token = jsh.$root('.xelem' + model + ' #' + field + '_token');
+    var jctrl_token = jsh.$root('.xelem' + model + ' .' + field + '_token');
     var file_token = jctrl_token.val();
     var url = '';
     if (file_token) url = jsh._BASEURL + '_dl/_temp/' + file_token;
@@ -645,12 +645,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if (jsh.XForms[model]._keys.length != 1) { throw new Error('File models require one key.'); }
       url = jsh._BASEURL + '_dl/' + model + '/' + keys[jsh.XForms[model]._keys[0]] + '/' + field;
     }
-    jsh.$root('#xfileproxy').prop('src', url);
+    jsh.getFileProxy().prop('src', url);
     //window.open(url,'_blank'); 
   }
 
   jsh.XFilePreview = function(model, field, title) {
-    var jctrl_token = jsh.$root('.xelem' + model + ' #' + field + '_token');
+    var jctrl_token = jsh.$root('.xelem' + model + ' .' + field + '_token');
     var file_token = jctrl_token.val();
     var url = '';
     if (file_token) url = jsh._BASEURL + '_dl/_temp/' + file_token + '?view=1';
@@ -665,10 +665,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XFileDelete = function(model, field, title) {
-    var jctrl_token = jsh.$root('.xelem' + model + ' #' + field + '_token');
-    var jctrl_dbexists = jsh.$root('.xelem' + model + ' #' + field + '_dbexists');
-    var jctrl_dbdelete = jsh.$root('.xelem' + model + ' #' + field + '_dbdelete');
-    var jctrl = jsh.$root('#' + field + '.xelem' + model);
+    var jctrl_token = jsh.$root('.xelem' + model + ' .' + field + '_token');
+    var jctrl_dbexists = jsh.$root('.xelem' + model + ' .' + field + '_dbexists');
+    var jctrl_dbdelete = jsh.$root('.xelem' + model + ' .' + field + '_dbdelete');
+    var jctrl = jsh.$root('.' + field + '.xelem' + model);
     if (jctrl_dbexists.val() == '1') jctrl_dbdelete.val('1');
     jctrl_token.val('');
     jctrl.addClass('nodocument');
@@ -676,7 +676,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.XFileUpload = function(model, field, title) {
     //Get PrevToken, if Applicable
-    jsh.xfileupload_ctrl = jsh.$root('#' + field + '.xelem' + model);
+    jsh.xfileupload_ctrl = jsh.$root('.' + field + '.xelem' + model);
     if (jsh.xfileupload_ctrl.size() != 1) return;
     $.colorbox({
       href: jsh.$root(".xfileuploader"), inline: true, closeButton: false, arrowKey: false, preloading: false, overlayClose: false, title: title, fixed: true,
@@ -706,8 +706,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     jsh.xfileupload_ctrl.children('.xform_file_dbdelete').val('0');
     jsh.xfileupload_ctrl.removeClass('nodocument');
     //Rerender Control
-    var val = XExt.getFormField(XExt.getFormFromObject(jsh.xfileupload_ctrl), jsh.xfileupload_ctrl[0].id);
-    XExt.setFormControl(XExt.getFormFromObject(jsh.xfileupload_ctrl), jsh.xfileupload_ctrl[0].id, val);
+    var val = XExt.getFormField(XExt.getFormFromObject(jsh.xfileupload_ctrl), jsh.xfileupload_ctrl.data('id'));
+    XExt.setFormControl(XExt.getFormFromObject(jsh.xfileupload_ctrl), jsh.xfileupload_ctrl.data('id'), val);
   }
 
   jsh.js_proxy_complete = function(id, data) {

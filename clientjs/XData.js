@@ -122,7 +122,7 @@ exports = module.exports = function(jsh){
       data: reqdata,
       dataType: 'json',
       success:function(data){
-        loadtime = ((new Date()).getTime() - starttime);
+        var loadtime = ((new Date()).getTime() - starttime);
         if((rowstart > 0) && (loadtime < 500)){
           window.setTimeout(function(){ _this.ProcessData(data,rowstart,onComplete,reqdata); },500-loadtime);
         }
