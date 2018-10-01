@@ -13,7 +13,7 @@
 <div class="xactions xelem<%=model.id%>">
   <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavFirst(); return false;" class="navbar"><img src="/images/icon_first.png" alt="First" title="First" /></a>
   <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavPrev(); return false;" class="navbar"><img src="/images/icon_prev.png" alt="Prev" title="Prev" /></a>
-  <div class="navtext" class="navtext_<%=model.id%>">1 of 1</div>
+  <div class="navtext navtext_<%=model.id%>">1 of 1</div>
   <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavNext(); return false;" class="navbar"><img src="/images/icon_next.png" alt="Next" title="Next" /></a>
   <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavLast(); return false;" class="navbar"><img src="/images/icon_last.png" alt="Last" title="Last" /></a>
   <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavAdd(); return false;" style="<%-xejs.visible(XExt.access(model.actions,'IU'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a>
