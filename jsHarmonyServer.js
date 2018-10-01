@@ -57,8 +57,8 @@ jsHarmonyServer.prototype.Init = function(cb){
   var app = this.app;
   app.jsh = this.jsh;
 
-  app.use(bodyParser.json());
-  app.use(bodyParser.urlencoded({ extended: true }));
+  app.use(bodyParser.json({ limit: '50mb' }));
+  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
   app.use(express.static(path.join(_this.jsh.Config.appbasepath, 'public')));
   app.use(express.static(path.join(__dirname, 'public')));
   app.use('/cmsfiles', express.static(path.join(_this.jsh.Config.datadir, 'cmsfiles')));
