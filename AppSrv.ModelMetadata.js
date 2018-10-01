@@ -81,7 +81,7 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
   var fieldlist = [];
   var nodatalock = null;
   var db = this.jsh.getModelDB(req, model.id);
-  if (model.title){
+  if (typeof model.title !== 'undefined'){
     if(_.isString(model.title)) title = model.title;
     else if(model.title.add && Helper.access(targetperm,'I')){
       if(_.isString(model.title.add)) title = model.title.add;
