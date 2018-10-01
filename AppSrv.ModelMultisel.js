@@ -202,7 +202,7 @@ exports.postModelMultisel = function (req, res, modelid, Q, P, onComplete) {
   
   var lov = lovfield.lov;
   if ('sql' in lov) {
-    _this.getDataLockSQL(req, model, model, [lov], sql_ptypes, sql_params, verrors, function (datalockquery) { lov_datalockqueries.push(datalockquery); });
+    _this.getDataLockSQL(req, model, [lov], sql_ptypes, sql_params, verrors, function (datalockquery) { lov_datalockqueries.push(datalockquery); });
     
     if ('sql_params' in lov) {
       var lov_pfields = _this.getFieldsByName(model.fields, lov.sql_params);
