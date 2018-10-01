@@ -623,9 +623,15 @@ exports = module.exports = function(jsh){
     return jsh.jslocals;
   }
 
-  XExt.JSEval = function(str,_thisobj){
+  XExt.JSEval = function(str,_thisobj,params){
     if(!_thisobj) thisobj = jsh;
-    var jscmd = '(function(){'+XExt.getJSLocals()+'return '+str+'}).call(_thisobj)';
+    var paramstr = '';
+    if(params){
+      for(var param in params){
+        paramstr += 'var '+param+'=params.'+param+';';
+      }
+    }
+    var jscmd = '(function(){'+XExt.getJSLocals()+paramstr+'return '+str+'}).call(_thisobj)';
     return eval(jscmd);
   }
 

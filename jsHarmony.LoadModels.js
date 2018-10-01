@@ -400,8 +400,11 @@ exports.ParseEntities = function () {
     //Add Model caption if not set
     if (!('caption' in model)) { model.caption = ['', model.id, model.id]; _this.LogInit_WARNING('Model ' + model.id + ' missing caption'); }
     if (!('title' in model)){
-      if((model.layout == 'grid') || (model.layout == 'multisel')) model.title = model.caption[2];
-      model.title = model.caption[1];
+      if(model.tabs && model.tabs.length && model.tabpos && (model.tabpos=='top')){ }
+      else {
+        if((model.layout == 'grid') || (model.layout == 'multisel')) model.title = model.caption[2];
+        else model.title = model.caption[1];
+      }
     }
     if (!('ejs' in model)) model.ejs = '';
     if (!('templates' in model)) model.templates = {};

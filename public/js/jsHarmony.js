@@ -1818,7 +1818,7 @@ exports = module.exports = function(jsh){
             var parentvals = [];
             //Narrow value of child LOV to values where CODVAL1 = that value
             var ctrl = parentobj.find((isGrid?'.':'.') + field.name + '.xelem' + modelid);
-            jsh.XExt.JSEval(lovparents_val,this);
+            jsh.XExt.JSEval(lovparents_val,this,{ parentvals: parentvals, parentobj: parentobj });
             jsh.XExt.RenderParentLOV(xform.Data, ctrl, parentvals, xform.Data._LOVs[field.name], xform.Data.Fields[field.name], ('lovparents' in field));
           });
         }
@@ -2464,9 +2464,15 @@ exports = module.exports = function(jsh){
     return jsh.jslocals;
   }
 
-  XExt.JSEval = function(str,_thisobj){
+  XExt.JSEval = function(str,_thisobj,params){
     if(!_thisobj) thisobj = jsh;
-    var jscmd = '(function(){'+XExt.getJSLocals()+'return '+str+'}).call(_thisobj)';
+    var paramstr = '';
+    if(params){
+      for(var param in params){
+        paramstr += 'var '+param+'=params.'+param+';';
+      }
+    }
+    var jscmd = '(function(){'+XExt.getJSLocals()+paramstr+'return '+str+'}).call(_thisobj)';
     return eval(jscmd);
   }
 

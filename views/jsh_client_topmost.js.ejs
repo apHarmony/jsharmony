@@ -386,6 +386,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //Check for new titles in returned data
     jsh.XFormTree(null, function(xform) {
       if(!jsh.App['xform_' + xform._id]) return;
+      if(!('_title' in jsh.App['xform_' + xform._id])) return;
       var title = jsh.App['xform_' + xform._id]._title||'';
       if(title != xform._title){
         xform._title = title;
