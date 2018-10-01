@@ -1,5 +1,5 @@
 <% if(!model.topmost && (model.title !== undefined)) { %>
-<h1 class="xtitle xelem<%=model.id%>" style="display:inline-block;padding:0px 0 12px 0;"><%=xejs.iif((model.title.indexOf('<'+'#') < 0),model.title,'&nbsp;')%></h1>
+<h1 class="xtitle xelem<%=model.id%>" style="display:inline-block;padding:0px 0 12px 0;"><%-xejs.iif((model.title.indexOf('<'+'#') < 0),XExt.escapeHTML(model.title),'&nbsp;')%></h1>
 <% } %>
 <% if(model.topmost){ %>
 <div class="xactions top xelem<%=model.id%>">

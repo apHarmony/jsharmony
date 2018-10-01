@@ -1224,7 +1224,8 @@ exports = module.exports = function(jsh){
               rowid: undefined,
               data: data[this.q],
               xejs: jsh.XExt.xejs,
-              jsh: jsh
+              jsh: jsh,
+              instance: jsh.getInstance()
             });
             jsh.$root(_this.PlaceholderID).append(ejsrslt);
             _this.RowCount = jsh.$root(_this.PlaceholderID).find('tr').length;
@@ -4360,7 +4361,7 @@ exports = module.exports = function(jsh){
     else if(this.TemplateID){
       var ejssource = jsh.$root(this.TemplateID).html();
       ejssource = ejssource.replace(/<#/g,'<%').replace(/#>/g,'%>')
-      jsh.$root(this.PlaceholderID).html(jsh.ejs.render(ejssource,{data:this.Data,xejs:jsh.XExt.xejs,jsh:jsh}));
+      jsh.$root(this.PlaceholderID).html(jsh.ejs.render(ejssource,{data:this.Data,xejs:jsh.XExt.xejs,jsh:jsh,instance:jsh.getInstance()}));
     }
     if (this.OnAfterRender) this.OnAfterRender();
   };

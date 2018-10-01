@@ -99,7 +99,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if(jsh.App.xgrid_<%=model.id%>){
         for (var i = 0; i < data[this.q].length; i++) {
           var rowid = this.RowCount + i;
-          var ejsrslt = jsh.ejs.render(ejssource, { rowid: rowid, data: [data[this.q][i]], xejs: XExt.xejs, jsh: jsh });
+          var ejsrslt = jsh.ejs.render(ejssource, { rowid: rowid, data: [data[this.q][i]], xejs: XExt.xejs, jsh: jsh, instance: jsh.getInstance() });
           var jobj = $(ejsrslt).appendTo(jsh.$root(this.PlaceholderID));
           xpost.NavTo(rowid, false);
           this.OnRowBind(jobj);
@@ -113,7 +113,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           moment: jsh.moment,
           xform: xform_<%=model.id%>,
           xform_meta: jsh.XForms['<%=model.id%>'],
-          jsh: jsh
+          jsh: jsh,
+          instance: jsh.getInstance()
         });
         var jobj = $(ejsrslt).appendTo(jsh.$root(this.PlaceholderID));
       }
@@ -291,7 +292,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
           var ejssource = jsh.$root(xdata.TemplateID).html();
           ejssource = ejssource.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
-          var ejsrslt = jsh.ejs.render(ejssource, { rowid: rowid, data: [_this.DataSet[rowid]], xejs: XExt.xejs, jsh: jsh });
+          var ejsrslt = jsh.ejs.render(ejssource, { rowid: rowid, data: [_this.DataSet[rowid]], xejs: XExt.xejs, jsh: jsh, instance: jsh.getInstance() });
           var jobj = jsh.$root(xdata.PlaceholderID).find("tr[data-id='" + rowid + "']");
           jobj.replaceWith($(ejsrslt));
           jobj = jsh.$root(xdata.PlaceholderID).find("tr[data-id='" + rowid + "']");
@@ -364,7 +365,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       rowid: rowid,
       data: [newrow],
       xejs: XExt.xejs,
-      jsh: jsh
+      jsh: jsh,
+      instance: jsh.getInstance()
     });
 
     var jobj;

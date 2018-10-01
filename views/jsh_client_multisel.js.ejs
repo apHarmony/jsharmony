@@ -77,7 +77,8 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
             ejssource = ejssource.replace(/<#/g,'<'+'%').replace(/#>/g,'%'+'>')
             var ejsrslt = jsh.ejs.render(ejssource,{
               data:data[xform_<%=model.id%>.q],
-              jsh: jsh
+              jsh: jsh,
+              instance: jsh.getInstance()
             });
             jsh.$root(xform_<%=model.id%>.PlaceholderID).empty();
             jsh.$root(xform_<%=model.id%>.PlaceholderID).append(ejsrslt);

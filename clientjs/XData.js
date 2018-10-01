@@ -218,7 +218,8 @@ exports = module.exports = function(jsh){
               rowid: undefined,
               data: data[this.q],
               xejs: jsh.XExt.xejs,
-              jsh: jsh
+              jsh: jsh,
+              instance: jsh.getInstance()
             });
             jsh.$root(_this.PlaceholderID).append(ejsrslt);
             _this.RowCount = jsh.$root(_this.PlaceholderID).find('tr').length;
