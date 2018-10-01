@@ -383,6 +383,17 @@ exports.ParseEntities = function () {
     var sqlext = _this.DB[modelDB].SQLExt;
     model.xvalidate = new XValidate();
     if ('sites' in model) _this.LogInit_WARNING('Model ' + model.id + ' had previous "sites" attribute - overwritten by system value');
+    if(model.roles){
+      var roleids = _.keys(model.roles);
+      for(var i=0;i<roleids.length;i++){
+        var role = roleids[i];
+        if(_.isString(model.roles[role])){
+          if(!('main' in model.roles)) model.roles['main'] = {};
+          model.roles['main'][role] = model.roles[role];
+          delete model.roles[role];
+        }
+      }
+    }
     model.sites = Helper.GetRoleSites(model.roles);
     if (!('table' in model)) _this.LogInit_WARNING('Model ' + model.id + ' missing table');
     if (!('actions' in model)) _this.LogInit_WARNING('Model ' + model.id + ' missing actions');
