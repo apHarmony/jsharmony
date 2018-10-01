@@ -4955,7 +4955,7 @@ exports = module.exports = function(jsh){
     }
   }
   SearchQuery.prototype.GetValues = function (_PlaceholderID) {
-    _this = this;
+    var _this = this;
     _this.Items = [];
     jsh.$root(_PlaceholderID + ' div.xfilter_expression').each(function (i, obj) {
       var v_column = $(obj).find('select.xfilter_column').val();
@@ -4967,7 +4967,7 @@ exports = module.exports = function(jsh){
     });
   };
   SearchQuery.prototype.HasUpdates = function (_PlaceholderID) {
-    _this = this;
+    var _this = this;
     var newitems = [];
     jsh.$root(_PlaceholderID + ' div').each(function (i, obj) {
       var v_value = $(obj).find('input.xfilter_value').val();
