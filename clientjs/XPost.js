@@ -265,7 +265,7 @@ exports = module.exports = function(jsh){
           if(val.indexOf('js:')==0){
             var js = val.substr(3);
             //Evaluate JS
-            val = jsh.XExt.JSEval(js,this);
+            val = jsh.XExt.JSEval(js,this,{ data: data });
           }
           rslt[fieldname] = val;
         }
