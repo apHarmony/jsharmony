@@ -223,7 +223,7 @@ exports.ParseInheritance = function () {
         });
         //Create a clone of parent model instead of object reference
         if (('fields' in parentmodel) && !('fields' in model)) model.fields = parentmodel.fields.slice(0);
-        EntityPropMerge(mergedprops, 'roles', model, parentmodel, function (newval, oldval) { return _.merge({}, oldval, newval) });
+        EntityPropMerge(mergedprops, 'roles', model, parentmodel, function (newval, oldval) { return newval||oldval; });
         EntityPropMerge(mergedprops, 'pagesettings', model, parentmodel, function (newval, oldval) { return _.merge({}, oldval, newval) });
         EntityPropMerge(mergedprops, 'tabs', model, parentmodel, function (newval, oldval) {
           return MergeModelArray(newval, oldval);
