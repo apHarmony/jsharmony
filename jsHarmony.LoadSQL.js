@@ -30,9 +30,11 @@ exports.getDBDrivers = function(){ return _DBDRIVERS; }
 
 //Validate Database Drive and Load SQL Configuration
 exports.InitDB = function(dbid, cb){
-  var dbconfig = this.DBConfig[dbid]._driver;
-  if(!dbconfig || !dbconfig.name) { console.error("*** Fatal error: Database ID "+dbid+" has missing or invalid _driver"); process.exit(8); }
-  var driverName = dbconfig.name;
+  var dbconfig = this.DBConfig[dbid];
+  var dbdriver = dbconfig._driver;
+  if(!dbconfig) { console.error("*** Fatal error: Database ID "+dbid+" not found"); process.exit(8); }
+  if(!dbdriver || !dbdriver.name) { console.error("*** Fatal error: Database ID "+dbid+" has missing or invalid _driver"); process.exit(8); }
+  var driverName = dbdriver.name;
   if(dbid=='default'){
     //Set MSSQL and PGSQL drivers to Pooled for default connection
     if(_.includes(['mssql','pgsql'],driverName)){

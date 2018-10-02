@@ -436,4 +436,18 @@ function setNoCache(req, res){
   }
 }
 
+jsHarmonyRouter.PublicRoot = function(root, options){
+  var staticRouter = express.static(root, options);
+  return function(req, res, next){
+    if (Helper.beginsWith(req.path, '/cmsfiles/')) return next();
+    if (Helper.beginsWith(req.path, '/_ul/')) return next();
+    if (Helper.beginsWith(req.path, '/_dl/')) return next();
+    if (Helper.beginsWith(req.path, '/_d/')) return next();
+    if (Helper.beginsWith(req.path, '/_queue/')) return next();
+    if (Helper.beginsWith(req.path, '/_report/')) return next();
+    if (Helper.beginsWith(req.path, '/_model/')) return next();
+    return staticRouter(req, res, next);
+  }
+}
+
 module.exports = jsHarmonyRouter;
