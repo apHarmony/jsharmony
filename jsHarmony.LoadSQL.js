@@ -49,7 +49,7 @@ exports.InitDB = function(dbid, cb){
   for (var i = 0; i < modeldirs.length; i++) {
     var modeldir = modeldirs[i];
     var fpath = modeldir.path;
-    if(modeldir.component=='jsharmony') fpath = modeldir.path + '../';
+    if(modeldir.component=='jsharmony') fpath = path.normalize(modeldir.path + '../');
     this.LoadSQL(db, fpath + 'sql/', driverName, modeldir.component);
     this.LoadSQL(db, fpath + 'sql/'+dbid+'/', driverName, modeldir.component);
   }

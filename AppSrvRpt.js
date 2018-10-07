@@ -18,8 +18,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var _ = require('lodash');
-var phantomjs = require('phantomjs'); //was phantomjs-prebuilt
-var phantom = require('phantom');
+var puppeteer = require('puppeteer');
 var path = require('path');
 var fs = require('fs');
 var mime = require('mime');
@@ -31,23 +30,21 @@ var ejs = require('ejs');
 var ejsext = require('./lib/ejsext.js');
 var moment = require('moment');
 var querystring = require('querystring');
-//var _PHANTOM_ZOOM = true;
-//var _PHANTOM_PATH_OVERRIDE = '';
-var _PHANTOM_ZOOM = false;
-var _PHANTOM_PATH_OVERRIDE = path.dirname(require.resolve('phantomjs'))+'\\phantom\\phantomjs.exe';
+var _HEADER_ZOOM = 0.75;
+var _BROWSER_RECYCLE_COUNT = 50;
 
 function AppSrvRpt(appsrv) {
   this.AppSrv = appsrv;
-  this.phsession = null;
-  this.phreqcount = 0;
-  this.phqueue = null;
+  this.browser = null;
+  this.browserreqcount = 0;
+  this.browserqueue = null;
   this.InitReportQueue();
-  process.addListener('exit', function (code) { if (this.phsession != null) { this.phsession.exit(); this.phsession = null; } });
+  process.addListener('exit', function (code) { if (this.browser != null) { this.browser.close(); this.browser = null; } });
 }
 
 AppSrvRpt.prototype.InitReportQueue = function () {
   var _this = this;
-  this.phqueue = async.queue(function (task, done) {
+  this.browserqueue = async.queue(function (task, done) {
     _this.genReport(task.req, task.res, task.modelid, task.params, task.data, done);
   }, 1);
 }
@@ -98,7 +95,7 @@ AppSrvRpt.prototype.queueReport = function (req, res, modelid, Q, P, params, onC
       return onComplete(null,_this.genReportContent(req, res, modelid, sql_params, rslt));
     }
     else{
-      _this.phqueue.push({ req: req, res: res, modelid: modelid, params: sql_params, data: rslt }, onComplete);
+      _this.browserqueue.push({ req: req, res: res, modelid: modelid, params: sql_params, data: rslt }, onComplete);
     }
   });
 };
@@ -298,147 +295,170 @@ AppSrvRpt.prototype.genReport = function (req, res, modelid, params, data, done)
     HelperFS.clearFiles(report_folder, jsh.Config.public_temp_expiration, -1, function () {
       tmp.file({ dir: report_folder }, function (tmperr, tmppath, tmpfd) {
         if (tmperr) throw tmperr;
-        _this.getPhantom(function (ph) {
+        _this.getBrowser(function (browser) {
           var page = null;
           try {
-            ph.createPage().then(function (_page) {            
+            browser.newPage().then(function (_page) {            
+              var tmppdfpath = tmppath + '.pdf';
+              var tmphtmlpath = tmppath + '.html';
               page = _page;
 
               var rptcontent = _this.genReportContent(req, res, modelid, params, data);
 
+              var pagesettings = {
+                format: 'Letter',
+                landscape: false,
+                printBrackground: true,
+                margin: {
+                  top: '1cm',
+                  bottom: '1cm',
+                  left: '1cm',
+                  right: '1cm',
+                }
+              };
+              if ('pagesettings' in model) pagesettings = _.extend(pagesettings, model.pagesettings);
+              pagesettings.path = tmppdfpath;
+
+              var dpi = 96;
+              var default_header = '1cm';//Math.floor(0.4 * dpi) + 'px';
+
+              var headerheight = 0;
+              var footerheight = 0;
+              if(rptcontent.header){
+                pagesettings.displayHeaderFooter = true;
+                pagesettings.headerTemplate = rptcontent.header;
+                headerheight = default_header;
+                if ('headerheight' in model) headerheight = model.headerheight;
+              }
+              if(rptcontent.footer){
+                pagesettings.displayHeaderFooter = true;
+                pagesettings.footerTemplate = rptcontent.footer;
+                footerheight = default_header;
+                if ('footerheight' in model) footerheight = model.footerheight;
+              }
+
               //page.set('viewportSize',{width:700,height:800},function(){
               
-              var dpi = 1.3 * 72;
-              var default_border = '1cm';//Math.floor(0.5 * dpi) + 'px';
-              var default_header = '1cm';//Math.floor(0.4 * dpi) + 'px';
-              
-              var pagesettings = {
-                format: 'letter',
-                orientation: 'portrait',
-                border: default_border,
-              };
-              var headerzoomcss = '';
-              if(_PHANTOM_ZOOM) headerzoomcss += '<style type="text/css">body{zoom:0.75;}</style>';
-              var headerheight = default_header;
-              var footerheight = default_header;
-              if ('headerheight' in model) headerheight = model.headerheight;
-              if ('footerheight' in model) footerheight = model.footerheight;
-              if (rptcontent.header) {
-                var pageheaderjs = model.pageheaderjs;
-                if (_.isArray(pageheaderjs)) pageheaderjs = pageheaderjs.join('');
-                if(!pageheaderjs) pageheaderjs = 'return txt;';
-
-                var headcontent = "function (pageNum, numPages) { var txt = " + JSON.stringify(headerzoomcss) + ' + ' +
-                  JSON.stringify(rptcontent.header) +
-                  "; txt = txt.replace(/{{pageNum}}/g,pageNum); txt = txt.replace(/{{numPages}}/g,numPages); var postproc = function(pageNum, numPages, txt){"+pageheaderjs+"}; txt = postproc(pageNum, numPages, txt); return txt; }";
-                pagesettings.header = {
-                  height: headerheight,
-                  contents: ph.callback(headcontent)
-                };
-              }
-              if (rptcontent.footer) {
-                var pagefooterjs = model.pagefooterjs;
-                if (_.isArray(pagefooterjs)) pagefooterjs = pagefooterjs.join('');
-                if(!pagefooterjs) pagefooterjs = 'return txt;';
-
-                var footcontent = "function (pageNum, numPages) { var txt = " + JSON.stringify(headerzoomcss) + ' + ' +
-                  JSON.stringify(rptcontent.footer) +
-                  "; txt = txt.replace(/{{pageNum}}/g,pageNum); txt = txt.replace(/{{numPages}}/g,numPages); var postproc = function(pageNum, numPages, txt){"+pagefooterjs+"}; txt = postproc(pageNum, numPages, txt); return txt; }";
-                pagesettings.footer = {
-                  height: footerheight,
-                  contents: ph.callback(footcontent)
-                };
-              }
-              if ('pagesettings' in model) pagesettings = _.merge(pagesettings, model.pagesettings);
-
               //Calculate page width
-              var zoom = undefined;
-              if(model.zoom) zoom = model.zoom;
+              var zoom = undefined;//xxx
+              if(model.zoom) zoom = model.zoom;//xxx
 
-              var borderLeft = 0;
-              var borderRight = 0;
-              var borderTop = 0;
-              var borderBottom = 0;
+              var marginLeft = 0;
+              var marginRight = 0;
+              var marginTop = 0;
+              var marginBottom = 0;
               var pageWidth = 1; //px
               var pageHeight = 1; //px
               var headerHeightPx = 0;
               var footerHeightPx = 0;
-              var dpi = 96;
-              if(pagesettings.border || pagesettings.margin){
+              if(pagesettings.margin){
                 var basemargin = pagesettings.margin;
-                if(!basemargin) basemargin = pagesettings.border;
+                if(!basemargin) basemargin = 0;
                 if(_.isString(basemargin)) basemargin = parseUnitsPx(basemargin,dpi);
                 if(_.isNumber(basemargin)){
-                  borderLeft = basemargin;
-                  borderRight = basemargin;
-                  borderTop = basemargin;
-                  borderBottm = basemargin;
+                  marginLeft = basemargin;
+                  marginRight = basemargin;
+                  marginTop = basemargin;
+                  marginBottom = basemargin;
                 }
                 else {
-                  if(basemargin.left) borderLeft = parseUnitsPx(basemargin.left,dpi);
-                  if(basemargin.right) borderRight = parseUnitsPx(basemargin.right,dpi);
-                  if(basemargin.top) borderTop = parseUnitsPx(basemargin.top,dpi);
-                  if(basemargin.bottom) borderBottom = parseUnitsPx(basemargin.bottom,dpi);
+                  if(basemargin.left) marginLeft = parseUnitsPx(basemargin.left,dpi);
+                  if(basemargin.right) marginRight = parseUnitsPx(basemargin.right,dpi);
+                  if(basemargin.top) marginTop = parseUnitsPx(basemargin.top,dpi);
+                  if(basemargin.bottom) marginBottom = parseUnitsPx(basemargin.bottom,dpi);
                 }
               }
+              if(pagesettings.width) pageWidth = parseUnitsPx(pagesettings.width,dpi);
+              if(pagesettings.height) pageHeight = parseUnitsPx(pagesettings.height,dpi);
               if(pagesettings.format){
                 var fmt = pagesettings.format.toLowerCase();
                 var w = 1;
                 var h = 1;
+                //Width and height in millimeters
+                if(fmt=='a0'){ w = 841; h=1189; }
+                if(fmt=='a1'){ w = 594; h=841; }
+                if(fmt=='a2'){ w = 420; h=594; }
                 if(fmt=='a3'){ w = 297; h=420; }
                 else if(fmt=='a4'){ w=210; h=297; }
                 else if(fmt=='a5'){ w=148; h=210; }
+                else if(fmt=='a6'){ w=105; h=148; }
+                else if(fmt=='a7'){ w=74; h=105; }
                 else if(fmt=='legal'){ w=215.9; h=355.6; }
                 else if(fmt=='letter'){ w=215.9; h=279.4; }
                 else if(fmt=='tabloid'){ w=279.4; h=431.8; }
-                if(pagesettings.orientation == 'landscape'){
+                else if(fmt=='ledger'){ w=279.4; h=431.8; }
+                else return jsh.Log.error('Invalid report format: '+pagesettings.format)
+                if(pagesettings.landscape){
                   _w = w;
                   w = h;
                   h = _w;
                 }
+                //Width and height in pixels
                 pageWidth = (w / (25.4)) * dpi;
-                pageHeight = (w / (25.4)) * dpi;
+                pageHeight = (h / (25.4)) * dpi;
               }
-              if(pagesettings.width) pageWidth = parseUnitsPx(pagesettings.width,dpi);
-              if(pagesettings.height) pageHeight = parseUnitsPx(pagesettings.height,dpi);
-              if(pagesettings.header && pagesettings.header.height) headerHeightPx = parseUnitsPx(pagesettings.header.height,dpi);
-              if(pagesettings.footer && pagesettings.footer.height) footerHeightPx = parseUnitsPx(pagesettings.footer.height,dpi);
+              if(headerheight) headerHeightPx = parseUnitsPx(headerheight,dpi);
+              if(footerheight) footerHeightPx = parseUnitsPx(footerheight,dpi);
               
-              var contentWidth = pageWidth - borderLeft - borderRight;
-              var contentHeight = pageHeight - borderTop - borderBottom - headerHeightPx - footerHeightPx;
+              var contentWidth = pageWidth - marginLeft - marginRight;
+              var contentHeight = pageHeight - marginTop - marginBottom - headerHeightPx - footerHeightPx;
               if (jsh.Config.debug_params.report_debug) { console.log('Calculated Page Size: '+contentHeight + 'x'+contentWidth); }
 
-              contentWidth *= 0.998;
-              contentHeight *= 0.998;
+              pagesettings.margin = {
+                top: (marginTop+headerHeightPx)+'px',
+                right: marginRight+'px',
+                bottom: (marginBottom+footerHeightPx)+'px',
+                left: marginLeft+'px',
+              }
+              if(pagesettings.headerTemplate){
+                pagesettings.headerTemplate = '<style type="text/css">#header{ padding:'+Math.round(marginTop*_HEADER_ZOOM)+'px '+Math.round(marginRight*_HEADER_ZOOM)+'px '+Math.round(marginBottom*_HEADER_ZOOM)+'px '+Math.round(marginLeft*_HEADER_ZOOM)+'px; -webkit-print-color-adjust: exact; }</style><div style="position:absolute;width:'+(contentWidth)+'px;font-size:12px;transform: scale('+_HEADER_ZOOM+'); transform-origin: top left;">'+pagesettings.headerTemplate+'</div>';
+              }
+              if(pagesettings.footerTemplate){
+                pagesettings.footerTemplate = '<style type="text/css">#footer{ padding:'+Math.round(marginTop*_HEADER_ZOOM)+'px '+Math.round(marginRight*_HEADER_ZOOM)+'px '+Math.round(marginBottom*_HEADER_ZOOM)+'px '+Math.round(marginLeft*_HEADER_ZOOM)+'px; -webkit-print-color-adjust: exact; }</style><div style="position:absolute;width:'+(contentWidth)+'px;font-size:12px;transform: scale('+_HEADER_ZOOM+'); transform-origin: bottom left;">'+pagesettings.footerTemplate+'</div>';
+              }
 
-              var onLoadFinished = function (val) { //  /dev/stdout     path.dirname(module.filename)+'/out.pdf'
-                var tmppdfpath = tmppath + '.pdf';
-                if(_PHANTOM_ZOOM) page.evaluate(function(zoom,contentWidth){ if(!zoom) zoom = contentWidth/document.width; document.body.style.zoom=zoom; },zoom,contentWidth);
-                page.render(tmppdfpath).then(function () {
-                  var dispose = function (disposedone) {
-                    page.close().then(function () {
-                      page = null;
-                      fs.close(tmpfd, function () {
-                        fs.unlink(tmppath, function (err) {
-                          if (typeof disposedone != 'undefined') disposedone();
-                        });
-                      });
-                    }).catch(function (err) { jsh.Log.error(err); });;
-                  };
-                  done(null, tmppdfpath, dispose);
-                }).catch(function (err) { jsh.Log.error(err); });
-              };
+              fs.writeFile(tmphtmlpath, rptcontent.body||'','utf8',function(err){
+                if(err) return jsh.Log.error(err);
+                page.goto('file://'+tmphtmlpath, { waitUntil: 'networkidle0' })
+                .then(function(){
+                  page.evaluate(function(){ if(!document||!document.body) return 0; document.body.style['-webkit-print-color-adjust'] = 'exact'; return document.body.clientWidth; }).then(function(documentWidth){
+                    if(documentWidth && !pagesettings.scale){
+                      var scale = contentWidth * 0.998 / documentWidth;
+                      if(scale < 0.1) scale = 0.1;
+                      if(scale > 1) scale = 1;
+                      pagesettings.scale = scale;
+                    }
+                    //page.emulateMedia('screen').then(function(){
+                      page.pdf(pagesettings).then(function () {
+                        var dispose = function (disposedone) {
+                          page.close().then(function () {
+                            page = null;
+                            fs.close(tmpfd, function () {
+                              fs.unlink(tmphtmlpath, function (err) {
+                                fs.unlink(tmppath, function (err) {
+                                  if (typeof disposedone != 'undefined') disposedone();
+                                });
+                              });
+                            });
+                          }).catch(function (err) { jsh.Log.error(err); });;
+                        };
+                        done(null, tmppdfpath, dispose);
+                      }).catch(function (err) { jsh.Log.error(err); });
+                    //}).catch(function (err) { jsh.Log.error(err); });
+                  }).catch(function (err) { jsh.Log.error(err); });
+                })
+                .catch(function (err) { jsh.Log.error(err); });
+              });
 
-              page.property('paperSize', pagesettings).then(function () {
-                page.on('onLoadFinished', onLoadFinished).then(function () {
-                  page.property('content', rptcontent.body).then(function () { /* Report Generation Complete */ }).catch(function (err) { jsh.Log.error(err); });;
-                }).catch(function (err) { jsh.Log.error(err); });
-              }).catch(function (err) { jsh.Log.error(err); });
-              //page.set('viewportSize',{width:3700,height:3800});
-            }).catch(function (err) { jsh.Log.error(err); });;
+            }).catch(function (err) { jsh.Log.error(err); });
           } catch (err) {
-            try { if (page != null) page.close(); } catch (ex) { }
-            return done(Helper.NewError("Error occurred during report generation (" + err.toString() + ')', -99999), null);
+            var rpterr = Helper.NewError("Error occurred during report generation (" + err.toString() + ')', -99999);
+            if (page != null){
+              return page.close()
+                .then(function(){ return done(rpterr, null); })
+                .catch(function (err) { jsh.Log.error(err); return done(rpterr, null); });
+            }
+            else return done(rpterr, null);
           }
         }); //, { dnodeOpts: { weak: false } }
       });
@@ -463,43 +483,30 @@ AppSrvRpt.prototype.RenderEJS = function (ejssrc, ejsdata) {
   return ejs.render(ejssrc, _.extend(ejsdata, { _: _, ejsext: ejsext }));
 }
 
-AppSrvRpt.prototype.getPhantom = function (callback) {
+AppSrvRpt.prototype.getBrowser = function (callback) {
   var _this = this;
   var jsh = _this.AppSrv.jsh;
-  if (_this.phsession) {
-    //Recycle phantom after 50 users
-    _this.phreqcount++;
-    if (_this.phreqcount > 3) { _this.phsession.exit(); _this.phsession = null; }
-    else return callback(_this.phsession);
-  }
-  jsh.Log.info('Launching PhantomJS Report Renderer');
-  var rptlogger = function () {
-    var logtxt = '';
-    for (var i = 0; i < arguments.length; i++) {
-      if (!arguments[i]) continue;
-      logtxt += arguments[i].toString() + ' - ';
+  if (_this.browser) {
+    //Recycle browser after _BROWSER_RECYCLE_COUNT uses
+    _this.browserreqcount++;
+    if (_this.browserreqcount >= _BROWSER_RECYCLE_COUNT) { 
+      return _this.browser.close()
+        .then(function(){ _this.browser = null; return _this.getBrowser(callback); })
+        .catch(function(err){ jsh.Log.error('Cound not exit report renderer: '+err.toString()); });
     }
-    if (!logtxt || (logtxt.indexOf('NOOP command') >= 0)) return;
-    jsh.Log.info(logtxt);
-  };
-  var phantomConfig = {
-    onExit: function (code, signal) {
-      if (code != 0) _this.phsession = null;
-    },
-    //Fault tolerance to generate new phantom if process crashes
-    /*logger: {
-      info: rptlogger,
-      debug: rptlogger,
-      warn: rptlogger,
-      error: rptlogger
-    }*/
-  };
-  if(_PHANTOM_PATH_OVERRIDE) phantomConfig.phantomPath = _PHANTOM_PATH_OVERRIDE;
-  phantom.create(['--web-security=no'], phantomConfig).then(function (_phsession) {
-    _this.phsession = _phsession;
-    _this.phreqcount = 0;
-    return callback(_this.phsession);
-  }).catch(function (err) { jsh.Log.error(err); });
+    else return callback(_this.browser);
+  }
+  jsh.Log.info('Launching Report Renderer');
+  puppeteer.launch({ ignoreHTTPSErrors: true })
+    .then(function(rslt){
+      _this.browser = rslt;
+      _this.browser.on('disconnected', function(){
+        _this.browser = null;
+      });
+      _this.browserreqcount = 0;
+      return callback(_this.browser);
+    })
+    .catch(function(err){ jsh.Log.error(err); });
 }
 
 AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete) {

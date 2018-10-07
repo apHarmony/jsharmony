@@ -69,7 +69,9 @@ exports.getReportHTML = function (req, res, modelid, Q, P, callback) {
     //Add footer
     idx = rslt.indexOf('</body');
     if(idx < 0) idx = rslt.length;
-    rslt = rslt.substr(0,idx) + rptcontent.footer + rslt.substr(idx,rslt.length);
+    if(rptcontent.footer){
+      rslt = rslt.substr(0,idx) + "<div style='clear:both;'>" + rptcontent.footer + "</div>" + rslt.substr(idx,rslt.length);
+    }
 
 
     rslt = rslt.replace(/(file:\/\/[^"'>]*)/gi,function(match,p1){ 

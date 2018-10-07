@@ -238,7 +238,11 @@ jsHarmonyServer.prototype.Run = function(cb){
     else {
       var redirect_app = express();
       redirect_app.get('*', function (req, res) {
-        var hostname = (req.headers.host.match(/:/g)) ? req.headers.host.slice(0, req.headers.host.indexOf(":")) : req.headers.host;
+        var ip = (req._remoteAddress || (req.connection && req.connection.remoteAddress));
+        var hostname = ip;
+        if(req.header && req.header.host){
+          hostname = (req.headers.host.match(/:/g)) ? req.headers.host.slice(0, req.headers.host.indexOf(":")) : req.headers.host;
+        }
         res.redirect('https://' + hostname + ':' + new_https_port + req.url);
       })
       var redirect_server = http.createServer(redirect_app);

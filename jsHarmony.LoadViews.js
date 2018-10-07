@@ -44,7 +44,7 @@ exports.getEJSFilename = function (f) {
   fpath = appDir + '/views/' + f + '.ejs';
   if (fs.existsSync(fpath)) return fpath;
   for (var i = modeldirs.length - 1; i >= 0; i--) {
-    fpath = modeldirs[i].path + '../views/' + f + '.ejs';
+    fpath = path.normalize(modeldirs[i].path + '../views/' + f + '.ejs');
     if (fs.existsSync(fpath)) return fpath;
   }
   fpath = appDir + '/views/' + f + '.ejs';
@@ -77,7 +77,7 @@ exports.LoadViewsFolder = function (dpath, dont_overwrite) {
 exports.LoadViews = function(){
   var modeldirs = this.getModelDirs();
   for (var i = modeldirs.length - 1; i >= 0; i--) {
-    var fpath = modeldirs[i].path + '../views/';
+    var fpath = path.normalize(modeldirs[i].path + '../views/');
     this.LoadViewsFolder(fpath, true);
   }
 }

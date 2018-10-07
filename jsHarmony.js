@@ -93,7 +93,7 @@ jsHarmony.prototype.Init = function(init_cb){
       //Load Configuration Files from modules
       modeldirs = _this.getModelDirs();
       for (var i = 0; i < modeldirs.length; i++) {
-        _this.Config.LoadJSONConfigFolder(_this, modeldirs[i].path + '../');
+        _this.Config.LoadJSONConfigFolder(_this, path.normalize(modeldirs[i].path + '../'));
       }
 
       //Create Required Folders

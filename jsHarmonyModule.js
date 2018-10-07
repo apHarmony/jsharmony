@@ -17,8 +17,8 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var jsHarmony = require('./jsharmony.js');
-var jsHarmonyConfig = require('./jsharmonyConfig.js');
+var jsHarmony = require('./jsHarmony.js');
+var jsHarmonyConfig = require('./jsHarmonyConfig.js');
 
 function jsHarmonyModule(){
   this.jsh = null;  //Set to target during jsh.AddModule

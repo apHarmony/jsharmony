@@ -187,6 +187,12 @@ exports = module.exports = function(jsh){
     }
     else if ((jctrl.size() > 0) && jctrl.hasClass('xform_label')) { 
       if(jctrl.hasClass('xform_label_static')){
+        if(field.value.indexOf('<#')>=0){
+          val = field.value;
+          val = val.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
+          val = jsh.ejs.render(val, { data: _this, xejs: jsh.XExt.xejs, jsh: jsh, instance: jsh.getInstance() });
+          jctrl.html(val);
+        }
         if(val) jctrl.show();
         else jctrl.hide();
       }

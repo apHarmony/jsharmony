@@ -47,7 +47,8 @@ for(var i=0;i<model.fields.length;i++){
     }
     else if(field.control=='label'){
       %><div data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_label xelem<%=model.id%> <%=field.controlclass%> <%=xejs.iif(field.value,'xform_label_static')%>" onclick="return (function(){<%-jslocals%><%-field.onclick%>}).call(this);"><%
-      if(field.value){ %><%-field.value%><% }
+      if(field.value && (field.value.indexOf('<#')>=0)){  }
+      else if(field.value){ %><%-field.value%><% }
       else { %><%=xejs.GetValue(field)%><% }
       %></div><% 
     }
