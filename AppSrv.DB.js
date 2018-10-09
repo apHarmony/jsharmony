@@ -58,7 +58,8 @@ exports.ExecScalar = function (context, sql, ptypes, params, callback, dbconfig,
   this.ExecDBFunc(db.Scalar, context, sql, ptypes, params, callback, dbconfig, db);
 };
 
-exports.AppDBError = function (req, res, err) {
+exports.AppDBError = function (req, res, err, errorHandler) {
+  if(!errorHandler) errorHandler = function(num, txt){ return Helper.GenError(req, res, num, txt); };
   if ('model' in err) {
     var model = err.model;
     if ('dberrors' in model) {
@@ -68,19 +69,19 @@ exports.AppDBError = function (req, res, err) {
         var etxt = dberr[1];
         if (erex.indexOf('/') == 0) {
           erex = erex.substr(1, erex.length - 2);
-          if (err.message.match(new RegExp(erex))) { return Helper.GenError(req, res, -9, etxt); }
+          if (err.message.match(new RegExp(erex))) { return errorHandler(-9, etxt); }
         }
-        else if (err.message.indexOf(erex) >= 0) { return Helper.GenError(req, res, -9, etxt); }
+        else if (err.message.indexOf(erex) >= 0) { return errorHandler(-9, etxt); }
       }
     }
   }
   //Not necessary because sql is printed out in node debug in log below
   //if ('sql' in err) { if (this.jsh.Config.debug_params.appsrv_logsql) err.message += ' SQL: ' + err.sql; }
-  if ((err.message) && (err.message == 'INVALID ACCESS')) return Helper.GenError(req, res, -12, "Invalid DataLock Access");
+  if ((err.message) && (err.message == 'INVALID ACCESS')) return errorHandler(-12, "Invalid DataLock Access");
   if (this.jsh.Config.debug_params.appsrv_requests) this.jsh.Log.error(err);
-  if ((err.message) && (err.message.indexOf('Application Error - ') == 0)) return Helper.GenError(req, res, -5, err.message);
-  if ('number' in err) return Helper.GenError(req, res, err.number, err.message);
-  return Helper.GenError(req, res, -99999, err.message);
+  if ((err.message) && (err.message.indexOf('Application Error - ') == 0)) return errorHandler(-5, err.message);
+  if ('number' in err) return errorHandler(err.number, err.message);
+  return errorHandler(-99999, err.message);
 }
 
 exports.DeformatParam = function (field, val, verrors) {

@@ -3,6 +3,7 @@
 -3: No records affected
 -4: Invalid Parameters
 -5: Database Application Error (Show error directly from trigger)
+-6: Model configuration error
 -9: Custom message
 -10: Invalid Login / Not Authenticated
 -11: Invalid Model Access

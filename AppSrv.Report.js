@@ -48,6 +48,35 @@ exports.getReport = function (req, res, modelid, Q, P, callback) {
   this.rptsrv.queueReport(req, res, modelid, Q, P, {}, callback);
 }
 
+exports.parseReportHTML = function(rptcontent){
+  var _this = this;
+  if(('body' in rptcontent) && !('header' in rptcontent) && !('footer' in rptcontent)) return '';
+  var rslt = rptcontent.body;
+  //Add Border
+  var idx = rslt.indexOf('</head');
+  if(idx < 0) idx = 0;
+  rslt = rslt.substr(0,idx) + '<style type="text/css">body { border:2px solid #ccc; zoom:1 !important; }</style>' + rslt.substr(idx,rslt.length);
+  //Add Header
+  idx = rslt.indexOf('<body');
+  if(idx < 0) idx = 0;
+  else idx = rslt.indexOf('>',idx)+1;
+  rslt = rslt.substr(0,idx) + rptcontent.header + rslt.substr(idx,rslt.length);
+  //Add footer
+  idx = rslt.indexOf('</body');
+  if(idx < 0) idx = rslt.length;
+  if(rptcontent.footer){
+    rslt = rslt.substr(0,idx) + "<div style='clear:both;'>" + rptcontent.footer + "</div>" + rslt.substr(idx,rslt.length);
+  }
+  //Convert paths to relative
+  rslt = rslt.replace(/(file:\/\/[^"'>]*)/gi,function(match,p1){ 
+    p1 = p1.replace(_this.jsh.Config.datadir,'');
+    if(Helper.endsWith(p1,'/node_modules/jsharmony/public/js/jsHarmony.js')) return '/js/jsHarmony.js';
+    if(p1.lastIndexOf('/public/') >= 0) return p1.substr(p1.lastIndexOf('/public/')+7);
+    return ''; 
+  });
+  return rslt;
+}
+
 exports.getReportHTML = function (req, res, modelid, Q, P, callback) {
   if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Report " + modelid + " not found in collection.");
   var _this = this;
@@ -55,31 +84,21 @@ exports.getReportHTML = function (req, res, modelid, Q, P, callback) {
   if (typeof P == 'undefined') P = req.body;
   if (typeof callback == 'undefined') callback = function (err, rptcontent) {
     /* Report Done */ 
-    if(!rptcontent.body && !rptcontent.header && !rptcontent.footer) return res.end();
-    var rslt = rptcontent.body;
-    //Add Border
-    var idx = rslt.indexOf('</head');
-    if(idx < 0) idx = 0;
-    rslt = rslt.substr(0,idx) + '<style type="text/css">body { border:2px solid #ccc; zoom:1 !important; }</style>' + rslt.substr(idx,rslt.length);
-    //Add Header
-    idx = rslt.indexOf('<body');
-    if(idx < 0) idx = 0;
-    else idx = rslt.indexOf('>',idx)+1;
-    rslt = rslt.substr(0,idx) + rptcontent.header + rslt.substr(idx,rslt.length);
-    //Add footer
-    idx = rslt.indexOf('</body');
-    if(idx < 0) idx = rslt.length;
-    if(rptcontent.footer){
-      rslt = rslt.substr(0,idx) + "<div style='clear:both;'>" + rptcontent.footer + "</div>" + rslt.substr(idx,rslt.length);
+    var rslt = '';
+    if(_.isArray(rptcontent) && (rptcontent.length == 1)){
+      rslt = _this.parseReportHTML(rptcontent[0]);
     }
-
-
-    rslt = rslt.replace(/(file:\/\/[^"'>]*)/gi,function(match,p1){ 
-      p1 = p1.replace(_this.jsh.Config.datadir,'');
-      if(Helper.endsWith(p1,'/node_modules/jsharmony/public/js/jsHarmony.js')) return '/js/jsHarmony.js';
-      if(p1.lastIndexOf('/public/') >= 0) return p1.substr(p1.lastIndexOf('/public/')+7);
-      return ''; 
-    });
+    else if(_.isArray(rptcontent)){
+      rslt = '<html><head></head><body>';
+      for(var i=0;i<rptcontent.length;i++){
+        rslt += '<iframe width="100%" height="500" src="data:text/html;base64,'+Buffer.from(_this.parseReportHTML(rptcontent[i])).toString('base64')+'"></iframe>';
+      }
+      rslt += '</body></html>';
+    }
+    else {
+      rslt = _this.parseReportHTML(rptcontent);
+    }
+    
     res.send(rslt);
     res.end();
   }

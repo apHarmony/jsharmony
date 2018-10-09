@@ -30,6 +30,7 @@ var ejs = require('ejs');
 var ejsext = require('./lib/ejsext.js');
 var moment = require('moment');
 var querystring = require('querystring');
+var hummus = require('hummus');
 var _HEADER_ZOOM = 0.75;
 var _BROWSER_RECYCLE_COUNT = 50;
 
@@ -55,15 +56,24 @@ AppSrvRpt.prototype.queueReport = function (req, res, modelid, Q, P, params, onC
   var jsh = thisapp.jsh;
   var _this = this;
   var model = jsh.getModel(req, modelid);
-  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
-  var db = jsh.getModelDB(req, modelid);
+  var db = params.db;
+  var dbcontext = params.dbcontext;
+  var errorHandler = function(num, txt){ return Helper.GenError(req, res, num, txt); };
+  if(params.errorHandler) errorHandler = params.errorHandler;
+  if(req){
+    if (!Helper.HasModelAccess(req, model, 'B')) { return errorHandler(-11, 'Invalid Model Access for '+modelid); }
+    db = db || jsh.getModelDB(req, modelid);
+    dbcontext = dbcontext || req._DBContext || 'report';
+  }
+  else if(!db) throw new Error('Either req or db is required.');
+
   //Validate Parameters
   var fieldlist = thisapp.getFieldNames(req, model.fields, 'B');
   _.map(fieldlist, function (field) { if (!(field in Q)) Q[field] = ''; });
-  if (!thisapp.ParamCheck('Q', Q, _.map(fieldlist, function (field) { return '&' + field; }))) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
-  if (!thisapp.ParamCheck('P', P, [])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
+  if (!thisapp.ParamCheck('Q', Q, _.map(fieldlist, function (field) { return '&' + field; }))) { return errorHandler(-4, 'Invalid Parameters'); }
+  if (!thisapp.ParamCheck('P', P, [])) { return errorHandler(-4, 'Invalid Parameters'); }
   
-  jsh.Log.info("REPORT: " + req.originalUrl + " " + (req.user_id || '') + " " + (req.user_name || ''));
+  if(req && !params.fromBatch) jsh.Log.info("REPORT: " + req.originalUrl + " " + (req.user_id || '') + " " + (req.user_name || ''));
   
   var sql_ptypes = [];
   var sql_params = {};
@@ -78,57 +88,165 @@ AppSrvRpt.prototype.queueReport = function (req, res, modelid, Q, P, params, onC
       sql_ptypes.push(dbtype);
       sql_params[fname] = thisapp.DeformatParam(field, Q[fname], verrors);
     }
-    else throw new Error('Missing parameter ' + fname);
+    else return errorHandler(-4, 'Missing parameter ' + fname);
   });
   verrors = _.merge(verrors, model.xvalidate.Validate('B', sql_params));
-  if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
+  if (!_.isEmpty(verrors)) { return errorHandler(-2, verrors[''].join('\n')); }
+
+  if(model.batch && !params.fromBatch) return _this.batchReport(req, res, db, dbcontext, model, sql_ptypes, sql_params, verrors, errorHandler, Q, params, onComplete);
   
   var dbtasks = {};
-
-  this.parseReportSQLData(req, res, model, sql_ptypes, sql_params, verrors, dbtasks, model.reportdata);
+  try{
+    this.parseReportSQLData(req, db, dbcontext, model, sql_ptypes, sql_params, verrors, dbtasks, model.reportdata);
+  }
+  catch(err){
+    jsh.Log.error(err);
+    return errorHandler(-99999, err.toString());
+  }
   
-  db.ExecTasks(dbtasks, function (err, rslt) {
-    if (err != null) { thisapp.AppDBError(req, res, err); return; }
-    if (rslt == null) rslt = {};
-    _this.MergeReportData(rslt, model.reportdata, null);
+  db.ExecTasks(dbtasks, function (err, dbdata) {
+    if (err) {
+      if(jsh.Config.debug_params.report_debug) console.log(err);
+      return thisapp.AppDBError(req, res, err, errorHandler);
+    }
+    if (dbdata == null) dbdata = {};
+    _this.MergeReportData(dbdata, model.reportdata, null);
     if(params.output=='html'){
-      return onComplete(null,_this.genReportContent(req, res, modelid, sql_params, rslt));
+      return onComplete(null,_this.genReportContent(req, res, modelid, sql_params, dbdata));
     }
     else{
-      _this.browserqueue.push({ req: req, res: res, modelid: modelid, params: sql_params, data: rslt }, onComplete);
+      _this.browserqueue.push({ req: req, res: res, modelid: modelid, params: sql_params, data: dbdata }, onComplete);
     }
   });
 };
 
-AppSrvRpt.prototype.parseReportSQLData = function (req, res, model, sql_ptypes, sql_params, verrors, dbtasks, rdata) {
+AppSrvRpt.prototype.batchReport = function (req, res, db, dbcontext, model, sql_ptypes, sql_params, verrors, errorHandler, Q, params, onComplete) {
   var thisapp = this.AppSrv;
   var jsh = thisapp.jsh;
   var _this = this;
-  var db = jsh.getModelDB(req, model.id);
+  if(!model.batch || !model.batch.sql) return errorHandler(-6, 'Batch reports require model.batch.sql');
+
+  //Parameters should already be validated
+
+  //Add DataLock parameters to SQL 
+  var datalockqueries = [];
+  thisapp.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
+  
+  var sql = db.sql.runReportBatch(jsh, model, datalockqueries);
+  
+  var dbtasks = {};
+  dbtasks['batchqueue'] = function (callback) {
+    db.Recordset(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt) {
+      if ((err == null) && (rslt == null)) err = Helper.NewError('Record not found', -1);
+      if (err != null) { err.model = model; err.sql = sql; }
+      callback(err, rslt);
+    });
+  }
+  
+  db.ExecTasks(dbtasks, function (err, rslt) {
+    if (err) { return thisapp.AppDBError(req, res, err, errorHandler); }
+    if (rslt == null) rslt = {};
+    var jobtasks = {};
+    if(params.output=='html'){
+      //Generate Batch HTML
+      var rptrslt = [];
+      async.eachSeries(rslt.batchqueue, function(batchparams, cb){
+        batchparams = _.extend({}, Q, batchparams);
+        thisapp.rptsrv.queueReport(req, res, model.id, batchparams, {}, _.extend({}, params, { db: db, dbcontext: dbcontext, errorHandler: errorHandler, fromBatch: true}), function (err, rptcontent) {
+          if(err) return cb(err);
+          rptrslt.push(rptcontent);
+          return cb();
+        });
+      }, function(err){;
+        if(err) return errorHandler(-99999, err);
+        return onComplete(null, rptrslt);
+      });
+    }
+    else {
+      //Generate Batch PDF
+      var report_folder = jsh.Config.datadir + 'temp/report/';
+      HelperFS.createFolderIfNotExists(report_folder, function (err) {
+        if (err) throw err;
+        HelperFS.clearFiles(report_folder, jsh.Config.public_temp_expiration, -1, function () {
+          tmp.file({ dir: report_folder }, function (batchtmperr, batchtmppath, batchtmpfd) {
+            if (batchtmperr) return errorHandler(-99999, batchtmperr);
+            var batchtmppdfpath = batchtmppath + '.pdf';
+            var pdfWriter = hummus.createWriter(batchtmppdfpath);
+            var batchdbdata = [];
+
+            async.eachSeries(rslt.batchqueue, function(batchparams, cb){
+              batchparams = _.extend({}, Q, batchparams);
+              thisapp.rptsrv.queueReport(req, res, model.id, batchparams, {}, _.extend({}, params, { db: db, dbcontext: dbcontext, errorHandler: errorHandler, fromBatch: true}), function (err, tmppath, dispose, dbdata) {
+                if(err) return cb(err);
+                batchdbdata.push(dbdata);
+                /* Report Done */ 
+                HelperFS.getFileStats(req, res, tmppath, function (err, stat) {
+                  if (err){ dispose(); return cb('Report file not found'); }
+                  //Merge PDFs using PDFKit
+                  pdfWriter.appendPDFPagesFromPDF(tmppath);
+                  dispose();
+                  return cb(null);
+                });
+              });
+            }, function(err){
+              var dispose = function(disposedone){
+                fs.close(batchtmpfd, function () {
+                  fs.unlink(batchtmppath, function (err) {
+                    if(disposedone) disposedone();
+                  });
+                });
+              }
+              pdfWriter.end();
+              if(err) return errorHandler(-99999, err);
+              return onComplete(null, batchtmppdfpath, dispose, batchdbdata);
+            });
+
+          });
+        });
+      });
+    }
+  });
+}
+
+AppSrvRpt.prototype.parseReportSQLData = function (req, db, dbcontext, model, sql_ptypes, sql_params, verrors, dbtasks, rdata) {
+  var thisapp = this.AppSrv;
+  var jsh = thisapp.jsh;
+  var _this = this;
+  if(req){
+    db = db || jsh.getModelDB(req, model.id);
+    dbcontext = dbcontext || req._DBContext || 'report';
+  }
+  else if(!db) throw new Error('Either req or db is required.');
   _.each(rdata, function (dparams, dname) {
     if (!('sql' in dparams)) throw new Error(dname + ' missing sql');
-    //Add DataLock parameters to SQL 
+
     var datalockqueries = [];
-    thisapp.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, dparams.nodatalock);
-    var skipdatalock = false;
-    if ('nodatalock' in dparams) {
-      var skipdatalock = true;
-      for (datalockid in req.jshsite.datalock) {
-        if (Helper.arrayIndexOf(dparams.nodatalock,datalockid,{caseInsensitive:jsh.Config.system_settings.case_insensitive_datalocks}) < 0) skipdatalock = false;
+    var skipdatalock = true;
+    if(req){
+      //Add DataLock parameters to SQL 
+      thisapp.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, dparams.nodatalock);
+      skipdatalock = false;
+      if ('nodatalock' in dparams) {
+        var skipdatalock = true;
+        for (datalockid in req.jshsite.datalock) {
+          if (Helper.arrayIndexOf(dparams.nodatalock,datalockid,{caseInsensitive:jsh.Config.system_settings.case_insensitive_datalocks}) < 0) skipdatalock = false;
+        }
       }
     }
     
     var sql = db.sql.parseReportSQLData(jsh, dname, dparams, skipdatalock, datalockqueries);
+
+    if(!req && (sql.indexOf('%%%DATALOCKS%%%')>=0)) throw new Error('Cannot use %%%DATALOCKS%%% in automated reports');
     
     dbtasks[dname] = function (callback) {
-      db.Recordset(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt) {
+      db.Recordset(dbcontext, sql, sql_ptypes, sql_params, function (err, rslt) {
         if ((err == null) && (rslt == null)) err = Helper.NewError('Record not found', -1);
         if (err != null) { err.model = model; err.sql = sql; }
         callback(err, rslt);
       });
     }
     
-    if ('children' in dparams) _this.parseReportSQLData(req, res, model, sql_ptypes, sql_params, verrors, dbtasks, dparams.children);
+    if ('children' in dparams) _this.parseReportSQLData(req, db, dbcontext, model, sql_ptypes, sql_params, verrors, dbtasks, dparams.children);
   });
 }
 
@@ -259,8 +377,8 @@ AppSrvRpt.prototype.genReportContent = function(req, res, modelid, params, data)
       data: data,
       params: params,
       _: _,
-      pageNum: '{{pageNum}}', 
-      numPages: '{{numPages}}' 
+      pageNum: "<span class='pageNumber'></span>", 
+      numPages: "<span class='totalPages'></span>" 
     });
   }
 
@@ -274,8 +392,8 @@ AppSrvRpt.prototype.genReportContent = function(req, res, modelid, params, data)
       data: data,
       params: params,
       _: _,
-      pageNum: '{{pageNum}}', 
-      numPages: '{{numPages}}' 
+      pageNum: "<span class='pageNumber'></span>", 
+      numPages: "<span class='totalPages'></span>" 
     });
   }
 
@@ -340,9 +458,6 @@ AppSrvRpt.prototype.genReport = function (req, res, modelid, params, data, done)
               //page.set('viewportSize',{width:700,height:800},function(){
               
               //Calculate page width
-              var zoom = undefined;//xxx
-              if(model.zoom) zoom = model.zoom;//xxx
-
               var marginLeft = 0;
               var marginRight = 0;
               var marginTop = 0;
@@ -442,7 +557,7 @@ AppSrvRpt.prototype.genReport = function (req, res, modelid, params, data, done)
                             });
                           }).catch(function (err) { jsh.Log.error(err); });;
                         };
-                        done(null, tmppdfpath, dispose);
+                        done(null, tmppdfpath, dispose, data);
                       }).catch(function (err) { jsh.Log.error(err); });
                     //}).catch(function (err) { jsh.Log.error(err); });
                   }).catch(function (err) { jsh.Log.error(err); });
@@ -545,9 +660,6 @@ AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete
   });
   verrors = _.merge(verrors, model.xvalidate.Validate('B', sql_params));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
-  
-  var dbtasks = {};
-  this.parseReportSQLData(req, res, model, sql_ptypes, sql_params, verrors, dbtasks, model.reportdata);
   
   if (!('sql' in model.jobqueue)) throw new Error(modelid + ' missing job queue sql');
   
