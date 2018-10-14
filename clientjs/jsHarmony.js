@@ -399,7 +399,7 @@ jsHarmony.prototype.runGlobalsMonitor = function(){
     for(var id in window){
       if(!(id in _this.globalsMonitorCache)){
         _this.globalsMonitorCache[id] = true;
-        if(_.includes(['google','_xdc_','data-cke-expando','CKEDITOR','data-cke-expando','OverlayView'],id)) continue;
+        if(_.includes(['google','_xdc_','data-cke-expando','CKEDITOR','data-cke-expando','OverlayView','module$contents$MapsEvent_MapsEvent'],id)) continue;
         if(_.includes(_this.Config.debug_params.ignore_globals,id)) continue;
         if(parseInt(id).toString()==id.toString()) continue;
         _this.XExt.Alert('New global variable: window.'+id);
