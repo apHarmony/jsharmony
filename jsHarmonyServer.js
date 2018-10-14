@@ -240,7 +240,7 @@ jsHarmonyServer.prototype.Run = function(cb){
       redirect_app.get('*', function (req, res) {
         var ip = (req._remoteAddress || (req.connection && req.connection.remoteAddress));
         var hostname = ip;
-        if(req.header && req.header.host){
+        if(req.headers && req.headers.host){
           hostname = (req.headers.host.match(/:/g)) ? req.headers.host.slice(0, req.headers.host.indexOf(":")) : req.headers.host;
         }
         res.redirect('https://' + hostname + ':' + new_https_port + req.url);
