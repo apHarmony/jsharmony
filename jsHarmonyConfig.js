@@ -50,6 +50,8 @@ jsHarmonyConfigBase.prototype.Merge = function(config){
 //jsHarmonyConfig
 /////////////////
 function jsHarmonyConfig(config){
+  //Application Name
+  this.app_name = 'jsHarmony';
   //Custom application settings
   this.app_settings = { };
   //Salt used in front-end algorithms
@@ -200,16 +202,8 @@ function jsHarmonyConfig(config){
   //Field Encryption Passwords
   this.passwords = {};
 
-  //Run function when jsHarmony server is started (to be removed / moved to callback)
-  this.onServerReady = undefined; //function(servers){ };
-  //Application title (to be removed / renamed to app_title, site_title moved to Site Config)
-  this.site_title = "jsHarmony";
-  //"Home" button URL (to be removed / moved to Site Config)
-  this.home_url = "";
-  //Public routes (to be removed / moved to Site Config)
-  this.public_apps = [];
-  //Private routes (to be removed / moved to Site Config)
-  this.private_apps = [];
+  //Run function when jsHarmony server is started
+  this.onServerReady = []; //(function(cb, servers){ return cb(); });
 
   //Additional CSS files for jsHarmony.css
   this.css_extensions = [
@@ -221,6 +215,29 @@ function jsHarmonyConfig(config){
 
   //Load jsHarmony in Silent Mode
   this.silentStart = false;
+
+  //Mailer settings
+  this.mailer_settings = {
+    //SMTP
+    type: 'smtp',
+    host: 'mail.company.com',
+    port: 465,
+    auth: {
+      user: 'donotreply@company.com',
+      pass: ''
+    },
+    secure: true,
+    debug: false,
+    tls: { rejectUnauthorized: false },
+    maxConnections: 5,  //Max parallel SMTP connections
+    maxMessages: 10     //Messages sent per SMTP connection
+
+    //Amazon SES
+    //type: 'ses',
+    //accessKeyId: "xxx",
+    //secretAccessKey: "xxx",
+    //rateLimit: 10 // Messages per second
+  };
 
   //Modules
   this.modules = {};
@@ -254,7 +271,7 @@ jsHarmonyConfig.prototype.Merge = function(config){
         }
       }
       //Merge arrays
-      else if(_.includes(['public_apps','private_apps','schema_replacement','css_extensions','js_extensions'],prop)) this[prop] = this[prop].concat(config[prop]);
+      else if(_.includes(['schema_replacement','css_extensions','js_extensions'],prop)) this[prop] = this[prop].concat(config[prop]);
       //Replace objects
       else if(_.includes(['valid_extensions','supported_images','server'],prop)) this[prop] = config[prop];
       //Merge first level objects

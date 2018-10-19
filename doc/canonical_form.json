@@ -172,8 +172,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "controlparams": { "dateformat": "mm/dd/y" }, //DatePicker Params - dateformat is parameter to jQuery datepicker control for date display
                        {"sqlparams": {"FILE_SIZE": "D_SIZE",  //file_upload params - File Size
                              "FILE_EXT": "D_EXT", //File Extension
-                             "FILE_UTSTMP": "D_UTstmp", //Upload Timestamp - will be combined with req.jshsite.sqlparams.TSTMP sql
-                             "FILE_UU": "D_UU", //Upload User - will be combined with req.jshsite.sqlparams.CUSER sql
+                             "FILE_UTSTMP": "D_UTstmp", //Upload Timestamp - will be combined with TSTMP sql
+                             "FILE_UU": "D_UU", //Upload User - will be combined with CUSER sql
                              "FILE_NAME": "D_FileName" //Target file name for download
                            },
                            "image": {

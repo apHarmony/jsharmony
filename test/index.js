@@ -60,7 +60,7 @@ describe('Basic HTTP',function(){
   });
   it('Static Auth', function (done) {
     jsh.Init(function(){
-      jsh.Sites['default'].Merge({
+      jsh.Sites['main'].Merge({
         auth: jsHarmony.Auth.Static([
           {user_id: 1, user_name: 'Andrew', user_email: 'andrew@domain.com', password: 'SAMPLE_PASSWORD', _roles: ['SYSADMIN']},
           {user_id: 2, user_name: 'Steve', user_email: 'steve@domain.com', password: 'SAMPLE_PASSWORD', _roles: ['BROWSE']},

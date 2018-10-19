@@ -128,15 +128,19 @@ AppSrvRpt.prototype.batchReport = function (req, res, db, dbcontext, model, sql_
 
   //Parameters should already be validated
 
-  //Add DataLock parameters to SQL 
+  //Add DataLock parameters to SQL
   var datalockqueries = [];
-  thisapp.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
+  if(req){
+    thisapp.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
+  }
   
   var sql = db.sql.runReportBatch(jsh, model, datalockqueries);
+
+  if(!req && (sql.indexOf('%%%DATALOCKS%%%')>=0)) throw new Error('Cannot use %%%DATALOCKS%%% in automated reports');
   
   var dbtasks = {};
   dbtasks['batchqueue'] = function (callback) {
-    db.Recordset(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt) {
+    db.Recordset(dbcontext, sql, sql_ptypes, sql_params, function (err, rslt) {
       if ((err == null) && (rslt == null)) err = Helper.NewError('Record not found', -1);
       if (err != null) { err.model = model; err.sql = sql; }
       callback(err, rslt);

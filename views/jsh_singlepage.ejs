@@ -65,7 +65,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.InitXFileUpload();
   jsh.title_html = '';
-  jsh.html_title = '<%=jsh.Config.site_title%> - %%%PAGETITLE%%%';
+  jsh.title = '<%=jsh.Config.app_name%> - %%%PAGETITLE%%%';
   jsh.frontsalt = <%-JSON.stringify(jsh.Config.frontsalt)%>;
   jsh.app_errors = [];
 
@@ -195,7 +195,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh.orig_title = XExt.unescapeEJS(model.toptitle);
       if (jsh.orig_title.indexOf('<#') < 0){
         jsh.$root('.xform_title').html(jsh.orig_title);
-        document.title = XExt.StripTags(jsh.html_title.replace('%%%PAGETITLE%%%',jsh.orig_title));
+        document.title = XExt.StripTags(jsh.title.replace('%%%PAGETITLE%%%',jsh.orig_title));
       }
       else if(jsh.prev_title_src == model.toptitle) jsh.$root('.xform_title').html(jsh.prev_title);
       else jsh.$root('.xform_title').html('&nbsp;');

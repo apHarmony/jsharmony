@@ -23,16 +23,26 @@ var Helper = require('./lib/Helper.js');
 ///////////////
 //jsHarmonySite
 ///////////////
-function jsHarmonySite(config){
-  this.id = "default";
+function jsHarmonySite(id, config){
+  //Site ID
+  this.id = id;
+  //"Home" button URL
+  this.home_url = "/";
+  //Default EJS template for rendering pages on this site
   this.basetemplate = "index";
+  //Root URL for models / images / JavaScript
   this.baseurl = '/';
+  //Public folder URL (for shared public folder between multiple sites)
   this.publicurl = '/';
+  //Client-side JSH Instance ID
   this.instance = "jshInstance";
+  //CSS Prefix for styles
   this.rootcss = '';
+  //Whether to display debug information in the system errors (should be set to false for production)
   this.show_system_errors = true;
+  //Salt used by cookieParser to prevent user from modifying cookie data
   this.cookiesalt = '';
-  this.router = undefined;
+  //Site authentication method - parameters below
   this.auth = undefined;
   /*
   {
@@ -66,28 +76,37 @@ function jsHarmonySite(config){
     on_passwordreset: function(req, jsh, params, cb){ /*cb(err, rslt)* / }
   } 
   */
+ //Site menu generator
   this.menu = function(req,res,jsh,params,onComplete){ 
     params.ShowListing = true; 
     params.XMenu = { MainMenu:[], SubMenus:{} }; 
     onComplete(); 
   }
+  //Global parameters sent to the client front-end
   this.globalparams = {
     /* user_id: function (req) { return req.user_id; }, */
   };
-  this.sqlparams = {
-    /* "TSTMP": "TSTMP" */
-  };
+  //Site router - set when routing is initialized
+  this.router = undefined;
+  //Function run when routing is initialized
   this.onLoad = function (jsh) { };
+  //Public apps (not requiring login)
   this.public_apps = [];
+  //Private apps (requiring login)
   this.private_apps = [];
+  //Datalock value functions
   this.datalock = {
     /* "c_id": function (req) { return req.gdata[jsh.map.client_id]; } */
   };
+  //Datalock datatypes
   this.datalocktypes = {
     /* "c_id": { 'name': "c_id", 'type': 'bigint' } */
   };
 
   if(config) this.Merge(config);
+
+  //Whether the site has been initialized
+  this.initialized = true;
 }
 
 //Merge target configuration with existing
@@ -99,7 +118,7 @@ jsHarmonySite.prototype.Merge = function(config){
       //Handle disabled authentication
       else if((prop=='auth') && (config[prop] === false)) this[prop] = false;
       //Merge objects
-      else if(_.includes(['auth', 'datalock','datalocktypes','globalparams','sqlparams'],prop)) this[prop] = _.extend(this[prop],config[prop]);
+      else if(_.includes(['auth', 'datalock','datalocktypes','globalparams'],prop)) this[prop] = _.extend(this[prop],config[prop]);
       //Merge arrays      
       else if(_.includes(['public_apps','private_apps'],prop)) this[prop] = this[prop].concat(config[prop]);
       //Replace existing objects
@@ -111,15 +130,14 @@ jsHarmonySite.prototype.Merge = function(config){
 jsHarmonySite.prototype.Validate = function(){
   var _this = this;
   if(!_this.id){
-    console.log('jsHarmony Site ID not set, setting value to "default"');
-    _this.id = 'default';
+    console.log('jsHarmony Site ID not set, setting value to "main"');
+    _this.id = 'main';
   }
   if(Helper.notset(_this.basetemplate)) _this.basetemplate = 'index';
   if(Helper.notset(_this.baseurl)) _this.baseurl = '/';
   if(Helper.notset(_this.show_system_errors)) _this.show_system_errors = true;
   if(!_this.menu) _this.menu = function(req,res,jsh,params,onComplete){ params.ShowListing = true; params.XMenu = { MainMenu:[], SubMenus:{} }; onComplete(); }
   if(!_this.globalparams) _this.globalparams = {};
-  if(!_this.sqlparams) _this.sqlparams = {};
   if(!_this.public_apps) _this.public_apps = [];
   if(!_this.private_apps) _this.private_apps = [];
 
@@ -144,6 +162,10 @@ jsHarmonySite.prototype.Validate = function(){
       jsh.AppSrv.ExecMultiRecordset('login', req.jshsite.auth.sql_auth, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
     };
   }
+}
+
+jsHarmonySite.Placeholder = function(){
+  this.initialized = false;
 }
 
 exports = module.exports = jsHarmonySite;

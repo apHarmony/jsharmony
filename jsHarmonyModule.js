@@ -34,5 +34,7 @@ jsHarmonyModule.prototype.Application = function(){
   jsh.AddModule(this);
   return jsh;
 }
+jsHarmonyModule.prototype.onModuleAdded = function(){
+}
 
 exports = module.exports = jsHarmonyModule;

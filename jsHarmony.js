@@ -27,6 +27,7 @@ var AppSrv = require('./AppSrv.js');
 var jsHarmonyConfig = require('./jsHarmonyConfig.js');
 var jsHarmonySite = require('./jsHarmonySite.js');
 var jsHarmonyServer = require('./jsHarmonyServer.js');
+var jsHarmonyMailer = require('./lib/Mailer.js');
 var Logger = require('./lib/Logger.js');
 
 function jsHarmony(config) {
@@ -36,7 +37,9 @@ function jsHarmony(config) {
   this.Views = {};
   this.DBConfig = {};
   this.DB = {};
-  this.Sites = {};
+  this.Sites = {
+    'main': new jsHarmonySite.Placeholder()
+  };
   this.Servers = {};
   this.Log = new Logger(this);
   this.Mailer = undefined;
@@ -65,6 +68,8 @@ jsHarmony.prototype.AddModule = function(module){
   //Initialize / Merge Module Config
   if(this.Config.modules[moduleName]) module.Config.Merge(this.Config.modules[moduleName]);
   this.Config.modules[moduleName] = module.Config;
+  //Run onModuleAdded event
+  module.onModuleAdded(this);
 }
 
 jsHarmony.prototype.GetModule = function(moduleName){
@@ -132,6 +137,11 @@ jsHarmony.prototype.Init = function(init_cb){
       });
     },
     function(cb){
+      //Configure Mailer
+      if(!_this.Mailer) _this.Mailer = jsHarmonyMailer(_this.Config.mailer_settings, _this.Log.info);
+      return cb();
+    },
+    function(cb){
       _this.Cache['application.js'] = '';
       _this.Cache['application.css'] = fs.readFileSync(path.dirname(module.filename)+'/jsHarmony.theme.css', 'utf8');
       for (var i = 0; i < modeldirs.length; i++) {
@@ -171,12 +181,12 @@ jsHarmony.prototype.Init = function(init_cb){
       }, cb);
     },
     function(cb){
-      if(_.isEmpty(_this.Sites)){
-        //Add default site
-        _this.Sites['default'] = new jsHarmonySite();
-        _this.Config.server.add_default_routes = true;
+      for(var siteid in _this.Sites){
+        if(!_this.Sites[siteid].initialized){
+          _this.Sites[siteid] = new jsHarmonySite(siteid, _this.Sites[siteid]);
+          if(siteid=='main') _this.Config.server.add_default_routes = true;
+        }
       }
-    
       _this.isInitialized = true;
       if(!_this.Config.silentStart) console.log('::jsHarmony Server ready::');
       return cb();
@@ -193,7 +203,7 @@ jsHarmony.prototype.CreateServer = function(serverConfig, cb){
 };
 
 //Initialize jsHarmony and start the server
-jsHarmony.prototype.Run = function(onServerReady){
+jsHarmony.prototype.Run = function(onComplete){
   var _this = this;
   _this.Init(function(){
     //Run each module
@@ -206,11 +216,11 @@ jsHarmony.prototype.Run = function(onServerReady){
         //Add default listner & server
         _this.CreateServer(_this.Config.server, function(server){
           _this.Servers['default'] = server;
-          _this.Servers['default'].Run(onServerReady);
+          _this.Servers['default'].Run(onComplete);
         });
       }
       else{
-        if(onServerReady) onServerReady();
+        if(onComplete) onComplete();
         return;
       }
     });

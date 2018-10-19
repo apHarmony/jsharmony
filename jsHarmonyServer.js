@@ -26,6 +26,7 @@ var https = require('https');
 var os = require('os');
 var _ = require('lodash');
 var jsHarmonyRouter = require('./jsHarmonyRouter.js');
+var Helper = require('./lib/Helper.js');
 
 function jsHarmonyServer(serverConfig, jsh){
   this.jsh = jsh;   //jsHarmony Object
@@ -67,14 +68,13 @@ jsHarmonyServer.prototype.Init = function(cb){
   app.set('view engine', 'ejs');
 
   if(_this.serverConfig.add_default_routes){
-    var siteConfig = _this.jsh.Sites['default'];
-    if(!siteConfig) throw new Error('serverConfig.add_default_routes: Missing jsh.Site "default"');
-    var router = jsHarmonyRouter(_this.jsh, 'default');
+    var siteConfig = _this.jsh.Sites['main'];
+    if(!siteConfig) throw new Error('serverConfig.add_default_routes: Missing jsh.Site "main"');
+    var router = jsHarmonyRouter(_this.jsh, 'main');
     //Set up cookies
     if(siteConfig.cookiesalt) app.use('/', cookieParser(siteConfig.cookiesalt, { path: siteConfig.baseurl }));
     else app.use('/', cookieParser({ path: siteConfig.baseurl }));
     app.use('/', router);
-    siteConfig.router = router;
     _this.addDefaultRoutes();
   }
   if(cb) return cb();
@@ -180,13 +180,13 @@ jsHarmonyServer.prototype.Run = function(cb){
         if(server_txt == '0.0.0.0') server_txt = os.hostname().toLowerCase();
         _this.jsh.Log.info('Log in at http://'+server_txt+':'+server.address().port);
       }
-      if (_this.jsh.Config.onServerReady) _this.jsh.Config.onServerReady([server]);
+      Helper.RunEventHandler(_this.jsh.Config.onServerReady, null, [server]);
       if (cb) cb([server]);
     }, function(err){
       console.log('\r\n\r\nCANNOT START SERVER!!!!!!\r\n\r\n');
       if (err && (err.code == 'EADDRINUSE')) {
         console.log('SERVER ALREADY RUNNING ON PORT '+_this.serverConfig.http_port+'\r\n\r\n');
-        if (_this.jsh.Config.onServerReady) _this.jsh.Config.onServerReady(); 
+        Helper.RunEventHandler(_this.jsh.Config.onServerReady); 
         if(cb) cb();
       } 
       else throw err;
@@ -221,13 +221,13 @@ jsHarmonyServer.prototype.Run = function(cb){
           _this.jsh.Log.info('Log in at https://'+server_txt+':'+new_https_port);
         }
         if(servers.push(server));
-        if (_this.jsh.Config.onServerReady) _this.jsh.Config.onServerReady(servers);
+        Helper.RunEventHandler(_this.jsh.Config.onServerReady, null, servers);
         if(cb_https) cb_https(servers);
       }, function(err){
         console.log('\r\n\r\nCANNOT START SERVER!!!!!!\r\n\r\n');
         if (err && (err.code == 'EADDRINUSE')) {
           console.log('SERVER ALREADY RUNNING ON PORT '+_this.serverConfig.https_port+'\r\n\r\n');
-          if (_this.jsh.Config.onServerReady) _this.jsh.Config.onServerReady();
+          Helper.RunEventHandler(_this.jsh.Config.onServerReady);
           if (cb_https) cb_https();
         } 
         else throw err;
@@ -255,7 +255,7 @@ jsHarmonyServer.prototype.Run = function(cb){
         console.log('\r\n\r\nCANNOT START SERVER!!!!!!\r\n\r\n');
         if (err && (err.code == 'EADDRINUSE')) {
           console.log('SERVER ALREADY RUNNING ON PORT '+_this.serverConfig.http_port+'\r\n\r\n');
-          if (_this.jsh.Config.onServerReady) _this.jsh.Config.onServerReady();
+          Helper.RunEventHandler(_this.jsh.Config.onServerReady);
           if (cb) cb();
         } 
         else throw err;

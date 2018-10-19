@@ -38,6 +38,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
   var router = express.Router();
   router.jsh = jsh;
   router.jshsite = siteConfig;
+  if(!siteConfig.router) siteConfig.router = this;
   if (siteConfig.onLoad) siteConfig.onLoad(jsh, router);
   
   /* GET home page. */
@@ -74,10 +75,6 @@ var jsHarmonyRouter = function (jsh, siteid) {
       if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Reset Password', body: rslt, XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
-  for (var i = 0; i < jsh.Config.public_apps.length; i++) {
-    var app = jsh.Config.public_apps[i];
-    for (var j in app) router.all(j, app[j].bind(jsh.AppSrv));
-  }
   for (var i = 0; i < siteConfig.public_apps.length; i++) {
     var app = siteConfig.public_apps[i];
     for (var j in app) router.all(j, app[j].bind(jsh.AppSrv));
@@ -125,10 +122,6 @@ var jsHarmonyRouter = function (jsh, siteid) {
   router.get('/application.js', function (req, res) {
     HelperFS.outputContent(req, res, jsh.Cache['application.js'],'text/javascript');
   });
-  for (var i = 0; i < jsh.Config.private_apps.length; i++) {
-    var app = jsh.Config.private_apps[i];
-    for (var j in app) router.all(j, app[j].bind(jsh.AppSrv));
-  }
   for (var i = 0; i < siteConfig.private_apps.length; i++) {
     var app = siteConfig.private_apps[i];
     for (var j in app) router.all(j, app[j].bind(jsh.AppSrv));

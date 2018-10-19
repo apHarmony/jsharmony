@@ -415,7 +415,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     else {
       jsh.$root('.xform_title').html(jsh.orig_title);
-      document.title = XExt.StripTags(jsh.html_title.replace('%%%PAGETITLE%%%',jsh.orig_title));
+      document.title = XExt.StripTags(jsh.title.replace('%%%PAGETITLE%%%',jsh.orig_title));
     }
 
     //Update Breadcrumbs

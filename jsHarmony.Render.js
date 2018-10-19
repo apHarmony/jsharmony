@@ -56,7 +56,7 @@ exports.getJSClientParams = function (req) {
   rslt += '_debug: ' + (req.jshsite.show_system_errors?'true':'false') + ',';
   rslt += '_BASEURL: \'' + req.baseurl + '\',';
   rslt += 'forcequery: ' + JSON.stringify(req.forcequery) + ',';
-  rslt += 'home_url: ' + JSON.stringify(_this.Config.home_url) + ',';
+  rslt += 'home_url: ' + JSON.stringify(req.jshsite.home_url) + ',';
   rslt += 'uimap: ' + JSON.stringify(_this.uimap) + ',';
   rslt += '_instance: ' + JSON.stringify(req.jshsite.instance) + ',';
   if (req.isAuthenticated) {
