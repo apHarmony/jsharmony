@@ -293,7 +293,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XForm_RefreshParent = function(modelid) {
-    var jshOpener = XExt.getOpenerJSH();
+    var jshOpener = XExt.getOpenerJSH(['XForm_Refresh']);
     if (jshOpener) {
       jshOpener.XForm_Refresh(modelid);
     }

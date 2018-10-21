@@ -2306,13 +2306,18 @@ exports = module.exports = function(jsh){
     elem.wrap('<div class="' + id + '_container" style="width:' + orig_width + 'px;border:1px solid #999;display:inline-block;"></div>');
     CKEDITOR.replace(id);
   }
-  XExt.getOpenerJSH = function(){
+  XExt.getOpenerJSH = function(capabilities){
     if (window.opener) {
-      return window.opener[jsh.getInstance()];
+      var pjsh = window.opener[jsh.getInstance()];
+      var hasCapabilities = true;
+      if(capabilities) _.each(capabilities, function(capability){
+        if(!pjsh[capability]) hasCapabilities = false;
+      });
+      if(hasCapabilities) return pjsh;
     }
   }
   XExt.notifyPopupComplete = function (id, rslt) {
-    var jshOpener = XExt.getOpenerJSH();
+    var jshOpener = XExt.getOpenerJSH(['XPopupComplete']);
     if (jshOpener) {
       jshOpener.XPopupComplete(id, rslt);
     }
@@ -15609,7 +15614,7 @@ jsHarmony.prototype.Init = function(){
   if(this.isAuthenticated && this.Config.require_html5_after_login){
     this.requireHTML5();
   }
-  if(this._debug) this.runGlobalsMonitor();
+  if(this.Config.debug_params.monitor_globals) this.runGlobalsMonitor();
 }
 
 jsHarmony.prototype.DefaultErrorHandler = function(num,txt){
@@ -15780,8 +15785,9 @@ jsHarmony.prototype.runGlobalsMonitor = function(){
     for(var id in window){
       if(!(id in _this.globalsMonitorCache)){
         _this.globalsMonitorCache[id] = true;
-        if(_.includes(['google','_xdc_','data-cke-expando','CKEDITOR','data-cke-expando','OverlayView','module$contents$MapsEvent_MapsEvent'],id)) continue;
+        if(_.includes(['google','_xdc_','data-cke-expando','CKEDITOR','data-cke-expando','OverlayView'],id)) continue;
         if(_.includes(_this.Config.debug_params.ignore_globals,id)) continue;
+        if(_this.XExt.beginsWith(id, 'module$contents$')) continue;
         if(parseInt(id).toString()==id.toString()) continue;
         _this.XExt.Alert('New global variable: window.'+id);
       }

@@ -78,6 +78,7 @@ function jsHarmonyConfig(config){
     db_requests: false,        //Log every database request through DB.js
     db_error_sql_state: true,  //Log SQL state during DB error
 
+    monitor_globals: false,      //Enable client-side monitoring of global / window variables: display a message if a new variable is found
     ignore_globals: [],        //Ignore these global variables in the client-side global monitor
   };
   //Number of rows returned per grid load
@@ -203,7 +204,7 @@ function jsHarmonyConfig(config){
   this.passwords = {};
 
   //Run function when jsHarmony server is started
-  this.onServerReady = []; //(function(cb, servers){ return cb(); });
+  this.onServerReady = []; //function(cb, servers){ return cb(); }
 
   //Additional CSS files for jsHarmony.css
   this.css_extensions = [

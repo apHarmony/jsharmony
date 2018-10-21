@@ -86,7 +86,7 @@ function jsHarmonySite(id, config){
   this.globalparams = {
     /* user_id: function (req) { return req.user_id; }, */
   };
-  //Site router - set when routing is initialized
+  //Site router - automatically set when jsHarmonyRouter is initialized with the site as a parameter
   this.router = undefined;
   //Function run when routing is initialized
   this.onLoad = function (jsh) { };

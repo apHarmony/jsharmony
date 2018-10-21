@@ -228,7 +228,7 @@ jsHarmony.prototype.Init = function(){
   if(this.isAuthenticated && this.Config.require_html5_after_login){
     this.requireHTML5();
   }
-  if(this._debug) this.runGlobalsMonitor();
+  if(this.Config.debug_params.monitor_globals) this.runGlobalsMonitor();
 }
 
 jsHarmony.prototype.DefaultErrorHandler = function(num,txt){
@@ -399,8 +399,9 @@ jsHarmony.prototype.runGlobalsMonitor = function(){
     for(var id in window){
       if(!(id in _this.globalsMonitorCache)){
         _this.globalsMonitorCache[id] = true;
-        if(_.includes(['google','_xdc_','data-cke-expando','CKEDITOR','data-cke-expando','OverlayView','module$contents$MapsEvent_MapsEvent'],id)) continue;
+        if(_.includes(['google','_xdc_','data-cke-expando','CKEDITOR','data-cke-expando','OverlayView'],id)) continue;
         if(_.includes(_this.Config.debug_params.ignore_globals,id)) continue;
+        if(_this.XExt.beginsWith(id, 'module$contents$')) continue;
         if(parseInt(id).toString()==id.toString()) continue;
         _this.XExt.Alert('New global variable: window.'+id);
       }

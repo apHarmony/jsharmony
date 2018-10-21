@@ -458,13 +458,18 @@ exports = module.exports = function(jsh){
     elem.wrap('<div class="' + id + '_container" style="width:' + orig_width + 'px;border:1px solid #999;display:inline-block;"></div>');
     CKEDITOR.replace(id);
   }
-  XExt.getOpenerJSH = function(){
+  XExt.getOpenerJSH = function(capabilities){
     if (window.opener) {
-      return window.opener[jsh.getInstance()];
+      var pjsh = window.opener[jsh.getInstance()];
+      var hasCapabilities = true;
+      if(capabilities) _.each(capabilities, function(capability){
+        if(!pjsh[capability]) hasCapabilities = false;
+      });
+      if(hasCapabilities) return pjsh;
     }
   }
   XExt.notifyPopupComplete = function (id, rslt) {
-    var jshOpener = XExt.getOpenerJSH();
+    var jshOpener = XExt.getOpenerJSH(['XPopupComplete']);
     if (jshOpener) {
       jshOpener.XPopupComplete(id, rslt);
     }
