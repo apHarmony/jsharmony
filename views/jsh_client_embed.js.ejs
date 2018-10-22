@@ -67,6 +67,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   <% if('js' in model){ %><%-XExt.ReplaceAll(model.js,'<'+'%=model.id%'+'>',model.id)%><% } %>
 })(<%-instance%>);
 </script>
+<% if(('css' in model) && model.css && model.css.trim()){ %>
+<style type="text/css">
+<%-model.css%>
+</style>
+<% } %>
 <script type="text/javascript">
 <%-jsh.RenderEJS('jsh_'+xejs.case(
   model.layout=='form','form',

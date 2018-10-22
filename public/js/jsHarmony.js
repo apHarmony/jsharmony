@@ -2208,6 +2208,7 @@ exports = module.exports = function(jsh){
       return '';
     },
     'eachKey': function (fields, func) {
+      if(!fields) return;
       for (var i = 0; i < fields.length; i++) {
         if (fields[i].key)
           func(fields[i]);
@@ -3292,6 +3293,22 @@ exports = module.exports = function(jsh){
     jobjpos.top -= jcontainerpos.top - jcontainer.scrollTop();
     jobjpos.left -= jcontainerpos.left - jcontainer.scrollLeft();
     XExt.scrollIntoView(jcontainer, jobjpos, jobj.height());
+  }
+  //Check if the mouse is within the target element
+  XExt.isMouseWithin = function(elem) {
+    return XExt.isPointWithin(elem, jsh.mouseX, jsh.mouseY);
+  }
+  //Check if the x,y coordinate is within the element
+  XExt.isPointWithin = function(elem, x, y) {
+    var jobj = $(elem);
+    var joff = jobj.offset();
+    var w = jobj.outerWidth();
+    var h = jobj.outerHeight();
+    if (x < joff.left) return false;
+    if (x > (joff.left + w)) return false;
+    if (y < joff.top) return false;
+    if (y > (joff.top + h)) return false;
+    return true;
   }
 
   return XExt;

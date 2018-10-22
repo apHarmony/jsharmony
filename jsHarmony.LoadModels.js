@@ -161,6 +161,13 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
       if ('js' in model) newjs += "\r\n" + model.js;
       model['js'] = newjs;
     }
+    //Load CSS
+    var cssfname = (modelbasedir + modelname.substr(prefix.length) + '.css');
+    if (fs.existsSync(cssfname)) {
+      var newcss = fs.readFileSync(cssfname, 'utf8');
+      if ('css' in model) newcss += "\r\n" + model.css;
+      model['css'] = newcss;
+    }
     //Load EJS
     var ejsfname = (modelbasedir + modelname.substr(prefix.length) + '.ejs');
     if(prefix=='_report_') ejsfname = (modelbasedir + modelname.substr(prefix.length) + '.form.ejs');
@@ -169,6 +176,7 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
       if ('ejs' in model) newejs += "\r\n" + model.ejs;
       model['ejs'] = newejs;
     }
+    //Load "onroute" handler
     var jsonroutefname = (modelbasedir + modelname.substr(prefix.length) + '.onroute.js');
     if (fs.existsSync(jsonroutefname)) {
       var newjs = fs.readFileSync(jsonroutefname, 'utf8');
@@ -725,7 +733,7 @@ exports.ParseEntities = function () {
       'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'nogridadd', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_filter', 'grid_save_before_update', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
-      'js', 'ejs', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
+      'js', 'ejs', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
       'path', 'component', 'templates', 'db',
       //Report Parameters

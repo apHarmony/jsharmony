@@ -72,6 +72,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "helpid": "CL",
   "js": "function(){}", //Custom JS to be included client-side.  Concatenated with model.js
   "ejs": "HTML CONTENT", //Custom EJS to be included client-side.  Concatenated with model.ejs
+  "css": "CSS CONTENT",  //Custom CSS to be included client-side.  Concatenated with model.css
   "tabpos": "top", //top,bottm
   //"curtab":1, //VIRTUAL PROPERTY, DO NOT OVERWRITE
   //sqlselect, sqldownloadselect, sqlinsertencrypt, sqlupdate, sqldelete, sqlrowcount
