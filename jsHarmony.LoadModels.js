@@ -102,10 +102,22 @@ exports.ParseJSON = function(fname, desc){
     console.error("FATAL ERROR Parsing " + desc + " in " + fname);
     console.log(ex.name + ': "' + ex.message + '"');
     try {
-      require('jsonlint').parse(ftext);
+      require('./lib/JSParser.js').Parse(ftext, fname);
     }
     catch (ex2) {
-      console.log(ex2);
+      if('startpos' in ex2){
+        var errmsg = 'Error: Parse error on line ' + ex2.startpos.line + ', char ' + ex2.startpos.char + '\n';
+        var eline = Helper.getLine(ftext, ex2.startpos.line);
+        if(typeof eline != 'undefined'){
+          errmsg += eline + '\n';
+          for(var i=0;i<ex2.startpos.char;i++) errmsg += '-';
+          errmsg += '^\n';
+        }
+        errmsg += ex2.message + '\n';
+        errmsg += ex2.stack;
+        console.log(errmsg);
+      }
+      else console.log(ex2);
     }
     console.error("-------------------------------------------");
     process.exit(8);

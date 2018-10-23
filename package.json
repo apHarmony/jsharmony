@@ -1,6 +1,6 @@
 {
   "name": "jsharmony",
-  "version": "1.1.17",
+  "version": "1.1.18",
   "description": "Rapid Application Development (RAD) Platform for Node.js Database Application Development",
   "main": "index.js",
   "scripts": {
@@ -44,7 +44,6 @@
     "gm": "^1.23.0",
     "jsharmony-db": "^1.1.0",
     "jsharmony-validate": "^1.1.0",
-    "jsonlint": "^1.6.2",
     "lodash": "^4.14.0",
     "mime": "^1.3.4",
     "moment": "^2.17.1",
