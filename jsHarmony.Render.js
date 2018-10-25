@@ -17,6 +17,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 var Helper = require('./lib/Helper.js');
+var ejs = require('ejs');
 
 module.exports = exports = {};
 
@@ -69,6 +70,13 @@ exports.getJSClientParams = function (req) {
 
 exports.getJSLocals = function(req){
   return 'var jsh = '+req.jshsite.instance+';var $ = jsh.$;var _ = jsh._;var async = jsh.async;var moment=jsh.moment;var ejs = jsh.ejs;var XExt = jsh.XExt;var XPost = jsh.XPost;var XValidate = jsh.XValidate;var _GET = jsh._GET;var XBase = jsh.XBase; var XForms = jsh.XForms;'
+}
+
+exports.RenderEJS = function(view,ejsparams){
+  var _this = this;
+  if(!ejsparams) ejsparams = {};
+  if(!('ejsparrams' in ejsparams)) ejsparams.ejsparams = ejsparams;
+  return ejs.render(_this.getEJS(view),ejsparams);
 }
 
 //Return a 404 error page
