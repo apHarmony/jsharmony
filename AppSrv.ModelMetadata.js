@@ -359,10 +359,12 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
         }
       }
       if(truncate_lov){
-        codevalpname = '__' + _this.jsh.map.codeval;
-        if(codevalpname in lov_params) { Helper.GenError(req, res, -4, 'Invalid existing parameter in LOV SQL expression: _codeval'); fatalError = true; return; }
-        lov_ptypes.push(_this.getDBType(field));
-        lov_params[codevalpname] = _this.DeformatParam(field, codeval, lov_verrors);
+        codevalpname = field.name;
+        //if(field.name in lov_params) { Helper.GenError(req, res, -4, 'Field parameter already in LOV SQL parameters: '+field.name); fatalError = true; return; }
+        if(!(field.name in lov_params)){
+          lov_ptypes.push(_this.getDBType(field));
+          lov_params[codevalpname] = _this.DeformatParam(field, codeval, lov_verrors);
+        }
       }
       if (!_.isEmpty(lov_verrors)) { Helper.GenError(req, res, -2, lov_verrors[''].join('\n')); fatalError = true; return; }
       var sql = lovdb.sql.getLOV(_this.jsh, field.name, lov, datalockqueries, param_datalocks, { truncate_lov: truncate_lov });
@@ -374,9 +376,9 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
         _this.ApplyTransTblChainedParameters(transtbl, sql, lov_ptypes, lov_params, model.fields);
         lovdb.Recordset(req._DBContext, sql, lov_ptypes, lov_params, dbtrans, function (err, rslt) {
           if (err == null) {
-            //Generate warning if the LOV options are too long, and sqlselect is not defined for the field
+            //Generate warning if the LOV options are too long, and sqlselect, sqltruncate is not defined for the field
             if(can_optimize && (rslt.length > 1000)){
-              jsh.Log.warning(model.id + ' > ' + field.name + ': More than 1000 results returned for LOV query.  Please consider implementing lov.sqlselect to improve performance.');
+              jsh.Log.warning(model.id + ' > ' + field.name + ': More than 1000 results returned for LOV query.  Please consider implementing lov.sqlselect, lov.sqltruncate, and adding %%%TRUNCATE%%% to the LOV sql to improve performance.');
             }
             if (('showcode' in lov) && lov.showcode) {
               for (var i = 0; i < rslt.length; i++) {

@@ -696,6 +696,18 @@ exports.ParseEntities = function () {
           }
         }
       }
+      //Check if sqltruncate also has %%%TRUNCATE%%% in sql
+      if(field.lov){
+        if(('sql' in lov) || ('sql2' in lov) || ('sqlmp' in lov)){
+          var lovsql = (lov.sql||'')+(lov.sql2||'')+(lov.sqlmp||'');
+          if(lov.sqltruncate && (lovsql.indexOf('%%%TRUNCATE%%%') < 0)){
+            _this.LogInit_ERROR(model.id + ' > ' + field.name + ': LOV uses sqltruncate without adding %%%TRUNCATE%%% to SQL');
+          }
+        }
+        else if(lov.sqltruncate){
+          _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Cannot use sqltruncate without sql, sql2, or sqlmp');
+        }
+      }
     });
     
     //Automatically add C (breadcrumb parameter) for breadcrumb and title sql_params
@@ -764,7 +776,7 @@ exports.ParseEntities = function () {
       'image', 'thumbnails', 'expand_all', 'item_context_menu'
     ];
     var _v_popuplov = ['target', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
-    var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'always_get_full_lov', 'nodatalock', 'showcode', 'db'];
+    var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db'];
     //lov
     var existing_targets = [];
     for (var f in model) { if (f.substr(0, 7) == 'comment') continue; if (!_.includes(_v_model, f)) _this.LogInit_ERROR(model.id + ': Invalid model property: ' + f); }
