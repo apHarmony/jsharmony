@@ -378,6 +378,34 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       });
   }
 
+  jsh.XForm_UpdateTitle = function(){
+    //If Title = blank, pull title from Tabs
+    var curform = jsh.XForms[jsh.XForms_root];
+    var window_title = '';
+    //Apply child tab's title to window if the form's title is blank
+    while(!window_title && curform){
+      if(curform._title){
+        window_title = curform._title||'';
+        if(window_title && (window_title.indexOf('<#') >= 0)){
+          window_title = jsh.ParseEJS(window_title,curform._id);
+        }
+        window_title = XExt.StripTags(window_title).trim();
+      }
+      curform = jsh.XForms[curform._curtab];
+    }
+    if(!window_title) window_title = jsh.XForms_root;
+    document.title = XExt.StripTags(jsh.title.replace('%%%PAGETITLE%%%',window_title));
+
+    var root_title = jsh.XForms[jsh.XForms_root]._title;
+    if(root_title && (root_title.indexOf('<#') >= 0)){
+      root_title = jsh.ParseEJS(root_title, jsh.XForms_root);
+      jsh.$root('.xform_title').html(root_title);
+    }
+    else {
+      jsh.$root('.xform_title').html(root_title);
+    }
+  }
+
   jsh.XFormsParseEJS = function(onComplete) {
     //Get breadcrumbs
     var root_data = jsh.App['xform_' + jsh.XForms_root];
@@ -390,33 +418,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       var title = jsh.App['xform_' + xform._id]._title||'';
       if(title != xform._title){
         xform._title = title;
-        if(xform._id==jsh.XForms_root){
-          jsh.orig_title = XExt.unescapeEJS(title);
-        }
       }
     });
 
     //Update title
-    if (jsh.orig_title.indexOf('<#') >= 0) {
-      var new_title = jsh.ParseEJS(jsh.orig_title, jsh.XForms_root);
-      jsh.$root('.xform_title').html(new_title);
-      var window_title = XExt.StripTags(new_title).trim();
-      //If Title = blank, pull title from Tabs
-      var curform = jsh.XForms[jsh.XForms_root];
-      //Apply child tab's title to window if the form's title is blank
-      while(!window_title && curform){
-        if(curform._title){
-          window_title = jsh.ParseEJS(curform._title,curform._id);
-          window_title = XExt.StripTags(window_title).trim();
-        }
-        curform = jsh.XForms[curform._curtab];
-      }
-      document.title = window_title;
-    }
-    else {
-      jsh.$root('.xform_title').html(jsh.orig_title);
-      document.title = XExt.StripTags(jsh.title.replace('%%%PAGETITLE%%%',jsh.orig_title));
-    }
+    jsh.XForm_UpdateTitle();
 
     //Update Breadcrumbs
     if (jsh.orig_bcrumbs.indexOf('<#') >= 0) {

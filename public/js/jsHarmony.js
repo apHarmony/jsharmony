@@ -15520,7 +15520,6 @@ var jsHarmony = function(options){
   this.delete_target = null;
   this.xfileupload_ctrl = null;
   this._bcrumbs = {};
-  this.orig_title = '';
   this.orig_bcrumbs = '';
   this.jsproxy_hooks = {};
   this.intervals = [];

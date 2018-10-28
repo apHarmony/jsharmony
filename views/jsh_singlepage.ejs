@@ -192,10 +192,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh.$root('.xbody').addClass(model_class);
       //Handle Title
       if(!model.toptitle) model.toptitle = '';
-      jsh.orig_title = XExt.unescapeEJS(model.toptitle);
-      if (jsh.orig_title.indexOf('<#') < 0){
-        jsh.$root('.xform_title').html(jsh.orig_title);
-        document.title = XExt.StripTags(jsh.title.replace('%%%PAGETITLE%%%',jsh.orig_title));
+      var orig_title = XExt.unescapeEJS(model.toptitle);
+      if (orig_title.indexOf('<#') < 0){
+        jsh.XForm_UpdateTitle();
       }
       else if(jsh.prev_title_src == model.toptitle) jsh.$root('.xform_title').html(jsh.prev_title);
       else jsh.$root('.xform_title').html('&nbsp;');
