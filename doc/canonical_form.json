@@ -229,10 +229,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "link": "edit:CW", //for grid, "add:", "select"...also added tab syntax: "edit:JW&tabs={\"JW\":\"J_QUICK\"}"
       //LOV sql_params must be defined as fields, and must be in the request QueryString
       "lov": { 
-        "sql": "select HP_CODE as CODEVal,HP_Desc as CODETxt from HP order by HP_Desc", 
+        "sql": "select HP_CODE as CODEVal,HP_Desc as CODETxt from HP where 1=1 %%%TRUNCATE%%% order by HP_Desc", 
         "datalock":{"C_ID":"client_C_ID"}, 
         "sql_params":["C_ID","T_ID"],
         "sqlselect": "(select hp_desc from jsharmony.hp where hp.hp_code = h.hp_code)",
+        "sqltruncate": "HP_CODE=@HP_CODE", //Limit list to one entry - parameter = field.name
         "always_get_full_lov": 1, //Do not truncate LOV to one value, when field is "B", readonly, or value is set in querystring.
         "db": "default" //Optional property - use an alternate database connection
       }, //codeval = Value, codetxt = Desc    "nodatalock":["C_ID"] (If applicable)

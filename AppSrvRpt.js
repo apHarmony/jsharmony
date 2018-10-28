@@ -616,7 +616,7 @@ AppSrvRpt.prototype.getBrowser = function (callback) {
     else return callback(_this.browser);
   }
   jsh.Log.info('Launching Report Renderer');
-  puppeteer.launch({ ignoreHTTPSErrors: true })
+  puppeteer.launch({ ignoreHTTPSErrors: true }) //, headless: false
     .then(function(rslt){
       _this.browser = rslt;
       _this.browser.on('disconnected', function(){

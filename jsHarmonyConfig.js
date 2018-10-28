@@ -296,6 +296,7 @@ jsHarmonyConfig.prototype.LoadJSConfigFile = function(jsh, fpath){
   }
   catch(ex){
     jsh.LogInit_ERROR('Error loading config file: '+fpath + ', '+ex.toString());
+    process.exit(1);
   }
 }
 

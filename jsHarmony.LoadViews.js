@@ -34,10 +34,19 @@ exports.getEJS = function (f, onError) {
 exports.getEJSFilename = function (f) {
   var appDir = path.dirname(require.main.filename);
   var modeldirs = this.getModelDirs();
+  var component = '';
+  var basefilename = '';
+  if(f.indexOf('/') >= 0){
+    component = f.substr(0,f.indexOf('/'));
+    basefilename = f.substr(f.indexOf('/')+1);
+  }
   var fpath = '';
+  var cpath = '';
   if (f.indexOf('reports/') == 0) {
     for (var i = modeldirs.length - 1; i >= 0; i--) {
       fpath = modeldirs[i].path + f + '.ejs';
+      cpath = modeldirs[i].path + basefilename + '.ejs';
+      if(component && (modeldirs[i].component==component) && fs.existsSync(cpath)) return cpath;
       if (fs.existsSync(fpath)) return fpath;
     }
   }
@@ -45,6 +54,8 @@ exports.getEJSFilename = function (f) {
   if (fs.existsSync(fpath)) return fpath;
   for (var i = modeldirs.length - 1; i >= 0; i--) {
     fpath = path.normalize(modeldirs[i].path + '../views/' + f + '.ejs');
+    cpath = path.normalize(modeldirs[i].path + '../views/' + basefilename + '.ejs');
+    if(component && (modeldirs[i].component==component) && fs.existsSync(cpath)) return cpath;
     if (fs.existsSync(fpath)) return fpath;
   }
   fpath = appDir + '/views/' + f + '.ejs';
