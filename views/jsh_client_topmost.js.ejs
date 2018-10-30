@@ -378,7 +378,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       });
   }
 
-  jsh.XForm_UpdateTitle = function(){
+  jsh.XForm_UpdateWindowTitle = function(options){
+    options = _.extend({ resolveEJS: true }, options);
+
     //If Title = blank, pull title from Tabs
     var curform = jsh.XForms[jsh.XForms_root];
     var window_title = '';
@@ -386,6 +388,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     while(!window_title && curform){
       if(curform._title){
         window_title = curform._title||'';
+        if(!options.resolveEJS && (window_title.indexOf('<#') >= 0)) return;
         if(window_title && (window_title.indexOf('<#') >= 0)){
           window_title = jsh.ParseEJS(window_title,curform._id);
         }
@@ -395,6 +398,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     if(!window_title) window_title = jsh.XForms_root;
     document.title = XExt.StripTags(jsh.title.replace('%%%PAGETITLE%%%',window_title));
+  }
+
+  jsh.XForm_UpdateTitle = function(options){
+    jsh.XForm_UpdateWindowTitle(options);
 
     var root_title = jsh.XForms[jsh.XForms_root]._title;
     if(root_title && (root_title.indexOf('<#') >= 0)){

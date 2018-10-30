@@ -46,7 +46,17 @@ function jsHarmony(config) {
   this.SystemErrors = [];
 
   this.EJS = {};
-  this.Stylus = {};
+  this.Stylus = {
+    /*
+    'stylusName': {
+      source: this.Config.moduledir+'....styl', //Stylus Source File
+      path: '/....css',                 //URL for router
+      //roles: { siteid: { "*":"B" } }, //(If roles are not defined, enable access by any role for all sites)
+      public: true                      //Enable public unauthenticated access
+      //css: 'cached css'               //Cached / evaluated css
+    }
+    */
+  };
   this.Models = {}; //Do not access this directly - use getModel, hasModel
   this.CustomControls = [];
   this.Popups = {};

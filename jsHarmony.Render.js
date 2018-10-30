@@ -97,7 +97,7 @@ exports.getStylusCSS = function(stylusName, callback){
   }
   if(!(stylusName in _this.Stylus)) return callback(new Error('Stylus CSS not defined for: '+stylusName));
   var stylusConfig = _this.Stylus[stylusName];
-  if(stylusConfig.css) return callback(null, stylusConfig.css);
+  if(typeof stylusConfig.css != 'undefined') return callback(null, stylusConfig.css);
   return HelperFS.readFile(stylusConfig.source,'utf8',sync,function(err,data){
     if(err) return callback(err);
     else {
