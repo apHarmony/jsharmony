@@ -21,7 +21,6 @@ var _ = require('lodash');
 var puppeteer = require('puppeteer');
 var path = require('path');
 var fs = require('fs');
-var mime = require('mime');
 var tmp = require('tmp');
 var async = require('async');
 var HelperFS = require('./lib/HelperFS.js');
@@ -458,6 +457,7 @@ AppSrvRpt.prototype.genReport = function (req, res, modelid, params, data, done)
                 footerheight = default_header;
                 if ('footerheight' in model) footerheight = model.footerheight;
               }
+              if(pagesettings.displayHeaderFooter) pagesettings.footerTemplate = pagesettings.footerTemplate || ' ';
 
               //page.set('viewportSize',{width:700,height:800},function(){
               
@@ -536,37 +536,78 @@ AppSrvRpt.prototype.genReport = function (req, res, modelid, params, data, done)
                 pagesettings.footerTemplate = '<style type="text/css">#footer{ padding:'+Math.round(marginTop*_HEADER_ZOOM)+'px '+Math.round(marginRight*_HEADER_ZOOM)+'px '+Math.round(marginBottom*_HEADER_ZOOM)+'px '+Math.round(marginLeft*_HEADER_ZOOM)+'px; -webkit-print-color-adjust: exact; }</style><div style="position:absolute;width:'+(contentWidth)+'px;font-size:12px;transform: scale('+_HEADER_ZOOM+'); transform-origin: bottom left;">'+pagesettings.footerTemplate+'</div>';
               }
 
-              fs.writeFile(tmphtmlpath, rptcontent.body||'','utf8',function(err){
+              var report_fonts = [].concat(jsh.Config.default_report_fonts||[]).concat(model.fonts||[]);
+              jsh.loadFonts(report_fonts, function(err, font_css){
                 if(err) return jsh.Log.error(err);
-                page.goto('file://'+tmphtmlpath, { waitUntil: 'networkidle0' })
-                .then(function(){
-                  page.evaluate(function(){ if(!document||!document.body) return 0; document.body.style['-webkit-print-color-adjust'] = 'exact'; return document.body.clientWidth; }).then(function(documentWidth){
-                    if(documentWidth && !pagesettings.scale){
-                      var scale = contentWidth * 0.998 / documentWidth;
-                      if(scale < 0.1) scale = 0.1;
-                      if(scale > 1) scale = 1;
-                      pagesettings.scale = scale;
-                    }
-                    //page.emulateMedia('screen').then(function(){
-                      page.pdf(pagesettings).then(function () {
-                        var dispose = function (disposedone) {
-                          page.close().then(function () {
-                            page = null;
-                            fs.close(tmpfd, function () {
-                              fs.unlink(tmphtmlpath, function (err) {
-                                fs.unlink(tmppath, function (err) {
-                                  if (typeof disposedone != 'undefined') disposedone();
+                var font_render = [];
+                for(var i=0;i<report_fonts.length;i++){
+                  var font = report_fonts[i];
+                  var font_str = '';
+                  if(font['font-family']) font_str += "font-family:'"+Helper.escapeCSS(font['font-family'].toString())+"';";
+                  if(font['font-style']) font_str += "font-style:"+font['font-style'].toString()+";";
+                  if(font['font-weight']) font_str += "font-weight:"+font['font-weight'].toString()+";";
+                  if(font_str) font_render.push(font_str);
+                }
+                if(font_css){
+                  if(pagesettings.headerTemplate) pagesettings.headerTemplate = '<style type="text/css">'+font_css+'</style>' + pagesettings.headerTemplate;
+                  if(pagesettings.footerTemplate) pagesettings.footerTemplate = '<style type="text/css">'+font_css+'</style>' + pagesettings.footerTemplate;
+                }
+
+                //Sets styles and returns document width
+                var onPageLoad = function(font_render,font_css){ 
+                  if(!document||!document.body) return 0;
+                  //Load CSS in header
+                  var head = document.getElementsByTagName('head');
+                  if(head.length) head = head[0];
+                  if(head){
+                    var css = document.createElement('style');
+                    css.type='text/css';
+                    css.innerHTML = font_css;
+                    head.appendChild(css);
+                  }
+                  //Add fonts to body (otherwise using them in the page header / footer will cause a Page Crash)
+                  if(font_render) for(var i=0;i<font_render.length;i++){
+                    var fontElement = document.createElement('div');
+                    fontElement.innerHTML = '&nbsp;';
+                    fontElement.setAttribute('style', font_render[i]+'visibility:hidden;position:absolute;top:0px;left:0px;');
+                    document.body.appendChild(fontElement);
+                  }
+                  document.body.style['-webkit-print-color-adjust'] = 'exact'; 
+                  return document.body.clientWidth; 
+                };
+
+                fs.writeFile(tmphtmlpath, rptcontent.body||'','utf8',function(err){
+                  if(err) return jsh.Log.error(err);
+                  page.goto('file://'+tmphtmlpath, { waitUntil: 'networkidle0' })
+                  .then(function(){
+                    page.evaluate(onPageLoad, font_render, font_css).then(function(documentWidth){
+                      if(documentWidth && !pagesettings.scale){
+                        var scale = contentWidth * 0.998 / documentWidth;
+                        if(scale < 0.1) scale = 0.1;
+                        if(scale > 1) scale = 1;
+                        pagesettings.scale = scale;
+                      }
+                      //page.emulateMedia('screen').then(function(){
+                        page.pdf(pagesettings).then(function () {
+                          var dispose = function (disposedone) {
+                            page.close().then(function () {
+                              page = null;
+                              fs.close(tmpfd, function () {
+                                fs.unlink(tmphtmlpath, function (err) {
+                                  fs.unlink(tmppath, function (err) {
+                                    if (typeof disposedone != 'undefined') disposedone();
+                                  });
                                 });
                               });
-                            });
-                          }).catch(function (err) { jsh.Log.error(err); });;
-                        };
-                        done(null, tmppdfpath, dispose, data);
-                      }).catch(function (err) { jsh.Log.error(err); });
-                    //}).catch(function (err) { jsh.Log.error(err); });
-                  }).catch(function (err) { jsh.Log.error(err); });
-                })
-                .catch(function (err) { jsh.Log.error(err); });
+                            }).catch(function (err) { jsh.Log.error(err); });;
+                          };
+                          done(null, tmppdfpath, dispose, data);
+                        }).catch(function (err) { jsh.Log.error(err); });
+                      //}).catch(function (err) { jsh.Log.error(err); });
+                    }).catch(function (err) { jsh.Log.error(err); });
+                  })
+                  .catch(function (err) { jsh.Log.error(err); });
+                });
               });
 
             }).catch(function (err) { jsh.Log.error(err); });

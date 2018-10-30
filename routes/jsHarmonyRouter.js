@@ -79,6 +79,9 @@ var jsHarmonyRouter = function (jsh, siteid) {
     var app = siteConfig.public_apps[i];
     for (var j in app) router.all(j, app[j].bind(jsh.AppSrv));
   }
+  for(var stylusName in jsh.Stylus){
+    handleStylus(jsh, siteid, router, stylusName, { public: true });
+  }
   router.get('/application.css', function (req, res) {
     //Concatenate jsh css with system css
     var f = function(){ HelperFS.outputContent(req, res, ejs.render(jsh.Cache['jsHarmony.css'] + '\r\n' + jsh.Cache['application.css'], { req: req, rootcss: req.jshsite.rootcss }),'text/css'); };
@@ -125,6 +128,9 @@ var jsHarmonyRouter = function (jsh, siteid) {
   for (var i = 0; i < siteConfig.private_apps.length; i++) {
     var app = siteConfig.private_apps[i];
     for (var j in app) router.all(j, app[j].bind(jsh.AppSrv));
+  }
+  for(var stylusName in jsh.Stylus){
+    handleStylus(jsh, siteid, router, stylusName, { public: false });
   }
   router.post('/_ul/clear', function (req, res) {
     jsh.AppSrv.ClearUpload(req, res);
@@ -427,6 +433,23 @@ function setNoCache(req, res){
     //Add Cache header for IE
     res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
   }
+}
+
+function handleStylus(jsh, siteid, router, stylusName, options){
+  options = _.extend({ public: true }, options);
+  var stylusConfig = jsh.Stylus[stylusName];
+  var stylusSites = [];
+  if(!('roles' in stylusConfig)) stylusSites = [siteid];
+  else stylusSites = Helper.GetRoleSites(stylusConfig.roles);
+  if(options.public && !stylusConfig.public) return;
+  if(!options.public && stylusConfig.public) return;
+  if(_.includes(stylusSites, siteid)) router.get(stylusConfig.path, function(req, res){
+    if (!options.public && !Helper.HasModelAccess(req, { actions: 'B', roles: stylusConfig.roles }, 'B')) { Helper.GenError(req, res, -11, 'Invalid Access for '+stylusName); return; }
+    jsh.getStylusCSS(stylusName, function(err, css){
+      if(err) jsh.Log.error(err);
+      else HelperFS.outputContent(req, res, css,'text/css');
+    });
+  });
 }
 
 jsHarmonyRouter.PublicRoot = function(root, options){

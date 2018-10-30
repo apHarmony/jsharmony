@@ -250,6 +250,7 @@ exports.ParseInheritance = function () {
         });
         EntityPropMerge(mergedprops, 'reportdata', model, parentmodel, function (newval, oldval) { return _.extend({}, oldval, newval); });
         EntityPropMerge(mergedprops, 'js', model, parentmodel, function (newval, oldval) { return oldval + "\r\n" + newval; });
+        EntityPropMerge(mergedprops, 'fonts', model, parentmodel, function (newval, oldval) { return (oldval||[]).concat(newval||[]); });
         
         //Merge Everything Else
         _this.Models[model.id] = _.extend({}, parentmodel, model);
@@ -753,7 +754,7 @@ exports.ParseEntities = function () {
     var _v_model = [
       'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites',
       'samplerepeat', 'topmenu', 'id', 'idmd5', 'access_models', '_inherits', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
-      'pagesettings', 'pageheader', 'pageheaderjs', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch',
+      'pagesettings', 'pageheader', 'pageheaderjs', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'nogridadd', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_filter', 'grid_save_before_update', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',

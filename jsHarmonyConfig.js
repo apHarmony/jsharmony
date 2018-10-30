@@ -213,6 +213,18 @@ function jsHarmonyConfig(config){
   ];
   //Additional JS files for jsHarmony.js
   this.js_extensions = [];
+  //Default report fonts
+  this.default_report_fonts = [
+    {
+      "font-family": "Roboto",
+      "font-style": "normal",
+      "font-weight": 400,
+      "src": "jsharmony/public/fonts/Roboto-Regular.ttf",
+      "format": "truetype", //embedded-opentype, woff2, woff, truetype, svg
+      "local": ["Roboto","Roboto-Regular"],
+      "css": "body { font-family: \'Roboto\'; }"
+    }
+  ];
 
   //Load jsHarmony in Silent Mode
   this.silentStart = false;

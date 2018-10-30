@@ -45,13 +45,13 @@ function jsHarmony(config) {
   this.Mailer = undefined;
   this.SystemErrors = [];
 
-  this.EJS = [];
-  this.EJSGrid = '';
-  this.EJSForm = '';
+  this.EJS = {};
+  this.Stylus = {};
   this.Models = {}; //Do not access this directly - use getModel, hasModel
   this.CustomControls = [];
   this.Popups = {};
   this.Cache = {};
+  this.FontCache = {};
   this._IMAGEMAGICK_FIELDS = [];
   this.AppSrv = null;
   this.map = {};

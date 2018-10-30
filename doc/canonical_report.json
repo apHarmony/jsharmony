@@ -40,6 +40,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     },
     "scale":1, //0.1 to 2
   },
+  "fonts": [
+    {
+      "font-family": "Material Icons",
+      "font-style": "normal",
+      "font-weight": 400,
+      "src": "jsharmony/public/fonts/Material-Icons-Regular.woff2",
+      "format": "woff2",
+      "local": ["Material Icons","Material-Icons-Regular"],
+      "css": ".material-icons { font-family: 'Material Icons'; font-weight: normal; font-style: normal; font-size: 24px; display: inline-block; line-height: 1; text-transform: none; letter-spacing: normal; word-wrap: normal; white-space: nowrap; direction: ltr; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; -moz-osx-font-smoothing: grayscale; font-feature-settings: 'liga'; }"
+    }
+  ],
   "fields": [
     {"name":"C_ID","type":"bigint","datalock":{"C_ID":"client_C_C_ID"},"nl":1,
 	      "control":"dropdown_L","actions": "B",
