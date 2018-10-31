@@ -419,7 +419,7 @@ AppSrvRpt.prototype.genReport = function (req, res, modelid, params, data, done)
         _this.getBrowser(function (browser) {
           var page = null;
           try {
-            browser.newPage().then(function (_page) {            
+            browser.newPage().then(function (_page) {
               var tmppdfpath = tmppath + '.pdf';
               var tmphtmlpath = tmppath + '.html';
               page = _page;
