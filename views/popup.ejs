@@ -11,12 +11,12 @@
 <script type="text/javascript" src="<%-req.baseurl%>application.js"></script>
 </head>
 
-<body>
-<div class="xmain">
+<body style="background:none;" class="popup">
+<div class="xmain" style="min-width:0px;">
 
-<div class="xbody"><%-ejsext.BreadCrumbs(req, jsh, modelid)%><% if(title){ %>
-<h1 style="display:inline-block;" class="xform_title"><%= title %></h1>
-<% } %><%- body %>
+<div class="xbody" style="min-height:0px;">
+<% if(title){ %><h1 style="display:inline-block;" class="xform_title"><%= title %></h1><% } %>
+<%- body %>
 </div><!-- xbody -->
 
 <div class="clear"></div>
