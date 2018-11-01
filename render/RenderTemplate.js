@@ -25,7 +25,8 @@ exports = module.exports = {};
 exports = module.exports = function(req,res,basetemplate,params){
   var jsh = this;
 	req.jshsite.menu(req,res,jsh,params,function(){
-		if(typeof req._override_title != 'undefined') params.title = req._override_title;
+    if(typeof req._override_title != 'undefined') params.title = req._override_title;
+    if(typeof req._override_template != 'undefined') basetemplate = req._override_template;
 		res.render(jsh.getView(req, basetemplate),params);
 	});
 };
