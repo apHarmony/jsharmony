@@ -139,8 +139,8 @@ BODY
 	border:1px solid #aaaaaa;
 }
 <%-rootcss%> a.xtab{
-	background-color:#152142;
-	color:#ffffff;
+  background-color:#dedede;
+  color:#000000;
 	padding:5px 15px;
 	margin-right:1px;
 	border-top:1px solid #333333;
@@ -148,8 +148,9 @@ BODY
 	border-right:1px solid #333333;
 }
 <%-rootcss%> a.xtab.selected{
-	background-color:#dedede;
-	color:#000000;
+  background-color:#152142;
+  color:#ffffff;
+	
 }
 <%-rootcss%> a.xtab.selected:hover{
 	text-decoration:none;
