@@ -343,8 +343,12 @@ jsHarmony.prototype.InitXFileUpload = function () {
     </div>');
 };
 
-jsHarmony.prototype.SelectMenu = function (menuid) {
+jsHarmony.prototype.SelectTopMenu = function (menuid) {
   var _this = this;
+  if(!menuid) menuid = '';
+  //Get top menu item
+  if(_.isArray(menuid)) menuid = menuid[0];
+  //Select top menu item
   _this.$root('.xmenu').children('a').each(function (i, obj) {
     var jobj = $(obj);
     var jsideobj = _this.$root('.side'+jobj.data('id'));

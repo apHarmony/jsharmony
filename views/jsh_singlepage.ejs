@@ -209,7 +209,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
       jsh.$root('.toplink_help').not('.static').attr('href',model.helpurl);
       jsh.$root('.toplink_help').not('.static').attr('onclick',model.helpurl_onclick);
-      if(model.topmenu){ jsh.SelectMenu(model.topmenu); }
+      if(model.topmenu){ jsh.SelectTopMenu(model.topmenu); }
       jsh.ResetLinks();
       jsh.trigger('jsh_ready');
       return;

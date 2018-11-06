@@ -74,8 +74,11 @@ function jsHarmonyConfig(config){
     hide_deprecated: false,    //Hide deprecated property error messages
     disable_email: false,      //Disable sending outgoing emails
     report_debug: false,       //Display report warnings (Null value, etc.)
+    auth_debug: false,         //Debug Login / Authentication - Log Hashes
     
     db_requests: false,        //Log every database request through DB.js
+    db_error_level: 2,         //Bitmask: 2 = WARNING, 4 = NOTICES :: Database messages displayed to the client
+    db_log_level: 6,           //Bitmask: 2 = WARNING, 4 = NOTICES :: Database messages logged to the console / log 
     db_error_sql_state: true,  //Log SQL state during DB error
 
     monitor_globals: false,      //Enable client-side monitoring of global / window variables: display a message if a new variable is found

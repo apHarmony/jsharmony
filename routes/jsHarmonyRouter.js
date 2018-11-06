@@ -60,19 +60,19 @@ var jsHarmonyRouter = function (jsh, siteid) {
   router.route('/login').all(function (req, res, next) {
     if(!siteConfig.auth){ jsh.Log.error('Auth not configured in config'); return next(); }
     (siteConfig.auth.onRenderLogin || jsh.RenderLogin).call(jsh, req, res, function (rslt) {
-      if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Login', body: rslt, XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
+      if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Login', body: rslt, XMenu: {}, selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
   router.route('/login/forgot_password').all(function (req, res, next) {
     if(!siteConfig.auth){ jsh.Log.error('Auth not configured in config'); return next(); }
     (siteConfig.auth.onRenderLoginForgotPassword || jsh.RenderLoginForgotPassword).call(jsh, req, res, function (rslt) {
-      if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Forgot Password', body: rslt, XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
+      if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Forgot Password', body: rslt, XMenu: {}, selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
   router.route('/login/forgot_password_reset').all(function (req, res, next) {
     if(!siteConfig.auth){ jsh.Log.error('Auth not configured in config'); return next(); }
     (siteConfig.auth.onRenderLoginForgotPasswordReset || jsh.RenderLoginForgotPasswordReset).call(jsh, req, res, function (rslt) {
-      if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Reset Password', body: rslt, XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
+      if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Reset Password', body: rslt, XMenu: {}, selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
   for (var i = 0; i < siteConfig.public_apps.length; i++) {
@@ -119,7 +119,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
   router.get('/logout', function (req, res, next) {
     if(!siteConfig.auth){ jsh.Log.error('Auth not configured in config'); return next(); }
     jsh.RenderLogout(req, res, function (rslt) {
-      if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Logout', body: rslt, XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
+      if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Logout', body: rslt, XMenu: {}, selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
   router.get('/application.js', function (req, res) {
@@ -286,9 +286,9 @@ var jsHarmonyRouter = function (jsh, siteid) {
         }
         //Show model listing, if no menu exists and user has access
         if(params.ShowListing || !siteConfig.auth || ('DEV' in req._roles)){
-          //_.extend(params, { title: 'Models', body: jsh.RenderListing(), XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
+          //_.extend(params, { title: 'Models', body: jsh.RenderListing(), XMenu: {}, selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
           return jsh.RenderTemplate(req, res, 'index', {
-            title: 'Models', body: jsh.RenderListing(), TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh
+            title: 'Models', body: jsh.RenderListing(), selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh
           });
         }
         //Otherwise, show error
@@ -373,7 +373,7 @@ function genSinglePage(jsh, req, res, modelid){
   }
   //Render page
   jsh.RenderTemplate(req, res, tmpl_name, {
-    title: '', body: ejsbody, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh
+    title: '', body: ejsbody, selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh
   });
 }
 
