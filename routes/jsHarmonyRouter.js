@@ -52,7 +52,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     req.getJSClientParams = function () { return jsh.getJSClientParams(req); }
     req.getJSLocals = function(){ return jsh.getJSLocals(req); }
     req.getJSH = function() { return jsh; };
-    if (jsh.Config.debug_params.web_detailed_errors) req._web_detailed_errors = 1;
+    if (req.jshsite && req.jshsite.show_system_errors) req._show_system_errors = 1;
     setNoCache(req,res);
     res.setHeader('X-UA-Compatible','IE=edge');
     return next();
@@ -336,12 +336,20 @@ var jsHarmonyRouter = function (jsh, siteid) {
       dbconfig.password = req.body.runas_password;
     }
 
-    db.MultiRecordset(req._DBContext, sql, [], {}, undefined, function (err, dbrslt) {
-      if(err){ err.sql = sql; return jsh.AppSrv.AppDBError(req, res, err); }
+    var show_notices = false;
+    if(req.body.show_notices) show_notices = true;
+
+    var context = req._DBContext;
+    if(req.body.nocontext) context = '';
+
+    db.MultiRecordset(context, sql, [], {}, undefined, function (err, dbrslt, stats) {
+      if(err){ err.sql = sql; return jsh.AppSrv.AppDBError(req, res, err, stats); }
       rslt = {
         '_success': 1,
+        '_stats': Helper.FormatStats(req, stats, { notices: show_notices, show_all_messages: true }),
         'dbrslt': dbrslt
       };
+      
       res.send(JSON.stringify(rslt));
     }, dbconfig);
   });

@@ -337,7 +337,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
   else filecallback(null);
 };
 
-exports.ProcessFileOperations = function (keyval, fileops, rslt, callback) {
+exports.ProcessFileOperations = function (keyval, fileops, rslt, stats, callback) {
   var jsh = this.jsh;
   if ((typeof keyval == 'undefined') || !keyval) return callback(Helper.NewError('Invalid file key', -13), null);
   
@@ -414,7 +414,7 @@ exports.ProcessFileOperations = function (keyval, fileops, rslt, callback) {
       jsh.Log.error(fileerr);
       return callback(Helper.NewError('Error committing file update.', -35), null);
     }
-    return callback(null, rslt);
+    return callback(null, rslt, stats);
   });
 };
 

@@ -67,7 +67,6 @@ function jsHarmonyConfig(config){
   //Debug Settings
   this.debug_params = {
     jsh_error_level: 1,        //1 = ERROR, 2 = WARNING, 4 = INFO  :: Messages generated while parsing jsHarmony configs
-    web_detailed_errors: true, //Be sure to set to false in production - you do not want error stack traces showing to users
     appsrv_requests: false,    //Record all APPSRV requests on LOG/CONSOLE
 
     pipe_log : true,           //Show LOG messages on CONSOLE
@@ -77,7 +76,6 @@ function jsHarmonyConfig(config){
     auth_debug: false,         //Debug Login / Authentication - Log Hashes
     
     db_requests: false,        //Log every database request through DB.js
-    db_error_level: 2,         //Bitmask: 2 = WARNING, 4 = NOTICES :: Database messages displayed to the client
     db_log_level: 6,           //Bitmask: 2 = WARNING, 4 = NOTICES :: Database messages logged to the console / log 
     db_error_sql_state: true,  //Log SQL state during DB error
 

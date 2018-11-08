@@ -57,7 +57,7 @@ AppSrvRpt.prototype.queueReport = function (req, res, modelid, Q, P, params, onC
   var model = jsh.getModel(req, modelid);
   var db = params.db;
   var dbcontext = params.dbcontext;
-  var errorHandler = function(num, txt){ return Helper.GenError(req, res, num, txt); };
+  var errorHandler = function(num, txt, stats){ return Helper.GenError(req, res, num, txt, { stats: stats }); };
   if(params.errorHandler) errorHandler = params.errorHandler;
   if(req){
     if (!Helper.HasModelAccess(req, model, 'B')) { return errorHandler(-11, 'Invalid Model Access for '+modelid); }
@@ -103,10 +103,10 @@ AppSrvRpt.prototype.queueReport = function (req, res, modelid, Q, P, params, onC
     return errorHandler(-99999, err.toString());
   }
   
-  db.ExecTasks(dbtasks, function (err, dbdata) {
+  db.ExecTasks(dbtasks, function (err, dbdata, stats) {
     if (err) {
       if(jsh.Config.debug_params.report_debug) console.log(err);
-      return thisapp.AppDBError(req, res, err, errorHandler);
+      return thisapp.AppDBError(req, res, err, stats, errorHandler);
     }
     if (dbdata == null) dbdata = {};
     _this.MergeReportData(dbdata, model.reportdata, null);
@@ -139,15 +139,16 @@ AppSrvRpt.prototype.batchReport = function (req, res, db, dbcontext, model, sql_
   
   var dbtasks = {};
   dbtasks['batchqueue'] = function (callback) {
-    db.Recordset(dbcontext, sql, sql_ptypes, sql_params, function (err, rslt) {
+    db.Recordset(dbcontext, sql, sql_ptypes, sql_params, function (err, rslt, stats) {
       if ((err == null) && (rslt == null)) err = Helper.NewError('Record not found', -1);
       if (err != null) { err.model = model; err.sql = sql; }
-      callback(err, rslt);
+      if (stats) stats.model = model;
+      callback(err, rslt, stats);
     });
   }
   
-  db.ExecTasks(dbtasks, function (err, rslt) {
-    if (err) { return thisapp.AppDBError(req, res, err, errorHandler); }
+  db.ExecTasks(dbtasks, function (err, rslt, stats) {
+    if (err) { return thisapp.AppDBError(req, res, err, stats, errorHandler); }
     if (rslt == null) rslt = {};
     var jobtasks = {};
     if(params.output=='html'){
@@ -242,10 +243,11 @@ AppSrvRpt.prototype.parseReportSQLData = function (req, db, dbcontext, model, sq
     if(!req && (sql.indexOf('%%%DATALOCKS%%%')>=0)) throw new Error('Cannot use %%%DATALOCKS%%% in automated reports');
     
     dbtasks[dname] = function (callback) {
-      db.Recordset(dbcontext, sql, sql_ptypes, sql_params, function (err, rslt) {
+      db.Recordset(dbcontext, sql, sql_ptypes, sql_params, function (err, rslt, stats) {
         if ((err == null) && (rslt == null)) err = Helper.NewError('Record not found', -1);
         if (err != null) { err.model = model; err.sql = sql; }
-        callback(err, rslt);
+        if (stats) stats.model = model;
+        callback(err, rslt, stats);
       });
     }
     
@@ -716,15 +718,16 @@ AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete
   
   var dbtasks = {};
   dbtasks['jobqueue'] = function (callback) {
-    db.Recordset(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt) {
+    db.Recordset(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt, stats) {
       if ((err == null) && (rslt == null)) err = Helper.NewError('Record not found', -1);
       if (err != null) { err.model = model; err.sql = sql; }
-      callback(err, rslt);
+      if (stats) stats.model = model;
+      callback(err, rslt, stats);
     });
   }
   
-  db.ExecTasks(dbtasks, function (err, rslt) {
-    if (err != null) { thisapp.AppDBError(req, res, err); return; }
+  db.ExecTasks(dbtasks, function (err, rslt, stats) {
+    if (err != null) { thisapp.AppDBError(req, res, err, stats); return; }
     if (rslt == null) rslt = {};
     if (('_test' in Q) && (Q._test == 1)) {
       for (var i = 0; i < rslt.jobqueue.length; i++) {
@@ -765,9 +768,10 @@ AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete
         
         if(!thisapp.JobProc.AddDBJob(req, res, jobtasks, i, jrow, reportid, rparams)) return;
       }
-      thisapp.JobProc.db.ExecTransTasks(jobtasks, function (err, rslt) {
-        if (err != null) { thisapp.AppDBError(req, res, err); return; }
+      thisapp.JobProc.db.ExecTransTasks(jobtasks, function (err, rslt, stats) {
+        if (err != null) { thisapp.AppDBError(req, res, err, stats); return; }
         else rslt = { '_success': _.size(jobtasks) };
+        rslt['_stats'] = Helper.FormatStats(req, stats);
         res.send(JSON.stringify(rslt));
       });
     }

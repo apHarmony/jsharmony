@@ -279,7 +279,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "dberrors": [
     [ "UNQ_H_H_UNIQUE", "This Help Panel has already been defined." ],
     [ "/UNQ_H_H_[UN]*IQUE/", "This Help Panel has already been defined." ]
-    //If error begins with "Application Error - " we will only show the error message, and also ignore any other error messages in that transaction
+    //If error/warning/notice begins with "Application Error - " we will show the error message.
+    //If error/warning/notice begins with "Application Warning - " we will show the warning message
+    //If error/warning/notice has the format "Execute Form - MESSAGE //C?c_id=1" we will show the message and open the form
   ],
   //Auto-generated
   "_inherits": ["CL_X","CL"] //Array of parent models

@@ -69,7 +69,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.frontsalt = <%-JSON.stringify(jsh.Config.frontsalt)%>;
   jsh.app_errors = [];
 
-  <% if(jsh.Config.debug_params.web_detailed_errors && jsh.SystemErrors){ %>
+  <% if(req._show_system_errors && jsh.SystemErrors){ %>
     jsh.app_errors = <%-JSON.stringify(jsh.SystemErrors)%>;
   <% } %>
 
@@ -227,7 +227,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         else if(_.includes([-1,-2],data.Number)){ XExt.Alert(data.Message,null,{ onAcceptImmediate:closeIfPopup }); return true; }
       }
       var msg = 'Failed to load state';
-      <% if(req._web_detailed_errors){ %>msg += ': ' + JSON.stringify(data);<% } %>
+      <% if(req._show_system_errors){ %>msg += ': ' + JSON.stringify(data);<% } %>
       XExt.Alert(msg);
     });
   }

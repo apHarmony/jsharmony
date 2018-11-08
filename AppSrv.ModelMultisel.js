@@ -115,10 +115,11 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
   
   var dbtasks = {};
   dbtasks[modelid] = function (dbtrans, callback) {
-    db.Recordset(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt) {
+    db.Recordset(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
       if ((err == null) && (rslt == null)) err = Helper.NewError('Record not found', -1);
       if (err != null) { err.model = model; err.sql = sql; }
-      callback(err, rslt);
+      if (stats) stats.model = model;
+      callback(err, rslt, stats);
     });
   }
   //Title Tasks
@@ -228,9 +229,10 @@ exports.postModelMultisel = function (req, res, modelid, Q, P, onComplete) {
   var dbtasks = {};
   dbtasks[modelid] = function (dbtrans, callback, transtbl) {
     sql_params = _this.ApplyTransTblEscapedParameters(sql_params, transtbl);
-    db.Row(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt) {
+    db.Row(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
       if (err != null) { err.model = model; err.sql = sql; }
-      callback(err, rslt);
+      if (stats) stats.model = model;
+      callback(err, rslt, stats);
     });
   };
   return onComplete(null, dbtasks);

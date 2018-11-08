@@ -78,7 +78,7 @@ exports = module.exports = function (req, res, onComplete) {
           else {
             var dbhash = user_info[jsh.map.user_hash].toString('hex');
             if(jsh.Config.debug_params.auth_debug){
-              jsh.Log('Login DB Hash: '+dbhash);
+              jsh.Log('Login DB Hash:     '+dbhash);
               jsh.Log('Login Client Hash: '+prehash);
             }
             if (nopass) prehash = dbhash;

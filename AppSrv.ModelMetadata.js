@@ -131,10 +131,10 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
   
   dbtasks['_title'] = function (dbtrans, callback, transtbl) {
     _this.ApplyTransTblChainedParameters(transtbl, sql, sql_ptypes, sql_params, model.fields);
-    db.Scalar(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, title) {
+    db.Scalar(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, title, stats) {
       if (err) { _this.jsh.Log.error(err); Helper.GenError(req, res, -99999, "An unexpected error has occurred"); return; }
       if(title) title = Helper.ResolveParams(req, title);
-      return callback(null, title);
+      return callback(null, title, stats);
     });
   }
 }
@@ -215,14 +215,14 @@ exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
   dbtasks['_defaults'] = function (dbtrans, callback, transtbl) {
     _this.ApplyTransTblChainedParameters(transtbl, dflt_sql, dflt_ptypes, dflt_params, model.fields);
     if (dflt_sql) {
-      db.Row(req._DBContext, dflt_sql, dflt_ptypes, dflt_params, dbtrans, function (err, rslt) {
+      db.Row(req._DBContext, dflt_sql, dflt_ptypes, dflt_params, dbtrans, function (err, rslt, stats) {
         if (err == null) {
           for (var f in rslt) {
             if (rslt[f] == null) _defaults[f] = '';
             else _defaults[f] = rslt[f].toString();
           }
         }
-        callback(err, _defaults);
+        callback(err, _defaults, stats);
       });
     }
     else callback(null, _defaults);
@@ -262,10 +262,11 @@ exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks) {
   var bcrumb_sql = db.sql.getBreadcrumbTasks(_this.jsh, model, datalockqueries, bcrumb_sql_fields);
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return false; }
   dbtasks['_bcrumbs'] = function (dbtrans, callback) {
-    db.Row(req._DBContext, bcrumb_sql, bcrumb_ptypes, bcrumb_params, dbtrans, function (err, rslt) {
+    db.Row(req._DBContext, bcrumb_sql, bcrumb_ptypes, bcrumb_params, dbtrans, function (err, rslt, stats) {
       if ((err == null) && (rslt == null)) err = Helper.NewError('Breadcrumbs not found', -14);
       if (err != null) { err.model = model; err.sql = bcrumb_sql; }
-      callback(err, rslt);
+      if (stats) stats.model = model;
+      callback(err, rslt, stats);
     });
   };
 }
@@ -374,7 +375,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
 
       dbtasks['_LOV_' + field.name] = function (dbtrans, callback, transtbl) {
         _this.ApplyTransTblChainedParameters(transtbl, sql, lov_ptypes, lov_params, model.fields);
-        lovdb.Recordset(req._DBContext, sql, lov_ptypes, lov_params, dbtrans, function (err, rslt) {
+        lovdb.Recordset(req._DBContext, sql, lov_ptypes, lov_params, dbtrans, function (err, rslt, stats) {
           if (err == null) {
             //Generate warning if the LOV options are too long, and sqlselect, sqltruncate is not defined for the field
             if(can_optimize && (rslt.length > 1000)){
@@ -392,7 +393,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
               rslt.unshift(newlov);
             }
           }
-          callback(err, rslt);
+          callback(err, rslt, stats);
         });
       };
     }

@@ -187,16 +187,17 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
   var dbtaskname = modelid;
   if (!is_new) {
     dbtasks[dbtaskname] = function (dbtans, callback) {
-      db.Recordset(req._DBContext, dbsql.sql, sql_ptypes, sql_params, dbtans, function (err, rslt) {
+      db.Recordset(req._DBContext, dbsql.sql, sql_ptypes, sql_params, dbtans, function (err, rslt, stats) {
         if (err != null) { err.model = model; err.sql = dbsql.sql; }
         else {
+          if (stats) stats.model = model;
           if ((rslt != null) && (rslt.length > rowcount)) {
             rslt.pop();
             rslt.push({ '_eof': false });
           }
           else rslt.push({ '_eof': true });
         }
-        callback(err, rslt);
+        callback(err, rslt, stats);
       });
     };
   }
@@ -209,10 +210,11 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
   
   if ('getcount' in Q) {
     dbtasks['_count_' + dbtaskname] = function (dbtrans, callback) {
-      db.Row(req._DBContext, dbsql.rowcount_sql, sql_ptypes, sql_params, dbtrans, function (err, rslt) {
+      db.Row(req._DBContext, dbsql.rowcount_sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
         if ((err == null) && (rslt == null)) err = Helper.NewError('Count not found', -14);
         if (err != null) { err.model = model; err.sql = dbsql.rowcount_sql; }
-        callback(err, rslt);
+        if (stats) stats.model = model;
+        callback(err, rslt, stats);
       });
     };
   }
@@ -232,8 +234,8 @@ exports.exportCSV = function (req, res, dbtasks, modelid) {
   var model = jsh.getModel(req, modelid);
   var db = _this.jsh.getModelDB(req, modelid);
   dbtasks = _.reduce(dbtasks, function (rslt, dbtask, key) { rslt[key] = async.apply(dbtask, undefined); return rslt; }, {});
-  db.ExecTasks(dbtasks, function (err, rslt) {
-    if (err != null) { _this.AppDBError(req, res, err); return; }
+  db.ExecTasks(dbtasks, function (err, rslt, stats) {
+    if (err != null) { _this.AppDBError(req, res, err, stats); return; }
     if (!modelid in rslt) throw new Error('DB result missing model.');
     var eof = false;
     if (_.isArray(rslt[modelid]) && (_.isObject(rslt[modelid][rslt[modelid].length - 1])) && ('_eof' in rslt[modelid][rslt[modelid].length - 1])) {

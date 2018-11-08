@@ -99,8 +99,7 @@ exports.getReportHTML = function (req, res, modelid, Q, P, callback) {
       rslt = _this.parseReportHTML(rptcontent);
     }
     
-    res.send(rslt);
-    res.end();
+    res.end(rslt);
   }
   
   this.rptsrv.queueReport(req, res, modelid, Q, P, {output:'html'}, callback);
