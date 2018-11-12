@@ -29,7 +29,7 @@ exports.ExecDBFunc = function (dbfunc, context, sql, ptypes, params, callback, d
   var _this = this;
   if(!db) db = _this.jsh.getDB('default');
   db.ExecTasks([function (cb) {
-      dbfunc.call(db, context, sql, ptypes, params, undefined, function (err, rslt) { cb(err, rslt); }, dbconfig);
+      dbfunc.call(db, context, sql, ptypes, params, undefined, function (err, rslt, stats) { cb(err, rslt, stats); }, dbconfig);
     }], callback);
 }
 
@@ -58,8 +58,9 @@ exports.ExecScalar = function (context, sql, ptypes, params, callback, dbconfig,
   this.ExecDBFunc(db.Scalar, context, sql, ptypes, params, callback, dbconfig, db);
 };
 
-exports.AppDBError = function (req, res, err, errorHandler) {
-  if(!errorHandler) errorHandler = function(num, txt){ return Helper.GenError(req, res, num, txt); };
+exports.AppDBError = function (req, res, err, stats, errorHandler) {
+  if(err.stats) stats = err.stats;
+  if(!errorHandler) errorHandler = function(num, txt, stats){ return Helper.GenError(req, res, num, txt, { stats: stats }); };
   if ('model' in err) {
     var model = err.model;
     if ('dberrors' in model) {
@@ -69,19 +70,20 @@ exports.AppDBError = function (req, res, err, errorHandler) {
         var etxt = dberr[1];
         if (erex.indexOf('/') == 0) {
           erex = erex.substr(1, erex.length - 2);
-          if (err.message.match(new RegExp(erex))) { return errorHandler(-9, etxt); }
+          if (err.message.match(new RegExp(erex))) { return errorHandler(-9, etxt, stats); }
         }
-        else if (err.message.indexOf(erex) >= 0) { return errorHandler(-9, etxt); }
+        else if (err.message.indexOf(erex) >= 0) { return errorHandler(-9, etxt, stats); }
       }
     }
   }
   //Not necessary because sql is printed out in node debug in log below
   //if ('sql' in err) { if (this.jsh.Config.debug_params.appsrv_logsql) err.message += ' SQL: ' + err.sql; }
-  if ((err.message) && (err.message == 'INVALID ACCESS')) return errorHandler(-12, "Invalid DataLock Access");
+  if ((err.message) && (err.message == 'INVALID ACCESS')) return errorHandler(-12, "Invalid DataLock Access", stats);
   if (this.jsh.Config.debug_params.appsrv_requests) this.jsh.Log.error(err);
-  if ((err.message) && (err.message.indexOf('Application Error - ') == 0)) return errorHandler(-5, err.message);
-  if ('number' in err) return errorHandler(err.number, err.message);
-  return errorHandler(-99999, err.message);
+  if ((err.message) && (err.message.indexOf('Application Error - ') == 0)) return errorHandler(-5, err.message, stats);
+  if(('number' in err) && err.frontend_visible) return errorHandler(err.number, err.message, stats);
+  //if ('number' in err) return errorHandler(err.number, err.message);  //This would prevent show_system_errors from functioning
+  return errorHandler(-99999, err.message, stats);
 }
 
 exports.DeformatParam = function (field, val, verrors) {
@@ -521,7 +523,7 @@ exports.ExecTasks = function (req, res, dbtasks, trans, callback) {
     function(dbtrans, callback, transtbl){ ... }
   */
   var _this = this;
-  if (_.isEmpty(dbtasks)) { res.end(JSON.stringify({ '_success': 1 })); return; }
+  if (_.isEmpty(dbtasks)) { res.end(JSON.stringify({ '_success': 1, '_stats': {} })); return; }
   
   //Split off post-processing
   var posttasks = [];
@@ -540,10 +542,11 @@ exports.ExecTasks = function (req, res, dbtasks, trans, callback) {
     */
     dbtasks = _this.TransformDBTasks(dbtasks, function(dbtask, key){ return async.apply(dbtask, undefined); });
   }
-  dbfunc.call(db, dbtasks, function (err, rslt) {
-    if (err != null) { _this.AppDBError(req, res, err); return; }
+  dbfunc.call(db, dbtasks, function (err, rslt, stats) {
+    if (err != null) { _this.AppDBError(req, res, err, stats); return; }
     if (rslt == null) rslt = {};
     rslt['_success'] = 1;
+    rslt['_stats'] = Helper.FormatStats(req, stats);
     //Handle EOF
     for (var rs in rslt) {
       if (_.isArray(rslt[rs]) && (_.isObject(rslt[rs][rslt[rs].length - 1])) && ('_eof' in rslt[rs][rslt[rs].length - 1])) {

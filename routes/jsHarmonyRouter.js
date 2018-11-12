@@ -52,7 +52,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     req.getJSClientParams = function () { return jsh.getJSClientParams(req); }
     req.getJSLocals = function(){ return jsh.getJSLocals(req); }
     req.getJSH = function() { return jsh; };
-    if (jsh.Config.debug_params.web_detailed_errors) req._web_detailed_errors = 1;
+    if (req.jshsite && req.jshsite.show_system_errors) req._show_system_errors = 1;
     setNoCache(req,res);
     res.setHeader('X-UA-Compatible','IE=edge');
     return next();
@@ -60,19 +60,19 @@ var jsHarmonyRouter = function (jsh, siteid) {
   router.route('/login').all(function (req, res, next) {
     if(!siteConfig.auth){ jsh.Log.error('Auth not configured in config'); return next(); }
     (siteConfig.auth.onRenderLogin || jsh.RenderLogin).call(jsh, req, res, function (rslt) {
-      if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Login', body: rslt, XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
+      if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Login', body: rslt, XMenu: {}, selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
   router.route('/login/forgot_password').all(function (req, res, next) {
     if(!siteConfig.auth){ jsh.Log.error('Auth not configured in config'); return next(); }
     (siteConfig.auth.onRenderLoginForgotPassword || jsh.RenderLoginForgotPassword).call(jsh, req, res, function (rslt) {
-      if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Forgot Password', body: rslt, XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
+      if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Forgot Password', body: rslt, XMenu: {}, selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
   router.route('/login/forgot_password_reset').all(function (req, res, next) {
     if(!siteConfig.auth){ jsh.Log.error('Auth not configured in config'); return next(); }
     (siteConfig.auth.onRenderLoginForgotPasswordReset || jsh.RenderLoginForgotPasswordReset).call(jsh, req, res, function (rslt) {
-      if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Reset Password', body: rslt, XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
+      if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Reset Password', body: rslt, XMenu: {}, selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
   for (var i = 0; i < siteConfig.public_apps.length; i++) {
@@ -119,7 +119,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
   router.get('/logout', function (req, res, next) {
     if(!siteConfig.auth){ jsh.Log.error('Auth not configured in config'); return next(); }
     jsh.RenderLogout(req, res, function (rslt) {
-      if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Logout', body: rslt, XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
+      if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Logout', body: rslt, XMenu: {}, selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
   router.get('/application.js', function (req, res) {
@@ -286,9 +286,9 @@ var jsHarmonyRouter = function (jsh, siteid) {
         }
         //Show model listing, if no menu exists and user has access
         if(params.ShowListing || !siteConfig.auth || ('DEV' in req._roles)){
-          //_.extend(params, { title: 'Models', body: jsh.RenderListing(), XMenu: {}, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
+          //_.extend(params, { title: 'Models', body: jsh.RenderListing(), XMenu: {}, selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
           return jsh.RenderTemplate(req, res, 'index', {
-            title: 'Models', body: jsh.RenderListing(), TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh
+            title: 'Models', body: jsh.RenderListing(), selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh
           });
         }
         //Otherwise, show error
@@ -336,12 +336,20 @@ var jsHarmonyRouter = function (jsh, siteid) {
       dbconfig.password = req.body.runas_password;
     }
 
-    db.MultiRecordset(req._DBContext, sql, [], {}, undefined, function (err, dbrslt) {
-      if(err){ err.sql = sql; return jsh.AppSrv.AppDBError(req, res, err); }
+    var show_notices = false;
+    if(req.body.show_notices) show_notices = true;
+
+    var context = req._DBContext;
+    if(req.body.nocontext) context = '';
+
+    db.MultiRecordset(context, sql, [], {}, undefined, function (err, dbrslt, stats) {
+      if(err){ err.sql = sql; return jsh.AppSrv.AppDBError(req, res, err, stats); }
       rslt = {
         '_success': 1,
+        '_stats': Helper.FormatStats(req, stats, { notices: show_notices, show_all_messages: true }),
         'dbrslt': dbrslt
       };
+      
       res.send(JSON.stringify(rslt));
     }, dbconfig);
   });
@@ -373,7 +381,7 @@ function genSinglePage(jsh, req, res, modelid){
   }
   //Render page
   jsh.RenderTemplate(req, res, tmpl_name, {
-    title: '', body: ejsbody, TopMenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh
+    title: '', body: ejsbody, selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh
   });
 }
 

@@ -145,10 +145,11 @@ exports.getModelForm = function (req, res, modelid, Q, P, form_m) {
   if (!is_new) dbtasks[0][modelid] = function (dbtrans, callback) {
     var dbfunc = db.Row;
     if (selecttype == 'multiple') dbfunc = db.Recordset;
-    dbfunc.call(db, req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt) {
+    dbfunc.call(db, req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
       if ((err == null) && (rslt == null)) err = Helper.NewError('Record not found', -1);
       if (err != null) { err.model = model; err.sql = sql; }
       else {
+        if (stats) stats.model = model;
         if ((rslt != null) && (selecttype == 'single') && (keylist.length == 1)) {
           var keyval = sql_params[keylist[0]];
           //Decrypt encrypted fields
@@ -179,7 +180,7 @@ exports.getModelForm = function (req, res, modelid, Q, P, form_m) {
             }, function (err) {
               if (err != null) return callback(Helper.NewError('Error performing file operation', -99999));
               _.merge(rslt, filerslt);
-              callback(null, rslt);
+              callback(null, rslt, stats);
             });
             return;
           }
@@ -189,7 +190,7 @@ exports.getModelForm = function (req, res, modelid, Q, P, form_m) {
           if (encryptedfields.length > 0) { throw new Error('Encryption not supported on FORM-M'); }
         }
       }
-      callback(err, rslt);
+      callback(err, rslt, stats);
     });
   }
   else if (is_new && (selecttype == 'multiple')) {
@@ -321,17 +322,18 @@ exports.putModelForm = function (req, res, modelid, Q, P, onComplete) {
     var dbtasks = {};
     dbtasks[modelid] = function (dbtrans, callback, transtbl) {
       sql_params = _this.ApplyTransTblEscapedParameters(sql_params, transtbl);
-      db.Row(req._DBContext, dbsql.sql, sql_ptypes, sql_params, dbtrans, function (err, rslt) {
-        if ((err == null) && (rslt != null) && (_this.jsh.map.rowcount in rslt) && (rslt[_this.jsh.map.rowcount] == 0)) err = Helper.NewError('No records affected', -3);
+      db.Row(req._DBContext, dbsql.sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
+        if (stats) stats.model = model;
+        if ((err == null) && (rslt != null) && (_this.jsh.map.rowcount in rslt) && (rslt[_this.jsh.map.rowcount] == 0)) err = Helper.NewError('No records affected', -3, stats);
         if (err != null) { err.model = model; err.sql = dbsql.sql; }
         else if (fileops.length > 0) {
           //Move files, if applicable
           var keyval = '';
           if (keys.length == 1) keyval = rslt[keys[0].name];
           else throw new Error('File uploads require one key');
-          return _this.ProcessFileOperations(keyval, fileops, rslt, callback);
+          return _this.ProcessFileOperations(keyval, fileops, rslt, stats, callback);
         }
-        callback(err, rslt);
+        callback(err, rslt, stats);
       });
     };
     if (encryptedfields.length > 0) {
@@ -362,10 +364,11 @@ exports.putModelForm = function (req, res, modelid, Q, P, onComplete) {
             }
           }
         });
-        db.Row(req._DBContext, dbsql.enc_sql, enc_sql_ptypes, enc_sql_params, dbtrans, function (err, rslt) {
-          if ((err == null) && (rslt != null) && (_this.jsh.map.rowcount in rslt) && (rslt[_this.jsh.map.rowcount] == 0)) err = Helper.NewError('No records affected', -3);
+        db.Row(req._DBContext, dbsql.enc_sql, enc_sql_ptypes, enc_sql_params, dbtrans, function (err, rslt, stats) {
+          if (stats) stats.model = model;
+          if ((err == null) && (rslt != null) && (_this.jsh.map.rowcount in rslt) && (rslt[_this.jsh.map.rowcount] == 0)) err = Helper.NewError('No records affected', -3, stats);
           if (err != null) { err.model = model; err.sql = dbsql.enc_sql; }
-          callback(err, rslt);
+          callback(err, rslt, stats);
         });
       };
     }
@@ -497,17 +500,18 @@ exports.postModelForm = function (req, res, modelid, Q, P, onComplete) {
     var dbtasks = {};
     dbtasks[modelid] = function (dbtrans, callback, transtbl) {
       sql_params = _this.ApplyTransTblEscapedParameters(sql_params, transtbl);
-      db.Row(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt) {
-        if ((err == null) && (rslt != null) && (_this.jsh.map.rowcount in rslt) && (rslt[_this.jsh.map.rowcount] == 0)) err = Helper.NewError('No records affected', -3);
+      db.Row(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
+        if (stats) stats.model = model;
+        if ((err == null) && (rslt != null) && (_this.jsh.map.rowcount in rslt) && (rslt[_this.jsh.map.rowcount] == 0)) err = Helper.NewError('No records affected', -3, stats);
         if (err != null) { err.model = model; err.sql = sql; }
         else if (fileops.length > 0) {
           //Set keyval and move files, if applicable
           var keyval = '';
           if (keys.length == 1) keyval = sql_params[keys[0].name];
           else throw new Error('File uploads require one key');
-          return _this.ProcessFileOperations(keyval, fileops, rslt, callback);
+          return _this.ProcessFileOperations(keyval, fileops, rslt, stats, callback);
         }
-        callback(err, rslt);
+        callback(err, rslt, stats);
       });
     };
     if (fileops.length > 0) dbtasks['_POSTPROCESS'] = function (callback) {
@@ -559,10 +563,11 @@ exports.deleteModelForm = function (req, res, modelid, Q, P, onComplete) {
   
   var dbtasks = {};
   dbtasks[modelid] = function (dbtrans, callback) {
-    db.Row(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt) {
-      if ((err == null) && (rslt != null) && (_this.jsh.map.rowcount in rslt) && (rslt[_this.jsh.map.rowcount] == 0)) err = Helper.NewError('No records affected', -3);
+    db.Row(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
+      if (stats) stats.model = model;
+      if ((err == null) && (rslt != null) && (_this.jsh.map.rowcount in rslt) && (rslt[_this.jsh.map.rowcount] == 0)) err = Helper.NewError('No records affected', -3, stats);
       if (err != null) { err.model = model; err.sql = sql; }
-      callback(err, rslt);
+      callback(err, rslt, stats);
     });
   };
   //Add post-processing task to delete any files

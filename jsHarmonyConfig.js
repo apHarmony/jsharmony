@@ -67,15 +67,16 @@ function jsHarmonyConfig(config){
   //Debug Settings
   this.debug_params = {
     jsh_error_level: 1,        //1 = ERROR, 2 = WARNING, 4 = INFO  :: Messages generated while parsing jsHarmony configs
-    web_detailed_errors: true, //Be sure to set to false in production - you do not want error stack traces showing to users
     appsrv_requests: false,    //Record all APPSRV requests on LOG/CONSOLE
 
     pipe_log : true,           //Show LOG messages on CONSOLE
     hide_deprecated: false,    //Hide deprecated property error messages
     disable_email: false,      //Disable sending outgoing emails
     report_debug: false,       //Display report warnings (Null value, etc.)
+    auth_debug: false,         //Debug Login / Authentication - Log Hashes
     
     db_requests: false,        //Log every database request through DB.js
+    db_log_level: 6,           //Bitmask: 2 = WARNING, 4 = NOTICES :: Database messages logged to the console / log 
     db_error_sql_state: true,  //Log SQL state during DB error
 
     monitor_globals: false,      //Enable client-side monitoring of global / window variables: display a message if a new variable is found

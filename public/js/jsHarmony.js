@@ -4721,11 +4721,14 @@ exports = module.exports = function(jsh){
         if(loader) loader.StopLoading(_this);
         if ((data instanceof Object) && ('_error' in data)) {
           if(jsh.DefaultErrorHandler(data._error.Number,data._error.Message)) { }
-          else if(!(_this.OnDBError(data._error))) { }
+          else if(!(_this.OnDBError(data._error,data._stats))) { }
           else if((data._error.Number == -9) || (data._error.Number == -5)){ jsh.XExt.Alert(data._error.Message); }
           else { jsh.XExt.Alert('Error #' + data._error.Number + ': ' + data._error.Message); }
           if ('onFail' in ExecParams) ExecParams.onFail(data._error);
           return;
+        }
+        if ((data instanceof Object) && ('_stats' in data)) {
+          _this.OnDBStats(data._stats);
         }
         if((ExecParams.method != 'get') && (data instanceof Object) && ('_success' in data)){
           _this.OnSuccess(data);
@@ -4745,7 +4748,7 @@ exports = module.exports = function(jsh){
         var jdata = data.responseJSON;
         if ((jdata instanceof Object) && ('_error' in jdata)) {
           if (jsh.DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { }
-          else if (!(_this.OnDBError(jdata._error))) { }
+          else if (!(_this.OnDBError(jdata._error,jdata._stats))) { }
           else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { jsh.XExt.Alert(jdata._error.Message); }
           else { jsh.XExt.Alert('Error #' + jdata._error.Number + ': ' + jdata._error.Message); }
           if ('onFail' in ExecParams) ExecParams.onFail(jdata._error);
@@ -4758,9 +4761,24 @@ exports = module.exports = function(jsh){
       }
     });
   };
-  XPost.prototype.OnDBError = function (error){
-    if (error && error.Message && jsh.XExt.beginsWith(error.Message, "Execute Form - ")) {
-      var dbaction = error.Message.substr(("Execute Form - ").length);
+  XPost.prototype.OnDBStats = function(dbstats){
+    var _this = this;
+    var rslt = true;
+    if(dbstats){
+      if(('warnings' in dbstats) && _.isArray(dbstats.warnings)) dbstats = [dbstats]
+      else if(('notices' in dbstats) && _.isArray(dbstats.notices)) dbstats = [dbstats]
+      _.each(dbstats, function(stats){
+        _.each(stats.warnings, function(warning){ rslt = rslt && _this.OnDBMessage(warning); });
+        _.each(stats.notices, function(notice){ rslt = rslt && _this.OnDBMessage(notice); });
+      });
+    }
+    return rslt;
+  }
+  XPost.prototype.OnDBMessage = function (exception){
+    if(exception && exception.Message) exception = exception.Message;
+    exception = (exception||'').toString();
+    if (jsh.XExt.beginsWith(exception, "Execute Form - ")) {
+      var dbaction = exception.substr(("Execute Form - ").length);
       var dbmessage = dbaction.substr(0, dbaction.indexOf('//')).trim();
       var url = dbaction.substr(dbaction.indexOf('//')+2);
       if (url.indexOf(' - ') >= 0) url = url.substr(0, url.indexOf(' - '));
@@ -4770,7 +4788,7 @@ exports = module.exports = function(jsh){
         modelid = url.substr(0, url.indexOf('?'));
         params = jsh.XExt.parseGET(url.substr(url.indexOf('?')));
       }
-      if (!dbmessage) dbmessage = 'Save operation did not complete.  Press OK to view details.';
+      if (!dbmessage) dbmessage = 'Opening form';
       jsh.XExt.Alert(dbmessage,undefined, {
         onAcceptImmediate: function () {
           jsh.XExt.popupForm(modelid, undefined, params);
@@ -4778,15 +4796,26 @@ exports = module.exports = function(jsh){
       });
       return false;
     }
+    else if(jsh.XExt.beginsWith(exception, "Application Error - ")){
+      jsh.XExt.Alert(exception);
+      return false;
+    }
+    else if(jsh.XExt.beginsWith(exception, "Application Warning - ")){
+      jsh.XExt.Alert(exception);
+      return false;
+    }
+    return true;
+  };
+  XPost.prototype.OnDBError = function (error, stats){
+    if(this.OnDBMessage(error)===false) return false;
 
     if(!this.Data) return true;
     
     if(this.Data.OnDBError){
       if(this.Data.OnDBError(error)===false) return false;
-      return true;
     }
-    else 
-      return true;
+
+    return true;
   };
   XPost.prototype.OnSuccess = function(rslt){
     if(!this.Data) return true;
@@ -15746,8 +15775,12 @@ jsHarmony.prototype.InitXFileUpload = function () {
     </div>');
 };
 
-jsHarmony.prototype.SelectMenu = function (menuid) {
+jsHarmony.prototype.SelectTopMenu = function (menuid) {
   var _this = this;
+  if(!menuid) menuid = '';
+  //Get top menu item
+  if(_.isArray(menuid)) menuid = menuid[0];
+  //Select top menu item
   _this.$root('.xmenu').children('a').each(function (i, obj) {
     var jobj = $(obj);
     var jsideobj = _this.$root('.side'+jobj.data('id'));

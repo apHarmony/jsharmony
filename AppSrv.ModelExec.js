@@ -106,9 +106,10 @@ exports.postModelExec = function (req, res, modelid, Q, P, onComplete) {
     sql_params = _this.ApplyTransTblEscapedParameters(sql_params, transtbl);
     var dbfunc = db.Recordset;
     if (model.sqltype && (model.sqltype == 'multirecordset')) dbfunc = db.MultiRecordset;
-    dbfunc.call(db, req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt) {
+    dbfunc.call(db, req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
       if (err != null) { err.model = model; err.sql = sql; }
-      callback(err, rslt);
+      if (stats) stats.model = model;
+      callback(err, rslt, stats);
     });
   };
   return onComplete(null, dbtasks);
