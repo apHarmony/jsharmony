@@ -66,7 +66,7 @@ function jsHarmonyConfig(config){
   this.google_settings = { API_KEY: '' };
   //Debug Settings
   this.debug_params = {
-    jsh_error_level: 1,        //1 = ERROR, 2 = WARNING, 4 = INFO  :: Messages generated while parsing jsHarmony configs
+    jsh_error_level: 1,        //Bitmask: 1 = ERROR, 2 = WARNING, 4 = INFO  :: Messages generated while parsing jsHarmony configs
     appsrv_requests: false,    //Record all APPSRV requests on LOG/CONSOLE
 
     pipe_log : true,           //Show LOG messages on CONSOLE
