@@ -153,7 +153,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
         var link_onclick = '';
         if (link_target && link_target.substr(0, 3) == 'js:') {
           link_url = '#';
-          link_onclick = "var xformid = '" + modelid + "'; "+link_target.substr(3)+' return false;';
+          link_onclick = "var xformid = '" + modelid + "'; "+link_target.substr(3)+'; return false;';
         }
         else {
           var link_parsed = jsh.parseLink(link_target);
@@ -169,10 +169,10 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
               var link_bindingObj = { target: link_targetmodelid };
               var link_binding_additionalFields = _.keys(req.forcequery).concat(_.keys(rslt.bindings)).concat(_.pullAll(_.keys(req.query),['action','tabs']));
               if(link_parsed.action=='add'){
-                link_bindings = jsh.AddBindings(model, link_bindingObj, 'Button '+(link_text||link_target), { req: req, bindType: 'nonKeyFields', additionalFields: link_binding_additionalFields });
+                link_bindings = jsh.AddAutomaticBindings(model, link_bindingObj, 'Button '+(link_text||link_target), { req: req, bindType: 'nonKeyFields', additionalFields: link_binding_additionalFields });
               }
               else{
-                link_bindings = jsh.AddBindings(model, link_bindingObj, 'Button '+(link_text||link_target), { req: req, bindType: 'childKey' });
+                link_bindings = jsh.AddAutomaticBindings(model, link_bindingObj, 'Button '+(link_text||link_target), { req: req, bindType: 'childKey' });
               }
             }
           }

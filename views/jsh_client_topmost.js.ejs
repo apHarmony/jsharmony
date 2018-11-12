@@ -231,7 +231,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           var btnaccess = jbtn.data('actions');
           if (jsh.is_add && !jsh.XExt.HasAccess(btnaccess, 'I')) jbtn.hide();
           else {
-            if(jbtn.is(':visible') && jbtn.hasClass('grouped')){
+            if(jbtn.hasClass('grouped')){
               var modelid = jbtn.data('model');
               var group = jbtn.data('group');
               var button_group_name = modelid+'_'+group;

@@ -49,6 +49,7 @@ exports.parseButtons = function (buttons) {
     }
     rsltbtn = _.merge(rsltbtn, button);
     if(!('icon' in rsltbtn) && !('text' in rsltbtn)) rsltbtn.icon = 'ok';
+    if(!rsltbtn.icon) rsltbtn.icon = "ok";
     rslt.push(rsltbtn);
   });
   return rslt;
@@ -145,7 +146,27 @@ exports.parseFieldExpression = function(field, exp, params, options){
   return rslt;
 }
 
-exports.getURL = function (req, target, tabs, fields, bindings, keys) {
+// getURL :: Generate a URL for a link, based on the "target" string
+//Button Links
+//  jsh.getURL(req, link_target, undefined, undefined, link_bindings);
+//Tab Links: linktabs[model.id] = tabmodelid
+//  jsh.getURL(req, '', linktabs); 
+//Duplicate Model Links
+//  jsh.getURL(req, model.duplicate.link, undefined, dmodel.fields);
+//Select Links: 'select'
+//  jsh.getURL(req, srcfield.link + ':' + model.id, undefined, model.fields); 
+//Field Links
+//  jsh.getURL(req, srcfield.link, undefined, model.fields);
+//
+//ex: edit:EW&E_ID
+//Parameters:
+//  req (Express.Request): Request
+//  target (string): Link target
+//  tabs: Array of selected tabs: { "PARENT_MODEL_ID": "SELECT_TAB_MODEL_ID" }
+//  fields: Array of the model's fields, for adding querystring parameters to the link, based on the link target parameters, ex: edit:EW&E_C_ID=C_ID
+//  bindings: Array of the link bindings, for adding additional querystring parameters to the link
+//            Bindings will be evaluated client-side, and overwrite any other querystring parameters
+exports.getURL = function (req, target, tabs, fields, bindings) {
   var ptarget = this.parseLink(target);
   var modelid = ptarget.modelid;
   var action = ptarget.action;

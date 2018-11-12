@@ -736,15 +736,15 @@ exports.ParseEntities = function () {
       else{
         if ('tabs' in model) for (var i=0;i<model.tabs.length;i++) {
           var tab = model.tabs[i]; //tab.target, tab.bindings
-          _this.AddBindings(model, tab, 'Tab '+(tab.name||''), { log: function(msg){ _this.LogInit_ERROR(msg); } });
+          _this.AddAutomaticBindings(model, tab, 'Tab '+(tab.name||''), { log: function(msg){ _this.LogInit_ERROR(msg); } });
         }
         if ('duplicate' in model) {
           var duplicate = model.duplicate; //duplicate.target, duplicate,bindings
-          _this.AddBindings(model, model.duplicate, "Duplicate action", { log: function(msg){ _this.LogInit_ERROR(msg); } });
+          _this.AddAutomaticBindings(model, model.duplicate, "Duplicate action", { log: function(msg){ _this.LogInit_ERROR(msg); } });
         }
         _.each(model.fields, function (field) {
           if (field.control == 'subform') {
-            _this.AddBindings(model, field, 'Subform '+field.name, { log: function(msg){ _this.LogInit_ERROR(msg); } });
+            _this.AddAutomaticBindings(model, field, 'Subform '+field.name, { log: function(msg){ _this.LogInit_ERROR(msg); } });
           }
         });
       }
@@ -1027,14 +1027,42 @@ exports.AddFieldDatalock = function(model, field, siteid, datalockid, datalockSe
   else this.LogInit_ERROR(model.id + ' > ' + field.name + ': Could not auto-add datalock - please define in _config.datalocks.'+siteid+'.'+datalockid+'.'+field.name);
 }
 
-exports.AddBindings = function(model, element, elementname, options){
+//_this.AddAutomaticBindings(model, tab, 'Tab '+(tab.name||''), { log: function(msg){ _this.LogInit_ERROR(msg); } });
+//_this.AddAutomaticBindings(model, model.duplicate, "Duplicate action", { log: function(msg){ _this.LogInit_ERROR(msg); } });
+//_this.AddAutomaticBindings(model, field, 'Subform '+field.name, { log: function(msg){ _this.LogInit_ERROR(msg); } });
+//Add: link_bindings = jsh.AddAutomaticBindings(model, link_bindingObj, 'Button '+(link_text||link_target), { req: req, bindType: 'nonKeyFields', additionalFields: link_binding_additionalFields });
+//Other: link_bindings = jsh.AddAutomaticBindings(model, link_bindingObj, 'Button '+(link_text||link_target), { req: req, bindType: 'childKey' });
+exports.AddAutomaticBindings = function(model, element, elementname, options){
   var _this = this;
   //bindType: parentKey, childKey, nonKeyFields
-  options = _.extend({ bindType: 'parentKey', additionalFields: [], req: null, log: function(msg){ _this.Log.error(msg); } }, options);
-  var _this = this;
+  options = _.extend({ 
+    //bindType: parentKey, childKey, or nonKeyFields
+    //  parentKey: Create a binding between each Parent Form's Key and a field with the same name in the child (Default)
+    //             "PARENT_KEY": "PARENT_KEY"
+    //             Used in Tabs, Subforms, and Duplicate
+    //  childKey:  Create a binding between each Child Form's Key and a field with the same name in the parent
+    //             "CHILD_KEY": "CHILD_KEY"
+    //             Used in Button Bindings
+    //  nonKeyFields: Bind any field that exists in both the parent and child, that is in the "additionalFields" array
+    //                Also, for parent form, form-m, and exec models, bind any field that is in both the parent and child, that is not the Child Form's key.
+    //                "ADDITIONAL_FIELD": "ADDITONAL_FIELD"
+    //                "CHILD_FIELD": "CHILD_FIELD" (When parent is a Form, Form-m, and Exec)
+    bindType: 'parentKey', 
+    //Array of field names used for binding nonKeyFields
+    additionalFields: [], 
+    //Express Request
+    req: null, 
+    //Logging function
+    log: function(msg){ _this.Log.error(msg); } 
+  }, options);
+
+  //If automatic bindings are not enabled, return
+  if(!_this.Config.system_settings.automatic_bindings) return;
+
+  //If a binding is already defined for this element, do not add more bindings
   if('bindings' in element) return;
 
-  //Parse target model
+  //Get binding target
   if (!('target' in element)) { options.log(model.id + ' > ' + elementname + ' Bindings: Missing target'); return }
   if (!(element.target in _this.Models)) { options.log(model.id + ' > ' + elementname + ': Target model "' + element.target + '" not found'); return }
   var tmodel = _this.getModel(options.req, element.target);
@@ -1043,16 +1071,24 @@ exports.AddBindings = function(model, element, elementname, options){
   var parentKeys = _this.AppSrvClass.prototype.getKeyNames(model.fields);
   if(!parentKeys.length) { options.log(model.id + ' > ' + elementname + ' Bindings: Parent model has no key'); return; }
 
-  //Check for dynamic bindings
   var bindings = {};
   var found_bindings = false;
+  //For each dynamic binding
   for(var modelgroup in this.Config.dynamic_bindings){
+    //If the dynamic binding applies to this model
     if(!this.isInModelGroup(tmodel.id, modelgroup)) continue;
     found_bindings = true;
     var dynamic_binding = this.Config.dynamic_bindings[modelgroup];
     //Apply dynamic bindings
     for(var childKey in dynamic_binding){
       var parentField = dynamic_binding[childKey];
+      //The following creates a conditional binding based on the name of the Parent Form's Key
+      //"CHILD_FIELD": {
+      //  //If the parent form's key name is "PARENT_KEY", set the binding from CHILD_FIELD to the character string 'CONSTANT'
+      //  "key:PARENT_KEY": "'CONSTANT'", 
+      //  //If the parent form's key name is "PARENT_KEY", set the binding from CHILD_FIELD to the Parent's PARENT_FIELD
+      //  "key:ct_id": "PARENT_FIELD"
+      //}
       if(!_.isString(parentField)){
         for(var parentFieldCondition in dynamic_binding[childKey]){
           if(parentFieldCondition.substr(0,4)=='key:'){
@@ -1061,6 +1097,12 @@ exports.AddBindings = function(model, element, elementname, options){
           else { options.log(model.id + ' > ' + elementname + ' Bindings: Invalid condition for '+childKey+': '+parentFieldCondition); return; }
         }
       }
+      //The following will add a binding from CHILD_FIELD to the Parent Form's Key Field
+      //"CHILD_FIELD": "key"
+      //The following will add a binding from CHILD_FIELD to the Parent's PARENT_FIELD
+      //"CHILD_FIELD": "PARENT_FIELD"
+      //the following will add a binding from CHILD_FIELD to the character string 'CONSTANT'
+      //"CHILD_FIELD": "'CONSTANT'"
       if(_.isString(parentField)){
         if(parentField=='key'){
           if(parentKeys.length != 1) { options.log(model.id + ' > ' + elementname + ' Bindings: Must have one key in the parent model when dynamically binding '+childKey+' to "key"'); return } 
@@ -1071,7 +1113,7 @@ exports.AddBindings = function(model, element, elementname, options){
     }
   }
 
-  //If bindings not found
+  //If dynamic bindings were not applied
   if(!found_bindings){ 
     if(options.bindType=='nonKeyFields'){
       //Match all child fields that are not keys (for add operations)

@@ -159,8 +159,8 @@ exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
   var dflt_params = {};
   var dflt_verrors = {};
   var dflt_sql_fields = [];
-  
-  for (var field_i = 0; field_i < model.fields.length; field_i++) {
+
+  if(model.fields) for (var field_i = 0; field_i < model.fields.length; field_i++) {
     var field = model.fields[field_i];
     if (!field.name) continue;
     if ('default' in field) {

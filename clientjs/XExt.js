@@ -1289,7 +1289,7 @@ exports = module.exports = function(jsh){
     for (var p in dfltwindowparams) { if (!(p in windowparams)) windowparams[p] = dfltwindowparams[p]; }
     for (var p in windowparams) { windowstr += ',' + p + '=' + windowparams[p]; }
     if (windowstr) windowstr = windowstr.substr(1);
-    if (win) { win.location = url; win.focus(); }
+    if (win) { win.location = url; win.focus(); return win; }
     else return window.open(url, '_blank', windowstr);
   }
   XExt.popupReport = function (modelid, params, windowparams, win) {
@@ -1307,7 +1307,7 @@ exports = module.exports = function(jsh){
     for (var p in dfltwindowparams) { if (!(p in windowparams)) windowparams[p] = dfltwindowparams[p]; }
     for (var p in windowparams) { windowstr += ',' + p + '=' + windowparams[p]; }
     if (windowstr) windowstr = windowstr.substr(1);
-    if (win) { win.location = url; win.focus(); }
+    if (win) { win.location = url; win.focus(); return win; }
     else return window.open(url, '_blank', windowstr);
   }
   XExt.renderCanvasCheckboxes = function () {
