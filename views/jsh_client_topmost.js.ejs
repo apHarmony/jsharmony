@@ -906,10 +906,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh.XPrint();
       handled = true;
     }
-    else if ((e.which == 68) && (e.ctrlKey) && (e.altKey)) {//CTRL+ALT+D = Developer Toolbar
-      alert('Developer Toolbar');
-      handled = true;
-    }
     if (handled) {
       e.preventDefault();
       e.stopImmediatePropagation();
