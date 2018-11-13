@@ -162,6 +162,7 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
   if(!model.component && modeldir && modeldir.component)  model.component = modeldir.component;
   if ('actions' in model) model['access_models'][modelname] = model.actions;
   if (('inherits' in model) && (model.inherits.indexOf(prefix)!=0)) model.inherits = prefix + model.inherits;
+  if('css' in model) model.css = Helper.ParseMultiLine(model.css);
   //if (modelname in this.Models) throw new Error('Cannot add ' + modelname + '.  The model already exists.')
   var modelbasedir = '';
   if(model.path) modelbasedir = path.dirname(model.path) + '/';
