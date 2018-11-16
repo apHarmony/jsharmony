@@ -664,6 +664,11 @@ exports.ParseEntities = function () {
       if (field.controlparams) ParseMultiLineProperties(field.controlparams, ['onpopup']);
     });
 
+    //Apply default actions to buttons
+    _.each(model.buttons, function(button){
+      if(!('actions' in button)) button.actions = 'BIU';
+    });
+
     //Automatically add sql_params based on SQL
     if(_this.Config.system_settings.automatic_parameters){
       //1. Add fkeys

@@ -192,7 +192,7 @@ function jsHarmonyConfig(config){
   this.help_panelid = "";
   //Default Button Definitions
   this.default_buttons = {
-    "add": { "icon": "add", "text": "Add %%%CAPTION%%%", "actions": "I", "class": "xbuttonadd" },
+    "add": { "icon": "add", "text": "Add %%%CAPTION%%%", "class": "xbuttonadd" },
     "edit": { "icon": "edit", "text": "Edit %%%CAPTION%%%" } 
   };
   //Model Groups for Dynamic Bindings

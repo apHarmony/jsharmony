@@ -50,6 +50,7 @@ exports.parseButtons = function (buttons) {
     rsltbtn = _.merge(rsltbtn, button);
     if(!('icon' in rsltbtn) && !('text' in rsltbtn)) rsltbtn.icon = 'ok';
     if(!rsltbtn.icon) rsltbtn.icon = "ok";
+    if(!('hide_when_target_inaccessible' in rsltbtn)) rsltbtn.hide_when_target_inaccessible = true;
     rslt.push(rsltbtn);
   });
   return rslt;

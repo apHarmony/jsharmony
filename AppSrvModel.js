@@ -160,6 +160,10 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
           var link_targetmodelid = link_parsed.modelid;
           var link_targetmodel = jsh.getModel(req, link_targetmodelid);
           if(link_targetmodel){
+            //Hide the button if the user does not have target access to the model
+            var link_targetperm = 'B';
+            if(link_parsed.action=='add') link_targetperm = 'I';
+            if(button.hide_when_target_inaccessible && !Helper.HasModelAccess(req, link_targetmodel, link_targetperm)) continue;
             //Apply text in button caption
             link_text = link_text.replace(new RegExp('%%%CAPTION%%%', 'g'), link_targetmodel.caption[1]);
             link_text = link_text.replace(new RegExp('%%%CAPTIONS%%%', 'g'), link_targetmodel.caption[2]);
