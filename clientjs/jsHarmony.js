@@ -84,7 +84,8 @@ var jsHarmony = function(options){
   this.XImageLoader = XImageLoader(this);
 
   //jsh_client_embed
-  this.App = {};
+  this.App = {};    //Functions and variables related to the current page - reset between SPA page loads
+  this.System = {}; //Global System Functions - unchanged between SPA page loads
   this.XForms = {};
   this.XBase = {};
   this.XForms_root = '';

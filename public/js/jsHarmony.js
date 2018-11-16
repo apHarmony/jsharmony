@@ -1699,7 +1699,7 @@ exports = module.exports = function(jsh){
       }
       if ('static' in field) {
         if (field.static.indexOf('js:') == 0) {
-          val = jsh.XExt.JSEval(field.static.substr(3),this,{ xform: xform });
+          val = jsh.XExt.JSEval(field.static.substr(3),this,{ xform: xform, modelid: modelid });
         }
         else val = field.static;
       }
@@ -1825,7 +1825,7 @@ exports = module.exports = function(jsh){
             var parentvals = [];
             //Narrow value of child LOV to values where CODVAL1 = that value
             var ctrl = parentobj.find((isGrid?'.':'.') + field.name + '.xelem' + modelid);
-            jsh.XExt.JSEval(lovparents_val,this,{ parentvals: parentvals, parentobj: parentobj, xform: xform });
+            jsh.XExt.JSEval(lovparents_val,this,{ parentvals: parentvals, parentobj: parentobj, xform: xform, modelid: modelid });
             jsh.XExt.RenderParentLOV(xform.Data, ctrl, parentvals, xform.Data._LOVs[field.name], xform.Data.Fields[field.name], ('lovparents' in field));
           });
         }
@@ -2473,19 +2473,22 @@ exports = module.exports = function(jsh){
     return rslt;
   }
 
-  XExt.getJSLocals = function(){
-    return jsh.jslocals;
+  XExt.getJSLocals = function(modelid){
+    var rslt = jsh.jslocals;
+    if(modelid) rslt += "var _this = jsh.App['"+modelid+"'];";
+    return rslt;
   }
 
   XExt.JSEval = function(str,_thisobj,params){
     if(!_thisobj) thisobj = jsh;
+    if(!params) params = {};
     var paramstr = '';
     if(params){
       for(var param in params){
         paramstr += 'var '+param+'=params.'+param+';';
       }
     }
-    var jscmd = '(function(){'+XExt.getJSLocals()+paramstr+'return '+str+'}).call(_thisobj)';
+    var jscmd = '(function(){'+XExt.getJSLocals(params.modelid)+paramstr+'return '+str+'}).call(_thisobj)';
     return eval(jscmd);
   }
 
@@ -4597,7 +4600,9 @@ exports = module.exports = function(jsh){
           if(val.indexOf('js:')==0){
             var js = val.substr(3);
             //Evaluate JS
-            val = jsh.XExt.JSEval(js,this,{ data: data });
+            var evalparams = { data: data };
+            if(q in jsh.App) evalparams.modelid = q;
+            val = jsh.XExt.JSEval(js,this,evalparams);
           }
           rslt[fieldname] = val;
         }
@@ -15516,7 +15521,8 @@ var jsHarmony = function(options){
   this.XImageLoader = XImageLoader(this);
 
   //jsh_client_embed
-  this.App = {};
+  this.App = {};    //Functions and variables related to the current page - reset between SPA page loads
+  this.System = {}; //Global System Functions - unchanged between SPA page loads
   this.XForms = {};
   this.XBase = {};
   this.XForms_root = '';

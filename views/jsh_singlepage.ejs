@@ -344,7 +344,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh: jsh,
       _GET: jsh._GET,
       instance: <%-JSON.stringify(req.jshsite.instance)%>,
-      jslocals: XExt.getJSLocals(),
+      jslocals: XExt.getJSLocals(model.id),
     }, params);
     ejsparams.ejsparams = ejsparams;
     return jsh.ejs.render(jsh.GetEJS(view), ejsparams);

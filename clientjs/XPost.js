@@ -265,7 +265,9 @@ exports = module.exports = function(jsh){
           if(val.indexOf('js:')==0){
             var js = val.substr(3);
             //Evaluate JS
-            val = jsh.XExt.JSEval(js,this,{ data: data });
+            var evalparams = { data: data };
+            if(q in jsh.App) evalparams.modelid = q;
+            val = jsh.XExt.JSEval(js,this,evalparams);
           }
           rslt[fieldname] = val;
         }
