@@ -222,7 +222,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "format": "phone", //"phone", or ["date","MM/DD/YY HH:mm"], or ["decimal","2"], or ["decimalext","2"] (Decimal that doesn't round up, only adds zeros, up to 20 decimal places), or "ssn", or ["time":"h:mm A"], or ["time":"HH:mm"]  //Date uses Moment.js
       "validate": [ "Required", "MaxLength:5", "MinLength:5", "IsNumeric", "IsNumeric:true" (Only positive), "IsDecimal", "IsDecimal:3" (3 decimal places), "MaxValue:999", "MinValue:100", "RegEx:'/regex/','be a correct value.'", "IsEmail", "IsDate", "IsSSN" ],
       // File can be , ["Required", "MaxSize:5000000" (bytes), "Extension:['.PDF','.JPEG']"]
-      "style": "font-size:20px;",
       "sample": "John Smith",
       "value": "John Smith",
       "link": "edit:CW", //for grid, "add:", "select"...also added tab syntax: "edit:JW&tabs={\"JW\":\"J_QUICK\"}"

@@ -625,19 +625,22 @@ exports = module.exports = function(jsh){
     return rslt;
   }
 
-  XExt.getJSLocals = function(){
-    return jsh.jslocals;
+  XExt.getJSLocals = function(modelid){
+    var rslt = jsh.jslocals;
+    if(modelid) rslt += "var _this = jsh.App['"+modelid+"'];";
+    return rslt;
   }
 
   XExt.JSEval = function(str,_thisobj,params){
     if(!_thisobj) thisobj = jsh;
+    if(!params) params = {};
     var paramstr = '';
     if(params){
       for(var param in params){
         paramstr += 'var '+param+'=params.'+param+';';
       }
     }
-    var jscmd = '(function(){'+XExt.getJSLocals()+paramstr+'return '+str+'}).call(_thisobj)';
+    var jscmd = '(function(){'+XExt.getJSLocals(params.modelid)+paramstr+'return '+str+'}).call(_thisobj)';
     return eval(jscmd);
   }
 

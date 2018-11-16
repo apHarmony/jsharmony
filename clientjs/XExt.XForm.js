@@ -335,7 +335,7 @@ exports = module.exports = function(jsh){
       }
       if ('static' in field) {
         if (field.static.indexOf('js:') == 0) {
-          val = jsh.XExt.JSEval(field.static.substr(3),this,{ xform: xform });
+          val = jsh.XExt.JSEval(field.static.substr(3),this,{ xform: xform, modelid: modelid });
         }
         else val = field.static;
       }
@@ -461,7 +461,7 @@ exports = module.exports = function(jsh){
             var parentvals = [];
             //Narrow value of child LOV to values where CODVAL1 = that value
             var ctrl = parentobj.find((isGrid?'.':'.') + field.name + '.xelem' + modelid);
-            jsh.XExt.JSEval(lovparents_val,this,{ parentvals: parentvals, parentobj: parentobj, xform: xform });
+            jsh.XExt.JSEval(lovparents_val,this,{ parentvals: parentvals, parentobj: parentobj, xform: xform, modelid: modelid });
             jsh.XExt.RenderParentLOV(xform.Data, ctrl, parentvals, xform.Data._LOVs[field.name], xform.Data.Fields[field.name], ('lovparents' in field));
           });
         }
