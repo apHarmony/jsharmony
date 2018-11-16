@@ -3,7 +3,7 @@
     "layout":"grid", 
 	"title":"All Customers",
 	"table":"v_cl",
-	"actions":"BI", 
+	"actions":"B", 
     "roles": {"BROWSE":"B"},
 	"caption":[0,"Customer","Customers"],
 	"sort":["^c_name"], 

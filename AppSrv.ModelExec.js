@@ -46,7 +46,7 @@ exports.getModelExec = function (req, res, modelid, Q, P, form_m) {
   //Title
   if(_this.addTitleTasks(req, res, model, Q, dbtasks, 'B')===false) return;
   //Breadcrumbs
-  if(_this.addBreadcrumbTasks(req, res, model, Q, dbtasks)===false) return;
+  if(_this.addBreadcrumbTasks(req, res, model, Q, dbtasks, 'B')===false) return;
   //LOV
   if(_this.addLOVTasks(req, res, model, Q, dbtasks)===false) return;
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }

@@ -419,6 +419,14 @@ exports.ParseEntities = function () {
     model.sites = Helper.GetRoleSites(model.roles);
     if (!('table' in model)) _this.LogInit_WARNING('Model ' + model.id + ' missing table');
     if (!('actions' in model)) _this.LogInit_WARNING('Model ' + model.id + ' missing actions');
+    //Read-only grids should only have "B" actions
+    if ((model.layout=='grid') && model.actions){
+      if(!model.commitlevel || (model.commitlevel=='none')){
+        if(Helper.access(model.actions, 'IUD')){
+          _this.LogInit_ERROR('Model ' + model.id + ' actions should be "B" if it is a read-only grid and "commitlevel" is not set');
+        }
+      }
+    }
     //Add Model caption if not set
     if (!('caption' in model)) { model.caption = ['', model.id, model.id]; _this.LogInit_WARNING('Model ' + model.id + ' missing caption'); }
     if (!('title' in model)){
@@ -457,7 +465,7 @@ exports.ParseEntities = function () {
         field.actions = '';
         if ((field.control == 'html') || (field.control == 'button')) field.actions = 'B';
         else {
-          _this.LogInit_WARNING('Model ' + model.id + ' Field ' + (field.name || field.caption || JSON.stringify(field)) + ' missing access.');
+          _this.LogInit_WARNING('Model ' + model.id + ' Field ' + (field.name || field.caption || JSON.stringify(field)) + ' missing actions.');
         }
       }
       if (!('caption' in field) && ('name' in field)) {
@@ -655,11 +663,6 @@ exports.ParseEntities = function () {
       if (field.lov) ParseMultiLineProperties(field.lov, ['sql', 'sql2', 'sqlmp', 'sqlselect']);
       if (field.controlparams) ParseMultiLineProperties(field.controlparams, ['onpopup']);
     });
-    
-    //Apply default actions to buttons
-    _.each(model.buttons, function(button){
-      if(!('actions' in button)) button.actions = 'BIU';
-    });
 
     //Automatically add sql_params based on SQL
     if(_this.Config.system_settings.automatic_parameters){
@@ -669,7 +672,11 @@ exports.ParseEntities = function () {
         _this.AddSqlParams(model, field.lov, ['sql','sql2','sqlmp']);
         _this.AddSqlParams(model, field.default);
       });
-      _this.AddSqlParams(model, model.breadcrumbs);
+      if(model.breadcrumbs){
+        _this.AddSqlParams(model, model.breadcrumbs);
+        _this.AddSqlParams(model, model.breadcrumbs.add);
+        _this.AddSqlParams(model, model.breadcrumbs.edit);
+      }
       if(model.title){
         _this.AddSqlParams(model, model.title);
         _this.AddSqlParams(model, model.title.add);
@@ -713,7 +720,11 @@ exports.ParseEntities = function () {
     });
     
     //Automatically add C (breadcrumb parameter) for breadcrumb and title sql_params
-    _this.AddSqlParamsFieldFlags(model, model.breadcrumbs, 'Breadcrumb');
+    if(model.breadcrumbs){
+      _this.AddSqlParamsFieldFlags(model, model.breadcrumbs, 'Breadcrumbs');
+      _this.AddSqlParamsFieldFlags(model, model.breadcrumbs.add, 'Breadcrumbs.Add');
+      _this.AddSqlParamsFieldFlags(model, model.breadcrumbs.edit, 'Breadcrumbs.Edit');
+    }
     if(model.title){
       _this.AddSqlParamsFieldFlags(model, model.title, 'Title');
       _this.AddSqlParamsFieldFlags(model, model.title.add, 'Title.Add');
@@ -882,6 +893,9 @@ exports.ParseEntities = function () {
           //----------------------
 
           var skip_datalock_model = skip_datalock(model, datalockid, datalockSearchOptions);
+          var skip_datalock_breadcrumbs = skip_datalock(model.breadcrumbs, datalockid, datalockSearchOptions);
+          var skip_datalock_breadcrumbs_add = model.breadcrumbs && skip_datalock(model.breadcrumbs.add, datalockid, datalockSearchOptions);
+          var skip_datalock_breadcrumbs_edit = model.breadcrumbs && skip_datalock(model.breadcrumbs.edit, datalockid, datalockSearchOptions);
           var skip_datalock_title = skip_datalock(model.title, datalockid, datalockSearchOptions);
           var skip_datalock_title_add = model.title && skip_datalock(model.title.add, datalockid, datalockSearchOptions);
           var skip_datalock_title_edit = model.title && skip_datalock(model.title.edit, datalockid, datalockSearchOptions);
@@ -889,6 +903,11 @@ exports.ParseEntities = function () {
           if(skip_datalock_model) continue;
 
           //Check if datalocks are missing from any SQL statements that require them
+          if(model.breadcrumbs){
+            if(!skip_datalock_breadcrumbs) _this.CheckDatalockSQL(model, model.breadcrumbs.sql, 'Breadcrumbs');
+            if(model.breadcrumbs.add && !skip_datalock_breadcrumbs_add) _this.CheckDatalockSQL(model, model.breadcrumbs.add.sql, 'Breadcrumbs.Add');
+            if(model.breadcrumbs.edit && !skip_datalock_breadcrumbs_edit) _this.CheckDatalockSQL(model, model.breadcrumbs.edit.sql, 'Breadcrumbs.Edit');
+          }
           if(model.title){
             if(!skip_datalock_title) _this.CheckDatalockSQL(model, model.title.sql, 'Title');
             if(model.title.add && !skip_datalock_title_add) _this.CheckDatalockSQL(model, model.title.add.sql, 'Title.Add');
@@ -1088,7 +1107,7 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
       //  //If the parent form's key name is "PARENT_KEY", set the binding from CHILD_FIELD to the character string 'CONSTANT'
       //  "key:PARENT_KEY": "'CONSTANT'", 
       //  //If the parent form's key name is "PARENT_KEY", set the binding from CHILD_FIELD to the Parent's PARENT_FIELD
-      //  "key:ct_id": "PARENT_FIELD"
+      //  "key:PARENT_KEY": "PARENT_FIELD"
       //}
       if(!_.isString(parentField)){
         for(var parentFieldCondition in dynamic_binding[childKey]){
