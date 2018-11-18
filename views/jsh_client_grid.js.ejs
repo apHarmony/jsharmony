@@ -22,6 +22,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var _ = jsh._;
   var $ = jsh.$;
   var XExt = jsh.XExt;
+  var modelid = '<%=model.id%>';
 
   jsh.App.XForm<%=model.id%>_Init = function(callback){
     var xfilter_<%=model.id%> = jsh.App.xfilter_<%=model.id%> = new jsh.XPost('','.xfilter_template_<%=model.id%>','.xfilter_<%=model.id%>');
@@ -36,7 +37,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xfilter_<%=model.id%>.Render();
     <% if(model.grid_expand_filter){ %>jsh.App.XForm<%=model.id%>_FilterExpand(0);<% } %>
 
-    var xform_post_<%=model.id%> = jsh.App.xform_post_<%=model.id%> = new jsh.XPost('<%=model.id%>','','');
+    var xform_post_<%=model.id%> = jsh.App.xform_post_<%=model.id%> = new jsh.XPost(modelid,'','');
     xform_post_<%=model.id%>.Data = new jsh.App.XForm<%=model.id%>();
     xform_post_<%=model.id%>.DataType = jsh.App.XForm<%=model.id%>;
 
@@ -44,7 +45,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var grid_template = '<%=(model.templates.grid||'.xgrid_'+model.id+'_template')%>';
     var grid_placeholder = jsh.$root(grid_template).data('target');
     var scrollControl = (isInlinePopup ? jsh.$root(grid_placeholder).closest('.xpanel')[0] : window);
-    var xform_<%=model.id%> = jsh.App.xform_<%=model.id%> = new jsh.XData('<%=model.id%>',grid_template,grid_placeholder,undefined,true,scrollControl);
+    var xform_<%=model.id%> = jsh.App.xform_<%=model.id%> = new jsh.XData(modelid,grid_template,grid_placeholder,undefined,true,scrollControl);
     xform_<%=model.id%>.NoResultsMessage = '<%-xejs.iif(('noresultsmessage' in model) && (model.noresultsmessage || (model.noresultsmessage==='')),model.noresultsmessage,'No results found %%%FORSEARCHPHRASE%%%')%>';
     <% if(typeof model.sort != 'undefined'){ for(var i=0;i<model.sort.length;i++){ %> 
     xform_<%=model.id%>.Sort.push('<%-model.sort[i]%>');
@@ -61,7 +62,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xform_<%=model.id%>.GetDBRowCount = <%-xejs.iif(('grid_rowcount' in model) && (model.grid_rowcount),'true','false')%>;
 
     <% if(!model.templates.grid){ %>
-      var xgrid_<%=model.id%> = jsh.App.xgrid_<%=model.id%> = new jsh.XGrid('<%=model.id%>',jsh.XForms['<%=model.id%>']._commitlevel,'<%-xejs.iif('validationlevel' in model,model.validationlevel,'row')%>');
+      var xgrid_<%=model.id%> = jsh.App.xgrid_<%=model.id%> = new jsh.XGrid(modelid,jsh.XForms[modelid]._commitlevel,'<%-xejs.iif('validationlevel' in model,model.validationlevel,'row')%>');
       xgrid_<%=model.id%>.Debug = true;
       xgrid_<%=model.id%>.OnRowEnter = function(rowid){ xform_post_<%=model.id%>.SetIndex(rowid,false); }
       xgrid_<%=model.id%>.OnControlUpdate = function(obj,e){ xform_post_<%=model.id%>.Data.OnControlUpdate(obj,e); }
@@ -76,7 +77,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if(!jsh.App.xgrid_<%=model.id%>) return;
       jsh.App.xgrid_<%=model.id%>.BindRow(jobj);
       jsh.App.XForm<%=model.id%>.prototype.BindLOV(xform_post_<%=model.id%>,jobj);
-      var xform = jsh.XForms['<%=model.id%>'];
+      var xform = jsh.XForms[modelid];
       if(xform._onrowbind) xform._onrowbind(xform,jobj,datarow);
     };
     xform_<%=model.id%>.OnMetaData = function(data){ xform_post_<%=model.id%>._LOVs = this._LOVs; xform_post_<%=model.id%>._defaults = this._defaults; xform_post_<%=model.id%>._title = this._title; }
@@ -112,7 +113,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           xejs: XExt.xejs,
           moment: jsh.moment,
           xform: xform_<%=model.id%>,
-          xform_meta: jsh.XForms['<%=model.id%>'],
+          xform_meta: jsh.XForms[modelid],
           jsh: jsh,
           instance: jsh.getInstance()
         });
@@ -149,15 +150,16 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh.xLoader.StartLoading(loadobj);
       var load_complete = false;
       //Load all pages
-      _.each(jsh.XForms['<%=model.id%>']._bindings,function(binding){
-        var bindval = jsh.XForms['<%=model.id%>'][binding]();
-        if(bindval=='') delete xform_<%=model.id%>.Data[binding];
+      _.each(jsh.XForms[modelid]._bindings,function(binding){
+        var bindval = jsh.XForms[modelid][binding]();
+        if(typeof bindval === 'undefined') XExt.Alert('Binding: '+modelid+':'+binding + ' resulted in "undefined"');
+        else if(bindval === '') delete xform_<%=model.id%>.Data[binding];
         else xform_<%=model.id%>.Data[binding] = bindval;
       });
 
       //Pass parameters from querystring
       for(var fieldname in jsh.App.XForm<%=model.id%>.prototype.Fields){
-        if((fieldname in jsh._GET) && !(fieldname in xform_<%=model.id%>.Data)){
+        if((fieldname in jsh._GET) && !(fieldname in xform_<%=model.id%>.Data) && !(fieldname in jsh.XForms[modelid]._constant_bindings)){
           var fieldval = jsh._GET[fieldname];
           if((typeof fieldval !== 'undefined') && (fieldval !== null)){
             xform_<%=model.id%>.Data[fieldname] = fieldval;
@@ -165,7 +167,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         }
       }
 
-      if(!jsh.is_add || isInlinePopup) delete xform_<%=model.id%>.Data._action;
+      if(!jsh.is_add || isInlinePopup || !XExt.HasAccess(jsh.XForms[modelid]._actions, 'I')) delete xform_<%=model.id%>.Data._action;
       else xform_<%=model.id%>.Data._action = 'add';
 
       var check_load_complete = function(){
@@ -187,8 +189,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xform_post_<%=model.id%>.GetSelectParams = function(){
       var rslt = new Object();
       if(!jsh.is_add || isInlinePopup){
-        _.each(jsh.XForms['<%=model.id%>']._bindings,function(binding){
-          rslt[binding] = jsh.XForms['<%=model.id%>'][binding]();
+        _.each(jsh.XForms[modelid]._bindings,function(binding){
+          rslt[binding] = jsh.XForms[modelid][binding]();
         });
       }
       else{
@@ -199,16 +201,16 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xform_post_<%=model.id%>.GetReselectParams = function(){
       var rslt = this.GetKeys();
       //Add bindings for GCOD
-      _.each(jsh.XForms['<%=model.id%>']._bindings,function(binding){
-        rslt[binding] = jsh.XForms['<%=model.id%>'][binding]();
+      _.each(jsh.XForms[modelid]._bindings,function(binding){
+        rslt[binding] = jsh.XForms[modelid][binding]();
       });
       return rslt;
     };
     xform_post_<%=model.id%>.GetDeleteParams = function(){
       var rslt = _.extend(this.GetFieldParams('D'), this.GetKeys());
       //Add bindings for GCOD
-      _.each(jsh.XForms['<%=model.id%>']._bindings,function(binding){
-        if(binding in rslt) rslt[binding] = jsh.XForms['<%=model.id%>'][binding]();
+      _.each(jsh.XForms[modelid]._bindings,function(binding){
+        if(binding in rslt) rslt[binding] = jsh.XForms[modelid][binding]();
       });
       return rslt;
     };
@@ -219,7 +221,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         <% xejs.eachKey(model.fields,function(field){ if(!field.name) return; %>rslt.<%=field['name']%> = this.Data.<%=field['name']%>;<%}); %>
       }
       else{
-        _.each(jsh.XForms['<%=model.id%>']._bindings,function(binding){
+        _.each(jsh.XForms[modelid]._bindings,function(binding){
           rslt[binding] = '%%%'+binding+'%%%';
         });
       }
@@ -256,7 +258,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
       //Bind oncommit handler if defined
       var orig_onsuccess = onsuccess;
-      if(jsh.XForms['<%=model.id%>']._oncommit) onsuccess = function(){ jsh.XForms['<%=model.id%>']._oncommit(jsh.XForms['<%=model.id%>'], rowid, orig_onsuccess); };
+      if(jsh.XForms[modelid]._oncommit) onsuccess = function(){ jsh.XForms[modelid]._oncommit(jsh.XForms[modelid], rowid, orig_onsuccess); };
       
       if(jsh.App.xform_<%=model.id%>.Prop.ReselectAfterEdit) jsh.App.XForm<%=model.id%>_Reselect(rowid,onsuccess);
       else if(onsuccess) onsuccess();
@@ -318,7 +320,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
     var oldrowid = -1;
     var oldobj = jsh.App.xgrid_<%=model.id%>.CurrentCell;
-    if(oldobj) oldrowid = XExt.XForm.GetRowID('<%=model.id%>',oldobj);
+    if(oldobj) oldrowid = XExt.XForm.GetRowID(modelid,oldobj);
 
     //Get Data, if data is new, delete row from both grid and ...
     if(xpost.DataSet[rowid]._is_new) return jsh.App.XForm<%=model.id%>_DeleteRow(rowid);
@@ -347,7 +349,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var xdata = jsh.App.xform_<%=model.id%>;
     if(jsh.App.xgrid_<%=model.id%>.CurrentCell) if(!xpost.CommitRow()) return;
     //Save parent and other items before adding, if commitlevel is row or cell
-    if(jsh.App.xgrid_<%=model.id%>.SaveBeforeUpdate && ((jsh.XForms['<%=model.id%>']._commitlevel == 'row') || (jsh.XForms['<%=model.id%>']._commitlevel == 'cell'))){
+    if(jsh.App.xgrid_<%=model.id%>.SaveBeforeUpdate && ((jsh.XForms[modelid]._commitlevel == 'row') || (jsh.XForms[modelid]._commitlevel == 'cell'))){
       if (jsh.XForm_GetChanges().length > 0) { return XExt.Alert('Please save all changes before adding a row.'); }
     }
     
@@ -393,7 +395,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.App.XForm<%=model.id%>_DuplicateRow = function(dmodelid, rowid, obj, bindings){
-    var modelid = '<%=model.id%>';
     var xpost = jsh.App.xform_post_<%=model.id%>;
     if(jsh.XForm_HasUpdates()){ XExt.Alert('Please save changes before duplicating.'); return false; }
     var rowdata = xpost.DataSet[rowid];
@@ -414,7 +415,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
       var oldrowid = -1;
       var oldobj = jsh.App.xgrid_<%=model.id%>.CurrentCell;
-      if(oldobj) oldrowid = XExt.XForm.GetRowID('<%=model.id%>',oldobj);
+      if(oldobj) oldrowid = XExt.XForm.GetRowID(modelid,oldobj);
 
       if(oldrowid != rowid) if(!xpost.CommitRow()) return;
     
@@ -444,7 +445,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if(!(xpost.DataSet[rowid]._is_new)){
         if(!(xpost.DataSet[rowid] in xpost.DeleteSet)) xpost.DeleteSet.push(xpost.DataSet[rowid]);
 
-        if(jsh.XForms['<%=model.id%>']._commitlevel == 'page'){
+        if(jsh.XForms[modelid]._commitlevel == 'page'){
           exec_delete();
         }
         else{
@@ -453,7 +454,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
             //On Complete
             exec_delete();
             xpost.ResetDirty();
-        if(jsh.XForms['<%=model.id%>']._oncommit) jsh.XForms['<%=model.id%>']._oncommit(jsh.XForms['<%=model.id%>'], -1, function(){});
+        if(jsh.XForms[modelid]._oncommit) jsh.XForms[modelid]._oncommit(jsh.XForms[modelid], -1, function(){});
           },function(data){
             //On Fail
             _.remove(xpost.DeleteSet,xpost.DataSet[rowid]);
@@ -468,9 +469,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.App.XForm<%=model.id%>_Save = function(){
-    if((jsh.XForms['<%=model.id%>']._commitlevel == 'cell') ||
-      (jsh.XForms['<%=model.id%>']._commitlevel == 'row') ||
-      (jsh.XForms['<%=model.id%>']._commitlevel == 'page'))
+    if((jsh.XForms[modelid]._commitlevel == 'cell') ||
+      (jsh.XForms[modelid]._commitlevel == 'row') ||
+      (jsh.XForms[modelid]._commitlevel == 'page'))
       return jsh.App.xform_post_<%=model.id%>.PrepSaveDataSet();
     return [];
   }

@@ -417,10 +417,13 @@ exports.ParseEntities = function () {
       }
     }
     model.sites = Helper.GetRoleSites(model.roles);
-    if (!('table' in model)) _this.LogInit_WARNING('Model ' + model.id + ' missing table');
+    if ((model.layout != 'exec') && !('table' in model)) _this.LogInit_WARNING('Model ' + model.id + ' missing table');
     if (!('actions' in model)) _this.LogInit_WARNING('Model ' + model.id + ' missing actions');
     //Add Model caption if not set
-    if (!('caption' in model)) { model.caption = ['', model.id, model.id]; _this.LogInit_WARNING('Model ' + model.id + ' missing caption'); }
+    if (!('caption' in model)) {
+      model.caption = ['', model.id, model.id]; 
+      if(model.layout != 'exec') _this.LogInit_WARNING('Model ' + model.id + ' missing caption'); 
+    }
     if (!('title' in model)){
       if(model.tabs && model.tabs.length && model.tabpos && (model.tabpos=='top')){ }
       else {
@@ -457,7 +460,7 @@ exports.ParseEntities = function () {
         field.actions = '';
         if ((field.control == 'html') || (field.control == 'button')) field.actions = 'B';
         else {
-          _this.LogInit_WARNING('Model ' + model.id + ' Field ' + (field.name || field.caption || JSON.stringify(field)) + ' missing access.');
+          _this.LogInit_WARNING('Model ' + model.id + ' Field ' + (field.name || field.caption || JSON.stringify(field)) + ' missing actions - defaulting to "'+field.actions+'"');
         }
       }
       if (!('caption' in field) && ('name' in field)) {
@@ -637,7 +640,7 @@ exports.ParseEntities = function () {
         }
       }
     });
-    if (!foundkey) _this.LogInit_WARNING('Model ' + model.id + ' missing key');
+    if (!foundkey && (model.layout != 'exec')) _this.LogInit_WARNING('Model ' + model.id + ' missing key');
     
     //**DEPRECATED MESSAGES**
     if (model.fields) _.each(model.fields, function (field) {

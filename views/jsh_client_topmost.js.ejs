@@ -513,9 +513,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //console.log("Evaluating: "+str);
     var rslt = undefined;
     if (!isNaN(str)) rslt = str;
-    else if ((str.length > 2) && (str[0] == "'") && (str[str.length - 1] == "'")) rslt = str.substr(1, str.length - 2);
+    else if ((str.length >= 2) && (str[0] == "'") && (str[str.length - 1] == "'")) rslt = str.substr(1, str.length - 2);
+    else if(str.trim().toLowerCase()=='null') rslt = null;
     else if ((typeof funccol !== 'undefined') && (str in funccol)) rslt = funccol[str]();
-    else {
+    else if(col) {
       //console.log('Array check'); console.log(col);
       if (_.isArray(col)) {
         for (var i = 0; i < col.length; i++) {

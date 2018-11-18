@@ -41,6 +41,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     _caption:<%-JSON.stringify(model.caption)%>,
     _parent:<%-((typeof parent == 'undefined')?'null':"'"+parent.id+"'")%>,
     _bindings:<%-((typeof model.bindings == 'undefined')?'null':JSON.stringify(_.keys(model.bindings)))%>,
+    _constant_bindings:<%-JSON.stringify(_.keys(_.pickBy(model.bindings, function(value, key){ if(typeof jsh.LiteralOrCollection(value) != 'undefined') return true; return false; })))%>,
     _keys:[<% xejs.eachKey(model.fields,function(field){%>'<%=field.name%>',<%});%>],
     _commitlevel:'<%=(model.commitlevel?model.commitlevel:'')%>',
     _curtab:<%-(curtab?JSON.stringify(curtab):'null')%>,
