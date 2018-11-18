@@ -95,6 +95,20 @@ AppSrvModel.prototype.GetModel = function (req, res, modelid) {
   req.TopModel = modelid;
 
   _this.genClientModel(req, res, modelid, true, null, function(rslt){
+    if(_.isString(rslt)){
+      _this.genClientModel(req, res, '_BASE_HTML', true, null, function(model){
+        model = _.extend(model, { 
+          id: modelid, 
+          caption: ['',modelid,modelid],
+          title: modelid,
+          helpurl: '',
+          helpurl_onclick: '',
+          ejs: rslt
+        });
+        res.end(JSON.stringify(model));
+      });
+      return;
+    }
     res.end(JSON.stringify(rslt));
   });
 };
@@ -111,6 +125,26 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
     else if (req.query.action == 'edit') targetperm = 'U'; //Browse is accessed the same way as update
   }
   if (!Helper.HasModelAccess(req, model, 'B'+targetperm)) { return onComplete("<div>You do not have access to this form.</div>"); }
+  
+  //If insert, and the model has any dynamic bindings, show message that the user needs to save first to edit the data
+  if((targetperm=='I') && !Helper.HasModelAccess(req, model, 'I')){
+    var allConstantBindings = true;
+    _.each(parentBindings, function(value, key){
+      if(typeof jsh.getStaticBinding(value) == 'undefined') allConstantBindings = false;
+    });
+    if(!allConstantBindings) { return onComplete("<div>Please save to manage "+model.caption[1]+" data.</div>"); }
+  }
+
+  if(!req.query.action){
+    if(model.layout=='form'){
+      if(!model.nokey && !model.unbound){
+        var keys = _this.AppSrv.getKeys(model.fields);
+        if(keys && keys.length){ 
+          return onComplete(jsh.RenderFormStarter(req, modelid))
+        }
+      }
+    }
+  }
 
   var rslt = {};
 
@@ -160,6 +194,10 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
           var link_targetmodelid = link_parsed.modelid;
           var link_targetmodel = jsh.getModel(req, link_targetmodelid);
           if(link_targetmodel){
+            //Hide the button if the user does not have target access to the model
+            var link_targetperm = 'B';
+            if(link_parsed.action=='add') link_targetperm = 'I';
+            if(button.hide_when_target_inaccessible && !Helper.HasModelAccess(req, link_targetmodel, link_targetperm)) continue;
             //Apply text in button caption
             link_text = link_text.replace(new RegExp('%%%CAPTION%%%', 'g'), link_targetmodel.caption[1]);
             link_text = link_text.replace(new RegExp('%%%CAPTIONS%%%', 'g'), link_targetmodel.caption[2]);

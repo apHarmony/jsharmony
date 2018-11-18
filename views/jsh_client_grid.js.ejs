@@ -159,7 +159,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
       //Pass parameters from querystring
       for(var fieldname in jsh.App.XForm<%=model.id%>.prototype.Fields){
-        if((fieldname in jsh._GET) && !(fieldname in xform_<%=model.id%>.Data) && !(fieldname in jsh.XForms[modelid]._constant_bindings)){
+        if((fieldname in jsh._GET) && !(fieldname in xform_<%=model.id%>.Data) && (jsh.XForms[modelid]._constant_bindings.indexOf(fieldname)<0)){
           var fieldval = jsh._GET[fieldname];
           if((typeof fieldval !== 'undefined') && (fieldval !== null)){
             xform_<%=model.id%>.Data[fieldname] = fieldval;
@@ -227,6 +227,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       }
       return rslt; 
     };
+
+    jsh.App.XForm<%=model.id%>_UpdateTitleCaption();
 
     callback();
   }

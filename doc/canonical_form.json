@@ -122,6 +122,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "style": "", 
       "class": "", 
       "roles": { "client": { "CLIENT": "*", "C_ADMIN": "B" } }, 
+      "hide_when_target_inaccessible": true,
       "nl": 1 }, //or just put the link for add
     {"link":"js:jsh.App.C_LOVBAR.Add(this,xformid);", "icon": "add", "text": "Add Customer", "actions": "B" },
     {"link": "savenew:", "icon": "add", "text": "Save and New", "actions": "IU" }

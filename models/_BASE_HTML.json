@@ -1,0 +1,8 @@
+{
+  "layout": "form",
+  "title": "",
+  "actions": "B",
+  "unbound": 1,
+  "hide_system_buttons" : ["print","help"],
+  "caption": ["","",""]
+}

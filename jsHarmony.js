@@ -156,9 +156,8 @@ jsHarmony.prototype.Init = function(init_cb){
       _this.Cache['application.css'] = fs.readFileSync(path.dirname(module.filename)+'/jsHarmony.theme.css', 'utf8');
       for (var i = 0; i < modeldirs.length; i++) {
         var modeldir = modeldirs[i];
-        if(modeldir.component=='jsharmony') continue;
-        _this.LoadModels(modeldir.path, modeldir, '', defaultDBDriver);
-        _this.LoadModels(modeldir.path + 'reports/', modeldir, '_report_', defaultDBDriver);
+        if (fs.existsSync(modeldir.path)) _this.LoadModels(modeldir.path, modeldir, '', defaultDBDriver);
+        if (fs.existsSync(modeldir.path + 'reports/')) _this.LoadModels(modeldir.path + 'reports/', modeldir, '_report_', defaultDBDriver);
         if (fs.existsSync(modeldir.path + 'js/')) _this.Cache['application.js'] += '\r\n' + _this.MergeFolder(modeldir.path + 'js/');
         if (fs.existsSync(modeldir.path + 'public_css/')) _this.Cache['application.css'] += '\r\n' + _this.MergeFolder(modeldir.path + 'public_css/');
       }

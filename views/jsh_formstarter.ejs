@@ -1,0 +1,19 @@
+<div>
+Forms must be run with the querystring "action" parameter.  Two actions are available:<br/>
+&nbsp;
+<h2>Add</h2>
+<pre>?action=add</pre>
+<form>
+  <input type="hidden" name="action" value="add">
+  <input type="button" value="Add New Record" onclick="<%=instance%>.$(this).closest('form').submit();" />
+</form>
+<h3>Browse / Edit</h3>
+<pre>?action=edit<% _.each(keys, function(key){ %>&<%=key%>=VALUE<% }); %></pre>
+<form>
+  <input type="hidden" name="action" value="edit">
+  <% _.each(keys, function(key){ %>
+  <label><%=key%>: <input type="text" name="<%=key%>" /></label><br/>
+  <% }); %>
+  <input type="button" value="Browse / Edit Record" onclick="<%=instance%>.$(this).closest('form').submit();" />
+</form>
+</div>

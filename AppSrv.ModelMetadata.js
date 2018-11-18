@@ -93,7 +93,7 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
     }
     else if(model.title.sql){ sql = model.title.sql; fieldlist = model.title.sql_params; nodatalock = model.title.nodatalock; }
   }
-  if(!sql){ 
+  if(!sql){
     if(title) title = Helper.ResolveParams(req, title);
     dbtasks['_title'] = function(dbtrans, callback, transtbl){ return callback(null, title); }
     return;
@@ -142,7 +142,10 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
 exports.getTitle = function (req, res, modelid, targetperm, onComplete) {
   if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
   var model = this.jsh.getModel(req, modelid);
-  if (!Helper.HasModelAccess(req, model, targetperm)) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
+  if (!Helper.HasModelAccess(req, model, targetperm)) { 
+    targetperm = 'B';
+    if (!Helper.HasModelAccess(req, model, targetperm)) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
+  }
 
   var dbtasks = {};
   if(this.addTitleTasks(req, res, model, req.query, dbtasks, targetperm)===false) return;
@@ -229,46 +232,69 @@ exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
   };
 }
 
-exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks) {
+exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks, targetperm) {
   var _this = this;
-  var _defaults = {};
   var verrors = {};
-  var db = _this.jsh.getModelDB(req, model.id);
   
-  if (!('breadcrumbs' in model) || !('sql' in model.breadcrumbs)) return;
-  
-  var bcrumb_ptypes = [];
-  var bcrumb_params = {};
+  if (!model.breadcrumbs) return;
+
+  var sql = null;
+  var fieldlist = [];
+  var nodatalock = null;
+  var db = this.jsh.getModelDB(req, model.id);
+  if(model.breadcrumbs.add && Helper.access(targetperm,'I')){
+    if(model.breadcrumbs.add.sql){ sql = model.breadcrumbs.add.sql; fieldlist = model.breadcrumbs.add.sql_params; nodatalock = model.breadcrumbs.add.nodatalock; }
+  }
+  else if(model.breadcrumbs.edit && Helper.access(targetperm,'BU')){
+    if(model.breadcrumbs.edit.sql){ sql = model.breadcrumbs.edit.sql; fieldlist = model.breadcrumbs.edit.sql_params; nodatalock = model.breadcrumbs.edit.nodatalock; }
+  }
+  else if(model.breadcrumbs.sql){ sql = model.breadcrumbs.sql; fieldlist = model.breadcrumbs.sql_params; nodatalock = model.breadcrumbs.nodatalock; }
+
+  if(!sql){ 
+    return;
+  }
+
+  var _this = this;
+  var fields = this.getFieldsByName(model.fields, fieldlist);
+  var sql_ptypes = [];
+  var sql_params = {};
+  var verrors = {};
   var datalockqueries = [];
   var bcrumb_sql_fieldlist = [];
-  var bcrumb_fields = this.getFields(req, model.fields, 'KC');
-  for (var i = 0; i < bcrumb_fields.length; i++) {
-    var field = bcrumb_fields[i];
+
+  for (var i = 0; i < fields.length; i++) {
+    var field = fields[i];
     var fname = field.name;
-    bcrumb_ptypes.push(_this.getDBType(field));
-    bcrumb_params[fname] = null;
-    if (fname in Q) {
-      bcrumb_params[fname] = _this.DeformatParam(field, Q[fname], verrors);
-      _this.getDataLockSQL(req, model, model.fields, bcrumb_ptypes, bcrumb_params, verrors, function (datalockquery, dfield) {
-        if (dfield != field) return false;
-        datalockqueries.push(datalockquery);
-        if (bcrumb_sql_fieldlist.indexOf(fname) < 0) bcrumb_sql_fieldlist.push(fname);
-        return true;
-      });
-      verrors = _.merge(verrors, model.xvalidate.Validate('*', bcrumb_params, fname));
+    if (fname in Q){
+      var dbtype = _this.getDBType(field);
+      sql_ptypes.push(dbtype);
+      sql_params[fname] = _this.DeformatParam(field, Q[fname], verrors);
     }
   }
-  var bcrumb_sql_fields = _this.getFieldsByName(model.fields, bcrumb_sql_fieldlist);
-  var bcrumb_sql = db.sql.getBreadcrumbTasks(_this.jsh, model, datalockqueries, bcrumb_sql_fields);
+
+  //Add DataLock parameters to SQL 
+  this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) { 
+    if(Helper.access(targetperm,'I') && dfield.key) return false;
+    bcrumb_sql_fieldlist.push(dfield.name);
+    datalockqueries.push(datalockquery);
+  }, nodatalock, model.id);
+  verrors = _.merge(verrors, model.xvalidate.Validate('*', sql_params, undefined, undefined, undefined, { ignoreUndefined: true }));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return false; }
-  dbtasks['_bcrumbs'] = function (dbtrans, callback) {
-    db.Row(req._DBContext, bcrumb_sql, bcrumb_ptypes, bcrumb_params, dbtrans, function (err, rslt, stats) {
+  
+  var sql = db.sql.getBreadcrumbTasks(_this.jsh, model, sql, datalockqueries, bcrumb_sql_fieldlist);
+
+  //Add parameters from querystring
+  _this.ApplyQueryParameters(Q, sql, sql_ptypes, sql_params, model);
+  
+  dbtasks['_bcrumbs'] = function (dbtrans, callback, transtbl) {
+    _this.ApplyTransTblChainedParameters(transtbl, sql, sql_ptypes, sql_params, model.fields);
+    db.Row(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
       if ((err == null) && (rslt == null)) err = Helper.NewError('Breadcrumbs not found', -14);
-      if (err != null) { err.model = model; err.sql = bcrumb_sql; }
+      if (err != null) { err.model = model; err.sql = sql; }
       if (stats) stats.model = model;
       callback(err, rslt, stats);
     });
-  };
+  }
 }
 
 exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {

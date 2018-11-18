@@ -157,7 +157,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
       //Initialize GET/forcequery
       jsh._GET = XExt.parseGET();
-      jsh.forcequery = rslt.forcequery;
+      jsh.forcequery = model.forcequery;
       _.extend(jsh._GET, jsh.forcequery);
 
       //Setup TopMost Variables
@@ -174,7 +174,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh.cur_model = model;
 
       var ejsprepend = '';
-      if(rslt.breadcrumbs) ejsprepend += rslt.breadcrumbs;
+      if(model.breadcrumbs) ejsprepend += model.breadcrumbs;
       //if(ejsrslt) ejsrslt = ejsrslt.trim();
       ejsprepend += jsh.title_html;
       if(ejsrslt.indexOf(CODE_EJSPREPEND)>=0) ejsrslt = ejsrslt.replace(CODE_EJSPREPEND,ejsprepend)

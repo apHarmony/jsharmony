@@ -56,6 +56,19 @@ exports.RenderListing = function () {
   return rslt;
 }
 
+exports.RenderFormStarter = function(req, modelid){
+  var _this = this;
+  if (!_this.hasModel(req, modelid)) throw new Error('Model ID not found: ' + modelid);
+  var model = _this.getModel(req, modelid);
+  keys = _.map(_this.AppSrv.getKeys(model.fields),'name');
+  var rslt = ejs.render(_this.getEJS('jsh_formstarter'), {
+    keys: keys,
+    instance: req.jshsite.instance,
+    _: _
+  });
+  return rslt;
+}
+
 //Get global variables inserted into client window context
 exports.getJSClientParams = function (req) {
   var _this = this;

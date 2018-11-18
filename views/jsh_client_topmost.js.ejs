@@ -360,7 +360,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           if (typeof xform._onloadimmediate != 'undefined') xform._onloadimmediate(xform);
           done();
         };
-        if (jsh.is_add && (!jsh.XExt.HasAccess(xform._actions, 'I')) && (xform._layout != 'multisel') && (xform._layout != 'exec')) { return done(); }
+        if (jsh.is_add){
+          if(!jsh.XExt.HasAccess(xform._actions, 'I')) { 
+            if((xform._layout == 'form') || (xform._layout == 'form-m') || (xform._layout == 'grid')){
+              if(!jsh.XExt.HasAccess(xform._actions, 'B')) return done();
+              //If model bindings are dependent on key
+              if(xform._bindings && (xform._bindings.length != xform._constant_bindings.length)) return done();
+            }
+          }
+        }
         jsh.App['xform_' + xform._id].Select(onDone);
       },
       function () {
@@ -422,6 +430,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     jsh.XFormTree(null, function(xform) {
       if(!jsh.App['xform_' + xform._id]) return;
       if(!('_title' in jsh.App['xform_' + xform._id])) return;
+      if(jsh.App['xform_' + xform._id]._title===null) return;
       var title = jsh.App['xform_' + xform._id]._title||'';
       if(title != xform._title){
         xform._title = title;
