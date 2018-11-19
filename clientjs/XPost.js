@@ -257,6 +257,7 @@ exports = module.exports = function(jsh){
     }));
   }
   XPost.prototype.ApplyDefaults = function(data){
+    var _this = this;
     var rslt = data;
     if(rslt._is_new && ('_defaults' in this)){
       _.each(this._defaults, function (val, fieldname){
@@ -266,7 +267,7 @@ exports = module.exports = function(jsh){
             var js = val.substr(3);
             //Evaluate JS
             var evalparams = { data: data };
-            if(q in jsh.App) evalparams.modelid = q;
+            if(_this.q in jsh.App) evalparams.modelid = _this.q;
             val = jsh.XExt.JSEval(js,this,evalparams);
           }
           rslt[fieldname] = val;
