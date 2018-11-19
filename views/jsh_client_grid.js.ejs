@@ -152,7 +152,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       //Load all pages
       _.each(jsh.XForms[modelid]._bindings,function(binding){
         var bindval = jsh.XForms[modelid][binding]();
-        if(typeof bindval === 'undefined') XExt.Alert('Binding: '+modelid+':'+binding + ' resulted in "undefined"');
+        if(typeof bindval === 'undefined') delete xform_<%=model.id%>.Data[binding];
         else if(bindval === '') delete xform_<%=model.id%>.Data[binding];
         else xform_<%=model.id%>.Data[binding] = bindval;
       });
