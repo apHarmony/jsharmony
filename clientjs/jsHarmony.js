@@ -43,6 +43,9 @@ var XMenu = require('./XMenu.js');
 var JSHFind = require('./JSHFind.js');
 var XLoader = require('./XLoader.js');
 var XImageLoader = require('./XImageLoader.js');
+//EJS
+var XViews = [];
+XViews['jsh_system'] = require('../views/jsh_system.ejs');
 
 
 //jsHarmony Core Client-side Object
@@ -82,6 +85,7 @@ var jsHarmony = function(options){
   this.JSHFind = JSHFind;
   this.XLoader = XLoader(this);
   this.XImageLoader = XImageLoader(this);
+  this.XViews = XViews;
 
   //jsh_client_embed
   this.App = {};    //Functions and variables related to the current page - reset between SPA page loads
@@ -253,16 +257,7 @@ jsHarmony.prototype.debugConsole = function (txt,clear) {
   this.$root('.xdebugconsole').prepend(txt+'<br/>');
 }
 jsHarmony.prototype.InitDialogs = function () {
-  this.root.append($('\
-    <div class="xdialogblock" style="display:none;">\
-    <div class="xdialogbox xalertbox"><div class="xalertmessage"></div><div align="center"><input type="button" value="OK" /></div></div>\
-    <div class="xdialogbox xconfirmbox"><div class="xconfirmmessage"></div><div align="center"><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="No" class="button_no" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
-    <div class="xdialogbox xpromptbox"><div class="xpromptmessage"></div><div align="right"><input class="xpromptfield" type="text"><br/><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
-    <div class="xdialogbox xtextzoombox"><div class="xtextzoommessage"></div><div align="right"><textarea class="xtextzoomfield"></textarea><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>\
-    </div>\
-    <div class="xdebugconsole"></div>\
-    <div class="xloadingblock" style="display:none;"><div><div class="xloadingbox">Loading<br/><img src="/images/loading.gif" alt="Loading" title="Loading" /></div></div></div>\
-  '));
+  this.root.append($(XViews['jsh_system']));
 };
 jsHarmony.prototype.XWindowResize = function (source) {
   var ww = $(window).width();

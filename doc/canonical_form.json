@@ -66,7 +66,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     "parents": ["QC_DBDW","CCL","<a href='PLRNDW?action=edit&PL_ID=<#=bcrumbs.PL_ID#>&tabs=%7B&quot;PLRNDW&quot;%3A&quot;PLRL&quot;%7D'>RND - <#=bcrumbs.PL_YEAR_TXT#> - <#=bcrumbs.PL_TYPE_TXT#></a>"], //Simple Breadcrumbs, array of parents.  Can also use HTML and Dynamic JS
     "title": "Client", //Title Override for Breadcrumbs, can use <#=bcrumbs.PL_YEAR_TXT#> for breadcrumb SQL data
     "sql": "select PL_ID,PL_YEAR_TXT,PL_TYPE_TXT from V_PLL where PL_ID=isnull(@PL_ID,(select PL_ID from PLR where PLR_ID=@PLR_ID))",
-    "sql_params":["C_ID","T_ID"]
+    "sql_params":["C_ID","T_ID"],
+    "nodatalock": ["C_ID"],
+    "add": { /* parents, title, sql, sql_params, nodatalock */ },
+    "edit": { /* parents, title, sql, sql_params, nodatalock */ }
+    }
   },
   "helpid": "CL",
   "js": "function(){}", //Custom JS to be included client-side.  Concatenated with model.js
@@ -122,12 +126,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "style": "", 
       "class": "", 
       "roles": { "client": { "CLIENT": "*", "C_ADMIN": "B" } }, 
-      "hide_when_target_inaccessible": true,
+      "hide_when_target_inaccessible": true, //If true, Add buttons will not show if "I" permission is not on the target form.  True by default.
       "nl": 1 }, //or just put the link for add
     {"link":"js:jsh.App.C_LOVBAR.Add(this,xformid);", "icon": "add", "text": "Add Customer", "actions": "B" },
     {"link": "savenew:", "icon": "add", "text": "Save and New", "actions": "IU" }
     {"link": "savenew:", "icon": "add", "text": "Save and New", "actions": "IU", "group":"Actions" }
-    //Buttons without I actions will not show up on Insert
     //"link":"js:XExt.popupReport('I',{ C_ID: 97 },{ width:900, height:500 });"
   ],
   "hide_system_buttons" : ["print","export","help","filter","clear"], //Current only on Grid
