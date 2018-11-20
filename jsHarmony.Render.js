@@ -60,8 +60,10 @@ exports.RenderFormStarter = function(req, modelid){
   var _this = this;
   if (!_this.hasModel(req, modelid)) throw new Error('Model ID not found: ' + modelid);
   var model = _this.getModel(req, modelid);
-  keys = _.map(_this.AppSrv.getKeys(model.fields),'name');
+  keys = _this.AppSrv.getKeyNames(model.fields);
+  foreignkeys = _this.AppSrv.getFieldNames(req, model.fields, 'F');
   var rslt = ejs.render(_this.getEJS('jsh_formstarter'), {
+    model: model,
     keys: keys,
     instance: req.jshsite.instance,
     _: _

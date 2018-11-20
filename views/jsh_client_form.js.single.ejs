@@ -35,16 +35,18 @@ _.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field
     xform_<%=model.id%>.GetKeys = function(){
       var rslt = new Object();
       if(!jsh.is_add){
+        //Browse / Edit Record
         _.each(jsh.XForms['<%=model.id%>']._bindings,function(binding){
           xform_<%=model.id%>.Data[binding] = jsh.XForms['<%=model.id%>'][binding]();
         });
         <% xejs.eachKey(model.fields,function(field){  if(!field.name) return; %>rslt.<%=field['name']%> = this.Data.<%=field['name']%>;<%}); %>
-        }
+      }
       else {
+        //Add Record
         //Add parameters for breadcrumbs
         <% _.each(model.fields,function(field){ if(!field.name) return; if(XExt.access(field.actions,'C')) { %>rslt.<%=field['name']%> = jsh.LiteralOrCollection('<%=field['name']%>',[jsh._GET,this.Data]);<% } }); %>
         <% _.each(model.fields,function(field){ if(!field.name) return; if(field.lovkey){ %>rslt.<%=field['name']%> = jsh.LiteralOrCollection('<%=field['name']%>',[jsh._GET,this.Data]);<% } }); %>
-        }
+      }
       return rslt; 
     };
     <%-xejs.iif(no_B,'xform_'+model.id+'.Select = function(onComplete){ if(onComplete) onComplete(); }; //No data to select')%>

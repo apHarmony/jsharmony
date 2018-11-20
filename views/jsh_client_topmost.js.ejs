@@ -108,7 +108,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if (!options.onFail) options.onFail = function () { };
     //Handle async validation, if applicable
     var rootxform = jsh.App['xform_' + jsh.XForms_root];
-    if (jsh.XForms[jsh.XForms_root]._layout == 'grid') rootxform = jsh.App['xform_post_' + jsh.XForms_root]
+    var rootlayout = jsh.XForms[jsh.XForms_root]._layout
+    if ((rootlayout == 'grid') || (rootlayout == 'multisel')) rootxform = jsh.App['xform_post_' + jsh.XForms_root]
     rootxform.ExecuteTrans(dbtasks, function (rslt) {
       if (options.onComplete && (options.onComplete(rslt) === false)) return;
       jsh.XForm_RefreshParent();
@@ -209,7 +210,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var enable_save = false;
     var enable_delete = false;
     jsh.XFormTree(null, function (xform) {
-      if ((xform._layout == 'form') || (xform._layout == 'multisel')) {
+      if ((xform._layout == 'form') || (xform._layout == 'multisel') || (xform._layout == 'form-m')) {
         if (jsh.XExt.HasAccess(xform._actions, 'IU')) enable_save = true;
         if ((xform._id == jsh.XForms_root) || (xform._parent == jsh.XForms_root))
           if (jsh.XExt.HasAccess(xform._actions, 'D')) { enable_delete = true; jsh.delete_target = xform._id; }

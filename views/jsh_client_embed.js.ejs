@@ -32,6 +32,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var tab = _.find(model.tabs,function(tab){ return tab.selected; });
     if(tab) curtab = tab.modelid;
   }
+  var bindings = model.bindings;
+  if(model.topmost && (typeof bindings == 'undefined')){
+    if((model.layout=='form-m')||(model.layout=='multisel')){
+      _.each(model.fields, function(field){
+        if(field.name && XExt.access(field.actions,'F') && (field.name in jsh._GET) && jsh._GET[field.name]){
+          if(!bindings) bindings = {};
+          bindings[field.name] = "'" + XExt.escapeJS(jsh._GET[field.name]) + "'";
+        }
+      });
+    }
+  }
   %>
   jsh.XForms['<%=model.id%>'] = {
     _id:'<%=model.id%>',
@@ -40,14 +51,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     _title: <%-xejs.iif(model.title,JSON.stringify(model.title),"''")%>,
     _caption:<%-JSON.stringify(model.caption)%>,
     _parent:<%-((typeof parent == 'undefined')?'null':"'"+parent.id+"'")%>,
-    _bindings:<%-((typeof model.bindings == 'undefined')?'null':JSON.stringify(_.keys(model.bindings)))%>,
-    _constant_bindings:<%-JSON.stringify(_.keys(_.pickBy(model.bindings, function(value, key){ if(typeof jsh.LiteralOrCollection(value) != 'undefined') return true; return false; })))%>,
+    _bindings:<%-((typeof bindings == 'undefined')?'null':JSON.stringify(_.keys(bindings)))%>,
+    _constant_bindings:<%-JSON.stringify(_.keys(_.pickBy(bindings, function(value, key){ if(typeof jsh.LiteralOrCollection(value) != 'undefined') return true; return false; })))%>,
     _keys:[<% xejs.eachKey(model.fields,function(field){%>'<%=field.name%>',<%});%>],
     _commitlevel:'<%=(model.commitlevel?model.commitlevel:'')%>',
     _curtab:<%-(curtab?JSON.stringify(curtab):'null')%>,
   //  _is_new:(jsh._GET['action']=='add'),
     <% 
-    if(model.topmost) _.each(model.fields,function(field){ if(field.lovkey || field.key || (model.bindings && (field.name in model.bindings))) {%><%=field['name']%>: function(){return jsh.LiteralOrCollection(<%-JSON.stringify(field['name'])%>,jsh._GET);},<%	}});
+    if(model.topmost) _.each(model.fields,function(field){ if(field.lovkey || field.key || (bindings && (field.name in bindings))) {%><%=field['name']%>: function(){return jsh.LiteralOrCollection(<%-JSON.stringify(field['name'])%>,jsh._GET);},<%	}});
     else if(typeof bindings != 'undefined') _.each(bindings,function(val,key){%><%=key%>: function(){return jsh.LiteralOrCollection(<%-JSON.stringify(val)%>,jsh.App.xform_<%=parent.id%>.Data,jsh.XForms['<%=parent.id%>']);},<%}); 
     
     if('oninit' in model){ %> _oninit:function(xform){<%-jslocals%><%-model.oninit%>}, <% }

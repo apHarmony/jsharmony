@@ -144,6 +144,9 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
         }
       }
     }
+    else if((model.layout=='multisel')||(model.layout=='form-m')){
+      return onComplete(jsh.RenderFormStarter(req, modelid));
+    }
   }
 
   var rslt = {};

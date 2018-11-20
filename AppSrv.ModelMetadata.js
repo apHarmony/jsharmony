@@ -285,6 +285,14 @@ exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks, targetperm) 
 
   //Add parameters from querystring
   _this.ApplyQueryParameters(Q, sql, sql_ptypes, sql_params, model);
+
+  //Add back additional sql parameters that were not yet defined
+  _.each(fields, function(field){
+    if(!(field.name in sql_params)){
+      sql_ptypes.push(_this.getDBType(field));
+      sql_params[field.name] = null;
+    }
+  });
   
   dbtasks['_bcrumbs'] = function (dbtrans, callback, transtbl) {
     _this.ApplyTransTblChainedParameters(transtbl, sql, sql_ptypes, sql_params, model.fields);
