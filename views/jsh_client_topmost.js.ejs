@@ -602,7 +602,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     return rslt;
   }
 
-  jsh.XForm_AddHistory = function(new_jsh_state, use_cur_state) {
+  jsh.XForm_AddHistory = function(new_jsh_state, use_cur_state, options) {
+    options = _.extend({ replaceHistory: false }, options);
     //Add Full URL to history (PATH+GET+HASH)
     var url = '';
     var state = undefined;
@@ -624,7 +625,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       nget.state = JSON.stringify(nget_state);
       if (!_.isEmpty(nget)) url += '?' + $.param(nget);
     }
-    XExt.AddHistory(url, state);
+    if(options.replaceHistory) XExt.ReplaceHistory(url, state);
+    else XExt.AddHistory(url, state);
   }
 
   jsh.XForm_LoadState = function(state, options) {

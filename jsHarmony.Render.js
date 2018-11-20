@@ -66,7 +66,8 @@ exports.RenderFormStarter = function(req, modelid){
     model: model,
     keys: keys,
     instance: req.jshsite.instance,
-    _: _
+    _: _,
+    querystring: req.query
   });
   return rslt;
 }

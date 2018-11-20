@@ -46,6 +46,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var XLoader = jsh.XLoader;
   var XImageLoader = jsh.XImageLoader;
   var CODE_EJSPREPEND = '<!--'+'%%%EJSPREPEND%%%'+'-->';
+  var initialLoad = true;
 
   jsh.jslocals = <%-JSON.stringify(req.getJSLocals())%>;
   jsh.state = { GET:{},QS:'',fullpath:'',fullurl:jsh._BASEURL,hash:'',modelid:'',path:'' };
@@ -147,7 +148,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           }
         }
       }
-      if((typeof options.addHistory == 'undefined') || options.addHistory) jsh.XForm_AddHistory(jsh.state);
+      if((typeof options.addHistory == 'undefined') || options.addHistory){
+        jsh.XForm_AddHistory(jsh.state, undefined, { replaceHistory: initialLoad });
+      }
+      initialLoad = false;
 
       var ejsrslt = jsh.Render(model);
       //console.log(ejsrslt); //Show Full Source
