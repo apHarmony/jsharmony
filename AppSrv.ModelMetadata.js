@@ -275,6 +275,7 @@ exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks, targetperm) 
   //Add DataLock parameters to SQL 
   this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) { 
     if(Helper.access(targetperm,'I') && dfield.key) return false;
+    if(!(dfield.name in sql_params)) return false;
     bcrumb_sql_fields.push(dfield);
     datalockqueries.push(datalockquery);
   }, nodatalock, model.id);
