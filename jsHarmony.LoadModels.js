@@ -911,11 +911,7 @@ exports.ParseEntities = function () {
           if(skip_datalock_model) continue;
 
           //Check if datalocks are missing from any SQL statements that require them
-          if(model.breadcrumbs){
-            if(!skip_datalock_breadcrumbs) _this.CheckDatalockSQL(model, model.breadcrumbs.sql, 'Breadcrumbs');
-            if(model.breadcrumbs.add && !skip_datalock_breadcrumbs_add) _this.CheckDatalockSQL(model, model.breadcrumbs.add.sql, 'Breadcrumbs.Add');
-            if(model.breadcrumbs.edit && !skip_datalock_breadcrumbs_edit) _this.CheckDatalockSQL(model, model.breadcrumbs.edit.sql, 'Breadcrumbs.Edit');
-          }
+          //Breadcrumbs do not require datalocks - parameters are individually validated if %%%DATALOCKS%%% is missing
           if(model.title){
             if(!skip_datalock_title) _this.CheckDatalockSQL(model, model.title.sql, 'Title');
             if(model.title.add && !skip_datalock_title_add) _this.CheckDatalockSQL(model, model.title.add.sql, 'Title.Add');
@@ -971,9 +967,9 @@ exports.ParseEntities = function () {
             }
 
             //Check if any KFC field is missing a datalock
-            if(field.key) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Missing datalock on key '+siteid+'::'+datalockid);
-            else if(field.foreignkey) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Missing datalock on foreign key '+siteid+'::'+datalockid);
-            else if(Helper.access(field.actions, 'C')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Missing datalock on sql param '+siteid+'::'+datalockid);
+            if(field.key) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Missing datalock '+siteid+'.'+datalockid +' for key '+field.name);
+            else if(field.foreignkey) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Missing datalock '+siteid+'.'+datalockid +' for foreign key '+field.name);
+            else if(Helper.access(field.actions, 'C')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Missing datalock '+siteid+'.'+datalockid +' for '+field.name);
             //Lovkey parameters in multisel
             else if((model.layout=='multisel') && field.lovkey) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Missing datalock on multisel lovkey '+siteid+'::'+datalockid);
             //Check if any custom LOV is missing a datalock

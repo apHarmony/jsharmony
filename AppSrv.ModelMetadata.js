@@ -260,7 +260,7 @@ exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks, targetperm) 
   var sql_params = {};
   var verrors = {};
   var datalockqueries = [];
-  var bcrumb_sql_fieldlist = [];
+  var bcrumb_sql_fields = [];
 
   for (var i = 0; i < fields.length; i++) {
     var field = fields[i];
@@ -275,13 +275,13 @@ exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks, targetperm) 
   //Add DataLock parameters to SQL 
   this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) { 
     if(Helper.access(targetperm,'I') && dfield.key) return false;
-    bcrumb_sql_fieldlist.push(dfield.name);
+    bcrumb_sql_fields.push(dfield);
     datalockqueries.push(datalockquery);
   }, nodatalock, model.id);
   verrors = _.merge(verrors, model.xvalidate.Validate('*', sql_params, undefined, undefined, undefined, { ignoreUndefined: true }));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return false; }
   
-  var sql = db.sql.getBreadcrumbTasks(_this.jsh, model, sql, datalockqueries, bcrumb_sql_fieldlist);
+  var sql = db.sql.getBreadcrumbTasks(_this.jsh, model, sql, datalockqueries, bcrumb_sql_fields);
 
   //Add parameters from querystring
   _this.ApplyQueryParameters(Q, sql, sql_ptypes, sql_params, model);
