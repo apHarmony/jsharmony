@@ -1,6 +1,6 @@
 {
   "name": "jsharmony",
-  "version": "1.1.37",
+  "version": "1.1.38",
   "description": "Rapid Application Development (RAD) Platform for Node.js Database Application Development",
   "main": "index.js",
   "scripts": {
@@ -55,6 +55,7 @@
     "nodemailer-smtp-pool": "^2.8.3",
     "puppeteer": "^1.9.0",
     "stylus": "~0.54.5",
-    "tmp": "^0.0.31"
+    "tmp": "^0.0.31",
+    "ws": "^6.1.2"
   }
 }

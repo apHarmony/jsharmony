@@ -24,6 +24,8 @@ var fs = require('fs');
 var http = require('http');
 var https = require('https');
 var os = require('os');
+var WebSocket = require('ws');
+var url = require('url');
 var _ = require('lodash');
 var jsHarmonyRouter = require('./jsHarmonyRouter.js');
 var Helper = require('./lib/Helper.js');
@@ -34,6 +36,7 @@ function jsHarmonyServer(serverConfig, jsh){
   this.running = false;
   this.serverConfig = serverConfig||{};
   this.servers = [];
+  this.webSockets = [];
   if(!('add_default_routes' in serverConfig)) serverConfig.add_default_routes = true;
   /*
   {
@@ -54,6 +57,38 @@ function jsHarmonyServer(serverConfig, jsh){
 //Initialize Express
 jsHarmonyServer.prototype.Init = function(cb){
   var _this = this;
+
+  //Initialize socket for debug log
+  if(_this.jsh.Config.debug_params.log_socket){
+    var logServer = new WebSocket.Server({ noServer: true });
+    _this.webSockets.push({
+      path: '/_log',
+      server: logServer
+    });
+    //On New connection
+    logServer.on('connection', function(ws, req, socket, head){
+      _this.jsh.Log('Debug Log Client Connected from '+req.connection.remoteAddress);
+      ws.isAlive = true;
+      ws.on('pong', function(){ ws.isAlive = true; });
+    });
+    //Keepalive
+    setInterval(function(){
+      logServer.clients.forEach(function(ws){
+        if(ws.isAlive===false) return ws.terminate();
+        ws.isAlive = false;
+        ws.ping(function(){});
+      });
+    }, 30000);
+    //Send logs to client
+    _this.jsh.Log.on('any', function(msg){
+      logServer.clients.forEach(function each(client) {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(msg));
+        }
+      });
+    });
+  }
+
   this.app = express();
   var app = this.app;
   app.jsh = this.jsh;
@@ -99,6 +134,23 @@ jsHarmonyServer.prototype.addDefaultRoutes = function () {
     res.render(_this.jsh.getView(req, errorpage, { disable_override: true }), {
       message: err.message,
       error: err,
+    });
+  });
+}
+
+jsHarmonyServer.prototype.addWebSocketHandler = function(server){
+  var _this = this;
+  server.on('upgrade', function(req, socket, head){
+    var pathname = url.parse(req.url).pathname;
+    _.each(_this.webSockets, function(webSocket){
+      if(webSocket.path==pathname){
+        _this.jsh.Log(pathname + ' : Websocket connection initialized');
+        webSocket.server.handleUpgrade(req, socket, head, function(ws){ webSocket.server.emit('connection', ws, req, socket, head); });
+      }
+      else {
+        _this.jsh.Log.error('Unhandled WebSocket request: '+pathname);
+        socket.destroy();
+      }
     });
   });
 }
@@ -172,6 +224,7 @@ jsHarmonyServer.prototype.Run = function(cb){
   if(http_server){
     var server = http.createServer(_this.app);
     _this.servers.push(server);
+    _this.addWebSocketHandler(server);
     server.timeout = _this.serverConfig.request_timeout;
     _this.ListenPort(server, _this.serverConfig.http_port, _this.serverConfig.http_ip, function(){
       _this.jsh.Log.info('Listening on HTTP port ' + server.address().port);
@@ -201,6 +254,7 @@ jsHarmonyServer.prototype.Run = function(cb){
     if(f_ca) https_options.ca = f_ca;
     var server = https.createServer(https_options, _this.app);
     _this.servers.push(server);
+    _this.addLogSocket(server);
     server.timeout = _this.serverConfig.request_timeout;
     var new_http_port = 0;
     var new_https_port = 0; 
