@@ -301,7 +301,7 @@ jsHarmonyServer.prototype.Run = function(cb){
     if(f_ca) https_options.ca = f_ca;
     var server = https.createServer(https_options, _this.app);
     _this.servers.push(server);
-    _this.addLogSocket(server);
+    _this.addWebSocketHandler(server);
     server.timeout = _this.serverConfig.request_timeout;
     var new_http_port = 0;
     var new_https_port = 0; 
