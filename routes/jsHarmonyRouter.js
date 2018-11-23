@@ -38,7 +38,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
   var router = express.Router();
   router.jsh = jsh;
   router.jshsite = siteConfig;
-  if(!siteConfig.router) siteConfig.router = this;
+  if(!siteConfig.router) siteConfig.router = router;
   if (siteConfig.onLoad) siteConfig.onLoad(jsh, router);
   
   /* GET home page. */
@@ -361,6 +361,21 @@ var jsHarmonyRouter = function (jsh, siteid) {
     processCustomRouting('singlepage', req, res, jsh, modelid, function(){
       genSinglePage(jsh, req, res, modelid);
     });
+  });
+  router.get('*', function(req, res, next){
+    //Validate WebSocket exists
+    var server = jsh.Servers['default'];
+    if(server){
+      var pathname = url.parse(req.url).pathname;
+      for(var i=0;i<server.webSockets.length;i++){
+        var webSocket = server.webSockets[i];
+        if(webSocket.path==pathname){
+          res.end('WEBSOCKET');
+          return;
+        }
+      }
+    }
+    return next();
   });
   
   return router;

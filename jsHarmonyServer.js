@@ -63,11 +63,18 @@ jsHarmonyServer.prototype.Init = function(cb){
     var logServer = new WebSocket.Server({ noServer: true });
     _this.webSockets.push({
       path: '/_log',
-      server: logServer
+      server: logServer,
+      roles: {},
+      dev: 1
     });
     //On New connection
     logServer.on('connection', function(ws, req, socket, head){
-      _this.jsh.Log('Debug Log Client Connected from '+req.connection.remoteAddress);
+      if(!req._roles || (!('SYSADMIN' in req._roles) && !('DEV' in req._roles))){
+        ws.terminate();
+        _this.jsh.Log.error('Potential Hacking Attempt - Unsecure Debug Log Client Connected from '+Helper.GetIP(req));
+        return;
+      }
+      _this.jsh.Log('Debug Log Client Connected from '+Helper.GetIP(req));
       ws.isAlive = true;
       ws.on('pong', function(){ ws.isAlive = true; });
     });
@@ -80,7 +87,7 @@ jsHarmonyServer.prototype.Init = function(cb){
       });
     }, 30000);
     //Send logs to client
-    _this.jsh.Log.on('any', function(msg){
+    _this.jsh.Log.on('log', function(msg){
       logServer.clients.forEach(function each(client) {
         if (client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify(msg));
@@ -142,16 +149,56 @@ jsHarmonyServer.prototype.addWebSocketHandler = function(server){
   var _this = this;
   server.on('upgrade', function(req, socket, head){
     var pathname = url.parse(req.url).pathname;
-    _.each(_this.webSockets, function(webSocket){
+    for(var i=0;i<_this.webSockets.length;i++){
+      var webSocket = _this.webSockets[i];
       if(webSocket.path==pathname){
-        _this.jsh.Log(pathname + ' : Websocket connection initialized');
-        webSocket.server.handleUpgrade(req, socket, head, function(ws){ webSocket.server.emit('connection', ws, req, socket, head); });
+        var initSocket = function(){
+          _this.jsh.Log(pathname + ' : Websocket connection initialized '+pathname);
+          webSocket.server.handleUpgrade(req, socket, head, function(ws){ webSocket.server.emit('connection', ws, req, socket, head); });
+        };
+        if(webSocket.roles || webSocket.dev){
+          //Run route to validate authentication
+          var siteConfig = _this.jsh.Sites['main'];
+          if(!siteConfig){
+            _this.jsh.Log.error('WebSocket Authentication requires jsh.Site "main"'); 
+            socket.destroy();
+            return; 
+          }
+          var router = siteConfig.router;
+          if(siteConfig.cookiesalt) cookieParser(siteConfig.cookiesalt, { path: siteConfig.baseurl })(req,{},function(){});
+          else cookieParser({ path: siteConfig.baseurl })(req,{},function(){});
+          router.handle(req, {
+            writeHead: function(){ }, 
+            setHeader: function(){ }, 
+            send: function(){ },
+            end: function(txt){
+              //Route returned WEBSOCKET
+              if(txt=='WEBSOCKET'){
+                //Validate Roles
+                if(!Helper.HasModelAccess(req, { actions: 'B', roles: webSocket.roles, dev: webSocket.dev }, 'B')) {
+                  _this.jsh.Log.error('Unauthorized access to WebSocket '+webSocket.path+' by '+Helper.GetIP(req));
+                  socket.destroy();
+                  return;
+                }
+                initSocket();
+                return;
+              }
+              else{
+                _this.jsh.Log.error('Unauthorized access to WebSocket '+webSocket.path+' by '+Helper.GetIP(req)); 
+                socket.destroy();
+                return;
+              }
+            }
+          }, function(){ });
+        }
+        else initSocket();
+        return;
       }
       else {
         _this.jsh.Log.error('Unhandled WebSocket request: '+pathname);
         socket.destroy();
       }
-    });
+    }
   });
 }
 
@@ -292,8 +339,7 @@ jsHarmonyServer.prototype.Run = function(cb){
     else {
       var redirect_app = express();
       redirect_app.get('*', function (req, res) {
-        var ip = (req._remoteAddress || (req.connection && req.connection.remoteAddress));
-        var hostname = ip;
+        var hostname = Helper.GetIP(req);
         if(req.headers && req.headers.host){
           hostname = (req.headers.host.match(/:/g)) ? req.headers.host.slice(0, req.headers.host.indexOf(":")) : req.headers.host;
         }
