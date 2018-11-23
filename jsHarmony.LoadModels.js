@@ -463,12 +463,57 @@ exports.ParseEntities = function () {
     var foundkey = false;
     var fieldnames = [];
     _.each(model.fields, function (field) {
+      if ('control' in field) {
+        //Parse and apply Custom Controls
+        while (base_controls.indexOf(field.control) < 0) {
+          if (!(field.control in _this.CustomControls)) throw new Error("Control not defined: " + field.control + " in " + model.id + ": " + JSON.stringify(field));
+          var customcontrol = _this.CustomControls[field.control];
+          for (var prop in customcontrol) {
+            if (!(prop in field)) field[prop] = customcontrol[prop];
+            else if (prop == "controlclass") field[prop] = field[prop] + " " + customcontrol[prop];
+          }
+          if (!('_orig_control' in field)) field['_orig_control'] = [];
+          field._orig_control.push(field.control);
+          field.control = customcontrol.control;
+        }
+      }
       if (field.name === '') delete field.name;
+      //Apply default actions
       if (!('actions' in field)) {
         field.actions = '';
-        if ((field.control == 'html') || (field.control == 'button')) field.actions = 'B';
+        if ((field.control == 'html') || (field.control == 'button') || (field.control == 'linkbutton') || (field.control == 'hidden')) field.actions = 'B';
         else {
-          //Actions should not be required, for shorter syntax
+          if (model.layout=='grid'){
+            if(!model.commitlevel || (model.commitlevel=='none') || !Helper.access(model.actions, 'IU')){
+              //Read-only grid
+              field.actions = 'B';
+            }
+            else {
+              //Editable grid
+              if(field.key) field.actions = 'B';
+              else field.actions = 'BIU';
+            }
+          }
+          else if(model.layout=='form'){
+            if(field.key) actions = 'B';
+            else if(!('control' in field)) actions = 'B';
+            else actions = 'BIU';
+          }
+          else if(model.layout=='form-m'){
+            if(field.key) actions = 'B';
+            else if(field.foreignkey && !('control' in field)) actions = 'I';
+            else field.actions = 'BIU';
+          }
+          else if(model.layout=='multisel'){
+            if(field.key) {}
+            else if(field.foreignkey) {}
+            else field.actions = 'B';
+          }
+          else if(model.layout=='exec'){
+            if(field.key) actions = 'B';
+            else if(!('control' in field)) actions = 'B';
+            else actions = 'BIU';
+          }
           //_this.LogInit_WARNING('Model ' + model.id + ' Field ' + (field.name || field.caption || JSON.stringify(field)) + ' missing actions - defaulting to "'+field.actions+'"');
         }
       }
@@ -556,21 +601,6 @@ exports.ParseEntities = function () {
             }
           }
           if(field.type==fieldtype) break;
-        }
-      }
-      
-      if ('control' in field) {
-        //Parse and apply Custom Controls
-        while (base_controls.indexOf(field.control) < 0) {
-          if (!(field.control in _this.CustomControls)) throw new Error("Control not defined: " + field.control + " in " + model.id + ": " + JSON.stringify(field));
-          var customcontrol = _this.CustomControls[field.control];
-          for (var prop in customcontrol) {
-            if (!(prop in field)) field[prop] = customcontrol[prop];
-            else if (prop == "controlclass") field[prop] = field[prop] + " " + customcontrol[prop];
-          }
-          if (!('_orig_control' in field)) field['_orig_control'] = [];
-          field._orig_control.push(field.control);
-          field.control = customcontrol.control;
         }
       }
       //Add Default Datatype Validation
