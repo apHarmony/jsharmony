@@ -33,6 +33,7 @@ exports = module.exports = function(jsh){
   var curSubMenuSel = '';
 
   var isXMenuInit = false;
+  
   function XMenuInit() {
     if (isXMenuInit) return;
     //Set up Top Menu Sidebar

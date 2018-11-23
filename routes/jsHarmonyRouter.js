@@ -365,10 +365,10 @@ var jsHarmonyRouter = function (jsh, siteid) {
   router.get('*', function(req, res, next){
     //Validate WebSocket exists
     var server = jsh.Servers['default'];
-    if(server){
+    if(server && server.serverConfig.webSockets){
       var pathname = url.parse(req.url).pathname;
-      for(var i=0;i<server.webSockets.length;i++){
-        var webSocket = server.webSockets[i];
+      for(var i=0;i<server.serverConfig.webSockets.length;i++){
+        var webSocket = server.serverConfig.webSockets[i];
         if(webSocket.path==pathname){
           res.end('WEBSOCKET');
           return;

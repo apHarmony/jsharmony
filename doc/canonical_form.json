@@ -54,6 +54,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     "main":   { "SYSADMIN": "*", "*": "B" },
     "client": { "C*": "B" }
   },
+  "dev": 1, //Enable for users with the "DEV" role, not for users with the "SYSADMIN" role
   "db": "default", //Optional property - use an alternate database connection
   "popup": [ 1000, 900 ],
   "sort": [ "^E_Name asc", "^C_Name" ], //^ = Ascending or v = Descending

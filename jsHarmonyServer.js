@@ -36,10 +36,9 @@ function jsHarmonyServer(serverConfig, jsh){
   this.running = false;
   this.serverConfig = serverConfig||{};
   this.servers = [];
-  this.webSockets = [];
   if(!('add_default_routes' in serverConfig)) serverConfig.add_default_routes = true;
   /*
-  {
+  serverConfig: {
     add_default_routes: true,
     http_port:0,
     http_port: 0,
@@ -49,7 +48,15 @@ function jsHarmonyServer(serverConfig, jsh){
     https_key: 'path/to/file',
     https_cert: 'path/to/file',
     https_ca: 'path/to/file',
-    request_timeout: 2*60*1000
+    request_timeout: 2*60*1000,
+    webSockets = [
+      {
+        path: '/path',     //Path of the WebSocket for "upgrade" HTTP request
+        server: wsServer,  //WebSocket.Server object handling the request - new WebSocket.Server({ noServer: true })
+        roles: {},         //jsHarmony roles { "DADMIN": "B" }   "B" access is used
+        dev: 1             //Enable for users with the "DEV" role, not for users with the "SYSADMIN" role
+      }
+    ]
   }
   */
 }
@@ -58,10 +65,12 @@ function jsHarmonyServer(serverConfig, jsh){
 jsHarmonyServer.prototype.Init = function(cb){
   var _this = this;
 
+  if(!_this.serverConfig.webSockets) _this.serverConfig.webSockets = [];
+
   //Initialize socket for debug log
   if(_this.jsh.Config.debug_params.log_socket){
     var logServer = new WebSocket.Server({ noServer: true });
-    _this.webSockets.push({
+    _this.serverConfig.webSockets.push({
       path: '/_log',
       server: logServer,
       roles: {},
@@ -145,12 +154,15 @@ jsHarmonyServer.prototype.addDefaultRoutes = function () {
   });
 }
 
+//Add handler for WebSocket endpoints
 jsHarmonyServer.prototype.addWebSocketHandler = function(server){
   var _this = this;
+  if(!_this.serverConfig.webSockets) return;
+
   server.on('upgrade', function(req, socket, head){
     var pathname = url.parse(req.url).pathname;
-    for(var i=0;i<_this.webSockets.length;i++){
-      var webSocket = _this.webSockets[i];
+    for(var i=0;i<_this.serverConfig.webSockets.length;i++){
+      var webSocket = _this.serverConfig.webSockets[i];
       if(webSocket.path==pathname){
         var initSocket = function(){
           _this.jsh.Log(pathname + ' : Websocket connection initialized '+pathname);
@@ -164,13 +176,11 @@ jsHarmonyServer.prototype.addWebSocketHandler = function(server){
             socket.destroy();
             return; 
           }
-          var router = siteConfig.router;
-          if(siteConfig.cookiesalt) cookieParser(siteConfig.cookiesalt, { path: siteConfig.baseurl })(req,{},function(){});
-          else cookieParser({ path: siteConfig.baseurl })(req,{},function(){});
+          var router = _this.app;
           router.handle(req, {
-            writeHead: function(){ }, 
-            setHeader: function(){ }, 
-            send: function(){ },
+            writeHead: function(txt){ }, 
+            setHeader: function(txt){ }, 
+            send: function(txt){ },
             end: function(txt){
               //Route returned WEBSOCKET
               if(txt=='WEBSOCKET'){
@@ -189,7 +199,11 @@ jsHarmonyServer.prototype.addWebSocketHandler = function(server){
                 return;
               }
             }
-          }, function(){ });
+          }, function(){
+            _this.jsh.Log.error('WebSocket Authentication Failed for: '+webSocket.path+' by '+Helper.GetIP(req)); 
+            socket.destroy();
+            return;
+          });
         }
         else initSocket();
         return;
