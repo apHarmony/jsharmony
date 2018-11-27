@@ -380,7 +380,7 @@ exports.addSearchTerm = function (req, model, field, search_i, in_search_value, 
       default: throw new Error('Search type ' + field.name + '/' + ftype + ' not supported.');
     }
   }
-  var searchterm = db.sql.getSearchTerm(this.jsh, field, pname, in_search_value, comparison);
+  var searchterm = db.sql.getSearchTerm(this.jsh, model, field, pname, in_search_value, comparison);
   if (searchterm) {
     if (!searchterm.dbtype) searchterm.dbtype = _this.getDBType(field);
     //Dont deformat dates

@@ -211,6 +211,9 @@ BODY
 <%-rootcss%> .xtbl td textarea {
   margin:0;
 }
+<%-rootcss%> .xtbl tbody td textarea {
+  vertical-align:middle;
+}
 <%-rootcss%> .xtbl td.xcheckbox_column {
   text-align:center;
 }
@@ -443,6 +446,105 @@ BODY
   text-decoration:none;
 }
 <%-rootcss%> .tdhidden { display:none; }
+<%-rootcss%> .xform.onecolumn .xform_caption.leading { white-space:nowrap; }
+
+/*
+===============
+CUSTOM CONTROLS
+===============
+*/
+
+<%-rootcss%> .xdate_mmddyy {
+	width:86px;
+}
+<%-rootcss%> .xtstmp {
+	width:120px;
+}
+<%-rootcss%> .xdropdown_VS {
+	width:50px;
+}
+<%-rootcss%> .xdropdown_S {
+	width:125px;
+}
+<%-rootcss%> .xdropdown_M{
+	width:240px;
+}
+<%-rootcss%> .xdropdown_L{
+	width:400px;
+}
+<%-rootcss%> .xdropdown_VL{
+	width:615px;
+}
+/*
+	width:597px;
+*/	
+<%-rootcss%> .xlabel_VS {
+	width:43px;
+}
+<%-rootcss%> .xlabel_S {
+	width:117px;
+}
+<%-rootcss%> .xlabel_M {
+	width:233px;
+}
+<%-rootcss%> .xlabel_L {
+	width:392px;
+}
+<%-rootcss%> .xlabel_VL {
+	width:590px;
+}
+<%-rootcss%> .xtextbox_VS {
+	width:43px;
+}
+<%-rootcss%> .xtextbox_S {
+	width:117px;
+}
+<%-rootcss%> .xtextbox_M {
+	width:233px;
+}
+<%-rootcss%> .xtextbox_L {
+	width:392px;
+}
+<%-rootcss%> .xtextbox_VL {
+	width:608px;
+}
+/*
+	width:590px;
+*/	
+<%-rootcss%> .xtextbox_email {
+	width:392px;
+}
+<%-rootcss%> .xtextbox_decimal {
+	width:200px;
+}
+<%-rootcss%> .xtextbox_mmddyy,
+<%-rootcss%> .xtextbox_hhmmss {
+	width:80px;
+}
+<%-rootcss%> .xtextbox_phone {
+	width:117px;
+}
+<%-rootcss%> .xtextbox_tstmp {
+	width:105px;
+}
+<%-rootcss%> .xtextbox_tstmp7 {
+	width:185px;
+}
+<%-rootcss%> .xtextbox_tstmp7z {
+	width:220px;
+}
+<%-rootcss%> .xtextarea_M {
+	width:590px;
+	height:120px;
+}
+<%-rootcss%> .xtextarea_caption {
+	vertical-align:top;
+	padding-top:4px;
+}
+<%-rootcss%> .xcaption_2 {
+	width:120px;
+	text-align:right;
+}
 
 /*
 =================

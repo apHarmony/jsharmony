@@ -26,7 +26,7 @@
   <div class="xnorecords xelem<%=model.id%>" style="display:none;">No <%=model.caption[1]%> Records</div>
   <div class="xformcontainer xelem<%=model.id%>">
 <% } %>
-<div class="xform xelem<%=model.id%> xform<%=model.id%>" data-id="xform<%=model.id%>" style="<%=model.formstyle%>">
+<div class="xform xelem<%=model.id%> xform<%=model.id%> <%=xejs.iif(model.onecolumn,'onecolumn')%>" data-id="xform<%=model.id%>" style="<%=model.formstyle%>">
 <%-jsh.RenderEJS('jsh_embed.js',ejsparams)%>
 <%-jsh.RenderEJS('jsh_controls',ejsparams)%>
 <% if(model.duplicate){

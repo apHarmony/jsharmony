@@ -53,9 +53,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         <%-xejs.iif('base_readonly' in field.controlparams,'"base_readonly":'+JSON.stringify(field.controlparams.base_readonly)+',') %>
         <%-xejs.iif('onpopup' in field.controlparams,'"onpopup":function(popupmodelid, parentmodelid, fieldid, onComplete){'+jslocals+field.controlparams.onpopup+'},') %>
       },<% }%>
-      <% if(('lov' in field) && ('parent' in field.lov)){ %>"lovparent":<%-JSON.stringify(field.lov.parent)%>, <% } %>
-      <% if(('lov' in field) && ('parents' in field.lov)){ %>"lovparents":<%-JSON.stringify(field.lov.parents)%>, <% } %>
-      <% if(('lov' in field) && ('blank' in field.lov)){ %>"lovblank":1, <% } %>
+      <% if(field.lov && field.lov.parent){ %>"lovparent":<%-JSON.stringify(field.lov.parent)%>, <% } %>
+      <% if(field.lov && field.lov.parents){ %>"lovparents":<%-JSON.stringify(field.lov.parents)%>, <% } %>
+      <% if(field.lov && ('blank' in field.lov)){ %>"lovblank":1, <% } %>
       }, <%});%>
   };
 

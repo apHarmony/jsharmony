@@ -106,7 +106,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           var fieldclass = '';
           if(field.control && (field.control=='hidden')) fieldclass += 'tdhidden';
           %>
-        <th nowrap class="<%=field.sortclass%> thead<%=field.name%> <%=field.captionclass%> <%=fieldclass%>" style="<%=field.captionstyle%>"><% if(field.disable_sort){ %><%=field.caption%><% } else { %><a href="#" onClick="return <%-instance%>.App.XForm<%=model.id%>_Sort(this,'<%=field.name%>')"><%=field.caption%></a><% } %></th>
+        <th nowrap class="<%=field.sortclass%> thead<%=field.name%> <%=field.captionclass%> <%=fieldclass%>" style="<%=field.captionstyle%>"><% if(field.disable_sort){ %><%=field.caption%><% } else { %><a href="#" onClick="return <%-instance%>.App.XForm<%=model.id%>_Sort(this,'<%=((field.lov && !field.lov.showcode)?('__'+jsh.uimap.codetxt+'__'+field.name):field.name)%>')"><%=field.caption%></a><% } %></th>
         <% } %>
         <%-xejs.iif(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'I'),'<th></th>')%>
         <%-xejs.iif(model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'D'),'<th></th>')%>
@@ -130,7 +130,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           var maxlength = XExt.getMaxLength(field);
           %>
           <td style="<%=field.cellstyle%>" class="<%=field.cellclass%> <%=xejs.iif(field.control=='checkbox','xcheckbox_column')%> <%=xejs.iif(field.popuplov,'xpopuplov_column')%> <%=fieldclass%>"><% 
-            if(!('control' in field) || (field.control=='label') || (field.control=='html')){
+        if(!('control' in field) || (field.control=='label') || (field.control=='html')){
               %><div data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.controlclass%> <%if(!('link' in field) && !('html' in field)){%><%=field.name%> xform_ctrl xelem<%=model.id%> xform_label<% } %>">
                 <% if(('link' in field) && (XExt.beginsWith(field.link,'#select'))){ %><a href="<%-field.link%>" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this);return false;" >
                 <% } else if('link' in field){ %><a href="<%-field.link%>" class="<%=field.name%> xform_ctrl xelem<%=model.id%> xform_label" <%-xejs.showProp('onclick',field.link_onclick,field.link=='#','return (function(){'+jslocals,'}).call(this);')%> ><% if(field.name && (field.control != 'html')){  %><# if(data[j]['<%=field.name%>']){ #><% } } %>
@@ -140,6 +140,8 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
                   <%-field.value%>
                 <% } else if(field.control=='html'){ %>
                   <#-data[j]['<%=field.name%>']#>
+                <% } else if(field.lov && !field.lov.showcode) { %>
+                  <#=<%-instance%>.XFormat.Apply(<%-format%>,data[j]['__'+jsh.uimap.codetxt+'__'+'<%=field.name%>'])#>
                 <% } else { %>
                   <#=<%-instance%>.XFormat.Apply(<%-format%>,data[j]['<%=field.name%>'])#>
                 <% } %>
@@ -149,6 +151,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
         else if(field.control=='textbox'){ %><input type="<%=xejs.getInputType(field)%>" data-id="<%=field.name%>" value="<%=xejs.GetValue(field)%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.id%> <%=field.controlclass%>" <%-xejs.iif(maxlength >= 0,'maxlength="'+maxlength+'"')%> /><% }
         else if(field.control=='textzoom'){ %><div class="nobr"><textarea data-id="<%=field.name%>" name="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xform_ctrl_textzoom xelem<%=model.id%> <%=field.controlclass%>"><%=xejs.GetValue(field)%></textarea><a href="#" class="xform_ctrl xtextzoom icon" onclick="var jctrl = <%-instance%>.$(this).prev('.<%=field.name%>'); <%-instance%>.XExt.ZoomEdit(jctrl.val(),'<%=field.caption_ext||field.caption%>',{readonly:!jctrl.hasClass('editable')},function(rslt){ <%-instance%>.XExt.setFormControl(<%-instance%>.XExt.getForm('<%=model.id%>'),'<%=field.name%>',rslt); jctrl.focus(); }); return false;"><img src="/images/icon_search.png" height="14" /></a></div><% }
         else if(field.control=='date'){ %><input data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.id%> datepicker <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" maxlength="10" /><% }
+        else if(field.control=='textarea'){ %><textarea data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.id%> <%=field.controlclass%>"><%=xejs.GetValue(field)%></textarea><% }
         else if(field.control=='dropdown'){ %><select data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.id%> dropdown <%=field.controlclass%>"><option><%=xejs.GetValue(field)%></option></select><% }
         else if(field.control=='hidden'){ %><input type="hidden" data-id="<%=field.name%>" value="<%=xejs.GetValue(field)%>" class="<%=field.name%> xform_ctrl xelem<%=model.id%> <%=field.controlclass%>" /><% }
         else if(field.control=='checkbox'){ %><div class="xform_ctrl checkbox_container xelem<%=model.id%>"><input data-id="<%=field.name%>" type="checkbox" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl checkbox xelem<%=model.id%> <%=field.controlclass%>" /></div><% }

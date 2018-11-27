@@ -129,7 +129,7 @@ BODY
 	border-bottom:1px solid #9f9f9f;
 	border-right:1px solid #9f9f9f;
 	padding:3px 6px 3px 6px;
-	vertical-align:text-top;
+  vertical-align:text-top;
 }
 <%-rootcss%> .xtbl .xtbl_loadmore a {
 	display:block;

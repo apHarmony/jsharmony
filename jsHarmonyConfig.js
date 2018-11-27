@@ -111,7 +111,18 @@ function jsHarmonyConfig(config){
     //Automatically add datalocks to model fields
     "automatic_datalocks": true,
     //Automatically add parameters to AppSrv functions if they are in the querystring, and automatically define foreign keys
-    "automatic_parameters": true
+    "automatic_parameters": true,
+    //Automatically look up and apply database schema - data types, required fields, primary keys, controls
+    "automatic_schema": { //Set "automatic_schema": false to disable any initial database schema lookup
+      "metadata_captions": true, //Use system meta data for field captions and model titles
+      "datatypes": true,         //Load datatypes from the database (type, length, precision, required validation, primary key, read-only)
+      "attributes": true,        //Load extended attributes from the database (required validation, primary key, read-only)
+      "controls": true,          //Load controls from the database
+      "lovs": true               //Load LOVs (List of Values - UCOD/GCOD/UCOD2/GCOD2) from the database
+    },
+    //Model validation level - "standard", "strict"
+    //  Strict: MISSING_CAPTION
+    "validation_level": "standard"
   };
   //Valid file upload extensions
   this.valid_extensions = [".jpg", ".jpeg", ".pdf", ".png", ".gif", ".txt", ".xlsm", ".xls", ".xlsx", ".bak", ".zip", ".csv"];

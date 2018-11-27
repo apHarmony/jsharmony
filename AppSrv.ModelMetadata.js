@@ -315,7 +315,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
   //Use function loop so that dbtasks works for multiple LOVs
   _.each(model.fields, function (field) {
     if(fatalError) return;
-    if ('lov' in field) {
+    if (field.lov) {
       var lov = field['lov'];
       var lov_ptypes = [];
       var lov_params = {};
@@ -416,7 +416,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
             if(can_optimize && (rslt.length > 1000)){
               jsh.Log.warning(model.id + ' > ' + field.name + ': More than 1000 results returned for LOV query.  Please consider implementing lov.sqlselect, lov.sqltruncate, and adding %%%TRUNCATE%%% to the LOV sql to improve performance.');
             }
-            if (('showcode' in lov) && lov.showcode) {
+            if (lov.showcode) {
               for (var i = 0; i < rslt.length; i++) {
                 rslt[i][jsh.map.codetxt] = rslt[i][jsh.map.codeval];
               }

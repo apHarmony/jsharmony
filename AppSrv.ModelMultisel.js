@@ -32,7 +32,7 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
   var lovkeylist = this.getFieldNamesWithProp(model.fields, 'lovkey');
   var lovfield = null;
   _.each(model.fields, function (field) {
-    if ('lov' in field) {
+    if (field.lov) {
       if (lovfield == null) lovfield = field;
       else throw new Error('Invalid Multisel - Can only have one LOV field.');
     }
@@ -136,7 +136,7 @@ exports.postModelMultisel = function (req, res, modelid, Q, P, onComplete) {
   
   var lovfield = null;
   _.each(model.fields, function (field) {
-    if ('lov' in field) {
+    if (field.lov) {
       if (lovfield == null) lovfield = field;
       else throw new Error('Invalid Multisel - Can only have one LOV field.');
     }

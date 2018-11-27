@@ -24,6 +24,7 @@ var XValidate = require('jsharmony-validate');
 require('./lib/ext-validation.js')(XValidate);
 var Helper = require('./lib/Helper.js');
 var HelperFS = require('./lib/HelperFS.js');
+var jsHarmonyCodeGen = require('./lib/CodeGen.js');
 
 module.exports = exports = {};
 
@@ -376,33 +377,183 @@ exports.ParseDeprecated = function () {
   });
 }
 
+exports.ParseCustomControls = function () {
+  var _this = this;
+  var queries = _this.CustomControlQueries = {};
+  for(var controlname in _this.CustomControls){
+    var control = _this.CustomControls[controlname];
+    if(control.for){
+      if(!_.isArray(control.for)) control.for = [control.for];
+      for(var i=0;i<control.for.length;i++){
+        var expr = control.for[i];
+        if(_.isString(expr)) expr = { "field": { "name": expr } };
+        control.for[i] = expr;
+        expr = JSON.parse(JSON.stringify(expr));
+        var fname = '*';
+        if(expr.field && expr.field.name){
+          fname = expr.field.name;
+          delete expr.field.name;
+          if(_.isEmpty(expr.field)) delete expr.field;
+        }
+        var exprstr = JSON.stringify(expr);
+        if(_.isEmpty(expr)) expr = exprstr = '*';
+
+        if(!(fname in queries)) queries[fname] = {};
+        if(!(exprstr in queries[fname])) queries[fname][exprstr] = { expr: expr, controls: [] }
+        queries[fname][exprstr].controls.push(controlname);
+      }
+    }
+  }
+};
+
+exports.ApplyCustomControlQueries = function(model, field){
+  var _this = this;
+
+  function QueryJSON(obj, expr){
+    if(obj===expr) return true;
+    if(!obj) return false;
+    if(!expr) return false;
+    for(var elem in expr){
+      if(expr[elem]===obj[elem]) continue;
+      if(_.isString(expr[elem])||_.isString(obj[elem])) return false;
+      if(_.isArray(expr[elem])){
+        if(!_.isArray(obj[elem])) return false;
+        if(expr[elem].length != obj[elem].length) return false;
+        for(var i=0;i<expr[elem].length;i++) if(!QueryJSON(expr[elem][i],obj[elem][i])) return false;
+      }
+      else if(expr[elem] && obj[elem]){
+        if(!QueryJSON(expr[elem],obj[elem])) return false;
+      }
+      else return false;
+    }
+    return true;
+  }
+
+  function QueryControl(expr){
+    if(!expr) return false;
+    if(expr=='*') return true;
+    var rslt = true;
+    if(expr.field){
+      rslt = rslt && QueryJSON(field, expr.field);
+    }
+    if(expr.model){
+      rslt = rslt && QueryJSON(model, expr.model);
+    }
+    return rslt;
+  }
+
+  function ApplyQuery(query){
+    var expr = query.expr;
+    if((expr=='*')||QueryControl(expr)){
+      //Apply controls
+      var controlnames = query.controls;
+      _.each(controlnames, function(controlname){
+        _this.ApplyCustomControl(field, controlname);
+      });
+    }
+  }
+
+  var queries = _this.CustomControlQueries;
+  if(queries['*']){
+    for(var exprstr in queries['*']){
+      ApplyQuery(queries['*'][exprstr]);
+    }
+  }
+  if(field.name && (field.name in queries)){
+    for(var exprstr in queries[field.name]){
+      ApplyQuery(queries[field.name][exprstr]);
+    }
+  }
+}
+
+exports.ApplyCustomControl = function(field, controlname){
+  var _this = this;
+  var customcontrol = _this.CustomControls[controlname];
+  for (var prop in customcontrol) {
+    if(prop=='for') continue;
+    if(prop=='control') continue;
+    if (!(prop in field)){ field[prop] = customcontrol[prop]; }
+    else if (prop == "controlclass") field[prop] = field[prop] + " " + customcontrol[prop];
+    else console.log('Not apply - '+prop);
+  }
+  if('control' in customcontrol){
+    if (!('_orig_control' in field)) field['_orig_control'] = [];
+    field._orig_control.push(field.control);
+    field.control = customcontrol.control;
+  }
+}
+
 exports.ParseEntities = function () {
   var _this = this;
+  _this.ParseCustomControls();
+  var codegen = new jsHarmonyCodeGen(_this);
   var base_controls = ["label", "html", "textbox", "textzoom", "dropdown", "date", "textarea", "hidden", "subform", "html", "password", "file_upload", "file_download", "button", "linkbutton", "tree", "checkbox"];
   var base_datatypes = ['DATETIME','VARCHAR','CHAR','BOOLEAN','BIGINT','INT','SMALLINT','TINYINT','DECIMAL','FLOAT','DATE','DATETIME','TIME','ENCASCII','HASH','FILE','BINARY'];
-  var all_keys = {};
-  var all_lovs = {};
+  var auto_datatypes = _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.datatypes
+  var auto_attributes = _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.attributes;
+  var validation_level = { }
+  switch(_this.Config.system_settings.validation_level){
+    case 'strict': validation_level.strict = 1;
+    default: validation_level.standard = 1;
+  }
+
+  var modelsExt = {};
   _.forOwn(this.Models, function (model) {
-    _.each(model.fields, function (field) {
-      if(field.name){
-        if(field.key){
-          if(!(field.name in all_keys)) all_keys[field.name] = [];
-          all_keys[field.name].push(model.id);
-        }
-        if((field.lov && (field.lov.sql||field.lov.sql2||field.lov.sqlmp||field.lov.sqlselect))||(field.popuplov)){
-          if(!(field.name in all_lovs)) all_lovs[field.name] = [];
-          all_lovs[field.name].push(model.id);
-        }
-      }
-    });
-  });
-  _.forOwn(this.Models, function (model) {
+    var modelExt = modelsExt[model.id] = {
+      db: undefined,
+      sqlext: undefined,
+      tabledef: undefined,
+      automodel: undefined,
+      isReadOnlyGrid: undefined,
+    }
     var modelDB = 'default';
     if('db' in model){
       if(!(model.db in _this.DBConfig)) _this.LogInit_ERROR('Model ' + model.id + ' uses an undefined db: '+model.db);
       else modelDB = model.db;
     }
-    var sqlext = _this.DB[modelDB].SQLExt;
+    var db = modelExt.db = _this.DB[modelDB];
+    var sqlext = modelExt.sqlext = db.SQLExt;
+    var tabledef = modelExt.tabledef = db.getTableDefinition(model.table);
+    var automodel = undefined;
+
+    if(model.layout=='form-onecolumn'){
+      model.layout = 'form';
+      model.onecolumn = true;
+    }
+
+    if((model.layout=='grid') && !('commitlevel' in model)){
+      if(model.actions && !Helper.access(model.actions, 'IUD')) model.commitlevel = 'none';
+      else if(tabledef && (tabledef.table_type=='view') && !('actions' in model)){ model.commitlevel = 'none'; }
+      else model.commitlevel = 'auto';
+    }
+    if (!('actions' in model)){
+      if((model.layout=='exec')||(model.layout=='multisel')) model.actions = 'BU';
+      else if(model.layout=='grid'){
+        if(!model.commitlevel || model.commitlevel=='none') model.actions = 'B';
+        else model.actions = 'BIUD';
+      }
+      else model.actions = 'BIUD';
+    }
+
+    var isReadOnlyGrid = modelExt.isReadOnlyGrid = (model.layout=='grid') && (!model.commitlevel || (model.commitlevel=='none') || !Helper.access(model.actions, 'IU'));
+    if(tabledef){
+      var autolayout = '';
+      if((model.layout=='form') || (model.layout=='form-m')) autolayout = 'form';
+      if(model.layout=='grid') autolayout = 'grid';
+
+      if(autolayout=='form'){
+        if(!tabledef.modelForm) codegen.generateModelFromTableDefition(tabledef,'form',{ db: model.db },function(err,messages,model){ tabledef.modelForm = model; });
+        automodel = modelExt.automodel = tabledef.modelForm;
+      }
+      else if((autolayout=='grid') && isReadOnlyGrid){
+        if(!tabledef.modelGridReadOnly) codegen.generateModelFromTableDefition(tabledef,'grid',{ db: model.db, readonly: true },function(err,messages,model){ tabledef.modelGridReadOnly = model; });
+        automodel = modelExt.automodel = tabledef.modelGridReadOnly;
+      }
+      else if((autolayout=='grid') && !isReadOnlyGrid){
+        if(!tabledef.modelGridEditable) codegen.generateModelFromTableDefition(tabledef,'grid',{ db: model.db },function(err,messages,model){ tabledef.modelGridEditable = model; });
+        automodel = modelExt.automodel = tabledef.modelGridEditable;
+      }
+    }
     model.xvalidate = new XValidate();
     if ('sites' in model) _this.LogInit_WARNING('Model ' + model.id + ' had previous "sites" attribute - overwritten by system value');
     if(model.roles){
@@ -418,7 +569,6 @@ exports.ParseEntities = function () {
     }
     model.sites = Helper.GetRoleSites(model.roles);
     if ((model.layout != 'exec') && !('table' in model) && !(model.unbound) && !model.sqlselect) _this.LogInit_WARNING('Model ' + model.id + ' missing table - use model.unbound property if this is intentional');
-    if (!('actions' in model)) _this.LogInit_WARNING('Model ' + model.id + ' missing actions');
     //Read-only grids should only have "B" actions
     if ((model.layout=='grid') && model.actions){
       if(!model.commitlevel || (model.commitlevel=='none')){
@@ -428,14 +578,19 @@ exports.ParseEntities = function () {
       }
     }
     //Add Model caption if not set
+    var originalCaption = true;
     if (!('caption' in model)) {
-      model.caption = ['', model.id, model.id]; 
-      if(model.layout != 'exec') _this.LogInit_WARNING('Model ' + model.id + ' missing caption'); 
+      model.caption = ['', model.id, model.id];
+      originalCaption = false;
+      if(!model.unbound && (model.layout != 'exec') && validation_level.strict) _this.LogInit_WARNING('Model ' + model.id + ' missing caption');
     }
     if (!('title' in model)){
       if(model.tabs && model.tabs.length && model.tabpos && (model.tabpos=='top')){ }
       else {
-        if((model.layout == 'grid') || (model.layout == 'multisel')) model.title = model.caption[2];
+        if(!originalCaption && 
+          tabledef && tabledef.description && 
+          _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.metadata_captions) model.title = tabledef.description;
+        else if((model.layout == 'grid') || (model.layout == 'multisel')) model.title = model.caption[2];
         else model.title = model.caption[1];
       }
     }
@@ -460,22 +615,115 @@ exports.ParseEntities = function () {
         }
       }
     }
+    //Auto-add primary key
     var foundkey = false;
+    _.each(model.fields, function (field) {
+      if(field.key) foundkey = true;
+    });
+    if (!foundkey && (model.layout != 'exec') && !model.unbound && !model.nokey){
+      if(auto_attributes && tabledef){
+        _.each(model.fields, function (field) {
+          var fielddef = db.getFieldDefinition(model.table, field.name,tabledef);
+          if(fielddef && fielddef.coldef && fielddef.coldef.primary_key){
+            field.key = 1;
+            foundkey = true;
+          }
+        });
+      }
+      if(!foundkey) _this.LogInit_WARNING('Model ' + model.id + ' missing key - use model.unbound or model.nokey properties if this is intentional');
+    }
+  });
+  var all_keys = {};
+  _.forOwn(this.Models, function (model) {
+    _.each(model.fields, function (field) {
+      if(field.name){
+        if(field.key){
+          if(!(field.name in all_keys)) all_keys[field.name] = [];
+          all_keys[field.name].push(model.id);
+        }
+      }
+    });
+  });
+  _.forOwn(this.Models, function (model) {
+    //Initialize data from previous loop
+    var modelExt = modelsExt[model.id];
+    var db = modelExt.db;
+    var sqlext = modelExt.sqlext;
+    var tabledef = modelExt.tabledef;
+    var automodel = modelExt.automodel;
+    var isReadOnlyGrid = modelExt.isReadOnlyGrid;
+    //Parse fields
+    var firstfield = true;
     var fieldnames = [];
     _.each(model.fields, function (field) {
+      var fielddef = db.getFieldDefinition(model.table, field.name,tabledef);
+      var coldef = undefined;
+      if(fielddef) coldef = fielddef.coldef;
+      if(fielddef && _this.Config.system_settings.automatic_schema){
+        var autofield = undefined;
+        if(automodel){
+          for(var i=0;i<automodel.fields.length;i++){
+            if(automodel.fields[i].name.toLowerCase()==field.name.toLowerCase()){ autofield = automodel.fields[i]; break; }
+          }
+          if(autofield){
+            //List of Values
+            if(_this.Config.system_settings.automatic_schema.lovs){
+              if(!('lov' in field) && autofield.lov){
+                field.lov = autofield.lov;
+                if(field.lov.parent){
+                  var foundparent = false;
+                  _.each(model.fields, function(pfield){ if(pfield.name && (pfield.name.toLowerCase()==field.lov.parent)) foundparent = true; });
+                  var isReadOnlyField = isReadOnlyGrid || (field.actions && !Helper.access(field.actions, 'IU')) || (field.control == 'label');
+                  if(!foundparent && !isReadOnlyField){
+                    _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Cannot initialize List of Values (LOV) - Parent field missing: '+field.lov.parent);
+                    delete field.lov;
+                    //Reset to textbox
+                    if(_this.Config.system_settings.automatic_schema.controls && !('control' in field) && (autofield.control=='dropdown')){
+                      field.control = 'textbox';
+                    }
+                  }
+                }
+              }
+            }
+            //Control
+            if(_this.Config.system_settings.automatic_schema.controls){
+              if(!('control' in field) && autofield.control){
+                //Field Control
+                field.control = autofield.control;
+                if(autofield.captionclass) field.captionclass = autofield.captionclass + ' ' + (field.captionclass||'');
+              }
+            }
+            //Required Field Validation
+            if(auto_attributes){
+              if(autofield.validate){
+                if(!('validate' in field)){
+                  field.validate = [];
+                  for(var i=0;i<autofield.validate.length;i++) field.validate.push(autofield.validate[i]);
+                }
+              }
+            }
+          }
+        }
+
+        //Field Datatypes
+        if(auto_datatypes){
+          if(fielddef.type && !('type' in field)) field.type = fielddef.type;
+          if(fielddef.length && !('length' in field)) field.length = fielddef.length;
+          if(fielddef.precision && !('precision' in field)) field.precision = fielddef.precision;
+        }
+        //Field Caption from DB Metadata
+        if(_this.Config.system_settings.automatic_schema.metadata_captions){
+          if(coldef.description && !('caption' in field)) field.caption = coldef.description;
+        }
+      }
+      _this.ApplyCustomControlQueries(model, field);
       if ('control' in field) {
         //Parse and apply Custom Controls
         while (base_controls.indexOf(field.control) < 0) {
           if (!(field.control in _this.CustomControls)) throw new Error("Control not defined: " + field.control + " in " + model.id + ": " + JSON.stringify(field));
-          var customcontrol = _this.CustomControls[field.control];
-          for (var prop in customcontrol) {
-            if (!(prop in field)) field[prop] = customcontrol[prop];
-            else if (prop == "controlclass") field[prop] = field[prop] + " " + customcontrol[prop];
-          }
-          if (!('_orig_control' in field)) field['_orig_control'] = [];
-          field._orig_control.push(field.control);
-          field.control = customcontrol.control;
+          _this.ApplyCustomControl(field, field.control);
         }
+        //Apply Custom Controls with Query Expressions
       }
       if (field.name === '') delete field.name;
       //Apply default actions
@@ -484,24 +732,27 @@ exports.ParseEntities = function () {
         if ((field.control == 'html') || (field.control == 'button') || (field.control == 'linkbutton') || (field.control == 'hidden')) field.actions = 'B';
         else {
           if (model.layout=='grid'){
-            if(!model.commitlevel || (model.commitlevel=='none') || !Helper.access(model.actions, 'IU')){
+            if(isReadOnlyGrid){
               //Read-only grid
               field.actions = 'B';
             }
             else {
               //Editable grid
               if(field.key) field.actions = 'B';
+              else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
               else field.actions = 'BIU';
             }
           }
           else if(model.layout=='form'){
-            if(field.key) actions = 'B';
-            else if(!('control' in field)) actions = 'B';
-            else actions = 'BIU';
+            if(field.key) field.actions = 'B';
+            else if(!('control' in field)) field.actions = 'B';
+            else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
+            else field.actions = 'BIU';
           }
           else if(model.layout=='form-m'){
-            if(field.key) actions = 'B';
-            else if(field.foreignkey && !('control' in field)) actions = 'I';
+            if(field.key) field.actions = 'B';
+            else if(field.foreignkey && !('control' in field)) field.actions = 'I';
+            else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
             else field.actions = 'BIU';
           }
           else if(model.layout=='multisel'){
@@ -510,9 +761,10 @@ exports.ParseEntities = function () {
             else field.actions = 'B';
           }
           else if(model.layout=='exec'){
-            if(field.key) actions = 'B';
-            else if(!('control' in field)) actions = 'B';
-            else actions = 'BIU';
+            if(field.key) field.actions = 'B';
+            else if(!('control' in field)) field.actions = 'B';
+            else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
+            else field.actions = 'BIU';
           }
           //_this.LogInit_WARNING('Model ' + model.id + ' Field ' + (field.name || field.caption || JSON.stringify(field)) + ' missing actions - defaulting to "'+field.actions+'"');
         }
@@ -520,6 +772,11 @@ exports.ParseEntities = function () {
       if (!('caption' in field) && ('name' in field)) {
         if (('control' in field) && (field.control == 'hidden')) field.caption = '';
         else field.caption = field.name;
+      }
+      if(model.onecolumn){
+        if((model.layout=='form')||(model.layout=='form-m')){
+          if(!firstfield && ('control' in field)) field.nl = 1;
+        }
       }
       if(!('datatype_config' in field)) field.datatype_config = {};
       if ('name' in field) {
@@ -529,7 +786,6 @@ exports.ParseEntities = function () {
       }
       if (field.key) { 
         field.actions += 'K'; 
-        foundkey = true; 
         if(Helper.access(field.actions, 'F') || field.foreignkey){ _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Key field should not also have foreignkey attribute.'); }
       }
       if ('__REMOVEFIELD__' in field){ 
@@ -677,8 +933,8 @@ exports.ParseEntities = function () {
           }
         }
       }
+      if(field.control && field.actions &&  !field.virtual && Helper.access(field.actions, 'BIUD') && (field.control!='hidden')) firstfield = false;
     });
-    if (!foundkey && (model.layout != 'exec') && !model.unbound && !model.nokey) _this.LogInit_WARNING('Model ' + model.id + ' missing key - use model.unbound or model.nokey properties if this is intentional');
     
     //**DEPRECATED MESSAGES**
     if (model.fields) _.each(model.fields, function (field) {
@@ -810,7 +1066,7 @@ exports.ParseEntities = function () {
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
       'js', 'ejs', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
-      'path', 'component', 'templates', 'db',
+      'path', 'component', 'templates', 'db', 'onecolumn',
       //Report Parameters
       'subheader', 'footerheight', 'headeradd',
     ];
@@ -866,6 +1122,18 @@ exports.ParseEntities = function () {
     //Generate Validators
     _.each(model.fields, function (field) {
       model.xvalidate.AddValidator('_obj.' + field.name, field.caption, field.actions, _this.GetValidatorFuncs(field.validate), field.roles);
+    });
+  });
+
+  var all_lovs = {};
+  _.forOwn(this.Models, function (model) {
+    _.each(model.fields, function (field) {
+      if(field.name){
+        if((field.lov && (field.lov.sql||field.lov.sql2||field.lov.sqlmp||field.lov.sqlselect))||(field.popuplov)){
+          if(!(field.name in all_lovs)) all_lovs[field.name] = [];
+          all_lovs[field.name].push(model.id);
+        }
+      }
     });
   });
 

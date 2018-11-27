@@ -59,6 +59,7 @@ function jsHarmony(config) {
   };
   this.Models = {}; //Do not access this directly - use getModel, hasModel
   this.CustomControls = [];
+  this.CustomControlQueries = {};
   this.Popups = {};
   this.Cache = {};
   this.FontCache = {};
@@ -147,6 +148,9 @@ jsHarmony.prototype.Init = function(init_cb){
       });
     },
     function(cb){
+      _this.LoadDBSchemas(cb);
+    },
+    function(cb){
       //Configure Mailer
       if(!_this.Mailer) _this.Mailer = jsHarmonyMailer(_this.Config.mailer_settings, _this.Log.info);
       return cb();
@@ -222,7 +226,7 @@ jsHarmony.prototype.Run = function(onComplete){
     }, function(){
       //If no module started a server, run the default server
       if(_.isEmpty(_this.Servers)){
-        //Add default listner & server
+        //Add default listener & server
         _this.CreateServer(_this.Config.server, function(server){
           _this.Servers['default'] = server;
           _this.Servers['default'].Run(onComplete);

@@ -75,6 +75,11 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
     if (!_.isString(val)) throw new Error('Invalid sort string');
     if (val.length < 2) throw new Error('Invalid sort string');
     var sortfield = val.substring(1);
+    var lovtxtfield = '';
+    if(sortfield.indexOf('__'+_this.jsh.map.codetxt+'__')==0){
+      var lovtxtfield = sortfield;
+      sortfield = sortfield.substr(_this.jsh.map.codetxt.length + 4);
+    }
     var sortdir = val[0];
     if (sortdir == 'v') sortdir = 'desc';
     else if (sortdir == '^') sortdir = 'asc';
@@ -82,7 +87,9 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
     if (!_.includes(availablesortfieldslist, sortfield)) throw new Error('Invalid sort field ' + sortfield);
     
     var field = _this.getFieldByName(model.fields, sortfield);
-    sortfields.push({ 'field': sortfield, 'dir': sortdir, 'sql': (field.sql_sort || '') });
+    var sortfieldname = sortfield;
+    if(lovtxtfield && field.lov && !field.lov.showcode) sortfieldname = lovtxtfield;
+    sortfields.push({ 'field': sortfieldname, 'dir': sortdir, 'sql': (field.sql_sort || '') });
     
     if (_.includes(unsortedkeys, sortfield)) unsortedkeys = _.without(unsortedkeys, sortfield);
   });

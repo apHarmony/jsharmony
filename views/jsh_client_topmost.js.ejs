@@ -257,6 +257,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           if (typeof xform._oninit != 'undefined') xform._oninit(xform);
         });
         jsh.XForm_Select(function () {
+          jsh.XForms_LayoutOneColumn();
           jsh.XForms_Show();
           jsh.XWindowResize();
           if (enable_save) jsh.$root('.xactions.top .save').show();
@@ -579,6 +580,20 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         //jsh.$root('.xform'+xformid).hide(); 
         //jsh.$root('.xtabcontrol'+xformid).hide(); 
       }
+    });
+  }
+
+  jsh.XForms_LayoutOneColumn = function(){
+    jsh.$root('.xform.onecolumn').each(function(){
+      var jform = $(this);
+      var max_width = 0;
+      jform.find('.leading').each(function(){ 
+        var width = $(this).width(); 
+        if(width > max_width) max_width = width;
+      });
+      jform.find('.leading').each(function(){ 
+        $(this).width(max_width);
+      });
     });
   }
 

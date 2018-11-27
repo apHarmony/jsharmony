@@ -105,6 +105,16 @@ exports = module.exports = function(jsh){
     //Apply formatting
     if ((field.name in _this) && (typeof val == 'undefined')) val = '';
     else val = jsh.XFormat.Apply(field.format, val);
+
+    //Get LOV Txt
+    var lovTxt = '';
+    if(field.showlovtxt){
+      var lovTxtName = '__'+jsh.uimap.codetxt+'__'+field.name;
+      lovTxt = _this[lovTxtName];
+      //Apply formatting
+      if ((lovTxtName in _this) && (typeof lovTxt == 'undefined')) lovTxt = '';
+      else lovTxt = jsh.XFormat.Apply(field.format, lovTxt);
+    }
     
     var fieldselector = '.' + field.name + '.xelem' + modelid;
     if (isGrid) fieldselector = '.' + field.name + '.xelem' + modelid;
@@ -185,7 +195,8 @@ exports = module.exports = function(jsh){
       if (checkhidden) jctrl.css('visibility', 'hidden');
       else if (checkhidden) jctrl.css('visibility', 'visible');
     }
-    else if ((jctrl.size() > 0) && jctrl.hasClass('xform_label')) { 
+    else if ((jctrl.size() > 0) && jctrl.hasClass('xform_label')) {
+      if(lovTxt) val = lovTxt;
       if(jctrl.hasClass('xform_label_static')){
         if(field.value.indexOf('<#')>=0){
           val = field.value;

@@ -141,7 +141,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //xejs.case(condition1,result1,condition2,result2,[catchall_result])
   "reselectafteredit": "row",    "comment1":"row, or blank",
   "newrowposition": "last",      "comment2":"first or last",
-  "commitlevel": "row",          "comment3":"cell, row, page, or none",
+  "commitlevel": "row",          "comment3":"cell, row, page, auto, or none", //auto=(if not editable, "none" - if top-level, "row", if subform "page"
   "validationlevel": "cell",     "comment4":"cell, or row",
   "nogridadd": 1,
   "noresultsmessage":  "No results found %%%FORSEARCHPHRASE%%%",
@@ -151,6 +151,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "grid_save_before_update": 1,
   "duplicate": {"target": "E_DUPLICATE", "bindings": {"E_ID":"E_ID", "C_ID": "C_ID"},"link":"edit:EW&E_ID=NEW_E_ID","link_text": "Duplicate Item"},
   "templates": { "grid": ".xgrid_calendar_template" },
+  "onecolumn": true, //Add newline (nl) after each form field except the first. (form, form-m)  Automatically align width of captions
   "fields": [
     {
       "name": "E_Name",

@@ -96,7 +96,7 @@ AppSrvModel.prototype.GetModel = function (req, res, modelid) {
 
   _this.genClientModel(req, res, modelid, true, null, function(rslt){
     if(_.isString(rslt)){
-      _this.genClientModel(req, res, '_BASE_HTML', true, null, function(model){
+      _this.genClientModel(req, res, '_BASE_HTML_MESSAGE', true, null, function(model){
         model = _.extend(model, { 
           id: modelid, 
           caption: ['',modelid,modelid],
@@ -126,12 +126,13 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
   }
   if (!Helper.HasModelAccess(req, model, 'B'+targetperm)) { return onComplete("<div>You do not have access to this form.</div>"); }
   
+  //Check if the bindings are based on the key value
+  var allConstantBindings = true;
+  _.each(parentBindings, function(value, key){
+    if(typeof jsh.getStaticBinding(value) == 'undefined') allConstantBindings = false;
+  });
   //If insert, and the model has any dynamic bindings, show message that the user needs to save first to edit the data
   if((targetperm=='I') && !Helper.HasModelAccess(req, model, 'I')){
-    var allConstantBindings = true;
-    _.each(parentBindings, function(value, key){
-      if(typeof jsh.getStaticBinding(value) == 'undefined') allConstantBindings = false;
-    });
     if(!allConstantBindings) { return onComplete("<div>Please save to manage "+model.caption[1]+" data.</div>"); }
   }
 
@@ -154,7 +155,18 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
   copyValues(rslt, model, [
     'id', 'layout', 'caption', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onupdate', 'oncommit', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy', 'js', 'hide_system_buttons',
     'popup', 'rowclass', 'rowstyle', 'tabpanelstyle', 'tablestyle', 'formstyle', 'sort', 'querystring', 'disableautoload', 'tabpos', 'templates',
-    'reselectafteredit','newrowposition','commitlevel','validationlevel','nogridadd','grid_expand_filter','grid_rowcount', 'grid_require_filter','grid_save_before_update','noresultsmessage','ejs','css',
+    'reselectafteredit','newrowposition','validationlevel','nogridadd','grid_expand_filter','grid_rowcount', 'grid_require_filter','grid_save_before_update','noresultsmessage','ejs','css','onecolumn',
+    //Commit Level
+    function(){
+      if(model.commitlevel){
+        if(model.commitlevel=='auto'){
+          if(!Helper.HasModelAccess(req, model, 'IUD')) rslt.commitlevel = 'none';
+          else if(topmost) rslt.commitlevel = 'row';
+          else rslt.commitlevel = 'page';
+        }
+        else rslt.commitlevel = model.commitlevel;
+      }
+    },
     //Add Bindings
     function() {
       if(parentBindings) rslt.bindings = parentBindings;
@@ -478,9 +490,9 @@ AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, onComplete) 
         'sortclass', 'link_onclick'
       ]);
     }
-    if ('lov' in srcfield) {
+    if (srcfield.lov) {
       dstfield.lov = {};
-      copyValues(dstfield.lov, srcfield.lov, ['parent','parents','blank']);
+      copyValues(dstfield.lov, srcfield.lov, ['parent','parents','blank','showcode']);
       if (('UCOD2' in srcfield.lov) || ('sql2' in srcfield.lov)) dstfield.lov.duallov = 1;
       else if ('sqlmp' in srcfield.lov) dstfield.lov.multilov = 1;
     }

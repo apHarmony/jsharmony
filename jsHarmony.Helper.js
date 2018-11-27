@@ -481,11 +481,10 @@ exports.LogInit = function(severity, msg) {
   var _this = this;
   if ((this.Config.debug_params.jsh_error_level & severity) > 0) {
     switch (severity) {
-      case _ERROR: console.log("ERROR: " + msg); break;
+      case _ERROR:{ console.log("ERROR: " + msg); this.SystemErrors.push(msg); break; }
       case _WARNING: console.log("WARNING: " + msg); break;
       default: _this.Log.info(msg); break;
     }
-    this.SystemErrors.push(msg);
   }
 }
 exports.LogInit_ERROR = function(msg){ return this.LogInit(_ERROR, msg); }

@@ -14,7 +14,7 @@
 var lovfield = '';
 for(var i=0;i<model.fields.length;i++){ 
   var field = model.fields[i];
-  if('lov' in field){ 
+  if(field.lov){ 
     if(lovfield != '') throw new Error('Can only have one LOV per Multisel.');
     lovfield = field.name; 
   }

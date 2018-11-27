@@ -35,7 +35,7 @@ exports = module.exports = function(jsh){
       _.each(model.Fields, function (field) {
         if (jsh.XExt.HasAccess(field.actions, 'BS') && !field.disable_search) {
           var comparison_type = 'none';
-          if ('lov' in field) comparison_type = 'lov';
+          if (field.lov) comparison_type = 'lov';
           else if ('type' in field) {
             if ((field.type == 'varchar') || (field.type == 'char') || (field.type == 'binary')) comparison_type = 'string';
             else if (_.includes(['bigint', 'int', 'smallint', 'tinyint', 'decimal', 'float', 'time'], field.type)) comparison_type = 'numeric';

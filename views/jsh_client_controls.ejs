@@ -18,6 +18,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 var dflt_captionstyle = "";
+var leadingfield = true;
 for(var i=0;i<model.fields.length;i++){ 
   var field = model.fields[i];
   if(!('control' in field)) continue; if(!('virtual' in field && field.virtual) && (!('actions' in field) || (field.actions == ''))) continue;
@@ -25,13 +26,13 @@ for(var i=0;i<model.fields.length;i++){
      ('captionstyle' in field) && (field.captionstyle != "") && (dflt_captionstyle == "")){
     dflt_captionstyle = field.captionstyle;
   }  
-  if(('nl' in field) && (field.control!='hidden')){ %><br/><% }
+  if(('nl' in field) && (field.control!='hidden')){ leadingfield = true; %><br/><% }
   if(('caption' in field) && (field.control!='subform') && (field.caption.length > 0) && (field.control!='hidden')) { 
     if(('nl' in field) && !('captionstyle' in field) && (dflt_captionstyle != "")){ 
-      %><div class="xform_caption <%=field.captionclass%>" style="<%=dflt_captionstyle%>"><%-xejs.escapeHTMLN(field.caption+((field.caption != '')?': ':''))%></div><%
+      %><div class="xform_caption <%=field.captionclass%> <%=xejs.iif(leadingfield,'leading')%>" style="<%=dflt_captionstyle%>"><%-xejs.escapeHTMLN(field.caption+((field.caption != '')?': ':''))%></div><%
 	  }
     else {
-      %><div class="xform_caption <%=field.captionclass%>" style="<%=field.captionstyle%>"><%-xejs.escapeHTMLN(field.caption+((field.caption != '')?': ':''))%></div><%
+      %><div class="xform_caption <%=field.captionclass%> <%=xejs.iif(leadingfield,'leading')%>" style="<%=field.captionstyle%>"><%-xejs.escapeHTMLN(field.caption+((field.caption != '')?': ':''))%></div><%
 	  }  
   }
   var maxlength = XExt.getMaxLength(field);
@@ -117,5 +118,6 @@ for(var i=0;i<model.fields.length;i++){
     <%
   }
   if('eol' in field){ %><br/><% }
+  if(field.control!='hidden'){ leadingfield = false; }
 } 
 %>
