@@ -192,6 +192,159 @@ CUSTOM CONTROL STYLES
 <%-rootcss%> .xform_button { border:1px solid transparent; }
 <%-rootcss%> .xform_button.highlighted { background-color:yellow; border:1px dashed #666; }
 
+/***************************
+MENU STYLES
+***************************/
+<%-rootcss%> .xmenu {
+	padding-top:34px;
+	padding-left:370px;
+  min-height:60px;
+}
+<%-rootcss%> .xmenu a{
+	font-family: 'PT Sans', arial, helvetica, sans-serif;
+	color:#ffffff;
+	text-decoration:none;
+	font-size:15px;
+	display:inline-block;
+	padding:14px 8px 28px 8px;
+	position:relative;
+	margin-right:7px;
+	margin-left:7px;
+}
+<%-rootcss%> .xmenu a:hover{
+	text-decoration:underline;
+}
+<%-rootcss%> .xmenu a .bottom{
+	display:none;
+}
+<%-rootcss%> .xmenu a.selected{
+/*	color:#000000;*/
+	background-image:url('<%-req.jshsite.publicurl%>images/menu_highlight_triangle.png');
+	background-repeat:no-repeat;
+	background-position:bottom center;
+}
+<%-rootcss%> .xmenu a.selected:hover{
+	text-decoration:none;
+}
+<%-rootcss%> .xmenu a.selected .bottom{
+	background-image:url('<%-req.jshsite.publicurl%>images/menu_highlight_bl.png');
+	width:6px;
+	height:10px;
+	display:block;
+	position:absolute;
+	top:52px;
+	left:-6px;
+}
+<%-rootcss%> .xmenu a.xmenu_more {
+  display:none;
+  position:absolute;
+  right:0px;
+  top:5px;
+  padding:0 0 0 2px;
+  background-image:url('<%-req.jshsite.publicurl%>images/menu_divider.png');
+  background-repeat:repeat-y;
+  margin-left:0px;
+}
+<%-rootcss%> .xmenu_more_bg {
+  padding:43px 20px 18px 26px;
+  background-image:url('<%-req.jshsite.publicurl%>images/top.png');
+  background-position-y:-5px;
+  background-repeat:repeat-x;
+}
+<%-rootcss%> a.xmenu_more img {
+  position:relative;
+  top:-1px;
+  padding-left:4px;
+}
+<%-rootcss%> .xmenuside {
+  display:none;
+  position:absolute;
+  top:84px;
+  right:0px;
+  z-index:9999;
+}
+<%-rootcss%> .xmenuside a{
+  background-image:url('<%-req.jshsite.publicurl%>images/menu_side_bg.png');
+  text-align:center;
+  height:26px;
+  color:white;
+  display:block;
+  padding:6px 35px 0px 35px;
+  font-family: 'PT Sans', arial, helvetica, sans-serif;
+	color:#ffffff;
+	text-decoration:none;
+	font-size:15px;
+}
+<%-rootcss%> .xmenuside a:hover{
+  text-decoration:underline;
+}
+<%-rootcss%> .xmenuside a.selected {
+  color:#fff;
+	background-image:url('<%-req.jshsite.publicurl%>images/menu_highlight_bg.png');
+  height:25px;
+  padding-top:7px;
+}
+/* SUBMENU */
+<%-rootcss%> .xsubmenu{
+	padding-left:26px;
+  position:relative;
+}
+<%-rootcss%> .xsubmenu div { display:inline-block; }
+<%-rootcss%> .xsubmenu .head{
+	font-weight:bold;
+	padding-right:6px;
+}
+<%-rootcss%> .xsubmenu a {
+	font-family: 'PT Sans', arial, helvetica, sans-serif;
+	color:#202020;
+	text-decoration:none;
+  display:inline-block;
+}
+<%-rootcss%> .xsubmenu a.selected {
+  border-bottom:2px solid #777;
+  padding-bottom:2px;
+}
+<%-rootcss%> .xsubmenu a:hover {
+	text-decoration:underline;
+}
+<%-rootcss%> .xsubmenu .xsubmenu_more {
+  position:absolute;
+  display:block;
+  top:-8px;
+  right:0px;
+  padding:7px 29px 0 29px;
+  background-color:#eeeeee;
+  border-left:1px solid #777;
+  border-right:1px solid #777;
+  height:23px;
+  z-index:2;
+}
+<%-rootcss%> .xsubmenuside {
+  position:absolute;
+  top:117px;
+  right:0px;
+  z-index:9998;
+}
+<%-rootcss%> .xsubmenuside a {
+  background-color:#eeeeee;
+  text-align:left;
+  font-family: 'PT Sans', arial, helvetica, sans-serif;
+	color:#202020;
+	text-decoration:none;
+  display:block;
+  padding:6px 16px 5px 16px;
+  font-size:13px;
+  border-bottom:1px solid #777;
+  border-right:1px solid #777;
+  border-left:1px solid #777;
+}
+<%-rootcss%> .xsubmenuside a.selected {
+	border-left:6px solid #777;
+}
+<%-rootcss%> .xsubmenuside a:hover {
+	text-decoration:underline;
+}
+
 /*
 ================
 PRINT STYLESHEET
@@ -204,4 +357,6 @@ PRINT STYLESHEET
   }
   <%-rootcss%> .xbody { padding:20px 0 0 15px; }
   <%-rootcss%> .xtbl thead th a { color:#000000; }
+  <%-rootcss%> .xmenu { display:none !important; }
+  <%-rootcss%> .xsubmenu { display:none !important; }
 }

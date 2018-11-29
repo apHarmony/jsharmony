@@ -339,26 +339,53 @@ jsHarmony.prototype.InitXFileUpload = function () {
     </div>');
 };
 
-jsHarmony.prototype.SelectTopMenu = function (menuid) {
+jsHarmony.prototype.SelectTopMenu = function (selectedmenu) {
   var _this = this;
-  if(!menuid) menuid = '';
+  if(!selectedmenu) selectedmenu = '';
   //Get top menu item
-  if(_.isArray(menuid)) menuid = menuid[0];
-  //Select top menu item
-  _this.$root('.xmenu').children('a').each(function (i, obj) {
-    var jobj = $(obj);
-    var jsideobj = _this.$root('.side'+jobj.data('id'));
-    if (jobj.hasClass('menu_' + String(menuid).toUpperCase())) {
-      if (!jobj.hasClass('selected')) jobj.addClass('selected');
-      if (!jsideobj.hasClass('selected')) jsideobj.addClass('selected');
+  if(!_.isString && _.isArray(selectedmenu)) selectedmenu = selectedmenu[selectedmenu.length-1];
+  selectedmenu = (selectedmenu||'').toString().toUpperCase();
+
+  //Find item
+  var jsubmenuitem = _this.$root('.xsubmenu .xsubmenuitem_'+selectedmenu).first();
+  var jmenuitem = null;
+  var submenuid = '';
+  var menuid = '';
+  if(jsubmenuitem.length){
+    submenuid = selectedmenu;
+    menuid = jsubmenuitem.closest('.xsubmenu').data('parent');
+    jmenuitem = _this.$root('.xmenu .xmenuitem_'+menuid).first();
+  }
+  else{
+    jsubmenuitem = null;
+    jmenuitem = _this.$root('.xmenu .xmenuitem_'+selectedmenu).first();
+    if(jmenuitem.length){
+      menuid = selectedmenu;
     }
-    else {
-      if (jobj.hasClass('selected')) jobj.removeClass('selected');
-      if (jsideobj.hasClass('selected')) jsideobj.removeClass('selected');
+    else{
+      jmenuitem = null;
     }
-  });
-  //Deal with xmenuside
+  }
+
+  //Render submenu
   this.XMenu.XSubMenuInit(menuid);
+
+  var jmenusideitem = null;
+  if(menuid) jmenusideitem = _this.$root('.xmenuside .xmenusideitem_'+menuid);
+
+  var jsubmenusideitem = null;
+  if(submenuid) jsubmenusideitem = _this.$root('.xsubmenuside .xsubmenusideitem_'+submenuid);
+
+  _this.$root('.xmenu .xmenuitem').not(jmenuitem).removeClass('selected');
+  _this.$root('.xmenuside .xmenusideitem').not(jmenusideitem).removeClass('selected');
+  if (jmenuitem && !jmenuitem.hasClass('selected')) jmenuitem.addClass('selected');
+  if (jmenusideitem && !jmenusideitem.hasClass('selected')) jmenusideitem.addClass('selected');
+
+  _this.$root('.xsubmenu .xsubmenuitem').not(jsubmenuitem).removeClass('selected');
+  _this.$root('.xsubmenuside .xsubmenusideitem').not(jsubmenusideitem).removeClass('selected');
+  if (jsubmenuitem && !jsubmenuitem.hasClass('selected')) jsubmenuitem.addClass('selected');
+  if (jsubmenusideitem && !jsubmenusideitem.hasClass('selected')) jsubmenusideitem.addClass('selected');
+  
 };
 
 jsHarmony.prototype.requireHTML5 = function(){

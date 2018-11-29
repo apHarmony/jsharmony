@@ -97,7 +97,7 @@ exports.getJSLocals = function(req){
 exports.RenderEJS = function(view,ejsparams){
   var _this = this;
   if(!ejsparams) ejsparams = {};
-  if(!('ejsparrams' in ejsparams)) ejsparams.ejsparams = ejsparams;
+  if(!('ejsparams' in ejsparams)) ejsparams.ejsparams = ejsparams;
   return ejs.render(_this.getEJS(view),ejsparams);
 }
 

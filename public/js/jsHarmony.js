@@ -399,6 +399,10 @@ process.off = noop;
 process.removeListener = noop;
 process.removeAllListeners = noop;
 process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) { return [] }
 
 process.binding = function (name) {
     throw new Error('process.binding is not supported');
@@ -4075,7 +4079,7 @@ exports = module.exports = function(jsh){
       if (xmenuside.size() > 0) {
         for (var i = 0; i < XMenuItems.length; i++) {
           var xmenuitem = XMenuItems[i];
-          var htmlobj = '<a href="' + xmenuitem.attr('href') + '" onclick="' + xmenuitem.attr('onclick') + '" class="side' + xmenuitem.data('id') + ' ' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
+          var htmlobj = '<a href="' + xmenuitem.attr('href') + '" onclick="' + xmenuitem.attr('onclick') + '" class="xmenusideitem xmenusideitem_' + xmenuitem.data('id') + ' ' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
           xmenuside.append(htmlobj);
         }
       }
@@ -4140,7 +4144,7 @@ exports = module.exports = function(jsh){
           if(link_onclick){
             link_onclick = 'onclick="'+jsh.getInstance()+'.$root(\'.xsubmenuside\').hide(); ' + link_onclick + '"';
           }
-          var htmlobj = '<a href="' + xsubmenuitem.attr('href') + '" ' + link_onclick + ' class="' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
+          var htmlobj = '<a href="' + xsubmenuitem.attr('href') + '" ' + link_onclick + ' class="xsubmenusideitem xsubmenusideitem_' + xsubmenuitem.data('id') + ' ' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
           xsubmenuside.append(htmlobj);
         }
       }
@@ -15794,26 +15798,53 @@ jsHarmony.prototype.InitXFileUpload = function () {
     </div>');
 };
 
-jsHarmony.prototype.SelectTopMenu = function (menuid) {
+jsHarmony.prototype.SelectTopMenu = function (selectedmenu) {
   var _this = this;
-  if(!menuid) menuid = '';
+  if(!selectedmenu) selectedmenu = '';
   //Get top menu item
-  if(_.isArray(menuid)) menuid = menuid[0];
-  //Select top menu item
-  _this.$root('.xmenu').children('a').each(function (i, obj) {
-    var jobj = $(obj);
-    var jsideobj = _this.$root('.side'+jobj.data('id'));
-    if (jobj.hasClass('menu_' + String(menuid).toUpperCase())) {
-      if (!jobj.hasClass('selected')) jobj.addClass('selected');
-      if (!jsideobj.hasClass('selected')) jsideobj.addClass('selected');
+  if(!_.isString && _.isArray(selectedmenu)) selectedmenu = selectedmenu[selectedmenu.length-1];
+  selectedmenu = (selectedmenu||'').toString().toUpperCase();
+
+  //Find item
+  var jsubmenuitem = _this.$root('.xsubmenu .xsubmenuitem_'+selectedmenu).first();
+  var jmenuitem = null;
+  var submenuid = '';
+  var menuid = '';
+  if(jsubmenuitem.length){
+    submenuid = selectedmenu;
+    menuid = jsubmenuitem.closest('.xsubmenu').data('parent');
+    jmenuitem = _this.$root('.xmenu .xmenuitem_'+menuid).first();
+  }
+  else{
+    jsubmenuitem = null;
+    jmenuitem = _this.$root('.xmenu .xmenuitem_'+selectedmenu).first();
+    if(jmenuitem.length){
+      menuid = selectedmenu;
     }
-    else {
-      if (jobj.hasClass('selected')) jobj.removeClass('selected');
-      if (jsideobj.hasClass('selected')) jsideobj.removeClass('selected');
+    else{
+      jmenuitem = null;
     }
-  });
-  //Deal with xmenuside
+  }
+
+  //Render submenu
   this.XMenu.XSubMenuInit(menuid);
+
+  var jmenusideitem = null;
+  if(menuid) jmenusideitem = _this.$root('.xmenuside .xmenusideitem_'+menuid);
+
+  var jsubmenusideitem = null;
+  if(submenuid) jsubmenusideitem = _this.$root('.xsubmenuside .xsubmenusideitem_'+submenuid);
+
+  _this.$root('.xmenu .xmenuitem').not(jmenuitem).removeClass('selected');
+  _this.$root('.xmenuside .xmenusideitem').not(jmenusideitem).removeClass('selected');
+  if (jmenuitem && !jmenuitem.hasClass('selected')) jmenuitem.addClass('selected');
+  if (jmenusideitem && !jmenusideitem.hasClass('selected')) jmenusideitem.addClass('selected');
+
+  _this.$root('.xsubmenu .xsubmenuitem').not(jsubmenuitem).removeClass('selected');
+  _this.$root('.xsubmenuside .xsubmenusideitem').not(jsubmenusideitem).removeClass('selected');
+  if (jsubmenuitem && !jsubmenuitem.hasClass('selected')) jsubmenuitem.addClass('selected');
+  if (jsubmenusideitem && !jsubmenusideitem.hasClass('selected')) jsubmenusideitem.addClass('selected');
+  
 };
 
 jsHarmony.prototype.requireHTML5 = function(){
@@ -22610,43 +22641,21 @@ exports.cache = {
 
 },{}],27:[function(require,module,exports){
 module.exports={
-  "_args": [
-    [
-      {
-        "raw": "ejs@2.6.1",
-        "scope": null,
-        "escapedName": "ejs",
-        "name": "ejs",
-        "rawSpec": "2.6.1",
-        "spec": "2.6.1",
-        "type": "version"
-      },
-      "C:\\wk\\jsharmony"
-    ]
-  ],
   "_from": "ejs@2.6.1",
   "_id": "ejs@2.6.1",
-  "_inCache": true,
+  "_inBundle": false,
+  "_integrity": "sha512-0xy4A/twfrRCnkhfk8ErDi5DqdAsAqeGxht4xkCUrsvhhbQNs7E+4jV0CN7+NKIY0aHE72+XvqtBIXzD31ZbXQ==",
   "_location": "/ejs",
-  "_nodeVersion": "8.9.4",
-  "_npmOperationalInternal": {
-    "host": "s3://npm-registry-packages",
-    "tmp": "tmp/ejs_2.6.1_1525546345882_0.354144762200554"
-  },
-  "_npmUser": {
-    "name": "mde",
-    "email": "mde@fleegix.org"
-  },
-  "_npmVersion": "5.6.0",
   "_phantomChildren": {},
   "_requested": {
+    "type": "version",
+    "registry": true,
     "raw": "ejs@2.6.1",
-    "scope": null,
-    "escapedName": "ejs",
     "name": "ejs",
+    "escapedName": "ejs",
     "rawSpec": "2.6.1",
-    "spec": "2.6.1",
-    "type": "version"
+    "saveSpec": null,
+    "fetchSpec": "2.6.1"
   },
   "_requiredBy": [
     "#USER",
@@ -22654,7 +22663,6 @@ module.exports={
   ],
   "_resolved": "https://registry.npmjs.org/ejs/-/ejs-2.6.1.tgz",
   "_shasum": "498ec0d495655abc6f23cd61868d926464071aa0",
-  "_shrinkwrap": null,
   "_spec": "ejs@2.6.1",
   "_where": "C:\\wk\\jsharmony",
   "author": {
@@ -22665,6 +22673,7 @@ module.exports={
   "bugs": {
     "url": "https://github.com/mde/ejs/issues"
   },
+  "bundleDependencies": false,
   "contributors": [
     {
       "name": "Timothy Gu",
@@ -22673,6 +22682,7 @@ module.exports={
     }
   ],
   "dependencies": {},
+  "deprecated": false,
   "description": "Embedded JavaScript templates",
   "devDependencies": {
     "browserify": "^13.1.1",
@@ -22685,15 +22695,6 @@ module.exports={
     "mocha": "^5.0.5",
     "uglify-js": "^3.3.16"
   },
-  "directories": {},
-  "dist": {
-    "integrity": "sha512-0xy4A/twfrRCnkhfk8ErDi5DqdAsAqeGxht4xkCUrsvhhbQNs7E+4jV0CN7+NKIY0aHE72+XvqtBIXzD31ZbXQ==",
-    "shasum": "498ec0d495655abc6f23cd61868d926464071aa0",
-    "tarball": "https://registry.npmjs.org/ejs/-/ejs-2.6.1.tgz",
-    "fileCount": 10,
-    "unpackedSize": 120006,
-    "npm-signature": "-----BEGIN PGP SIGNATURE-----\r\nVersion: OpenPGP.js v3.0.4\r\nComment: https://openpgpjs.org\r\n\r\nwsFcBAEBCAAQBQJa7f1qCRA9TVsSAnZWagAAhNAQAJzOG4316d2XzOX25knk\nTRhCBHHyFNO4XGZwaomJ3PDugWunW/95FBU96qd9GHpntJO4BU8HSmhUzaRA\nHLQW5Y08NMbsY8vh3cyCKpPSfYuABdpj2OxL5g7z31dsAjg8M94J0AACyggH\np0WGMtB0knMw9fBUfNvDkKgoYXXmlQ3vSNDWzWS1Mkh2z6GzfwEulyq3OJLP\nb2KhHvcZK3/xxrJF6XODrIA9XPf3G0hZw5PMQ8Mjwi3KGrJuG73U7muzy/xm\nOF7KojEOgryZpaG/lQWdedY8YTj8nKFa3KHrKEazywbReV8mpGk0N5D2sIbT\nKgu0txWGxMaGzGcVRMPHHu2eofftpSjqrTU4dbFUBjG8KfV5fb8S5hwTNOzJ\nNHJZvdoBTn+vGXvEDTkmXz9gm/Z8iEtB2wj+lP6mvgezVLQm8HJvkoJ2tkrC\ndQMH/aX5f9/ySKLwWtz7Y8u3eXeUIJEqCh2zoAHwJ05lAbVoZF6mhyx93fac\naoq6BkboQhONOPPI9CQSvy3MFS97+cMjRkOTXS0IzXhwP89DWpv0Pcb5mXcP\nkL45APf4XNUnYclNmSSYm9Y+AvufISSZYyTH0+UTwDY9bckAcRO2ZWv86Jo5\noOkyXF3PxZVUnRyMjuTl9+gHwOAraWooaAzKGY8+RBTQzdYthoy1om+Dxyke\n/uID\r\n=nnYW\r\n-----END PGP SIGNATURE-----\r\n"
-  },
   "engines": {
     "node": ">=0.10.0"
   },
@@ -22705,15 +22706,7 @@ module.exports={
   ],
   "license": "Apache-2.0",
   "main": "./lib/ejs.js",
-  "maintainers": [
-    {
-      "name": "mde",
-      "email": "mde@fleegix.org"
-    }
-  ],
   "name": "ejs",
-  "optionalDependencies": {},
-  "readme": "ERROR: No README data found!",
   "repository": {
     "type": "git",
     "url": "git://github.com/mde/ejs.git"
