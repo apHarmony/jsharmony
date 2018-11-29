@@ -47,7 +47,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //If the title is not set, the caption will be used.  If the caption is not set, the model ID will be used
     //The topmost form's title will be used in the window title
     //If the title is set to blank on a tabbed form, the current tab's title will be used for the window title
-  "topmenu": "clients",
+  "menu": "clients",  //Can be set to either the top menu id or submenu id
   "actions": "B", //B,BI,BIU,BD,BID,BIUD
   "roles": { "X_X": "*", "X_B": "B" }, //By default, only SYSADMIN & DEV have access.  Permissions only assigned to "main" site, not "client" site
   "roles": 

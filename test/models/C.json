@@ -6,7 +6,7 @@
   "actions": "BIUD", 
   "roles": {"BROWSE":"B"},
   "caption": [ "", "Customer", "Customers" ],
-  "topmenu": "clients",
+  "menu": "clients",
 	"popup":[1000,650],
   "fields": [
     {"name":"c_sts","type":"varchar","length":8,"actions":"BIU","control":"dropdown",

@@ -213,7 +213,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
       jsh.$root('.toplink_help').not('.static').attr('href',model.helpurl);
       jsh.$root('.toplink_help').not('.static').attr('onclick',model.helpurl_onclick);
-      if(model.topmenu){ jsh.SelectTopMenu(model.topmenu); }
+      if(model.menu){ jsh.XMenu.Select(model.menu); }
       jsh.ResetLinks();
       jsh.trigger('jsh_ready');
       return;
@@ -250,8 +250,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var ahash = a.hash;
     var amodelid = '';
 
-    if(!$(a).hasClass('xmenu_more')) jsh.$root('.xmenuside').hide();
-    if(!$(a).hasClass('xsubmenu_more')) jsh.$root('.xsubmenuside').hide();
+    jsh.HidePopups(a);
 
     if(apath.indexOf(jsh._BASEURL)==0) apath = apath.substr(jsh._BASEURL.length);
     if(apath.indexOf('_report/')==0) amodelid = '_report_'+apath.substr(8);

@@ -53,6 +53,13 @@ var jsHarmony = function(options){
   if(!options) options = {};
   var _this = this;
 
+  //Events
+  this.onRefreshLayout = [];
+  this.RefreshLayout = function(){ _this.XExt.trigger(_this.onRefreshLayout); }
+
+  this.onHidePopups = [];
+  this.HidePopups = function(obj){ _this.XExt.trigger(_this.onHidePopups, obj); }
+
   //Options
   this.forcequery = {};
   this._BASEURL = '/';
@@ -106,7 +113,6 @@ var jsHarmony = function(options){
   this.mouseDown = false;
   this.last_clicked_time = undefined;
   this.last_clicked = undefined;
-  this.curSubMenu = '';
   this.DEFAULT_DATEFORMAT = 'mm/dd/yy';
   this.onPaymentProxyComplete = function(){};
 
@@ -215,6 +221,7 @@ jsHarmony.prototype.Init = function(){
     }
   });
   _this.InitDialogs();
+  _this.XMenu.Init();
   $(document).mousemove(function (e) {
     _this.mouseX = e.pageX;
     _this.mouseY = e.pageY;
@@ -274,7 +281,7 @@ jsHarmony.prototype.XWindowResize = function (source) {
     this.$root('.xbodyhead').css('max-width', bodyhead_width + 'px');
   }
   this.XDialogResize(source, params);
-  this.XMenu.XMenuResize();
+  this.RefreshLayout();
 }
 jsHarmony.prototype.XDialogResize = function (source, params) {
   this.$root('.xdialogblock').css('width', params.pw + 'px');
@@ -337,55 +344,6 @@ jsHarmony.prototype.InitXFileUpload = function () {
       </div></div>\
       <iframe id="'+this.getInstance()+'_xfileproxy" name="'+this.getInstance()+'_xfileproxy" src="about:blank" style="width:0;height:0;border:0px solid #fff;"></iframe>\
     </div>');
-};
-
-jsHarmony.prototype.SelectTopMenu = function (selectedmenu) {
-  var _this = this;
-  if(!selectedmenu) selectedmenu = '';
-  //Get top menu item
-  if(!_.isString && _.isArray(selectedmenu)) selectedmenu = selectedmenu[selectedmenu.length-1];
-  selectedmenu = (selectedmenu||'').toString().toUpperCase();
-
-  //Find item
-  var jsubmenuitem = _this.$root('.xsubmenu .xsubmenuitem_'+selectedmenu).first();
-  var jmenuitem = null;
-  var submenuid = '';
-  var menuid = '';
-  if(jsubmenuitem.length){
-    submenuid = selectedmenu;
-    menuid = jsubmenuitem.closest('.xsubmenu').data('parent');
-    jmenuitem = _this.$root('.xmenu .xmenuitem_'+menuid).first();
-  }
-  else{
-    jsubmenuitem = null;
-    jmenuitem = _this.$root('.xmenu .xmenuitem_'+selectedmenu).first();
-    if(jmenuitem.length){
-      menuid = selectedmenu;
-    }
-    else{
-      jmenuitem = null;
-    }
-  }
-
-  //Render submenu
-  this.XMenu.XSubMenuInit(menuid);
-
-  var jmenusideitem = null;
-  if(menuid) jmenusideitem = _this.$root('.xmenuside .xmenusideitem_'+menuid);
-
-  var jsubmenusideitem = null;
-  if(submenuid) jsubmenusideitem = _this.$root('.xsubmenuside .xsubmenusideitem_'+submenuid);
-
-  _this.$root('.xmenu .xmenuitem').not(jmenuitem).removeClass('selected');
-  _this.$root('.xmenuside .xmenusideitem').not(jmenusideitem).removeClass('selected');
-  if (jmenuitem && !jmenuitem.hasClass('selected')) jmenuitem.addClass('selected');
-  if (jmenusideitem && !jmenusideitem.hasClass('selected')) jmenusideitem.addClass('selected');
-
-  _this.$root('.xsubmenu .xsubmenuitem').not(jsubmenuitem).removeClass('selected');
-  _this.$root('.xsubmenuside .xsubmenusideitem').not(jsubmenusideitem).removeClass('selected');
-  if (jsubmenuitem && !jsubmenuitem.hasClass('selected')) jsubmenuitem.addClass('selected');
-  if (jsubmenusideitem && !jsubmenusideitem.hasClass('selected')) jsubmenusideitem.addClass('selected');
-  
 };
 
 jsHarmony.prototype.requireHTML5 = function(){

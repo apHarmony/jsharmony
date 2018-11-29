@@ -1227,6 +1227,30 @@ exports = module.exports = function(jsh){
     jsh.XPost.prototype.XExecute('../_token', {}, onComplete, onFail);
   }
 
+  XExt.triggerAsync = function(handlers, cb /*, param1, param2 */){
+    if(!cb) cb = function(){ };
+    if(!handlers) handlers = [];
+    if(!_.isArray(handlers)) handlers = [handlers];
+    var params = [];
+    if(arguments.length > 2) params = Array.prototype.slice.call(arguments, 2);
+    //Run handlers
+    jsh.async.eachSeries(handlers, function(handler, handler_cb){
+      var hparams = [handler_cb].concat(params);
+      handler.apply(null, hparams);
+    }, cb);
+  }
+
+  XExt.trigger = function(handlers /*, param1, param2 */){
+    if(!handlers) handlers = [];
+    if(!_.isArray(handlers)) handlers = [handlers];
+    var params = [];
+    if(arguments.length > 1) params = Array.prototype.slice.call(arguments, 1);
+    //Run handlers
+    _.each(handlers, function(handler){
+      handler.apply(null, params);
+    });
+  }
+
   /*************************/
   /* Form Helper Functions */
   /*************************/

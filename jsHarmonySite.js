@@ -80,7 +80,7 @@ function jsHarmonySite(id, config){
   this.menu = function(req,res,jsh,params,onComplete){ 
     params.showlisting = true; 
     params.startmodel = null;
-    params.menudata = { }; 
+    params.menudata = { MainMenu:[], SubMenus:{}  }; 
     onComplete(); 
   }
   //Global parameters sent to the client front-end

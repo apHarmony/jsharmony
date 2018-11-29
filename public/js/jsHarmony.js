@@ -399,10 +399,6 @@ process.off = noop;
 process.removeListener = noop;
 process.removeAllListeners = noop;
 process.emit = noop;
-process.prependListener = noop;
-process.prependOnceListener = noop;
-
-process.listeners = function (name) { return [] }
 
 process.binding = function (name) {
     throw new Error('process.binding is not supported');
@@ -3090,6 +3086,30 @@ exports = module.exports = function(jsh){
     jsh.XPost.prototype.XExecute('../_token', {}, onComplete, onFail);
   }
 
+  XExt.triggerAsync = function(handlers, cb /*, param1, param2 */){
+    if(!cb) cb = function(){ };
+    if(!handlers) handlers = [];
+    if(!_.isArray(handlers)) handlers = [handlers];
+    var params = [];
+    if(arguments.length > 2) params = Array.prototype.slice.call(arguments, 2);
+    //Run handlers
+    jsh.async.eachSeries(handlers, function(handler, handler_cb){
+      var hparams = [handler_cb].concat(params);
+      handler.apply(null, hparams);
+    }, cb);
+  }
+
+  XExt.trigger = function(handlers /*, param1, param2 */){
+    if(!handlers) handlers = [];
+    if(!_.isArray(handlers)) handlers = [handlers];
+    var params = [];
+    if(arguments.length > 1) params = Array.prototype.slice.call(arguments, 1);
+    //Run handlers
+    _.each(handlers, function(handler){
+      handler.apply(null, params);
+    });
+  }
+
   /*************************/
   /* Form Helper Functions */
   /*************************/
@@ -4040,31 +4060,90 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var $ = require('./jquery-1.11.2');
+var _ = require('lodash');
 
 exports = module.exports = function(jsh){
 
+  //------------------------
+  //XMenu :: Menu Controller
+  //------------------------
   var XMenu = function(){ }
+  XMenu.Menus = {};      //Menu Instances
+  XMenu.Interfaces = {}; //Menu Interfaces (ex. horizontal)
+  XMenu.Init = function(){
+    var _this = this;
+    for(var menuType in _this.Interfaces){
+      if(menuType in _this.Menus) continue;
 
-  var XMenuItems = [];
-  var XMenuLeft = 0;
-  var XMenuMoreWidth = 0;
+      var interface = _this.Interfaces[menuType];
+      if(interface.isActive && interface.isActive()){
+        var object = new interface();
+        object.Init();
+        _this.Menus[menuType] = object;
+      }
+    }
+  }
+  XMenu.Select = function(selectedmenu){
+    var _this = this;
+    for(var menuType in _this.Menus){
+      _this.Menus[menuType].Select(selectedmenu);
+    }
+  }
 
-  var XSubMenuItems = [];
-  var XSubMenuLeft = 0;
-  var XSubMenuMoreWidth = 0;
-  var curSubMenuSel = '';
+  //-----------------------------
+  //XMenuBase :: Menu Base Object
+  //-----------------------------
+  var XMenuBase = function(){
+    this.isInitialized = false;
+  }
+  XMenuBase.prototype.Init = function(){
+    var _this = this;
+    if(this.isInitialized) return false;
 
-  var isXMenuInit = false;
-  
-  function XMenuInit() {
-    if (isXMenuInit) return;
+    //Register into global RefreshLayout function
+    jsh.onRefreshLayout.push(function(){ _this.RefreshLayout(); });
+    //Register into global HidePopups function
+    jsh.onHidePopups.push(function(obj){ _this.HidePopups(obj); });
+
+    this.isInitialized = true;
+    return true;
+  }
+  XMenuBase.prototype.Select = function(selectedmenu){ }
+  XMenuBase.isActive = function(){ return false; }   //Must be implemented for each Menu Type - not a prototype function
+  XMenuBase.prototype.RefreshLayout = function(){ }
+  XMenuBase.prototype.HidePopups = function(){ }
+
+  //-----------------------------------------------------------------
+  //XMenuHorizontal :: Menu Implementation for Horizontal Menu System
+  //-----------------------------------------------------------------
+  var XMenuHorizontal = function(){
+    this.MenuItems = [];       //Top Menu items
+    this.MenuOverhang = 0;     //How much the full menu would exceed window dimensions
+    this.MenuMoreWidth = 0;    //Width of the "More" button
+
+    this.SubMenuItems = [];    //Submenu Items
+    this.SubMenuOverhang = 0;  //How much the full submenu would exceed window dimensions
+    this.SubMenuMoreWidth = 0; //Width of the submenu "More" button
+
+    this.menuid = '';          //Currently selected Menu ID
+    this.submenuid = '';       //Currently selected SubMenu ID
+  }
+
+  XMenuHorizontal.prototype = new XMenuBase();
+
+  XMenuHorizontal.isActive = function(){ return jsh.$root('.xmenuhorizontal').length; }
+
+  XMenuHorizontal.prototype.Init = function(){
+    var _this = this;
+    if(!XMenuBase.prototype.Init.apply(this)) return;
+
     //Set up Top Menu Sidebar
     if (jsh.$root('.xmenu').size() > 0) {
       jsh.$root('.xmenu a').each(function (i, obj) {
         if ($(obj).hasClass('xmenu_more')) return;
-        XMenuItems.push($(obj));
+        _this.MenuItems.push($(obj));
       });
-      XMenuCalcDimensions(true);
+      _this.CalcDimensions(true);
       
       jsh.$root('.xmenu_more').click(function () {
         var xmenuside = jsh.$root('.xmenuside');
@@ -4077,110 +4156,100 @@ exports = module.exports = function(jsh){
       //Create xmenuside
       var xmenuside = jsh.$root('.xmenuside');
       if (xmenuside.size() > 0) {
-        for (var i = 0; i < XMenuItems.length; i++) {
-          var xmenuitem = XMenuItems[i];
+        for (var i = 0; i < _this.MenuItems.length; i++) {
+          var xmenuitem = _this.MenuItems[i];
           var htmlobj = '<a href="' + xmenuitem.attr('href') + '" onclick="' + xmenuitem.attr('onclick') + '" class="xmenusideitem xmenusideitem_' + xmenuitem.data('id') + ' ' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
           xmenuside.append(htmlobj);
         }
       }
     }
-    isXMenuInit = true;
+
   }
 
-  function XMenuCalcDimensions(force){
-    if(!force && (XMenuItems.length > 0)){
-      var jobj = XMenuItems[0];
-      if(jobj.outerWidth(true).toString() == jobj.data('width')) return;
-    }
-    for(var i=0;i<XMenuItems.length;i++){
-      var jobj = XMenuItems[i];
-      var jwidth = jobj.outerWidth(true);
-      jobj.data('width', jwidth);
-    }
-    XMenuLeft = jsh.$root('.xmenu').offset().left + parseInt(jsh.$root('.xmenu').css('padding-left').replace(/\D/g, ''));
-    if (isNaN(XMenuLeft)) XMenuLeft = 0;
-  }
+  //Update the currently selected menu item
+  XMenuHorizontal.prototype.Select = function(selectedmenu){
+    var _this = this;
+    if(!selectedmenu) selectedmenu = '';
 
-  XMenu.XSubMenuInit = function (menuid){
-    jsh.curSubMenu = menuid;
-    var selsubmenu = '.xsubmenu_' + String(menuid).toUpperCase();
-    curSubMenuSel = selsubmenu;
+    //Get top menu item
+    if(!_.isString && _.isArray(selectedmenu)) selectedmenu = selectedmenu[selectedmenu.length-1];
+    selectedmenu = (selectedmenu||'').toString().toUpperCase();
 
-    //Set up Side Menu Sidebar
-    XSubMenuItems = [];
-    XSubMenuLeft = 0;
-    XSubMenuMoreWidth = 0;
-    jsh.$root('.xsubmenu').hide();
-    jsh.$root('.xsubmenuside').hide().empty();
-
-    if (jsh.$root(selsubmenu).size() > 0) {
-      jsh.$root(selsubmenu).show();
-      jsh.$root(selsubmenu + ' a, ' + selsubmenu + ' div').each(function (i, obj) {
-        if ($(obj).hasClass('xsubmenu_more')) return;
-        var jobj = $(obj);
-        var jwidth = jobj.outerWidth(true);
-        jobj.data('width', jwidth);
-        XSubMenuItems.push(jobj);
-      });
-      XSubMenuLeft = jsh.$root(selsubmenu).offset().left + parseInt(jsh.$root(selsubmenu).css('padding-left').replace(/\D/g, ''));
-      //Add .head width to XSubMenuLeft
-      if (isNaN(XSubMenuLeft)) XSubMenuLeft = 0;
-      
-      jsh.$root(selsubmenu + ' .xsubmenu_more').off('click');
-      jsh.$root(selsubmenu + ' .xsubmenu_more').on('click', function () {
-        var xsubmenuside = jsh.$root('.xsubmenuside');
-        if (!xsubmenuside.is(":visible")) xsubmenuside.show();
-        else xsubmenuside.hide();
-        return false;
-      });
+    //Find item
+    var jsubmenuitem = jsh.$root('.xsubmenu .xsubmenuitem_'+selectedmenu).first();
+    var jmenuitem = null;
+    var submenuid = '';
+    var menuid = '';
+    if(jsubmenuitem.length){
+      submenuid = selectedmenu;
+      menuid = jsubmenuitem.closest('.xsubmenu').data('parent');
+      jmenuitem = jsh.$root('.xmenu .xmenuitem_'+menuid).first();
     }
-    //Initialize xsubmenuside for this submenu
-    var xsubmenuside = jsh.$root('.xsubmenuside');
-    if (xsubmenuside.size() > 0) {
-      for (var i = 0; i < XSubMenuItems.length; i++) {
-        var xsubmenuitem = XSubMenuItems[i];
-        if ($(xsubmenuitem).is('a')) {
-          var link_onclick = xsubmenuitem.attr('onclick');
-          if(link_onclick){
-            link_onclick = 'onclick="'+jsh.getInstance()+'.$root(\'.xsubmenuside\').hide(); ' + link_onclick + '"';
-          }
-          var htmlobj = '<a href="' + xsubmenuitem.attr('href') + '" ' + link_onclick + ' class="xsubmenusideitem xsubmenusideitem_' + xsubmenuitem.data('id') + ' ' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
-          xsubmenuside.append(htmlobj);
-        }
+    else{
+      jsubmenuitem = null;
+      jmenuitem = jsh.$root('.xmenu .xmenuitem_'+selectedmenu).first();
+      if(jmenuitem.length){
+        menuid = selectedmenu;
+      }
+      else{
+        jmenuitem = null;
       }
     }
-    XMenu.XMenuResize();
+
+    _this.menuid = menuid;
+    _this.submenuid = submenuid;
+
+    //Render submenu
+    _this.RenderSubmenu();
+
+    var jmenusideitem = null;
+    if(menuid) jmenusideitem = jsh.$root('.xmenuside .xmenusideitem_'+menuid);
+
+    var jsubmenusideitem = null;
+    if(submenuid) jsubmenusideitem = jsh.$root('.xsubmenuside .xsubmenusideitem_'+submenuid);
+
+    jsh.$root('.xmenu .xmenuitem').not(jmenuitem).removeClass('selected');
+    jsh.$root('.xmenuside .xmenusideitem').not(jmenusideitem).removeClass('selected');
+    if (jmenuitem && !jmenuitem.hasClass('selected')) jmenuitem.addClass('selected');
+    if (jmenusideitem && !jmenusideitem.hasClass('selected')) jmenusideitem.addClass('selected');
+
+    jsh.$root('.xsubmenu .xsubmenuitem').not(jsubmenuitem).removeClass('selected');
+    jsh.$root('.xsubmenuside .xsubmenusideitem').not(jsubmenusideitem).removeClass('selected');
+    if (jsubmenuitem && !jsubmenuitem.hasClass('selected')) jsubmenuitem.addClass('selected');
+    if (jsubmenusideitem && !jsubmenusideitem.hasClass('selected')) jsubmenusideitem.addClass('selected');
   }
 
-  XMenu.XMenuResize = function() {
+  XMenuHorizontal.prototype.RefreshLayout = function(){
+    var _this = this;
+    if(!this.isInitialized) return;
+
     if (jsh.$root('.xmenu').size() == 0) return;
-    if (!isXMenuInit) XMenuInit();
     var maxw = $(window).width()-1;
     
     //Refresh dimensions, if necessary
-    XMenuCalcDimensions();
+    _this.CalcDimensions();
 
     var showmore = false;
     //Find out if we need to show "more" menu
-    var curleft = XMenuLeft;
-    for (var i = 0; i < XMenuItems.length; i++) { curleft += XMenuItems[i].data('width'); }
+    var curleft = _this.MenuOverhang;
+    for (var i = 0; i < _this.MenuItems.length; i++) { curleft += _this.MenuItems[i].data('width'); }
     if (curleft > maxw) showmore = true;
     
     var jmore = jsh.$root('.xmenu_more');
     if (jmore.size() > 0) {
       if (showmore) {
         if (!jmore.is(":visible")) jmore.show();
-        if (XMenuMoreWidth <= 0) { XMenuMoreWidth = jmore.outerWidth(true); }
-        maxw -= XMenuMoreWidth;
+        if (_this.MenuMoreWidth <= 0) { _this.MenuMoreWidth = jmore.outerWidth(true); }
+        maxw -= _this.MenuMoreWidth;
       }
       else {
         if (jmore.is(":visible")) { jmore.hide(); jsh.$root('.xmenuside').hide(); }
       }
     }
     
-    var curleft = XMenuLeft;
-    for (var i = 0; i < XMenuItems.length; i++) {
-      var xmenuitem = XMenuItems[i];
+    var curleft = _this.MenuOverhang;
+    for (var i = 0; i < _this.MenuItems.length; i++) {
+      var xmenuitem = _this.MenuItems[i];
       curleft += xmenuitem.data('width');
       if (curleft > maxw) {
         if (xmenuitem.is(":visible")) xmenuitem.hide();
@@ -4189,38 +4258,40 @@ exports = module.exports = function(jsh){
         if (!xmenuitem.is(":visible")) xmenuitem.show();
       }
     }
-    XSubMenuResize();
+    this.RefreshSubmenuLayout();
   }
 
-  function XSubMenuResize() {
-    if(!curSubMenuSel || (jsh.$root(curSubMenuSel).size() == 0)) return;
+  XMenuHorizontal.prototype.RefreshSubmenuLayout = function(){
+    var _this = this;
+    var jSubMenu = _this.getSubmenu();
+    if(!jSubMenu.length) return;
     var maxw = $(window).width()-1;
     
     var showmore = false;
     //Find out if we need to show "more" menu
-    var curleft = XSubMenuLeft;
+    var curleft = _this.SubMenuOverhang;
     //jsh.$root('.dev_marker').remove();
-    for (var i = 0; i < XSubMenuItems.length; i++) {
-      curleft += XSubMenuItems[i].data('width');
+    for (var i = 0; i < _this.SubMenuItems.length; i++) {
+      curleft += _this.SubMenuItems[i].data('width');
       //jsh.root.prepend('<div class="dev_marker" style="background-color:red;width:1px;height:120px;position:absolute;top:0px;left:'+curleft+'px;z-index:9999;"></div>');
     }
     if (curleft > maxw) showmore = true;
     
-    var jmore = jsh.$root(curSubMenuSel + ' .xsubmenu_more');
+    var jmore = jSubMenu.find('.xsubmenu_more');
     if (jmore.size() > 0) {
       if (showmore) {
         if (!jmore.is(":visible")) jmore.show();
-        if (XSubMenuMoreWidth <= 0) { XSubMenuMoreWidth = jmore.outerWidth(true); }
-        maxw -= XSubMenuMoreWidth;
+        if (_this.SubMenuMoreWidth <= 0) { _this.SubMenuMoreWidth = jmore.outerWidth(true); }
+        maxw -= _this.SubMenuMoreWidth;
       }
       else {
-        if (jmore.is(":visible")) { jmore.hide(); jsh.$root(curSubMenuSel + ' .xsubmenu_more').hide(); }
+        if (jmore.is(":visible")) { jmore.hide(); jSubMenu.find('.xsubmenu_more').hide(); }
       }
     }
     
-    var curleft = XSubMenuLeft;
-    for (var i = 0; i < XSubMenuItems.length; i++) {
-      var xsubmenuitem = XSubMenuItems[i];
+    var curleft = _this.SubMenuOverhang;
+    for (var i = 0; i < _this.SubMenuItems.length; i++) {
+      var xsubmenuitem = _this.SubMenuItems[i];
       curleft += xsubmenuitem.data('width');
       if (curleft > maxw) {
         if (xsubmenuitem.is(":visible")) xsubmenuitem.hide();
@@ -4231,9 +4302,93 @@ exports = module.exports = function(jsh){
     }
   }
 
+  XMenuHorizontal.prototype.getSubmenu = function(menuid){
+    var _this = this;
+    if(!menuid) menuid = _this.menuid;
+    return jsh.$root('.xsubmenu_' + String(menuid).toUpperCase());
+  }
+
+  XMenuHorizontal.prototype.RenderSubmenu = function(){
+    var _this = this;
+    var jSubMenu = _this.getSubmenu();
+
+    //Set up Side Menu Sidebar
+    _this.SubMenuItems = [];
+    _this.SubMenuOverhang = 0;
+    _this.SubMenuMoreWidth = 0;
+    jsh.$root('.xsubmenu').hide();
+    jsh.$root('.xsubmenuside').hide().empty();
+
+    if (jSubMenu.size() > 0) {
+      jSubMenu.show();
+      jSubMenu.find('a, div').each(function (i, obj) {
+        if ($(obj).hasClass('xsubmenu_more')) return;
+        var jobj = $(obj);
+        var jwidth = jobj.outerWidth(true);
+        jobj.data('width', jwidth);
+        _this.SubMenuItems.push(jobj);
+      });
+      _this.SubMenuOverhang = jSubMenu.offset().left + parseInt(jSubMenu.css('padding-left').replace(/\D/g, ''));
+      //Add .head width to SubMenuOverhang
+      if (isNaN(_this.SubMenuOverhang)) _this.SubMenuOverhang = 0;
+      
+      jSubMenu.find('.xsubmenu_more').off('click');
+      jSubMenu.find('.xsubmenu_more').on('click', function () {
+        var xsubmenuside = jsh.$root('.xsubmenuside');
+        if (!xsubmenuside.is(":visible")) xsubmenuside.show();
+        else xsubmenuside.hide();
+        return false;
+      });
+    }
+    //Initialize xsubmenuside for this submenu
+    var xsubmenuside = jsh.$root('.xsubmenuside');
+    if (xsubmenuside.size() > 0) {
+      for (var i = 0; i < _this.SubMenuItems.length; i++) {
+        var xsubmenuitem = _this.SubMenuItems[i];
+        if ($(xsubmenuitem).is('a')) {
+          var link_onclick = xsubmenuitem.attr('onclick');
+          if(link_onclick){
+            link_onclick = 'onclick="'+jsh.getInstance()+'.$root(\'.xsubmenuside\').hide(); ' + link_onclick + '"';
+          }
+          var htmlobj = '<a href="' + xsubmenuitem.attr('href') + '" ' + link_onclick + ' class="xsubmenusideitem xsubmenusideitem_' + xsubmenuitem.data('id') + ' ' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
+          xsubmenuside.append(htmlobj);
+        }
+      }
+    }
+    _this.RefreshLayout();
+  }
+
+  XMenuHorizontal.prototype.CalcDimensions = function(force){
+    var _this = this;
+    if(!force && (_this.MenuItems.length > 0)){
+      var jobj = _this.MenuItems[0];
+      if(jobj.outerWidth(true).toString() == jobj.data('width')) return;
+    }
+    for(var i=0;i<_this.MenuItems.length;i++){
+      var jobj = _this.MenuItems[i];
+      var jwidth = jobj.outerWidth(true);
+      jobj.data('width', jwidth);
+    }
+    _this.MenuOverhang = jsh.$root('.xmenu').offset().left + parseInt(jsh.$root('.xmenu').css('padding-left').replace(/\D/g, ''));
+    if (isNaN(_this.MenuOverhang)) _this.MenuOverhang = 0;
+  }
+
+  XMenuHorizontal.prototype.HidePopups = function(obj){
+    var jobj = $(obj);
+    var jmenuside = jsh.$root('.xmenuside');
+    var jsubmenuside = jsh.$root('.xsubmenuside');
+
+    if(!jobj.hasClass('xmenu_more')) jmenuside.hide();
+    if(!jobj.hasClass('xsubmenu_more')) jsubmenuside.hide();
+  }
+
+
+  XMenu.Base = XMenuBase;
+  XMenu.Interfaces['horizontal'] = XMenuHorizontal;
+
   return XMenu;
 }
-},{"./jquery-1.11.2":21}],16:[function(require,module,exports){
+},{"./jquery-1.11.2":21,"lodash":28}],16:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -15512,6 +15667,13 @@ var jsHarmony = function(options){
   if(!options) options = {};
   var _this = this;
 
+  //Events
+  this.onRefreshLayout = [];
+  this.RefreshLayout = function(){ _this.XExt.trigger(_this.onRefreshLayout); }
+
+  this.onHidePopups = [];
+  this.HidePopups = function(obj){ _this.XExt.trigger(_this.onHidePopups, obj); }
+
   //Options
   this.forcequery = {};
   this._BASEURL = '/';
@@ -15565,7 +15727,6 @@ var jsHarmony = function(options){
   this.mouseDown = false;
   this.last_clicked_time = undefined;
   this.last_clicked = undefined;
-  this.curSubMenu = '';
   this.DEFAULT_DATEFORMAT = 'mm/dd/yy';
   this.onPaymentProxyComplete = function(){};
 
@@ -15674,6 +15835,7 @@ jsHarmony.prototype.Init = function(){
     }
   });
   _this.InitDialogs();
+  _this.XMenu.Init();
   $(document).mousemove(function (e) {
     _this.mouseX = e.pageX;
     _this.mouseY = e.pageY;
@@ -15733,7 +15895,7 @@ jsHarmony.prototype.XWindowResize = function (source) {
     this.$root('.xbodyhead').css('max-width', bodyhead_width + 'px');
   }
   this.XDialogResize(source, params);
-  this.XMenu.XMenuResize();
+  this.RefreshLayout();
 }
 jsHarmony.prototype.XDialogResize = function (source, params) {
   this.$root('.xdialogblock').css('width', params.pw + 'px');
@@ -15796,55 +15958,6 @@ jsHarmony.prototype.InitXFileUpload = function () {
       </div></div>\
       <iframe id="'+this.getInstance()+'_xfileproxy" name="'+this.getInstance()+'_xfileproxy" src="about:blank" style="width:0;height:0;border:0px solid #fff;"></iframe>\
     </div>');
-};
-
-jsHarmony.prototype.SelectTopMenu = function (selectedmenu) {
-  var _this = this;
-  if(!selectedmenu) selectedmenu = '';
-  //Get top menu item
-  if(!_.isString && _.isArray(selectedmenu)) selectedmenu = selectedmenu[selectedmenu.length-1];
-  selectedmenu = (selectedmenu||'').toString().toUpperCase();
-
-  //Find item
-  var jsubmenuitem = _this.$root('.xsubmenu .xsubmenuitem_'+selectedmenu).first();
-  var jmenuitem = null;
-  var submenuid = '';
-  var menuid = '';
-  if(jsubmenuitem.length){
-    submenuid = selectedmenu;
-    menuid = jsubmenuitem.closest('.xsubmenu').data('parent');
-    jmenuitem = _this.$root('.xmenu .xmenuitem_'+menuid).first();
-  }
-  else{
-    jsubmenuitem = null;
-    jmenuitem = _this.$root('.xmenu .xmenuitem_'+selectedmenu).first();
-    if(jmenuitem.length){
-      menuid = selectedmenu;
-    }
-    else{
-      jmenuitem = null;
-    }
-  }
-
-  //Render submenu
-  this.XMenu.XSubMenuInit(menuid);
-
-  var jmenusideitem = null;
-  if(menuid) jmenusideitem = _this.$root('.xmenuside .xmenusideitem_'+menuid);
-
-  var jsubmenusideitem = null;
-  if(submenuid) jsubmenusideitem = _this.$root('.xsubmenuside .xsubmenusideitem_'+submenuid);
-
-  _this.$root('.xmenu .xmenuitem').not(jmenuitem).removeClass('selected');
-  _this.$root('.xmenuside .xmenusideitem').not(jmenusideitem).removeClass('selected');
-  if (jmenuitem && !jmenuitem.hasClass('selected')) jmenuitem.addClass('selected');
-  if (jmenusideitem && !jmenusideitem.hasClass('selected')) jmenusideitem.addClass('selected');
-
-  _this.$root('.xsubmenu .xsubmenuitem').not(jsubmenuitem).removeClass('selected');
-  _this.$root('.xsubmenuside .xsubmenusideitem').not(jsubmenusideitem).removeClass('selected');
-  if (jsubmenuitem && !jsubmenuitem.hasClass('selected')) jsubmenuitem.addClass('selected');
-  if (jsubmenusideitem && !jsubmenusideitem.hasClass('selected')) jsubmenusideitem.addClass('selected');
-  
 };
 
 jsHarmony.prototype.requireHTML5 = function(){
@@ -22641,21 +22754,43 @@ exports.cache = {
 
 },{}],27:[function(require,module,exports){
 module.exports={
+  "_args": [
+    [
+      {
+        "raw": "ejs@2.6.1",
+        "scope": null,
+        "escapedName": "ejs",
+        "name": "ejs",
+        "rawSpec": "2.6.1",
+        "spec": "2.6.1",
+        "type": "version"
+      },
+      "C:\\wk\\jsharmony"
+    ]
+  ],
   "_from": "ejs@2.6.1",
   "_id": "ejs@2.6.1",
-  "_inBundle": false,
-  "_integrity": "sha512-0xy4A/twfrRCnkhfk8ErDi5DqdAsAqeGxht4xkCUrsvhhbQNs7E+4jV0CN7+NKIY0aHE72+XvqtBIXzD31ZbXQ==",
+  "_inCache": true,
   "_location": "/ejs",
+  "_nodeVersion": "8.9.4",
+  "_npmOperationalInternal": {
+    "host": "s3://npm-registry-packages",
+    "tmp": "tmp/ejs_2.6.1_1525546345882_0.354144762200554"
+  },
+  "_npmUser": {
+    "name": "mde",
+    "email": "mde@fleegix.org"
+  },
+  "_npmVersion": "5.6.0",
   "_phantomChildren": {},
   "_requested": {
-    "type": "version",
-    "registry": true,
     "raw": "ejs@2.6.1",
-    "name": "ejs",
+    "scope": null,
     "escapedName": "ejs",
+    "name": "ejs",
     "rawSpec": "2.6.1",
-    "saveSpec": null,
-    "fetchSpec": "2.6.1"
+    "spec": "2.6.1",
+    "type": "version"
   },
   "_requiredBy": [
     "#USER",
@@ -22663,6 +22798,7 @@ module.exports={
   ],
   "_resolved": "https://registry.npmjs.org/ejs/-/ejs-2.6.1.tgz",
   "_shasum": "498ec0d495655abc6f23cd61868d926464071aa0",
+  "_shrinkwrap": null,
   "_spec": "ejs@2.6.1",
   "_where": "C:\\wk\\jsharmony",
   "author": {
@@ -22673,7 +22809,6 @@ module.exports={
   "bugs": {
     "url": "https://github.com/mde/ejs/issues"
   },
-  "bundleDependencies": false,
   "contributors": [
     {
       "name": "Timothy Gu",
@@ -22682,7 +22817,6 @@ module.exports={
     }
   ],
   "dependencies": {},
-  "deprecated": false,
   "description": "Embedded JavaScript templates",
   "devDependencies": {
     "browserify": "^13.1.1",
@@ -22695,6 +22829,15 @@ module.exports={
     "mocha": "^5.0.5",
     "uglify-js": "^3.3.16"
   },
+  "directories": {},
+  "dist": {
+    "integrity": "sha512-0xy4A/twfrRCnkhfk8ErDi5DqdAsAqeGxht4xkCUrsvhhbQNs7E+4jV0CN7+NKIY0aHE72+XvqtBIXzD31ZbXQ==",
+    "shasum": "498ec0d495655abc6f23cd61868d926464071aa0",
+    "tarball": "https://registry.npmjs.org/ejs/-/ejs-2.6.1.tgz",
+    "fileCount": 10,
+    "unpackedSize": 120006,
+    "npm-signature": "-----BEGIN PGP SIGNATURE-----\r\nVersion: OpenPGP.js v3.0.4\r\nComment: https://openpgpjs.org\r\n\r\nwsFcBAEBCAAQBQJa7f1qCRA9TVsSAnZWagAAhNAQAJzOG4316d2XzOX25knk\nTRhCBHHyFNO4XGZwaomJ3PDugWunW/95FBU96qd9GHpntJO4BU8HSmhUzaRA\nHLQW5Y08NMbsY8vh3cyCKpPSfYuABdpj2OxL5g7z31dsAjg8M94J0AACyggH\np0WGMtB0knMw9fBUfNvDkKgoYXXmlQ3vSNDWzWS1Mkh2z6GzfwEulyq3OJLP\nb2KhHvcZK3/xxrJF6XODrIA9XPf3G0hZw5PMQ8Mjwi3KGrJuG73U7muzy/xm\nOF7KojEOgryZpaG/lQWdedY8YTj8nKFa3KHrKEazywbReV8mpGk0N5D2sIbT\nKgu0txWGxMaGzGcVRMPHHu2eofftpSjqrTU4dbFUBjG8KfV5fb8S5hwTNOzJ\nNHJZvdoBTn+vGXvEDTkmXz9gm/Z8iEtB2wj+lP6mvgezVLQm8HJvkoJ2tkrC\ndQMH/aX5f9/ySKLwWtz7Y8u3eXeUIJEqCh2zoAHwJ05lAbVoZF6mhyx93fac\naoq6BkboQhONOPPI9CQSvy3MFS97+cMjRkOTXS0IzXhwP89DWpv0Pcb5mXcP\nkL45APf4XNUnYclNmSSYm9Y+AvufISSZYyTH0+UTwDY9bckAcRO2ZWv86Jo5\noOkyXF3PxZVUnRyMjuTl9+gHwOAraWooaAzKGY8+RBTQzdYthoy1om+Dxyke\n/uID\r\n=nnYW\r\n-----END PGP SIGNATURE-----\r\n"
+  },
   "engines": {
     "node": ">=0.10.0"
   },
@@ -22706,7 +22849,15 @@ module.exports={
   ],
   "license": "Apache-2.0",
   "main": "./lib/ejs.js",
+  "maintainers": [
+    {
+      "name": "mde",
+      "email": "mde@fleegix.org"
+    }
+  ],
   "name": "ejs",
+  "optionalDependencies": {},
+  "readme": "ERROR: No README data found!",
   "repository": {
     "type": "git",
     "url": "git://github.com/mde/ejs.git"

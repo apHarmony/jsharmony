@@ -8,7 +8,7 @@
 	"caption":[0,"Customer","Customers"],
 	"sort":["^c_name"], 
 	"buttons":[{"link":"add:C"}],
-	"topmenu":"clients",
+	"menu":"clients",
     "grid_expand_filter": 1,
     "grid_require_filter": 0,
     "grid_rowcount":1,

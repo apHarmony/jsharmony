@@ -417,8 +417,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
       if (topmost) {
         rslt['topmost'] = 1;
         rslt['menu'] = '';
-        rslt['topmenu'] = '';
-        copyValues(rslt, model, ['menu','topmenu']);
+        copyValues(rslt, model, ['menu']);
         rslt['toptitle'] = model.id;
         if ('title' in rslt) rslt['toptitle'] = rslt.title;
         rslt['forcequery'] = req.forcequery;

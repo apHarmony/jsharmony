@@ -195,12 +195,12 @@ CUSTOM CONTROL STYLES
 /***************************
 MENU STYLES
 ***************************/
-<%-rootcss%> .xmenu {
+<%-rootcss%> .xmenuhorizontal .xmenu {
 	padding-top:34px;
 	padding-left:370px;
   min-height:60px;
 }
-<%-rootcss%> .xmenu a{
+<%-rootcss%> .xmenuhorizontal .xmenu a{
 	font-family: 'PT Sans', arial, helvetica, sans-serif;
 	color:#ffffff;
 	text-decoration:none;
@@ -211,22 +211,22 @@ MENU STYLES
 	margin-right:7px;
 	margin-left:7px;
 }
-<%-rootcss%> .xmenu a:hover{
+<%-rootcss%> .xmenuhorizontal .xmenu a:hover{
 	text-decoration:underline;
 }
-<%-rootcss%> .xmenu a .bottom{
+<%-rootcss%> .xmenuhorizontal .xmenu a .bottom{
 	display:none;
 }
-<%-rootcss%> .xmenu a.selected{
+<%-rootcss%> .xmenuhorizontal .xmenu a.selected{
 /*	color:#000000;*/
 	background-image:url('<%-req.jshsite.publicurl%>images/menu_highlight_triangle.png');
 	background-repeat:no-repeat;
 	background-position:bottom center;
 }
-<%-rootcss%> .xmenu a.selected:hover{
+<%-rootcss%> .xmenuhorizontal .xmenu a.selected:hover{
 	text-decoration:none;
 }
-<%-rootcss%> .xmenu a.selected .bottom{
+<%-rootcss%> .xmenuhorizontal .xmenu a.selected .bottom{
 	background-image:url('<%-req.jshsite.publicurl%>images/menu_highlight_bl.png');
 	width:6px;
 	height:10px;
@@ -235,7 +235,7 @@ MENU STYLES
 	top:52px;
 	left:-6px;
 }
-<%-rootcss%> .xmenu a.xmenu_more {
+<%-rootcss%> .xmenuhorizontal .xmenu a.xmenu_more {
   display:none;
   position:absolute;
   right:0px;
@@ -245,25 +245,25 @@ MENU STYLES
   background-repeat:repeat-y;
   margin-left:0px;
 }
-<%-rootcss%> .xmenu_more_bg {
+<%-rootcss%> .xmenuhorizontal .xmenu_more_bg {
   padding:43px 20px 18px 26px;
   background-image:url('<%-req.jshsite.publicurl%>images/top.png');
   background-position-y:-5px;
   background-repeat:repeat-x;
 }
-<%-rootcss%> a.xmenu_more img {
+<%-rootcss%> .xmenuhorizontal a.xmenu_more img {
   position:relative;
   top:-1px;
   padding-left:4px;
 }
-<%-rootcss%> .xmenuside {
+<%-rootcss%> .xmenuhorizontal .xmenuside {
   display:none;
   position:absolute;
   top:84px;
   right:0px;
   z-index:9999;
 }
-<%-rootcss%> .xmenuside a{
+<%-rootcss%> .xmenuhorizontal .xmenuside a{
   background-image:url('<%-req.jshsite.publicurl%>images/menu_side_bg.png');
   text-align:center;
   height:26px;
@@ -275,39 +275,42 @@ MENU STYLES
 	text-decoration:none;
 	font-size:15px;
 }
-<%-rootcss%> .xmenuside a:hover{
+<%-rootcss%> .xmenuhorizontal .xmenuside a:hover{
   text-decoration:underline;
 }
-<%-rootcss%> .xmenuside a.selected {
+<%-rootcss%> .xmenuhorizontal .xmenuside a.selected {
   color:#fff;
 	background-image:url('<%-req.jshsite.publicurl%>images/menu_highlight_bg.png');
   height:25px;
   padding-top:7px;
 }
 /* SUBMENU */
-<%-rootcss%> .xsubmenu{
+<%-rootcss%> .xmenuhorizontal .xsubmenu{
 	padding-left:26px;
   position:relative;
 }
-<%-rootcss%> .xsubmenu div { display:inline-block; }
-<%-rootcss%> .xsubmenu .head{
+<%-rootcss%> .xmenuhorizontal .xsubmenu div { display:inline-block; }
+<%-rootcss%> .xmenuhorizontal .xsubmenu .head{
 	font-weight:bold;
 	padding-right:6px;
 }
-<%-rootcss%> .xsubmenu a {
+<%-rootcss%> .xmenuhorizontal .xsubmenu a {
 	font-family: 'PT Sans', arial, helvetica, sans-serif;
 	color:#202020;
 	text-decoration:none;
   display:inline-block;
 }
-<%-rootcss%> .xsubmenu a.selected {
+<%-rootcss%> .xmenuhorizontal .xsubmenu a.selected {
   border-bottom:2px solid #777;
   padding-bottom:2px;
 }
-<%-rootcss%> .xsubmenu a:hover {
+<%-rootcss%> .xmenuhorizontal .xsubmenu a:hover {
 	text-decoration:underline;
 }
-<%-rootcss%> .xsubmenu .xsubmenu_more {
+<%-rootcss%> .xmenuhorizontal .xsubmenu a.selected:hover {
+	text-decoration:none;
+}
+<%-rootcss%> .xmenuhorizontal .xsubmenu .xsubmenu_more {
   position:absolute;
   display:block;
   top:-8px;
@@ -319,13 +322,13 @@ MENU STYLES
   height:23px;
   z-index:2;
 }
-<%-rootcss%> .xsubmenuside {
+<%-rootcss%> .xmenuhorizontal .xsubmenuside {
   position:absolute;
   top:117px;
   right:0px;
   z-index:9998;
 }
-<%-rootcss%> .xsubmenuside a {
+<%-rootcss%> .xmenuhorizontal .xsubmenuside a {
   background-color:#eeeeee;
   text-align:left;
   font-family: 'PT Sans', arial, helvetica, sans-serif;
@@ -338,11 +341,14 @@ MENU STYLES
   border-right:1px solid #777;
   border-left:1px solid #777;
 }
-<%-rootcss%> .xsubmenuside a.selected {
+<%-rootcss%> .xmenuhorizontal .xsubmenuside a.selected {
 	border-left:6px solid #777;
 }
-<%-rootcss%> .xsubmenuside a:hover {
+<%-rootcss%> .xmenuhorizontal .xsubmenuside a:hover {
 	text-decoration:underline;
+}
+<%-rootcss%> .xmenuhorizontal .xsubmenuside a.selected:hover {
+	text-decoration:none;
 }
 
 /*
@@ -357,6 +363,6 @@ PRINT STYLESHEET
   }
   <%-rootcss%> .xbody { padding:20px 0 0 15px; }
   <%-rootcss%> .xtbl thead th a { color:#000000; }
-  <%-rootcss%> .xmenu { display:none !important; }
-  <%-rootcss%> .xsubmenu { display:none !important; }
+  <%-rootcss%> .xmenuhorizontal .xmenu { display:none !important; }
+  <%-rootcss%> .xmenuhorizontal .xsubmenu { display:none !important; }
 }

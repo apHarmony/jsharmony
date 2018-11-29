@@ -25,7 +25,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "actions": "B",
   "roles": { "C_ADMIN": "B" },
   "db": "default", //Optional property - use an alternate database connection
-  "topmenu":"reports",
+  "menu":"reports",
   "description": "Report Description",
   "template": "canonical_report.ejs", //Report source HTML/EJS template
   "pagesettings":  { //Any custom pagesettings
