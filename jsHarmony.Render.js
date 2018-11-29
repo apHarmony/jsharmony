@@ -82,9 +82,13 @@ exports.getJSClientParams = function (req) {
   rslt += 'home_url: ' + JSON.stringify(req.jshsite.home_url) + ',';
   rslt += 'uimap: ' + JSON.stringify(_this.uimap) + ',';
   rslt += '_instance: ' + JSON.stringify(req.jshsite.instance) + ',';
+  rslt += 'cookie_suffix: ' + JSON.stringify(Helper.GetCookieSuffix(req,_this)) + ',';
   if (req.isAuthenticated) {
     if (_this.Config.google_settings && _this.Config.google_settings.API_KEY) rslt += 'google_api_key: ' + JSON.stringify(_this.Config.google_settings.API_KEY) + ',';
     rslt += 'isAuthenticated: true,';
+  }
+  if ('DEV' in req._roles){
+    rslt += 'dev: ' + JSON.stringify(1) + ',';
   }
   rslt += '}';
   return rslt;

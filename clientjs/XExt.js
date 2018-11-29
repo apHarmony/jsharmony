@@ -543,6 +543,58 @@ exports = module.exports = function(jsh){
     }
     return rslt;
   }
+
+  XExt.GetCookieNameWithSuffix = function(cname){return cname+jsh.cookie_suffix}
+  XExt.GetCookie = function(cname){
+    cname= XExt.GetCookieNameWithSuffix(cname);
+    var rslt = [];
+    var c_a = XExt.readCookie(cname);
+    if (c_a.length>0){
+      for(var i=0;i<c_a.length;i++) {
+        rslt.push(decodeURIComponent(c_a[i]));
+      }
+    }
+    return rslt;
+  }
+  XExt.SetCookie = function(cname,cvalue,exmin){
+    cname= XExt.GetCookieNameWithSuffix(cname);
+    var expires = '';
+    if (exmin !== 0){
+      var d = new Date();
+      d.setTime(d.getTime() + (exmin*60*1000));
+      expires = ";expires="+ d.toUTCString();
+    }
+    document.cookie = cname + "=" + encodeURIComponent(cvalue) + expires + "; path="+jsh._BASEURL;
+  }
+  XExt.ClearCookie = function(cname){
+    return XExt.SetCookie(cname,'',-100000);
+  }
+  XExt.GetSettingsCookie = function(module_name){
+    var settings ={};
+    try{
+      settings = JSON.parse(jsh.XExt.GetCookie('settings')[0]);
+    }catch (e) {
+      //  todo what todo on error?
+    }
+    if (!_.isEmpty(module_name)){
+      if (settings.hasOwnProperty(module_name)){
+        settings = settings[module_name];
+      }else {
+        settings = {}
+      }
+    }
+    return settings;
+  }
+
+  XExt.SetSettingsCookie = function(module_name,cvalue,exmin){
+    if (typeof module_name === undefined || module_name.length <=0){
+      throw "Please provide module name!";
+    }
+    var settings = XExt.GetSettingsCookie();
+    settings[module_name]=cvalue;
+    return XExt.SetCookie('settings',JSON.stringify(settings),exmin);
+  }
+
   XExt.currentURL = function(){
     var rslt = window.location.href.toString().split(window.location.host)[1];
     rslt = rslt.split('?')[0];
