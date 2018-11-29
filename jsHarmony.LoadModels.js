@@ -516,11 +516,6 @@ exports.ParseEntities = function () {
     var tabledef = modelExt.tabledef = db.getTableDefinition(model.table);
     var automodel = undefined;
 
-    if(model.layout=='form-onecolumn'){
-      model.layout = 'form';
-      model.onecolumn = true;
-    }
-
     if((model.layout=='grid') && !('commitlevel' in model)){
       if(model.actions && !Helper.access(model.actions, 'IUD')) model.commitlevel = 'none';
       else if(tabledef && (tabledef.table_type=='view') && !('actions' in model)){ model.commitlevel = 'none'; }
@@ -740,6 +735,7 @@ exports.ParseEntities = function () {
               //Editable grid
               if(field.key) field.actions = 'B';
               else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
+              else if(field.control=='label') field.actions = 'B';
               else field.actions = 'BIU';
             }
           }
@@ -747,12 +743,14 @@ exports.ParseEntities = function () {
             if(field.key) field.actions = 'B';
             else if(!('control' in field)) field.actions = 'B';
             else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
+            else if(field.control=='label') field.actions = 'B';
             else field.actions = 'BIU';
           }
           else if(model.layout=='form-m'){
             if(field.key) field.actions = 'B';
             else if(field.foreignkey && !('control' in field)) field.actions = 'I';
             else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
+            else if(field.control=='label') field.actions = 'B';
             else field.actions = 'BIU';
           }
           else if(model.layout=='multisel'){
@@ -764,6 +762,7 @@ exports.ParseEntities = function () {
             if(field.key) field.actions = 'B';
             else if(!('control' in field)) field.actions = 'B';
             else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
+            else if(field.control=='label') field.actions = 'B';
             else field.actions = 'BIU';
           }
           //_this.LogInit_WARNING('Model ' + model.id + ' Field ' + (field.name || field.caption || JSON.stringify(field)) + ' missing actions - defaulting to "'+field.actions+'"');

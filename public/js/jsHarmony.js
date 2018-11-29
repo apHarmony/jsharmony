@@ -2486,8 +2486,13 @@ exports = module.exports = function(jsh){
 
   XExt.getJSLocals = function(modelid){
     var rslt = jsh.jslocals;
-    if(modelid) rslt += "var _this = jsh.App['"+modelid+"'];";
+    if(modelid) rslt += "var modelid = '"+modelid+"'; var _this = jsh.App[modelid]; ";
     return rslt;
+  }
+
+  XExt.getJSApp = function(modelid,quotechar){
+    if(typeof quotechar=='undefined') quotechar = '\'';
+    return jsh._instance + '.App[' + quotechar + modelid + quotechar + ']';
   }
 
   XExt.JSEval = function(str,_thisobj,params){
