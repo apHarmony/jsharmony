@@ -4,5 +4,17 @@
 <div class="xdialogbox xpromptbox"><div class="xpromptmessage"></div><div align="right"><input class="xpromptfield" type="text"><br/><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>
 <div class="xdialogbox xtextzoombox"><div class="xtextzoommessage"></div><div align="right"><textarea class="xtextzoomfield"></textarea><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>
 </div>
-<div class="xdebugconsole"></div>
+<div class="xdebuginfo"></div>
+<div class="xdebugconsole">
+  <div id="debug-panel">
+    <header>Debug Info
+      <div class="controls"><i class="material-icons" data-s="minimize">&#xe259;</i><i class="material-icons" data-s="settings">&#xe8b8;</i><i class="material-icons" data-s="close">&#xe5cd;</i></div>
+    </header>
+    <div class="debug-settings"><legend>Please select debug info source.</legend></div>
+    <div class="xdebuginfo-body"></div>
+  </div>
+  <div id="debug-panel-minimized" style="display: none;">
+    <div class="controls"><i class="material-icons" data-s="expand">&#xe895;</i></div>
+  </div>
+</div>
 <div class="xloadingblock" style="display:none;"><div><div class="xloadingbox">Loading<br/><img src="/images/loading.gif" alt="Loading" title="Loading" /></div></div></div>

@@ -43,6 +43,7 @@ var XMenu = require('./XMenu.js');
 var JSHFind = require('./JSHFind.js');
 var XLoader = require('./XLoader.js');
 var XImageLoader = require('./XImageLoader.js');
+var XDebugConsole = require('./XDebugConsole.js');
 //EJS
 var XViews = [];
 XViews['jsh_system'] = require('../views/jsh_system.ejs');
@@ -85,6 +86,7 @@ var jsHarmony = function(options){
   this.JSHFind = JSHFind;
   this.XLoader = XLoader(this);
   this.XImageLoader = XImageLoader(this);
+  this.XDebugConsole = XDebugConsole(this);
   this.XViews = XViews;
 
   //jsh_client_embed
@@ -215,6 +217,7 @@ jsHarmony.prototype.Init = function(){
     }
   });
   _this.InitDialogs();
+  _this.XDebugConsole.Init();
   $(document).mousemove(function (e) {
     _this.mouseX = e.pageX;
     _this.mouseY = e.pageY;
@@ -251,10 +254,10 @@ jsHarmony.prototype.DefaultErrorHandler = function(num,txt){
 	return false;
 }
 
-jsHarmony.prototype.debugConsole = function (txt,clear) {
-  this.$root('.xdebugconsole').show();
-  if(clear) this.$root('.xdebugconsole').empty();
-  this.$root('.xdebugconsole').prepend(txt+'<br/>');
+jsHarmony.prototype.XDebugInfo = function (txt,clear) {
+  this.$root('.xdebuginfo').show();
+  if (clear) this.$root('.xdebuginfo').empty();
+  this.$root('.xdebuginfo').prepend(txt + '<br/>');
 }
 jsHarmony.prototype.InitDialogs = function () {
   this.root.append($(XViews['jsh_system']));

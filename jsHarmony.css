@@ -596,7 +596,7 @@ LOADING ANIMATION
 DIALOG BOXES
 ============
 */
-<%-rootcss%> .xdebugconsole {
+<%-rootcss%> .xdebuginfo {
   display:none;
   position:absolute;
   top:0px;
@@ -604,7 +604,65 @@ DIALOG BOXES
   color:#c2ffb8;
   background-color:rgba(0,0,0,0.5);
   z-index:200000;
-}
+  }
+<%-rootcss%> .xdebugconsole.visible::before{
+  content:'';
+  display:block;
+  height: 300px;
+  }
+<%-rootcss%> .xdebugconsole #debug-panel {
+  display:none;
+  position: fixed;
+  bottom: 0;
+  height: 300px;
+  width: 100%;
+  right:0px;
+  z-index:1;
+  border-top: 3px solid #aaa;
+  border-bottom: 3px solid #aaa;
+  background-color: #fff;
+  }
+<%-rootcss%> .xdebugconsole header{
+  padding: 5px 29px;
+  height: 25px;
+  line-height: 1.1em;
+  font-size: 1.8em;
+  background-color: #e1e1e1;
+  border-bottom: 1px solid #aaa;
+  }
+<%-rootcss%> .xdebugconsole .controls{
+  float: right;
+  display: inline-block;
+  }
+<%-rootcss%> .xdebugconsole .debug-settings{
+  padding: 5px 29px;
+  border-bottom: 1px solid #aaa;
+  display: none;
+  }
+<%-rootcss%> .xdebugconsole .info-message{
+  padding: 2px 29px;
+  /*background: #eeeeee;*/
+  }
+<%-rootcss%> .xdebugconsole .info-message:nth-child(2) {
+  background: #f3f3f3;
+  }
+<%-rootcss%> .xdebugconsole .controls i {
+  cursor: pointer;
+  }
+<%-rootcss%> .xdebugconsole .xdebuginfo-body {
+  position: fixed;
+  height: 264px;
+  overflow: auto;
+  width: 100%;
+  }
+<%-rootcss%> .xdebugconsole #debug-panel-minimized{
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  }
+<%-rootcss%> .xdebugconsole pre{
+  word-wrap: break-word;
+  }
 <%-rootcss%> .xdialogblock {
 	position:fixed;
 	top:0px;
