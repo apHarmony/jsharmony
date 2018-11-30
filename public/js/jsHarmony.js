@@ -1181,7 +1181,7 @@ exports = module.exports = function(jsh){
   var XDebugConsole = function(){
   };
   XDebugConsole.cookie_name = 'x_debug_console';
-  XDebugConsole.default_settings = {"enabled":1,"minimized":0,"source":["web server","client requests","system","database","authentication"]};
+  XDebugConsole.default_settings = {"enabled":1,"minimized":0,"source":["webserver","client requests","system","database","authentication"]};
   function isEnabled(){
     return (jsh.dev && XDebugConsole.settings.enabled);
   }
@@ -1198,7 +1198,7 @@ exports = module.exports = function(jsh){
 
       this.addEventListener("load", function(){
         if (XDebugConsole.settings.source.indexOf("client requests")>-1){
-          XDebugConsole.showDebugMessage('Client Request: '+this.responseURL+'<br>Client Response: '+JSON.stringify(JSON.parse(this.responseText), null, 2));
+          XDebugConsole.showDebugMessage('Client Request: '+this.responseURL+'<br>Client Response: '+JSON.stringify(JSON.parse(this.responseText), null, 2).replace(/\\r\\n/g, '<br>'));
         }
       }, false);
       this.baseSend(value);
@@ -1206,10 +1206,16 @@ exports = module.exports = function(jsh){
   }
   XDebugConsole.socket = '';
   XDebugConsole.setWebSocketListener = function(){
-    if (XDebugConsole.settings.source.indexOf("web server")>-1){
+    if (XDebugConsole.settings.source.indexOf("webserver")>-1
+      || XDebugConsole.settings.source.indexOf("system")>-1
+      || XDebugConsole.settings.source.indexOf("database")>-1
+      || XDebugConsole.settings.source.indexOf("authentication")>-1
+    ){
       XDebugConsole.socket = new WebSocket("ws://"+window.location.hostname+":"+window.location.port+jsh._BASEURL+"_log");
       XDebugConsole.socket.onmessage = function(e){
-        XDebugConsole.showDebugMessage('Server request: '+JSON.stringify(JSON.parse(e.data), null, 2));
+        var m = JSON.parse(e.data);
+        if(XDebugConsole.settings.source.indexOf(m.source)>-1)
+        XDebugConsole.showDebugMessage('<span style="color: '+m.color+'">'+_.startCase(m.source)+': '+ m.txt+'</span>');
       }
     }else {
       if (typeof XDebugConsole.socket === 'object'){
