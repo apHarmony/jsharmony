@@ -641,12 +641,8 @@ DIALOG BOXES
   }
 <%-rootcss%> .xdebugconsole .info-message{
   padding: 2px 29px;
-  /*background: #eeeeee;*/
   border-bottom: 1px solid #999;
   }
-/*<%-rootcss%> .xdebugconsole .info-message:nth-child(Even) {*/
-  /*background: #f3f3f3;*/
-  /*}*/
 <%-rootcss%> .xdebugconsole .controls i {
   cursor: pointer;
   }

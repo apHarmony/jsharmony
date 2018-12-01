@@ -574,7 +574,7 @@ exports = module.exports = function(jsh){
     try{
       settings = JSON.parse(jsh.XExt.GetCookie('settings')[0]);
     }catch (e) {
-      //  todo what todo on error?
+      return settings;
     }
     if (!_.isEmpty(module_name)){
       if (settings.hasOwnProperty(module_name)){

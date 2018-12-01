@@ -1192,10 +1192,6 @@ exports = module.exports = function(jsh){
   XDebugConsole.setXMLHttpRequestListener = function(){
     XMLHttpRequest.prototype.baseSend = XMLHttpRequest.prototype.send;
     XMLHttpRequest.prototype.send = function(value) {
-      // this.addEventListener("progress", function(){
-      //   XDebugConsole.showDebugMessage('loading');
-      // }, false);
-
       this.addEventListener("load", function(){
         if (XDebugConsole.settings.source.indexOf("client requests")>-1){
           XDebugConsole.showDebugMessage('Client Request: '+this.responseURL+'<br>Client Response: '+JSON.stringify(JSON.parse(this.responseText), null, 2).replace(/\\r\\n/g, '<br>'));
@@ -1211,11 +1207,13 @@ exports = module.exports = function(jsh){
       || XDebugConsole.settings.source.indexOf("database")>-1
       || XDebugConsole.settings.source.indexOf("authentication")>-1
     ){
-      XDebugConsole.socket = new WebSocket("ws://"+window.location.hostname+":"+window.location.port+jsh._BASEURL+"_log");
-      XDebugConsole.socket.onmessage = function(e){
-        var m = JSON.parse(e.data);
-        if(XDebugConsole.settings.source.indexOf(m.source)>-1)
-        XDebugConsole.showDebugMessage('<span style="color: '+m.color+'">'+_.startCase(m.source)+': '+ m.txt+'</span>');
+      if (typeof XDebugConsole.socket !== 'object') {
+        XDebugConsole.socket = new WebSocket("ws://" + window.location.hostname + ":" + window.location.port + jsh._BASEURL + "_log");
+        XDebugConsole.socket.onmessage = function (e) {
+          var m = JSON.parse(e.data);
+          if (XDebugConsole.settings.source.indexOf(m.source) > -1)
+            XDebugConsole.showDebugMessage('<span style="color: ' + m.color + '">' + _.startCase(m.source) + ': ' + m.txt + '</span>');
+        }
       }
     }else {
       if (typeof XDebugConsole.socket === 'object'){
@@ -1224,8 +1222,6 @@ exports = module.exports = function(jsh){
       }
     }
   }
-
-
   XDebugConsole.InitDebugPanel = function(){
     XDebugConsole.setXMLHttpRequestListener();
     XDebugConsole.setWebSocketListener();
@@ -1287,7 +1283,6 @@ exports = module.exports = function(jsh){
     }
   }
 
-  // TODO  _.extend | we should not combine here !!! ???
   XDebugConsole.Init = function(){
     this.settings = jsh.XExt.GetSettingsCookie(XDebugConsole.cookie_name);
     if (!this.settings.hasOwnProperty('enabled') && !this.settings.hasOwnProperty('source') && !this.settings.hasOwnProperty('minimized')){
@@ -2396,7 +2391,7 @@ exports = module.exports = function(jsh){
     try{
       settings = JSON.parse(jsh.XExt.GetCookie('settings')[0]);
     }catch (e) {
-      //  todo what todo on error?
+      return settings;
     }
     if (!_.isEmpty(module_name)){
       if (settings.hasOwnProperty(module_name)){
