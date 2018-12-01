@@ -75,8 +75,7 @@ exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, module) {
       for (var c in model) this.CustomControls[c] = model[c];
     }
     else if (modelname == '_config') {
-      if(!isDBSpecific) continue;
-      this.Config.Merge(model);
+      continue;
     }
     else {
       if (!('layout' in model) && !('inherits' in model)) {

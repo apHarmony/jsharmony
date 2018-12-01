@@ -221,6 +221,8 @@ function jsHarmonyConfig(config){
   this.onServerReady = []; //function(cb, servers){ return cb(); }
   //When jsHarmony config is loaded
   this.onConfigLoaded = []; //function(cb, jsh){ return cb(); }
+  //When the database drivers are loaded, before the schema is read
+  this.onDBDriverLoaded = [];  //function(cb, jsh){ return cb(); }
 
   //Additional CSS files for jsHarmony.css
   this.css_extensions = [
@@ -270,6 +272,9 @@ function jsHarmonyConfig(config){
 
   //Modules
   this.modules = {};
+
+  //DB Specific Configuration
+  this.forDB = {}; //{ pgsql: [ {config1}, {config2} ] }
 
   this._validProperties = _.keys(this);
 
@@ -349,15 +354,24 @@ jsHarmonyConfig.prototype.LoadJSConfigFolder = function(jsh, fpath){
   this.LoadJSConfigFile(jsh, fpath + '/app.config.' + os.hostname().toLowerCase() + '.js');
 }
 
-jsHarmonyConfig.prototype.LoadJSONConfigFile = function(jsh, fpath){
+jsHarmonyConfig.prototype.LoadJSONConfigFile = function(jsh, fpath, dbDriver){
   if(!fpath) throw new Error('Config file path is required');
   if (!fs.existsSync(fpath)) return;
   var config = jsh.ParseJSON(fpath, "Config");
-  //Merge config
-  this.Merge(config);
+  if(dbDriver){
+    //Add to database-specific config
+    if(!(dbDriver in this.forDB)) this.forDB[dbDriver] = [];
+    this.forDB[dbDriver].push(config);
+  }
+  else {
+    //Merge config
+    this.Merge(config);
+  }
 }
 
 jsHarmonyConfig.prototype.LoadJSONConfigFolder = function(jsh, fpath){
+  var _this = this;
+
   //Include appropriate config file based on Path
   if(!fpath) fpath = jsh.Config.appbasepath;
   if(!fpath) fpath = path.dirname(require.main.filename);
@@ -379,6 +393,10 @@ jsHarmonyConfig.prototype.LoadJSONConfigFolder = function(jsh, fpath){
   //Load config based on Hostname
   this.LoadJSONConfigFile(jsh, fpath + '/_config.' + os.hostname().toLowerCase() + '.json');
   //Load config based on Default Database Driver
+  var dbDrivers = jsh.getDBDrivers();
+  _.each(dbDrivers, function(dbDriver){
+    _this.LoadJSONConfigFile(jsh, fpath + '/_config.' + dbDriver + '.json', dbDriver);
+  });
   if(jsh.DBConfig['default'] && jsh.DBConfig['default']._driver){
     var defaultDBDriver = jsh.DBConfig['default']._driver.name;
     this.LoadJSONConfigFile(jsh, fpath + '/_config.' + defaultDBDriver + '.json');
