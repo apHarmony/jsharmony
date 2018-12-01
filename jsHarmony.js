@@ -132,6 +132,9 @@ jsHarmony.prototype.Init = function(init_cb){
       }, cb);
     },
     function(cb){
+      Helper.triggerAsync(_this.Config.onConfigLoaded, cb, _this)
+    },
+    function(cb){
       //Load Views
       _this.LoadViews();
       if(!_this.Config.silentStart) console.log('Loading models...');

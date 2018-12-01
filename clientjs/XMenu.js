@@ -60,8 +60,8 @@ exports = module.exports = function(jsh){
 
     //Register into global RefreshLayout function
     jsh.onRefreshLayout.push(function(){ _this.RefreshLayout(); });
-    //Register into global HidePopups function
-    jsh.onHidePopups.push(function(obj){ _this.HidePopups(obj); });
+    //Register into global onNavigated function
+    jsh.onNavigated.push(function(obj){ _this.Navigated(obj); });
 
     this.isInitialized = true;
     return true;
@@ -69,7 +69,7 @@ exports = module.exports = function(jsh){
   XMenuBase.prototype.Select = function(selectedmenu){ }
   XMenuBase.isActive = function(){ return false; }   //Must be implemented for each Menu Type - not a prototype function
   XMenuBase.prototype.RefreshLayout = function(){ }
-  XMenuBase.prototype.HidePopups = function(){ }
+  XMenuBase.prototype.Navigated = function(obj){ }
 
   //-----------------------------------------------------------------
   //XMenuHorizontal :: Menu Implementation for Horizontal Menu System
@@ -116,7 +116,11 @@ exports = module.exports = function(jsh){
       if (xmenuside.size() > 0) {
         for (var i = 0; i < _this.MenuItems.length; i++) {
           var xmenuitem = _this.MenuItems[i];
-          var htmlobj = '<a href="' + xmenuitem.attr('href') + '" onclick="' + xmenuitem.attr('onclick') + '" class="xmenusideitem xmenusideitem_' + xmenuitem.data('id') + ' ' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
+          var link_onclick = xmenuitem.attr('onclick');
+          if(link_onclick){
+            link_onclick = 'onclick="' + link_onclick + ' ;"';
+          }
+          var htmlobj = '<a href="' + xmenuitem.attr('href') + '" ' + link_onclick + ' class="xmenusideitem xmenusideitem_' + xmenuitem.data('id') + ' ' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
           xmenuside.append(htmlobj);
         }
       }
@@ -306,7 +310,7 @@ exports = module.exports = function(jsh){
         if ($(xsubmenuitem).is('a')) {
           var link_onclick = xsubmenuitem.attr('onclick');
           if(link_onclick){
-            link_onclick = 'onclick="'+jsh.getInstance()+'.$root(\'.xsubmenuside\').hide(); ' + link_onclick + '"';
+            link_onclick = 'onclick="'+jsh.getInstance()+'.$root(\'.xsubmenuside\').hide(); ' + link_onclick + ';"';
           }
           var htmlobj = '<a href="' + xsubmenuitem.attr('href') + '" ' + link_onclick + ' class="xsubmenusideitem xsubmenusideitem_' + xsubmenuitem.data('id') + ' ' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
           xsubmenuside.append(htmlobj);
@@ -331,7 +335,7 @@ exports = module.exports = function(jsh){
     if (isNaN(_this.MenuOverhang)) _this.MenuOverhang = 0;
   }
 
-  XMenuHorizontal.prototype.HidePopups = function(obj){
+  XMenuHorizontal.prototype.Navigated = function(obj){
     var jobj = $(obj);
     var jmenuside = jsh.$root('.xmenuside');
     var jsubmenuside = jsh.$root('.xsubmenuside');

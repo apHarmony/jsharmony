@@ -250,7 +250,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var ahash = a.hash;
     var amodelid = '';
 
-    jsh.HidePopups(a);
+    jsh.Navigated(a);
 
     if(apath.indexOf(jsh._BASEURL)==0) apath = apath.substr(jsh._BASEURL.length);
     if(apath.indexOf('_report/')==0) amodelid = '_report_'+apath.substr(8);

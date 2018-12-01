@@ -217,8 +217,10 @@ function jsHarmonyConfig(config){
   //Field Encryption Passwords
   this.passwords = {};
 
-  //Run function when jsHarmony server is started
+  //When jsHarmony server is started
   this.onServerReady = []; //function(cb, servers){ return cb(); }
+  //When jsHarmony config is loaded
+  this.onConfigLoaded = []; //function(cb, jsh){ return cb(); }
 
   //Additional CSS files for jsHarmony.css
   this.css_extensions = [

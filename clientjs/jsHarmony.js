@@ -57,8 +57,8 @@ var jsHarmony = function(options){
   this.onRefreshLayout = [];
   this.RefreshLayout = function(){ _this.XExt.trigger(_this.onRefreshLayout); }
 
-  this.onHidePopups = [];
-  this.HidePopups = function(obj){ _this.XExt.trigger(_this.onHidePopups, obj); }
+  this.onNavigated = [];
+  this.Navigated = function(obj){ _this.XExt.trigger(_this.onNavigated, obj); }
 
   //Options
   this.forcequery = {};
