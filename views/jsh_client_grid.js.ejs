@@ -54,7 +54,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xform_<%=model.id%>.Data = {};
     //Extended xData
     xform_<%=model.id%>.Prop.ReselectAfterEdit = <%-xejs.iif(('reselectafteredit' in model) && (model.reselectafteredit),'true','false')%>;
-    xform_<%=model.id%>.Prop.NewRowPosition = '<%-xejs.iif('newrowposition' in model,model.newrowposition,'last')%>';
+    xform_<%=model.id%>.Prop.NewRowPosition = '<%-xejs.iif('newrowposition' in model,model.newrowposition,'first')%>';
     xform_<%=model.id%>.Prop.ModifiedSinceLoad = false;
     xform_<%=model.id%>.Prop.Enabled = (isInlinePopup ? false : true);
     xform_<%=model.id%>.Prop.isInlinePopup = isInlinePopup;

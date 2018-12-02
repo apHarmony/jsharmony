@@ -278,14 +278,14 @@ BODY
 <%-rootcss%> .xcrumbs a {
 	color:#888888;
 }
-<%-rootcss%> h1.xtitlefiltered {
+<%-rootcss%> h1.xtitlecaption {
   padding-left:9px;
   display:none;
 }
-<%-rootcss%> .xtitlefiltered a{
+<%-rootcss%> .xtitlecaption a{
   color:#888;
 }
-<%-rootcss%> .xtitlefiltered a:hover{
+<%-rootcss%> .xtitlecaption a:hover{
   text-decoration:none;
 }
 <%-rootcss%> .xfilter {

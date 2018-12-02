@@ -578,6 +578,11 @@ exports.ParseEntities = function () {
       originalCaption = false;
       if(!model.unbound && (model.layout != 'exec') && validation_level.strict) _this.LogInit_WARNING('Model ' + model.id + ' missing caption');
     }
+    if(!model.caption) model.caption = ['','',''];
+    else if(_.isString(model.caption) || !_.isArray(model.caption)) model.caption = ['',model.caption,model.caption];
+    else if(model.caption.length==1) model.caption = ['',model.caption[0],model.caption[0]];
+    else if(model.caption.length==2) model.caption = ['',model.caption[0],model.caption[1]];
+
     if (!('title' in model)){
       if(model.tabs && model.tabs.length && model.tabpos && (model.tabpos=='top')){ }
       else {
@@ -723,7 +728,9 @@ exports.ParseEntities = function () {
       //Apply default actions
       if (!('actions' in field)) {
         field.actions = '';
-        if ((field.control == 'html') || (field.control == 'button') || (field.control == 'linkbutton') || (field.control == 'hidden')) field.actions = 'B';
+        if((model.layout=='grid') && ((field.type=='encascii')||(field.type=='hash'))) field.actions = '';
+        else if(field.type=='hash') field.actions = '';        
+        else if ((field.control == 'html') || (field.control == 'button') || (field.control == 'linkbutton') || (field.control == 'hidden')) field.actions = 'B';
         else {
           if (model.layout=='grid'){
             if(isReadOnlyGrid){
@@ -836,10 +843,17 @@ exports.ParseEntities = function () {
           if (field.foreignkey) { field.actions += 'F'; }
         }
         else if(Helper.access(field.actions, 'F')){
-          _this.LogDeprecated(model.id + ' > ' + field.name + ': "F" access is deprecated.  Please use foreignkey instead, or automatic parameters.');
+          _this.LogDeprecated(model.id + ' > ' + field.name + ': "F" action has been deprecated.  Please use foreignkey instead, or automatic parameters.');
           field.foreignkey = 1;
         }
       }
+
+      //Apply "enable_search" property
+      if(Helper.access(field.actions, 'S')){
+        _this.LogDeprecated(model.id + ' > ' + field.name + ': "S" action has been deprecated.  Please use the enable_search property instead.');
+        field.enable_search = 1;
+      }
+      else if(field.enable_search) field.actions += 'S';
 
       //Apply additional properties inherited from DataType definition
       if (('type' in field) && (field.type in sqlext.CustomDataTypes)) {
@@ -936,7 +950,7 @@ exports.ParseEntities = function () {
     
     //**DEPRECATED MESSAGES**
     if (model.fields) _.each(model.fields, function (field) {
-      if (field.actions && Helper.access(field.actions, 'C')) _this.LogDeprecated(model.id + ' > ' + field.name + ': Access \'C\' has been deprecated - use breadcrumbs.sql_params');
+      if (field.actions && Helper.access(field.actions, 'C')) _this.LogDeprecated(model.id + ' > ' + field.name + ': Action \'C\' has been deprecated - use breadcrumbs.sql_params');
       if ('hidden' in field) _this.LogDeprecated(model.id + ' > ' + field.name + ': The hidden attribute has been deprecated - use "control":"hidden"');
       if ('html' in field) _this.LogDeprecated(model.id + ' > ' + field.name + ': The html attribute has been deprecated - use "control":"html"');
       if ('lovkey' in field) _this.LogDeprecated(model.id + ' > ' + field.name + ': The lovkey attribute has been deprecated');
@@ -1059,7 +1073,7 @@ exports.ParseEntities = function () {
       'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites',
       'samplerepeat', 'menu', 'id', 'idmd5', 'access_models', '_inherits', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
       'pagesettings', 'pageheader', 'pageheaderjs', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
-      'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'nogridadd', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
+      'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_filter', 'grid_save_before_update', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
       'js', 'ejs', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
@@ -1070,7 +1084,7 @@ exports.ParseEntities = function () {
     ];
     var _v_field = [
       'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'foreignkey', 'serverejs', 'roles', 'static', 'cellclass',
-      'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
+      'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'enable_search', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
       'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'always_editable_on_insert', 'precision', 'password', 'hash', 'salt', 'unbound',
       'sqlselect', 'sqlupdate', 'sqlinsert','sql_sort', 'sqlwhere', 'sql_search_sound', 'sql_search', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVE__', '__AFTER__',
       'sql_from_db','sql_to_db','sql_search_to_db','datatype_config'
@@ -1111,7 +1125,7 @@ exports.ParseEntities = function () {
       }
     });
     if (no_B && model.breadcrumbs && model.breadcrumbs.sql) {
-      _this.LogInit_ERROR(model.id + ': No fields set to B (Browse) access.  Form databinding will be disabled client-side, and breadcrumbs sql will not execute.');
+      _this.LogInit_ERROR(model.id + ': No fields set to B (Browse) action.  Form databinding will be disabled client-side, and breadcrumbs sql will not execute.');
     }
     if (no_key && !model.nokey && !model.unbound && ((model.layout == 'form') || (model.layout == 'form-m'))) {
       _this.LogInit_ERROR(model.id + ': No key is defined.  Use nokey or unbound attributes if intentional.');
@@ -1167,7 +1181,7 @@ exports.ParseEntities = function () {
           if (!tabmodel.fields) _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Target model has no fields for binding');
           var binding_child_field = _this.AppSrvClass.prototype.getFieldByName(tabmodel.fields, binding_child);
           if (!binding_child_field) _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Bound field "' + binding_child + '" is not defined in the target model "' + tab.target + '"');
-          else if (!Helper.access(binding_child_field.actions, 'F') && !binding_child_field.key) _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Bound field "' + binding_child + '" in target model "' + tab.target + '" missing F access');
+          else if (!Helper.access(binding_child_field.actions, 'F') && !binding_child_field.key) _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Bound field "' + binding_child + '" in target model "' + tab.target + '" missing F action');
         }
       }
     }
