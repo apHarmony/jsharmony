@@ -44,7 +44,7 @@ for(var i=0;i<model.fields.length;i++){
     //Render Control
     if(field.control=='html'){
       if(('serverejs' in field) && field.serverejs){ %><%-ejs.render(field.value,ejsparams)%><% }
-      else { %><%-field.value%><% }
+      else { %><%-XExt.renderClientEJS(field.value,ejsparams)%><% }
     }
     else if(field.control=='label'){
       %><div data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_label xelem<%=model.id%> <%=field.controlclass%> <%=xejs.iif(field.value,'xform_label_static')%>" onclick="return (function(){<%-jslocals%><%-field.onclick%>}).call(this);"><%

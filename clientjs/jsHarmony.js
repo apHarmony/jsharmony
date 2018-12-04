@@ -69,6 +69,7 @@ var jsHarmony = function(options){
   this._instance = '';
   this.google_api_key = '';
   this.isAuthenticated = false;
+  this.isReport = false;
   for(var key in options) this[key] = options[key];
 
   //Libraries
@@ -174,6 +175,12 @@ var jsHarmony = function(options){
 
   this.BindEvents();
   jsHarmony.Instances.push(this);
+
+  if(this.isReport){
+    window.$ = $;
+    window.jQuery = $;
+    window.moment = moment;
+  }
 }
 
 jsHarmony.prototype.$root = function(sel){

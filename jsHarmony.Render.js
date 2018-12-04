@@ -91,14 +91,19 @@ exports.getJSClientParams = function (req) {
 }
 
 exports.getJSLocals = function(req){
-  return 'var jsh = '+req.jshsite.instance+';var $ = jsh.$;var _ = jsh._;var async = jsh.async;var moment=jsh.moment;var ejs = jsh.ejs;var XExt = jsh.XExt;var XPost = jsh.XPost;var XValidate = jsh.XValidate;var _GET = jsh._GET;var XBase = jsh.XBase; var XForms = jsh.XForms;'
+  return 'var jsh = '+req.jshsite.instance+';var $ = jsh.$;var _ = jsh._;var async = jsh.async;var moment=jsh.moment;var ejs = jsh.ejs;var XExt = jsh.XExt;var XPost = jsh.XPost;var XValidate = jsh.XValidate;var XFormat = jsh.XFormat;var _GET = jsh._GET;var XBase = jsh.XBase; var XForms = jsh.XForms;'
 }
 
-exports.RenderEJS = function(view,ejsparams){
+exports.RenderView = function(view,ejsparams){
+  var _this = this;
+  return this.RenderEJS(_this.getEJS(view),ejsparams);
+}
+
+exports.RenderEJS = function(code,ejsparams){
   var _this = this;
   if(!ejsparams) ejsparams = {};
   if(!('ejsparams' in ejsparams)) ejsparams.ejsparams = ejsparams;
-  return ejs.render(_this.getEJS(view),ejsparams);
+  return ejs.render(code,ejsparams);
 }
 
 exports.getStylusCSS = function(stylusName, callback){

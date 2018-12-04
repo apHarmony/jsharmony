@@ -12,7 +12,7 @@
     <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavAdd(); return false;" style="<%-xejs.visible(XExt.access(model.actions,'IU'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a>
     <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavDelete(); return false;" style="<%-xejs.visible(XExt.access(model.actions,'D'))%>"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a>
   <% } %>
-  <%-jsh.RenderEJS('jsh_buttons',ejsparams)%>
+  <%-jsh.RenderView('jsh_buttons',ejsparams)%>
   <% if(model.topmost){ %>
     <a href="#" class="save" onclick="<%-instance%>.XForm_Save();return false;" style="display:none;"><img src="/images/icon_save.png" alt="Save" title="Save" />Save</a>
     <% if(model.layout != 'form-m') { %><a href="#" class="delete" onclick="<%-instance%>.XForm_Delete();return false;" style="display:none;"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a><% } %>
@@ -27,8 +27,8 @@
   <div class="xformcontainer xelem<%=model.id%>">
 <% } %>
 <div class="xform xelem<%=model.id%> xform<%=model.id%> <%=xejs.iif(model.onecolumn,'onecolumn')%>" data-id="xform<%=model.id%>" style="<%=model.formstyle%>">
-<%-jsh.RenderEJS('jsh_embed.js',ejsparams)%>
-<%-jsh.RenderEJS('jsh_controls',ejsparams)%>
+<%-jsh.RenderView('jsh_embed.js',ejsparams)%>
+<%-jsh.RenderView('jsh_controls',ejsparams)%>
 <% if(model.duplicate){
   var popup_model = _.extend({},model.duplicate.model);
   popup_model.hide_system_buttons = _.union(popup_model.hide_system_buttons,['export']); 
@@ -46,6 +46,6 @@
     </div>
   </div>
 <% } %>
-<%-model.ejs%>
+<%-jsh.RenderEJS(model.ejs,ejsparams)%>
 </div>
 <%-xejs.iif(model.layout == 'form-m','</div>')%>

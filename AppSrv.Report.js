@@ -99,6 +99,9 @@ exports.getReportHTML = function (req, res, modelid, Q, P, callback) {
       rslt = _this.parseReportHTML(rptcontent);
     }
     
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8'
+    });
     res.end(rslt);
   }
   

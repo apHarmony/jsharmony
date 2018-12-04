@@ -1,4 +1,4 @@
-<%-jsh.RenderEJS('jsh_embed.js',ejsparams)%>
+<%-jsh.RenderView('jsh_embed.js',ejsparams)%>
 <div class="xbodyhead xelem<%=model.id%>">
 <% if(model.topmost) { %><!--%%%EJSPREPEND%%%--><% } %>
 <% if(!model.topmost && (model.title !== undefined)) { %>
@@ -11,7 +11,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
 %>
 <h1 class="xtitlecaption xtitlecaption<%=model.id%>" style="display:inline-block;"><a href="#" onclick="<%-instance%>.$root('.xfilter_<%=model.id%>').slideToggle(); return false;">(filtered)</a></h1>
 <div class="xactions <%=xactiontype%> xelem<%=model.id%>">
-  <%-jsh.RenderEJS('jsh_buttons',ejsparams)%>
+  <%-jsh.RenderView('jsh_buttons',ejsparams)%>
   <% if(model.inlinepopup){ %><a href="#" onclick="<%-instance%>.XExt.popupClear('<%=model.id%>',this); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'clear'))%>"><img src="/images/icon_delete.png" alt="Clear" title="Clear" />Clear</a><% } %>
   <% if(model.topmost && (model.commitlevel) && (model.commitlevel != 'none')){ %><a href="#" class="save" onclick="<%-instance%>.XForm_Save();return false;" style="display:none;"><img src="/images/icon_save.png" alt="Save" title="Save" />Save</a><% } %>
   <% if(!model.templates.grid){ %><a href="#" onclick="<%-instance%>.App.XForm<%=model.id%>_AddRow(); return false;" class="xbuttonadd" style="<%-xejs.visible(xejs.showSystemButton(model,'add') && model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'I'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a><% } %>
@@ -200,4 +200,4 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
     </div>
   </div>
 <% } %>
-<%-model.ejs%>
+<%-jsh.RenderEJS(model.ejs,ejsparams)%>

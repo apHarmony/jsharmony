@@ -371,6 +371,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
             }
           }
         }
+        if(jsh.XForms[xform._id].unbound) return onDone();
         jsh.App['xform_' + xform._id].Select(onDone);
       },
       function () {
@@ -568,7 +569,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       bcrumbs: jsh.XBCrumbs(),
       jsh: jsh,
       instance: jsh.getInstance(),
-      _GET: jsh._GET
+      _GET: jsh._GET,
+      modelid: modelid,
+      js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
     });
     return ejsrslt;
   }

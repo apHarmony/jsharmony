@@ -482,6 +482,11 @@ exports = module.exports = function(jsh){
     rslt = XExt.ReplaceAll(rslt, '#&gt;', '#>');
     return rslt;
   }
+  XExt.renderClientEJS = function(ejssrc,ejsparams){
+    if(ejssrc.indexOf('<#')<0) return ejssrc;
+    ejssrc = ejssrc.replace(/<#/g, '<%').replace(/#>/g, '%>');
+    return jsh.ejs.render(ejssrc,ejsparams);
+  }
   XExt.isSinglePage = function () {
     if (jsh.singlepage) return true;
     return false;
@@ -647,6 +652,10 @@ exports = module.exports = function(jsh){
     }
     var jscmd = '(function(){'+XExt.getJSLocals(params.modelid)+paramstr+'return '+str+'}).call(_thisobj)';
     return eval(jscmd);
+  }
+
+  XExt.wrapJS = function(code,modelid){
+    return 'return (function(){'+XExt.escapeHTML(XExt.getJSLocals(modelid))+' '+XExt.escapeHTML(code)+' return false; }).call(this);';
   }
 
   XExt.TreeItemContextMenu = function (ctrl, n) {

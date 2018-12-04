@@ -347,13 +347,18 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       _GET: jsh._GET,
       instance: <%-JSON.stringify(req.jshsite.instance)%>,
       jslocals: XExt.getJSLocals(model.id),
+      js: function(code){ return XExt.wrapJS(code,model.id); }
     }, params);
     ejsparams.ejsparams = ejsparams;
     return jsh.ejs.render(jsh.GetEJS(view), ejsparams);
   }
 
-  jsh.RenderEJS = function(view,ejsparams){
-    return jsh.ejs.render(jsh.GetEJS(view),ejsparams);
+  jsh.RenderView = function(view,ejsparams){
+    return jsh.RenderEJS(jsh.GetEJS(view),ejsparams);
+  }
+
+  jsh.RenderEJS = function(code,ejsparams){
+    return jsh.ejs.render(code,ejsparams);
   }
 
   jsh.GetModel = function(modelid,d,onComplete,onFail){

@@ -146,7 +146,7 @@ exports = module.exports = function (req, res, onComplete) {
 };
 
 function RenderPage(req, jsh, account, source, verrors) {
-  return jsh.RenderEJS('jsh_login', {
+  return jsh.RenderView('jsh_login', {
     'username': account.username,
     'remember': account.remember,
     'source': source,
