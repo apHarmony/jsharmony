@@ -655,7 +655,7 @@ exports = module.exports = function(jsh){
   }
 
   XExt.wrapJS = function(code,modelid){
-    return 'return (function(){'+XExt.escapeHTML(XExt.getJSLocals(modelid))+' '+XExt.escapeHTML(code)+' return false; }).call(this);';
+    return 'return (function(){'+XExt.escapeHTML(XExt.getJSLocals(modelid))+' '+XExt.escapeHTML(code)+'; return false; }).call(this);';
   }
 
   XExt.TreeItemContextMenu = function (ctrl, n) {

@@ -473,7 +473,7 @@ exports.ApplyCustomControl = function(field, controlname){
     if(prop=='control') continue;
     if (!(prop in field)){ field[prop] = customcontrol[prop]; }
     else if (prop == "controlclass") field[prop] = field[prop] + " " + customcontrol[prop];
-    else console.log('Not apply - '+prop);
+    else { /* Do not apply */ }
   }
   if('control' in customcontrol){
     if (!('_orig_control' in field)) field['_orig_control'] = [];
@@ -1129,6 +1129,13 @@ exports.ParseEntities = function () {
     }
     if (no_key && !model.nokey && !model.unbound && ((model.layout == 'form') || (model.layout == 'form-m'))) {
       _this.LogInit_ERROR(model.id + ': No key is defined.  Use nokey or unbound attributes if intentional.');
+    }
+    if(model.unbound){
+      _.each(['table','sqlselect','sqlinsert','sqlupdate','sqldelete','sqlexec','sqlrowcount','sqldownloadselect','sqlinsertencrypt'],function(prop){
+        if(model[prop]){
+          _this.LogInit_WARNING(model.id + ': Model has both "unbound" and "'+prop+'" properties.  The "'+prop+'" property cannot be used with unbound forms.');
+        }
+      });
     }
 
     //Generate Validators

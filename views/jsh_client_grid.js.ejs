@@ -22,6 +22,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var _ = jsh._;
   var $ = jsh.$;
   var XExt = jsh.XExt;
+  var moment = jsh.moment;
   var modelid = '<%=model.id%>';
 
   jsh.App.XForm<%=model.id%>_Init = function(callback){
@@ -105,6 +106,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
             data: [data[this.q][i]], 
             xejs: XExt.xejs, 
             jsh: jsh, 
+            _: _,
+            moment: moment,
+            XExt: XExt,
             instance: jsh.getInstance(),
             modelid: modelid,
             js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
@@ -119,10 +123,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           rowid: this.RowCount, 
           data: data[this.q], 
           xejs: XExt.xejs,
-          moment: jsh.moment,
           xform: xform_<%=model.id%>,
           xform_meta: jsh.XForms[modelid],
           jsh: jsh,
+          _: _,
+          moment: moment,
+          XExt: XExt,
           instance: jsh.getInstance(),
           modelid: modelid,
           js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
@@ -310,7 +316,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
             rowid: rowid, 
             data: [_this.DataSet[rowid]], 
             xejs: XExt.xejs, 
-            jsh: jsh, 
+            jsh: jsh,
+            _: _,
+            moment: moment,
+            XExt: XExt,
             instance: jsh.getInstance(),
             modelid: modelid,
             js: function(code){ return jsh.XExt.wrapJS(code,modelid); } 
@@ -388,6 +397,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       data: [newrow],
       xejs: XExt.xejs,
       jsh: jsh,
+      _: _,
+      moment: moment,
+      XExt: XExt,
       instance: jsh.getInstance(),
       modelid: modelid,
       js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
