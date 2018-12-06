@@ -68,6 +68,7 @@ function jsHarmony(config) {
   this.map = {};
   this.uimap = {};
   this.isInitialized = false;
+  this.StartTime = Date.now();
 }
 
 //Add module (before Init/Run)

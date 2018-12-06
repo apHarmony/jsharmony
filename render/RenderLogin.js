@@ -68,18 +68,18 @@ exports = module.exports = function (req, res, onComplete) {
           var user_info = rslt[0][0];
           var prehash = crypto.createHash('sha1').update(user_info[jsh.map.user_id] + xpassword + req.jshsite.auth.salt).digest('hex');
           if ((user_info[jsh.map.user_status]||'').toUpperCase() != 'ACTIVE') {
-            if(jsh.Config.debug_params.auth_debug) jsh.Log('Login: User account not ACTIVE');
+            if(jsh.Config.debug_params.auth_debug) jsh.Log('Login: User account not ACTIVE', { source: 'authentication' });
             verrors[''] = 'Your account has been suspended.  Please contact support at <a href="mailto:' + jsh.Config.support_email + '">' + jsh.Config.support_email + '</a> for more information'; 
           }
           else if (user_info[jsh.map.user_hash] == null) { 
-            if(jsh.Config.debug_params.auth_debug) jsh.Log('Login: DB Password empty');
+            if(jsh.Config.debug_params.auth_debug) jsh.Log('Login: DB Password empty', { source: 'authentication' });
             verrors[''] = 'Invalid email address or password'; 
           }
           else {
             var dbhash = user_info[jsh.map.user_hash].toString('hex');
             if(jsh.Config.debug_params.auth_debug){
-              jsh.Log('Login DB Hash:     '+dbhash);
-              jsh.Log('Login Client Hash: '+prehash);
+              jsh.Log('Login DB Hash:     '+dbhash, { source: 'authentication' });
+              jsh.Log('Login Client Hash: '+prehash, { source: 'authentication' });
             }
             if (nopass) prehash = dbhash;
             if (dbhash == prehash) {
@@ -92,7 +92,7 @@ exports = module.exports = function (req, res, onComplete) {
               sqlparams[jsh.map.user_last_ip] = ipaddr;
               sqlparams[jsh.map.user_id] = user_id;
               sqlparams[jsh.map.user_last_tstmp] = PE_LL_Tstmp;
-              if(jsh.Config.debug_params.auth_debug) jsh.Log('Login: Success');
+              if(jsh.Config.debug_params.auth_debug) jsh.Log('Login: Success', { source: 'authentication' });
               req.jshsite.auth.on_loginsuccess(req, jsh, sqlparams, function (err, rslt) {
                 if ((rslt != null) && (rslt.length == 1) && (rslt[0] != null) && (rslt[0][jsh.map.rowcount] == 1)) {
                   Helper.ClearCookie(req, res, jsh, 'account', { 'path': req.baseurl });
@@ -111,7 +111,7 @@ exports = module.exports = function (req, res, onComplete) {
         }
         else { 
           if(jsh.Config.debug_params.auth_debug){
-            jsh.Log('Login: User account not found');
+            jsh.Log('Login: User account not found', { source: 'authentication' });
             if(err) jsh.Log(err);
           }
           verrors[''] = 'Invalid email address or password'; 

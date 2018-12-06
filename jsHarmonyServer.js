@@ -130,6 +130,7 @@ jsHarmonyServer.prototype.initDebugLogSocket = function(){
     });
     //On New connection
     logServer.on('connection', function(ws, req, socket, head){
+      ws.sources = {};
       if(!req._roles || (!('SYSADMIN' in req._roles) && !('DEV' in req._roles))){
         ws.terminate();
         _this.jsh.Log.error('Potential Hacking Attempt - Unsecure Debug Log Client Connected from '+Helper.GetIP(req));
@@ -138,6 +139,49 @@ jsHarmonyServer.prototype.initDebugLogSocket = function(){
       _this.jsh.Log('Debug Log Client Connected from '+Helper.GetIP(req));
       ws.isAlive = true;
       ws.on('pong', function(){ ws.isAlive = true; });
+      ws.on('message', function(data){
+        //Try to parse message
+        var jmsg = {};
+        try{
+          jmsg = JSON.parse(data);
+        }
+        catch(ex){}
+        //If message has "setSettings", read the "sources" object
+        if(jmsg && jmsg.setSettings){
+          var sources = jmsg.setSettings.sources;
+          if(sources){
+            //Enable Database option
+            if(sources.database){
+              if(!('_orig_db_requests' in _this.jsh.Config.debug_params)) _this.jsh.Config.debug_params._orig_db_requests = _this.jsh.Config.debug_params.db_requests;
+              _this.jsh.Config.debug_params.db_requests = true;
+            }
+            else {
+              if('_orig_db_requests' in _this.jsh.Config.debug_params) _this.jsh.Config.debug_params.db_requests = _this.jsh.Config.debug_params._orig_db_requests;
+              delete _this.jsh.Config._orig_db_requests;
+            }
+            //Enable Authentication option
+            if(sources.authentication){
+              if(!('_orig_auth_debug' in _this.jsh.Config.debug_params)) _this.jsh.Config.debug_params._orig_auth_debug = _this.jsh.Config.debug_params.auth_debug;
+              _this.jsh.Config.debug_params.auth_debug = true;
+            }
+            else {
+              if('_orig_auth_debug' in _this.jsh.Config.debug_params) _this.jsh.Config.debug_params.auth_debug = _this.jsh.Config.debug_params._orig_auth_debug;
+              delete _this.jsh.Config._orig_auth_debug;
+            }
+            ws.sources.database = !!sources.database;
+            ws.sources.authentication = !!sources.authentication;
+            ws.sources.system = !!sources.system;
+            ws.sources.webserver = !!sources.webserver;
+          }
+        }
+        //If message has "getHistory", return the history
+        if(jmsg && jmsg.getHistory){
+          var history = _this.jsh.Log.getHistory(ws.sources);
+          _.each(history, function(logObject){
+            ws.send(JSON.stringify(logObject));
+          });
+        }
+      });
     });
     //Keepalive
     setInterval(function(){
@@ -149,9 +193,13 @@ jsHarmonyServer.prototype.initDebugLogSocket = function(){
     }, 30000);
     //Send logs to client
     _this.jsh.Log.on('log', function(msg){
-      logServer.clients.forEach(function each(client) {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify(msg));
+      logServer.clients.forEach(function each(ws) {
+        if (ws.readyState === WebSocket.OPEN) {
+          if(ws.sources){
+            if(msg && msg.source && ws.sources[msg.source]){
+              ws.send(JSON.stringify(msg));
+            }
+          }
         }
       });
     });
@@ -241,7 +289,6 @@ jsHarmonyServer.prototype.ListenPort = function(server, firstPort, ip, onSuccess
       }
       onError(err);
     });
-    //server.on('connection',function(socket){ socket.setTimeout(0); });
   }
   if(!params.currentPort){ params.currentPort = 8080; params.tryNextPort = true;  }
   server.listen(params.currentPort, ip);
