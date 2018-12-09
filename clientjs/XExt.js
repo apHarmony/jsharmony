@@ -25,6 +25,8 @@ exports = module.exports = function(jsh){
 
   var XExt = function(){ }
 
+  XExt.COOKIE_MAX_EXPIRATION = 2147483647;
+
   XExt.XForm = require('./XExt.XForm.js')(jsh);
 
   XExt.parseGET = function (qs) {
@@ -586,13 +588,13 @@ exports = module.exports = function(jsh){
     return settings;
   }
 
-  XExt.SetSettingsCookie = function(module_name,cvalue,exmin){
+  XExt.SetSettingsCookie = function(module_name,cvalue){
     if (typeof module_name === undefined || module_name.length <=0){
       throw "Please provide module name!";
     }
     var settings = XExt.GetSettingsCookie();
     settings[module_name]=cvalue;
-    return XExt.SetCookie('settings',JSON.stringify(settings),exmin);
+    return XExt.SetCookie('settings',JSON.stringify(settings),XExt.COOKIE_MAX_EXPIRATION);
   }
 
   XExt.currentURL = function(){
