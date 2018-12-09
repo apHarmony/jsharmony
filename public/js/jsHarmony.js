@@ -1180,8 +1180,23 @@ var _ = require('lodash');
 exports = module.exports = function(jsh){
   var XDebugConsole = function(){
   };
-  XDebugConsole.cookie_name = 'x_debug_console';
-  XDebugConsole.default_settings = {"enabled":1,"minimized":0,"source":["webserver","client requests","system","database","authentication"]};
+  XDebugConsole.SETTINGS_ID = 'debugconsole';
+  XDebugConsole.socket = {};
+  XDebugConsole.settings = {};
+  XDebugConsole.client_sources = {
+    "client_requests": true
+  };
+  XDebugConsole.server_sources = {
+    "webserver":true,
+    "system": true,
+    "database": true,
+    "authentication": true
+  };
+  XDebugConsole.default_settings = {
+    "enabled":1, // todo set to 0 not enabled by default
+    "minimized":0,
+    "sources": _.extend({},XDebugConsole.client_sources,XDebugConsole.server_sources)
+  };
   function isEnabled(){
     return (jsh.dev && XDebugConsole.settings.enabled);
   }
@@ -1193,132 +1208,183 @@ exports = module.exports = function(jsh){
     XMLHttpRequest.prototype.baseSend = XMLHttpRequest.prototype.send;
     XMLHttpRequest.prototype.send = function(value) {
       this.addEventListener("load", function(){
-        if (XDebugConsole.settings.source.indexOf("client requests")>-1){
+        if (XDebugConsole.settings.sources["client_requests"]){
           XDebugConsole.showDebugMessage('Client Request: '+this.responseURL+'<br>Client Response: '+JSON.stringify(JSON.parse(this.responseText), null, 2).replace(/\\r\\n/g, '<br>'));
         }
       }, false);
       this.baseSend(value);
     };
   }
-  XDebugConsole.socket = '';
+
+  function getSourcesForWebSocket(){
+    var sources = _.extend({},XDebugConsole.settings.sources);
+    _.forOwn(XDebugConsole.client_sources,function (v,k) {
+      delete sources[k]
+    });
+    // _.forOwn(sources,function (v,k){
+    //   if (!v) delete sources[k]
+    // });
+    return sources;
+  }
+
   XDebugConsole.setWebSocketListener = function(){
-    if (XDebugConsole.settings.source.indexOf("webserver")>-1
-      || XDebugConsole.settings.source.indexOf("system")>-1
-      || XDebugConsole.settings.source.indexOf("database")>-1
-      || XDebugConsole.settings.source.indexOf("authentication")>-1
-    ){
-      if (typeof XDebugConsole.socket !== 'object') {
+    console.log(XDebugConsole.socket);
+    console.log(_.isEmpty(XDebugConsole.socket));
+
+    var settings = {sources: getSourcesForWebSocket()};
+    console.log(settings);
+    if (!_.isEmpty(settings.sources)) {
+      if (_.isEmpty(XDebugConsole.socket)) {
         XDebugConsole.socket = new WebSocket("ws://" + window.location.hostname + ":" + window.location.port + jsh._BASEURL + "_log");
-        XDebugConsole.socket.onmessage = function (e) {
-          var m = JSON.parse(e.data);
-          if (XDebugConsole.settings.source.indexOf(m.source) > -1)
-            XDebugConsole.showDebugMessage('<span style="color: ' + m.color + '">' + _.startCase(m.source) + ': ' + m.txt + '</span>');
+        XDebugConsole.socket.onopen = function (e) {
+          console.log(JSON.stringify({setSettings: settings}));
+          XDebugConsole.socket.send(JSON.stringify({setSettings: settings}));
+          XDebugConsole.socket.send(JSON.stringify({getHistory: true}));
+          console.log(XDebugConsole.socket);
         }
+        XDebugConsole.socket.onmessage = function (e) {
+          // console.log(XDebugConsole.socket);
+          var m = JSON.parse(e.data);
+          console.log(m);
+          XDebugConsole.showDebugMessage('<span style="color: ' + m.color + '">' + _.startCase(m.source) + ': ' + m.txt + '</span>');
+        }
+      }else{
+        XDebugConsole.socket.send(JSON.stringify({setSettings: settings}));
       }
     }else {
-      if (typeof XDebugConsole.socket === 'object'){
-        XDebugConsole.socket.close(1000,'close');
-        XDebugConsole.socket='';
+      if (!_.isEmpty(XDebugConsole.socket)) {
+        setTimeout(function(){ socket.close(); setTimeout(done, 500); }, 50000);
       }
     }
-  }
-  XDebugConsole.InitDebugPanel = function(){
-    XDebugConsole.setXMLHttpRequestListener();
-    XDebugConsole.setWebSocketListener();
-    var default_sources = XDebugConsole.default_settings.source;
-    var settingsHtml = '';
-    for (var i=0; i<default_sources.length; i++) {
-      settingsHtml += '<label for="' + default_sources[i] + '"><input type="checkbox" name="source" class="src" id="' + default_sources[i] + '" value="' + default_sources[i] + '"> ' + default_sources[i] + '</label><br>';
+
+
+      // if (XDebugConsole.settings.sources["webserver"]
+      //   || XDebugConsole.settings.sources["system"]
+      //   || XDebugConsole.settings.sources["database"]
+      //   || XDebugConsole.settings.sources["authentication"]
+      // ){
+      //   if (typeof XDebugConsole.socket !== 'object') {
+      //     XDebugConsole.socket = new WebSocket("ws://" + window.location.hostname + ":" + window.location.port + jsh._BASEURL + "_log");
+      //     console.log(XDebugConsole.socket);
+      //
+      //     XDebugConsole.socket.onopen = function (e) {
+      //
+      //       XDebugConsole.socket.send(JSON.stringify({ setSettings: settings }));
+      //       XDebugConsole.socket.send(JSON.stringify({ getHistory: true }));
+      //       console.log(XDebugConsole.socket);
+      //     }
+      //     XDebugConsole.socket.onmessage = function (e) {
+      //       console.log(XDebugConsole.socket);
+      //       var m = JSON.parse(e.data);
+      //       if (XDebugConsole.settings.sources[m.source])
+      //         XDebugConsole.showDebugMessage('<span style="color: ' + m.color + '">' + _.startCase(m.source) + ': ' + m.txt + '</span>');
+      //     }
+      //   }
+      // }else {
+      //   if (typeof XDebugConsole.socket === 'object'){
+      //     XDebugConsole.socket.close(1000,'close');
+      //     XDebugConsole.socket='';
+      //   }
+      // }
     }
-    XDebugConsole.DebugDialog = jsh.$root('.xdebugconsole');
-    XDebugConsole.DebugPanel  =  XDebugConsole.DebugDialog.find('#debug-panel');
-    XDebugConsole.DebugPanel.find('.debug-settings').append($(settingsHtml));
-    XDebugConsole.DebugPanelMin  = XDebugConsole.DebugDialog.find('#debug-panel-minimized');
-    var checkboxes = XDebugConsole.DebugPanel.find('.src');
-    for (var i=0; i<checkboxes.length; i++){
-      if (XDebugConsole.settings.source.indexOf(checkboxes[i].value)>-1){
-        $(checkboxes[i]).click();
+    XDebugConsole.InitDebugPanel = function(){
+      XDebugConsole.setXMLHttpRequestListener();
+      XDebugConsole.setWebSocketListener();
+      var default_sources = XDebugConsole.default_settings.sources;
+      var settingsHtml = '';
+      _.forOwn(default_sources, function(v, k) {
+        settingsHtml += '<label for="' + k + '">' +
+          '<input type="checkbox" name="sources" class="src" id="' + k + '" value="' + k + '"> ' + _.upperFirst(k.replace(/_/g,' ')) + '</label><br>';
+      } );
+
+      XDebugConsole.DebugDialog = jsh.$root('.xdebugconsole');
+      XDebugConsole.DebugPanel  =  XDebugConsole.DebugDialog.find('#debug-panel');
+      XDebugConsole.DebugPanel.find('.debug-settings').append($(settingsHtml));
+      XDebugConsole.DebugPanelMin  = XDebugConsole.DebugDialog.find('#debug-panel-minimized');
+      var checkboxes = XDebugConsole.DebugPanel.find('.src');
+      for (var i=0; i<checkboxes.length; i++){
+        if (XDebugConsole.settings.sources[checkboxes[i].value]){
+          $(checkboxes[i]).click();
+        }
       }
+      if (isEnabled()){
+        XDebugConsole.DebugDialog.show().addClass('visible');
+        if (isMinimized()){
+          XDebugConsole.DebugDialog.removeClass('visible');
+          XDebugConsole.DebugPanelMin.show();
+          XDebugConsole.DebugPanel.hide();
+        }else {
+          XDebugConsole.DebugDialog.addClass('visible');
+          XDebugConsole.DebugPanel.show();
+          XDebugConsole.DebugPanelMin.hide();
+        }
+      }else{
+        XDebugConsole.DebugDialog.hide().removeClass('visible');
+      }
+      XDebugConsole.DebugPanel.on('click','.src', onSourcesChange);
+      XDebugConsole.DebugDialog.find('.controls').on('click','i',onControlHit);
     }
-    if (isEnabled()){
-      XDebugConsole.DebugDialog.show().addClass('visible');
-      if (isMinimized()){
-        XDebugConsole.DebugDialog.removeClass('visible');
-        XDebugConsole.DebugPanelMin.show();
+
+    function onControlHit(e){
+      var action = $(e.currentTarget).data("action");
+      if (action ==='settings') return XDebugConsole.DebugPanel.find('.debug-settings').toggle();
+      if (action ==='minimize') {
         XDebugConsole.DebugPanel.hide();
-      }else {
-        XDebugConsole.DebugDialog.addClass('visible');
+        XDebugConsole.DebugPanelMin.show();
+        XDebugConsole.DebugDialog.removeClass('visible');
+        XDebugConsole.settings.minimized=1;
+        jsh.XExt.SetSettingsCookie(XDebugConsole.SETTINGS_ID,XDebugConsole.settings);
+      }
+      if (action ==='expand') {
         XDebugConsole.DebugPanel.show();
         XDebugConsole.DebugPanelMin.hide();
+        XDebugConsole.DebugDialog.addClass('visible');
+        XDebugConsole.settings.minimized=0;
+        jsh.XExt.SetSettingsCookie(XDebugConsole.SETTINGS_ID,XDebugConsole.settings);
       }
-    }else{
-      XDebugConsole.DebugDialog.hide().removeClass('visible');
+      if (action ==='close') {
+        XDebugConsole.DebugDialog.hide();
+        XDebugConsole.settings.enabled=0;
+        XDebugConsole.showDebugMessage('closed',1);
+        jsh.XExt.SetSettingsCookie(XDebugConsole.SETTINGS_ID,XDebugConsole.settings);
+      }
     }
-    XDebugConsole.DebugPanel.on('click','.src', processSourcesChange);
-    XDebugConsole.DebugDialog.on('click','i',handleControlHit);
-  }
 
-  function handleControlHit(e){
-    var action = $(e.currentTarget).data("s");
-    if (action ==='settings') return XDebugConsole.DebugPanel.find('.debug-settings').toggle();
-    if (action ==='minimize') {
-      XDebugConsole.DebugPanel.toggle();
-      XDebugConsole.DebugPanelMin.toggle();
-      XDebugConsole.DebugDialog.removeClass('visible');
-      XDebugConsole.settings.minimized=1;
-      jsh.XExt.SetSettingsCookie(XDebugConsole.cookie_name,XDebugConsole.settings,60*24*300);
-    }
-    if (action ==='expand') {
-      XDebugConsole.DebugPanel.toggle();
-      XDebugConsole.DebugPanelMin.toggle();
-      XDebugConsole.DebugDialog.addClass('visible');
-      XDebugConsole.settings.minimized=0;
-      jsh.XExt.SetSettingsCookie(XDebugConsole.cookie_name,XDebugConsole.settings,60*24*300);
-    }
-    if (action ==='close') {
-      XDebugConsole.DebugDialog.toggle();
-      XDebugConsole.settings.enabled=0;
-      XDebugConsole.showDebugMessage('closed',1);
-      jsh.XExt.SetSettingsCookie(XDebugConsole.cookie_name,XDebugConsole.settings,60*24*300);
-    }
-  }
+    XDebugConsole.Init = function(){
 
-  XDebugConsole.Init = function(){
-    this.settings = jsh.XExt.GetSettingsCookie(XDebugConsole.cookie_name);
-    if (!this.settings.hasOwnProperty('enabled') && !this.settings.hasOwnProperty('source') && !this.settings.hasOwnProperty('minimized')){
-      this.settings = {};
+      this.settings = jsh.XExt.GetSettingsCookie(XDebugConsole.SETTINGS_ID);
+      if (!this.settings.hasOwnProperty('enabled')
+        && !this.settings.hasOwnProperty('sources')
+        && !this.settings.hasOwnProperty('minimized')
+        && !(typeof this.settings.sources === 'object')
+      ){
+        this.settings = {};
+      }
+      this.settings = _.extend(this.default_settings, this.settings);
+      jsh.XExt.SetSettingsCookie(XDebugConsole.SETTINGS_ID,XDebugConsole.settings);
+      this.InitDebugPanel();
+    };
+
+    function onSourcesChange(e){
+      var jobj = $(this);
+      var added = jobj.prop("checked");
+      XDebugConsole.settings.sources[jobj.val()] = added;
+      var message = 'Added: ';
+      if (!added) message = "Removed: ";
+      message = message + jobj.val().replace(/_/g,' ');
+      XDebugConsole.showDebugMessage(message, true);
+      jsh.XExt.SetSettingsCookie(XDebugConsole.SETTINGS_ID,XDebugConsole.settings);
+      XDebugConsole.setWebSocketListener();
     }
-    if(_.isEmpty(this.settings)){
-      this.settings = this.default_settings
-    }
-    jsh.XExt.SetSettingsCookie(XDebugConsole.cookie_name,XDebugConsole.settings,60*24*300);
-    this.InitDebugPanel();
+
+    XDebugConsole.showDebugMessage = function (txt, clear) {
+      var body = XDebugConsole.DebugPanel.find('.xdebuginfo-body');
+      if(clear) body.empty();
+      body.prepend('<div class="info-message"><pre>'+txt+'</pre></div>');
+    };
+
+    return XDebugConsole;
   };
-
-  function processSourcesChange(e){
-    var elem = e.currentTarget;
-    if($(elem).prop("checked") === true){
-      XDebugConsole.settings.source.push(elem.value);
-      XDebugConsole.showDebugMessage('Aded: '+elem.value, true);
-    }
-    else if($(elem).prop("checked") === false){
-      var removed = _.remove(XDebugConsole.settings.source, function(n) {
-        return n === elem.value;
-      });
-      XDebugConsole.showDebugMessage('Removed: '+removed[0],true);
-    }
-    jsh.XExt.SetSettingsCookie(XDebugConsole.cookie_name,XDebugConsole.settings,60*24*300);
-    XDebugConsole.setWebSocketListener();
-  }
-
-  XDebugConsole.showDebugMessage = function (txt, clear) {
-    var body = XDebugConsole.DebugPanel.find('.xdebuginfo-body');
-    if(clear) body.empty();
-    body.prepend('<div class="info-message"><pre>'+txt+'</pre></div>');
-  }
-
-  return XDebugConsole;
-}
 },{"./jquery-1.11.2":21,"lodash":30}],9:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
@@ -1841,6 +1907,8 @@ exports = module.exports = function(jsh){
   var XValidate = jsh.XValidate;
 
   var XExt = function(){ }
+
+  XExt.COOKIE_MAX_EXPIRATION = 2147483647;
 
   XExt.XForm = require('./XExt.XForm.js')(jsh);
 
@@ -2403,13 +2471,13 @@ exports = module.exports = function(jsh){
     return settings;
   }
 
-  XExt.SetSettingsCookie = function(module_name,cvalue,exmin){
+  XExt.SetSettingsCookie = function(module_name,cvalue){
     if (typeof module_name === undefined || module_name.length <=0){
       throw "Please provide module name!";
     }
     var settings = XExt.GetSettingsCookie();
     settings[module_name]=cvalue;
-    return XExt.SetCookie('settings',JSON.stringify(settings),exmin);
+    return XExt.SetCookie('settings',JSON.stringify(settings),XExt.COOKIE_MAX_EXPIRATION);
   }
 
   XExt.currentURL = function(){
@@ -44706,5 +44774,5 @@ return isNaN(t)?d:t},g=p(h[0]),m=Math.max(g,p(h[1]||"")),g=a?Math.max(g,a.getFul
 */
 exports = module.exports = function(jQuery){ (function(t,e,i){function n(i,n,o){var r=e.createElement(i);return n&&(r.id=Z+n),o&&(r.style.cssText=o),t(r)}function o(){return i.innerHeight?i.innerHeight:t(i).height()}function r(e,i){i!==Object(i)&&(i={}),this.cache={},this.el=e,this.value=function(e){var n;return void 0===this.cache[e]&&(n=t(this.el).attr("data-cbox-"+e),void 0!==n?this.cache[e]=n:void 0!==i[e]?this.cache[e]=i[e]:void 0!==X[e]&&(this.cache[e]=X[e])),this.cache[e]},this.get=function(e){var i=this.value(e);return t.isFunction(i)?i.call(this.el,this):i}}function h(t){var e=W.length,i=(z+t)%e;return 0>i?e+i:i}function a(t,e){return Math.round((/%/.test(t)?("x"===e?E.width():o())/100:1)*parseInt(t,10))}function s(t,e){return t.get("photo")||t.get("photoRegex").test(e)}function l(t,e){return t.get("retinaUrl")&&i.devicePixelRatio>1?e.replace(t.get("photoRegex"),t.get("retinaSuffix")):e}function d(t){"contains"in y[0]&&!y[0].contains(t.target)&&t.target!==v[0]&&(t.stopPropagation(),y.focus())}function c(t){c.str!==t&&(y.add(v).removeClass(c.str).addClass(t),c.str=t)}function g(e){z=0,e&&e!==!1&&"nofollow"!==e?(W=t("."+te).filter(function(){var i=t.data(this,Y),n=new r(this,i);return n.get("rel")===e}),z=W.index(_.el),-1===z&&(W=W.add(_.el),z=W.length-1)):W=t(_.el)}function u(i){t(e).trigger(i),ae.triggerHandler(i)}function f(i){var o;if(!G){if(o=t(i).data(Y),_=new r(i,o),g(_.get("rel")),!$){$=q=!0,c(_.get("className")),y.css({visibility:"hidden",display:"block",opacity:""}),L=n(se,"LoadedContent","width:0; height:0; overflow:hidden; visibility:hidden"),b.css({width:"",height:""}).append(L),D=T.height()+k.height()+b.outerHeight(!0)-b.height(),j=C.width()+H.width()+b.outerWidth(!0)-b.width(),A=L.outerHeight(!0),N=L.outerWidth(!0);var h=a(_.get("initialWidth"),"x"),s=a(_.get("initialHeight"),"y"),l=_.get("maxWidth"),f=_.get("maxHeight");_.w=(l!==!1?Math.min(h,a(l,"x")):h)-N-j,_.h=(f!==!1?Math.min(s,a(f,"y")):s)-A-D,L.css({width:"",height:_.h}),J.position(),u(ee),_.get("onOpen"),O.add(F).hide(),y.focus(),_.get("trapFocus")&&e.addEventListener&&(e.addEventListener("focus",d,!0),ae.one(re,function(){e.removeEventListener("focus",d,!0)})),_.get("returnFocus")&&ae.one(re,function(){t(_.el).focus()})}var p=parseFloat(_.get("opacity"));v.css({opacity:p===p?p:"",cursor:_.get("overlayClose")?"pointer":"",visibility:"visible"}).show(),_.get("closeButton")?B.html(_.get("close")).appendTo(b):B.appendTo("<div/>"),w()}}function p(){y||(V=!1,E=t(i),y=n(se).attr({id:Y,"class":t.support.opacity===!1?Z+"IE":"",role:"dialog",tabindex:"-1"}).hide(),v=n(se,"Overlay").hide(),S=t([n(se,"LoadingOverlay")[0],n(se,"LoadingGraphic")[0]]),x=n(se,"Wrapper"),b=n(se,"Content").append(F=n(se,"Title"),I=n(se,"Current"),P=t('<button type="button"/>').attr({id:Z+"Previous"}),K=t('<button type="button"/>').attr({id:Z+"Next"}),R=n("button","Slideshow"),S),B=t('<button type="button"/>').attr({id:Z+"Close"}),x.append(n(se).append(n(se,"TopLeft"),T=n(se,"TopCenter"),n(se,"TopRight")),n(se,!1,"clear:left").append(C=n(se,"MiddleLeft"),b,H=n(se,"MiddleRight")),n(se,!1,"clear:left").append(n(se,"BottomLeft"),k=n(se,"BottomCenter"),n(se,"BottomRight"))).find("div div").css({"float":"left"}),M=n(se,!1,"position:absolute; width:9999px; visibility:hidden; display:none; max-width:none;"),O=K.add(P).add(I).add(R)),e.body&&!y.parent().length&&t(e.body).append(v,y.append(x,M))}function m(){function i(t){t.which>1||t.shiftKey||t.altKey||t.metaKey||t.ctrlKey||(t.preventDefault(),f(this))}return y?(V||(V=!0,K.click(function(){J.next()}),P.click(function(){J.prev()}),B.click(function(){J.close()}),v.click(function(){_.get("overlayClose")&&J.close()}),t(e).bind("keydown."+Z,function(t){var e=t.keyCode;$&&_.get("escKey")&&27===e&&(t.preventDefault(),J.close()),$&&_.get("arrowKey")&&W[1]&&!t.altKey&&(37===e?(t.preventDefault(),P.click()):39===e&&(t.preventDefault(),K.click()))}),t.isFunction(t.fn.on)?t(e).on("click."+Z,"."+te,i):t("."+te).live("click."+Z,i)),!0):!1}function w(){var e,o,r,h=J.prep,d=++le;if(q=!0,U=!1,u(he),u(ie),_.get("onLoad"),_.h=_.get("height")?a(_.get("height"),"y")-A-D:_.get("innerHeight")&&a(_.get("innerHeight"),"y"),_.w=_.get("width")?a(_.get("width"),"x")-N-j:_.get("innerWidth")&&a(_.get("innerWidth"),"x"),_.mw=_.w,_.mh=_.h,_.get("maxWidth")&&(_.mw=a(_.get("maxWidth"),"x")-N-j,_.mw=_.w&&_.w<_.mw?_.w:_.mw),_.get("maxHeight")&&(_.mh=a(_.get("maxHeight"),"y")-A-D,_.mh=_.h&&_.h<_.mh?_.h:_.mh),e=_.get("href"),Q=setTimeout(function(){S.show()},100),_.get("inline")){var c=t(e);r=t("<div>").hide().insertBefore(c),ae.one(he,function(){r.replaceWith(c)}),h(c)}else _.get("iframe")?h(" "):_.get("html")?h(_.get("html")):s(_,e)?(e=l(_,e),U=new Image,t(U).addClass(Z+"Photo").bind("error",function(){h(n(se,"Error").html(_.get("imgError")))}).one("load",function(){d===le&&setTimeout(function(){var e;t.each(["alt","longdesc","aria-describedby"],function(e,i){var n=t(_.el).attr(i)||t(_.el).attr("data-"+i);n&&U.setAttribute(i,n)}),_.get("retinaImage")&&i.devicePixelRatio>1&&(U.height=U.height/i.devicePixelRatio,U.width=U.width/i.devicePixelRatio),_.get("scalePhotos")&&(o=function(){U.height-=U.height*e,U.width-=U.width*e},_.mw&&U.width>_.mw&&(e=(U.width-_.mw)/U.width,o()),_.mh&&U.height>_.mh&&(e=(U.height-_.mh)/U.height,o())),_.h&&(U.style.marginTop=Math.max(_.mh-U.height,0)/2+"px"),W[1]&&(_.get("loop")||W[z+1])&&(U.style.cursor="pointer",U.onclick=function(){J.next()}),U.style.width=U.width+"px",U.style.height=U.height+"px",h(U)},1)}),U.src=e):e&&M.load(e,_.get("data"),function(e,i){d===le&&h("error"===i?n(se,"Error").html(_.get("xhrError")):t(this).contents())})}var v,y,x,b,T,C,H,k,W,E,L,M,S,F,I,R,K,P,B,O,_,D,j,A,N,z,U,$,q,G,Q,J,V,X={html:!1,photo:!1,iframe:!1,inline:!1,transition:"elastic",speed:300,fadeOut:300,width:!1,initialWidth:"600",innerWidth:!1,maxWidth:!1,height:!1,initialHeight:"450",innerHeight:!1,maxHeight:!1,scalePhotos:!0,scrolling:!0,opacity:.9,preloading:!0,className:!1,overlayClose:!0,escKey:!0,arrowKey:!0,top:!1,bottom:!1,left:!1,right:!1,fixed:!1,data:void 0,closeButton:!0,fastIframe:!0,open:!1,reposition:!0,loop:!0,slideshow:!1,slideshowAuto:!0,slideshowSpeed:2500,slideshowStart:"start slideshow",slideshowStop:"stop slideshow",photoRegex:/\.(gif|png|jp(e|g|eg)|bmp|ico|webp|jxr|svg)((#|\?).*)?$/i,retinaImage:!1,retinaUrl:!1,retinaSuffix:"@2x.$1",current:"image {current} of {total}",previous:"previous",next:"next",close:"close",xhrError:"This content failed to load.",imgError:"This image failed to load.",returnFocus:!0,trapFocus:!0,onOpen:!1,onLoad:!1,onComplete:!1,onCleanup:!1,onClosed:!1,rel:function(){return this.rel},href:function(){return t(this).attr("href")},title:function(){return this.title}},Y="colorbox",Z="cbox",te=Z+"Element",ee=Z+"_open",ie=Z+"_load",ne=Z+"_complete",oe=Z+"_cleanup",re=Z+"_closed",he=Z+"_purge",ae=t("<a/>"),se="div",le=0,de={},ce=function(){function t(){clearTimeout(h)}function e(){(_.get("loop")||W[z+1])&&(t(),h=setTimeout(J.next,_.get("slideshowSpeed")))}function i(){R.html(_.get("slideshowStop")).unbind(s).one(s,n),ae.bind(ne,e).bind(ie,t),y.removeClass(a+"off").addClass(a+"on")}function n(){t(),ae.unbind(ne,e).unbind(ie,t),R.html(_.get("slideshowStart")).unbind(s).one(s,function(){J.next(),i()}),y.removeClass(a+"on").addClass(a+"off")}function o(){r=!1,R.hide(),t(),ae.unbind(ne,e).unbind(ie,t),y.removeClass(a+"off "+a+"on")}var r,h,a=Z+"Slideshow_",s="click."+Z;return function(){r?_.get("slideshow")||(ae.unbind(oe,o),o()):_.get("slideshow")&&W[1]&&(r=!0,ae.one(oe,o),_.get("slideshowAuto")?i():n(),R.show())}}();t[Y]||(t(p),J=t.fn[Y]=t[Y]=function(e,i){var n,o=this;if(e=e||{},t.isFunction(o))o=t("<a/>"),e.open=!0;else if(!o[0])return o;return o[0]?(p(),m()&&(i&&(e.onComplete=i),o.each(function(){var i=t.data(this,Y)||{};t.data(this,Y,t.extend(i,e))}).addClass(te),n=new r(o[0],e),n.get("open")&&f(o[0])),o):o},J.position=function(e,i){function n(){T[0].style.width=k[0].style.width=b[0].style.width=parseInt(y[0].style.width,10)-j+"px",b[0].style.height=C[0].style.height=H[0].style.height=parseInt(y[0].style.height,10)-D+"px"}var r,h,s,l=0,d=0,c=y.offset();if(E.unbind("resize."+Z),y.css({top:-9e4,left:-9e4}),h=E.scrollTop(),s=E.scrollLeft(),_.get("fixed")?(c.top-=h,c.left-=s,y.css({position:"fixed"})):(l=h,d=s,y.css({position:"absolute"})),d+=_.get("right")!==!1?Math.max(E.width()-_.w-N-j-a(_.get("right"),"x"),0):_.get("left")!==!1?a(_.get("left"),"x"):Math.round(Math.max(E.width()-_.w-N-j,0)/2),l+=_.get("bottom")!==!1?Math.max(o()-_.h-A-D-a(_.get("bottom"),"y"),0):_.get("top")!==!1?a(_.get("top"),"y"):Math.round(Math.max(o()-_.h-A-D,0)/2),y.css({top:c.top,left:c.left,visibility:"visible"}),x[0].style.width=x[0].style.height="9999px",r={width:_.w+N+j,height:_.h+A+D,top:l,left:d},e){var g=0;t.each(r,function(t){return r[t]!==de[t]?(g=e,void 0):void 0}),e=g}de=r,e||y.css(r),y.dequeue().animate(r,{duration:e||0,complete:function(){n(),q=!1,x[0].style.width=_.w+N+j+"px",x[0].style.height=_.h+A+D+"px",_.get("reposition")&&setTimeout(function(){E.bind("resize."+Z,J.position)},1),t.isFunction(i)&&i()},step:n})},J.resize=function(t){var e;$&&(t=t||{},t.width&&(_.w=a(t.width,"x")-N-j),t.innerWidth&&(_.w=a(t.innerWidth,"x")),L.css({width:_.w}),t.height&&(_.h=a(t.height,"y")-A-D),t.innerHeight&&(_.h=a(t.innerHeight,"y")),t.innerHeight||t.height||(e=L.scrollTop(),L.css({height:"auto"}),_.h=L.height()),L.css({height:_.h}),e&&L.scrollTop(e),J.position("none"===_.get("transition")?0:_.get("speed")))},J.prep=function(i){function o(){return _.w=_.w||L.width(),_.w=_.mw&&_.mw<_.w?_.mw:_.w,_.w}function a(){return _.h=_.h||L.height(),_.h=_.mh&&_.mh<_.h?_.mh:_.h,_.h}if($){var d,g="none"===_.get("transition")?0:_.get("speed");L.remove(),L=n(se,"LoadedContent").append(i),L.hide().appendTo(M.show()).css({width:o(),overflow:_.get("scrolling")?"auto":"hidden"}).css({height:a()}).prependTo(b),M.hide(),t(U).css({"float":"none"}),c(_.get("className")),d=function(){function i(){t.support.opacity===!1&&y[0].style.removeAttribute("filter")}var n,o,a=W.length;$&&(o=function(){clearTimeout(Q),S.hide(),u(ne),_.get("onComplete")},F.html(_.get("title")).show(),L.show(),a>1?("string"==typeof _.get("current")&&I.html(_.get("current").replace("{current}",z+1).replace("{total}",a)).show(),K[_.get("loop")||a-1>z?"show":"hide"]().html(_.get("next")),P[_.get("loop")||z?"show":"hide"]().html(_.get("previous")),ce(),_.get("preloading")&&t.each([h(-1),h(1)],function(){var i,n=W[this],o=new r(n,t.data(n,Y)),h=o.get("href");h&&s(o,h)&&(h=l(o,h),i=e.createElement("img"),i.src=h)})):O.hide(),_.get("iframe")?(n=e.createElement("iframe"),"frameBorder"in n&&(n.frameBorder=0),"allowTransparency"in n&&(n.allowTransparency="true"),_.get("scrolling")||(n.scrolling="no"),t(n).attr({src:_.get("href"),name:(new Date).getTime(),"class":Z+"Iframe",allowFullScreen:!0}).one("load",o).appendTo(L),ae.one(he,function(){n.src="//about:blank"}),_.get("fastIframe")&&t(n).trigger("load")):o(),"fade"===_.get("transition")?y.fadeTo(g,1,i):i())},"fade"===_.get("transition")?y.fadeTo(g,0,function(){J.position(0,d)}):J.position(g,d)}},J.next=function(){!q&&W[1]&&(_.get("loop")||W[z+1])&&(z=h(1),f(W[z]))},J.prev=function(){!q&&W[1]&&(_.get("loop")||z)&&(z=h(-1),f(W[z]))},J.close=function(){$&&!G&&(G=!0,$=!1,u(oe),_.get("onCleanup"),E.unbind("."+Z),v.fadeTo(_.get("fadeOut")||0,0),y.stop().fadeTo(_.get("fadeOut")||0,0,function(){y.hide(),v.hide(),u(he),L.remove(),setTimeout(function(){G=!1,u(re),_.get("onClosed")},1)}))},J.remove=function(){y&&(y.stop(),t[Y].close(),y.stop(!1,!0).remove(),v.remove(),G=!1,y=null,t("."+te).removeData(Y).removeClass(te),t(e).unbind("click."+Z).unbind("keydown."+Z))},J.element=function(){return t(_.el)},J.settings=X)})(jQuery,document,window); };
 },{}],34:[function(require,module,exports){
-module.exports = exports = "<div class=\"xdialogblock\" style=\"display:none;\">\r\n<div class=\"xdialogbox xalertbox\"><div class=\"xalertmessage\"></div><div align=\"center\"><input type=\"button\" value=\"OK\" /></div></div>\r\n<div class=\"xdialogbox xconfirmbox\"><div class=\"xconfirmmessage\"></div><div align=\"center\"><input type=\"button\" value=\"OK\" class=\"button_ok\" style=\"margin-right:15px;\" /> <input type=\"button\" value=\"No\" class=\"button_no\" style=\"margin-right:15px;\" /> <input type=\"button\" value=\"Cancel\" class=\"button_cancel\" /></div></div>\r\n<div class=\"xdialogbox xpromptbox\"><div class=\"xpromptmessage\"></div><div align=\"right\"><input class=\"xpromptfield\" type=\"text\"><br/><input type=\"button\" value=\"OK\" class=\"button_ok\" style=\"margin-right:15px;\" /> <input type=\"button\" value=\"Cancel\" class=\"button_cancel\" /></div></div>\r\n<div class=\"xdialogbox xtextzoombox\"><div class=\"xtextzoommessage\"></div><div align=\"right\"><textarea class=\"xtextzoomfield\"></textarea><input type=\"button\" value=\"OK\" class=\"button_ok\" style=\"margin-right:15px;\" /> <input type=\"button\" value=\"Cancel\" class=\"button_cancel\" /></div></div>\r\n</div>\r\n<div class=\"xdebuginfo\"></div>\r\n<div class=\"xdebugconsole\">\r\n  <div id=\"debug-panel\">\r\n    <header>Debug Info\r\n      <div class=\"controls\"><i class=\"material-icons\" data-s=\"minimize\">&#xe259;</i><i class=\"material-icons\" data-s=\"settings\">&#xe8b8;</i><i class=\"material-icons\" data-s=\"close\">&#xe5cd;</i></div>\r\n    </header>\r\n    <div class=\"debug-settings\"><legend>Please select debug info source.</legend></div>\r\n    <div class=\"xdebuginfo-body\"></div>\r\n  </div>\r\n  <div id=\"debug-panel-minimized\" style=\"display: none;\">\r\n    <div class=\"controls\"><i class=\"material-icons\" data-s=\"expand\">&#xe895;</i></div>\r\n  </div>\r\n</div>\r\n<div class=\"xloadingblock\" style=\"display:none;\"><div><div class=\"xloadingbox\">Loading<br/><img src=\"/images/loading.gif\" alt=\"Loading\" title=\"Loading\" /></div></div></div>\r\n"
+module.exports = exports = "<div class=\"xdialogblock\" style=\"display:none;\">\r\n<div class=\"xdialogbox xalertbox\"><div class=\"xalertmessage\"></div><div align=\"center\"><input type=\"button\" value=\"OK\" /></div></div>\r\n<div class=\"xdialogbox xconfirmbox\"><div class=\"xconfirmmessage\"></div><div align=\"center\"><input type=\"button\" value=\"OK\" class=\"button_ok\" style=\"margin-right:15px;\" /> <input type=\"button\" value=\"No\" class=\"button_no\" style=\"margin-right:15px;\" /> <input type=\"button\" value=\"Cancel\" class=\"button_cancel\" /></div></div>\r\n<div class=\"xdialogbox xpromptbox\"><div class=\"xpromptmessage\"></div><div align=\"right\"><input class=\"xpromptfield\" type=\"text\"><br/><input type=\"button\" value=\"OK\" class=\"button_ok\" style=\"margin-right:15px;\" /> <input type=\"button\" value=\"Cancel\" class=\"button_cancel\" /></div></div>\r\n<div class=\"xdialogbox xtextzoombox\"><div class=\"xtextzoommessage\"></div><div align=\"right\"><textarea class=\"xtextzoomfield\"></textarea><input type=\"button\" value=\"OK\" class=\"button_ok\" style=\"margin-right:15px;\" /> <input type=\"button\" value=\"Cancel\" class=\"button_cancel\" /></div></div>\r\n</div>\r\n<div class=\"xdebuginfo\"></div>\r\n<div class=\"xdebugconsole\">\r\n  <div id=\"debug-panel\">\r\n    <header>Debug Info\r\n      <div class=\"controls\"><i class=\"material-icons\" data-action=\"minimize\">&#xe259;</i><i class=\"material-icons\" data-action=\"settings\">&#xe8b8;</i><i class=\"material-icons\" data-action=\"close\">&#xe5cd;</i></div>\r\n    </header>\r\n    <div class=\"debug-settings\"><legend>Please select debug info source.</legend></div>\r\n    <div class=\"xdebuginfo-body\"></div>\r\n  </div>\r\n  <div id=\"debug-panel-minimized\" style=\"display: none;\">\r\n    <div class=\"controls\"><i class=\"material-icons\" data-action=\"expand\">&#xe895;</i></div>\r\n  </div>\r\n</div>\r\n<div class=\"xloadingblock\" style=\"display:none;\"><div><div class=\"xloadingbox\">Loading<br/><img src=\"/images/loading.gif\" alt=\"Loading\" title=\"Loading\" /></div></div></div>\r\n"
 },{}]},{},[22]);
