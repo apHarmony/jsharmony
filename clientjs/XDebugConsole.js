@@ -25,6 +25,7 @@ exports = module.exports = function(jsh){
   };
   XDebugConsole.SETTINGS_ID = 'debugconsole';
   XDebugConsole.socket = {};
+  XDebugConsole.socket_url = "ws://" + window.location.hostname + ":" + window.location.port + jsh._BASEURL + "_log";
   XDebugConsole.settings = {};
   XDebugConsole.client_sources = {
     "client_requests": true
@@ -75,11 +76,29 @@ exports = module.exports = function(jsh){
     var settings = {sources: getSourcesForWebSocket()};
     if (!_.isEmpty(settings.sources)) {
       if (typeof XDebugConsole.socket.readyState === 'undefined'){
-        XDebugConsole.socket = new WebSocket("ws://" + window.location.hostname + ":" + window.location.port + jsh._BASEURL + "_log");
+        XDebugConsole.socket = new WebSocket(XDebugConsole.socket_url);
         XDebugConsole.socket.onopen = function (e) {
           XDebugConsole.socket.send(JSON.stringify({setSettings: settings}));
           XDebugConsole.socket.send(JSON.stringify({getHistory: true}));
         }
+        XDebugConsole.socket.onclose = function (e) {
+          if (!e.wasClean){
+            var t = new Date();
+            XDebugConsole.showDebugMessage(
+              '<span style="color: red;">'+ t.toLocaleString() + ' - ' +
+              ' Can\'t connect to Web Socket (URL: '+XDebugConsole.socket_url
+              +'; Code: '+e.code+') Will try to reconnect in 10 sec.</span>'
+            );
+            XDebugConsole.socket={};
+            setTimeout(function(){
+              var t = new Date();
+              XDebugConsole.showDebugMessage(
+                '<span style="color: green;">'+ t.toLocaleString() + ' - ' + 'Trying to reconnect to Web Socket.</span>'
+              );
+              XDebugConsole.setWebSocketListener()
+            }, 10000);
+          }
+        };
         XDebugConsole.socket.onmessage = function (e) {
           var m = JSON.parse(e.data);
           var t = new Date( m.timestamp);
