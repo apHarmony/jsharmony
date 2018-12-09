@@ -201,7 +201,14 @@ exports = module.exports = function(jsh){
         if(field.value.indexOf('<#')>=0){
           val = field.value;
           val = val.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
-          val = jsh.ejs.render(val, { data: _this, xejs: jsh.XExt.xejs, jsh: jsh, instance: jsh.getInstance() });
+          val = jsh.ejs.render(val, { 
+            data: _this, 
+            xejs: jsh.XExt.xejs, 
+            jsh: jsh, 
+            instance: jsh.getInstance(),
+            modelid: modelid,
+            js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
+          });
           jctrl.html(val);
         }
         if(val) jctrl.show();

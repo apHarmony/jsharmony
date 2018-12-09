@@ -1,9 +1,9 @@
 //var is_admin = <?=(has_role('ISADMIN')?'true':'false')?>;
 
 <% if(model.layout=='form'){ %>
-  <%-jsh.RenderEJS('jsh_form.js.single',ejsparams)%>
+  <%-jsh.RenderView('jsh_form.js.single',ejsparams)%>
 <% } else if(model.layout=='form-m') { %>
-  <%-jsh.RenderEJS('jsh_form.js.multiple',ejsparams)%>
+  <%-jsh.RenderView('jsh_form.js.multiple',ejsparams)%>
 <% } %>
 
-<%-jsh.RenderEJS('jsh_form.js.datamodel',ejsparams)%>
+<%-jsh.RenderView('jsh_form.js.datamodel',ejsparams)%>

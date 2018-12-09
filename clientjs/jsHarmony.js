@@ -54,6 +54,13 @@ var jsHarmony = function(options){
   if(!options) options = {};
   var _this = this;
 
+  //Events
+  this.onRefreshLayout = [];
+  this.RefreshLayout = function(){ _this.XExt.trigger(_this.onRefreshLayout); }
+
+  this.onNavigated = [];
+  this.Navigated = function(obj){ _this.XExt.trigger(_this.onNavigated, obj); }
+
   //Options
   this.forcequery = {};
   this._BASEURL = '/';
@@ -108,7 +115,6 @@ var jsHarmony = function(options){
   this.mouseDown = false;
   this.last_clicked_time = undefined;
   this.last_clicked = undefined;
-  this.curSubMenu = '';
   this.DEFAULT_DATEFORMAT = 'mm/dd/yy';
   this.onPaymentProxyComplete = function(){};
 
@@ -170,6 +176,14 @@ var jsHarmony = function(options){
 
   this.BindEvents();
   jsHarmony.Instances.push(this);
+
+  if(options.globalScope){
+    window.$ = $;
+    window.jQuery = $;
+    window.moment = moment;
+    window.jsh = this;
+    if(!_instance) _instance = 'jsh';
+  }
 }
 
 jsHarmony.prototype.$root = function(sel){
@@ -217,6 +231,7 @@ jsHarmony.prototype.Init = function(){
     }
   });
   _this.InitDialogs();
+  _this.XMenu.Init();
   _this.XDebugConsole.Init();
   $(document).mousemove(function (e) {
     _this.mouseX = e.pageX;
@@ -277,7 +292,7 @@ jsHarmony.prototype.XWindowResize = function (source) {
     this.$root('.xbodyhead').css('max-width', bodyhead_width + 'px');
   }
   this.XDialogResize(source, params);
-  this.XMenu.XMenuResize();
+  this.RefreshLayout();
 }
 jsHarmony.prototype.XDialogResize = function (source, params) {
   this.$root('.xdialogblock').css('width', params.pw + 'px');
@@ -340,28 +355,6 @@ jsHarmony.prototype.InitXFileUpload = function () {
       </div></div>\
       <iframe id="'+this.getInstance()+'_xfileproxy" name="'+this.getInstance()+'_xfileproxy" src="about:blank" style="width:0;height:0;border:0px solid #fff;"></iframe>\
     </div>');
-};
-
-jsHarmony.prototype.SelectTopMenu = function (menuid) {
-  var _this = this;
-  if(!menuid) menuid = '';
-  //Get top menu item
-  if(_.isArray(menuid)) menuid = menuid[0];
-  //Select top menu item
-  _this.$root('.xmenu').children('a').each(function (i, obj) {
-    var jobj = $(obj);
-    var jsideobj = _this.$root('.side'+jobj.data('id'));
-    if (jobj.hasClass('menu_' + String(menuid).toUpperCase())) {
-      if (!jobj.hasClass('selected')) jobj.addClass('selected');
-      if (!jsideobj.hasClass('selected')) jsideobj.addClass('selected');
-    }
-    else {
-      if (jobj.hasClass('selected')) jobj.removeClass('selected');
-      if (jsideobj.hasClass('selected')) jsideobj.removeClass('selected');
-    }
-  });
-  //Deal with xmenuside
-  this.XMenu.XSubMenuInit(menuid);
 };
 
 jsHarmony.prototype.requireHTML5 = function(){

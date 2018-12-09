@@ -1,4 +1,4 @@
-<%-jsh.RenderEJS('jsh_embed.js',ejsparams)%>
+<%-jsh.RenderView('jsh_embed.js',ejsparams)%>
 <div class="xbodyhead xelem<%=model.id%>">
 <% if(model.topmost) { %><!--%%%EJSPREPEND%%%--><% } %>
 <% if(!model.topmost && (model.title !== undefined)) { %>
@@ -11,10 +11,10 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
 %>
 <h1 class="xtitlecaption xtitlecaption<%=model.id%>" style="display:inline-block;"><a href="#" onclick="<%-instance%>.$root('.xfilter_<%=model.id%>').slideToggle(); return false;">(filtered)</a></h1>
 <div class="xactions <%=xactiontype%> xelem<%=model.id%>">
-  <%-jsh.RenderEJS('jsh_buttons',ejsparams)%>
+  <%-jsh.RenderView('jsh_buttons',ejsparams)%>
   <% if(model.inlinepopup){ %><a href="#" onclick="<%-instance%>.XExt.popupClear('<%=model.id%>',this); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'clear'))%>"><img src="/images/icon_delete.png" alt="Clear" title="Clear" />Clear</a><% } %>
   <% if(model.topmost && (model.commitlevel) && (model.commitlevel != 'none')){ %><a href="#" class="save" onclick="<%-instance%>.XForm_Save();return false;" style="display:none;"><img src="/images/icon_save.png" alt="Save" title="Save" />Save</a><% } %>
-  <% if(!model.templates.grid){ %><a href="#" onclick="<%-instance%>.App.XForm<%=model.id%>_AddRow(); return false;" class="xbuttonadd" style="<%-xejs.visible(!model.nogridadd && model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'I'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a><% } %>
+  <% if(!model.templates.grid){ %><a href="#" onclick="<%-instance%>.App.XForm<%=model.id%>_AddRow(); return false;" class="xbuttonadd" style="<%-xejs.visible(xejs.showSystemButton(model,'add') && model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'I'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a><% } %>
   <a href="#" class="xfilterbutton xfilterbutton<%=model.id%>" onclick="<%-instance%>.App.XForm<%=model.id%>_FilterButton(); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'filter'))%>"><img src="/images/icon_filter.png" alt="Filter" title="Filter" /><span>Filter</span></a>
   <a href="/" onclick="<%-instance%>.XPrint(); return false;" style="<%-xejs.visible(model.topmost && xejs.showSystemButton(model,'print'))%>"><img src="/images/icon_print.png" alt="Print" title="Print" />Print</a>
   <a href="#" onclick="<%-instance%>.App.XForm<%=model.id%>_Export(); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'export'))%>"><img src="/images/icon_export.png" alt="Export" title="Export" />Export</a>
@@ -54,7 +54,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
     }
     #>
     <# for(var i=0;i<data.Items.length;i++){ var selected_column = null; #>
-    <div class="xfilter_expression">
+    <div class="xfilter_expression xfilter_expression_<#=i#>">
       Filter Column: &nbsp;<select class="xfilter_column" onchange="<%-instance%>.App.XForm<%=model.id%>_FilterColumnChange();"><option value="ALL">Any...</option><# for(var j=0;j<data.Fields.length;j++){ if(!data.Fields[j].caption) continue; #><option value="<#=data.Fields[j].name#>" <# if(data.Fields[j].name==data.Items[i].Column){ selected_column = data.Fields[j]; #>selected="Selected"<# } #>><#=data.Fields[j].caption#></option><# } #></select>&nbsp; 
       <div class="xfilter_comparison_div" style="display:inline-block;width:140px;">
         <# if(selected_column && (selected_column.comparison_type=='string')){ #>
@@ -81,11 +81,11 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
       </div>&nbsp; 
       <input type="text" class="xfilter_value <#=xejs.iif((selected_column && (selected_column.comparison_type=='date')),'datepicker')#>" value="<#=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'',data.Items[i].Value)#>" onkeyup="<%-instance%>.App.XForm<%=model.id%>_FilterKeyUp(event);" style="<#=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'visibility:hidden;')#>" /> 
         <# if(i==(data.Items.length-1)){ #>
-        <a href="#" style="width:80px;" onclick="<%-instance%>.App.XForm<%=model.id%>_FilterApply(); return false;"><img src="/images/icon_search.png" alt="Apply Filter" title="Apply Filter" />GO</a>
-        <a href="#" style="width:130px;text-align:right;" onclick="<%-instance%>.App.XForm<%=model.id%>_FilterAdd(); return false;">Add Criteria<img src="/images/icon_add.png" alt="Add Criteria" title="Add Criteria" /></a>
+        <a class="xfilter_apply" href="#" style="width:80px;" onclick="<%-instance%>.App.XForm<%=model.id%>_FilterApply(); return false;"><img src="/images/icon_search.png" alt="Apply Filter" title="Apply Filter" />GO</a>
+        <a class="xfilter_add" href="#" style="width:130px;text-align:right;" onclick="<%-instance%>.App.XForm<%=model.id%>_FilterAdd(); return false;">Add Criteria<img src="/images/icon_add.png" alt="Add Criteria" title="Add Criteria" /></a>
         <# } else { #>
         <span style="display:inline-block;width:80px;">&nbsp; <a style="display:inline-block;cursor:hand;cursor:pointer;" class="xfilter_join_lbl" onclick="<%-instance%>.App.XForm<%=model.id%>_FilterJoinChange(); return false;"><#=data.Items[i].Join#></a> </span>
-        <a href="#" style="width:130px;text-align:right;" onclick="<%-instance%>.App.XForm<%=model.id%>_FilterRemove(this); return false;">Remove Criteria<img src="/images/icon_remove.png" alt="Remove Criteria" title="Remove Criteria" /></a>
+        <a class="xfilter_remove" href="#" style="width:130px;text-align:right;" onclick="<%-instance%>.App.XForm<%=model.id%>_FilterRemove(this); return false;">Remove Criteria<img src="/images/icon_remove.png" alt="Remove Criteria" title="Remove Criteria" /></a>
         <input type="hidden" class="xfilter_join" value="<#=data.Items[i].Join#>">
         <# } #>
     </div>
@@ -200,4 +200,4 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
     </div>
   </div>
 <% } %>
-<%-model.ejs%>
+<%-jsh.RenderEJS(model.ejs,ejsparams)%>

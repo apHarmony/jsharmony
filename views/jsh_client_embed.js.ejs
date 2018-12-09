@@ -71,6 +71,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if('ondestroy' in model){ %> _ondestroy:function(xform){<%-jslocals%><%-model.ondestroy%>}, <% }
     if('onloadstate' in model){ %> _onloadstate:function(xform, state){<%-jslocals%><%-model.onloadstate%>}, <% }
     if('onrowbind' in model){ %> _onrowbind:function(xform, jobj, datarow){<%-jslocals%><%-model.onrowbind%>}, <% }
+
+    if(model.unbound){ %> unbound:true, <% }
     //onloadstate
     %>
   };
@@ -89,7 +91,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 </style>
 <% } %>
 <script type="text/javascript">
-<%-jsh.RenderEJS('jsh_'+xejs.case(
+<%-jsh.RenderView('jsh_'+xejs.case(
   model.layout=='form','form',
   model.layout=='form-m','form',
   model.layout=='multisel','multisel',

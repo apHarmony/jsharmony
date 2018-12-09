@@ -484,6 +484,11 @@ exports = module.exports = function(jsh){
     rslt = XExt.ReplaceAll(rslt, '#&gt;', '#>');
     return rslt;
   }
+  XExt.renderClientEJS = function(ejssrc,ejsparams){
+    if(ejssrc.indexOf('<#')<0) return ejssrc;
+    ejssrc = ejssrc.replace(/<#/g, '<%').replace(/#>/g, '%>');
+    return jsh.ejs.render(ejssrc,ejsparams);
+  }
   XExt.isSinglePage = function () {
     if (jsh.singlepage) return true;
     return false;
@@ -681,8 +686,13 @@ exports = module.exports = function(jsh){
 
   XExt.getJSLocals = function(modelid){
     var rslt = jsh.jslocals;
-    if(modelid) rslt += "var _this = jsh.App['"+modelid+"'];";
+    if(modelid) rslt += "var modelid = '"+modelid+"'; var _this = jsh.App[modelid]; ";
     return rslt;
+  }
+
+  XExt.getJSApp = function(modelid,quotechar){
+    if(typeof quotechar=='undefined') quotechar = '\'';
+    return jsh._instance + '.App[' + quotechar + modelid + quotechar + ']';
   }
 
   XExt.JSEval = function(str,_thisobj,params){
@@ -696,6 +706,10 @@ exports = module.exports = function(jsh){
     }
     var jscmd = '(function(){'+XExt.getJSLocals(params.modelid)+paramstr+'return '+str+'}).call(_thisobj)';
     return eval(jscmd);
+  }
+
+  XExt.wrapJS = function(code,modelid){
+    return 'return (function(){'+XExt.escapeHTML(XExt.getJSLocals(modelid))+' '+XExt.escapeHTML(code)+'; return false; }).call(this);';
   }
 
   XExt.TreeItemContextMenu = function (ctrl, n) {
@@ -1274,6 +1288,30 @@ exports = module.exports = function(jsh){
   XExt.getToken = function (onComplete, onFail) {
     if(!jsh) throw new Error('XExt requires jsHarmony instance to run getToken');
     jsh.XPost.prototype.XExecute('../_token', {}, onComplete, onFail);
+  }
+
+  XExt.triggerAsync = function(handlers, cb /*, param1, param2 */){
+    if(!cb) cb = function(){ };
+    if(!handlers) handlers = [];
+    if(!_.isArray(handlers)) handlers = [handlers];
+    var params = [];
+    if(arguments.length > 2) params = Array.prototype.slice.call(arguments, 2);
+    //Run handlers
+    jsh.async.eachSeries(handlers, function(handler, handler_cb){
+      var hparams = [handler_cb].concat(params);
+      handler.apply(null, hparams);
+    }, cb);
+  }
+
+  XExt.trigger = function(handlers /*, param1, param2 */){
+    if(!handlers) handlers = [];
+    if(!_.isArray(handlers)) handlers = [handlers];
+    var params = [];
+    if(arguments.length > 1) params = Array.prototype.slice.call(arguments, 1);
+    //Run handlers
+    _.each(handlers, function(handler){
+      handler.apply(null, params);
+    });
   }
 
   /*************************/

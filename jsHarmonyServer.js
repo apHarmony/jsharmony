@@ -67,44 +67,6 @@ jsHarmonyServer.prototype.Init = function(cb){
 
   if(!_this.serverConfig.webSockets) _this.serverConfig.webSockets = [];
 
-  //Initialize socket for debug log
-  if(_this.jsh.Config.debug_params.log_socket){
-    var logServer = new WebSocket.Server({ noServer: true });
-    _this.serverConfig.webSockets.push({
-      path: '/_log',
-      server: logServer,
-      roles: {},
-      dev: 1
-    });
-    //On New connection
-    logServer.on('connection', function(ws, req, socket, head){
-      if(!req._roles || (!('SYSADMIN' in req._roles) && !('DEV' in req._roles))){
-        ws.terminate();
-        _this.jsh.Log.error('Potential Hacking Attempt - Unsecure Debug Log Client Connected from '+Helper.GetIP(req));
-        return;
-      }
-      _this.jsh.Log('Debug Log Client Connected from '+Helper.GetIP(req));
-      ws.isAlive = true;
-      ws.on('pong', function(){ ws.isAlive = true; });
-    });
-    //Keepalive
-    setInterval(function(){
-      logServer.clients.forEach(function(ws){
-        if(ws.isAlive===false) return ws.terminate();
-        ws.isAlive = false;
-        ws.ping(function(){});
-      });
-    }, 30000);
-    //Send logs to client
-    _this.jsh.Log.on('log', function(msg){
-      logServer.clients.forEach(function each(client) {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify(msg));
-        }
-      });
-    });
-  }
-
   this.app = express();
   var app = this.app;
   app.jsh = this.jsh;
@@ -152,6 +114,96 @@ jsHarmonyServer.prototype.addDefaultRoutes = function () {
       error: err,
     });
   });
+}
+
+jsHarmonyServer.prototype.initDebugLogSocket = function(){
+  var _this = this;
+
+  //Initialize socket for debug log
+  if(_this.jsh.Config.debug_params.log_socket){
+    var logServer = new WebSocket.Server({ noServer: true });
+    _this.serverConfig.webSockets.push({
+      path: '/_log',
+      server: logServer,
+      roles: {},
+      dev: 1
+    });
+    //On New connection
+    logServer.on('connection', function(ws, req, socket, head){
+      ws.sources = {};
+      if(!req._roles || (!('SYSADMIN' in req._roles) && !('DEV' in req._roles))){
+        ws.terminate();
+        _this.jsh.Log.error('Potential Hacking Attempt - Unsecure Debug Log Client Connected from '+Helper.GetIP(req));
+        return;
+      }
+      _this.jsh.Log('Debug Log Client Connected from '+Helper.GetIP(req));
+      ws.isAlive = true;
+      ws.on('pong', function(){ ws.isAlive = true; });
+      ws.on('message', function(data){
+        //Try to parse message
+        var jmsg = {};
+        try{
+          jmsg = JSON.parse(data);
+        }
+        catch(ex){}
+        //If message has "setSettings", read the "sources" object
+        if(jmsg && jmsg.setSettings){
+          var sources = jmsg.setSettings.sources;
+          if(sources){
+            //Enable Database option
+            if(sources.database){
+              if(!('_orig_db_requests' in _this.jsh.Config.debug_params)) _this.jsh.Config.debug_params._orig_db_requests = _this.jsh.Config.debug_params.db_requests;
+              _this.jsh.Config.debug_params.db_requests = true;
+            }
+            else {
+              if('_orig_db_requests' in _this.jsh.Config.debug_params) _this.jsh.Config.debug_params.db_requests = _this.jsh.Config.debug_params._orig_db_requests;
+              delete _this.jsh.Config._orig_db_requests;
+            }
+            //Enable Authentication option
+            if(sources.authentication){
+              if(!('_orig_auth_debug' in _this.jsh.Config.debug_params)) _this.jsh.Config.debug_params._orig_auth_debug = _this.jsh.Config.debug_params.auth_debug;
+              _this.jsh.Config.debug_params.auth_debug = true;
+            }
+            else {
+              if('_orig_auth_debug' in _this.jsh.Config.debug_params) _this.jsh.Config.debug_params.auth_debug = _this.jsh.Config.debug_params._orig_auth_debug;
+              delete _this.jsh.Config._orig_auth_debug;
+            }
+            ws.sources.database = !!sources.database;
+            ws.sources.authentication = !!sources.authentication;
+            ws.sources.system = !!sources.system;
+            ws.sources.webserver = !!sources.webserver;
+          }
+        }
+        //If message has "getHistory", return the history
+        if(jmsg && jmsg.getHistory){
+          var history = _this.jsh.Log.getHistory(ws.sources);
+          _.each(history, function(logObject){
+            ws.send(JSON.stringify(logObject));
+          });
+        }
+      });
+    });
+    //Keepalive
+    setInterval(function(){
+      logServer.clients.forEach(function(ws){
+        if(ws.isAlive===false) return ws.terminate();
+        ws.isAlive = false;
+        ws.ping(function(){});
+      });
+    }, 30000);
+    //Send logs to client
+    _this.jsh.Log.on('log', function(msg){
+      logServer.clients.forEach(function each(ws) {
+        if (ws.readyState === WebSocket.OPEN) {
+          if(ws.sources){
+            if(msg && msg.source && ws.sources[msg.source]){
+              ws.send(JSON.stringify(msg));
+            }
+          }
+        }
+      });
+    });
+  }
 }
 
 //Add handler for WebSocket endpoints
@@ -237,7 +289,6 @@ jsHarmonyServer.prototype.ListenPort = function(server, firstPort, ip, onSuccess
       }
       onError(err);
     });
-    //server.on('connection',function(socket){ socket.setTimeout(0); });
   }
   if(!params.currentPort){ params.currentPort = 8080; params.tryNextPort = true;  }
   server.listen(params.currentPort, ip);
@@ -251,6 +302,8 @@ jsHarmonyServer.prototype.Run = function(cb){
   var http_redirect = false;
   var http_server = false;
   var https_server = false;
+
+  _this.initDebugLogSocket();
 
   //this.serverConfig
   if(!_this.jsh.Config.frontsalt){
@@ -294,13 +347,13 @@ jsHarmonyServer.prototype.Run = function(cb){
         if(server_txt == '0.0.0.0') server_txt = os.hostname().toLowerCase();
         _this.jsh.Log.info('Log in at http://'+server_txt+':'+server.address().port);
       }
-      Helper.RunEventHandler(_this.jsh.Config.onServerReady, null, [server]);
+      Helper.triggerAsync(_this.jsh.Config.onServerReady, null, [server]);
       if (cb) cb([server]);
     }, function(err){
       console.log('\r\n\r\nCANNOT START SERVER!!!!!!\r\n\r\n');
       if (err && (err.code == 'EADDRINUSE')) {
         console.log('SERVER ALREADY RUNNING ON PORT '+_this.serverConfig.http_port+'\r\n\r\n');
-        Helper.RunEventHandler(_this.jsh.Config.onServerReady); 
+        Helper.triggerAsync(_this.jsh.Config.onServerReady); 
         if(cb) cb();
       } 
       else throw err;
@@ -336,13 +389,13 @@ jsHarmonyServer.prototype.Run = function(cb){
           _this.jsh.Log.info('Log in at https://'+server_txt+':'+new_https_port);
         }
         if(servers.push(server));
-        Helper.RunEventHandler(_this.jsh.Config.onServerReady, null, servers);
+        Helper.triggerAsync(_this.jsh.Config.onServerReady, null, servers);
         if(cb_https) cb_https(servers);
       }, function(err){
         console.log('\r\n\r\nCANNOT START SERVER!!!!!!\r\n\r\n');
         if (err && (err.code == 'EADDRINUSE')) {
           console.log('SERVER ALREADY RUNNING ON PORT '+_this.serverConfig.https_port+'\r\n\r\n');
-          Helper.RunEventHandler(_this.jsh.Config.onServerReady);
+          Helper.triggerAsync(_this.jsh.Config.onServerReady);
           if (cb_https) cb_https();
         } 
         else throw err;
@@ -369,7 +422,7 @@ jsHarmonyServer.prototype.Run = function(cb){
         console.log('\r\n\r\nCANNOT START SERVER!!!!!!\r\n\r\n');
         if (err && (err.code == 'EADDRINUSE')) {
           console.log('SERVER ALREADY RUNNING ON PORT '+_this.serverConfig.http_port+'\r\n\r\n');
-          Helper.RunEventHandler(_this.jsh.Config.onServerReady);
+          Helper.triggerAsync(_this.jsh.Config.onServerReady);
           if (cb) cb();
         } 
         else throw err;

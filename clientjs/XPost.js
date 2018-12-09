@@ -56,7 +56,7 @@ exports = module.exports = function(jsh){
       this.Data.OnRender.apply(this.Data,arguments);
     else if(this.TemplateID){
       var ejssource = jsh.$root(this.TemplateID).html();
-      ejssource = ejssource.replace(/<#/g,'<%').replace(/#>/g,'%>')
+      ejssource = ejssource.replace(/<#/g,'<%').replace(/#>/g,'%>');
       jsh.$root(this.PlaceholderID).html(jsh.ejs.render(ejssource,{data:this.Data,xejs:jsh.XExt.xejs,jsh:jsh,instance:jsh.getInstance()}));
     }
     if (this.OnAfterRender) this.OnAfterRender();

@@ -22,6 +22,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var _ = jsh._;
   var $ = jsh.$;
   var XExt = jsh.XExt;
+  var moment = jsh.moment;
   var modelid = '<%=model.id%>';
 
   jsh.App.XForm<%=model.id%>_Init = function(callback){
@@ -54,7 +55,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xform_<%=model.id%>.Data = {};
     //Extended xData
     xform_<%=model.id%>.Prop.ReselectAfterEdit = <%-xejs.iif(('reselectafteredit' in model) && (model.reselectafteredit),'true','false')%>;
-    xform_<%=model.id%>.Prop.NewRowPosition = '<%-xejs.iif('newrowposition' in model,model.newrowposition,'last')%>';
+    xform_<%=model.id%>.Prop.NewRowPosition = '<%-xejs.iif('newrowposition' in model,model.newrowposition,'first')%>';
     xform_<%=model.id%>.Prop.ModifiedSinceLoad = false;
     xform_<%=model.id%>.Prop.Enabled = (isInlinePopup ? false : true);
     xform_<%=model.id%>.Prop.isInlinePopup = isInlinePopup;
@@ -100,7 +101,18 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if(jsh.App.xgrid_<%=model.id%>){
         for (var i = 0; i < data[this.q].length; i++) {
           var rowid = this.RowCount + i;
-          var ejsrslt = jsh.ejs.render(ejssource, { rowid: rowid, data: [data[this.q][i]], xejs: XExt.xejs, jsh: jsh, instance: jsh.getInstance() });
+          var ejsrslt = jsh.ejs.render(ejssource, { 
+            rowid: rowid, 
+            data: [data[this.q][i]], 
+            xejs: XExt.xejs, 
+            jsh: jsh, 
+            _: _,
+            moment: moment,
+            XExt: XExt,
+            instance: jsh.getInstance(),
+            modelid: modelid,
+            js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
+          });
           var jobj = $(ejsrslt).appendTo(jsh.$root(this.PlaceholderID));
           xpost.NavTo(rowid, false);
           this.OnRowBind(jobj);
@@ -111,11 +123,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           rowid: this.RowCount, 
           data: data[this.q], 
           xejs: XExt.xejs,
-          moment: jsh.moment,
           xform: xform_<%=model.id%>,
           xform_meta: jsh.XForms[modelid],
           jsh: jsh,
-          instance: jsh.getInstance()
+          _: _,
+          moment: moment,
+          XExt: XExt,
+          instance: jsh.getInstance(),
+          modelid: modelid,
+          js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
         });
         var jobj = $(ejsrslt).appendTo(jsh.$root(this.PlaceholderID));
       }
@@ -296,7 +312,18 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
           var ejssource = jsh.$root(xdata.TemplateID).html();
           ejssource = ejssource.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
-          var ejsrslt = jsh.ejs.render(ejssource, { rowid: rowid, data: [_this.DataSet[rowid]], xejs: XExt.xejs, jsh: jsh, instance: jsh.getInstance() });
+          var ejsrslt = jsh.ejs.render(ejssource, { 
+            rowid: rowid, 
+            data: [_this.DataSet[rowid]], 
+            xejs: XExt.xejs, 
+            jsh: jsh,
+            _: _,
+            moment: moment,
+            XExt: XExt,
+            instance: jsh.getInstance(),
+            modelid: modelid,
+            js: function(code){ return jsh.XExt.wrapJS(code,modelid); } 
+          });
           var jobj = jsh.$root(xdata.PlaceholderID).find("tr[data-id='" + rowid + "']");
           jobj.replaceWith($(ejsrslt));
           jobj = jsh.$root(xdata.PlaceholderID).find("tr[data-id='" + rowid + "']");
@@ -370,7 +397,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       data: [newrow],
       xejs: XExt.xejs,
       jsh: jsh,
-      instance: jsh.getInstance()
+      _: _,
+      moment: moment,
+      XExt: XExt,
+      instance: jsh.getInstance(),
+      modelid: modelid,
+      js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
     });
 
     var jobj;
@@ -640,4 +672,4 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 })(<%-instance%>);
 
-<%-jsh.RenderEJS('jsh_grid.js.datamodel',ejsparams)%>
+<%-jsh.RenderView('jsh_grid.js.datamodel',ejsparams)%>

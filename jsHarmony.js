@@ -68,6 +68,7 @@ function jsHarmony(config) {
   this.map = {};
   this.uimap = {};
   this.isInitialized = false;
+  this.StartTime = Date.now();
 }
 
 //Add module (before Init/Run)
@@ -132,9 +133,27 @@ jsHarmony.prototype.Init = function(init_cb){
       }, cb);
     },
     function(cb){
+      //Apply database-specific configurations
+      for(var dbid in _this.DBConfig){
+        var dbconfig = _this.DBConfig[dbid];
+        if(dbconfig && dbconfig._driver && dbconfig._driver.name){
+          var driverName = dbconfig._driver.name;
+          if(driverName in _this.Config.forDB){
+            var driverConfigs = _this.Config.forDB[driverName];
+            _.each(driverConfigs, function(driverConfig){
+              _this.Config.Merge(driverConfig);
+            });
+          }
+        }
+      }
+      return cb();
+    },
+    function(cb){
+      Helper.triggerAsync(_this.Config.onConfigLoaded, cb, _this)
+    },
+    function(cb){
       //Load Views
       _this.LoadViews();
-      if(!_this.Config.silentStart) console.log('Loading models...');
       return cb();
     },
     function(cb){
@@ -148,6 +167,10 @@ jsHarmony.prototype.Init = function(init_cb){
       });
     },
     function(cb){
+      Helper.triggerAsync(_this.Config.onDBDriverLoaded, cb, _this)
+    },
+    function(cb){
+      if(!_this.Config.silentStart) console.log('Loading models...');
       _this.LoadDBSchemas(cb);
     },
     function(cb){

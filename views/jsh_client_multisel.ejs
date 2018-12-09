@@ -9,7 +9,7 @@
   <a href="<%-model.helpurl%>" onclick="<%-model.helpurl_onclick%>"><img src="/images/icon_help.png" alt="Help" title="Help" />Help</a>
 </div>
 <% } %>
-<%-jsh.RenderEJS('jsh_embed.js',ejsparams)%>
+<%-jsh.RenderView('jsh_embed.js',ejsparams)%>
 <%  
 var lovfield = '';
 for(var i=0;i<model.fields.length;i++){ 

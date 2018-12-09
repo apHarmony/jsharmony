@@ -154,8 +154,8 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
 
   copyValues(rslt, model, [
     'id', 'layout', 'caption', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onupdate', 'oncommit', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy', 'js', 'hide_system_buttons',
-    'popup', 'rowclass', 'rowstyle', 'tabpanelstyle', 'tablestyle', 'formstyle', 'sort', 'querystring', 'disableautoload', 'tabpos', 'templates',
-    'reselectafteredit','newrowposition','validationlevel','nogridadd','grid_expand_filter','grid_rowcount', 'grid_require_filter','grid_save_before_update','noresultsmessage','ejs','css','onecolumn',
+    'popup', 'rowclass', 'rowstyle', 'tabpanelstyle', 'tablestyle', 'formstyle', 'sort', 'querystring', 'disableautoload', 'tabpos', 'templates', 'unbound',
+    'reselectafteredit','newrowposition','validationlevel','grid_expand_filter','grid_rowcount', 'grid_require_filter','grid_save_before_update','noresultsmessage','ejs','css','onecolumn',
     //Commit Level
     function(){
       if(model.commitlevel){
@@ -417,8 +417,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
       if (topmost) {
         rslt['topmost'] = 1;
         rslt['menu'] = '';
-        rslt['topmenu'] = '';
-        copyValues(rslt, model, ['menu','topmenu']);
+        copyValues(rslt, model, ['menu']);
         rslt['toptitle'] = model.id;
         if ('title' in rslt) rslt['toptitle'] = rslt.title;
         rslt['forcequery'] = req.forcequery;

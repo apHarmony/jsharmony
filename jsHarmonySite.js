@@ -78,8 +78,9 @@ function jsHarmonySite(id, config){
   */
  //Site menu generator
   this.menu = function(req,res,jsh,params,onComplete){ 
-    params.ShowListing = true; 
-    params.XMenu = { MainMenu:[], SubMenus:{} }; 
+    params.showlisting = true; 
+    params.startmodel = null;
+    params.menudata = { MainMenu:[], SubMenus:{}  }; 
     onComplete(); 
   }
   //Global parameters sent to the client front-end
@@ -136,7 +137,7 @@ jsHarmonySite.prototype.Validate = function(){
   if(Helper.notset(_this.basetemplate)) _this.basetemplate = 'index';
   if(Helper.notset(_this.baseurl)) _this.baseurl = '/';
   if(Helper.notset(_this.show_system_errors)) _this.show_system_errors = true;
-  if(!_this.menu) _this.menu = function(req,res,jsh,params,onComplete){ params.ShowListing = true; params.XMenu = { MainMenu:[], SubMenus:{} }; onComplete(); }
+  if(!_this.menu) _this.menu = function(req,res,jsh,params,onComplete){ params.showlisting = true; params.startmodel = null; params.menudata = { }; onComplete(); }
   if(!_this.globalparams) _this.globalparams = {};
   if(!_this.public_apps) _this.public_apps = [];
   if(!_this.private_apps) _this.private_apps = [];
