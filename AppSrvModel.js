@@ -451,7 +451,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, onComplete) 
       'html', 'cellstyle', 'cellclass', 'lovkey', 'controlstyle', 'disable_sort', 'disable_search'
     ]);
     if (srcfield.popuplov) dstfield.popuplov = 1;
-    if (srcfield.sql_search_sound) dstfield.search_sound = 1;
+    if (srcfield.sqlsearchsound) dstfield.search_sound = 1;
     if (jsh.Config.use_sample_data && ('sample' in srcfield)) dstfield.sample = srcfield.sample;
     if ('controlparams' in srcfield) {
       dstfield.controlparams = {};

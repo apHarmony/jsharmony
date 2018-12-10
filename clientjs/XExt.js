@@ -220,6 +220,42 @@ exports = module.exports = function(jsh){
     return val.split(find).join(replace);
   }
 
+  XExt.trim = function(str,chr,dir){
+    if(!chr) chr = ' \t\n\r\v\f';
+    var foundchr = true;
+    var rslt = str||'';
+  
+    if(!dir){
+      rslt = XExt.trim(str, chr, 1);
+      rslt = XExt.trim(rslt, chr, -1);
+      return rslt;
+    }
+  
+    while(foundchr){
+      foundchr = false;
+      if(!rslt) break;
+      var tgtchr = '';
+      if(dir>0) tgtchr = rslt[rslt.length-1];
+      else tgtchr = rslt[0];
+      for(var i=0;i<chr.length;i++){
+        if(tgtchr==chr[i]){ foundchr = true; break; }
+      }
+      if(foundchr){
+        if(dir>0) rslt = rslt.substr(0,rslt.length - 1);
+        else rslt = rslt.substr(1);
+      }
+    }
+    return rslt;  
+  }
+
+  XExt.trimRight = function(str, chr){
+    return XExt.trim(str, chr, 1);
+  }
+
+  XExt.trimLeft = function(str, chr){
+    return XExt.trim(str, chr, -1);
+  }
+
   XExt.AddHistory = function (url, obj, title) {
     if (jsh && !jsh.isHTML5) return;
     if (typeof obj == 'undefined') obj = {};

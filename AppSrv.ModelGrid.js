@@ -89,7 +89,7 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
     var field = _this.getFieldByName(model.fields, sortfield);
     var sortfieldname = sortfield;
     if(lovtxtfield && field.lov && !field.lov.showcode) sortfieldname = lovtxtfield;
-    sortfields.push({ 'field': sortfieldname, 'dir': sortdir, 'sql': (field.sql_sort || '') });
+    sortfields.push({ 'field': sortfieldname, 'dir': sortdir, 'sql': (field.sqlsort || '') });
     
     if (_.includes(unsortedkeys, sortfield)) unsortedkeys = _.without(unsortedkeys, sortfield);
   });

@@ -274,9 +274,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "enable_search": 1, //Only applies to grid, enable search if it is a hidden column
       "disable_search": 1, //Only applies to grid, do not display as a filter column
       "disable_search_all": 1, //Only applies to grid, do not query in "Any" filter search
-      "sql_sort": "(case when X then 1 else 0 end)", //Only applies to grid
-      "sql_search": "(case when X then 1 else 0 end)", //Only applies to grid
-      "sql_search_sound": "C_ID in (select C_ID from SDX where SDX_COL='CN' and SDX_VAL=SOUNDEX(%%%FIELD%%%))",
+      "sqlsort": "(case when X then 1 else 0 end)", //Only applies to grid
+      "sqlsearch": "(case when X then 1 else 0 end)", //Only applies to grid
+      "sqlsearchsound": "C_ID in (select C_ID from SDX where SDX_COL='CN' and SDX_VAL=SOUNDEX(%%%FIELD%%%))",
       "__REMOVE__":1, //Remove Model field in inherited child
       "__AFTER__": "FIELDNAME", "__START__", "__END__", //Position in inherited child
       //SYSTEM: datatype_config, sql_from_db, sql_to_db

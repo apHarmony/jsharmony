@@ -349,9 +349,10 @@ var jsHarmonyRouter = function (jsh, siteid) {
       res.send(JSON.stringify(rslt));
     }, dbconfig);
   });
-  router.get('/:modelid/:modelkey?', function (req, res, next) {
+  router.get(/\/(.*)/, function (req, res, next) {
     //Verify model exists
-    var modelid = req.params.modelid;
+    var modelid = req.params[0];
+    modelid = Helper.trimRight(modelid,'/');
     if (!jsh.hasModel(req, modelid)){ return next(); }
     processModelQuerystring(jsh, req, modelid);
     processCustomRouting('singlepage', req, res, jsh, modelid, function(){

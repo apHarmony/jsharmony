@@ -32,19 +32,19 @@ module.exports = exports = {};
 *******************/
 exports.RenderListing = function () {
   var rslt = '<br/>&nbsp;';
-  var components = { 'Local':[] };
+  var modules = { 'Local':[] };
   for (var modelid in this.Models) {
-    var component = this.Models[modelid].component||'Local';
-    if(!(component in components)) components[component] = [];
-    components[component].push(modelid);
+    var module = this.Models[modelid].module||'Local';
+    if(!(module in modules)) modules[module] = [];
+    modules[module].push(modelid);
   }
   var has_models = false;
-  for(var component in components){
-    var modelids = components[component];
+  for(var module in modules){
+    var modelids = modules[module];
     modelids.sort();
     if(!modelids.length) continue;
     else has_models = true;
-    rslt += '<h2>'+component+'</h2>';
+    rslt += '<h2>'+module+'</h2>';
     rslt += '<ul>';
     for (var i = 0; i < modelids.length; i++) {
       var modelid = modelids[i];
@@ -145,10 +145,10 @@ exports.loadFonts = function(fonts, callback){
   var appDir = path.dirname(require.main.filename);
 
   function getFontPath(fontsrc){
-    var component = '';
+    var module = '';
     var basefilename = '';
     if(fontsrc.indexOf('/') >= 0){
-      component = fontsrc.substr(0,fontsrc.indexOf('/'));
+      module = fontsrc.substr(0,fontsrc.indexOf('/'));
       basefilename = fontsrc.substr(fontsrc.indexOf('/')+1);
     }
     //Absolute path
@@ -163,7 +163,7 @@ exports.loadFonts = function(fonts, callback){
     for (var i = modeldirs.length - 1; i >= 0; i--) {
       fpath = path.normalize(modeldirs[i].path + '../' + fontsrc);
       cpath = path.normalize(modeldirs[i].path + '../' + basefilename);
-      if(component && (modeldirs[i].component==component) && fs.existsSync(cpath)) return cpath;
+      if(module && (modeldirs[i].module==module) && fs.existsSync(cpath)) return cpath;
       if (fs.existsSync(fpath)) return fpath;
     }
     return '';

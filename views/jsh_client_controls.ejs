@@ -27,13 +27,18 @@ for(var i=0;i<model.fields.length;i++){
     dflt_captionstyle = field.captionstyle;
   }  
   if(('nl' in field) && (field.control!='hidden')){ leadingfield = true; %><br/><% }
-  if(('caption' in field) && (field.control!='subform') && (field.caption.length > 0) && (field.control!='hidden')) { 
-    if(('nl' in field) && !('captionstyle' in field) && (dflt_captionstyle != "")){ 
-      %><div class="xform_caption <%=field.captionclass%> <%=xejs.iif(leadingfield,'leading')%>" style="<%=dflt_captionstyle%>"><%-xejs.escapeHTMLN(field.caption+((field.caption != '')?': ':''))%></div><%
-	  }
-    else {
-      %><div class="xform_caption <%=field.captionclass%> <%=xejs.iif(leadingfield,'leading')%>" style="<%=field.captionstyle%>"><%-xejs.escapeHTMLN(field.caption+((field.caption != '')?': ':''))%></div><%
-	  }  
+  if((field.control!='subform') && (field.control!='hidden')){
+    if(('caption' in field) && (field.caption.length > 0)) { 
+      if(('nl' in field) && !('captionstyle' in field) && (dflt_captionstyle != "")){ 
+        %><div class="xform_caption <%=field.captionclass%> <%=xejs.iif(leadingfield,'leading')%>" style="<%=dflt_captionstyle%>"><%-xejs.escapeHTMLN(field.caption+((field.caption != '')?': ':''))%></div><%
+      }
+      else {
+        %><div class="xform_caption <%=field.captionclass%> <%=xejs.iif(leadingfield,'leading')%>" style="<%=field.captionstyle%>"><%-xejs.escapeHTMLN(field.caption+((field.caption != '')?': ':''))%></div><%
+      }
+    }
+    else if(model.onecolumn) {
+      %><div class="xform_caption <%=field.captionclass%> <%=xejs.iif(leadingfield,'leading')%>" style="<%=field.captionstyle%>"></div><%
+    }
   }
   var maxlength = XExt.getMaxLength(field);
   if((field.control=='html') || (field.control=='label')){

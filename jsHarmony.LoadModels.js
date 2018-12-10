@@ -35,13 +35,13 @@ module.exports = exports = {};
 //Get array of all model folders
 exports.getModelDirs = function(){
   var rslt = [];
-  rslt.push({ component: 'jsharmony', path: this.Config.moduledir + '/models/' });
+  rslt.push({ module: 'jsharmony', path: this.Config.moduledir + '/models/' });
   for(var moduleName in this.Modules){
     if(this.Modules[moduleName].Config.moduledir){
-      rslt.push({ component: moduleName, path: this.Modules[moduleName].Config.moduledir + '/models/' });
+      rslt.push({ module: moduleName, path: this.Modules[moduleName].Config.moduledir + '/models/' });
     }
   }
-  rslt.push({ component: 'application', path: this.Config.localmodeldir });
+  rslt.push({ module: 'application', path: this.Config.localmodeldir });
   return rslt;
 }
 
@@ -159,7 +159,7 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
   model['access_models'] = {};
   model['_inherits'] = [];
   if(!model.path && modelpath) model.path = modelpath;
-  if(!model.component && modeldir && modeldir.component)  model.component = modeldir.component;
+  if(!model.module && modeldir && modeldir.module)  model.module = modeldir.module;
   if ('actions' in model) model['access_models'][modelname] = model.actions;
   if (('inherits' in model) && (model.inherits.indexOf(prefix)!=0)) model.inherits = prefix + model.inherits;
   if('css' in model) model.css = Helper.ParseMultiLine(model.css);
@@ -532,8 +532,9 @@ exports.ParseEntities = function () {
     var isReadOnlyGrid = modelExt.isReadOnlyGrid = (model.layout=='grid') && (!model.commitlevel || (model.commitlevel=='none') || !Helper.access(model.actions, 'IU'));
     if(tabledef){
       var autolayout = '';
-      if((model.layout=='form') || (model.layout=='form-m')) autolayout = 'form';
+      if((model.layout=='form') || (model.layout=='form-m') || (model.layout=='exec')) autolayout = 'form';
       if(model.layout=='grid') autolayout = 'grid';
+      if(model.layout=='multisel') autolayout = 'multisel';
 
       if(autolayout=='form'){
         if(!tabledef.modelForm) codegen.generateModelFromTableDefition(tabledef,'form',{ db: model.db },function(err,messages,model){ tabledef.modelForm = model; });
@@ -546,6 +547,10 @@ exports.ParseEntities = function () {
       else if((autolayout=='grid') && !isReadOnlyGrid){
         if(!tabledef.modelGridEditable) codegen.generateModelFromTableDefition(tabledef,'grid',{ db: model.db },function(err,messages,model){ tabledef.modelGridEditable = model; });
         automodel = modelExt.automodel = tabledef.modelGridEditable;
+      }
+      else if(autolayout=='multisel'){
+        if(!tabledef.modelMultisel) codegen.generateModelFromTableDefition(tabledef,'multisel',{ db: model.db },function(err,messages,model){ tabledef.modelMultisel = model; });
+        automodel = modelExt.automodel = tabledef.modelMultisel;
       }
     }
     model.xvalidate = new XValidate();
@@ -692,13 +697,19 @@ exports.ParseEntities = function () {
                 if(autofield.captionclass) field.captionclass = autofield.captionclass + ' ' + (field.captionclass||'');
               }
             }
-            //Required Field Validation
             if(auto_attributes){
+              //Required Field Validation
               if(autofield.validate){
                 if(!('validate' in field)){
                   field.validate = [];
                   for(var i=0;i<autofield.validate.length;i++) field.validate.push(autofield.validate[i]);
                 }
+              }
+              //Add Foreign Key to Multisel
+              if(model.layout=='multisel'){
+                if(field.key) {}
+                else if(field.lov) {}
+                else if(autofield.foreignkeys && autofield.foreignkeys.direct && autofield.foreignkeys.direct.length) field.foreignkey = 1;
               }
             }
           }
@@ -779,7 +790,7 @@ exports.ParseEntities = function () {
         else field.caption = field.name;
       }
       if(model.onecolumn){
-        if((model.layout=='form')||(model.layout=='form-m')){
+        if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')){
           if(!firstfield && ('control' in field)) field.nl = 1;
         }
       }
@@ -955,12 +966,24 @@ exports.ParseEntities = function () {
       if ('html' in field) _this.LogDeprecated(model.id + ' > ' + field.name + ': The html attribute has been deprecated - use "control":"html"');
       if ('lovkey' in field) _this.LogDeprecated(model.id + ' > ' + field.name + ': The lovkey attribute has been deprecated');
     });
+
+    //Check multisel
+    if(model.layout=='multisel'){
+      var lovfield = '';
+      _.each(model.fields, function(field){
+        if(field.lov){ 
+          if(lovfield != '') _this.LogInit_ERROR('Model ' + model.id + ': Can only have one LOV per Multisel');
+          lovfield = field.name; 
+        }
+      });
+      if(lovfield == '') _this.LogInit_ERROR('Model ' + model.id + ': Multisel requires one LOV');
+    }
     
     //Convert mutli-line variables to single string
     ParseMultiLineProperties(model, ['js', 'sqlselect', 'sqldownloadselect', 'sqlinsert', 'sqlinsertencrypt', 'sqlupdate', 'sqldelete', 'sqlexec', 'sqlwhere', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onvalidate', 'onupdate', 'ondestroy', 'oncommit']);
     if (model.breadcrumbs) ParseMultiLineProperties(model.breadcrumbs, ['sql']);
     if (model.fields) _.each(model.fields, function (field) {
-      ParseMultiLineProperties(field, ['onchange', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlwhere', 'sql_sort', 'sql_search', 'sql_search_sound', 'value']);
+      ParseMultiLineProperties(field, ['onchange', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlwhere', 'sqlsort', 'sqlsearch', 'sqlsearchsound', 'value']);
       if (field.lov) ParseMultiLineProperties(field.lov, ['sql', 'sql2', 'sqlmp', 'sqlselect']);
       if (field.controlparams) ParseMultiLineProperties(field.controlparams, ['onpopup']);
     });
@@ -1078,7 +1101,7 @@ exports.ParseEntities = function () {
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
       'js', 'ejs', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
-      'path', 'component', 'templates', 'db', 'onecolumn',
+      'path', 'module', 'templates', 'db', 'onecolumn',
       //Report Parameters
       'subheader', 'footerheight', 'headeradd',
     ];
@@ -1086,8 +1109,8 @@ exports.ParseEntities = function () {
       'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'foreignkey', 'serverejs', 'roles', 'static', 'cellclass',
       'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'enable_search', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
       'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'always_editable_on_insert', 'precision', 'password', 'hash', 'salt', 'unbound',
-      'sqlselect', 'sqlupdate', 'sqlinsert','sql_sort', 'sqlwhere', 'sql_search_sound', 'sql_search', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVE__', '__AFTER__',
-      'sql_from_db','sql_to_db','sql_search_to_db','datatype_config'
+      'sqlselect', 'sqlupdate', 'sqlinsert','sqlsort', 'sqlwhere', 'sqlsearchsound', 'sqlsearch', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVE__', '__AFTER__',
+      'sql_from_db','sql_to_db','sqlsearch_to_db','datatype_config'
     ];
     var _v_controlparams = [
       'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'dateformat', 'base_readonly',
@@ -1123,6 +1146,8 @@ exports.ParseEntities = function () {
         if (!_.includes(existing_targets, field.target)) existing_targets.push(field.target);
         else _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Duplicate target - each field target must be unique within a model');
       }
+      //Check if the field has a type
+      if(field.actions && field.name && !('type' in field) && !('value' in field) && (field.control != 'subform') && !field.unbound) _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Missing type.  Set a field.value or field.unbound if intentional.');
     });
     if (no_B && model.breadcrumbs && model.breadcrumbs.sql) {
       _this.LogInit_ERROR(model.id + ': No fields set to B (Browse) action.  Form databinding will be disabled client-side, and breadcrumbs sql will not execute.');
@@ -1565,11 +1590,11 @@ function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
   });
   _.each(model.fields, function (field) {
     if (('target' in field) && ((field.control == 'subform') || (field.popuplov))) {
-      if (!(field.target in jsh.Models)) { _this.LogInit_WARNING('Invalid ' + field.control + ' target model ' + field.target + ' in ' + model.id); return }
+      if (!(field.target in jsh.Models)) { _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Invalid target model "' + field.target + '"'); return }
       var tmodel = jsh.Models[field.target];
       tmodel.access_models[srcmodelid] = srcaccess;
-      validateSiteAccess(model, tmodel, model.id + ' > ' + field.control + ': ', '', field.roles);
-      validateSiteLinks(model, field.link, model.id + ' > ' + field.control + ' link: ', field.link, field.roles);
+      validateSiteAccess(model, tmodel, model.id + ' > ' + field.name + ': ', '', field.roles);
+      validateSiteLinks(model, field.link, model.id + ' > ' + field.name + ' link: ', field.link, field.roles);
       ParseAccessModels(jsh, tmodel, srcmodelid, srcaccess);
     }
     if ((field.control == 'subform') && !('bindings' in field)) _this.LogInit_WARNING('Model ' + model.id + ' subform ' + field.name + ' missing binding.');

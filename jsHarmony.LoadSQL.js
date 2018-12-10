@@ -51,9 +51,9 @@ exports.InitDB = function(dbid, cb){
   for (var i = 0; i < modeldirs.length; i++) {
     var modeldir = modeldirs[i];
     var fpath = modeldir.path;
-    if(modeldir.component=='jsharmony') fpath = path.normalize(modeldir.path + '../');
-    this.LoadSQL(db, fpath + 'sql/', driverName, modeldir.component);
-    this.LoadSQL(db, fpath + 'sql/'+dbid+'/', driverName, modeldir.component);
+    if(modeldir.module=='jsharmony') fpath = path.normalize(modeldir.path + '../');
+    this.LoadSQL(db, fpath + 'sql/', driverName, modeldir.module);
+    this.LoadSQL(db, fpath + 'sql/'+dbid+'/', driverName, modeldir.module);
   }
   this.AddGlobalSQLParams(db.SQLExt.Funcs, this.map, 'jsh.map.');
   if(cb) return cb();
@@ -69,8 +69,8 @@ exports.AddGlobalSQLParams = function(sqlFuncs, items, prefix){
   }
 }
 
-exports.LoadSQL = function (db, dir, type, component) {
-  var rslt = this.LoadSQLFromFolder(dir, type, component);
+exports.LoadSQL = function (db, dir, type, module) {
+  var rslt = this.LoadSQLFromFolder(dir, type, module);
   var sqlext = db.SQLExt;
   for(var funcName in rslt.Funcs) sqlext.Funcs[funcName] = rslt.Funcs[funcName];
   for(var datatypeid in rslt.CustomDataTypes) sqlext.CustomDataTypes[datatypeid] = rslt.CustomDataTypes[datatypeid];
@@ -131,7 +131,7 @@ exports.LoadSQLFiles = function(dir, options){
   return rslt;
 }
 
-exports.LoadSQLFromFolder = function (dir, type, component, rslt) {
+exports.LoadSQLFromFolder = function (dir, type, module, rslt) {
   if(!rslt) rslt = {};
   if(!rslt.CustomDataTypes) rslt.CustomDataTypes = {};
   if(!rslt.Funcs) rslt.Funcs = {};
@@ -176,7 +176,7 @@ exports.LoadSQLFromFolder = function (dir, type, component, rslt) {
   //Load SQL Scripts
   var scriptsdir = dir+'scripts/';
   d = _this.LoadSQLFiles(scriptsdir, { ignoreDirectories: false, filterType: type });
-  if(component && (d.length > 0)){
+  if(module && (d.length > 0)){
     var scripts = {};
 
     //Process folders
@@ -231,7 +231,7 @@ exports.LoadSQLFromFolder = function (dir, type, component, rslt) {
     }
     processScriptPrefix(scripts);
 
-    rslt.Scripts[component] = scripts;
+    rslt.Scripts[module] = scripts;
   }
 
   return rslt;

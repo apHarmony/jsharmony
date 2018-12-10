@@ -108,7 +108,7 @@ exports.getModelForm = function (req, res, modelid, Q, P, form_m) {
       if (!_.includes(allfieldslist, sortfield)) throw new Error('Invalid sort field ' + sortfield);
       
       var field = _this.getFieldByName(model.fields, sortfield);
-      sortfields.push({ 'field': sortfield, 'dir': sortdir, 'sql': (field.sql_sort || '') });
+      sortfields.push({ 'field': sortfield, 'dir': sortdir, 'sql': (field.sqlsort || '') });
       
       if (_.includes(unsortedkeys, sortfield)) unsortedkeys = _.without(unsortedkeys, sortfield);
     });
