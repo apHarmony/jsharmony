@@ -23,7 +23,7 @@ var async = require('async');
 
 exports = module.exports = function(jsh){
 
-  function XPost(_q,_TemplateID,_PlaceholderID){
+  function XForm(_q,_TemplateID,_PlaceholderID){
     this._this = this;
     this.q = _q;
     this.TemplateID = _TemplateID;
@@ -47,7 +47,7 @@ exports = module.exports = function(jsh){
     this.OnAfterRender = null;
   }
 
-  XPost.prototype.Render = function(){
+  XForm.prototype.Render = function(){
     if(!this.Data) return;
     this.ResetValidation();
 
@@ -61,11 +61,11 @@ exports = module.exports = function(jsh){
     }
     if (this.OnAfterRender) this.OnAfterRender();
   };
-  XPost.prototype.GetValues = function(){
+  XForm.prototype.GetValues = function(){
     if(!this.Data) return;
     this.Data.GetValues(this.PlaceholderID);
   };
-  XPost.prototype.HasUpdates = function (){
+  XForm.prototype.HasUpdates = function (){
     if (this.IsDirty) return true;
     if(_.isArray(this.DataSet)){
       if(this.DeleteSet.length > 0) return true;
@@ -79,7 +79,7 @@ exports = module.exports = function(jsh){
     if(!this.Data) return false;
     return this.Data.HasUpdates(this.PlaceholderID);
   };
-  XPost.prototype.Validate = function(perms,obj){
+  XForm.prototype.Validate = function(perms,obj){
     obj = obj || this.Data;
     if(!obj) return;
     var validator;
@@ -90,13 +90,13 @@ exports = module.exports = function(jsh){
     if (this.xData) parentobj = this.Data._jrow;
     return validator.ValidateControls(perms,obj,'',parentobj);
   }
-  XPost.prototype.ResetValidation = function(obj){
+  XForm.prototype.ResetValidation = function(obj){
     obj = obj || this.Data;
     if(!obj) return;
     if(!obj.xvalidate) return;
     return obj.xvalidate.ResetValidation();
   }
-  XPost.prototype.RecheckDirty = function () {
+  XForm.prototype.RecheckDirty = function () {
     var rsltDirty = false;
     if (this.DeleteSet.length > 0) rsltDirty = true;
     if (_.isArray(this.DataSet)) {
@@ -109,7 +109,7 @@ exports = module.exports = function(jsh){
     }
     this.IsDirty = rsltDirty;
   }
-  XPost.prototype.ResetDirty = function () {
+  XForm.prototype.ResetDirty = function () {
     if (_.isArray(this.DataSet)) {
       this.DeleteSet = [];
       for (var i = 0; i < this.DataSet.length; i++) {
@@ -126,31 +126,31 @@ exports = module.exports = function(jsh){
     }
     this.IsDirty = false;
   }
-  XPost.prototype.Count = function(){
+  XForm.prototype.Count = function(){
     if(!_.isArray(this.DataSet)) return 1;
     return this.DataSet.length;
   }
-  XPost.prototype.NavNext = function(){
+  XForm.prototype.NavNext = function(){
     if(this.Count() == 0) return;
     if(this.Index == (this.Count()-1)) return;
     this.NavTo(this.Index+1);
   }
-  XPost.prototype.NavPrev = function(){
+  XForm.prototype.NavPrev = function(){
     if(this.Count() == 0) return;
     if(this.Index == 0) return;
     this.NavTo(this.Index-1);
   }
-  XPost.prototype.NavFirst = function(){
+  XForm.prototype.NavFirst = function(){
     if(this.Count() == 0) return;
     if(this.Index == 0) return;
     this.NavTo(0);
   }
-  XPost.prototype.NavLast = function(){
+  XForm.prototype.NavLast = function(){
     if(this.Count() == 0) return;
     if(this.Index == (this.Count()-1)) return;
     this.NavTo(this.Count()-1);
   }
-  XPost.prototype.SetIndex = function (_index, saveold) {
+  XForm.prototype.SetIndex = function (_index, saveold) {
     if (typeof saveold == 'undefined') saveold = true;
     if (_index > this.Count()) { jsh.XExt.Alert('Cannot navigate - Index greater than size of collection'); return false; }
     else if (_index < 0) { jsh.XExt.Alert('Cannot navigate - Index less than zero'); return false; }
@@ -172,17 +172,17 @@ exports = module.exports = function(jsh){
     }
     return true;
   }
-  XPost.prototype.NavTo = function (_index, saveold){
+  XForm.prototype.NavTo = function (_index, saveold){
     if (!this.SetIndex(_index, saveold)) return;
     this.Render();
   }
-  XPost.prototype.NavAdd = function(){
+  XForm.prototype.NavAdd = function(){
     if(!this.Data.Commit()) return;
     this.NewRow();
     if(this.Index==-1){ this.NavTo(0,false); }
     else this.NavLast();
   }
-  XPost.prototype.NavDelete = function(){
+  XForm.prototype.NavDelete = function(){
     if(this.Count() == 0) return;
     this.DataSet[this.Index] = _.extend(this.DataSet[this.Index],this.Data);
     if(!this.Data._is_new) this.DeleteSet.push(this.DataSet[this.Index]);
@@ -196,13 +196,13 @@ exports = module.exports = function(jsh){
       this.NavTo(this.Index,false);
     }
   }
-  XPost.prototype.NewRow = function (){
+  XForm.prototype.NewRow = function (){
     var rslt = this.ApplyDefaults(new this.DataType());
     this.DataSet.push(rslt);
     this.IsDirty = true;
     return rslt;
   }
-  XPost.prototype.Select = function(onComplete){
+  XForm.prototype.Select = function(onComplete){
     var _this = this;
 
     this.qExecute(this.PrepExecute('get', this.q, this.GetSelectParams(), {}, function (rslt){
@@ -256,7 +256,7 @@ exports = module.exports = function(jsh){
       if(onComplete) onComplete(rslt);
     }));
   }
-  XPost.prototype.ApplyDefaults = function(data){
+  XForm.prototype.ApplyDefaults = function(data){
     var _this = this;
     var rslt = data;
     if(rslt._is_new && ('_defaults' in this)){
@@ -276,7 +276,7 @@ exports = module.exports = function(jsh){
     }
     return rslt;
   }
-  XPost.prototype.PrepExecute = function(_method,_model,_query,_post,onComplete,onFail){
+  XForm.prototype.PrepExecute = function(_method,_model,_query,_post,onComplete,onFail){
     var rslt = { 
       'method':_method,
       'model':_model,
@@ -291,13 +291,13 @@ exports = module.exports = function(jsh){
     }
     return rslt;
   }
-  XPost.prototype.CommitRow = function (){
+  XForm.prototype.CommitRow = function (){
     if (!this.Data.Commit()) return false;
     this.DataSet[this.Index] = _.extend(this.DataSet[this.Index], this.Data);
     if (this.Data._is_dirty) this.IsDirty = true;
     return true;
   }
-  XPost.prototype.PrepSaveDataSet = function(ignorecommit){
+  XForm.prototype.PrepSaveDataSet = function(ignorecommit){
     if(!ignorecommit && !this.CommitRow()) return;
     
     var dbtasks = [];
@@ -329,22 +329,22 @@ exports = module.exports = function(jsh){
     this.Data = curdata;
     return dbtasks;
   }
-  XPost.prototype.PrepUpdate = function(onComplete,onFail){ 
+  XForm.prototype.PrepUpdate = function(onComplete,onFail){ 
     return this.PrepExecute('post',this.q,this.GetKeys(),this.GetUpdateParams(),onComplete,onFail); 
   }
-  XPost.prototype.Update = function(onComplete,onFail){ this.qExecute(this.PrepUpdate(onComplete,onFail)); }
-  XPost.prototype.PrepInsert = function(onComplete,onFail){ 
+  XForm.prototype.Update = function(onComplete,onFail){ this.qExecute(this.PrepUpdate(onComplete,onFail)); }
+  XForm.prototype.PrepInsert = function(onComplete,onFail){ 
     return this.PrepExecute('put',this.q,{},this.GetInsertParams(),onComplete,onFail); 
   }
-  XPost.prototype.Insert = function(onComplete,onFail){ this.qExecute(this.PrepInsert(onComplete,onFail)); }
-  XPost.prototype.PrepDelete = function(onComplete,onFail){ 
+  XForm.prototype.Insert = function(onComplete,onFail){ this.qExecute(this.PrepInsert(onComplete,onFail)); }
+  XForm.prototype.PrepDelete = function(onComplete,onFail){ 
     return this.PrepExecute('delete',this.q,this.GetDeleteParams(),{},onComplete,onFail); 
   }
-  XPost.prototype.Delete = function(onComplete,onFail){ this.qExecute(this.PrepDelete(onComplete,onFail)); }
-  XPost.prototype.Execute = function(onComplete,onFail){ 
+  XForm.prototype.Delete = function(onComplete,onFail){ this.qExecute(this.PrepDelete(onComplete,onFail)); }
+  XForm.prototype.Execute = function(onComplete,onFail){ 
     this.qExecute(this.PrepExecute('get',this.q,this.Data,{},onComplete,onFail)); 
   }
-  XPost.prototype.ExecuteTrans = function (DBTasks, onComplete, onFail) {
+  XForm.prototype.ExecuteTrans = function (DBTasks, onComplete, onFail) {
     var execdata = [];
     for (var i = 0; i < DBTasks.length; i++) {
       var dbtask = DBTasks[i];
@@ -372,11 +372,11 @@ exports = module.exports = function(jsh){
     if (onFail) execparams.onFail = onFail;
     this.qExecute(execparams);
   }
-  XPost.prototype.qExecute = function (ExecParams) {
+  XForm.prototype.qExecute = function (ExecParams) {
     ExecParams.url = jsh._BASEURL + '_d/' + ExecParams.model + '/';
     this.qExecuteBase(ExecParams);
   }
-  XPost.prototype.qExecuteBase = function(ExecParams){
+  XForm.prototype.qExecuteBase = function(ExecParams){
     var _this = this;
     var url = ExecParams.url;
     if(!_.isEmpty(ExecParams.query)) url += '?'+$.param(ExecParams.query);
@@ -432,7 +432,7 @@ exports = module.exports = function(jsh){
       }
     });
   };
-  XPost.prototype.OnDBStats = function(dbstats){
+  XForm.prototype.OnDBStats = function(dbstats){
     var _this = this;
     var rslt = true;
     if(dbstats){
@@ -445,7 +445,7 @@ exports = module.exports = function(jsh){
     }
     return rslt;
   }
-  XPost.prototype.OnDBMessage = function (exception){
+  XForm.prototype.OnDBMessage = function (exception){
     if(exception && exception.Message) exception = exception.Message;
     exception = (exception||'').toString();
     if (jsh.XExt.beginsWith(exception, "Execute Form - ")) {
@@ -477,7 +477,7 @@ exports = module.exports = function(jsh){
     }
     return true;
   };
-  XPost.prototype.OnDBError = function (error, stats){
+  XForm.prototype.OnDBError = function (error, stats){
     if(this.OnDBMessage(error)===false) return false;
 
     if(!this.Data) return true;
@@ -488,23 +488,23 @@ exports = module.exports = function(jsh){
 
     return true;
   };
-  XPost.prototype.OnSuccess = function(rslt){
+  XForm.prototype.OnSuccess = function(rslt){
     if(!this.Data) return true;
     
     if(this.Data.OnSuccess){
       this.Data.OnSuccess(rslt);
     }
   };
-  XPost.prototype.OnUndefined = function(data){
+  XForm.prototype.OnUndefined = function(data){
     if(this.Data && (this.Data.OnUndefined)) this.Data.OnUndefined(data);
     else jsh.XExt.Alert("Undefined: " + JSON.stringify(data));
   }
-  XPost.prototype.GetFieldParams = function(action){
+  XForm.prototype.GetFieldParams = function(action){
     var _this = this;
     var rslt = {};
     _.each(_this.Data.Fields,function(field){
       if (!jsh.XExt.HasAccess(field.actions, action)) return;
-      if((typeof _this.Data[field.name] == 'undefined') && _.includes(jsh.XForms[_this.q]._bindings,field.name)){
+      if((typeof _this.Data[field.name] == 'undefined') && _.includes(jsh.XModels[_this.q]._bindings,field.name)){
         rslt[field.name] = '%%%'+field.name+'%%%';
       }
       else {
@@ -521,25 +521,25 @@ exports = module.exports = function(jsh){
     return rslt;
   }
 
-  XPost.prototype.XExecute = function(q,d,onComplete,onFail){
-    var xpost = new XPost(q,'','');
+  XForm.prototype.XExecute = function(q,d,onComplete,onFail){
+    var xpost = new XForm(q,'','');
     xpost.Data = d;
     xpost.Execute(onComplete,onFail);
   }
 
-  XPost.prototype.XExecuteBlock = function(q,d,onComplete,onFail){
-    var xpost = new XPost(q,'','');
+  XForm.prototype.XExecuteBlock = function(q,d,onComplete,onFail){
+    var xpost = new XForm(q,'','');
     xpost.Data = d;
     xpost.async = false;
     xpost.Execute(onComplete,onFail);
   }
 
-  XPost.prototype.XExecutePost = function (q, d, onComplete, onFail, options){
+  XForm.prototype.XExecutePost = function (q, d, onComplete, onFail, options){
     if(!options) options = {};
-    var xpost = new XPost(q, '', '');
+    var xpost = new XForm(q, '', '');
     if(options.OnDBError) xpost.Data.OnDBError = options.OnDBError;
     xpost.qExecute(xpost.PrepExecute('post', xpost.q, {}, d, onComplete, onFail)); 
   }
 
-  return XPost;
+  return XForm;
 }

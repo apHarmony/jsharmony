@@ -235,8 +235,9 @@ var jsHarmonyRouter = function (jsh, siteid) {
       jsh.AppSrv.getReportJob(req, res, modelid);
     });
   });
-  router.get('/_csv/:modelid/', function (req, res, next) {
-    var modelid = req.params.modelid;
+  router.get(/\/\_csv\/(.*)/, function (req, res, next) {
+    var modelid = req.params[0];
+    modelid = Helper.trimRight(modelid,'/');
     if (typeof modelid === 'undefined') { next(); return; }
     if (!jsh.hasModel(req, modelid)) { next(); return; }
     var model = jsh.getModel(req, modelid);
@@ -256,9 +257,10 @@ var jsHarmonyRouter = function (jsh, siteid) {
     if (typeof queueid === 'undefined') { next(); return; }
     jsh.AppSrv.PopQueue(req, res, queueid);
   });
-  router.route('/_d/:modelid/')
+  router.route(/\/\_d\/(.*)/)
 		.all(function (req, res, next) {
-    var modelid = req.params.modelid;
+    var modelid = req.params[0];
+    modelid = Helper.trimRight(modelid,'/');
     if (typeof modelid === 'undefined') { next(); return; }
     if (!jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
     processCustomRouting('d', req, res, jsh, modelid, function(){
@@ -303,9 +305,10 @@ var jsHarmonyRouter = function (jsh, siteid) {
       genSinglePage(jsh, req, res, modelid);
     });
   });
-  router.get('/_model/:modelid', function (req, res, next) {
+  router.get(/\/\_model\/(.*)/, function (req, res, next) {
     //Return model meta-data for SinglePage rendering
-    var modelid = req.params.modelid;
+    var modelid = req.params[0];
+    modelid = Helper.trimRight(modelid,'/');
     if (!jsh.hasModel(req, modelid)) return next();
     processModelQuerystring(jsh, req, modelid);
     processCustomRouting('model', req, res, jsh, modelid, function(){

@@ -97,7 +97,7 @@ exports = module.exports = function(jsh){
   XPayment.prototype.Result = function() {
     var _this = this;
     //Verify Payment Result
-    jsh.XPost.prototype.XExecutePost(_this.payment_result_url, { 'payment_id': _this.payment_id, 'fp_hash': _this.fp_hash }, function (rslt) {
+    jsh.XForm.prototype.XExecutePost(_this.payment_result_url, { 'payment_id': _this.payment_id, 'fp_hash': _this.fp_hash }, function (rslt) {
       if ('_success' in rslt) {
         var PACC_STS = rslt['PACC_STS'];
         var PACC_PP_Result = rslt['PACC_PP_Result'];

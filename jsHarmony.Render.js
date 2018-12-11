@@ -91,7 +91,7 @@ exports.getJSClientParams = function (req) {
 }
 
 exports.getJSLocals = function(req){
-  return 'var jsh = '+req.jshsite.instance+';var $ = jsh.$;var _ = jsh._;var async = jsh.async;var moment=jsh.moment;var ejs = jsh.ejs;var XExt = jsh.XExt;var XPost = jsh.XPost;var XValidate = jsh.XValidate;var XFormat = jsh.XFormat;var _GET = jsh._GET;var XBase = jsh.XBase; var XForms = jsh.XForms;'
+  return 'var jsh = '+req.jshsite.instance+';var $ = jsh.$;var _ = jsh._;var async = jsh.async;var moment=jsh.moment;var ejs = jsh.ejs;var XExt = jsh.XExt;var XForm = jsh.XForm;var XValidate = jsh.XValidate;var XFormat = jsh.XFormat;var _GET = jsh._GET;var XBase = jsh.XBase; var XModels = jsh.XModels;'
 }
 
 exports.RenderView = function(view,ejsparams){

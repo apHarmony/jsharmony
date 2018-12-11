@@ -16,12 +16,14 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
-//DataModel <%=model.id%>
+//DataModel
 (function(jsh){
+  var modelid = '<%=model.id%>';
+  var xmodel = jsh.XModels[modelid];
 
-  var XForm<%=model.id%> = jsh.App.XForm<%=model.id%> = function(){ }
+  var xdatamodel = jsh.App['XDatamodel'+modelid] = xmodel.datamodel = function(){ }
 
-  XForm<%=model.id%>.prototype.Fields = {
+  xdatamodel.prototype.Fields = {
     <% _.each(model.fields,function(field){ if(!('actions' in field)) return; if(field.control=='subform') return; if(field.control=='html') return; if(!field.name) return; %>
       "<%=field.name%>":{"name":"<%=field.name%>",
         "caption":<%-JSON.stringify(field.caption_ext||field.caption)%>,

@@ -37,10 +37,13 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
   var xform = null;
   var xform_post = null;
   var modelid = '<%=model.id%>';
+  var xmodel = jsh.XModels[modelid];
 
-  jsh.App.XForm<%=model.id%>_Init = function(callback){
-    xform = jsh.App['xform_'+modelid] = new jsh.XData(modelid);
-    xform_post = jsh.App['xform_post_'+modelid] = new jsh.XPost(modelid,'','');
+  var xcontroller = jsh.App['XController'+modelid] = xmodel.controller = function(){ }
+
+  xcontroller.Init = function(callback){
+    xform = jsh.App['xform_'+modelid] = new jsh.XGrid(modelid);
+    xform_post = jsh.App['xform_post_'+modelid] = new jsh.XForm(modelid,'','');
     xform.HasUpdates = function(){ return false; };
     xform.Data = {};
     xform.PlaceholderID = '.xmultisel_'+modelid+'_placeholder';
@@ -51,18 +54,18 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
 
       //Pass parameters from bindings
       if(!jsh.is_add){
-        _.each(jsh.XForms[modelid]._bindings,function(binding){
-          var bfield = jsh.App.XForm<%=model.id%>.prototype.Fields[binding];
+        _.each(jsh.XModels[modelid]._bindings,function(binding){
+          var bfield = xmodel.datamodel.prototype.Fields[binding];
           if((typeof bfield != 'undefined') && (jsh.XExt.HasAccess(bfield.actions,'F'))){
-            execparams[binding] = jsh.XForms[modelid][binding]();
+            execparams[binding] = jsh.XModels[modelid][binding]();
           }
         });
       }
       else{
-        _.each(jsh.XForms[modelid]._bindings,function(binding){
-          var bfield = jsh.App.XForm<%=model.id%>.prototype.Fields[binding];
+        _.each(jsh.XModels[modelid]._bindings,function(binding){
+          var bfield = xmodel.datamodel.prototype.Fields[binding];
           if((typeof bfield != 'undefined') && (bfield.lovkey)){
-            execparams[binding] = jsh.XForms[modelid][binding]();
+            execparams[binding] = jsh.XModels[modelid][binding]();
           }
         });
       }
@@ -100,7 +103,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
     callback();
   }
 
-  jsh.App.XForm<%=model.id%>_Save = function(){
+  xcontroller.Save = function(){
     var selected_values = [];
     jsh.$root(xform.PlaceholderID+' input.xselitem').each(function(i,obj){
       if($(obj).is(':checked')){
@@ -109,10 +112,10 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
     });
     var _query = {};
     //Pass parameters from bindings
-    _.each(jsh.XForms[modelid]._bindings,function(binding){
-      var bfield = jsh.App.XForm<%=model.id%>.prototype.Fields[binding];
+    _.each(jsh.XModels[modelid]._bindings,function(binding){
+      var bfield = xmodel.datamodel.prototype.Fields[binding];
       if((typeof bfield != 'undefined') && !(jsh.XExt.HasAccess(bfield.actions,'F'))) return;
-      _query[binding] = jsh.XForms[modelid][binding]();
+      _query[binding] = jsh.XModels[modelid][binding]();
       if(jsh.is_add && (typeof  _query[binding] == 'undefined')){
         _query[binding] = '%%%'+binding+'%%%';
       }

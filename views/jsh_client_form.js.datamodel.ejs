@@ -22,15 +22,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var $ = jsh.$;
   var XExt = jsh.XExt;
   var XValidate = jsh.XValidate;
+  var modelid = '<%=model.id%>';
+  var xmodel = jsh.XModels[modelid];
 
-  var XForm<%=model.id%> = jsh.App.XForm<%=model.id%> = function(){
+  var xdatamodel = jsh.App['XDatamodel'+modelid] = xmodel.datamodel = function(){
     this._is_new = true;
-    this._modelid = '<%=model.id%>';
+    this._modelid = modelid;
     <% _.each(model.fields,function(field){ if(!field.name) return; %>this.<%=field.name%> = '';<%});%>
-    XExt.XForm.ApplyDefaults(this);
+    XExt.XModel.ApplyDefaults(this);
   }
 
-  XForm<%=model.id%>.prototype.Fields = {
+  xdatamodel.prototype.Fields = {
     <% _.each(model.fields,function(field){ if(!('actions' in field)) return; if(('unbound' in field) && field.unbound) return; if(field.control=='subform') return; if(field.control=='html') return; if(field.control=='button') return;  if(!field.name) return; %>
       "<%=field.name%>":{"name":"<%=field.name%>",
       <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
@@ -59,18 +61,18 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       }, <%});%>
   };
 
-  XForm<%=model.id%>.prototype.OnRender = XExt.XForm.OnRender('<%=model.id%>');
-  XForm<%=model.id%>.prototype.GetValues = XExt.XForm.GetValues();
-  XForm<%=model.id%>.prototype.GetValue = XExt.XForm.GetValue('<%=model.id%>');
-  XForm<%=model.id%>.prototype.HasUpdates = XExt.XForm.HasUpdates();
-  XForm<%=model.id%>.prototype.HasUpdate = XExt.XForm.HasUpdate();
-  XForm<%=model.id%>.prototype.OnControlUpdate = XExt.XForm.OnControlUpdate();
-  XForm<%=model.id%>.prototype.Commit = XExt.XForm.Commit('<%=model.id%>','xform_<%=model.id%>');
-  XForm<%=model.id%>.prototype.BindLOV = XExt.XForm.BindLOV('<%=model.id%>');
-  jsh.on('jsh_ready', function(){ XForm<%=model.id%>.prototype.BindLOV(jsh.App.xform_<%=model.id%>); });
+  xdatamodel.prototype.OnRender = XExt.XModel.OnRender(modelid);
+  xdatamodel.prototype.GetValues = XExt.XModel.GetValues();
+  xdatamodel.prototype.GetValue = XExt.XModel.GetValue(modelid);
+  xdatamodel.prototype.HasUpdates = XExt.XModel.HasUpdates();
+  xdatamodel.prototype.HasUpdate = XExt.XModel.HasUpdate();
+  xdatamodel.prototype.OnControlUpdate = XExt.XModel.OnControlUpdate();
+  xdatamodel.prototype.Commit = XExt.XModel.Commit(modelid,'xform_<%=model.id%>');
+  xdatamodel.prototype.BindLOV = XExt.XModel.BindLOV(modelid);
+  jsh.on('jsh_ready', function(){ xdatamodel.prototype.BindLOV(jsh.App.xform_<%=model.id%>); });
 
-  XForm<%=model.id%>.prototype.xvalidate = new XValidate(jsh);
+  xdatamodel.prototype.xvalidate = new XValidate(jsh);
   <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; %>
-  XForm<%=model.id%>.prototype.xvalidate.AddControlValidator('.<%=field.name%>.xelem<%=model.id%>','_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getaccess(model.actions,"BIU"):field.actions)%>',[<%-field.validate%>]);<%});%>
+  xdatamodel.prototype.xvalidate.AddControlValidator('.<%=field.name%>.xelem<%=model.id%>','_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getaccess(model.actions,"BIU"):field.actions)%>',[<%-field.validate%>]);<%});%>
 
 })(<%-instance%>);

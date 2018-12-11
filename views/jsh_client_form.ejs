@@ -14,9 +14,9 @@
   <% } %>
   <%-jsh.RenderView('jsh_buttons',ejsparams)%>
   <% if(model.topmost){ %>
-    <a href="#" class="save" onclick="<%-instance%>.XForm_Save();return false;" style="display:none;"><img src="/images/icon_save.png" alt="Save" title="Save" />Save</a>
-    <% if(model.layout != 'form-m') { %><a href="#" class="delete" onclick="<%-instance%>.XForm_Delete();return false;" style="display:none;"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a><% } %>
-    <a href="#" onclick="<%-instance%>.XPrint(); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'print'))%>"><img src="/images/icon_print.png" alt="Print" title="Print" />Print</a>
+    <a href="#" class="save" onclick="<%-instance%>.XPage.Save();return false;" style="display:none;"><img src="/images/icon_save.png" alt="Save" title="Save" />Save</a>
+    <% if(model.layout != 'form-m') { %><a href="#" class="delete" onclick="<%-instance%>.XPage.Delete();return false;" style="display:none;"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a><% } %>
+    <a href="#" onclick="<%-instance%>.XPage.Print(); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'print'))%>"><img src="/images/icon_print.png" alt="Print" title="Print" />Print</a>
     <a href="<%-model.helpurl%>" onclick="<%-model.helpurl_onclick%>" style="<%-xejs.visible(xejs.showSystemButton(model,'help'))%>"><img src="/images/icon_help.png" alt="Help" title="Help" />Help</a>
   <% } %>
 </div><% if(model.topmost){ %><div class="xactions_spacer"></div><% } %>
@@ -39,7 +39,7 @@
       <div class="xpanel" style="<%=model.duplicate.popupstyle%>">
         <%-jsh.Render(popup_model,model)%>
         <div style="text-align:center;padding-top:8px;">
-          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.id%>" style="padding:3px 8px;" value="Duplicate" onclick="<%-instance%>.XForm_Duplicate('<%=popup_model.id%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link))%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link_options))%>'); return false;" />
+          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.id%>" style="padding:3px 8px;" value="Duplicate" onclick="<%-instance%>.XPage.Duplicate('<%=popup_model.id%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link))%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link_options))%>'); return false;" />
           <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.id%>" style="padding:3px 8px;" value="Cancel" onclick="<%-instance%>.$.colorbox.close(); return false;" />
         </div>
       </div>

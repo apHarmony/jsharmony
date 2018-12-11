@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright 2017 apHarmony
 
 This file is part of jsHarmony.
@@ -21,289 +21,336 @@ var $ = require('./jquery-1.11.2');
 
 exports = module.exports = function(jsh){
 
-  function XGrid(_modelid, _CommitLevel, _ValidationLevel) {
-    this.modelid = _modelid;
-    this.ErrorClass = 'xinputerror';
-    this.CommitLevel = _CommitLevel;
-    this.ValidationLevel = _ValidationLevel;
-    this.CurrentCell = null;
-    this.Debug = false;
-    this.OnCellEnter = null; //(obj,e)
-    this.OnCellLeave = null; //(oldobj,newobj,e)
-    this.OnRowEnter = null; //(rowid)
-    this.OnRowLeave = null; //(rowid)
-    this.OnGridEnter = null; //()
-    this.OnGridLeave = null; //(oldobj)
-    this.OnControlUpdate = null; //(obj,e)
-    this.OnValiding = null; //(rowid,obj,oncancel) return true/false
-    this.OnCommit = null; //(rowid,obj,onsuccess,oncancel) return true (if no commit required, or immediate result)/false (if delay commit)    newobj,oldobj,onsuccess,oncancel,oldrowid
-    this.IsDirty = null; //return true/false
-    this.OnCancelEdit = null; //(rowid,obj)
-    this.SaveBeforeUpdate = false;
-    this.Init();
-  }
-  XGrid.prototype.CellEnter = function (obj, e) {
-    this.DebugLog('Enter Cell ' + $(obj).data('id'));
-    this.CurrentCell = obj;
-    if (this.OnCellEnter) this.OnCellEnter(obj, e);
-  }
-
-  XGrid.prototype.CellLeave = function (oldobj, newobj, e) {
-    this.DebugLog('Leave Cell ' + $(oldobj).data('id'));
-    if (this.OnCellLeave) this.OnCellLeave(obj, e);
-  }
-
-  XGrid.prototype.RowEnter = function (rowid) {
-    this.DebugLog('Enter Row ' + rowid);
-    if (this.OnRowEnter) this.OnRowEnter(rowid);
-  }
-
-  XGrid.prototype.RowLeave = function (rowid) {
-    this.DebugLog('Leave Row ' + rowid);
-    if (this.OnRowLeave) this.OnRowLeave(rowid);
-  }
-
-  XGrid.prototype.GridEnter = function () {
-    this.DebugLog('Enter Grid');
-    if (this.OnGridEnter) this.OnGridEnter();
-  }
-
-  XGrid.prototype.GridLeave = function (oldobj) {
-    this.DebugLog('Leave Grid');
-    this.CurrentCell = undefined;
-    if (this.OnGridLeave) this.OnGridLeave(oldobj);
-  }
-
-  XGrid.prototype.CellChange = function (oldobj, newobj, e) {
-    var oldrowid = -1;
-    var newrowid = -1;
-    if (oldobj) {
-      oldrowid = jsh.XExt.XForm.GetRowID(this.modelid, oldobj);
-      this.CellLeave(oldobj, newobj, e);
+  function XGrid(_q,_TemplateID,_PlaceholderID,_CustomScroll,_Paging,_ScrollControl){
+    this._this = this;
+    this.TemplateID = _TemplateID;
+    this.PlaceholderID = _PlaceholderID;
+    this.ColSpan = jsh.$root(this.PlaceholderID).parent().find('thead th').length;
+    this.q = _q;
+    
+    if(_CustomScroll === undefined) this.CustomScroll = ''; 
+    else {
+      if(lteIE7()){
+        this.CustomScroll = '';
+        _ScrollControl = _CustomScroll;
+        jsh.$root(_CustomScroll).css('overflow','auto');
+      }
+      else this.CustomScroll = _CustomScroll
     }
-    if (newobj) newrowid = jsh.XExt.XForm.GetRowID(this.modelid, newobj);
-    if (oldrowid != newrowid) {
-      if (oldobj) this.RowLeave(oldrowid);
-      if (newobj) {
-        if (!oldobj) this.GridEnter();
-        this.RowEnter(newrowid);
+    
+    if(_Paging === undefined) this.Paging = true;
+    else this.Paging = _Paging;
+    if(_ScrollControl === undefined) this.ScrollControl = window; 
+    else this.ScrollControl = _ScrollControl;
+    this.Sort = new Array();
+    this.Search = '';
+    this.SearchJSON = '';
+    this.scrolledPastBottom = false;
+    this.lastDocumentHeight = 0;
+    this.scrollPrevious = 0;
+    this.scrollFunc = null;
+    this.EOF = true;
+    this.NoResultsMessage = 'No results %%%FORSEARCHPHRASE%%%';
+    this.RequireFilterMessage = 'Please select a filter';
+    this.RowCount = 0;
+    this.AutoLoadMore = true;
+    if(this.Paging) this.EnableScrollUpdate();
+    this.IsLoading = false;
+    this.TemplateHTMLFunc = null;
+    this.LastColumns = new Array(); //Used in Tool Search
+    this.Formatters = new Array(); //Used in Tool Search
+    this.LastData = null;
+    this.Data = null;
+    this.PreProcessResult = null;
+    this.OnBeforeSelect = null;
+    this.OnRowBind = null;
+    this.OnMetaData = null; //(data)
+    this.OnDBRowCount = null;
+    this.OnResetDataSet = null; //()
+    this.OnRender = null; //(ejssource,data)
+    this.OnLoadMoreData = null; //()
+    this.OnLoadComplete = null;
+    this.OnLoadError = null;
+    this.RequireFilter = false;
+    this.State = {};
+    this.Prop = {};
+    this.GetMeta = true;
+    this.GetDBRowCount = false;
+    this.DBRowCount = -1;
+    this._LOVs = {};
+    this._defaults = {};
+    this._bcrumbs = {};
+    this._title = null;
+  }
+
+  //Passing 0,-1 for rowcount will return total rowcount
+  XGrid.prototype.Load = function(rowstart,rowcount,onComplete,getCSV,onFail){
+    if(this.IsLoading){
+      return;
+    }
+    this.IsLoading = true;
+    var loader = jsh.xLoader;
+    if (typeof getCSV == 'undefined') getCSV = false;
+    
+    var rowstart = typeof rowstart !== 'undefined' ? rowstart : 0;
+    var rowcount = typeof rowcount !== 'undefined' ? rowcount : 0;
+    var _this = this;
+    
+    if(rowstart > 0){
+      if(_this.EOF) return;
+      jsh.$root(_this.PlaceholderID).find('tr.xtbl_loadmore').remove();
+      jsh.$root(_this.PlaceholderID).append('<tr class="xtbl_loadmore"><td colspan="'+_this.ColSpan+'"><a href="#">Loading...</div></td></tr>');
+    }
+    var starttime = (new Date()).getTime();
+    
+    var reqdata = { rowstart: rowstart, rowcount: rowcount, sort: JSON.stringify(this.Sort), search: this.Search, searchjson: this.SearchJSON, d: JSON.stringify(this.Data) };
+    if (this.GetMeta) reqdata.meta = 1;
+    if (this.GetDBRowCount && (rowstart == 0)) {
+      _this.DBRowCount = -1;
+      reqdata.getcount = 1;
+    }
+    if (getCSV) {
+      this.IsLoading = false;
+      onComplete(jsh._BASEURL + '_csv/' + this.q + '/?'+$.param(reqdata));
+      return;
+    }
+    if (this.OnBeforeSelect) this.OnBeforeSelect();
+    if(loader) loader.StartLoading(_this);
+    $.ajax({
+      type:"GET",
+      url:jsh._BASEURL+'_d/'+this.q+'/',
+      data: reqdata,
+      dataType: 'json',
+      success:function(data){
+        var loadtime = ((new Date()).getTime() - starttime);
+        if((rowstart > 0) && (loadtime < 500)){
+          window.setTimeout(function(){ _this.ProcessData(data,rowstart,onComplete,reqdata); },500-loadtime);
+        }
+        else { _this.ProcessData(data,rowstart,onComplete,reqdata); }
+      },
+      error: function (data) {
+        if(loader) loader.StopLoading(_this);
+        _this.IsLoading = false;
+        if (_this.OnLoadComplete) _this.OnLoadComplete();
+        if (onComplete) onComplete();
+
+        var jdata = data.responseJSON;
+        if ((jdata instanceof Object) && ('_error' in jdata)) {
+          if (jsh.DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { }
+          else if (_this.OnLoadError && _this.OnLoadError(jdata._error)) { }
+          else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { jsh.XExt.Alert(jdata._error.Message); }
+          else { jsh.XExt.Alert('Error #' + jdata._error.Number + ': ' + jdata._error.Message); }
+          if (onFail) onFail(jdata._error);
+          return;
+        }
+        if (onFail && onFail(data)) { }
+        else if (_this.OnLoadError && _this.OnLoadError(jdata._error)) { }
+        else if (('status' in data) && (data.status == '404')) { jsh.XExt.Alert('(404) The requested page was not found.'); }
+        else if (jsh._debug) jsh.XExt.Alert('An error has occurred: ' + data.responseText);
+        else jsh.XExt.Alert('An error has occurred.  If the problem continues, please contact the system administrator for assistance.');
+      }
+    });
+  };
+  XGrid.prototype.ProcessData = function(data,rowstart,onComplete,reqdata){
+    var _this = this;
+    var loader = jsh.xLoader;
+    if(rowstart > 0){
+      jsh.$root(_this.PlaceholderID).find('tr.xtbl_loadmore').remove();
+    }
+    if ((data instanceof Object) && ('_error' in data)) {
+      if (jsh.DefaultErrorHandler(data['_error'].Number, data['_error'].Message)) { }
+      else if ((data._error.Number == -9) || (data._error.Number == -5)) { jsh.XExt.Alert(data._error.Message); }
+      else { jsh.XExt.Alert('Error #' + data._error.Number + ': ' + data._error.Message); }
+    }
+    else {
+      if (_this.GetMeta) {
+        _this.GetMeta = false;
+        if ('_defaults' in data) { _this._defaults = data['_defaults']; }
+        if ('_bcrumbs' in data) { _this._bcrumbs = data['_bcrumbs']; }
+        if ('_title' in data) { _this._title = data['_title']; }
+        for (var tbl in data) {
+          if (tbl.indexOf('_LOV_') == 0) {
+            _this._LOVs[tbl.substring(5)] = data[tbl];
+          }
+        }
+        if (_this.OnMetaData) _this.OnMetaData(data);
+      }
+      if (('_count_' + this.q) in data) {
+        var dcount = data['_count_' + this.q];
+        if ((dcount != null)) _this.DBRowCount = dcount['cnt'];
+        _this.OnDBRowCount();
+        //if ((dcount != null) && (dcount.length == 1)) onComplete(dcount[0]['cnt']);
+        //else { jsh.XExt.Alert('Error retrieving total row count.'); }
+        //onComplete = null;  //Clear onComplete event, already handled
+      }
+      if ((data[this.q].length == 0) && ((_this.NoResultsMessage) || (_this.RequireFilter && _this.RequireFilterMessage))) {
+        _this.EOF = true;
+        var noresultsmessage = _this.NoResultsMessage.replace(/%%%FORSEARCHPHRASE%%%/g, (($.trim(_this.Search) != '')?'for selected search phrase':''));
+        if (_this.RequireFilter && !reqdata.search && !reqdata.searchjson) noresultsmessage = _this.RequireFilterMessage;
+        jsh.$root(_this.PlaceholderID).html('<tr class="xtbl_noresults"><td colspan="' + _this.ColSpan + '" align="center" class="xtbl_noresults">' + noresultsmessage + '</td></tr>');
+        _this.RowCount = 0;
+        if (_this.OnResetDataSet) _this.OnResetDataSet(data);
       }
       else {
-        this.GridLeave(oldobj);
+        if (_this.PreProcessResult) _this.PreProcessResult(data);
+        var ejssource = "";
+        if (_this.TemplateHTMLFunc != null) {
+          ejssource = _this.TemplateHTMLFunc(data, rowstart);
+          if (ejssource === false) {
+            if(loader) loader.StopLoading(_this);
+            _this.IsLoading = false;
+            _this.Load();
+            return;
+          }
+        }
+        else ejssource = jsh.$root(_this.TemplateID).html();
+        
+        if (rowstart == 0) {
+          jsh.$root(_this.PlaceholderID).empty();
+          _this.RowCount = 0;
+          if (_this.OnResetDataSet) _this.OnResetDataSet(data);
+        }
+        if (ejssource) {
+          ejssource = ejssource.replace(/<#/g, '<%').replace(/#>/g, '%>')
+          if (data[this.q] && _this.OnRender) _this.OnRender(ejssource, data);
+          else {
+            var ejsrslt = jsh.ejs.render(ejssource, {
+              rowid: undefined,
+              data: data[this.q],
+              xejs: jsh.XExt.xejs,
+              jsh: jsh,
+              instance: jsh.getInstance()
+            });
+            jsh.$root(_this.PlaceholderID).append(ejsrslt);
+            _this.RowCount = jsh.$root(_this.PlaceholderID).find('tr').length;
+          }
+        }
+        _this.EOF = data['_eof_' + this.q];
+        if ((_this.Paging) && (!_this.EOF)) {
+          jsh.$root(_this.PlaceholderID).append('<tr class="xtbl_loadmore"><td colspan="' + _this.ColSpan + '"><a href="#">Load More Data</div></td></tr>');
+          jsh.$root(_this.PlaceholderID).find('.xtbl_loadmore').click(function () {
+            if (_this.OnLoadMoreData) { _this.OnLoadMoreData(); return false; }
+            _this.Load(_this.RowCount);
+            return false;
+          });
+        }
+        if (_this.CustomScroll != '') {
+          jsh.$root(_this.CustomScroll).mCustomScrollbar("update");
+        }
       }
     }
-    if (newobj) {
-      this.CellEnter(newobj, e);
-    }
+    if(loader) loader.StopLoading(_this);
+    _this.IsLoading = false;
+    if (_this.OnLoadComplete) _this.OnLoadComplete();
+    if(onComplete) onComplete();
   }
-
-  XGrid.prototype.Init = function () {
-    //Global Focus Change
-    var _this = this;
-    jsh.focusHandler.push(function (newobj) {
-      if (jsh.xLoader.IsLoading) { return; }
-      var newrowid = -1;
-      var oldrowid = -1;
-      var oldobj = _this.CurrentCell;
-      if (!oldobj) return; //Return if user was not previously in grid
-      if ($.datepicker && $.datepicker._datepickerShowing) {
-        if (newobj == $('body')[0]) return;
-        else if (jsh.$root('.ui-datepicker').has(newobj).length) return;
-      }
-      if (newobj) newrowid = jsh.XExt.XForm.GetRowID(_this.modelid, newobj);
-      if (newrowid >= 0) return; //Return if current control is in grid
-      _this.DebugLog('FocusHandler Triggered');
-      _this.CellLeaving(oldobj, undefined, undefined, function () {
-        //Success
-        _this.CellChange(_this.CurrentCell);
-      });
-    });
-  }
-
-  XGrid.prototype.DebugLog = function (obj) {
-    if (this.Debug) console.log(obj);
-  }
-
-  XGrid.prototype.ControlEnter = function (obj, e) {
-    var _this = this;
-    if (this.CurrentCell == obj) return;
-    if (this.ErrorClass) if ($(obj).hasClass(this.ErrorClass)) { this.CurrentCell = obj; return; }
+  XGrid.prototype.ResetSortGlyphs = function (tblobj){
+    var xhtml_thead = tblobj.find('thead tr');
+    xhtml_thead.find("th").removeClass('sortAsc').removeClass('sortDesc');
+    if (!this.Sort || (this.Sort.length == 0)) return;
     
-    //Reset old value
-    var immediate_result = this.ControlLeaving(obj, e, function (_immediate_result) {
-      //On success
-      _this.CellChange(_this.CurrentCell, obj, e);
-      if (!_immediate_result) {
-      }
-    }, function (_immediate_result) {
-      //On failure
-      if (_immediate_result) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    });
-    if (!immediate_result) {
-      //Do not change value until database execution complete
-      e.preventDefault();
-      e.stopPropagation();
-      window.setTimeout(function () { $(obj).blur(); }, 1);
-    }
-    return;
+    var xhtml_th = tblobj.find('.thead' + this.Sort[0].substring(1));
+    if (this.Sort[0][0] == '^') { xhtml_th.addClass('sortAsc'); }
+    else { xhtml_th.addClass('sortDesc'); }
   }
-
-  XGrid.prototype.CheckboxUpdate = function (obj, e) {
-    var _this = this;
-    var obj_changed = (this.CurrentCell != obj);
-    //if(!obj_changed) return;
-    if (this.ErrorClass) if ($(obj).hasClass(this.ErrorClass)) { this.CurrentCell = obj; return; }
-    var ischecked = obj.checked;
-    obj.checked = !ischecked;
-    //Do not change checkbox until database execution complete
-    $(obj).prop('disabled', true);
-    
-    var immediate_result = this.ControlLeaving(obj, e, function () {
-      //On success
-      _this.CellChange(_this.CurrentCell, obj, e);
-      $(obj).prop('disabled', false);
-      obj.checked = ischecked;
-      $(obj).focus();
-      _this.ControlUpdate(obj, e);
-      if (true && (_this.CommitLevel == 'cell')) { _this.ControlLeaving(obj, e); }
-    }, function (_immediate_result) {
-      //On failure
-      $(obj).prop('disabled', false);
-      if (_immediate_result) {
-        e.preventDefault();
-        e.stopPropagation();
+  XGrid.prototype.AddSort = function(obj,col){
+    var newdir = '^';
+    for(var i = 0; i < this.Sort.length; i++){
+      if(this.Sort[i].substring(1)==col){
+        if(i==0){
+          var curdir = this.Sort[i].substring(0,1);
+          if(curdir == '^') newdir = 'v';
+        }
+        this.Sort.splice(i,1);
+        i--;
       }
-    });
-    
-    if (!immediate_result) {
-      e.preventDefault();
-      e.stopPropagation();
     }
-  }
-  //----------------
-  //OnControlLeaving
-  //----------------
-  //Return true if immediate result
-  //Return false if needs to wait
-  XGrid.prototype.ControlLeaving = function (obj, e, onsuccess, oncancel) {
-    var _this = this;
-    var rslt = this.CellLeaving(this.CurrentCell, obj, e, onsuccess, oncancel);
-    if (rslt === true) return true;
-    else if (rslt === false) return true;
+    var xhtml_th = $(obj).parent();
+    var xhtml_thead = xhtml_th.parent();
+    if(newdir == '^'){ xhtml_thead.find("th").removeClass('sortAsc').removeClass('sortDesc'); xhtml_th.addClass('sortAsc'); }
+    else{ xhtml_thead.find("th").removeClass('sortAsc').removeClass('sortDesc'); xhtml_th.addClass('sortDesc'); }
+    this.Sort.unshift(newdir+col);
+    this.Load();
     return false;
   }
-  XGrid.prototype.ControlUpdate = function (obj, e) {
-    this.DebugLog('Update ' + $(obj).data('id'));
-    if (this.OnControlUpdate) this.OnControlUpdate(obj, e);
+  XGrid.prototype.NewSearch = function(txt){
+    this.Search = txt;
+    this.Load();
+    return false;
   }
-  XGrid.prototype.ControlKeyDown = function (obj, e) {
-    if (e.keyCode == 27) { //Escape key pressed
-      //Get current Rowid
-      var rowid = -1;
-      var obj = this.CurrentCell;
-      if (obj) rowid = jsh.XExt.XForm.GetRowID(this.modelid, obj);
-      if (rowid < 0) return;
-      if (this.OnCancelEdit) this.OnCancelEdit(rowid, obj);
-    }
+  XGrid.prototype.NewSearchJSON = function(txt, cb){
+    this.SearchJSON = txt;
+    this.Load(undefined,undefined,cb);
+    return false;
   }
-
-  XGrid.prototype.CellLeaving = function (oldobj, newobj, e, onsuccess, oncancel) {
-    var oldrowid = -1;
-    var newrowid = -1;
-    if (oldobj) oldrowid = jsh.XExt.XForm.GetRowID(this.modelid, oldobj);
-    if (newobj) newrowid = jsh.XExt.XForm.GetRowID(this.modelid, newobj);
-
-    var rowchange = (oldrowid != newrowid);
-    
-    if ((this.ValidationLevel == 'cell') || (this.CommitLevel == 'cell')) {
-      //Validate Cell, if applicable
-      if (this.OnValidating && !this.OnValidating(oldrowid, oldobj)) {
-        if (oncancel) oncancel(true);
-        return true;
-      }
-    }
-    else if (rowchange && ((this.ValidationLevel == 'row') || (this.CommitLevel == 'row'))) {
-      //Validate Row, if applicable
-      if (this.OnValidating && !this.OnValidating(oldrowid, oldobj)) {
-        if (oncancel) oncancel(true);
-        return true;
-      }
-    }
-
-    
-    if(this.SaveBeforeUpdate && ((this.CommitLevel == 'row') || (this.CommitLevel == 'cell')) && !oldobj && rowchange && (!this.IsDirty || !this.IsDirty())){
-      if (jsh.XForm_GetChanges().length > 0) {
-        jsh.XExt.Alert('Please save all changes before updating the grid.',function(){
-          $(document.activeElement).blur();
-        });
-        if(oncancel) oncancel(true);
-        return true;
-      }
-    }
-    
-    //Commit Cell/Row
-    if (this.IsDirty && this.IsDirty() && this.OnCommit && (
-      (this.CommitLevel == 'cell') || 
-      ((this.CommitLevel == 'cell') && (newobj && $(newobj).is(':checkbox'))) || 
-      (rowchange && (this.CommitLevel == 'row'))
-  )) {
-      
-      if (newobj) jsh.qInputAction = new jsh.XExt.XInputAction(newobj);
-      else if (jsh.qInputAction && !(jsh.qInputAction.IsExpired())) { }
-      else jsh.qInputAction = null;
-      
-      jsh.ignorefocusHandler = true;
-      window.setTimeout(function () {
-        $(document.activeElement).blur();
-        $(oldobj).focus();
-        window.setTimeout(function () {
-          jsh.ignorefocusHandler = false;
-          if ($(oldobj).data('datepicker')) $(oldobj).datepicker('hide');
-        }, 1);
-      }, 1);
-      
-      var onsuccess_override = function () {
-        if (onsuccess) onsuccess(false);
-        if (jsh.qInputAction) jsh.qInputAction.Exec();
-      }
-      
-      if (!this.OnCommit(oldrowid, oldobj, onsuccess_override, oncancel)) return false;
-    }
-    
-    if (onsuccess) onsuccess();
-    return true;
-  }
-
-  XGrid.prototype.BindRow = function (jobj) {
+  XGrid.prototype._WindowOnScrollBottom = function(callback){
     var _this = this;
-    var modelid = _this.modelid;
-    var xform = (modelid ? jsh.App['XForm'+modelid] : null);
-    var xfields = (xform ? xform.prototype.Fields : []);
-    jobj.find('.xelem' + this.modelid).not('.xelem' + this.modelid + '.checkbox').keyup(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
-    jobj.find('.xelem' + this.modelid).change(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
-    jobj.find('.xelem' + this.modelid + '.checkbox').click(function (e) { if (!$(this).hasClass('editable')) return; return _this.CheckboxUpdate(this, e); });
-    jobj.find('.xelem' + this.modelid + '.datepicker').each(function () {
-      if (!$(this).hasClass('editable')) return;
-      var ctrl = this;
-      var dateformat = jsh.DEFAULT_DATEFORMAT;
-      var fname = $(this).data('id');
-      var xfield = xfields[fname];
-      if (xfield && xfield.controlparams) dateformat = xfield.controlparams.dateformat;
-      $(this).datepicker({
-        changeMonth: true, changeYear: true, dateFormat: dateformat, duration: '', showAnim: '', onSelect: function () {
-          jsh.ignorefocusHandler = true;
-          window.setTimeout(function () {
-            window.setTimeout(function () { jsh.ignorefocusHandler = false; _this.ControlUpdate(ctrl); }, 1);
-          }, 1);
+    _this.scrollFunc = function(){
+      var curDocumentHeight = _this._getDocumentHeight();
+      if(curDocumentHeight != _this.lastDocumentHeight){
+        _this.lastDocumentHeight = curDocumentHeight;
+        _this.scrolledPastBottom = false;
+      }
+      var pastBottom = (($(window).height() + $(window).scrollTop()) >= (curDocumentHeight));
+      if(!_this.scrolledPastBottom && pastBottom) {
+        callback($(window).height() + $(window).scrollTop());
+        _this.scrolledPastBottom = true;
+      } else {
+        if(!pastBottom) _this.scrolledPastBottom = false;
+      }
+      _this.scrollPrevious = $(window).scrollTop();
+    };
+    jsh.$root(_this.ScrollControl).scroll(_this.scrollFunc);
+  }
+  XGrid.prototype._getDocumentHeight = function() {
+    return Math.max(
+        Math.max(document.body.scrollHeight, document.documentElement.scrollHeight),
+        Math.max(document.body.offsetHeight, document.documentElement.offsetHeight),
+        Math.max(document.body.clientHeight, document.documentElement.clientHeight)
+    );
+  }
+  XGrid.prototype._ControlOnScrollBottom = function(callback){
+    var _this = this;
+    _this.scrollFunc = function () {
+      var pastBottom = ((jsh.$root(_this.ScrollControl).outerHeight() + jsh.$root(_this.ScrollControl).scrollTop()) >= jsh.$root(_this.ScrollControl).get(0).scrollHeight);
+      //console.log((jsh.$root(_this.ScrollControl).outerHeight()+jsh.$root(_this.ScrollControl).scrollTop()) + ">=" + jsh.$root(_this.ScrollControl).get(0).scrollHeight);
+      if (!_this.scrolledPastBottom && pastBottom) {
+        callback(jsh.$root(_this.ScrollControl).height() + jsh.$root(_this.ScrollControl).scrollTop());
+        _this.scrolledPastBottom = true;
+      } else {
+        if (!pastBottom) _this.scrolledPastBottom = false;
+      }
+      _this.scrollPrevious = jsh.$root(_this.ScrollControl).scrollTop();
+    };
+    jsh.$root(_this.ScrollControl).scroll(_this.scrollFunc);
+  }
+  XGrid.prototype.EnableScrollUpdate = function() {
+    var _this = this;
+    var updateFunc = function(){
+      if(_this.AutoLoadMore){
+        if(!_this.EOF){
+          _this.Load(_this.RowCount);
+        }
+      }
+    };
+    if(_this.CustomScroll != ''){
+      jsh.$root(_this.CustomScroll).mCustomScrollbar({
+        theme:"dark",
+        autoScrollOnFocus: false,
+        scrollButtons:{ enable:true },
+        scrollInertia:0,
+        callbacks:{
+          onTotalScroll: updateFunc
         }
       });
-    });
-    jobj.find('.xelem' + this.modelid).not('.xelem' + this.modelid + '.checkbox').focus(function (e) { if (jsh.xDialog.length) return; if (!$(this).hasClass('editable')) return; return _this.ControlEnter(this, e); });
-    jobj.find('.xelem' + this.modelid + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e) })
-    jobj.find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; if (jsh.xDialog.length) return; if (!$(ctrl).hasClass('editable')) return; return _this.ControlEnter(ctrl, e); });
+    }
+    else if(this.ScrollControl == window) this._WindowOnScrollBottom(updateFunc);
+    else this._ControlOnScrollBottom(updateFunc);
+  }
+  XGrid.prototype.Destroy = function (){
+    var _this = this;
+    if (_this.CustomScroll != '') { jsh.$root(_this.CustomScroll).mCustomScrollbar("destroy"); }
+    else { jsh.$root(_this.ScrollControl).unbind('scroll', _this.scrollFunc); }
   }
 
   return XGrid;

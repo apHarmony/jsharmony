@@ -31,8 +31,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var ejs = jsh.ejs;
   var async = jsh.async;
   var moment = jsh.moment;
-  var XData = jsh.XData;
-  var XPost = jsh.XPost;
+  var XGrid = jsh.XGrid;
+  var XForm = jsh.XForm;
   var XExt = jsh.XExt;
   var XFormat = jsh.XFormat;
   var XValidate = jsh.XValidate;
@@ -40,7 +40,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var XPayment = jsh.XPayment;
   var XBarcode = jsh.XBarcode;
   var XScanner = jsh.XScanner;
-  var XGrid = jsh.XGrid;
+  var XEditableGrid = jsh.XEditableGrid;
   var XMenu = jsh.XMenu;
   var JSHFind = jsh.JSHFind;
   var XLoader = jsh.XLoader;
@@ -64,7 +64,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.qInputAction = null;
   jsh.static_paths = ['logout'];
 
-  jsh.InitXFileUpload();
+  jsh.InitFileUpload();
   jsh.title_html = '';
   jsh.title = '<%=jsh.Config.app_name%> - %%%PAGETITLE%%%';
   jsh.frontsalt = <%-JSON.stringify(jsh.Config.frontsalt)%>;
@@ -132,7 +132,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         catch(ex){ tabs = null; }
         if(tabs){
           //Check if any of the tabs need to be updated
-          jsh.forEachModelTree(model, null, function (model, modelParent) {
+          jsh.XPage.traverseModelDefinitions(model, null, function (model, modelParent) {
             if(modelParent && modelParent.curtabmodel){
               if((modelParent.id in tabs) && (tabs[modelParent.id] != model.id)){
                 tabs[modelParent.id] = model.id;
@@ -149,15 +149,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         }
       }
       if((typeof options.addHistory == 'undefined') || options.addHistory){
-        jsh.XForm_AddHistory(jsh.state, undefined, { replaceHistory: initialLoad });
+        jsh.XPage.AddHistory(jsh.state, undefined, { replaceHistory: initialLoad });
       }
       initialLoad = false;
 
       var ejsrslt = jsh.Render(model);
       //console.log(ejsrslt); //Show Full Source
-      jsh.XForm_PreDestroy();
+      jsh.XPage.PreDestroy();
       jsh.$root('.xbody').html('');
-      jsh.XForm_Destroy();
+      jsh.XPage.Destroy();
 
       //Initialize GET/forcequery
       jsh._GET = XExt.parseGET();
@@ -165,7 +165,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       _.extend(jsh._GET, jsh.forcequery);
 
       //Setup TopMost Variables
-      window.onbeforeunload = function(){ return jsh.XForm_OnExit(); };
+      window.onbeforeunload = function(){ return jsh.XPage.OnExit(); };
       jsh.cancelExit = false;
       jsh.focusHandler = [];
       jsh.ignorefocusHandler = false;
@@ -198,7 +198,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if(!model.toptitle) model.toptitle = '';
       var orig_title = XExt.unescapeEJS(model.toptitle);
       if (orig_title.indexOf('<#') < 0){
-        jsh.XForm_UpdateTitle({ resolveEJS: false });
+        jsh.XPage.UpdateTitle({ resolveEJS: false });
       }
       else if(jsh.prev_title_src == model.toptitle) jsh.$root('.xform_title').html(jsh.prev_title);
       else jsh.$root('.xform_title').html('&nbsp;');
@@ -275,7 +275,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var new_url = new_jsh_state.fullpath+new_jsh_state.QS;
     if(orig_url == new_url){
       if(new_jsh_state.hash){ 
-        if((typeof addHistory == 'undefined') || addHistory) jsh.XForm_AddHistory(new_jsh_state,true);
+        if((typeof addHistory == 'undefined') || addHistory) jsh.XPage.AddHistory(new_jsh_state,true);
         XExt.jumpAnchor(new_jsh_state.hash); 
       }
       return false;
@@ -288,7 +288,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
     //Try to exit, show message if changes on the page
     if(!jsh.cancelExit){
-      var exit_rslt = jsh.XForm_OnExit();
+      var exit_rslt = jsh.XPage.OnExit();
       if(exit_rslt){
         XExt.Confirm(exit_rslt + "\n\nAre you sure you want to leave this page?",exec_navigate,function(){
           if(typeof onCancel != 'undefined') onCancel();
@@ -362,7 +362,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.GetModel = function(modelid,d,onComplete,onFail){
-    XPost.prototype.XExecute('../_model/'+jsh.state.modelid,d, function (rslt) {
+    XForm.prototype.XExecute('../_model/'+jsh.state.modelid,d, function (rslt) {
       onComplete(rslt);
     },onFail);
   }
@@ -383,8 +383,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if(rslt.path.indexOf('_report/')==0) rslt.modelid = '_report_'+rslt.path.substr(8);
     else rslt.modelid = rslt.path;
     if((rslt.modelid.length > 0) && (rslt.modelid[rslt.modelid.length-1] == '/')) rslt.modelid = rslt.modelid.substr(0,rslt.modelid.length-1);
-    
-    if(rslt.modelid.indexOf('/') >= 0){ jsh.Error(-99999,'Invalid Model ID'); return; }
     return rslt;
   }
 

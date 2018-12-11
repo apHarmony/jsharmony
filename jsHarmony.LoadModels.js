@@ -588,6 +588,10 @@ exports.ParseEntities = function () {
     else if(model.caption.length==1) model.caption = ['',model.caption[0],model.caption[0]];
     else if(model.caption.length==2) model.caption = ['',model.caption[0],model.caption[1]];
 
+    model.class = model.id.replace(/[^a-zA-Z0-9_-]+/g, '_');
+    model.class = Helper.trimLeft(model.class,'-');
+    while(model.class.indexOf('__') > 0) model.class = Helper.ReplaceAll(model.class,'__','_');
+
     if (!('title' in model)){
       if(model.tabs && model.tabs.length && model.tabpos && (model.tabpos=='top')){ }
       else {
@@ -1093,7 +1097,7 @@ exports.ParseEntities = function () {
 
     //Validate Model and Field Parameters
     var _v_model = [
-      'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites',
+      'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites', 'class',
       'samplerepeat', 'menu', 'id', 'idmd5', 'access_models', '_inherits', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
       'pagesettings', 'pageheader', 'pageheaderjs', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',

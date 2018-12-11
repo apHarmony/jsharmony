@@ -25,7 +25,7 @@ exports = module.exports = function(jsh){
 
   var XExt = function(){ }
 
-  XExt.XForm = require('./XExt.XForm.js')(jsh);
+  XExt.XModel = require('./XExt.XModel.js')(jsh);
 
   XExt.parseGET = function (qs) {
     if (typeof qs == 'undefined') qs = window.location.search;
@@ -132,7 +132,7 @@ exports = module.exports = function(jsh){
         }
       }
       //All variables ready, run main operation
-      var xpost = new jsh.XPost(q, '', '');
+      var xpost = new jsh.XForm(q, '', '');
       xpost.Data = d;
       var dq = {}, dp = {};
       if (method == 'get') dq = d;
@@ -506,9 +506,9 @@ exports = module.exports = function(jsh){
     }
   }
   XExt.notifyPopupComplete = function (id, rslt) {
-    var jshOpener = XExt.getOpenerJSH(['XPopupComplete']);
+    var jshOpener = XExt.getOpenerJSH(['XPage.PopupComplete']);
     if (jshOpener) {
-      jshOpener.XPopupComplete(id, rslt);
+      jshOpener.XPage.PopupComplete(id, rslt);
     }
   }
   XExt.unescapeEJS = function (ejssrc) {
@@ -668,7 +668,7 @@ exports = module.exports = function(jsh){
 
   XExt.getJSLocals = function(modelid){
     var rslt = jsh.jslocals;
-    if(modelid) rslt += "var modelid = '"+modelid+"'; var _this = jsh.App[modelid]; ";
+    if(modelid) rslt += "var modelid = '"+modelid+"'; var _this = jsh.App[modelid]; var xmodel = jsh.XModels[modelid]; ";
     return rslt;
   }
 
@@ -691,7 +691,7 @@ exports = module.exports = function(jsh){
   }
 
   XExt.wrapJS = function(code,modelid){
-    return 'return (function(){'+XExt.escapeHTML(XExt.getJSLocals(modelid))+' '+XExt.escapeHTML(code)+'; return false; }).call(this);';
+    return 'return (function(){'+XExt.escapeHTML(XExt.getJSLocals(modelid))+' '+XExt.unescapeEJS(XExt.escapeHTML(code))+'; return false; }).call(this);';
   }
 
   XExt.TreeItemContextMenu = function (ctrl, n) {
@@ -1082,7 +1082,7 @@ exports = module.exports = function(jsh){
     if (typeof options == 'undefined') options = {};
     var parentmodelid = $(obj).data('model');
     var parentfield = null;
-    if (parentmodelid) parentfield = jsh.App['XForm' + parentmodelid].prototype.Fields[fieldid];
+    if (parentmodelid) parentfield = jsh.App['XDatamodel' + parentmodelid].prototype.Fields[fieldid];
     if (!parentobj) parentobj = jsh.$root('.' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelid);
     var numOpens = 0;
     
@@ -1142,7 +1142,7 @@ exports = module.exports = function(jsh){
 
   XExt.popupSelect = function (modelid, obj) {
     var rslt = null;
-    var rowid = XExt.XForm.GetRowID(modelid, obj);
+    var rowid = XExt.XModel.GetRowID(modelid, obj);
     var xdata = jsh.App['xform_' + modelid];
     var xpost = jsh.App['xform_post_' + modelid];
     
@@ -1259,6 +1259,26 @@ exports = module.exports = function(jsh){
     else f();
   }
 
+  XExt.LiteralOrCollection = function(str, col, funccol) {
+    //console.log("Evaluating: "+str);
+    var rslt = undefined;
+    if (!isNaN(str)) rslt = str;
+    else if ((str.length >= 2) && (str[0] == "'") && (str[str.length - 1] == "'")) rslt = str.substr(1, str.length - 2);
+    else if(str.trim().toLowerCase()=='null') rslt = null;
+    else if ((typeof funccol !== 'undefined') && (str in funccol)) rslt = funccol[str]();
+    else if(col) {
+      //console.log('Array check'); console.log(col);
+      if (_.isArray(col)) {
+        for (var i = 0; i < col.length; i++) {
+          if (str in col[i]) return col[i][str];
+        }
+      }
+      else rslt = col[str];
+    }
+    //console.log('Result: '+rslt);
+    return rslt;
+  }
+
   XExt.findClosest = function (elem, sel) {
     var jobj = $(elem).find(sel);
     if (jobj.length) return jobj;
@@ -1269,7 +1289,7 @@ exports = module.exports = function(jsh){
 
   XExt.getToken = function (onComplete, onFail) {
     if(!jsh) throw new Error('XExt requires jsHarmony instance to run getToken');
-    jsh.XPost.prototype.XExecute('../_token', {}, onComplete, onFail);
+    jsh.XForm.prototype.XExecute('../_token', {}, onComplete, onFail);
   }
 
   XExt.triggerAsync = function(handlers, cb /*, param1, param2 */){
@@ -1309,8 +1329,8 @@ exports = module.exports = function(jsh){
     return undefined;
   }
   XExt.getForm = function (id) {
-    if (!(id in jsh.XForms)) { XExt.Alert('ERROR: Form ' + id + ' not found.'); return; }
-    if (jsh.XForms[id]._layout == 'grid') return jsh.App['xform_post_' + id];
+    if (!(id in jsh.XModels)) { XExt.Alert('ERROR: Form ' + id + ' not found.'); return; }
+    if (jsh.XModels[id]._layout == 'grid') return jsh.App['xform_post_' + id];
     return jsh.App['xform_' + id];
   }
   XExt.getFormFromObject = function (ctrl) {
@@ -1339,12 +1359,12 @@ exports = module.exports = function(jsh){
   XExt.setFormField = function (xform, fieldname, fieldval) {
     if (!xform) { XExt.Alert('ERROR: Cannot set field ' + fieldname + ' - Parent form not found.'); return; }
     if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
-    XExt.XForm.SetFieldValue(xform.Data, xform.Data.Fields[fieldname], fieldval);
+    XExt.XModel.SetFieldValue(xform.Data, xform.Data.Fields[fieldname], fieldval);
   }
   XExt.setFormControl = function (xform, fieldname, fieldval) { //Set fieldval to undefined for refresh
     if (!xform) { XExt.Alert('ERROR: Cannot set field ' + fieldname + ' - Parent form not found.'); return; }
     if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
-    XExt.XForm.SetControlValue(xform.Data, xform.Data.Fields[fieldname], fieldval);
+    XExt.XModel.SetControlValue(xform.Data, xform.Data.Fields[fieldname], fieldval);
   }
   /***********************/
   /* UI Helper Functions */

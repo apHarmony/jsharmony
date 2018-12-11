@@ -22,9 +22,9 @@ var _ = require('lodash');
 
 exports = module.exports = function(jsh){
 
-  var XExtXForm = function(){ }
+  var XExtXModel = function(){ }
 
-  XExtXForm.GetRowID = function (modelid,obj){
+  XExtXModel.GetRowID = function (modelid,obj){
     var jobj = $(obj);
     if(jobj.hasClass('row_independent')) return -1;
     var cur_row = jobj.closest('.xrow_'+modelid);
@@ -34,16 +34,16 @@ exports = module.exports = function(jsh){
     return -1;
   }
 
-  XExtXForm.OnRender = function (modelid) {
+  XExtXModel.OnRender = function (modelid) {
     return function(){
       var _this = this;
       var parentobj = jsh.root;
       if (this._jrow) parentobj = this._jrow;
-      var isGrid = (jsh.XForms[modelid]._layout == 'grid');
+      var isGrid = (jsh.XModels[modelid]._layout == 'grid');
       //Clear highlighted background of currently edited cells
       parentobj.find('.xelem'+modelid+'.xform_ctrl').removeClass('updated');
       
-      if (jsh.XForms[modelid]._layout == 'form-m') {
+      if (jsh.XModels[modelid]._layout == 'form-m') {
         if (jsh.App['xform_'+modelid].Count()==0) {
           jsh.$root('.xelem'+modelid+'.xnorecords').show();
           jsh.$root('.xelem'+modelid+'.xformcontainer').css('visibility', 'hidden');
@@ -77,30 +77,30 @@ exports = module.exports = function(jsh){
       }
       //Put data into the form
       _.each(this.Fields, function (field) {
-        XExtXForm.RenderField(_this, parentobj, modelid, field);
+        XExtXModel.RenderField(_this, parentobj, modelid, field);
       });
-      if (jsh.XForms[modelid]._layout == 'form-m') {
+      if (jsh.XModels[modelid]._layout == 'form-m') {
         jsh.$root('.navtext_' + modelid).html((jsh.App['xform_' + modelid].Index + 1) + ' of ' + jsh.App['xform_' + modelid].Count());
       }
     };
   };
 
-  XExtXForm.SetFieldValue = function (xformdata, field, val){
+  XExtXModel.SetFieldValue = function (xformdata, field, val){
     xformdata[field.name] = val;
     var parentobj = jsh.root;
     if (xformdata._jrow) parentobj = xformdata._jrow;
-    XExtXForm.RenderField(xformdata, parentobj, xformdata._modelid, field, val);
+    XExtXModel.RenderField(xformdata, parentobj, xformdata._modelid, field, val);
   }
 
-  XExtXForm.SetControlValue = function (xformdata, field, val) { //Leave val to "undefined" for refresh
+  XExtXModel.SetControlValue = function (xformdata, field, val) { //Leave val to "undefined" for refresh
     var parentobj = jsh.root;
     if (xformdata._jrow) parentobj = xformdata._jrow;
-    var jctrl = XExtXForm.RenderField(xformdata, parentobj, xformdata._modelid, field, val);
+    var jctrl = XExtXModel.RenderField(xformdata, parentobj, xformdata._modelid, field, val);
     if(jctrl && jctrl.length) xformdata.OnControlUpdate(jctrl[0]);
   }
 
-  XExtXForm.RenderField = function (_this, parentobj, modelid, field, val){
-    var isGrid = (jsh.XForms[modelid]._layout == 'grid');
+  XExtXModel.RenderField = function (_this, parentobj, modelid, field, val){
+    var isGrid = (jsh.XModels[modelid]._layout == 'grid');
     if(typeof val === 'undefined') val = _this[field.name];
     //Apply formatting
     if ((field.name in _this) && (typeof val == 'undefined')) val = '';
@@ -141,8 +141,8 @@ exports = module.exports = function(jsh){
         //Set thumbnail
         if (jctrl_thumbnail.length && field.controlparams.thumbnail_width) {
           var keys = jsh.App['xform_' + modelid].GetKeys();
-          if (jsh.XForms[modelid]._keys.length != 1) { throw new Error('File models require one key.'); }
-          var thumb_url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[jsh.XForms[modelid]._keys[0]] + '/' + field.name + '?view=1&thumb=1&_=' + (new Date().getTime());
+          if (jsh.XModels[modelid]._keys.length != 1) { throw new Error('File models require one key.'); }
+          var thumb_url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[jsh.XModels[modelid]._keys[0]] + '/' + field.name + '?view=1&thumb=1&_=' + (new Date().getTime());
           jctrl_thumbnail.attr('src', thumb_url).show();
           jctrl_thumbnail.attr('width', field.controlparams.thumbnail_width + 'px');
         }
@@ -239,9 +239,9 @@ exports = module.exports = function(jsh){
     var show_lookup_when_readonly = false;
 
     var access = (_this._is_new?'I':'U');
-    if (jsh.XForms[modelid]._layout=='exec') access = 'B';
+    if (jsh.XModels[modelid]._layout=='exec') access = 'B';
     var is_editable = jsh.XExt.HasAccess(field.actions, access);
-    if (is_editable && field.always_editable_on_insert && ((access == 'I') || (jsh.XForms[modelid]._layout=='exec'))){ }
+    if (is_editable && field.always_editable_on_insert && ((access == 'I') || (jsh.XModels[modelid]._layout=='exec'))){ }
     else {
       if (is_editable && ('readonly' in field) && (field.readonly == 1)) is_editable = false;
       if (_this._readonly && _.includes(_this._readonly, field.name)) is_editable = false;
@@ -252,13 +252,13 @@ exports = module.exports = function(jsh){
       show_lookup_when_readonly = true;
     }
 
-    if (is_editable && !jctrl.hasClass('editable')) { jsh.XEnable(jctrl); }
-    else if (!is_editable && !jctrl.hasClass('uneditable')) { jsh.XDisable(jctrl, show_lookup_when_readonly); }
+    if (is_editable && !jctrl.hasClass('editable')) { jsh.XPage.Enable(jctrl); }
+    else if (!is_editable && !jctrl.hasClass('uneditable')) { jsh.XPage.Disable(jctrl, show_lookup_when_readonly); }
 
     return jctrl;
   }
 
-  XExtXForm.OnControlUpdate = function () {
+  XExtXModel.OnControlUpdate = function () {
     return function (obj, e) {
       var jobj = $(obj);
       var id = $(obj).data('id');
@@ -282,7 +282,7 @@ exports = module.exports = function(jsh){
     };
   };
 
-  XExtXForm.GetValues = function () {
+  XExtXModel.GetValues = function () {
     return function (perm) {
       var _this = this;
       _.each(this.Fields, function (field) {
@@ -294,12 +294,12 @@ exports = module.exports = function(jsh){
     };
   };
 
-  XExtXForm.GetValue = function (modelid) {
+  XExtXModel.GetValue = function (modelid) {
     return function (field) {
       var _this = this;
       var parentobj = jsh.root;
       if (this._jrow) parentobj = this._jrow;
-      var isGrid = (jsh.XForms[modelid]._layout == 'grid');
+      var isGrid = (jsh.XModels[modelid]._layout == 'grid');
       
       var fieldselector = '.' + field.name + '.xelem' + modelid;
       if (isGrid) fieldselector = '.' + field.name + '.xelem' + modelid;
@@ -347,7 +347,7 @@ exports = module.exports = function(jsh){
         val = jsh.XExt.ReplaceAll(val, '&quot;', '"');
       }
       //If field is in bindings
-      var xform = jsh.XForms[modelid];
+      var xform = jsh.XModels[modelid];
       if (('_bindings' in xform) && (_.includes(xform._bindings, field.name))) {
         val = xform[field.name]();
       }
@@ -371,9 +371,9 @@ exports = module.exports = function(jsh){
     };
   };
 
-  XExtXForm.HasUpdates = function () {
+  XExtXModel.HasUpdates = function () {
     return function () {
-      if (jsh.XForms[this._modelid]._layout=='exec') return false;
+      if (jsh.XModels[this._modelid]._layout=='exec') return false;
       var _this = this;
       if (this._is_new) { return true; }
       var access = (this._is_new?'I':'U');
@@ -386,9 +386,9 @@ exports = module.exports = function(jsh){
     };
   };
 
-  XExtXForm.HasUpdate = function () {
+  XExtXModel.HasUpdate = function () {
     return function (id) {
-      if (jsh.XForms[this._modelid]._layout=='exec') return false;
+      if (jsh.XModels[this._modelid]._layout=='exec') return false;
       var field = this.Fields[id];
       if (('virtual' in field) && field.virtual) return false;
       if (('static' in field) && field.static) return false;
@@ -406,27 +406,27 @@ exports = module.exports = function(jsh){
     };
   };
 
-  XExtXForm.Commit = function (modelid,xpostid) {
+  XExtXModel.Commit = function (modelid,xpostid) {
     return function (perm) {
       var _this = this;
       var parentobj = jsh.root;
       if (this._jrow) parentobj = this._jrow;
-      if ((jsh.XForms[modelid]._layout == 'form-m') || (jsh.XForms[modelid]._layout == 'grid')) {
+      if ((jsh.XModels[modelid]._layout == 'form-m') || (jsh.XModels[modelid]._layout == 'grid')) {
         if (jsh.App[xpostid].Count()==0) return true;
       }
       //_is_new at record-level
       var _this = this;
       var access = (this._is_new?'I':'U');
-      if (jsh.XForms[modelid]._layout=='exec') access = 'B';
+      if (jsh.XModels[modelid]._layout=='exec') access = 'B';
       if (this.HasUpdates()) {
         if (!this._is_dirty) {
           //Clone Data to Orig
-          this._orig = XExtXForm.GetOwnFields(this);
+          this._orig = XExtXModel.GetOwnFields(this);
           this._is_dirty = true;
         }
       }
       this.GetValues(access);
-      var _xvalidate = jsh.App['XForm' + modelid].prototype.xvalidate;
+      var _xvalidate = jsh.App['XDatamodel' + modelid].prototype.xvalidate;
       if (_xvalidate) {
         this.xvalidate = _xvalidate;
         var valid = jsh.App[xpostid].Validate(access);
@@ -437,7 +437,7 @@ exports = module.exports = function(jsh){
     };
   };
 
-  XExtXForm.GetOwnFields = function(val) {
+  XExtXModel.GetOwnFields = function(val) {
     var rslt = {};
     _.forOwn(val, function (val, key) {
       if (key == '_LOVs') return;
@@ -456,10 +456,10 @@ exports = module.exports = function(jsh){
     return rslt;
   }
 
-  XExtXForm.BindLOV = function (modelid) {
+  XExtXModel.BindLOV = function (modelid) {
     return function (xform, parentobj) {
       if (!parentobj) parentobj = jsh.root;
-      var isGrid = (jsh.XForms[modelid]._layout == 'grid');
+      var isGrid = (jsh.XModels[modelid]._layout == 'grid');
       _.each(this.Fields, function (field) {
         if (!('control' in field)) return; if (field.control == 'subform') return;
         if (field.control == 'dropdown') {
@@ -487,7 +487,7 @@ exports = module.exports = function(jsh){
     };
   }
 
-  XExtXForm.ApplyDefaults = function (xformdata) {
+  XExtXModel.ApplyDefaults = function (xformdata) {
     if(!('_readonly' in xformdata)) xformdata._readonly = [];
     for(var fname in xformdata.Fields){
       if((fname in jsh._GET) && jsh._GET[fname]){
@@ -497,5 +497,5 @@ exports = module.exports = function(jsh){
     }  
   }
 
-  return XExtXForm;
+  return XExtXModel;
 }

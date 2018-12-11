@@ -26,26 +26,30 @@ _.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field
   var _ = jsh._;
   var $ = jsh.$;
   var XExt = jsh.XExt;
+  var modelid = '<%=model.id%>';
+  var xmodel = jsh.XModels[modelid];
 
-  jsh.App.XForm<%=model.id%>_Init = function(callback){
-    var xform_<%=model.id%> = jsh.App.xform_<%=model.id%> = new jsh.XPost('<%=model.id%>','','');
-    xform_<%=model.id%>.Data = new jsh.App.XForm<%=model.id%>();
+  var xcontroller = jsh.App['XController'+modelid] = xmodel.controller = function(){ }
 
-    <% xejs.eachKey(model.fields,function(field){  if(!field.name) return; %>xform_<%=model.id%>.Data.<%=field['name']%> = jsh.XForms['<%=model.id%>'].<%=field['name']%>();<%}); %>
+  xcontroller.Init = function(callback){
+    var xform_<%=model.id%> = jsh.App.xform_<%=model.id%> = new jsh.XForm('<%=model.id%>','','');
+    xform_<%=model.id%>.Data = new xmodel.datamodel();
+
+    <% xejs.eachKey(model.fields,function(field){  if(!field.name) return; %>xform_<%=model.id%>.Data.<%=field['name']%> = jsh.XModels['<%=model.id%>'].<%=field['name']%>();<%}); %>
     xform_<%=model.id%>.GetKeys = function(){
       var rslt = new Object();
       if(!jsh.is_add){
         //Browse / Edit Record
-        _.each(jsh.XForms['<%=model.id%>']._bindings,function(binding){
-          xform_<%=model.id%>.Data[binding] = jsh.XForms['<%=model.id%>'][binding]();
+        _.each(jsh.XModels['<%=model.id%>']._bindings,function(binding){
+          xform_<%=model.id%>.Data[binding] = jsh.XModels['<%=model.id%>'][binding]();
         });
         <% xejs.eachKey(model.fields,function(field){  if(!field.name) return; %>rslt.<%=field['name']%> = this.Data.<%=field['name']%>;<%}); %>
       }
       else {
         //Add Record
         //Add parameters for breadcrumbs
-        <% _.each(model.fields,function(field){ if(!field.name) return; if(XExt.access(field.actions,'C')) { %>rslt.<%=field['name']%> = jsh.LiteralOrCollection('<%=field['name']%>',[jsh._GET,this.Data]);<% } }); %>
-        <% _.each(model.fields,function(field){ if(!field.name) return; if(field.lovkey){ %>rslt.<%=field['name']%> = jsh.LiteralOrCollection('<%=field['name']%>',[jsh._GET,this.Data]);<% } }); %>
+        <% _.each(model.fields,function(field){ if(!field.name) return; if(XExt.access(field.actions,'C')) { %>rslt.<%=field['name']%> = jsh.XExt.LiteralOrCollection('<%=field['name']%>',[jsh._GET,this.Data]);<% } }); %>
+        <% _.each(model.fields,function(field){ if(!field.name) return; if(field.lovkey){ %>rslt.<%=field['name']%> = jsh.XExt.LiteralOrCollection('<%=field['name']%>',[jsh._GET,this.Data]);<% } }); %>
       }
       return rslt; 
     };
@@ -64,7 +68,7 @@ _.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field
     callback();
   }
 
-  jsh.App.XForm<%=model.id%>_Save = function(){
+  xcontroller.Save = function(){
     var data = jsh.App.xform_<%=model.id%>.Data;
     if(!data.Commit()) return;
 
@@ -81,7 +85,7 @@ _.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field
     return [dbtask];
   }
   
-  jsh.App.XForm<%=model.id%>_Delete = function(callback){
+  xcontroller.Delete = function(callback){
     var is_new =  jsh.App.xform_<%=model.id%>.Data._is_new;
     
     XExt.Confirm("Are you sure you want to delete this "+(is_new ? 'new ':'')+"<%=model.caption[1]%>?",function(){

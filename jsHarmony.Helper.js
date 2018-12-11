@@ -266,7 +266,7 @@ exports.getURL = function (req, target, tabs, fields, bindings) {
     _.each(bindings, function (binding, bindingid) {
       //Evaluate bindings
       delete q[bindingid];
-      rsltparams += '&amp;' + bindingid + '=<#='+req.jshsite.instance+'.LiteralOrCollection(' + JSON.stringify(binding).replace(/"/g, '&quot;') + ',data)#>';
+      rsltparams += '&amp;' + bindingid + '=<#='+req.jshsite.instance+'.XExt.LiteralOrCollection(' + JSON.stringify(binding).replace(/"/g, '&quot;') + ',data)#>';
     });
   }
   if (rsltoverride) return rsltoverride;
@@ -287,7 +287,7 @@ exports.getURL_onclick = function (req, field, model) {
     if (!this.hasModel(req, ptarget.modelid)) throw new Error("Link Model " + ptarget.modelid + " not found.");
     if (!Helper.HasModelAccess(req, this.getModel(req, ptarget.modelid), 'BIU')) return req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;";
     if ((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec')) {
-      seturl += "url="+req.jshsite.instance+".XExt.ReplaceAll(url,'data[j]','data'); var xform = "+req.jshsite.instance+".App['xform_" + model.id + "']; if(xform && xform.Data && !xform.Data.Commit()) return false; url = "+req.jshsite.instance+".ParseEJS(url,'" + model.id + "'); ";
+      seturl += "url="+req.jshsite.instance+".XExt.ReplaceAll(url,'data[j]','data'); var xform = "+req.jshsite.instance+".App['xform_" + model.id + "']; if(xform && xform.Data && !xform.Data.Commit()) return false; url = "+req.jshsite.instance+".XPage.ParseEJS(url,'" + model.id + "'); ";
     }
     var link_model = this.getModel(req, ptarget.modelid);
     if(ptarget.action=='download'){
@@ -368,9 +368,9 @@ exports.getModelLinkOnClick = function (tgtmodelid, req, link_target) {
   if (!tgtmodelid) tgtmodelid = req.TopModel;
   if (!this.hasModel(req, tgtmodelid)) return '';
   var model = this.getModel(req, tgtmodelid);
-  //ParseEJS if necessary
+  //XPage.ParseEJS if necessary
   if (link_target && (link_target.substr(0, 8) == 'savenew:')) {
-    return req.jshsite.instance+".XForm_SaveNew(href);return false;";
+    return req.jshsite.instance+".XPage.SaveNew(href);return false;";
   }
   else if ('popup' in model) {
     return (" window.open(href,'_blank','width=" + model['popup'][0] + ",height=" + model['popup'][1] + ",resizable=1,scrollbars=1');return false;");
