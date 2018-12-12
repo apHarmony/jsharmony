@@ -64,10 +64,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.XPage.GetChanges = function() {  //Returns array of form names that have changed
     var foundchanges = [];
-    _.each(jsh.XModels, function (xform) {
-      if (!jsh.XExt.HasAccess(xform._actions, 'IUD')) return;
-      if (jsh.App['xform_' + xform._id].HasUpdates()) { foundchanges.push(xform._caption[1]); }
-      else if ((jsh.App['xform_' + xform._id].Data) && (jsh.App['xform_' + xform._id].Data._is_dirty)) { foundchanges.push(xform._caption[1]); }
+    _.each(jsh.XModels, function (xmodel) {
+      if (!jsh.XExt.HasAccess(xmodel.actions, 'IUD')) return;
+      if (xmodel.controller.HasUpdates()) { foundchanges.push(xmodel.caption[1]); }
+      else if (xmodel.controller.form && xmodel.controller.form.Data && xmodel.controller.form.Data._is_dirty) { foundchanges.push(xmodel.caption[1]); }
     });
     return foundchanges;
   }
@@ -79,13 +79,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var valid = true;
     jsh.XPage.traverseModels(null, function (xmodel) {
       if (!valid) return;
-      var xformid = xmodel._id;
-      if (XExt.HasAccess(xmodel._actions, 'IU')) {
+      if (XExt.HasAccess(xmodel.actions, 'IU')) {
         var access = 'U';
-        if (xmodel._layout == 'multisel') access = 'U';
-        else if (xmodel._layout == 'grid') access = 'IU';
-        else if (jsh.App['xform_' + xformid].Data._is_new) access = 'I';
-        if (XExt.HasAccess(xmodel._actions, access)) {
+        if (xmodel.layout == 'multisel') access = 'U';
+        else if (xmodel.layout == 'grid') access = 'IU';
+        else if (xmodel.controller.form.Data._is_new) access = 'I';
+        if (XExt.HasAccess(xmodel.actions, access)) {
           var ftasks = xmodel.controller.Save();
           if (typeof ftasks == 'undefined') { valid = false; return; }
           dbtasks = _.union(dbtasks, ftasks);
@@ -95,7 +94,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if (!valid) return options.onFail('validation');
     jsh.XPage.traverseModelsAsync(jsh.XModels_root, function (xmodel, done) {
       if (!valid) return;
-      if (typeof xmodel._onvalidate != 'undefined') xmodel._onvalidate(xform, function (rslt) { valid = (rslt === true); done(); });
+      if (typeof xmodel.onvalidate != 'undefined') xmodel.onvalidate(xmodel, function (rslt) { valid = (rslt === true); done(); });
       else done();
     }, function () {
       if (!valid) return options.onFail('form_validation');
@@ -107,31 +106,29 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if (!options) options = {};
     if (!options.onFail) options.onFail = function () { };
     //Handle async validation, if applicable
-    var rootxform = jsh.App['xform_' + jsh.XModels_root];
-    var rootlayout = jsh.XModels[jsh.XModels_root]._layout
-    if ((rootlayout == 'grid') || (rootlayout == 'multisel')) rootxform = jsh.App['xform_post_' + jsh.XModels_root]
-    rootxform.ExecuteTrans(dbtasks, function (rslt) {
+    var rootxmodel = jsh.XModels[jsh.XModels_root];
+    rootxmodel.controller.form.ExecuteTrans(dbtasks, function (rslt) {
       if (options.onComplete && (options.onComplete(rslt) === false)) return;
       jsh.XPage.RefreshParent();
       if (jsh.is_add) {
         var url = XExt.currentURL() + '?action=edit';
         var urlkeys = {};
         //Scan results for key
-        _.each(jsh.XModels[jsh.XModels_root]._keys, function (key) {
+        _.each(rootxmodel.keys, function (key) {
           //Find keys in results
           var foundkey = false;
           _.each(rslt, function (mrslt, modelid) {
             if (_.isObject(mrslt)) {
               if (key in mrslt) {
                 var keyval = mrslt[key];
-                jsh.XModels[jsh.XModels_root][key] = function () { return keyval; }
-                rootxform.Data[key] = keyval;
+                rootxmodel.bindings[key] = function () { return keyval; }
+                rootxmodel.controller.form.Data[key] = keyval;
                 urlkeys[key] = keyval;
                 foundkey = true;
               }
             }
           });
-          if (!foundkey) urlkeys[key] = jsh.XModels[jsh.XModels_root][key]();
+          if (!foundkey) urlkeys[key] = rootxmodel.getBindingOrRootKey(key);
         });
         jsh.is_add = false;
         if (!_.isEmpty(urlkeys)) url = url + '&' + $.param(urlkeys, false);
@@ -139,9 +136,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         jsh.cancelExit = true;
         //Execute oninsert Handler
         var bubble = true;
-        jsh.XPage.traverseModels(null, function (xform) {
+        jsh.XPage.traverseModels(null, function (xmodel) {
           if (!bubble) return;
-          if (typeof xform._oninsert != 'undefined') if (xform._oninsert(xform, urlkeys, url) === false) bubble = false;
+          if (typeof xmodel.oninsert != 'undefined') if (xmodel.oninsert(xmodel, urlkeys, url) === false) bubble = false;
         });
         if (!bubble) return;
 
@@ -151,9 +148,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
       //Execute onupdate Handler
       var bubble = true;
-      jsh.XPage.traverseModels(null, function (xform) {
+      jsh.XPage.traverseModels(null, function (xmodel) {
         if (!bubble) return;
-        if (typeof xform._onupdate != 'undefined') if (xform._onupdate(xform) === false) bubble = false;
+        if (typeof xmodel.onupdate != 'undefined') if (xmodel.onupdate(xmodel) === false) bubble = false;
       });
       if (!bubble) return;
 
@@ -177,7 +174,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.Delete = function() {
-    jsh.App['XController' + jsh.delete_target + '_Delete'](function () {
+    var xmodel = jsh.XModels[jsh.delete_target];
+    xmodel.controller.Delete(function () {
       jsh.XPage.RefreshParent();
       window.onbeforeunload = null;
       jsh.cancelExit = true;
@@ -203,20 +201,20 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.XPage.onReady = function() {
     jsh.XPage.Hide();
-    if (!jsh.XModels[jsh.XModels_root]._actions) { jsh.XExt.Alert('ERROR - No effective access to root form'); return; }
+    if (!jsh.XModels[jsh.XModels_root].actions) { jsh.XExt.Alert('ERROR - No effective access to root form'); return; }
 
-    //  jsh.XPage.traverseModels(null,function(xform){ console.log(xform._id); },function(){ jsh.$root('.xelemX').show(); });
-    //  jsh.XPage.traverseModelsAsync(jsh.XModels_root,function(xform,done){ done(); },function(){ jsh.$root('.xelemX').show(); console.log('all done'); });
+    //  jsh.XPage.traverseModels(null,function(xmodel){ console.log(xmodel.id); },function(){ jsh.$root('.xelemX').show(); });
+    //  jsh.XPage.traverseModelsAsync(jsh.XModels_root,function(xmodel,done){ done(); },function(){ jsh.$root('.xelemX').show(); console.log('all done'); });
     var enable_save = false;
     var enable_delete = false;
-    jsh.XPage.traverseModels(null, function (xform) {
-      if ((xform._layout == 'form') || (xform._layout == 'multisel') || (xform._layout == 'form-m')) {
-        if (jsh.XExt.HasAccess(xform._actions, 'IU')) enable_save = true;
-        if ((xform._id == jsh.XModels_root) || (xform._parent == jsh.XModels_root))
-          if (jsh.XExt.HasAccess(xform._actions, 'D')) { enable_delete = true; jsh.delete_target = xform._id; }
+    jsh.XPage.traverseModels(null, function (xmodel) {
+      if ((xmodel.layout == 'form') || (xmodel.layout == 'multisel') || (xmodel.layout == 'form-m')) {
+        if (jsh.XExt.HasAccess(xmodel.actions, 'IU')) enable_save = true;
+        if ((xmodel.id == jsh.XModels_root) || (xmodel.parent == jsh.XModels_root))
+          if (jsh.XExt.HasAccess(xmodel.actions, 'D')) { enable_delete = true; jsh.delete_target = xmodel.id; }
       }
-      else if ((xform._layout == 'grid') && (xform._commitlevel) && (xform._commitlevel != 'none')) {
-        if (jsh.XExt.HasAccess(xform._actions, 'IUD')) enable_save = true;
+      else if ((xmodel.layout == 'grid') && (xmodel.commitlevel) && (xmodel.commitlevel != 'none')) {
+        if (jsh.XExt.HasAccess(xmodel.actions, 'IUD')) enable_save = true;
       }
     });
 
@@ -234,10 +232,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           else {
             if(jbtn.hasClass('grouped')){
               var modelid = jbtn.data('model');
+              var buttonmodel = jsh.XModels[modelid];
               var group = jbtn.data('group');
               var button_group_name = modelid+'_'+group;
               if(!(button_group_name in button_groups)) button_groups[button_group_name] = {
                 modelid: modelid,
+                modelclass: buttonmodel.class,
                 group: group,
                 jbutton: []
               };
@@ -247,14 +247,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         });
         for(var button_group_name in button_groups){
           var button_group = button_groups[button_group_name];
-          jsh.$root('.xbody').append('<div class="xactions_group xcontext_menu xelem'+button_group.modelid+'" data-group="'+button_group.group+'" style="display:none;"></div>');
-          var jgroup = jsh.$root('.xactions_group.xelem'+button_group.modelid+'[data-group="'+button_group.group+'"]');
+          jsh.$root('.xbody').append('<div class="xactions_group xcontext_menu xelem'+button_group.modelclass+'" data-group="'+button_group.group+'" style="display:none;"></div>');
+          var jgroup = jsh.$root('.xactions_group.xelem'+button_group.modelclass+'[data-group="'+button_group.group+'"]');
           _.each(button_group.jbutton,function(jbutton){
             jgroup.append(jbutton);
           });
         }
-        jsh.XPage.traverseModels(null, function (xform) {
-          if (typeof xform._oninit != 'undefined') xform._oninit(xform);
+        jsh.XPage.traverseModels(null, function (xmodel) {
+          if (typeof xmodel.oninit != 'undefined') xmodel.oninit(xmodel);
         });
         jsh.XPage.Select(function () {
           jsh.XPage.LayoutOneColumn();
@@ -262,8 +262,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           jsh.XWindowResize();
           if (enable_save) jsh.$root('.xactions.top .save').show();
           if (enable_delete) jsh.$root('.xactions.top .delete').show();
-          jsh.XPage.traverseModels(null, function (xform) {
-            if (!jsh.is_add && jsh.XExt.HasAccess(xform._actions, 'I')) jsh.$root('.xactions.xelem' + xform._id + ' .duplicate').show();
+          jsh.XPage.traverseModels(null, function (xmodel) {
+            if (!jsh.is_add && jsh.XExt.HasAccess(xmodel.actions, 'I')) jsh.$root('.xactions.xelem' + xmodel.class + ' .duplicate').show();
           });
           jsh.init_complete = true;
           //Update Browser History with URL/state
@@ -295,7 +295,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.RefreshParent = function(modelid) {
-    var jshOpener = XExt.getOpenerJSH(['XPage.Refresh']);
+    var jshOpener = XExt.getOpenerJSH(['Refresh']);
     if (jshOpener) {
       jshOpener.XPage.Refresh(modelid);
     }
@@ -307,8 +307,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.XPage.PreDestroy = function() {
     //Call OnDestroy Handlers
-    _.each(jsh.XModels, function (xform) {
-      if (typeof xform._ondestroy != 'undefined') xform._ondestroy(xform);
+    _.each(jsh.XModels, function (xmodel) {
+      if (typeof xmodel.ondestroy != 'undefined') xmodel.ondestroy(xmodel);
     });
     //Clear CKEDITORs
     if ((typeof CKEDITOR != 'undefined') && (CKEDITOR.instances)) {
@@ -357,31 +357,31 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     //Call Select on each model
     jsh.XPage.traverseModelsAsync(root,
-      function (xform, done) {
+      function (xmodel, done) {
         var onDone = function () {
-          if (typeof xform._onloadimmediate != 'undefined') xform._onloadimmediate(xform);
+          if (typeof xmodel.onloadimmediate != 'undefined') xmodel.onloadimmediate(xmodel);
           done();
         };
         if (jsh.is_add){
-          if(!jsh.XExt.HasAccess(xform._actions, 'I')) { 
-            if((xform._layout == 'form') || (xform._layout == 'form-m') || (xform._layout == 'grid')){
-              if(!jsh.XExt.HasAccess(xform._actions, 'B')) return done();
+          if(!jsh.XExt.HasAccess(xmodel.actions, 'I')) { 
+            if((xmodel.layout == 'form') || (xmodel.layout == 'form-m') || (xmodel.layout == 'grid')){
+              if(!jsh.XExt.HasAccess(xmodel.actions, 'B')) return done();
               //If model bindings are dependent on key
-              if(xform._bindings && (xform._bindings.length != xform._constant_bindings.length)) return done();
+              if(xmodel.bindings && (_.keys(xmodel.bindings).length != xmodel.constant_bindings.length)) return done();
             }
           }
         }
-        if(jsh.XModels[xform._id].unbound) return onDone();
-        jsh.App['xform_' + xform._id].Select(onDone);
+        if(jsh.XModels[xmodel.id].unbound) return onDone();
+        xmodel.controller.Select(onDone);
       },
       function () {
         //Update title and other dynamic elements with in-place EJS
         jsh.XPage.RenderEJS(function () {
           //Trigger the onload event for each model
           var bubble = true;
-          jsh.XPage.traverseModels(null, function (xform) {
+          jsh.XPage.traverseModels(null, function (xmodel) {
             if (!bubble) return;
-            if (typeof xform._onload != 'undefined') if (xform._onload(xform, callback) === false) bubble = false;
+            if (typeof xmodel.onload != 'undefined') if (xmodel.onload(xmodel, callback) === false) bubble = false;
           });
           if (bubble && callback) callback();
           if (jsh.XExt.isSinglePage()) jsh.ResetLinks();
@@ -393,19 +393,19 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     options = _.extend({ resolveEJS: true }, options);
 
     //If Title = blank, pull title from Tabs
-    var curform = jsh.XModels[jsh.XModels_root];
+    var xmodel = jsh.XModels[jsh.XModels_root];
     var window_title = '';
     //Apply child tab's title to window if the form's title is blank
-    while(!window_title && curform){
-      if(curform._title){
-        window_title = curform._title||'';
+    while(!window_title && xmodel){
+      if(xmodel.title){
+        window_title = xmodel.title||'';
         if(!options.resolveEJS && (window_title.indexOf('<#') >= 0)) return;
         if(window_title && (window_title.indexOf('<#') >= 0)){
-          window_title = jsh.XPage.ParseEJS(window_title,curform._id);
+          window_title = jsh.XPage.ParseEJS(window_title,xmodel.id);
         }
         window_title = XExt.StripTags(window_title).trim();
       }
-      curform = jsh.XModels[curform._curtab];
+      xmodel = jsh.XModels[xmodel.curtab];
     }
     if(!window_title) window_title = jsh.XModels_root;
     document.title = XExt.StripTags(jsh.title.replace('%%%PAGETITLE%%%',window_title));
@@ -414,7 +414,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.XPage.UpdateTitle = function(options){
     jsh.XPage.UpdateWindowTitle(options);
 
-    var root_title = jsh.XModels[jsh.XModels_root]._title;
+    var root_title = jsh.XModels[jsh.XModels_root].title;
     if(root_title && (root_title.indexOf('<#') >= 0)){
       root_title = jsh.XPage.ParseEJS(root_title, jsh.XModels_root);
       jsh.$root('.xform_title').html(root_title);
@@ -426,17 +426,18 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.XPage.RenderEJS = function(onComplete) {
     //Get breadcrumbs
-    var root_data = jsh.App['xform_' + jsh.XModels_root];
-    if ('_bcrumbs' in root_data) jsh._bcrumbs = root_data._bcrumbs;
+    var rootxmodel = jsh.XModels[jsh.XModels_root];
+    if (rootxmodel.controller.HasBreadCrumbs()) jsh.bcrumbs = rootxmodel.controller.GetBreadCrumbs();
 
     //Check for new titles in returned data
-    jsh.XPage.traverseModels(null, function(xform) {
-      if(!jsh.App['xform_' + xform._id]) return;
-      if(!('_title' in jsh.App['xform_' + xform._id])) return;
-      if(jsh.App['xform_' + xform._id]._title===null) return;
-      var title = jsh.App['xform_' + xform._id]._title||'';
-      if(title != xform._title){
-        xform._title = title;
+    jsh.XPage.traverseModels(null, function(xmodel) {
+      if(!xmodel.controller) return;
+      if(!xmodel.controller.HasTitle()) return;
+      var title = xmodel.controller.GetTitle();
+      if(title===null) return;
+      title = title||'';
+      if(title != xmodel.title){
+        xmodel.title = title;
       }
     });
 
@@ -448,14 +449,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh.$root('div.bcrumbs').html(jsh.XPage.ParseEJS(jsh.orig_bcrumbs, jsh.XModels_root));
     }
 
-    jsh.XPage.traverseModels(null, function (xform) {
-      jsh.$root(".xtitle.xelem" + xform._id).each(function () {
+    jsh.XPage.traverseModels(null, function (xmodel) {
+      jsh.$root(".xtitle.xelem" + xmodel.class).each(function () {
         //Update each form title
-        var title_text = xform._title;
-        if (title_text.indexOf('<#') >= 0) $(this).html(jsh.XPage.ParseEJS(title_text, xform._id));
+        var title_text = xmodel.title;
+        if (title_text.indexOf('<#') >= 0) $(this).html(jsh.XPage.ParseEJS(title_text, xmodel.id));
         else $(this).html(title_text);
       });
-      jsh.$root(".xform_button.xelem" + xform._id).each(function () {
+      jsh.$root(".xform_button.xelem" + xmodel.class).each(function () {
         var href = $(this).attr('href');
         //Store / retrieve original URL
         if ($(this).data('orighref')) href = $(this).data('orighref');
@@ -463,7 +464,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         //Parse URL EJS
         if (href.indexOf('<#') >= 0) {
           /* Resolve EJS */
-          $(this).attr('href', jsh.XPage.ParseEJS(href, xform._id));
+          $(this).attr('href', jsh.XPage.ParseEJS(href, xmodel.id));
         }
       });
     }, onComplete);
@@ -489,28 +490,28 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.XPage.traverseModels = function(parentid, callback, oncomplete, options) {
     if(!options) options = {};
-    _.each(jsh.XModels, function (xform, xformid) {
-      if (xform._parent == parentid) {
-        callback(xform);
-        if(!options.childrenOnly) jsh.XPage.traverseModels(xform._id, callback, undefined, options);
+    _.each(jsh.XModels, function (xmodel, xmodelid) {
+      if (xmodel.parent == parentid) {
+        callback(xmodel);
+        if(!options.childrenOnly) jsh.XPage.traverseModels(xmodel.id, callback, undefined, options);
       }
     });
     if (typeof oncomplete != 'undefined') oncomplete();
   }
 
-  jsh.XPage.traverseModelsAsync = function(rootid, xformfunc, done, options) {
+  jsh.XPage.traverseModelsAsync = function(rootid, xmodelfunc, done, options) {
     if (!options) options = { };
-    xformfunc(jsh.XModels[rootid], function () {
-      jsh.XPage.traverseModelsAsyncWorker(rootid, xformfunc, done, options);
+    xmodelfunc(jsh.XModels[rootid], function () {
+      jsh.XPage.traverseModelsAsyncWorker(rootid, xmodelfunc, done, options);
     });
   }
 
-  jsh.XPage.traverseModelsAsyncWorker = function(parentid, xformfunc, done, options) {
+  jsh.XPage.traverseModelsAsyncWorker = function(parentid, xmodelfunc, done, options) {
     var childf = [];
-    _.each(jsh.XModels, function (xform, xformid) {
-      if (xform._parent == parentid) {
+    _.each(jsh.XModels, function (xmodel, xmodelid) {
+      if (xmodel.parent == parentid) {
         childf.push(function (cb) {
-          xformfunc(xform, function () { jsh.XPage.traverseModelsAsyncWorker(xform._id, xformfunc, cb, options); });
+          xmodelfunc(xmodel, function () { jsh.XPage.traverseModelsAsyncWorker(xmodel.id, xmodelfunc, cb, options); });
         });
       }
     });
@@ -523,12 +524,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.XPage.getBreadcrumbs = function(){
     var rslt = {};
-    for(var f in jsh.XModels){
-      var xform = jsh.App['xform_'+f];
-      if(xform && xform._bcrumbs) rslt = _.extend(rslt, xform._bcrumbs);
+    for(var modelid in jsh.XModels){
+      var xmodel = jsh.XModels[modelid];
+      if(xmodel.controller){
+        var bcrumbs = xmodel.controller.GetBreadCrumbs();
+        if(bcrumbs) rslt = _.extend(rslt, bcrumbs);
+      }
     }
-    var root_data = jsh.App['xform_' + jsh.XModels_root];
-    rslt = _.extend(rslt, jsh._bcrumbs);
+    var rootxmodel = jsh.XModels[jsh.XModels_root];
+    if(rootxmodel.controller && rootxmodel.controller.HasBreadCrumbs()){
+      rslt = _.extend(rslt, jsh.bcrumbs);
+    }
     return rslt;
   }
 
@@ -536,16 +542,19 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var ejssrc = _ejssrc;
     var data = {};
     if (!(modelid in jsh.XModels)) { XExt.Alert('Error: Model ' + modelid + ' not found.'); return; }
-    _.merge(data, jsh.forcequery, jsh.App['xform_' + modelid].Data);
-    //_.extend(data, jsh.forcequery, jsh.App['xform_' + modelid].Data); //Previously
-    _.each(jsh.XModels[modelid]._bindings, function (binding) {
-      data[binding] = jsh.XModels[modelid][binding]();
-    });
+    var xmodel = jsh.XModels[modelid];
+    _.merge(data, jsh.forcequery);
+    if(xmodel.controller && xmodel.controller.grid) _.merge(data, xmodel.controller.grid.Data);
+    else if(xmodel.controller && xmodel.controller.form) _.merge(data, xmodel.controller.form.Data);
+    
+    for(var fieldname in xmodel.bindings){
+      data[fieldname] = xmodel.bindings[fieldname]();
+    }
     ejssrc = ejssrc.replace(/<#/g, '<' + '%').replace(/#>/g, '%' + '>');
 
     var ejsrslt = jsh.ejs.render(ejssrc, {
       data: data,
-      LiteralOrCollection: jsh.XExt.LiteralOrCollection,
+      LiteralOrLookup: jsh.XExt.LiteralOrLookup,
       bcrumbs: jsh.XPage.getBreadcrumbs(),
       jsh: jsh,
       instance: jsh.getInstance(),
@@ -557,11 +566,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.Hide = function() {
-    _.each(jsh.XModels, function (xform, xformid) {
-      if (xform._layout == 'grid') jsh.$root('.xtbl.xelem' + xformid + ',.xbodyhead.xelem' + xformid).hide();
+    _.each(jsh.XModels, function (xmodel, xmodelid) {
+      if (xmodel.layout == 'grid') jsh.$root('.xtbl.xelem' + xmodel.class + ',.xbodyhead.xelem' + xmodel.class).hide();
       else {
-        //jsh.$root('.xform'+xformid).hide(); 
-        //jsh.$root('.xtabcontrol'+xformid).hide(); 
+        //jsh.$root('.xform'+xmodel.class).hide(); 
+        //jsh.$root('.xtabcontrol'+xmodel.class).hide(); 
       }
     });
   }
@@ -581,11 +590,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.Show = function() {
-    _.each(jsh.XModels, function (xform, xformid) {
-      if (xform._layout == 'grid') jsh.$root('.xtbl.xelem' + xformid + ',.xbodyhead.xelem' + xformid).show();
+    _.each(jsh.XModels, function (xmodel, xmodelid) {
+      if (xmodel.layout == 'grid') jsh.$root('.xtbl.xelem' + xmodel.class + ',.xbodyhead.xelem' + xmodel.class).show();
       else {
-        jsh.$root('.xform' + xformid).show();
-        jsh.$root('.xtabcontrol' + xformid).show();
+        jsh.$root('.xform' + xmodel.class).show();
+        jsh.$root('.xtabcontrol' + xmodel.class).show();
       }
     });
   }
@@ -593,9 +602,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.XPage.GetState = function(url) {
     var rslt = {};
     _.each(jsh.XModels, function (xmodel) {
-      if (!XExt.HasAccess(xmodel._actions, 'B')) return;
-      if (xmodel._layout != 'grid') return;
-      rslt[xmodel._id] = xmodel.controller.GetState();
+      if (!XExt.HasAccess(xmodel.actions, 'B')) return;
+      if (xmodel.layout != 'grid') return;
+      rslt[xmodel.id] = xmodel.controller.GetState();
     });
     if ((typeof url != 'undefined') && (url != '')) rslt['_url'] = url;
     return rslt;
@@ -651,10 +660,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       }
     }
     _.each(jsh.XModels, function (xmodel) {
-      var modelid = xmodel._id;
-      if (!jsh.XExt.HasAccess(xmodel._actions, 'B')) return;
-      if (xmodel._onloadstate) return xmodel._onloadstate(xmodel, state[modelid]);
-      if (xmodel._layout != 'grid') return;
+      var modelid = xmodel.id;
+      if (!jsh.XExt.HasAccess(xmodel.actions, 'B')) return;
+      if (xmodel.onloadstate) return xmodel.onloadstate(xmodel, state[modelid]);
+      if (xmodel.layout != 'grid') return;
       if (modelid in state) {
         xmodel.controller.LoadState(state[modelid]);
       }
@@ -663,48 +672,54 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     return true;
   }
 
-  jsh.XPage.DownloadFile = function(model, field, title) {
-    var jctrl_token = jsh.$root('.xelem' + model + ' .' + field + '_token');
+  jsh.XPage.DownloadFile = function(modelid, field, title) {
+    var xmodel = jsh.XModels[modelid];
+    var jctrl_token = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_token');
     var file_token = jctrl_token.val();
     var url = '';
     if (file_token) url = jsh._BASEURL + '_dl/_temp/' + file_token;
     else {
-      var keys = jsh.App['xform_' + model].GetKeys();
-      if (jsh.XModels[model]._keys.length != 1) { throw new Error('File models require one key.'); }
-      url = jsh._BASEURL + '_dl/' + model + '/' + keys[jsh.XModels[model]._keys[0]] + '/' + field;
+      var xmodel = jsh.XModels[modelid];
+      var keys = xmodel.controller.form.GetKeys();
+      if (xmodel.keys.length != 1) { throw new Error('File models require one key.'); }
+      url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field;
     }
     jsh.getFileProxy().prop('src', url);
     //window.open(url,'_blank'); 
   }
 
-  jsh.XPage.FilePreview = function(model, field, title) {
-    var jctrl_token = jsh.$root('.xelem' + model + ' .' + field + '_token');
+  jsh.XPage.FilePreview = function(modelid, field, title) {
+    var xmodel = jsh.XModels[modelid];
+    var jctrl_token = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_token');
     var file_token = jctrl_token.val();
     var url = '';
     if (file_token) url = jsh._BASEURL + '_dl/_temp/' + file_token + '?view=1';
     else {
-      var keys = jsh.App['xform_' + model].GetKeys();
-      if (jsh.XModels[model]._keys.length != 1) { throw new Error('File models require one key.'); }
-      url = jsh._BASEURL + '_dl/' + model + '/' + keys[jsh.XModels[model]._keys[0]] + '/' + field + '?view=1';
+      var xmodel = jsh.XModels[modelid];
+      var keys = xmodel.controller.form.GetKeys();
+      if (xmodel.keys.length != 1) { throw new Error('File models require one key.'); }
+      url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field + '?view=1';
       url += '&_=' + (new Date().getTime());
     }
     //jsh.getFileProxy().prop('src', url);
     window.open(url,'_blank',"height=600, width=800"); 
   }
 
-  jsh.XPage.FileDelete = function(model, field, title) {
-    var jctrl_token = jsh.$root('.xelem' + model + ' .' + field + '_token');
-    var jctrl_dbexists = jsh.$root('.xelem' + model + ' .' + field + '_dbexists');
-    var jctrl_dbdelete = jsh.$root('.xelem' + model + ' .' + field + '_dbdelete');
-    var jctrl = jsh.$root('.' + field + '.xelem' + model);
+  jsh.XPage.FileDelete = function(modelid, field, title) {
+    var xmodel = jsh.XModels[modelid];
+    var jctrl_token = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_token');
+    var jctrl_dbexists = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_dbexists');
+    var jctrl_dbdelete = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_dbdelete');
+    var jctrl = jsh.$root('.' + field + '.xelem' + xmodel.class);
     if (jctrl_dbexists.val() == '1') jctrl_dbdelete.val('1');
     jctrl_token.val('');
     jctrl.addClass('nodocument');
   }
 
-  jsh.XPage.FileUploadDialog = function(model, field, title) {
+  jsh.XPage.FileUploadDialog = function(modelid, field, title) {
+    var xmodel = jsh.XModels[modelid];
     //Get PrevToken, if Applicable
-    jsh.xfileupload_ctrl = jsh.$root('.' + field + '.xelem' + model);
+    jsh.xfileupload_ctrl = jsh.$root('.' + field + '.xelem' + xmodel.class);
     if (jsh.xfileupload_ctrl.size() != 1) return;
     $.colorbox({
       href: jsh.$root(".xfileuploader"), inline: true, closeButton: false, arrowKey: false, preloading: false, overlayClose: false, title: title, fixed: true,
@@ -761,25 +776,25 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.XPage.RunReport = function() {
     var xmodel = jsh.XModels[jsh.XModels_root];
-    if (!(xmodel._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+    if (!(xmodel.layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
     xmodel.controller.RunReport();
   }
 
   jsh.XPage.RunReportHTML = function() {
     var xmodel = jsh.XModels[jsh.XModels_root];
-    if (!(xmodel._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+    if (!(xmodel.layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
     xmodel.controller.RunReport(undefined,{output:'html'});
   }
 
   jsh.XPage.TestQueue = function() {
     var xmodel = jsh.XModels[jsh.XModels_root];
-    if (!(xmodel._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+    if (!(xmodel.layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
     xmodel.controller.TestQueue();
   }
 
   jsh.XPage.RunQueue = function() {
     var xmodel = jsh.XModels[jsh.XModels_root];
-    if (!(xmodel._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+    if (!(xmodel.layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
 
     XExt.Confirm("Are you sure you want to start the Report Job?", function () {
       xmodel.controller.RunQueue();
@@ -808,7 +823,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     if(thisobj) xmodel = jsh.XModels[XExt.getModelIdFromObject(thisobj)];
     
-    if (!(xmodel._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+    if (!(xmodel.layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
     xmodel.controller.RunDBFunc(cb, options);
   }
 
@@ -853,17 +868,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.XPage.onGridExit = function(obj, f) {
     var has_changes = false;
-    jsh.XPage.traverseModels(null, function (xform) {
+    jsh.XPage.traverseModels(null, function (xmodel) {
       if (has_changes) return;
-      if ((xform._layout == 'grid') && (xform._commitlevel) && (xform._commitlevel != 'none')) {
-        if (xform._commitlevel == 'page') {
-          if (jsh.App['xform_post_' + xform._id].IsDirty) {
+      if ((xmodel.layout == 'grid') && (xmodel.commitlevel) && (xmodel.commitlevel != 'none')) {
+        if (xmodel.commitlevel == 'page') {
+          if (xmodel.controller.form.IsDirty) {
             XExt.Alert('Please save changes before performing grid operations.');
             has_changes = true;
             return;
           }
         }
-        if (jsh.App['xgrid_' + xform._id] && jsh.App['xgrid_' + xform._id].CurrentCell) {
+        if (xmodel.controller.editablegrid && xmodel.controller.editablegrid.CurrentCell) {
           jsh.qInputAction = new XExt.XInputAction(obj, f);
           has_changes = true;
           return;
@@ -874,9 +889,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.openDataURL = function(win, modelid, url, options) {
-    var model = jsh.XModels[modelid];
+    var xmodel = jsh.XModels[modelid];
     if (!win) win = window.open('', '_blank', options);
-    if ((model._layout == 'form') || (model._layout == 'form-m') || (model._layout == 'exec')) {
+    if ((xmodel.layout == 'form') || (xmodel.layout == 'form-m') || (xmodel.layout == 'exec')) {
       url = XExt.ReplaceAll(url, 'data[j]', 'data');
     }
     url = jsh.XPage.ParseEJS(url, modelid);
@@ -886,7 +901,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.XPage.Duplicate = function(modelid, link, link_options) {
     var win = null;
-    jsh.App['XController' + modelid + '_RunDBFunc'](function (rslt) {
+    var xmodel = jsh.XModels[jsh.delete_target];
+    xmodel.controller.RunDBFunc(function (rslt) {
       //On success
       if(link){
         jsh.XPage.openDataURL(win, modelid, link, link_options, rslt);
@@ -905,9 +921,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
   jsh.XPage.HasUpdates = function() {
     var rslt = false;
-    _.each(jsh.XModels, function (xform) {
-      if (!XExt.HasAccess(xform._actions, 'IUD')) return;
-      if (jsh.App['xform_' + xform._id].HasUpdates()) { rslt = true; }
+    _.each(jsh.XModels, function (xmodel) {
+      if (!XExt.HasAccess(xmodel.actions, 'IUD')) return;
+      if (xmodel.controller.HasUpdates()) { rslt = true; }
     });
     return rslt;
   }
@@ -943,7 +959,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var jobj = $(obj);
     var modelid = $(jobj).data('model');
     var group = $(jobj).data('group');
-    var jgroup = jsh.$root('.xactions_group.xelem'+modelid+'[data-group="'+group+'"]');
+    var xmodel = jsh.XModels[modelid];
+    var jgroup = jsh.$root('.xactions_group.xelem'+xmodel.class+'[data-group="'+group+'"]');
     
     jsh.$root('.xcontext_menu').hide();
     jgroup.css('visibility', 'hidden');

@@ -380,7 +380,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
             if ('popup' in dmodel) rslt.duplicate.popupstyle = 'width: ' + dmodel.popup[0] + 'px; height: ' + dmodel.popup[1] + 'px;';
             if(model.layout != 'grid') rslt.buttons.push({
               'url': '#',
-              'onclick': "if(jsh.XPage.HasUpdates()){ XExt.Alert('Please save changes before duplicating.'); return false; } XExt.popupShow('" + dmodelid + "','" + model.id + "_duplicate','Duplicate " + model.caption[1] + "',undefined,this); return false;",
+              'onclick': "if(jsh.XPage.HasUpdates()){ XExt.Alert('Please save changes before duplicating.'); return false; } XExt.popupShow('" + dmodelid + "','" + model.class + "_duplicate','Duplicate " + model.caption[1] + "',undefined,this); return false;",
               'actions': 'I',
               'icon': 'copy',
               'text': (model.duplicate.link_text || 'Duplicate'),

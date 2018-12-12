@@ -266,7 +266,7 @@ exports.getURL = function (req, target, tabs, fields, bindings) {
     _.each(bindings, function (binding, bindingid) {
       //Evaluate bindings
       delete q[bindingid];
-      rsltparams += '&amp;' + bindingid + '=<#='+req.jshsite.instance+'.XExt.LiteralOrCollection(' + JSON.stringify(binding).replace(/"/g, '&quot;') + ',data)#>';
+      rsltparams += '&amp;' + bindingid + '=<#='+req.jshsite.instance+'.XExt.LiteralOrLookup(' + JSON.stringify(binding).replace(/"/g, '&quot;') + ',data)#>';
     });
   }
   if (rsltoverride) return rsltoverride;
@@ -287,7 +287,7 @@ exports.getURL_onclick = function (req, field, model) {
     if (!this.hasModel(req, ptarget.modelid)) throw new Error("Link Model " + ptarget.modelid + " not found.");
     if (!Helper.HasModelAccess(req, this.getModel(req, ptarget.modelid), 'BIU')) return req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;";
     if ((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec')) {
-      seturl += "url="+req.jshsite.instance+".XExt.ReplaceAll(url,'data[j]','data'); var xform = "+req.jshsite.instance+".App['xform_" + model.id + "']; if(xform && xform.Data && !xform.Data.Commit()) return false; url = "+req.jshsite.instance+".XPage.ParseEJS(url,'" + model.id + "'); ";
+      seturl += "var jsh="+req.jshsite.instance+"; url=jsh.XExt.ReplaceAll(url,'data[j]','data'); var modelid='" + Helper.escapeHTML(model.id) + "'; var xmodel=jsh.XModels[modelid]; var xform = xmodel.controller.form; if(xform && xform.Data && !xform.Data.Commit()) return false; url = jsh.XPage.ParseEJS(url,modelid); ";
     }
     var link_model = this.getModel(req, ptarget.modelid);
     if(ptarget.action=='download'){

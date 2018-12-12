@@ -280,12 +280,12 @@ exports = module.exports = function(jsh){
   XEditableGrid.prototype.BindRow = function (jobj) {
     var _this = this;
     var modelid = _this.modelid;
-    var xform = (modelid ? jsh.App['XDatamodel'+modelid] : null);
-    var xfields = (xform ? xform.prototype.Fields : []);
-    jobj.find('.xelem' + this.modelid).not('.xelem' + this.modelid + '.checkbox').keyup(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
-    jobj.find('.xelem' + this.modelid).change(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
-    jobj.find('.xelem' + this.modelid + '.checkbox').click(function (e) { if (!$(this).hasClass('editable')) return; return _this.CheckboxUpdate(this, e); });
-    jobj.find('.xelem' + this.modelid + '.datepicker').each(function () {
+    var xmodel = (modelid? jsh.XModels[modelid] : null);
+    var xfields = (xmodel ? xmodel.datamodel.prototype.Fields : []);
+    jobj.find('.xelem' + xmodel.class).not('.xelem' + xmodel.class + '.checkbox').keyup(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
+    jobj.find('.xelem' + xmodel.class).change(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
+    jobj.find('.xelem' + xmodel.class + '.checkbox').click(function (e) { if (!$(this).hasClass('editable')) return; return _this.CheckboxUpdate(this, e); });
+    jobj.find('.xelem' + xmodel.class + '.datepicker').each(function () {
       if (!$(this).hasClass('editable')) return;
       var ctrl = this;
       var dateformat = jsh.DEFAULT_DATEFORMAT;
@@ -301,8 +301,8 @@ exports = module.exports = function(jsh){
         }
       });
     });
-    jobj.find('.xelem' + this.modelid).not('.xelem' + this.modelid + '.checkbox').focus(function (e) { if (jsh.xDialog.length) return; if (!$(this).hasClass('editable')) return; return _this.ControlEnter(this, e); });
-    jobj.find('.xelem' + this.modelid + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e) })
+    jobj.find('.xelem' + xmodel.class).not('.xelem' + xmodel.class + '.checkbox').focus(function (e) { if (jsh.xDialog.length) return; if (!$(this).hasClass('editable')) return; return _this.ControlEnter(this, e); });
+    jobj.find('.xelem' + xmodel.class + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e) })
     jobj.find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; if (jsh.xDialog.length) return; if (!$(ctrl).hasClass('editable')) return; return _this.ControlEnter(ctrl, e); });
   }
 

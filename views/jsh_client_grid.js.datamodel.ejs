@@ -24,7 +24,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var modelid = '<%=model.id%>';
   var xmodel = jsh.XModels[modelid];
 
-  var xdatamodel = jsh.App['XDatamodel'+modelid] = xmodel.datamodel = function(){
+  var xdatamodel = xmodel.datamodel = function(){
     this._jrow = undefined;
     this._is_new = true;
     this._is_dirty = true;
@@ -42,6 +42,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
       <%-xejs.iif('type' in field,'"type":'+JSON.stringify(field.type)+',') %>
       <%-xejs.iif('actions' in field,'"actions":'+JSON.stringify(field.actions)+',') %>
+      <%-xejs.iif('key' in field,'"key":'+JSON.stringify(field.key)+',') %>
+      <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>
       <%-xejs.iif('readonly' in field,'"readonly":'+JSON.stringify(field.readonly)+',') %>
       <%-xejs.iif('control' in field,'"control":'+JSON.stringify(field.control)+',') %>
       <%-xejs.iif('virtual' in field,'"virtual":'+JSON.stringify(field.virtual)+',') %>
@@ -75,11 +77,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   xdatamodel.prototype.HasUpdates = XExt.XModel.HasUpdates();
   xdatamodel.prototype.HasUpdate = XExt.XModel.HasUpdate();
   xdatamodel.prototype.OnControlUpdate = XExt.XModel.OnControlUpdate();
-  xdatamodel.prototype.Commit = XExt.XModel.Commit(modelid,'xform_post_<%=model.id%>');
+  xdatamodel.prototype.Commit = XExt.XModel.Commit(xmodel);
   xdatamodel.prototype.BindLOV = XExt.XModel.BindLOV(modelid);
 
   xdatamodel.prototype.xvalidate = new XValidate(jsh);
   <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; %>
-  xdatamodel.prototype.xvalidate.AddControlValidator('.<%=field.name%>.xelem<%=model.id%>','_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getaccess(model.actions,"BIU"):field.actions)%>',[<%-field.validate%>]);<%});%>
+  xdatamodel.prototype.xvalidate.AddControlValidator('.<%=field.name%>.xelem'+xmodel.class,'_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getaccess(model.actions,"BIU"):field.actions)%>',[<%-field.validate%>]);<%});%>
 
 })(<%-instance%>);

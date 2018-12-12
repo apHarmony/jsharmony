@@ -145,19 +145,21 @@ var jsHarmonyRouter = function (jsh, siteid) {
   router.post('/_ul/json', function (req, res) {
     jsh.AppSrv.Upload(req, res);
   });
-  router.get('/_dl/_temp/:keyid', function (req, res) {
+  router.get('/_dl/_temp/:keyid', function (req, res, next) {
     var keyid = req.params.keyid;
     if (typeof keyid === 'undefined') { next(); return; }
     var params = {};
     if (req.query && req.query.view) params.view = true;
     jsh.AppSrv.Download(req, res, '_temp', keyid, undefined, params);
   });
-  router.get('/_dl/:modelid/:keyid/:fieldid', function (req, res) {
-    var modelid = req.params.modelid;
+  //router.get('/_dl/:modelid/:keyid/:fieldid', function (req, res, next) {
+  router.get(/\/\_dl\/(.*)\/([^/]*)\/([^/]*)/, function (req, res, next) {
+    var modelid = req.params[0];
+    modelid = Helper.trimRight(modelid,'/');
     if (typeof modelid === 'undefined') { next(); return; }
-    var keyid = req.params.keyid;
+    var keyid = req.params[1];
     if (typeof keyid === 'undefined') { next(); return; }
-    var fieldid = req.params.fieldid;
+    var fieldid = req.params[2];
     if (typeof fieldid === 'undefined') { next(); return; }
     var params = {};
     if (req.query && req.query.view) params.view = true;
@@ -167,7 +169,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
   router.get('/_token', function (req, res) { 
     jsh.AppSrv.GetToken(req, res);
   });
-  router.post('/_d/_transaction', function (req, res) {
+  router.post('/_d/_transaction', function (req, res, next) {
     if (!('data' in req.body)) { next(); return; }
     var data = JSON.parse(req.body.data);
     if (!(data instanceof Array)) { next(); return; }
@@ -286,7 +288,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
         //Show model listing, if no menu exists and user has access
         if(params.showlisting || !siteConfig.auth || ('DEV' in req._roles)){
           return jsh.RenderTemplate(req, res, 'index', {
-            title: 'Models', body: jsh.RenderListing(), selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh
+            title: 'Models', body: jsh.RenderListing(req), selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh
           });
         }
         //Otherwise, show error

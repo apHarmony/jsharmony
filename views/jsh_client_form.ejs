@@ -1,16 +1,16 @@
 <% if(!model.topmost && (model.title !== undefined)) { %>
-<h1 class="xtitle xelem<%=model.id%>" style="display:inline-block;padding:0px 0 12px 0;"><%-xejs.iif((model.title.indexOf('<'+'#') < 0),XExt.escapeHTML(model.title),'&nbsp;')%></h1>
+<h1 class="xtitle xelem<%=model.class%>" style="display:inline-block;padding:0px 0 12px 0;"><%-xejs.iif((model.title.indexOf('<'+'#') < 0),XExt.escapeHTML(model.title),'&nbsp;')%></h1>
 <% } %>
 <% if(model.topmost || (model.layout == 'form-m') || model.buttons || model.duplicate){ %>
-<div class="xactions <%=xejs.case(model.topmost,'top',(model.layout == 'form-m'),'','secondaryform')%> xelem<%=model.id%>">
+<div class="xactions <%=xejs.case(model.topmost,'top',(model.layout == 'form-m'),'','secondaryform')%> xelem<%=model.class%>">
   <% if(model.layout == 'form-m') { %>
-    <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavFirst(); return false;" class="navbar"><img src="/images/icon_first.png" alt="First" title="First" /></a>
-    <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavPrev(); return false;" class="navbar"><img src="/images/icon_prev.png" alt="Prev" title="Prev" /></a>
-    <div class="navtext navtext_<%=model.id%>">1 of 1</div>
-    <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavNext(); return false;" class="navbar"><img src="/images/icon_next.png" alt="Next" title="Next" /></a>
-    <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavLast(); return false;" class="navbar"><img src="/images/icon_last.png" alt="Last" title="Last" /></a>
-    <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavAdd(); return false;" style="<%-xejs.visible(XExt.access(model.actions,'IU'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a>
-    <a href="#" onclick="<%-instance%>.App.xform_<%=model.id%>.NavDelete(); return false;" style="<%-xejs.visible(XExt.access(model.actions,'D'))%>"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a>
+    <a href="#" onclick="<%-js('xmodel.controller.form.NavFirst();')%>" class="navbar"><img src="/images/icon_first.png" alt="First" title="First" /></a>
+    <a href="#" onclick="<%-js('xmodel.controller.form.NavPrev();')%>" class="navbar"><img src="/images/icon_prev.png" alt="Prev" title="Prev" /></a>
+    <div class="navtext navtext_<%=model.class%>">1 of 1</div>
+    <a href="#" onclick="<%-js('xmodel.controller.form.NavNext();')%>" class="navbar"><img src="/images/icon_next.png" alt="Next" title="Next" /></a>
+    <a href="#" onclick="<%-js('xmodel.controller.form.NavLast();')%>" class="navbar"><img src="/images/icon_last.png" alt="Last" title="Last" /></a>
+    <a href="#" onclick="<%-js('xmodel.controller.form.NavAdd();')%>" style="<%-xejs.visible(XExt.access(model.actions,'IU'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a>
+    <a href="#" onclick="<%-js('xmodel.controller.form.NavDelete();')%>" style="<%-xejs.visible(XExt.access(model.actions,'D'))%>"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a>
   <% } %>
   <%-jsh.RenderView('jsh_buttons',ejsparams)%>
   <% if(model.topmost){ %>
@@ -23,10 +23,10 @@
 <% } %>
 <% if(model.layout == 'form-m') { %>
   <div class="clear"></div>
-  <div class="xnorecords xelem<%=model.id%>" style="display:none;">No <%=model.caption[1]%> Records</div>
-  <div class="xformcontainer xelem<%=model.id%>">
+  <div class="xnorecords xelem<%=model.class%>" style="display:none;">No <%=model.caption[1]%> Records</div>
+  <div class="xformcontainer xelem<%=model.class%>">
 <% } %>
-<div class="xform xelem<%=model.id%> xform<%=model.id%> <%=xejs.iif(model.onecolumn,'onecolumn')%>" data-id="xform<%=model.id%>" style="<%=model.formstyle%>">
+<div class="xform xelem<%=model.class%> xform<%=model.class%> <%=xejs.iif(model.onecolumn,'onecolumn')%>" data-id="<%=model.id%>" style="<%=model.formstyle%>">
 <%-jsh.RenderView('jsh_embed.js',ejsparams)%>
 <%-jsh.RenderView('jsh_controls',ejsparams)%>
 <% if(model.duplicate){
@@ -35,12 +35,12 @@
   popup_model.inlinepopup = 1;
   %>
   <div style="display:none;">
-    <div class="xsubform xpopup xelem<%=model.id%> popup_<%=model.id%>_duplicate" class="colorbox_inline">
+    <div class="xsubform xpopup xelem<%=model.class%> popup_<%=model.class%>_duplicate" class="colorbox_inline">
       <div class="xpanel" style="<%=model.duplicate.popupstyle%>">
         <%-jsh.Render(popup_model,model)%>
         <div style="text-align:center;padding-top:8px;">
-          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.id%>" style="padding:3px 8px;" value="Duplicate" onclick="<%-instance%>.XPage.Duplicate('<%=popup_model.id%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link))%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link_options))%>'); return false;" />
-          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.id%>" style="padding:3px 8px;" value="Cancel" onclick="<%-instance%>.$.colorbox.close(); return false;" />
+          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.class%>" style="padding:3px 8px;" value="Duplicate" onclick="<%-instance%>.XPage.Duplicate('<%=popup_model.id%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link))%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link_options))%>'); return false;" />
+          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.class%>" style="padding:3px 8px;" value="Cancel" onclick="<%-instance%>.$.colorbox.close(); return false;" />
         </div>
       </div>
     </div>

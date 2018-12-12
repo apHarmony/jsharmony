@@ -170,7 +170,7 @@ BODY
 	border-left:none;
 	padding:4px 0 0 1px;
 }
-<%-rootcss%> a.xtab{
+<%-rootcss%> a.xtab,<%-rootcss%> a.xtab:visited{
 	display:inline-block;
 }
 <%-rootcss%> .xtabcontrol {
@@ -315,7 +315,7 @@ BODY
   clear:right;
   display:none;
 }
-<%-rootcss%> a.linkbutton {
+<%-rootcss%> a.linkbutton,<%-rootcss%> a.linkbutton:visited {
   display:inline-block;
   color:#000000;
 }

@@ -34,48 +34,48 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
   var _ = jsh._;
   var $ = jsh.$;
   var XExt = jsh.XExt;
+  var xgrid = null;
   var xform = null;
-  var xform_post = null;
   var modelid = '<%=model.id%>';
   var xmodel = jsh.XModels[modelid];
 
-  var xcontroller = jsh.App['XController'+modelid] = xmodel.controller = function(){ }
+  var xcontroller = xmodel.controller = new XExt.XModel.XController(xmodel);
 
   xcontroller.Init = function(callback){
-    xform = jsh.App['xform_'+modelid] = new jsh.XGrid(modelid);
-    xform_post = jsh.App['xform_post_'+modelid] = new jsh.XForm(modelid,'','');
-    xform.HasUpdates = function(){ return false; };
-    xform.Data = {};
-    xform.PlaceholderID = '.xmultisel_'+modelid+'_placeholder';
-    xform.TemplateID = '.xmultisel_'+modelid+'_template';
+    xgrid = xcontroller.grid = new jsh.XGrid(modelid);
+    xform = xcontroller.form = new jsh.XForm(modelid,'','');
+    xgrid.HasUpdates = function(){ return false; };
+    xgrid.Data = {};
+    xgrid.PlaceholderID = '.xmultisel_'+xmodel.class+'_placeholder';
+    xgrid.TemplateID = '.xmultisel_'+xmodel.class+'_template';
 
-    xform.Select = function(onComplete){
+    xgrid.Select = function(onComplete){
       var execparams = {};
 
       //Pass parameters from bindings
       if(!jsh.is_add){
-        _.each(jsh.XModels[modelid]._bindings,function(binding){
-          var bfield = xmodel.datamodel.prototype.Fields[binding];
+        for(var fieldname in xmodel.bindings){
+          var bfield = xmodel.datamodel.prototype.Fields[fieldname];
           if((typeof bfield != 'undefined') && (jsh.XExt.HasAccess(bfield.actions,'F'))){
-            execparams[binding] = jsh.XModels[modelid][binding]();
+            execparams[fieldname] = xmodel.bindings[fieldname]();
           }
-        });
+        }
       }
       else{
-        _.each(jsh.XModels[modelid]._bindings,function(binding){
-          var bfield = xmodel.datamodel.prototype.Fields[binding];
+        for(var fieldname in xmodel.bindings){
+          var bfield = xmodel.datamodel.prototype.Fields[fieldname];
           if((typeof bfield != 'undefined') && (bfield.lovkey)){
-            execparams[binding] = jsh.XModels[modelid][binding]();
+            execparams[fieldname] = xmodel.bindings[fieldname]();
           }
-        });
+        }
       }
 
-      jsh.xLoader.StartLoading(xform);
+      jsh.xLoader.StartLoading(xgrid);
       var _query = '';
       if(!_.isEmpty(execparams)) _query = '?'+$.param(execparams);
       $.ajax({
         type:"GET",
-        url:jsh._BASEURL+'_d/'+xform.q+'/'+_query,
+        url:jsh._BASEURL+'_d/'+xgrid.q+'/'+_query,
         dataType: 'json',
         success:function(data){
           if((data instanceof Object) && ('_error' in data)){
@@ -84,17 +84,17 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
             else { jsh.XExt.Alert('Error #'+data._error.Number+': '+data._error.Message); }
           }
           else{
-            var ejssource = jsh.$root(xform.TemplateID).html();
+            var ejssource = jsh.$root(xgrid.TemplateID).html();
             ejssource = ejssource.replace(/<#/g,'<'+'%').replace(/#>/g,'%'+'>')
             var ejsrslt = jsh.ejs.render(ejssource,{
-              data:data[xform.q],
+              data:data[xgrid.q],
               jsh: jsh,
               instance: jsh.getInstance()
             });
-            jsh.$root(xform.PlaceholderID).empty();
-            jsh.$root(xform.PlaceholderID).append(ejsrslt);
+            jsh.$root(xgrid.PlaceholderID).empty();
+            jsh.$root(xgrid.PlaceholderID).append(ejsrslt);
           }
-          jsh.xLoader.StopLoading(xform);
+          jsh.xLoader.StopLoading(xgrid);
           if(onComplete) onComplete();
         }
       });
@@ -105,24 +105,24 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
 
   xcontroller.Save = function(){
     var selected_values = [];
-    jsh.$root(xform.PlaceholderID+' input.xselitem').each(function(i,obj){
+    jsh.$root(xgrid.PlaceholderID+' input.xselitem').each(function(i,obj){
       if($(obj).is(':checked')){
         selected_values.push($(obj).val());
       }
     });
     var _query = {};
     //Pass parameters from bindings
-    _.each(jsh.XModels[modelid]._bindings,function(binding){
-      var bfield = xmodel.datamodel.prototype.Fields[binding];
+    for(var fieldname in xmodel.bindings){
+      var bfield = xmodel.datamodel.prototype.Fields[fieldname];
       if((typeof bfield != 'undefined') && !(jsh.XExt.HasAccess(bfield.actions,'F'))) return;
-      _query[binding] = jsh.XModels[modelid][binding]();
-      if(jsh.is_add && (typeof  _query[binding] == 'undefined')){
-        _query[binding] = '%%%'+binding+'%%%';
+      _query[fieldname] = xmodel.bindings[fieldname]();
+      if(jsh.is_add && (typeof  _query[fieldname] == 'undefined')){
+        _query[fieldname] = '%%%'+fieldname+'%%%';
       }
-    });
+    }
     var rslt = { 
       'method':'post',
-      'model':xform.q,
+      'model':xgrid.q,
       'query':_query,
       'post':{'<%=lovfield%>':JSON.stringify(selected_values)},
       'onComplete':undefined

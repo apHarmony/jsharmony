@@ -77,10 +77,10 @@ exports = module.exports = function(jsh){
     this.GetMeta = true;
     this.GetDBRowCount = false;
     this.DBRowCount = -1;
-    this._LOVs = {};
-    this._defaults = {};
-    this._bcrumbs = {};
-    this._title = null;
+    this.LOVs = {};
+    this.defaults = {};
+    this.bcrumbs = {};
+    this.title = null;
   }
 
   //Passing 0,-1 for rowcount will return total rowcount
@@ -165,12 +165,12 @@ exports = module.exports = function(jsh){
     else {
       if (_this.GetMeta) {
         _this.GetMeta = false;
-        if ('_defaults' in data) { _this._defaults = data['_defaults']; }
-        if ('_bcrumbs' in data) { _this._bcrumbs = data['_bcrumbs']; }
-        if ('_title' in data) { _this._title = data['_title']; }
+        if ('_defaults' in data) { _this.defaults = data['_defaults']; }
+        if ('_bcrumbs' in data) { _this.bcrumbs = data['_bcrumbs']; }
+        if ('_title' in data) { _this.title = data['_title']; }
         for (var tbl in data) {
           if (tbl.indexOf('_LOV_') == 0) {
-            _this._LOVs[tbl.substring(5)] = data[tbl];
+            _this.LOVs[tbl.substring(5)] = data[tbl];
           }
         }
         if (_this.OnMetaData) _this.OnMetaData(data);

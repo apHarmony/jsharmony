@@ -30,7 +30,7 @@ module.exports = exports = {};
 /*******************
 |    RENDER HTML   |
 *******************/
-exports.RenderListing = function () {
+exports.RenderListing = function (req) {
   var rslt = '<br/>&nbsp;';
   var modules = { 'Local':[] };
   for (var modelid in this.Models) {
@@ -48,7 +48,7 @@ exports.RenderListing = function () {
     rslt += '<ul>';
     for (var i = 0; i < modelids.length; i++) {
       var modelid = modelids[i];
-      rslt += '<li><a href="' + modelid + '" target="_blank">' + modelid + '</a></li>';
+      rslt += '<li><a href="' + req.baseurl + modelid + '" target="_blank">' + modelid + '</a></li>';
     }
     rslt += '</ul>';
   }

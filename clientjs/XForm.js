@@ -154,19 +154,19 @@ exports = module.exports = function(jsh){
     if (typeof saveold == 'undefined') saveold = true;
     if (_index > this.Count()) { jsh.XExt.Alert('Cannot navigate - Index greater than size of collection'); return false; }
     else if (_index < 0) { jsh.XExt.Alert('Cannot navigate - Index less than zero'); return false; }
-    delete this.Data._LOVs;
-    delete this.Data._defaults;
-    delete this.Data._bcrumbs;
-    delete this.Data._title;
+    delete this.Data.LOVs;
+    delete this.Data.defaults;
+    delete this.Data.bcrumbs;
+    delete this.Data.title;
     if (saveold) {
       if (!this.CommitRow()) return false;
     }
     this.Index = _index;
     this.Data = _.extend(this.Data, this.DataSet[this.Index]);
-    this.Data._LOVs = this._LOVs;
-    this.Data._defaults = this._defaults;
-    this.Data._bcrumbs = this._bcrumbs;
-    this.Data._title = this._title;
+    this.Data._LOVs = this.LOVs;
+    this.Data._defaults = this.defaults;
+    this.Data._bcrumbs = this.bcrumbs;
+    this.Data._title = this.title;
     if (this.xData) {
       this.Data._jrow = jsh.$root(this.xData.PlaceholderID).find("tr[data-id='" + this.Index + "']");
     }
@@ -217,10 +217,10 @@ exports = module.exports = function(jsh){
       if ('_defaults' in rslt) { _this.Data['_defaults'] = rslt['_defaults']; }
       if ('_bcrumbs' in rslt) { _this.Data['_bcrumbs'] = rslt['_bcrumbs']; }
       if ('_title' in rslt) { _this.Data['_title'] = rslt['_title']; }
-      _this._LOVs = _this.Data._LOVs;
-      _this._defaults = _this.Data._defaults;
-      _this._bcrumbs = _this.Data._bcrumbs;
-      _this._title = _this.Data._title;
+      _this.LOVs = _this.Data._LOVs;
+      _this.defaults = _this.Data._defaults;
+      _this.bcrumbs = _this.Data._bcrumbs;
+      _this.title = _this.Data._title;
       //Load Data
       if(_this.q in rslt){
         if(_.isArray(rslt[_this.q])){
@@ -259,8 +259,8 @@ exports = module.exports = function(jsh){
   XForm.prototype.ApplyDefaults = function(data){
     var _this = this;
     var rslt = data;
-    if(rslt._is_new && ('_defaults' in this)){
-      _.each(this._defaults, function (val, fieldname){
+    if(rslt._is_new && ('defaults' in this)){
+      _.each(this.defaults, function (val, fieldname){
         if(rslt[fieldname]) return; //If field is set via GET, do not overwrite
         if(fieldname in rslt){
           if(val.indexOf('js:')==0){
@@ -504,7 +504,7 @@ exports = module.exports = function(jsh){
     var rslt = {};
     _.each(_this.Data.Fields,function(field){
       if (!jsh.XExt.HasAccess(field.actions, action)) return;
-      if((typeof _this.Data[field.name] == 'undefined') && _.includes(jsh.XModels[_this.q]._bindings,field.name)){
+      if((typeof _this.Data[field.name] == 'undefined') && (field.name in jsh.XModels[_this.q].bindings)){
         rslt[field.name] = '%%%'+field.name+'%%%';
       }
       else {

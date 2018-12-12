@@ -282,7 +282,9 @@ exports = module.exports = function(jsh){
   };
 
   XExt.hideTab = function (modelid, tabname) {
-    jsh.$root('.xtab' + modelid).each(function (i, obj) {
+    var modelclass = modelid;
+    if(modelid in jsh.XModels) modelclass = jsh.XModels[modelid].class;
+    jsh.$root('.xtab' + modelclass).each(function (i, obj) {
       var jobj = $(obj);
       if (jobj.html() == tabname) jobj.hide();
     });
@@ -499,14 +501,15 @@ exports = module.exports = function(jsh){
     if (window.opener) {
       var pjsh = window.opener[jsh.getInstance()];
       var hasCapabilities = true;
+      if(!pjsh.XPage) return;
       if(capabilities) _.each(capabilities, function(capability){
-        if(!pjsh[capability]) hasCapabilities = false;
+        if(!pjsh.XPage[capability]) hasCapabilities = false;
       });
       if(hasCapabilities) return pjsh;
     }
   }
   XExt.notifyPopupComplete = function (id, rslt) {
-    var jshOpener = XExt.getOpenerJSH(['XPage.PopupComplete']);
+    var jshOpener = XExt.getOpenerJSH(['PopupComplete']);
     if (jshOpener) {
       jshOpener.XPage.PopupComplete(id, rslt);
     }
@@ -1081,10 +1084,16 @@ exports = module.exports = function(jsh){
   XExt.popupShow = function (modelid, fieldid, title, parentobj, obj, options) {
     if (typeof options == 'undefined') options = {};
     var parentmodelid = $(obj).data('model');
+    var parentmodelclass = parentmodelid;
     var parentfield = null;
-    if (parentmodelid) parentfield = jsh.App['XDatamodel' + parentmodelid].prototype.Fields[fieldid];
-    if (!parentobj) parentobj = jsh.$root('.' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelid);
+    if (parentmodelid){
+      var parentmodel = jsh.XModels[parentmodelid];
+      parentfield = parentmodel.datamodel.prototype.Fields[fieldid];
+      parentmodelclass = parentmodel.class;
+    }
+    if (!parentobj) parentobj = jsh.$root('.' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelclass);
     var numOpens = 0;
+    var xmodel = jsh.XModels[modelid];
     
     popupData[modelid] = {};
     XExt.execif(parentfield && parentfield.controlparams && parentfield.controlparams.onpopup,
@@ -1092,26 +1101,26 @@ exports = module.exports = function(jsh){
       function () {
       var codeval = $(obj).data('codeval');
       if (codeval) popupData[modelid].codeval = codeval;
-      var xdata = jsh.App['xform_' + modelid];
-      xdata.RowCount = 0;
-      if (xdata.Prop) xdata.Prop.Enabled = true;
-      jsh.$root(xdata.PlaceholderID).html('');
+      var xgrid = xmodel.controller.grid;
+      xgrid.RowCount = 0;
+      if (xgrid.Prop) xgrid.Prop.Enabled = true;
+      jsh.$root(xgrid.PlaceholderID).html('');
       var orig_jsh_ignorefocusHandler = jsh.ignorefocusHandler;
       jsh.ignorefocusHandler = true;
       var popup_options = {};
       popup_options = {
         modelid: modelid,
-        href: ".popup_" + fieldid + '.xelem' + parentmodelid, inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, title: title, fixed: true,
+        href: ".popup_" + fieldid + '.xelem' + parentmodelclass, inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, title: title, fixed: true,
         fadeOut:0,
         onOpen: function () {
           //When nested popUps are called, onOpen is not called
         },
         onComplete: function () {
           numOpens++;
-          if(numOpens==1) xdata.Select();
-          if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelid + ' .xfilter_value').first().is(':visible')) jsh.$root('.popup_' + fieldid + ' .xfilter_value').first().focus();
-          else if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelid).find('td a').length) jsh.$root('.popup_' + fieldid).find('td a').first().focus();
-            //else jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelid).find('input,select,textarea').first().focus();
+          if(numOpens==1) xgrid.Select();
+          if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass + ' .xfilter_value').first().is(':visible')) jsh.$root('.popup_' + fieldid + ' .xfilter_value').first().focus();
+          else if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('td a').length) jsh.$root('.popup_' + fieldid).find('td a').first().focus();
+            //else jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('input,select,textarea').first().focus();
         },
         onClosed: function () {
           var found_popup = false;
@@ -1143,27 +1152,25 @@ exports = module.exports = function(jsh){
   XExt.popupSelect = function (modelid, obj) {
     var rslt = null;
     var rowid = XExt.XModel.GetRowID(modelid, obj);
-    var xdata = jsh.App['xform_' + modelid];
-    var xpost = jsh.App['xform_post_' + modelid];
+    var xmodel = jsh.XModels[modelid];
     
-    if (popupData[modelid].codeval) rslt = xpost.DataSet[rowid][popupData[modelid].codeval];
+    if (popupData[modelid].codeval) rslt = xmodel.controller.form.DataSet[rowid][popupData[modelid].codeval];
     if (!rslt) rslt = '';
     popupData[modelid].result = rslt;
     popupData[modelid].rowid = rowid;
-    popupData[modelid].resultrow = xpost.DataSet[rowid];
-    xdata.Prop.Enabled = false;
+    popupData[modelid].resultrow = xmodel.controller.form.DataSet[rowid];
+    xmodel.controller.grid.Prop.Enabled = false;
     $.colorbox.close();
   }
 
   XExt.popupClear = function (modelid, obj) {
     var rslt = null;
-    var xdata = jsh.App['xform_' + modelid];
-    var xpost = jsh.App['xform_post_' + modelid];
+    var xmodel = jsh.XModels[modelid];
     
     popupData[modelid].result = rslt;
     popupData[modelid].rowid = -1;
-    popupData[modelid].resultrow = new xpost.DataType();
-    xdata.Prop.Enabled = false;
+    popupData[modelid].resultrow = new xmodel.controller.form.DataType();
+    xmodel.controller.grid.Prop.Enabled = false;
     $.colorbox.close();
   }
 
@@ -1175,7 +1182,7 @@ exports = module.exports = function(jsh){
     var xid = $(obj).closest('.xtbl').data('id');
     if (!xid) xid = $(obj).closest('.xform').data('id');
     if (!xid) return null;
-    return xid.substr(5);
+    return xid;
   }
 
   XExt.getModelMD5 = function (modelid) {
@@ -1259,23 +1266,32 @@ exports = module.exports = function(jsh){
     else f();
   }
 
-  XExt.LiteralOrCollection = function(str, col, funccol) {
+  XExt.LiteralOrLookup = function(str, dictionary, xmodel) {
     //console.log("Evaluating: "+str);
     var rslt = undefined;
+
+    //If numeric, return the value
     if (!isNaN(str)) rslt = str;
+    //If a literal 'TEXT', return the value
     else if ((str.length >= 2) && (str[0] == "'") && (str[str.length - 1] == "'")) rslt = str.substr(1, str.length - 2);
-    else if(str.trim().toLowerCase()=='null') rslt = null;
-    else if ((typeof funccol !== 'undefined') && (str in funccol)) rslt = funccol[str]();
-    else if(col) {
-      //console.log('Array check'); console.log(col);
-      if (_.isArray(col)) {
-        for (var i = 0; i < col.length; i++) {
-          if (str in col[i]) return col[i][str];
+    //If "null", return null
+    else if(str.trim().toLowerCase()=='null') rslt = null; 
+    //If a binding, return the evaluated binding
+    else if (xmodel && xmodel.hasBindingOrRootKey(str)) rslt = xmodel.getBindingOrRootKey(str);
+    //If a lookup in the dictionary, return the value
+    else if(dictionary) {
+      if (_.isArray(dictionary)) {
+        //Array of collections
+        for (var i = 0; i < dictionary.length; i++) {
+          if (str in dictionary[i]) return dictionary[i][str];
         }
       }
-      else rslt = col[str];
+      else{
+        //Single Collection
+        rslt = dictionary[str];
+      }
     }
-    //console.log('Result: '+rslt);
+    //Return the value
     return rslt;
   }
 
@@ -1324,23 +1340,22 @@ exports = module.exports = function(jsh){
   }
   XExt.getFormBase = function (id) {
     if (!jsh.XBase[id]) { XExt.Alert('ERROR: Base form ' + id + ' not found.'); return; }
-    var fname = jsh.XBase[id][0];
-    if (fname) return jsh.App['xform_' + fname];
+    var basemodelid = jsh.XBase[id][0];
+    if (basemodelid) return jsh.XModels[basemodelid].controller.form;
     return undefined;
   }
   XExt.getForm = function (id) {
     if (!(id in jsh.XModels)) { XExt.Alert('ERROR: Form ' + id + ' not found.'); return; }
-    if (jsh.XModels[id]._layout == 'grid') return jsh.App['xform_post_' + id];
-    return jsh.App['xform_' + id];
+    return jsh.XModels[id].controller.form;
   }
   XExt.getFormFromObject = function (ctrl) {
-    var fname = $(ctrl).closest('.xform').data('id');
-    if (fname) return jsh.App['xform_' + fname.substr(5)];
+    var modelid = $(ctrl).closest('.xform').data('id');
+    if (modelid) return jsh.XModels[basemodelid].controller.form;
     return undefined;
   }
   XExt.getModelIdFromObject = function (ctrl) {
-    var fname = $(ctrl).closest('.xform').data('id');
-    if (fname) return fname.substr(5);
+    var modelid = $(ctrl).closest('.xform').data('id');
+    if (modelid) return modelid;
     return undefined;
   }
   XExt.getFieldFromObject = function (ctrl) {

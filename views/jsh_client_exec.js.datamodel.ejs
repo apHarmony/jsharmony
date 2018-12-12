@@ -24,7 +24,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var modelid = '<%=model.id%>';
   var xmodel = jsh.XModels[modelid];
 
-  var xdatamodel = jsh.App['XDatamodel'+modelid] = xmodel.datamodel = function(){
+  var xdatamodel = xmodel.datamodel = function(){
     this._is_new = true;
     this._modelid = modelid;
     <% _.each(model.fields,function(field){ if(!field.name) return; %>this.<%=field.name%> = '';<%});%>
@@ -42,6 +42,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       <%-xejs.iif('always_editable_on_insert' in field,'"always_editable_on_insert":'+JSON.stringify(field.always_editable_on_insert)+',') %>
       <%-xejs.iif('onchange' in field,'"onchange":'+JSON.stringify('(function(){'+jslocals+field.onchange+'}).call(this,obj,newval,e)')+',') %>
       <%-xejs.iif('static' in field,'"static":'+JSON.stringify(field.static)+',') %>
+      <%-xejs.iif('key' in field,'"key":'+JSON.stringify(field.key)+',') %>
       <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>
       <% if('controlparams' in field){ %>controlparams:{
         <%-xejs.iif('thumbnail_width' in field.controlparams,'"thumbnail_width":'+JSON.stringify(field.controlparams.thumbnail_width)+',') %>
@@ -65,12 +66,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   xdatamodel.prototype.HasUpdates = XExt.XModel.HasUpdates();
   xdatamodel.prototype.HasUpdate = XExt.XModel.HasUpdate();
   xdatamodel.prototype.OnControlUpdate = XExt.XModel.OnControlUpdate();
-  xdatamodel.prototype.Commit = XExt.XModel.Commit(modelid,'xform_<%=model.id%>');
+  xdatamodel.prototype.Commit = XExt.XModel.Commit(xmodel);
   xdatamodel.prototype.BindLOV = XExt.XModel.BindLOV(modelid);
-  jsh.on('jsh_ready', function(){ xdatamodel.prototype.BindLOV(jsh.App.xform_<%=model.id%>); });
+  jsh.on('jsh_ready', function(){ xdatamodel.prototype.BindLOV(xmodel.controller.form); });
 
   xdatamodel.prototype.xvalidate = new XValidate(jsh);
   <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; %>
-  xdatamodel.prototype.xvalidate.AddControlValidator('.<%=field.name%>.xelem<%=model.id%>','_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getaccess(model.actions,"BIU"):field.actions)%>',[<%-field.validate%>]);<%});%>
+  xdatamodel.prototype.xvalidate.AddControlValidator('.<%=field.name%>.xelem<%=model.class%>','_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getaccess(model.actions,"BIU"):field.actions)%>',[<%-field.validate%>]);<%});%>
 
 })(<%-instance%>);

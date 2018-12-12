@@ -85,16 +85,16 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "sqlexec": "exec dbo.PLE_NOTIF @C_ID,@MDate", //Used by EXEC.  Be sure to add %%%DATALOCKS%%% if applicable
   "sqltype": "multirecordset", //recordset, multirecordset  Used by EXEC.
   "sqlwhere": "C_STS='ACTIVE'", //Additional filter for grid
-  //onload(xform,callback) - Returns false to not bubble (Executed once all selects are complete, on every reselect.  Callback pulls execution away from main thread, return false, and reset links on completion,
-  //onloadimmediate(xform) - Runs immediately once select is complete, instead of when all selects are complete for all subforms
-  //oninit(xform) (Executed when form is first loaded)
-  //oninsert(xform,urlkeys,url) (FORM ONLY) Returns false to not bubble - Executed after insert operation is completed
-  //onvalidate(xform, callback) - Must return callback(true) if validation succeeded and handle errors
-  //onupdate (FORM ONLY)
-  //ondestroy
-  //oncommit(xform, rowid, callback) (GRID ONLY) - Executes after db Update / Insert / Delete.
-  //onloadstate(xform, state)
-  //onrowbind(xform,jobj,datarow) (GRID ONLY)
+  //onload(xmodel,callback) - Returns false to not bubble (Executed once all selects are complete, on every reselect.  Callback pulls execution away from main thread, return false, and reset links on completion,
+  //onloadimmediate(xmodel) - Runs immediately once select is complete, instead of when all selects are complete for all subforms
+  //oninit(xmodel) (Executed when form is first loaded)
+  //oninsert(xmodel,urlkeys,url) (FORM ONLY) Returns false to not bubble - Executed after insert operation is completed
+  //onvalidate(xmodel, callback) - Must return callback(true) if validation succeeded and handle errors
+  //onupdate (xmodel) FORM ONLY)
+  //ondestroy (xmodel)
+  //oncommit(xmodel, rowid, callback) (GRID ONLY) - Executes after db Update / Insert / Delete.
+  //onloadstate(xmodel, state)
+  //onrowbind(xmodel,jobj,datarow) (GRID ONLY)
   //onroute (routetype ('singlepage'), req, res, f, require, jsh, modelid, params) - Server-side reroute to different page if necessary, called before any ent data loaded - TOW
   //    routetypes: singlepage, model, d, d_transaction, csv, report, d_report, d_report_html, d_reportjob
   //    params = { query: {...}, post: {...} }

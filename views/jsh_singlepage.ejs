@@ -173,7 +173,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh.is_add =  (jsh._GET['action']=='add');
       jsh.init_complete = false;
       jsh.delete_target = null;
-      jsh._bcrumbs = {};
+      jsh.bcrumbs = {};
       jsh.xPopupStack = [];
       jsh.cur_model = model;
 
@@ -185,15 +185,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       else ejsrslt = ejsprepend + ejsrslt;
       //console.log(ejsrslt); //Debug EJS output
       jsh.$root('.xbody').html(ejsrslt);
-      var model_class = 'xbody_'+jsh.state.modelid;
-      if(model._basemodel) model_class += ' xbody_'+ model._basemodel;
+      var body_class = 'xbody_'+jsh.state.modelid;
+      if(model._basemodel) body_class += ' xbody_'+ model._basemodel;
       var prevClasses = XExt.getClasses(jsh.$root('.xbody'));
       for(var i=0;i<prevClasses.length;i++){
         if(XExt.beginsWith(prevClasses[i], 'xbody_')){
           jsh.$root('.xbody').removeClass(prevClasses[i]);
         }
       }
-      jsh.$root('.xbody').addClass(model_class);
+      jsh.$root('.xbody').addClass(body_class);
       //Handle Title
       if(!model.toptitle) model.toptitle = '';
       var orig_title = XExt.unescapeEJS(model.toptitle);

@@ -24,89 +24,87 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var XExt = jsh.XExt;
   var moment = jsh.moment;
   var modelid = '<%=model.id%>';
-  var modelclass = '<%=model.class%>';
   var xmodel = jsh.XModels[modelid];
 
-  var xcontroller = jsh.App['XController'+modelid] = xmodel.controller = function(){ }
-
+  var xcontroller = xmodel.controller = new XExt.XModel.XController(xmodel);
   var xfilter = null;
-  var xform_post = null;
+  var xeditablegrid = null;
+  var xgrid = null;
   var xform = null;
 
   xcontroller.Init = function(callback){
-    xfilter = jsh.App['xfilter_'+modelid] = new jsh.XForm('','.xfilter_template_'+modelid,'.xfilter_'+modelid);
+    xfilter = xcontroller.filter = new jsh.XForm('','.xfilter_template_'+xmodel.class,'.xfilter_'+xmodel.class);
     xfilter.Data = new jsh.XSearch.SearchQuery(new xmodel.datamodel());
     xfilter.Data.Items.unshift(new jsh.XSearch.SearchItem('ALL','','and','contains'));
     xfilter.OnAfterRender = function(){ 
-      jsh.$root('.xfilter_'+modelclass+' input.xfilter_value').each(function(){ jsh.XBarcode.EnableScanner($(this)); }); 
-      jsh.$root('.xfilter_'+modelclass+' input.xfilter_value.datepicker').each(function(){ 
+      jsh.$root('.xfilter_'+xmodel.class+' input.xfilter_value').each(function(){ jsh.XBarcode.EnableScanner($(this)); }); 
+      jsh.$root('.xfilter_'+xmodel.class+' input.xfilter_value.datepicker').each(function(){ 
         $(this).datepicker({ constrainInput: false, changeMonth: true, changeYear: true, dateFormat: jsh.DEFAULT_DATEFORMAT });
       }); 
     };
     xfilter.Render();
     <% if(model.grid_expand_filter){ %>xcontroller.FilterExpand(0);<% } %>
 
-    var xform_post_<%=model.id%> = jsh.App.xform_post_<%=model.id%> = new jsh.XForm(modelid,'','');
-    xform_post_<%=model.id%>.Data = new xmodel.datamodel();
-    xform_post_<%=model.id%>.DataType = xmodel.datamodel;
+    xform = xcontroller.form = new jsh.XForm(modelid,'','');
+    xform.Data = new xmodel.datamodel();
+    xform.DataType = xmodel.datamodel;
 
     var isInlinePopup = <%-xejs.iif(('inlinepopup' in model) && (model.inlinepopup),'true','false')%>;
-    var grid_template = '<%=(model.templates.grid||'.xgrid_'+model.id+'_template')%>';
+    var grid_template = '<%=(model.templates.grid||'.xgrid_'+model.class+'_template')%>';
     var grid_placeholder = jsh.$root(grid_template).data('target');
     var scrollControl = (isInlinePopup ? jsh.$root(grid_placeholder).closest('.xpanel')[0] : window);
-    var xform_<%=model.id%> = jsh.App.xform_<%=model.id%> = new jsh.XGrid(modelid,grid_template,grid_placeholder,undefined,true,scrollControl);
-    xform_<%=model.id%>.NoResultsMessage = '<%-xejs.iif(('noresultsmessage' in model) && (model.noresultsmessage || (model.noresultsmessage==='')),model.noresultsmessage,'No results found %%%FORSEARCHPHRASE%%%')%>';
+    xgrid = xcontroller.grid = new jsh.XGrid(modelid,grid_template,grid_placeholder,undefined,true,scrollControl);
+    xgrid.NoResultsMessage = '<%-xejs.iif(('noresultsmessage' in model) && (model.noresultsmessage || (model.noresultsmessage==='')),model.noresultsmessage,'No results found %%%FORSEARCHPHRASE%%%')%>';
     <% if(typeof model.sort != 'undefined'){ for(var i=0;i<model.sort.length;i++){ %> 
-    xform_<%=model.id%>.Sort.push('<%-model.sort[i]%>');
-      <% } } %>
-      xform_<%=model.id%>.HasUpdates = function(){ if(this.RowCount==0) return false; return xform_post_<%=model.id%>.HasUpdates(); };
-    xform_<%=model.id%>.Data = {};
+      xgrid.Sort.push('<%-model.sort[i]%>');
+    <% } } %>
+    xgrid.HasUpdates = function(){ if(this.RowCount==0) return false; return xform.HasUpdates(); };
+    xgrid.Data = {};
     //Extended xData
-    xform_<%=model.id%>.Prop.ReselectAfterEdit = <%-xejs.iif(('reselectafteredit' in model) && (model.reselectafteredit),'true','false')%>;
-    xform_<%=model.id%>.Prop.NewRowPosition = '<%-xejs.iif('newrowposition' in model,model.newrowposition,'first')%>';
-    xform_<%=model.id%>.Prop.ModifiedSinceLoad = false;
-    xform_<%=model.id%>.Prop.Enabled = (isInlinePopup ? false : true);
-    xform_<%=model.id%>.Prop.isInlinePopup = isInlinePopup;
-    xform_<%=model.id%>.RequireFilter = <%-xejs.iif(model.grid_require_filter,'true','false')%>;;
-    xform_<%=model.id%>.GetDBRowCount = <%-xejs.iif(('grid_rowcount' in model) && (model.grid_rowcount),'true','false')%>;
+    xgrid.Prop.ReselectAfterEdit = <%-xejs.iif(('reselectafteredit' in model) && (model.reselectafteredit),'true','false')%>;
+    xgrid.Prop.NewRowPosition = '<%-xejs.iif('newrowposition' in model,model.newrowposition,'first')%>';
+    xgrid.Prop.ModifiedSinceLoad = false;
+    xgrid.Prop.Enabled = (isInlinePopup ? false : true);
+    xgrid.Prop.isInlinePopup = isInlinePopup;
+    xgrid.RequireFilter = <%-xejs.iif(model.grid_require_filter,'true','false')%>;;
+    xgrid.GetDBRowCount = <%-xejs.iif(('grid_rowcount' in model) && (model.grid_rowcount),'true','false')%>;
 
     <% if(!model.templates.grid){ %>
-      var xgrid_<%=model.id%> = jsh.App.xgrid_<%=model.id%> = new jsh.XEditableGrid(modelid,jsh.XModels[modelid]._commitlevel,'<%-xejs.iif('validationlevel' in model,model.validationlevel,'row')%>');
-      xgrid_<%=model.id%>.Debug = true;
-      xgrid_<%=model.id%>.OnRowEnter = function(rowid){ xform_post_<%=model.id%>.SetIndex(rowid,false); }
-      xgrid_<%=model.id%>.OnControlUpdate = function(obj,e){ xform_post_<%=model.id%>.Data.OnControlUpdate(obj,e); }
-      xgrid_<%=model.id%>.OnValidating = function(rowid,obj){ return xform_post_<%=model.id%>.CommitRow(); }
-      xgrid_<%=model.id%>.IsDirty = function(){ return xform_post_<%=model.id%>.IsDirty; }
-      xgrid_<%=model.id%>.OnCommit = xcontroller.OnCommit;
-      xgrid_<%=model.id%>.OnCancelEdit = function(rowid,obj){ xcontroller.ResetRow(rowid); }
-      xgrid_<%=model.id%>.SaveBeforeUpdate = <%=(model.grid_save_before_update?'true':'false')%>;
+      xeditablegrid = xcontroller.editablegrid = new jsh.XEditableGrid(modelid,xmodel.commitlevel,'<%-xejs.iif('validationlevel' in model,model.validationlevel,'row')%>');
+      xeditablegrid.Debug = true;
+      xeditablegrid.OnRowEnter = function(rowid){ xform.SetIndex(rowid,false); }
+      xeditablegrid.OnControlUpdate = function(obj,e){ xform.Data.OnControlUpdate(obj,e); }
+      xeditablegrid.OnValidating = function(rowid,obj){ return xform.CommitRow(); }
+      xeditablegrid.IsDirty = function(){ return xform.IsDirty; }
+      xeditablegrid.OnCommit = xcontroller.OnCommit;
+      xeditablegrid.OnCancelEdit = function(rowid,obj){ xcontroller.ResetRow(rowid); }
+      xeditablegrid.SaveBeforeUpdate = <%=(model.grid_save_before_update?'true':'false')%>;
     <% } %>
 
-    xform_<%=model.id%>.OnRowBind = function(jobj,datarow){
-      if(!jsh.App.xgrid_<%=model.id%>) return;
-      jsh.App.xgrid_<%=model.id%>.BindRow(jobj);
-      xmodel.datamodel.prototype.BindLOV(xform_post_<%=model.id%>,jobj);
-      var xform = jsh.XModels[modelid];
-      if(xform._onrowbind) xform._onrowbind(xform,jobj,datarow);
+    xgrid.OnRowBind = function(jobj,datarow){
+      if(!xeditablegrid) return;
+      xeditablegrid.BindRow(jobj);
+      xmodel.datamodel.prototype.BindLOV(xform,jobj);
+      if(xmodel.onrowbind) xmodel.onrowbind(xmodel,jobj,datarow);
     };
-    xform_<%=model.id%>.OnMetaData = function(data){ xform_post_<%=model.id%>._LOVs = this._LOVs; xform_post_<%=model.id%>._defaults = this._defaults; xform_post_<%=model.id%>._title = this._title; }
-    xform_<%=model.id%>.OnDBRowCount = function(data){ xcontroller.UpdateTitleCaption(); };
-    xform_<%=model.id%>.OnResetDataSet = function(data){ var xpost = xform_post_<%=model.id%>;
-      xpost.DataSet = []; xpost.ResetDirty();
-      if (data[this.q].length <= 0){ xpost.Index = -1; }
-      else{ xpost.Index = 0; }
+    xgrid.OnMetaData = function(data){ xform.LOVs = this.LOVs; xform.defaults = this.defaults; xform.title = this.title; }
+    xgrid.OnDBRowCount = function(data){ xcontroller.UpdateTitleCaption(); };
+    xgrid.OnResetDataSet = function(data){
+      xform.DataSet = []; xform.ResetDirty();
+      if (data[this.q].length <= 0){ xform.Index = -1; }
+      else{ xform.Index = 0; }
       this.Prop.ModifiedSinceLoad = false;
     }
-    xform_<%=model.id%>.OnRender = function(ejssource,data){ var xpost = xform_post_<%=model.id%>;
-      xpost.DataSet = xpost.DataSet.concat(data[this.q]);
+    xgrid.OnRender = function(ejssource,data){
+      xform.DataSet = xform.DataSet.concat(data[this.q]);
       for (var i = 0; i < data[this.q].length; i++) {
         var rowid = this.RowCount + i;
-        xpost.DataSet[rowid]['_is_new'] = false;
-        xpost.DataSet[rowid]['_is_dirty'] = false;
-        xpost.DataSet[rowid]['_is_deleted'] = false;
-        xpost.DataSet[rowid]['_orig'] = null;
+        xform.DataSet[rowid]['_is_new'] = false;
+        xform.DataSet[rowid]['_is_dirty'] = false;
+        xform.DataSet[rowid]['_is_deleted'] = false;
+        xform.DataSet[rowid]['_orig'] = null;
       }
-      if(jsh.App.xgrid_<%=model.id%>){
+      if(xeditablegrid){
         for (var i = 0; i < data[this.q].length; i++) {
           var rowid = this.RowCount + i;
           var ejsrslt = jsh.ejs.render(ejssource, { 
@@ -121,9 +119,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
             modelid: modelid,
             js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
           });
-          console.log(ejsrslt);
           var jobj = $(ejsrslt).appendTo(jsh.$root(this.PlaceholderID));
-          xpost.NavTo(rowid, false);
+          xform.NavTo(rowid, false);
           this.OnRowBind(jobj);
         }
       }
@@ -132,8 +129,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           rowid: this.RowCount, 
           data: data[this.q], 
           xejs: XExt.xejs,
-          xform: xform_<%=model.id%>,
-          xform_meta: jsh.XModels[modelid],
+          xmodel: xmodel,
           jsh: jsh,
           _: _,
           moment: moment,
@@ -147,57 +143,57 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       $.colorbox.resize();
       this.RowCount += data[this.q].length;
     }
-    xform_<%=model.id%>.OnLoadMoreData = function(){
+    xgrid.OnLoadMoreData = function(){
       if(this.Prop.ModifiedSinceLoad){ this.Select(); return; }
       this.Load(this.RowCount);
     }
 
-    xform_post_<%=model.id%>.xData = xform_<%=model.id%>;
-    xform_<%=model.id%>.State.Search = xfilter.Data.Items;
-    xform_<%=model.id%>.State.Sort = xform_<%=model.id%>.Sort;
-    <%=xejs.iif(('disableautoload' in model) && (model.disableautoload),'xform_'+model.id+'.AutoLoadMore = false;') %>
-    xform_<%=model.id%>.OnBeforeSelect = function(){
+    xform.xData = xgrid;
+    xgrid.State.Search = xfilter.Data.Items;
+    xgrid.State.Sort = xgrid.Sort;
+    <%=xejs.iif(('disableautoload' in model) && (model.disableautoload),'xgrid.AutoLoadMore = false;') %>
+    xgrid.OnBeforeSelect = function(){
       var has_search_items = xcontroller.HasSearchItems(this.SearchJSON);
       if(has_search_items){ 
-        jsh.$root('.xfilterbutton<%=model.id%> span').html('Remove Filter');
+        jsh.$root('.xfilterbutton<%=model.class%> span').html('Remove Filter');
       }
       else{
-        jsh.$root('.xfilterbutton<%=model.id%> span').html('Filter');
+        jsh.$root('.xfilterbutton<%=model.class%> span').html('Filter');
       }
       xcontroller.UpdateTitleCaption();
     };
-    xform_<%=model.id%>.Select = function(done){
+    xgrid.Select = function(done){
       //Get current number of pages
-      if(!xform_<%=model.id%>.Prop.Enabled){ if(done) done(); return;}
-      var loadobj = "XFORM<%=model.id%>";
-      var init_rowcount = xform_<%=model.id%>.RowCount;
+      if(!xgrid.Prop.Enabled){ if(done) done(); return;}
+      var loadobj = "XFORM"+modelid;
+      var init_rowcount = xgrid.RowCount;
       var init_scroll = $(window).scrollTop();
       jsh.xLoader.StartLoading(loadobj);
       var load_complete = false;
       //Load all pages
-      _.each(jsh.XModels[modelid]._bindings,function(binding){
-        var bindval = jsh.XModels[modelid][binding]();
-        if(typeof bindval === 'undefined') delete xform_<%=model.id%>.Data[binding];
-        else if(bindval === '') delete xform_<%=model.id%>.Data[binding];
-        else xform_<%=model.id%>.Data[binding] = bindval;
-      });
+      for(var fieldname in xmodel.bindings){
+        var bindval = xmodel.bindings[fieldname]();
+        if(typeof bindval === 'undefined') delete xgrid.Data[fieldname];
+        else if(bindval === '') delete xgrid.Data[fieldname];
+        else xgrid.Data[fieldname] = bindval;
+      }
 
       //Pass parameters from querystring
       for(var fieldname in xmodel.datamodel.prototype.Fields){
-        if((fieldname in jsh._GET) && !(fieldname in xform_<%=model.id%>.Data) && (jsh.XModels[modelid]._constant_bindings.indexOf(fieldname)<0)){
+        if((fieldname in jsh._GET) && !(fieldname in xgrid.Data) && (xmodel.constant_bindings.indexOf(fieldname)<0)){
           var fieldval = jsh._GET[fieldname];
           if((typeof fieldval !== 'undefined') && (fieldval !== null)){
-            xform_<%=model.id%>.Data[fieldname] = fieldval;
+            xgrid.Data[fieldname] = fieldval;
           }
         }
       }
 
-      if(!jsh.is_add || isInlinePopup || !XExt.HasAccess(jsh.XModels[modelid]._actions, 'I')) delete xform_<%=model.id%>.Data._action;
-      else xform_<%=model.id%>.Data._action = 'add';
+      if(!jsh.is_add || isInlinePopup || !XExt.HasAccess(xmodel.actions, 'I')) delete xgrid.Data._action;
+      else xgrid.Data._action = 'add';
 
       var check_load_complete = function(){
-        if(!xform_<%=model.id%>) return;
-        load_complete = (xform_<%=model.id%>.EOF || (xform_<%=model.id%>.RowCount >= init_rowcount));
+        if(!xgrid) return;
+        load_complete = (xgrid.EOF || (xgrid.RowCount >= init_rowcount));
         if(load_complete){ 
           //Move scrollbar
           $(window).scrollTop(init_scroll);
@@ -205,50 +201,50 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           jsh.xLoader.StopLoading(loadobj); 
           if(done) done(); 
         }
-        else xform_<%=model.id%>.Load(xform_<%=model.id%>.RowCount,undefined,check_load_complete);
+        else xgrid.Load(xgrid.RowCount,undefined,check_load_complete);
       };
-      xform_<%=model.id%>.GetMeta = true;
-      xform_<%=model.id%>.Load(undefined,undefined,check_load_complete);
+      xgrid.GetMeta = true;
+      xgrid.Load(undefined,undefined,check_load_complete);
     };
 
-    xform_post_<%=model.id%>.GetSelectParams = function(){
+    xform.GetSelectParams = function(){
       var rslt = new Object();
       if(!jsh.is_add || isInlinePopup){
-        _.each(jsh.XModels[modelid]._bindings,function(binding){
-          rslt[binding] = jsh.XModels[modelid][binding]();
-        });
+        for(var fieldname in xmodel.bindings){
+          rslt[fieldname] = xmodel.bindings[fieldname]();
+        }
       }
       else{
         rslt._action = 'add';
       }
       return rslt; 
     };
-    xform_post_<%=model.id%>.GetReselectParams = function(){
+    xform.GetReselectParams = function(){
       var rslt = this.GetKeys();
       //Add bindings for GCOD
-      _.each(jsh.XModels[modelid]._bindings,function(binding){
-        rslt[binding] = jsh.XModels[modelid][binding]();
-      });
+      for(var fieldname in xmodel.bindings){
+        rslt[fieldname] = xmodel.bindings[fieldname]();
+      }
       return rslt;
     };
-    xform_post_<%=model.id%>.GetDeleteParams = function(){
+    xform.GetDeleteParams = function(){
       var rslt = _.extend(this.GetFieldParams('D'), this.GetKeys());
       //Add bindings for GCOD
-      _.each(jsh.XModels[modelid]._bindings,function(binding){
-        if(binding in rslt) rslt[binding] = jsh.XModels[modelid][binding]();
-      });
+      for(var fieldname in xmodel.bindings){
+        if(fieldname in rslt) rslt[fieldname] = xmodel.bindings[fieldname]();
+      }
       return rslt;
     };
     //    return _.extend(this.GetFieldParams('D'), this.GetKeys()); 
-    xform_post_<%=model.id%>.GetKeys = function(){
+    xform.GetKeys = function(){
       var rslt = new Object();
       if(!jsh.is_add){
         <% xejs.eachKey(model.fields,function(field){ if(!field.name) return; %>rslt.<%=field['name']%> = this.Data.<%=field['name']%>;<%}); %>
       }
       else{
-        _.each(jsh.XModels[modelid]._bindings,function(binding){
-          rslt[binding] = '%%%'+binding+'%%%';
-        });
+        for(var fieldname in xmodel.bindings){
+          rslt[fieldname] = '%%%'+fieldname+'%%%';
+        }
       }
       return rslt; 
     };
@@ -259,41 +255,40 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   xcontroller.OnCommit = function(rowid,obj,onsuccess,oncancel){
-    var xpost = jsh.App.xform_post_<%=model.id%>;
-    var dbtasks = xpost.PrepSaveDataSet();
+    var dbtasks = xform.PrepSaveDataSet();
     
-    xpost.ExecuteTrans(dbtasks,function(rslt){
+    xform.ExecuteTrans(dbtasks,function(rslt){
       //On Success
-      jsh.App.xform_<%=model.id%>.Prop.ModifiedSinceLoad = true;
+      xgrid.Prop.ModifiedSinceLoad = true;
       //Merge back results
       if('_success' in rslt){
-        var dbrsltsuffix = '_<%=model.id%>';
+        var dbrsltsuffix = '_'+modelid;
         for(var dbrslt in rslt){
           if(XExt.endsWith(dbrslt,dbrsltsuffix)){
             var taskidx = dbrslt.substr(0,dbrslt.length - dbrsltsuffix.length);
             var dbtaskid = 'insert_'+taskidx;
-            if(dbtaskid in xpost.DBTaskRows){
-              var dbrowid = xpost.DBTaskRows[dbtaskid];
-              xpost.DataSet[dbrowid] = _.extend(xpost.DataSet[xpost.Index], rslt[dbrslt]);
-              if(xpost.Index == dbrowid) xpost.Data = _.extend(xpost.Data, rslt[dbrslt]);
+            if(dbtaskid in xform.DBTaskRows){
+              var dbrowid = xform.DBTaskRows[dbtaskid];
+              xform.DataSet[dbrowid] = _.extend(xform.DataSet[xform.Index], rslt[dbrslt]);
+              if(xform.Index == dbrowid) xform.Data = _.extend(xform.Data, rslt[dbrslt]);
             }
           }
         }
       }
 
-      xpost.ResetDirty();
+      xform.ResetDirty();
 
       //Bind oncommit handler if defined
       var orig_onsuccess = onsuccess;
-      if(jsh.XModels[modelid]._oncommit) onsuccess = function(){ jsh.XModels[modelid]._oncommit(jsh.XModels[modelid], rowid, orig_onsuccess); };
+      if(xmodel.oncommit) onsuccess = function(){ xmodel.oncommit(xmodel, rowid, orig_onsuccess); };
       
-      if(jsh.App.xform_<%=model.id%>.Prop.ReselectAfterEdit) xcontroller.Reselect(rowid,onsuccess);
+      if(xgrid.Prop.ReselectAfterEdit) xcontroller.Reselect(rowid,onsuccess);
       else if(onsuccess) onsuccess();
 
     },function(data){
       //On Fail
-      if(xpost.Data._jrow){
-        $(xpost.Data._jrow).find('.xform_ctrl').addClass(xmodel.datamodel.prototype.xvalidate.ErrorClass);
+      if(xform.Data._jrow){
+        $(xform.Data._jrow).find('.xform_ctrl').addClass(xmodel.datamodel.prototype.xvalidate.ErrorClass);
       }
       if(oncancel) oncancel(false);
       if(data && ('responseText' in data)) XExt.Alert('An error has occurred: ' + data.responseText);
@@ -303,11 +298,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   xcontroller.Reselect = function(rowid,oncomplete,onfail){
-    if(!jsh.App.xgrid_<%=model.id%>) return;
+    if(!xeditablegrid) return;
     if(rowid < 0){ XExt.Alert('Invalid Reselect Row ID'); return; }
-    var _this = jsh.App.xform_post_<%=model.id%>;
+    var _this = xform;
     
-    var xdata = jsh.App.xform_<%=model.id%>;
     if(rowid != _this.Index) if(!_this.SetIndex(rowid,true)) return;
     var reqdata = { rowstart: 0, rowcount: 1, d: JSON.stringify(_this.GetReselectParams()) };
     _this.XExecute(_this.q,reqdata,function(rslt){
@@ -319,7 +313,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           _this.DataSet[rowid]['_is_dirty'] = false;
           _this.DataSet[rowid]['_orig'] = null;
 
-          var ejssource = jsh.$root(xdata.TemplateID).html();
+          var ejssource = jsh.$root(xgrid.TemplateID).html();
           ejssource = ejssource.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
           var ejsrslt = jsh.ejs.render(ejssource, { 
             rowid: rowid, 
@@ -333,12 +327,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
             modelid: modelid,
             js: function(code){ return jsh.XExt.wrapJS(code,modelid); } 
           });
-          var jobj = jsh.$root(xdata.PlaceholderID).find("tr[data-id='" + rowid + "']");
+          var jobj = jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']");
           jobj.replaceWith($(ejsrslt));
-          jobj = jsh.$root(xdata.PlaceholderID).find("tr[data-id='" + rowid + "']");
+          jobj = jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']");
           _this.SetIndex(rowid,false);
           _this.Render();
-          xdata.OnRowBind(jobj);
+          xgrid.OnRowBind(jobj);
         }
         if(oncomplete) oncomplete();
       }
@@ -352,54 +346,50 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 
   xcontroller.ResetRow = function(rowid){
-    if(!jsh.App.xgrid_<%=model.id%>) return;
-    var xpost = jsh.App.xform_post_<%=model.id%>;
-    var xdata = jsh.App.xform_<%=model.id%>;
+    if(!xeditablegrid) return;
 
     var oldrowid = -1;
-    var oldobj = jsh.App.xgrid_<%=model.id%>.CurrentCell;
+    var oldobj = xeditablegrid.CurrentCell;
     if(oldobj) oldrowid = XExt.XModel.GetRowID(modelid,oldobj);
 
     //Get Data, if data is new, delete row from both grid and ...
-    if(xpost.DataSet[rowid]._is_new) return xcontroller.DeleteRow(rowid);
+    if(xform.DataSet[rowid]._is_new) return xcontroller.DeleteRow(rowid);
     //If HasChanges
     if(oldrowid == rowid){ 
-      if(xpost.Data._orig != null)      xpost.Data = _.extend(xpost.Data, xpost.Data._orig);
-      xpost.Data._orig = null;
-      xpost.Data._is_dirty = false;
-      xpost.DataSet[rowid] = _.extend(xpost.DataSet[rowid], xpost.Data);
-      xpost.Render();
+      if(xform.Data._orig != null)      xform.Data = _.extend(xform.Data, xform.Data._orig);
+      xform.Data._orig = null;
+      xform.Data._is_dirty = false;
+      xform.DataSet[rowid] = _.extend(xform.DataSet[rowid], xform.Data);
+      xform.Render();
     }
     else{
-      if(xpost.DataSet[rowid]._orig != null){
+      if(xform.DataSet[rowid]._orig != null){
 
       }
     }
-    xpost.RecheckDirty();
+    xform.RecheckDirty();
 
     //Undo Changes
     //
   }
 
   xcontroller.AddRow = function(){
-    if(!jsh.App.xgrid_<%=model.id%>) return;
-    var xpost = jsh.App.xform_post_<%=model.id%>;
-    var xdata = jsh.App.xform_<%=model.id%>;
-    if(jsh.App.xgrid_<%=model.id%>.CurrentCell) if(!xpost.CommitRow()) return;
+    if(!xeditablegrid) return;
+    if(xeditablegrid.CurrentCell) if(!xform.CommitRow()) return;
     //Save parent and other items before adding, if commitlevel is row or cell
-    if(jsh.App.xgrid_<%=model.id%>.SaveBeforeUpdate && ((jsh.XModels[modelid]._commitlevel == 'row') || (jsh.XModels[modelid]._commitlevel == 'cell'))){
+    if(xeditablegrid.SaveBeforeUpdate && ((xmodel.commitlevel == 'row') || (xmodel.commitlevel == 'cell'))){
       if (jsh.XPage.GetChanges().length > 0) { return XExt.Alert('Please save all changes before adding a row.'); }
     }
     
-    var newrow = xpost.NewRow();
+    var newrow = xform.NewRow();
     
-    xdata.RowCount++;
-    var rowid = xdata.RowCount-1;
-    jsh.App.xform_<%=model.id%>.Prop.ModifiedSinceLoad = true;
+    xgrid.RowCount++;
+    var rowid = xgrid.RowCount-1;
+    xgrid.Prop.ModifiedSinceLoad = true;
     
     var ejssource = "";
-    if (xdata.TemplateHTMLFunc != null) ejssource = xdata.TemplateHTMLFunc(data, xdata.RowCount);
-    else ejssource = jsh.$root(xdata.TemplateID).html();
+    if (xgrid.TemplateHTMLFunc != null) ejssource = xgrid.TemplateHTMLFunc(data, xgrid.RowCount);
+    else ejssource = jsh.$root(xgrid.TemplateID).html();
     ejssource = ejssource.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
     var ejsrslt = jsh.ejs.render(ejssource, {
       rowid: rowid,
@@ -415,93 +405,89 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     });
 
     var jobj;
-    if(jsh.$root(xdata.PlaceholderID).find('tr.xtbl_noresults').length){ jsh.$root(xdata.PlaceholderID).find('tr.xtbl_noresults').remove(); }
-    if(xdata.Prop.NewRowPosition=='first'){
-      jobj = $(ejsrslt).prependTo(jsh.$root(xdata.PlaceholderID));
+    if(jsh.$root(xgrid.PlaceholderID).find('tr.xtbl_noresults').length){ jsh.$root(xgrid.PlaceholderID).find('tr.xtbl_noresults').remove(); }
+    if(xgrid.Prop.NewRowPosition=='first'){
+      jobj = $(ejsrslt).prependTo(jsh.$root(xgrid.PlaceholderID));
     }
-    else if(jsh.$root(xdata.PlaceholderID).find('.xtbl_loadmore').length){
+    else if(jsh.$root(xgrid.PlaceholderID).find('.xtbl_loadmore').length){
       //Prepend
-      jobj = $(ejsrslt).insertBefore(jsh.$root(xdata.PlaceholderID).find('.xtbl_loadmore'));
+      jobj = $(ejsrslt).insertBefore(jsh.$root(xgrid.PlaceholderID).find('.xtbl_loadmore'));
     }
     else {
-      jobj = $(ejsrslt).appendTo(jsh.$root(xdata.PlaceholderID));
+      jobj = $(ejsrslt).appendTo(jsh.$root(xgrid.PlaceholderID));
     }
 
-    var oldindex = xpost.Index;
-    xpost.NavTo(rowid,false);
+    var oldindex = xform.Index;
+    xform.NavTo(rowid,false);
     var newobj = $(jobj).find('.xform_ctrl.editable:visible').not('input[type=hidden]').first();
     newobj.focus();
-    if(xdata.OnRowBind) xdata.OnRowBind(jobj);
-    jsh.App.xgrid_<%=model.id%>.CurrentCell = document.activeElement;
+    if(xgrid.OnRowBind) xgrid.OnRowBind(jobj);
+    xeditablegrid.CurrentCell = document.activeElement;
     newobj.focus();
     return rowid;
   }
 
   xcontroller.DuplicateRow = function(dmodelid, rowid, obj, bindings){
-    var xpost = jsh.App.xform_post_<%=model.id%>;
     if(jsh.XPage.HasUpdates()){ XExt.Alert('Please save changes before duplicating.'); return false; }
-    var rowdata = xpost.DataSet[rowid];
+    var rowdata = xform.DataSet[rowid];
     for(var binding in bindings){
       if(binding in rowdata){
         jsh.XModels[dmodelid][binding] = function(){ return rowdata[binding]; };
       }
     }
-    XExt.popupShow(dmodelid,'<%=model.id%>_duplicate','Duplicate <%=model.caption[1]%>',undefined,obj);
+    XExt.popupShow(dmodelid,xmodel.class+'_duplicate','Duplicate <%=model.caption[1]%>',undefined,obj);
     return false;
   }
 
   xcontroller.DeleteRow = function(rowid){
-    if(!jsh.App.xgrid_<%=model.id%>) return;
+    if(!xeditablegrid) return;
     XExt.Confirm("Are you sure you want to delete this <%=model.caption[1]%>?",function(){
-      var xpost = jsh.App.xform_post_<%=model.id%>;
-      var xdata = jsh.App.xform_<%=model.id%>;
-
       var oldrowid = -1;
-      var oldobj = jsh.App.xgrid_<%=model.id%>.CurrentCell;
+      var oldobj = xeditablegrid.CurrentCell;
       if(oldobj) oldrowid = XExt.XModel.GetRowID(modelid,oldobj);
 
-      if(oldrowid != rowid) if(!xpost.CommitRow()) return;
+      if(oldrowid != rowid) if(!xform.CommitRow()) return;
     
       var exec_delete = function(){
-        jsh.App.xform_<%=model.id%>.Prop.ModifiedSinceLoad = true;
-        xpost.DataSet[rowid]._is_deleted = true;
-        xpost.DataSet[rowid]._is_new = false;
-        xpost.DataSet[rowid]._is_dirty = false;
-        xpost.DataSet[rowid]._orig = null;
-        jsh.$root(xdata.PlaceholderID).find("tr[data-id='" + rowid + "']").remove();
-        jsh.App.xgrid_<%=model.id%>.CurrentCell = null;
-        if(xpost.Index==rowid){ 
-          xpost.Data._is_new = false;
-          xpost.Data._is_dirty = false;
-          xpost.Data._orig = null;
-          xpost.Index = -1;
-          for(var i=0;i<xpost.Count();i++){
-            if(!xpost.DataSet[i]._is_deleted){ 
-              xpost.SetIndex(i,false);
+        xgrid.Prop.ModifiedSinceLoad = true;
+        xform.DataSet[rowid]._is_deleted = true;
+        xform.DataSet[rowid]._is_new = false;
+        xform.DataSet[rowid]._is_dirty = false;
+        xform.DataSet[rowid]._orig = null;
+        jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']").remove();
+        xeditablegrid.CurrentCell = null;
+        if(xform.Index==rowid){ 
+          xform.Data._is_new = false;
+          xform.Data._is_dirty = false;
+          xform.Data._orig = null;
+          xform.Index = -1;
+          for(var i=0;i<xform.Count();i++){
+            if(!xform.DataSet[i]._is_deleted){ 
+              xform.SetIndex(i,false);
               break;
             }
           }
         }
-        xpost.RecheckDirty();
+        xform.RecheckDirty();
       }
 
-      if(!(xpost.DataSet[rowid]._is_new)){
-        if(!(xpost.DataSet[rowid] in xpost.DeleteSet)) xpost.DeleteSet.push(xpost.DataSet[rowid]);
+      if(!(xform.DataSet[rowid]._is_new)){
+        if(!(xform.DataSet[rowid] in xform.DeleteSet)) xform.DeleteSet.push(xform.DataSet[rowid]);
 
-        if(jsh.XModels[modelid]._commitlevel == 'page'){
+        if(xmodel.commitlevel == 'page'){
           exec_delete();
         }
         else{
-          var dbtasks = xpost.PrepSaveDataSet(true);
-          xpost.ExecuteTrans(dbtasks,function(rslt){
+          var dbtasks = xform.PrepSaveDataSet(true);
+          xform.ExecuteTrans(dbtasks,function(rslt){
             //On Complete
             exec_delete();
-            xpost.ResetDirty();
-        if(jsh.XModels[modelid]._oncommit) jsh.XModels[modelid]._oncommit(jsh.XModels[modelid], -1, function(){});
+            xform.ResetDirty();
+        if(xmodel.oncommit) xmodel.oncommit(xmodel, -1, function(){});
           },function(data){
             //On Fail
-            _.remove(xpost.DeleteSet,xpost.DataSet[rowid]);
-            xpost.RecheckDirty();
+            _.remove(xform.DeleteSet,xform.DataSet[rowid]);
+            xform.RecheckDirty();
             if(data && ('responseText' in data)) XExt.Alert('An error has occurred: ' + data.responseText);
             return true; //Error handled
           });
@@ -512,47 +498,47 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   xcontroller.Save = function(){
-    if((jsh.XModels[modelid]._commitlevel == 'cell') ||
-      (jsh.XModels[modelid]._commitlevel == 'row') ||
-      (jsh.XModels[modelid]._commitlevel == 'page'))
-      return jsh.App.xform_post_<%=model.id%>.PrepSaveDataSet();
+    if((xmodel.commitlevel == 'cell') ||
+      (xmodel.commitlevel == 'row') ||
+      (xmodel.commitlevel == 'page'))
+      return xform.PrepSaveDataSet();
     return [];
   }
 
   xcontroller.GetState = function(){
-    return jsh.App.xform_<%=model.id%>.State;
+    return xgrid.State;
   }
 
   xcontroller.LoadState = function(state){
     if('Sort' in state){
-      jsh.App.xform_<%=model.id%>.State.Sort = state.Sort;
-      jsh.App.xform_<%=model.id%>.Sort = state.Sort;
-      jsh.App.xform_<%=model.id%>.ResetSortGlyphs(jsh.$root('.xform<%=model.id%>'));
+      xgrid.State.Sort = state.Sort;
+      xgrid.Sort = state.Sort;
+      xgrid.ResetSortGlyphs(jsh.$root('.xform'+xmodel.class));
     }
     if('Search' in state){
-      jsh.App.xform_<%=model.id%>.State.Search = state.Search;
+      xgrid.State.Search = state.Search;
       xfilter.Data.Items = state.Search;
       xfilter.Render();
-      jsh.App.xform_<%=model.id%>.SearchJSON = JSON.stringify(state.Search);
+      xgrid.SearchJSON = JSON.stringify(state.Search);
     }
   }
 
   xcontroller.Refresh = function(){
     if(jsh.XPage.onGridExit(null,function(){ xcontroller.Refresh(); })) return;
-    jsh.App.xform_<%=model.id%>.Load();
+    xgrid.Load();
   }
 
   xcontroller.Sort = function(obj,fieldname){
-    if(!jsh.App.xform_<%=model.id%>.Prop.isInlinePopup) if(jsh.XPage.onGridExit(obj,function(){ xcontroller.Sort(obj,fieldname); })) return;
-    jsh.App.xform_<%=model.id%>.AddSort(obj,fieldname);
-    jsh.App.xform_<%=model.id%>.State.Sort = jsh.App.xform_<%=model.id%>.Sort;
+    if(!xgrid.Prop.isInlinePopup) if(jsh.XPage.onGridExit(obj,function(){ xcontroller.Sort(obj,fieldname); })) return;
+    xgrid.AddSort(obj,fieldname);
+    xgrid.State.Sort = xgrid.Sort;
     jsh.XPage.AddHistory();
     return false;
   }
 
   xcontroller.HasSearchItems = function(val){
     var rslt = false;
-    if(typeof val == 'undefined') val = jsh.App.xform_<%=model.id%>.SearchJSON;
+    if(typeof val == 'undefined') val = xgrid.SearchJSON;
     if(val.trim() != ''){
       var sjson = JSON.parse(val);
       _.each(sjson,function(squery){
@@ -588,26 +574,26 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   xcontroller.FilterExpand = function(timeout){
-    if(jsh.$root('.xfilter_'+modelclass).is(':visible')) return;
+    if(jsh.$root('.xfilter_'+xmodel.class).is(':visible')) return;
     if(xfilter.Data.Items.length == 0){
       xcontroller.FilterAdd();
-      jsh.$root('.xfilter_'+modelclass).slideDown(timeout,function(){ jsh.$root('.xfilter_'+modelclass+' .xfilter_value').first().select().focus(); });
+      jsh.$root('.xfilter_'+xmodel.class).slideDown(timeout,function(){ jsh.$root('.xfilter_'+xmodel.class+' .xfilter_value').first().select().focus(); });
     }
     else {
-      jsh.$root('.xfilter_'+modelclass).slideDown(timeout,function(){ jsh.$root('.xfilter_'+modelclass+' .xfilter_value').first().select().focus(); });
+      jsh.$root('.xfilter_'+xmodel.class).slideDown(timeout,function(){ jsh.$root('.xfilter_'+xmodel.class+' .xfilter_value').first().select().focus(); });
     }
   }
 
   xcontroller.FilterButton = function(){
-    if(jsh.$root('.xfilterbutton'+modelclass+' span').html()=='Remove Filter'){
+    if(jsh.$root('.xfilterbutton'+xmodel.class+' span').html()=='Remove Filter'){
       xfilter.Data.Items = [];
       xfilter.Render();
-      jsh.$root('.xfilter_'+modelclass).hide();
+      jsh.$root('.xfilter_'+xmodel.class).hide();
       xcontroller.FilterExpand(400);
       xcontroller.FilterApply();
     }
     else{
-      if(jsh.$root('.xfilter_'+modelclass).is(':visible')) jsh.$root('.xfilter_'+modelclass).slideUp();
+      if(jsh.$root('.xfilter_'+xmodel.class).is(':visible')) jsh.$root('.xfilter_'+xmodel.class).slideUp();
       else xcontroller.FilterExpand(400);
     }
   }
@@ -617,15 +603,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   xcontroller.SetFilter = function(searchitems,hide){
-    if(hide) jsh.$root('.xfilter_'+modelclass).hide();
+    if(hide) jsh.$root('.xfilter_'+xmodel.class).hide();
     xfilter.Data.Items = searchitems;
     xfilter.Render();
-    jsh.App.xform_<%=model.id%>.State.Search = searchitems;
-    jsh.App.xform_<%=model.id%>.SearchJSON = JSON.stringify(searchitems);
+    xgrid.State.Search = searchitems;
+    xgrid.SearchJSON = JSON.stringify(searchitems);
   }
 
   xcontroller.FilterApply = function(cb){
-    if(!jsh.App.xform_<%=model.id%>.Prop.isInlinePopup) if(jsh.XPage.onGridExit(null,function(){ xcontroller.FilterApply(); })) return;
+    if(!xgrid.Prop.isInlinePopup) if(jsh.XPage.onGridExit(null,function(){ xcontroller.FilterApply(); })) return;
     xfilter.GetValues();
     var searchitems = JSON.parse(JSON.stringify(xfilter.Data.Items));
     var has_search_items = false;
@@ -638,9 +624,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if(has_search_items){ 
       sjson = JSON.stringify(searchitems);
     }
-    jsh.App.xform_<%=model.id%>.State.Search = searchitems;
+    xgrid.State.Search = searchitems;
     jsh.XPage.AddHistory();
-    jsh.App.xform_<%=model.id%>.NewSearchJSON(sjson, cb);
+    xgrid.NewSearchJSON(sjson, cb);
   }
 
   xcontroller.FilterAdd = function(){
@@ -657,8 +643,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   xcontroller.Export = function(){
-    if(!jsh.App.xform_<%=model.id%>.Prop.isInlinePopup) if(jsh.XPage.onGridExit(null,function(){ xcontroller.Export(); })) return;
-    jsh.App.xform_<%=model.id%>.Load(0,0,function(url){
+    if(!xgrid.Prop.isInlinePopup) if(jsh.XPage.onGridExit(null,function(){ xcontroller.Export(); })) return;
+    xgrid.Load(0,0,function(url){
       jsh.getFileProxy().prop('src', url);
     },true);
   }
@@ -667,16 +653,16 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var has_search_items = xcontroller.HasSearchItems(this.SearchJSON);
     var txt = '(';
     if(has_search_items) txt += 'filtered';
-    if(jsh.App.xform_<%=model.id%>.DBRowCount >= 0) txt += ((txt=='(')?'':' - ') + jsh.App.xform_<%=model.id%>.DBRowCount.toLocaleString() + ' rows';
+    if(xgrid.DBRowCount >= 0) txt += ((txt=='(')?'':' - ') + xgrid.DBRowCount.toLocaleString() + ' rows';
     if(txt == '(') txt = '';
     else txt += ')';
     if(txt){
-      jsh.$root('.xtitlecaption<%=model.id%>').show();
+      jsh.$root('.xtitlecaption'+xmodel.class).show();
     }
     else {
-      jsh.$root('.xtitlecaption<%=model.id%>').hide();
+      jsh.$root('.xtitlecaption'+xmodel.class).hide();
     }
-    jsh.$root('.xtitlecaption<%=model.id%> a').text(txt);
+    jsh.$root('.xtitlecaption'+xmodel.class+' a').text(txt);
   }
 
 })(<%-instance%>);

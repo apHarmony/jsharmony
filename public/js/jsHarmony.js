@@ -5797,12 +5797,12 @@ exports = module.exports = function(jsh){
   XEditableGrid.prototype.BindRow = function (jobj) {
     var _this = this;
     var modelid = _this.modelid;
-    var xform = (modelid ? jsh.App['XDatamodel'+modelid] : null);
-    var xfields = (xform ? xform.prototype.Fields : []);
-    jobj.find('.xelem' + this.modelid).not('.xelem' + this.modelid + '.checkbox').keyup(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
-    jobj.find('.xelem' + this.modelid).change(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
-    jobj.find('.xelem' + this.modelid + '.checkbox').click(function (e) { if (!$(this).hasClass('editable')) return; return _this.CheckboxUpdate(this, e); });
-    jobj.find('.xelem' + this.modelid + '.datepicker').each(function () {
+    var xmodel = (modelid? jsh.XModels[modelid] : null);
+    var xfields = (xmodel ? xmodel.datamodel.prototype.Fields : []);
+    jobj.find('.xelem' + xmodel.class).not('.xelem' + xmodel.class + '.checkbox').keyup(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
+    jobj.find('.xelem' + xmodel.class).change(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
+    jobj.find('.xelem' + xmodel.class + '.checkbox').click(function (e) { if (!$(this).hasClass('editable')) return; return _this.CheckboxUpdate(this, e); });
+    jobj.find('.xelem' + xmodel.class + '.datepicker').each(function () {
       if (!$(this).hasClass('editable')) return;
       var ctrl = this;
       var dateformat = jsh.DEFAULT_DATEFORMAT;
@@ -5818,8 +5818,8 @@ exports = module.exports = function(jsh){
         }
       });
     });
-    jobj.find('.xelem' + this.modelid).not('.xelem' + this.modelid + '.checkbox').focus(function (e) { if (jsh.xDialog.length) return; if (!$(this).hasClass('editable')) return; return _this.ControlEnter(this, e); });
-    jobj.find('.xelem' + this.modelid + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e) })
+    jobj.find('.xelem' + xmodel.class).not('.xelem' + xmodel.class + '.checkbox').focus(function (e) { if (jsh.xDialog.length) return; if (!$(this).hasClass('editable')) return; return _this.ControlEnter(this, e); });
+    jobj.find('.xelem' + xmodel.class + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e) })
     jobj.find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; if (jsh.xDialog.length) return; if (!$(ctrl).hasClass('editable')) return; return _this.ControlEnter(ctrl, e); });
   }
 
@@ -5864,29 +5864,30 @@ exports = module.exports = function(jsh){
 
   XExtXModel.OnRender = function (modelid) {
     return function(){
-      var _this = this;
+      var _this = this; //datamodel
       var parentobj = jsh.root;
       if (this._jrow) parentobj = this._jrow;
-      var isGrid = (jsh.XModels[modelid]._layout == 'grid');
+      var xmodel = jsh.XModels[modelid];
+      var isGrid = (xmodel.layout == 'grid');
       //Clear highlighted background of currently edited cells
-      parentobj.find('.xelem'+modelid+'.xform_ctrl').removeClass('updated');
+      parentobj.find('.xelem'+xmodel.class+'.xform_ctrl').removeClass('updated');
       
-      if (jsh.XModels[modelid]._layout == 'form-m') {
-        if (jsh.App['xform_'+modelid].Count()==0) {
-          jsh.$root('.xelem'+modelid+'.xnorecords').show();
-          jsh.$root('.xelem'+modelid+'.xformcontainer').css('visibility', 'hidden');
+      if (xmodel.layout == 'form-m') {
+        if (xmodel.controller.form.Count()==0) {
+          jsh.$root('.xelem'+xmodel.class+'.xnorecords').show();
+          jsh.$root('.xelem'+xmodel.class+'.xformcontainer').css('visibility', 'hidden');
         }
         else {
-          jsh.$root('.xelem'+modelid+'.xnorecords').hide();
-          jsh.$root('.xelem'+modelid+'.xformcontainer').css('visibility', 'visible');
+          jsh.$root('.xelem'+xmodel.class+'.xnorecords').hide();
+          jsh.$root('.xelem'+xmodel.class+'.xformcontainer').css('visibility', 'visible');
         }
       }
     
       //Set List of Values
       if ('_LOVs' in this) {
         for (var _LOV in this._LOVs) {
-          var lovselector = '.' + _LOV + '.xelem' + modelid;
-          if (isGrid) lovselector = '.' + _LOV + '.xelem' + modelid;
+          var lovselector = '.' + _LOV + '.xelem' + xmodel.class;
+          if (isGrid) lovselector = '.' + _LOV + '.xelem' + xmodel.class;
           var ctrl = parentobj.find(lovselector);
           if (('control' in this.Fields[_LOV]) && (this.Fields[_LOV].control == 'tree'))
             jsh.XExt.TreeRender(ctrl, this._LOVs[_LOV], this.Fields[_LOV]);
@@ -5907,8 +5908,8 @@ exports = module.exports = function(jsh){
       _.each(this.Fields, function (field) {
         XExtXModel.RenderField(_this, parentobj, modelid, field);
       });
-      if (jsh.XModels[modelid]._layout == 'form-m') {
-        jsh.$root('.navtext_' + modelid).html((jsh.App['xform_' + modelid].Index + 1) + ' of ' + jsh.App['xform_' + modelid].Count());
+      if (xmodel.layout == 'form-m') {
+        jsh.$root('.navtext_' + xmodel.class).html((xmodel.controller.form.Index + 1) + ' of ' + xmodel.controller.form.Count());
       }
     };
   };
@@ -5928,7 +5929,8 @@ exports = module.exports = function(jsh){
   }
 
   XExtXModel.RenderField = function (_this, parentobj, modelid, field, val){
-    var isGrid = (jsh.XModels[modelid]._layout == 'grid');
+    var xmodel = jsh.XModels[modelid];
+    var isGrid = (xmodel.layout == 'grid');
     if(typeof val === 'undefined') val = _this[field.name];
     //Apply formatting
     if ((field.name in _this) && (typeof val == 'undefined')) val = '';
@@ -5944,13 +5946,13 @@ exports = module.exports = function(jsh){
       else lovTxt = jsh.XFormat.Apply(field.format, lovTxt);
     }
     
-    var fieldselector = '.' + field.name + '.xelem' + modelid;
-    if (isGrid) fieldselector = '.' + field.name + '.xelem' + modelid;
+    var fieldselector = '.' + field.name + '.xelem' + xmodel.class;
+    if (isGrid) fieldselector = '.' + field.name + '.xelem' + xmodel.class;
     var jctrl = parentobj.find(fieldselector);
     if (('control' in field) && (field.control == 'file_upload')) {
       //Show "Upload File" always
-      var filefieldselector = '.xelem' + modelid + ' .' + field.name;
-      if (isGrid) filefieldselector = '.xelem' + modelid + ' .' + field.name;
+      var filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
+      if (isGrid) filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
       var jctrl_download = parentobj.find(filefieldselector + '_download');
       var jctrl_upload = parentobj.find(filefieldselector + '_upload');
       var jctrl_delete = parentobj.find(filefieldselector + '_delete');
@@ -5968,9 +5970,9 @@ exports = module.exports = function(jsh){
         jctrl_dbexists.val('1');
         //Set thumbnail
         if (jctrl_thumbnail.length && field.controlparams.thumbnail_width) {
-          var keys = jsh.App['xform_' + modelid].GetKeys();
-          if (jsh.XModels[modelid]._keys.length != 1) { throw new Error('File models require one key.'); }
-          var thumb_url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[jsh.XModels[modelid]._keys[0]] + '/' + field.name + '?view=1&thumb=1&_=' + (new Date().getTime());
+          var keys = xmodel.controller.form.GetKeys();
+          if (xmodel.keys.length != 1) { throw new Error('File models require one key.'); }
+          var thumb_url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field.name + '?view=1&thumb=1&_=' + (new Date().getTime());
           jctrl_thumbnail.attr('src', thumb_url).show();
           jctrl_thumbnail.attr('width', field.controlparams.thumbnail_width + 'px');
         }
@@ -6067,9 +6069,9 @@ exports = module.exports = function(jsh){
     var show_lookup_when_readonly = false;
 
     var access = (_this._is_new?'I':'U');
-    if (jsh.XModels[modelid]._layout=='exec') access = 'B';
+    if (xmodel.layout=='exec') access = 'B';
     var is_editable = jsh.XExt.HasAccess(field.actions, access);
-    if (is_editable && field.always_editable_on_insert && ((access == 'I') || (jsh.XModels[modelid]._layout=='exec'))){ }
+    if (is_editable && field.always_editable_on_insert && ((access == 'I') || (xmodel.layout=='exec'))){ }
     else {
       if (is_editable && ('readonly' in field) && (field.readonly == 1)) is_editable = false;
       if (_this._readonly && _.includes(_this._readonly, field.name)) is_editable = false;
@@ -6127,15 +6129,16 @@ exports = module.exports = function(jsh){
       var _this = this;
       var parentobj = jsh.root;
       if (this._jrow) parentobj = this._jrow;
-      var isGrid = (jsh.XModels[modelid]._layout == 'grid');
+      var xmodel = jsh.XModels[modelid];
+      var isGrid = (xmodel.layout == 'grid');
       
-      var fieldselector = '.' + field.name + '.xelem' + modelid;
-      if (isGrid) fieldselector = '.' + field.name + '.xelem' + modelid;
+      var fieldselector = '.' + field.name + '.xelem' + xmodel.class;
+      if (isGrid) fieldselector = '.' + field.name + '.xelem' + xmodel.class;
       var jctrl = parentobj.find(fieldselector);
 
       if (('control' in field) && (field.control == 'file_upload')) {
-        var filefieldselector = '.xelem' + modelid + ' .' + field.name;
-        if (isGrid) filefieldselector = '.xelem' + modelid + ' .' + field.name;
+        var filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
+        if (isGrid) filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
 
         var jctrl_token = parentobj.find(filefieldselector + '_token');
         var jctrl_dbdelete = parentobj.find(filefieldselector + '_dbdelete');
@@ -6175,13 +6178,12 @@ exports = module.exports = function(jsh){
         val = jsh.XExt.ReplaceAll(val, '&quot;', '"');
       }
       //If field is in bindings
-      var xform = jsh.XModels[modelid];
-      if (('_bindings' in xform) && (_.includes(xform._bindings, field.name))) {
-        val = xform[field.name]();
+      if (xmodel.bindings && (field.name in xmodel.bindings)) {
+        val = xmodel.bindings[field.name]();
       }
       if ('static' in field) {
         if (field.static.indexOf('js:') == 0) {
-          val = jsh.XExt.JSEval(field.static.substr(3),this,{ xform: xform, modelid: modelid });
+          val = jsh.XExt.JSEval(field.static.substr(3),this,{ xmodel: xmodel, modelid: modelid });
         }
         else val = field.static;
       }
@@ -6201,7 +6203,7 @@ exports = module.exports = function(jsh){
 
   XExtXModel.HasUpdates = function () {
     return function () {
-      if (jsh.XModels[this._modelid]._layout=='exec') return false;
+      if (jsh.XModels[this._modelid].layout=='exec') return false;
       var _this = this;
       if (this._is_new) { return true; }
       var access = (this._is_new?'I':'U');
@@ -6216,7 +6218,7 @@ exports = module.exports = function(jsh){
 
   XExtXModel.HasUpdate = function () {
     return function (id) {
-      if (jsh.XModels[this._modelid]._layout=='exec') return false;
+      if (jsh.XModels[this._modelid].layout=='exec') return false;
       var field = this.Fields[id];
       if (('virtual' in field) && field.virtual) return false;
       if (('static' in field) && field.static) return false;
@@ -6234,18 +6236,18 @@ exports = module.exports = function(jsh){
     };
   };
 
-  XExtXModel.Commit = function (modelid,xpostid) {
+  XExtXModel.Commit = function (xmodel) {
     return function (perm) {
       var _this = this;
       var parentobj = jsh.root;
       if (this._jrow) parentobj = this._jrow;
-      if ((jsh.XModels[modelid]._layout == 'form-m') || (jsh.XModels[modelid]._layout == 'grid')) {
-        if (jsh.App[xpostid].Count()==0) return true;
+      if ((xmodel.layout == 'form-m') || (xmodel.layout == 'grid')) {
+        if (xmodel.controller.form.Count()==0) return true;
       }
       //_is_new at record-level
       var _this = this;
       var access = (this._is_new?'I':'U');
-      if (jsh.XModels[modelid]._layout=='exec') access = 'B';
+      if (xmodel.layout=='exec') access = 'B';
       if (this.HasUpdates()) {
         if (!this._is_dirty) {
           //Clone Data to Orig
@@ -6254,10 +6256,10 @@ exports = module.exports = function(jsh){
         }
       }
       this.GetValues(access);
-      var _xvalidate = jsh.App['XDatamodel' + modelid].prototype.xvalidate;
+      var _xvalidate = xmodel.datamodel.prototype.xvalidate;
       if (_xvalidate) {
         this.xvalidate = _xvalidate;
-        var valid = jsh.App[xpostid].Validate(access);
+        var valid = xmodel.controller.form.Validate(access);
         delete this.xvalidate;
         if (!valid) return false;
       }
@@ -6287,7 +6289,8 @@ exports = module.exports = function(jsh){
   XExtXModel.BindLOV = function (modelid) {
     return function (xform, parentobj) {
       if (!parentobj) parentobj = jsh.root;
-      var isGrid = (jsh.XModels[modelid]._layout == 'grid');
+      var xmodel = jsh.XModels[modelid];
+      var isGrid = (xmodel.layout == 'grid');
       _.each(this.Fields, function (field) {
         if (!('control' in field)) return; if (field.control == 'subform') return;
         if (field.control == 'dropdown') {
@@ -6299,14 +6302,14 @@ exports = module.exports = function(jsh){
           if (lovparents.length == 0) return;
           var lovparents_val = '';
           for (var i = 0; i < lovparents.length; i++) {
-            var curselector = (isGrid?'.':'.') + lovparents[i] + '.xelem' + modelid;
+            var curselector = (isGrid?'.':'.') + lovparents[i] + '.xelem' + xmodel.class;
             lovparents_selector += ((i > 0)?',':'') + curselector;
             lovparents_val += 'parentvals.push(parentobj.find("' + curselector + '").val()); ';
           }
           parentobj.find(lovparents_selector).change(function (evt) {
             var parentvals = [];
             //Narrow value of child LOV to values where CODVAL1 = that value
-            var ctrl = parentobj.find((isGrid?'.':'.') + field.name + '.xelem' + modelid);
+            var ctrl = parentobj.find((isGrid?'.':'.') + field.name + '.xelem' + xmodel.class);
             jsh.XExt.JSEval(lovparents_val,this,{ parentvals: parentvals, parentobj: parentobj, xform: xform, modelid: modelid });
             jsh.XExt.RenderParentLOV(xform.Data, ctrl, parentvals, xform.Data._LOVs[field.name], xform.Data.Fields[field.name], ('lovparents' in field));
           });
@@ -6323,6 +6326,42 @@ exports = module.exports = function(jsh){
         xformdata._readonly.push(fname);
       }
     }  
+  }
+
+  XExtXModel.XController = function(xmodel){
+    this.xmodel = xmodel;
+    this.form = undefined;
+    this.grid = undefined;
+  }
+
+  XExtXModel.XController.prototype.Select = function(onDone){
+    if(this.grid) return this.grid.Select(onDone);
+    else if(this.form) return this.form.Select(onDone);
+  }
+
+  XExtXModel.XController.prototype.HasUpdates = function(){
+    if(this.grid) return this.grid.HasUpdates();
+    else if(this.form) return this.form.HasUpdates();
+  }
+
+  XExtXModel.XController.prototype.HasBreadCrumbs = function(){
+    if(this.grid) return ('bcrumbs' in this.grid);
+    else if(this.form) return ('bcrumbs' in this.form);
+  }
+
+  XExtXModel.XController.prototype.GetBreadCrumbs = function(){
+    if(this.grid) return this.grid.bcrumbs;
+    else if(this.form) return this.form.bcrumbs;
+  }
+
+  XExtXModel.XController.prototype.HasTitle = function(){
+    if(this.grid) return ('title' in this.grid);
+    else if(this.form) return ('title' in this.form);
+  }
+
+  XExtXModel.XController.prototype.GetTitle = function(){
+    if(this.grid) return this.grid.title;
+    else if(this.form) return this.form.title;
   }
 
   return XExtXModel;
@@ -6612,7 +6651,9 @@ exports = module.exports = function(jsh){
   };
 
   XExt.hideTab = function (modelid, tabname) {
-    jsh.$root('.xtab' + modelid).each(function (i, obj) {
+    var modelclass = modelid;
+    if(modelid in jsh.XModels) modelclass = jsh.XModels[modelid].class;
+    jsh.$root('.xtab' + modelclass).each(function (i, obj) {
       var jobj = $(obj);
       if (jobj.html() == tabname) jobj.hide();
     });
@@ -6829,14 +6870,15 @@ exports = module.exports = function(jsh){
     if (window.opener) {
       var pjsh = window.opener[jsh.getInstance()];
       var hasCapabilities = true;
+      if(!pjsh.XPage) return;
       if(capabilities) _.each(capabilities, function(capability){
-        if(!pjsh[capability]) hasCapabilities = false;
+        if(!pjsh.XPage[capability]) hasCapabilities = false;
       });
       if(hasCapabilities) return pjsh;
     }
   }
   XExt.notifyPopupComplete = function (id, rslt) {
-    var jshOpener = XExt.getOpenerJSH(['XPage.PopupComplete']);
+    var jshOpener = XExt.getOpenerJSH(['PopupComplete']);
     if (jshOpener) {
       jshOpener.XPage.PopupComplete(id, rslt);
     }
@@ -7411,10 +7453,16 @@ exports = module.exports = function(jsh){
   XExt.popupShow = function (modelid, fieldid, title, parentobj, obj, options) {
     if (typeof options == 'undefined') options = {};
     var parentmodelid = $(obj).data('model');
+    var parentmodelclass = parentmodelid;
     var parentfield = null;
-    if (parentmodelid) parentfield = jsh.App['XDatamodel' + parentmodelid].prototype.Fields[fieldid];
-    if (!parentobj) parentobj = jsh.$root('.' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelid);
+    if (parentmodelid){
+      var parentmodel = jsh.XModels[parentmodelid];
+      parentfield = parentmodel.datamodel.prototype.Fields[fieldid];
+      parentmodelclass = parentmodel.class;
+    }
+    if (!parentobj) parentobj = jsh.$root('.' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelclass);
     var numOpens = 0;
+    var xmodel = jsh.XModels[modelid];
     
     popupData[modelid] = {};
     XExt.execif(parentfield && parentfield.controlparams && parentfield.controlparams.onpopup,
@@ -7422,26 +7470,26 @@ exports = module.exports = function(jsh){
       function () {
       var codeval = $(obj).data('codeval');
       if (codeval) popupData[modelid].codeval = codeval;
-      var xdata = jsh.App['xform_' + modelid];
-      xdata.RowCount = 0;
-      if (xdata.Prop) xdata.Prop.Enabled = true;
-      jsh.$root(xdata.PlaceholderID).html('');
+      var xgrid = xmodel.controller.grid;
+      xgrid.RowCount = 0;
+      if (xgrid.Prop) xgrid.Prop.Enabled = true;
+      jsh.$root(xgrid.PlaceholderID).html('');
       var orig_jsh_ignorefocusHandler = jsh.ignorefocusHandler;
       jsh.ignorefocusHandler = true;
       var popup_options = {};
       popup_options = {
         modelid: modelid,
-        href: ".popup_" + fieldid + '.xelem' + parentmodelid, inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, title: title, fixed: true,
+        href: ".popup_" + fieldid + '.xelem' + parentmodelclass, inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, title: title, fixed: true,
         fadeOut:0,
         onOpen: function () {
           //When nested popUps are called, onOpen is not called
         },
         onComplete: function () {
           numOpens++;
-          if(numOpens==1) xdata.Select();
-          if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelid + ' .xfilter_value').first().is(':visible')) jsh.$root('.popup_' + fieldid + ' .xfilter_value').first().focus();
-          else if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelid).find('td a').length) jsh.$root('.popup_' + fieldid).find('td a').first().focus();
-            //else jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelid).find('input,select,textarea').first().focus();
+          if(numOpens==1) xgrid.Select();
+          if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass + ' .xfilter_value').first().is(':visible')) jsh.$root('.popup_' + fieldid + ' .xfilter_value').first().focus();
+          else if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('td a').length) jsh.$root('.popup_' + fieldid).find('td a').first().focus();
+            //else jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('input,select,textarea').first().focus();
         },
         onClosed: function () {
           var found_popup = false;
@@ -7473,27 +7521,25 @@ exports = module.exports = function(jsh){
   XExt.popupSelect = function (modelid, obj) {
     var rslt = null;
     var rowid = XExt.XModel.GetRowID(modelid, obj);
-    var xdata = jsh.App['xform_' + modelid];
-    var xpost = jsh.App['xform_post_' + modelid];
+    var xmodel = jsh.XModels[modelid];
     
-    if (popupData[modelid].codeval) rslt = xpost.DataSet[rowid][popupData[modelid].codeval];
+    if (popupData[modelid].codeval) rslt = xmodel.controller.form.DataSet[rowid][popupData[modelid].codeval];
     if (!rslt) rslt = '';
     popupData[modelid].result = rslt;
     popupData[modelid].rowid = rowid;
-    popupData[modelid].resultrow = xpost.DataSet[rowid];
-    xdata.Prop.Enabled = false;
+    popupData[modelid].resultrow = xmodel.controller.form.DataSet[rowid];
+    xmodel.controller.grid.Prop.Enabled = false;
     $.colorbox.close();
   }
 
   XExt.popupClear = function (modelid, obj) {
     var rslt = null;
-    var xdata = jsh.App['xform_' + modelid];
-    var xpost = jsh.App['xform_post_' + modelid];
+    var xmodel = jsh.XModels[modelid];
     
     popupData[modelid].result = rslt;
     popupData[modelid].rowid = -1;
-    popupData[modelid].resultrow = new xpost.DataType();
-    xdata.Prop.Enabled = false;
+    popupData[modelid].resultrow = new xmodel.controller.form.DataType();
+    xmodel.controller.grid.Prop.Enabled = false;
     $.colorbox.close();
   }
 
@@ -7505,7 +7551,7 @@ exports = module.exports = function(jsh){
     var xid = $(obj).closest('.xtbl').data('id');
     if (!xid) xid = $(obj).closest('.xform').data('id');
     if (!xid) return null;
-    return xid.substr(5);
+    return xid;
   }
 
   XExt.getModelMD5 = function (modelid) {
@@ -7589,23 +7635,32 @@ exports = module.exports = function(jsh){
     else f();
   }
 
-  XExt.LiteralOrCollection = function(str, col, funccol) {
+  XExt.LiteralOrLookup = function(str, dictionary, xmodel) {
     //console.log("Evaluating: "+str);
     var rslt = undefined;
+
+    //If numeric, return the value
     if (!isNaN(str)) rslt = str;
+    //If a literal 'TEXT', return the value
     else if ((str.length >= 2) && (str[0] == "'") && (str[str.length - 1] == "'")) rslt = str.substr(1, str.length - 2);
-    else if(str.trim().toLowerCase()=='null') rslt = null;
-    else if ((typeof funccol !== 'undefined') && (str in funccol)) rslt = funccol[str]();
-    else if(col) {
-      //console.log('Array check'); console.log(col);
-      if (_.isArray(col)) {
-        for (var i = 0; i < col.length; i++) {
-          if (str in col[i]) return col[i][str];
+    //If "null", return null
+    else if(str.trim().toLowerCase()=='null') rslt = null; 
+    //If a binding, return the evaluated binding
+    else if (xmodel && xmodel.hasBindingOrRootKey(str)) rslt = xmodel.getBindingOrRootKey(str);
+    //If a lookup in the dictionary, return the value
+    else if(dictionary) {
+      if (_.isArray(dictionary)) {
+        //Array of collections
+        for (var i = 0; i < dictionary.length; i++) {
+          if (str in dictionary[i]) return dictionary[i][str];
         }
       }
-      else rslt = col[str];
+      else{
+        //Single Collection
+        rslt = dictionary[str];
+      }
     }
-    //console.log('Result: '+rslt);
+    //Return the value
     return rslt;
   }
 
@@ -7654,23 +7709,22 @@ exports = module.exports = function(jsh){
   }
   XExt.getFormBase = function (id) {
     if (!jsh.XBase[id]) { XExt.Alert('ERROR: Base form ' + id + ' not found.'); return; }
-    var fname = jsh.XBase[id][0];
-    if (fname) return jsh.App['xform_' + fname];
+    var basemodelid = jsh.XBase[id][0];
+    if (basemodelid) return jsh.XModels[basemodelid].controller.form;
     return undefined;
   }
   XExt.getForm = function (id) {
     if (!(id in jsh.XModels)) { XExt.Alert('ERROR: Form ' + id + ' not found.'); return; }
-    if (jsh.XModels[id]._layout == 'grid') return jsh.App['xform_post_' + id];
-    return jsh.App['xform_' + id];
+    return jsh.XModels[id].controller.form;
   }
   XExt.getFormFromObject = function (ctrl) {
-    var fname = $(ctrl).closest('.xform').data('id');
-    if (fname) return jsh.App['xform_' + fname.substr(5)];
+    var modelid = $(ctrl).closest('.xform').data('id');
+    if (modelid) return jsh.XModels[basemodelid].controller.form;
     return undefined;
   }
   XExt.getModelIdFromObject = function (ctrl) {
-    var fname = $(ctrl).closest('.xform').data('id');
-    if (fname) return fname.substr(5);
+    var modelid = $(ctrl).closest('.xform').data('id');
+    if (modelid) return modelid;
     return undefined;
   }
   XExt.getFieldFromObject = function (ctrl) {
@@ -8049,19 +8103,19 @@ exports = module.exports = function(jsh){
     if (typeof saveold == 'undefined') saveold = true;
     if (_index > this.Count()) { jsh.XExt.Alert('Cannot navigate - Index greater than size of collection'); return false; }
     else if (_index < 0) { jsh.XExt.Alert('Cannot navigate - Index less than zero'); return false; }
-    delete this.Data._LOVs;
-    delete this.Data._defaults;
-    delete this.Data._bcrumbs;
-    delete this.Data._title;
+    delete this.Data.LOVs;
+    delete this.Data.defaults;
+    delete this.Data.bcrumbs;
+    delete this.Data.title;
     if (saveold) {
       if (!this.CommitRow()) return false;
     }
     this.Index = _index;
     this.Data = _.extend(this.Data, this.DataSet[this.Index]);
-    this.Data._LOVs = this._LOVs;
-    this.Data._defaults = this._defaults;
-    this.Data._bcrumbs = this._bcrumbs;
-    this.Data._title = this._title;
+    this.Data._LOVs = this.LOVs;
+    this.Data._defaults = this.defaults;
+    this.Data._bcrumbs = this.bcrumbs;
+    this.Data._title = this.title;
     if (this.xData) {
       this.Data._jrow = jsh.$root(this.xData.PlaceholderID).find("tr[data-id='" + this.Index + "']");
     }
@@ -8112,10 +8166,10 @@ exports = module.exports = function(jsh){
       if ('_defaults' in rslt) { _this.Data['_defaults'] = rslt['_defaults']; }
       if ('_bcrumbs' in rslt) { _this.Data['_bcrumbs'] = rslt['_bcrumbs']; }
       if ('_title' in rslt) { _this.Data['_title'] = rslt['_title']; }
-      _this._LOVs = _this.Data._LOVs;
-      _this._defaults = _this.Data._defaults;
-      _this._bcrumbs = _this.Data._bcrumbs;
-      _this._title = _this.Data._title;
+      _this.LOVs = _this.Data._LOVs;
+      _this.defaults = _this.Data._defaults;
+      _this.bcrumbs = _this.Data._bcrumbs;
+      _this.title = _this.Data._title;
       //Load Data
       if(_this.q in rslt){
         if(_.isArray(rslt[_this.q])){
@@ -8154,8 +8208,8 @@ exports = module.exports = function(jsh){
   XForm.prototype.ApplyDefaults = function(data){
     var _this = this;
     var rslt = data;
-    if(rslt._is_new && ('_defaults' in this)){
-      _.each(this._defaults, function (val, fieldname){
+    if(rslt._is_new && ('defaults' in this)){
+      _.each(this.defaults, function (val, fieldname){
         if(rslt[fieldname]) return; //If field is set via GET, do not overwrite
         if(fieldname in rslt){
           if(val.indexOf('js:')==0){
@@ -8399,7 +8453,7 @@ exports = module.exports = function(jsh){
     var rslt = {};
     _.each(_this.Data.Fields,function(field){
       if (!jsh.XExt.HasAccess(field.actions, action)) return;
-      if((typeof _this.Data[field.name] == 'undefined') && _.includes(jsh.XModels[_this.q]._bindings,field.name)){
+      if((typeof _this.Data[field.name] == 'undefined') && (field.name in jsh.XModels[_this.q].bindings)){
         rslt[field.name] = '%%%'+field.name+'%%%';
       }
       else {
@@ -8729,10 +8783,10 @@ exports = module.exports = function(jsh){
     this.GetMeta = true;
     this.GetDBRowCount = false;
     this.DBRowCount = -1;
-    this._LOVs = {};
-    this._defaults = {};
-    this._bcrumbs = {};
-    this._title = null;
+    this.LOVs = {};
+    this.defaults = {};
+    this.bcrumbs = {};
+    this.title = null;
   }
 
   //Passing 0,-1 for rowcount will return total rowcount
@@ -8817,12 +8871,12 @@ exports = module.exports = function(jsh){
     else {
       if (_this.GetMeta) {
         _this.GetMeta = false;
-        if ('_defaults' in data) { _this._defaults = data['_defaults']; }
-        if ('_bcrumbs' in data) { _this._bcrumbs = data['_bcrumbs']; }
-        if ('_title' in data) { _this._title = data['_title']; }
+        if ('_defaults' in data) { _this.defaults = data['_defaults']; }
+        if ('_bcrumbs' in data) { _this.bcrumbs = data['_bcrumbs']; }
+        if ('_title' in data) { _this.title = data['_title']; }
         for (var tbl in data) {
           if (tbl.indexOf('_LOV_') == 0) {
-            _this._LOVs[tbl.substring(5)] = data[tbl];
+            _this.LOVs[tbl.substring(5)] = data[tbl];
           }
         }
         if (_this.OnMetaData) _this.OnMetaData(data);
@@ -20331,7 +20385,7 @@ var jsHarmony = function(options){
   this.init_complete = false;
   this.delete_target = null;
   this.xfileupload_ctrl = null;
-  this._bcrumbs = {};
+  this.bcrumbs = {};
   this.orig_bcrumbs = '';
   this.jsproxy_hooks = {};
   this.intervals = [];

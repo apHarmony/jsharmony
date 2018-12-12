@@ -36,29 +36,30 @@ exports = module.exports = function(jsh){
 
   XExtXModel.OnRender = function (modelid) {
     return function(){
-      var _this = this;
+      var _this = this; //datamodel
       var parentobj = jsh.root;
       if (this._jrow) parentobj = this._jrow;
-      var isGrid = (jsh.XModels[modelid]._layout == 'grid');
+      var xmodel = jsh.XModels[modelid];
+      var isGrid = (xmodel.layout == 'grid');
       //Clear highlighted background of currently edited cells
-      parentobj.find('.xelem'+modelid+'.xform_ctrl').removeClass('updated');
+      parentobj.find('.xelem'+xmodel.class+'.xform_ctrl').removeClass('updated');
       
-      if (jsh.XModels[modelid]._layout == 'form-m') {
-        if (jsh.App['xform_'+modelid].Count()==0) {
-          jsh.$root('.xelem'+modelid+'.xnorecords').show();
-          jsh.$root('.xelem'+modelid+'.xformcontainer').css('visibility', 'hidden');
+      if (xmodel.layout == 'form-m') {
+        if (xmodel.controller.form.Count()==0) {
+          jsh.$root('.xelem'+xmodel.class+'.xnorecords').show();
+          jsh.$root('.xelem'+xmodel.class+'.xformcontainer').css('visibility', 'hidden');
         }
         else {
-          jsh.$root('.xelem'+modelid+'.xnorecords').hide();
-          jsh.$root('.xelem'+modelid+'.xformcontainer').css('visibility', 'visible');
+          jsh.$root('.xelem'+xmodel.class+'.xnorecords').hide();
+          jsh.$root('.xelem'+xmodel.class+'.xformcontainer').css('visibility', 'visible');
         }
       }
     
       //Set List of Values
       if ('_LOVs' in this) {
         for (var _LOV in this._LOVs) {
-          var lovselector = '.' + _LOV + '.xelem' + modelid;
-          if (isGrid) lovselector = '.' + _LOV + '.xelem' + modelid;
+          var lovselector = '.' + _LOV + '.xelem' + xmodel.class;
+          if (isGrid) lovselector = '.' + _LOV + '.xelem' + xmodel.class;
           var ctrl = parentobj.find(lovselector);
           if (('control' in this.Fields[_LOV]) && (this.Fields[_LOV].control == 'tree'))
             jsh.XExt.TreeRender(ctrl, this._LOVs[_LOV], this.Fields[_LOV]);
@@ -79,8 +80,8 @@ exports = module.exports = function(jsh){
       _.each(this.Fields, function (field) {
         XExtXModel.RenderField(_this, parentobj, modelid, field);
       });
-      if (jsh.XModels[modelid]._layout == 'form-m') {
-        jsh.$root('.navtext_' + modelid).html((jsh.App['xform_' + modelid].Index + 1) + ' of ' + jsh.App['xform_' + modelid].Count());
+      if (xmodel.layout == 'form-m') {
+        jsh.$root('.navtext_' + xmodel.class).html((xmodel.controller.form.Index + 1) + ' of ' + xmodel.controller.form.Count());
       }
     };
   };
@@ -100,7 +101,8 @@ exports = module.exports = function(jsh){
   }
 
   XExtXModel.RenderField = function (_this, parentobj, modelid, field, val){
-    var isGrid = (jsh.XModels[modelid]._layout == 'grid');
+    var xmodel = jsh.XModels[modelid];
+    var isGrid = (xmodel.layout == 'grid');
     if(typeof val === 'undefined') val = _this[field.name];
     //Apply formatting
     if ((field.name in _this) && (typeof val == 'undefined')) val = '';
@@ -116,13 +118,13 @@ exports = module.exports = function(jsh){
       else lovTxt = jsh.XFormat.Apply(field.format, lovTxt);
     }
     
-    var fieldselector = '.' + field.name + '.xelem' + modelid;
-    if (isGrid) fieldselector = '.' + field.name + '.xelem' + modelid;
+    var fieldselector = '.' + field.name + '.xelem' + xmodel.class;
+    if (isGrid) fieldselector = '.' + field.name + '.xelem' + xmodel.class;
     var jctrl = parentobj.find(fieldselector);
     if (('control' in field) && (field.control == 'file_upload')) {
       //Show "Upload File" always
-      var filefieldselector = '.xelem' + modelid + ' .' + field.name;
-      if (isGrid) filefieldselector = '.xelem' + modelid + ' .' + field.name;
+      var filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
+      if (isGrid) filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
       var jctrl_download = parentobj.find(filefieldselector + '_download');
       var jctrl_upload = parentobj.find(filefieldselector + '_upload');
       var jctrl_delete = parentobj.find(filefieldselector + '_delete');
@@ -140,9 +142,9 @@ exports = module.exports = function(jsh){
         jctrl_dbexists.val('1');
         //Set thumbnail
         if (jctrl_thumbnail.length && field.controlparams.thumbnail_width) {
-          var keys = jsh.App['xform_' + modelid].GetKeys();
-          if (jsh.XModels[modelid]._keys.length != 1) { throw new Error('File models require one key.'); }
-          var thumb_url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[jsh.XModels[modelid]._keys[0]] + '/' + field.name + '?view=1&thumb=1&_=' + (new Date().getTime());
+          var keys = xmodel.controller.form.GetKeys();
+          if (xmodel.keys.length != 1) { throw new Error('File models require one key.'); }
+          var thumb_url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field.name + '?view=1&thumb=1&_=' + (new Date().getTime());
           jctrl_thumbnail.attr('src', thumb_url).show();
           jctrl_thumbnail.attr('width', field.controlparams.thumbnail_width + 'px');
         }
@@ -239,9 +241,9 @@ exports = module.exports = function(jsh){
     var show_lookup_when_readonly = false;
 
     var access = (_this._is_new?'I':'U');
-    if (jsh.XModels[modelid]._layout=='exec') access = 'B';
+    if (xmodel.layout=='exec') access = 'B';
     var is_editable = jsh.XExt.HasAccess(field.actions, access);
-    if (is_editable && field.always_editable_on_insert && ((access == 'I') || (jsh.XModels[modelid]._layout=='exec'))){ }
+    if (is_editable && field.always_editable_on_insert && ((access == 'I') || (xmodel.layout=='exec'))){ }
     else {
       if (is_editable && ('readonly' in field) && (field.readonly == 1)) is_editable = false;
       if (_this._readonly && _.includes(_this._readonly, field.name)) is_editable = false;
@@ -299,15 +301,16 @@ exports = module.exports = function(jsh){
       var _this = this;
       var parentobj = jsh.root;
       if (this._jrow) parentobj = this._jrow;
-      var isGrid = (jsh.XModels[modelid]._layout == 'grid');
+      var xmodel = jsh.XModels[modelid];
+      var isGrid = (xmodel.layout == 'grid');
       
-      var fieldselector = '.' + field.name + '.xelem' + modelid;
-      if (isGrid) fieldselector = '.' + field.name + '.xelem' + modelid;
+      var fieldselector = '.' + field.name + '.xelem' + xmodel.class;
+      if (isGrid) fieldselector = '.' + field.name + '.xelem' + xmodel.class;
       var jctrl = parentobj.find(fieldselector);
 
       if (('control' in field) && (field.control == 'file_upload')) {
-        var filefieldselector = '.xelem' + modelid + ' .' + field.name;
-        if (isGrid) filefieldselector = '.xelem' + modelid + ' .' + field.name;
+        var filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
+        if (isGrid) filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
 
         var jctrl_token = parentobj.find(filefieldselector + '_token');
         var jctrl_dbdelete = parentobj.find(filefieldselector + '_dbdelete');
@@ -347,13 +350,12 @@ exports = module.exports = function(jsh){
         val = jsh.XExt.ReplaceAll(val, '&quot;', '"');
       }
       //If field is in bindings
-      var xform = jsh.XModels[modelid];
-      if (('_bindings' in xform) && (_.includes(xform._bindings, field.name))) {
-        val = xform[field.name]();
+      if (xmodel.bindings && (field.name in xmodel.bindings)) {
+        val = xmodel.bindings[field.name]();
       }
       if ('static' in field) {
         if (field.static.indexOf('js:') == 0) {
-          val = jsh.XExt.JSEval(field.static.substr(3),this,{ xform: xform, modelid: modelid });
+          val = jsh.XExt.JSEval(field.static.substr(3),this,{ xmodel: xmodel, modelid: modelid });
         }
         else val = field.static;
       }
@@ -373,7 +375,7 @@ exports = module.exports = function(jsh){
 
   XExtXModel.HasUpdates = function () {
     return function () {
-      if (jsh.XModels[this._modelid]._layout=='exec') return false;
+      if (jsh.XModels[this._modelid].layout=='exec') return false;
       var _this = this;
       if (this._is_new) { return true; }
       var access = (this._is_new?'I':'U');
@@ -388,7 +390,7 @@ exports = module.exports = function(jsh){
 
   XExtXModel.HasUpdate = function () {
     return function (id) {
-      if (jsh.XModels[this._modelid]._layout=='exec') return false;
+      if (jsh.XModels[this._modelid].layout=='exec') return false;
       var field = this.Fields[id];
       if (('virtual' in field) && field.virtual) return false;
       if (('static' in field) && field.static) return false;
@@ -406,18 +408,18 @@ exports = module.exports = function(jsh){
     };
   };
 
-  XExtXModel.Commit = function (modelid,xpostid) {
+  XExtXModel.Commit = function (xmodel) {
     return function (perm) {
       var _this = this;
       var parentobj = jsh.root;
       if (this._jrow) parentobj = this._jrow;
-      if ((jsh.XModels[modelid]._layout == 'form-m') || (jsh.XModels[modelid]._layout == 'grid')) {
-        if (jsh.App[xpostid].Count()==0) return true;
+      if ((xmodel.layout == 'form-m') || (xmodel.layout == 'grid')) {
+        if (xmodel.controller.form.Count()==0) return true;
       }
       //_is_new at record-level
       var _this = this;
       var access = (this._is_new?'I':'U');
-      if (jsh.XModels[modelid]._layout=='exec') access = 'B';
+      if (xmodel.layout=='exec') access = 'B';
       if (this.HasUpdates()) {
         if (!this._is_dirty) {
           //Clone Data to Orig
@@ -426,10 +428,10 @@ exports = module.exports = function(jsh){
         }
       }
       this.GetValues(access);
-      var _xvalidate = jsh.App['XDatamodel' + modelid].prototype.xvalidate;
+      var _xvalidate = xmodel.datamodel.prototype.xvalidate;
       if (_xvalidate) {
         this.xvalidate = _xvalidate;
-        var valid = jsh.App[xpostid].Validate(access);
+        var valid = xmodel.controller.form.Validate(access);
         delete this.xvalidate;
         if (!valid) return false;
       }
@@ -459,7 +461,8 @@ exports = module.exports = function(jsh){
   XExtXModel.BindLOV = function (modelid) {
     return function (xform, parentobj) {
       if (!parentobj) parentobj = jsh.root;
-      var isGrid = (jsh.XModels[modelid]._layout == 'grid');
+      var xmodel = jsh.XModels[modelid];
+      var isGrid = (xmodel.layout == 'grid');
       _.each(this.Fields, function (field) {
         if (!('control' in field)) return; if (field.control == 'subform') return;
         if (field.control == 'dropdown') {
@@ -471,14 +474,14 @@ exports = module.exports = function(jsh){
           if (lovparents.length == 0) return;
           var lovparents_val = '';
           for (var i = 0; i < lovparents.length; i++) {
-            var curselector = (isGrid?'.':'.') + lovparents[i] + '.xelem' + modelid;
+            var curselector = (isGrid?'.':'.') + lovparents[i] + '.xelem' + xmodel.class;
             lovparents_selector += ((i > 0)?',':'') + curselector;
             lovparents_val += 'parentvals.push(parentobj.find("' + curselector + '").val()); ';
           }
           parentobj.find(lovparents_selector).change(function (evt) {
             var parentvals = [];
             //Narrow value of child LOV to values where CODVAL1 = that value
-            var ctrl = parentobj.find((isGrid?'.':'.') + field.name + '.xelem' + modelid);
+            var ctrl = parentobj.find((isGrid?'.':'.') + field.name + '.xelem' + xmodel.class);
             jsh.XExt.JSEval(lovparents_val,this,{ parentvals: parentvals, parentobj: parentobj, xform: xform, modelid: modelid });
             jsh.XExt.RenderParentLOV(xform.Data, ctrl, parentvals, xform.Data._LOVs[field.name], xform.Data.Fields[field.name], ('lovparents' in field));
           });
@@ -495,6 +498,42 @@ exports = module.exports = function(jsh){
         xformdata._readonly.push(fname);
       }
     }  
+  }
+
+  XExtXModel.XController = function(xmodel){
+    this.xmodel = xmodel;
+    this.form = undefined;
+    this.grid = undefined;
+  }
+
+  XExtXModel.XController.prototype.Select = function(onDone){
+    if(this.grid) return this.grid.Select(onDone);
+    else if(this.form) return this.form.Select(onDone);
+  }
+
+  XExtXModel.XController.prototype.HasUpdates = function(){
+    if(this.grid) return this.grid.HasUpdates();
+    else if(this.form) return this.form.HasUpdates();
+  }
+
+  XExtXModel.XController.prototype.HasBreadCrumbs = function(){
+    if(this.grid) return ('bcrumbs' in this.grid);
+    else if(this.form) return ('bcrumbs' in this.form);
+  }
+
+  XExtXModel.XController.prototype.GetBreadCrumbs = function(){
+    if(this.grid) return this.grid.bcrumbs;
+    else if(this.form) return this.form.bcrumbs;
+  }
+
+  XExtXModel.XController.prototype.HasTitle = function(){
+    if(this.grid) return ('title' in this.grid);
+    else if(this.form) return ('title' in this.form);
+  }
+
+  XExtXModel.XController.prototype.GetTitle = function(){
+    if(this.grid) return this.grid.title;
+    else if(this.form) return this.form.title;
   }
 
   return XExtXModel;
