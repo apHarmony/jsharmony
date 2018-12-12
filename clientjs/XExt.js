@@ -132,14 +132,14 @@ exports = module.exports = function(jsh){
         }
       }
       //All variables ready, run main operation
-      var xpost = new jsh.XForm(q, '', '');
-      xpost.Data = d;
+      var xform = new jsh.XForm(q, '', '');
+      xform.Data = d;
       var dq = {}, dp = {};
       if (method == 'get') dq = d;
       else if (method == 'postq') { dq = d; method = 'post'; }
       else if (method == 'putq') { dq = d; method = 'put'; if (options.post) { dp = options.post; } }
       else dp = d;
-      xpost.qExecute(xpost.PrepExecute(method, xpost.q, dq, dp, function (rslt) {
+      xform.qExecute(xform.PrepExecute(method, xform.q, dq, dp, function (rslt) {
         if ('_success' in rslt) {
           if (onComplete) onComplete(rslt);
           else XExt.Alert('Operation completed successfully.');
@@ -1350,7 +1350,7 @@ exports = module.exports = function(jsh){
   }
   XExt.getFormFromObject = function (ctrl) {
     var modelid = $(ctrl).closest('.xform').data('id');
-    if (modelid) return jsh.XModels[basemodelid].controller.form;
+    if (modelid) return jsh.XModels[modelid].controller.form;
     return undefined;
   }
   XExt.getModelIdFromObject = function (ctrl) {

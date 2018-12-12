@@ -121,6 +121,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
             if (_.isObject(mrslt)) {
               if (key in mrslt) {
                 var keyval = mrslt[key];
+                if(!rootxmodel.bindings) rootxmodel.bindings = {};
                 rootxmodel.bindings[key] = function () { return keyval; }
                 rootxmodel.controller.form.Data[key] = keyval;
                 urlkeys[key] = keyval;

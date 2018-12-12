@@ -100,6 +100,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     return false;
   }
+  xmodel.get = function(fieldname){
+    if(xmodel.hasBindingOrRootKey(fieldname)) return xmodel.getBindingOrRootKey(fieldname);
+    else if(xmodel.controller && xmodel.controller.form) return XExt.getFormField(xmodel.controller.form, fieldname);
+    else XExt.Alert('Could not set value - model.controller.form not initialized');
+  }
+  xmodel.set = function(fieldname,value){
+    if(xmodel.controller && xmodel.controller.form) XExt.setFormControl(xmodel.controller.form, fieldname, value);
+    else XExt.Alert('Could not set value - model.controller.form not initialized');
+  }
   if(!(basemodelid in jsh.XBase)) jsh.XBase[basemodelid] = [];
   jsh.XBase[basemodelid].push(modelid);
   <% if('js' in model){ %>

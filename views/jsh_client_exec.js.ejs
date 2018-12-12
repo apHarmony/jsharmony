@@ -96,9 +96,9 @@ _.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field
     if(modelid.indexOf('_report_') < 0){ XExt.Alert('Model is not a report'); return; }
     var reportid = modelid.substr(8);
     //XForm to XGet -> ReportJob
-    var xpost = new jsh.XForm('_reportjob/'+reportid,'','');
-    xpost.Data = xform.GetFieldParams('B');
-    xpost.Execute(function(rslt){ 
+    var xpostform = new jsh.XForm('_reportjob/'+reportid,'','');
+    xpostform.Data = xform.GetFieldParams('B');
+    xpostform.Execute(function(rslt){ 
       if('_success' in rslt){
         XExt.Alert('Successfully queued '+rslt._success+' '+((rslt._success==1) ? 'report':'reports')+'.');
       }
@@ -117,10 +117,10 @@ _.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field
     }
     if(!xform.Data.Commit()) return;
     //Execute DBFunc
-    var xpost = new jsh.XForm(modelid,'','');
-    xpost.GetUpdateParams = function(){ return xform.GetFieldParams('U'); }
+    var xpostform = new jsh.XForm(modelid,'','');
+    xpostform.GetUpdateParams = function(){ return xform.GetFieldParams('U'); }
     if(options.onBeforeUpdate) options.onBeforeUpdate();
-    xpost.Update(function(rslt){ 
+    xpostform.Update(function(rslt){ 
       if('_success' in rslt){
         //Merge data back
         if((modelid in rslt) && rslt[modelid]){

@@ -373,7 +373,7 @@ exports.getModelLinkOnClick = function (tgtmodelid, req, link_target) {
     return req.jshsite.instance+".XPage.SaveNew(href);return false;";
   }
   else if ('popup' in model) {
-    return (" window.open(href,'_blank','width=" + model['popup'][0] + ",height=" + model['popup'][1] + ",resizable=1,scrollbars=1');return false;");
+    return ("window.open(this.href,'_blank','width=" + model['popup'][0] + ",height=" + model['popup'][1] + ",resizable=1,scrollbars=1');return false;");
   }
   return "";
 };

@@ -6501,14 +6501,14 @@ exports = module.exports = function(jsh){
         }
       }
       //All variables ready, run main operation
-      var xpost = new jsh.XForm(q, '', '');
-      xpost.Data = d;
+      var xform = new jsh.XForm(q, '', '');
+      xform.Data = d;
       var dq = {}, dp = {};
       if (method == 'get') dq = d;
       else if (method == 'postq') { dq = d; method = 'post'; }
       else if (method == 'putq') { dq = d; method = 'put'; if (options.post) { dp = options.post; } }
       else dp = d;
-      xpost.qExecute(xpost.PrepExecute(method, xpost.q, dq, dp, function (rslt) {
+      xform.qExecute(xform.PrepExecute(method, xform.q, dq, dp, function (rslt) {
         if ('_success' in rslt) {
           if (onComplete) onComplete(rslt);
           else XExt.Alert('Operation completed successfully.');
@@ -7719,7 +7719,7 @@ exports = module.exports = function(jsh){
   }
   XExt.getFormFromObject = function (ctrl) {
     var modelid = $(ctrl).closest('.xform').data('id');
-    if (modelid) return jsh.XModels[basemodelid].controller.form;
+    if (modelid) return jsh.XModels[modelid].controller.form;
     return undefined;
   }
   XExt.getModelIdFromObject = function (ctrl) {
@@ -8471,23 +8471,23 @@ exports = module.exports = function(jsh){
   }
 
   XForm.prototype.XExecute = function(q,d,onComplete,onFail){
-    var xpost = new XForm(q,'','');
-    xpost.Data = d;
-    xpost.Execute(onComplete,onFail);
+    var xform = new XForm(q,'','');
+    xform.Data = d;
+    xform.Execute(onComplete,onFail);
   }
 
   XForm.prototype.XExecuteBlock = function(q,d,onComplete,onFail){
-    var xpost = new XForm(q,'','');
-    xpost.Data = d;
-    xpost.async = false;
-    xpost.Execute(onComplete,onFail);
+    var xform = new XForm(q,'','');
+    xform.Data = d;
+    xform.async = false;
+    xform.Execute(onComplete,onFail);
   }
 
   XForm.prototype.XExecutePost = function (q, d, onComplete, onFail, options){
     if(!options) options = {};
-    var xpost = new XForm(q, '', '');
-    if(options.OnDBError) xpost.Data.OnDBError = options.OnDBError;
-    xpost.qExecute(xpost.PrepExecute('post', xpost.q, {}, d, onComplete, onFail)); 
+    var xform = new XForm(q, '', '');
+    if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
+    xform.qExecute(xform.PrepExecute('post', xform.q, {}, d, onComplete, onFail)); 
   }
 
   return XForm;

@@ -106,7 +106,7 @@ for(var i=0;i<model.fields.length;i++){
     }
   }
   if(field.control=='checkbox'){ %><input data-id="<%=field.name%>" type="checkbox" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl checkbox xelem<%=model.class%> <%=field.controlclass%>" /><% }
-  if(field.popuplov){ %><a href="#" data-id="<%=field.name%>_xlookup" class="<%=field.name%>_xlookup xform_ctrl xlookup icon" style="<%=field.controlparams.popupiconstyle%>" data-codeval="<%=field.controlparams.codeval%>" data-model="<%=model.id%>" onclick="(function(){<%-jslocals%> jsh.XExt.popupShow('<%=field.model.id%>','<%=field.name%>','<%=field.caption_ext||field.caption%> Selection',undefined,this,{OnControlUpdate:function(obj,e){ xmodel.controller.form.Data.OnControlUpdate(obj,e); }}) })(); return false;"><img src="/images/icon_search.png" /></a>
+  if(field.popuplov){ %><a href="#" data-id="<%=field.name%>_xlookup" class="<%=field.name%>_xlookup xform_ctrl xlookup icon" style="<%=field.controlparams.popupiconstyle%>" data-codeval="<%=field.controlparams.codeval%>" data-model="<%=model.id%>" onclick="(function(){<%-jslocals%> jsh.XExt.popupShow('<%=field.model.id%>','<%=field.name%>','<%=field.caption_ext||field.caption%> Selection',undefined,this,{OnControlUpdate:function(obj,e){ xmodel.controller.form.Data.OnControlUpdate(obj,e); }}) }).call(this); return false;"><img src="/images/icon_search.png" /></a>
     <% 
     var popup_model = _.extend({},field.model);
     popup_model.hide_system_buttons = _.union(popup_model.hide_system_buttons,['export']); 

@@ -522,23 +522,23 @@ exports = module.exports = function(jsh){
   }
 
   XForm.prototype.XExecute = function(q,d,onComplete,onFail){
-    var xpost = new XForm(q,'','');
-    xpost.Data = d;
-    xpost.Execute(onComplete,onFail);
+    var xform = new XForm(q,'','');
+    xform.Data = d;
+    xform.Execute(onComplete,onFail);
   }
 
   XForm.prototype.XExecuteBlock = function(q,d,onComplete,onFail){
-    var xpost = new XForm(q,'','');
-    xpost.Data = d;
-    xpost.async = false;
-    xpost.Execute(onComplete,onFail);
+    var xform = new XForm(q,'','');
+    xform.Data = d;
+    xform.async = false;
+    xform.Execute(onComplete,onFail);
   }
 
   XForm.prototype.XExecutePost = function (q, d, onComplete, onFail, options){
     if(!options) options = {};
-    var xpost = new XForm(q, '', '');
-    if(options.OnDBError) xpost.Data.OnDBError = options.OnDBError;
-    xpost.qExecute(xpost.PrepExecute('post', xpost.q, {}, d, onComplete, onFail)); 
+    var xform = new XForm(q, '', '');
+    if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
+    xform.qExecute(xform.PrepExecute('post', xform.q, {}, d, onComplete, onFail)); 
   }
 
   return XForm;

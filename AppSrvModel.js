@@ -202,7 +202,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
         var link_onclick = '';
         if (link_target && link_target.substr(0, 3) == 'js:') {
           link_url = '#';
-          link_onclick = "var xformid = '" + modelid + "'; "+link_target.substr(3)+'; return false;';
+          link_onclick = "var modelid = '" + modelid + "'; "+link_target.substr(3)+'; return false;';
         }
         else {
           var link_parsed = jsh.parseLink(link_target);
