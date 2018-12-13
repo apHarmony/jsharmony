@@ -938,6 +938,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh.XPrint();
       handled = true;
     }
+    else if ((e.which == 68) && (e.altKey) && (e.ctrlKey)) { //ALT+CTRL+D = ENABLE DEBUG CONSOLE
+      jsh.XDebugConsole.reInit();
+      handled = true;
+    }
     if (handled) {
       e.preventDefault();
       e.stopImmediatePropagation();

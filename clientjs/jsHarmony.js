@@ -298,9 +298,9 @@ jsHarmony.prototype.XDialogResize = function (source, params) {
   this.$root('.xdialogblock').css('width', params.pw + 'px');
   this.$root('.xdialogblock').css('height', params.ph + 'px');
 
-  this.$root('.xdebugconsole').css('top', params.stop + 'px');
-  this.$root('.xdebugconsole').css('left', params.sleft + 'px');
-  this.$root('.xdebugconsole').css('width', params.ww + 'px');
+  this.$root('.xdebuginfo').css('top', params.stop + 'px');
+  this.$root('.xdebuginfo').css('left', params.sleft + 'px');
+  this.$root('.xdebuginfo').css('width', params.ww + 'px');
 
   this.$root('.xdialogblock .xdialogbox').each(function () {
     var jobj = $(this);

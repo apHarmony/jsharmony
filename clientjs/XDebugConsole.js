@@ -37,7 +37,7 @@ exports = module.exports = function(jsh){
     "authentication": true
   };
   XDebugConsole.default_settings = {
-    "enabled":1, // todo set to 0 not enabled by default
+    "enabled":0,
     "minimized":0,
     "sources": _.extend({},XDebugConsole.client_sources,XDebugConsole.server_sources)
   };
@@ -48,18 +48,25 @@ exports = module.exports = function(jsh){
     return (XDebugConsole.settings.minimized);
   }
 
+  XDebugConsole.reInit = function(){
+    XDebugConsole.settings.enabled = 1;
+    XDebugConsole.setWebSocketListener();
+    XDebugConsole.setXMLHttpRequestListener();
+    return onControlAction('expand');
+  };
+
   XDebugConsole.setXMLHttpRequestListener = function(){
     XMLHttpRequest.prototype.baseSend = XMLHttpRequest.prototype.send;
     XMLHttpRequest.prototype.send = function(value) {
       this.addEventListener("load", function(){
-        if (XDebugConsole.settings.sources["client_requests"]){
+        if (XDebugConsole.settings.sources["client_requests"] && XDebugConsole.settings.enabled){
           var t = new Date();
           XDebugConsole.showDebugMessage(t.toLocaleString() + ' - Client Request: '+this.responseURL+'<br>Client Response: '+JSON.stringify(JSON.parse(this.responseText), null, 2).replace(/\\r\\n/g, '<br>'));
         }
       }, false);
       this.baseSend(value);
     };
-  }
+  };
 
   function getSourcesForWebSocket(){
     var sources = _.extend({},XDebugConsole.settings.sources);
@@ -74,13 +81,13 @@ exports = module.exports = function(jsh){
 
   XDebugConsole.setWebSocketListener = function(){
     var settings = {sources: getSourcesForWebSocket()};
-    if (!_.isEmpty(settings.sources)) {
+    if (!_.isEmpty(settings.sources) && XDebugConsole.settings.enabled) {
       if (typeof XDebugConsole.socket.readyState === 'undefined'){
         XDebugConsole.socket = new WebSocket(XDebugConsole.socket_url);
         XDebugConsole.socket.onopen = function (e) {
           XDebugConsole.socket.send(JSON.stringify({setSettings: settings}));
           XDebugConsole.socket.send(JSON.stringify({getHistory: true}));
-        }
+        };
         XDebugConsole.socket.onclose = function (e) {
           if (!e.wasClean){
             var t = new Date();
@@ -115,7 +122,7 @@ exports = module.exports = function(jsh){
         XDebugConsole.socket={};
       }
     }
-  }
+  };
   XDebugConsole.InitDebugPanel = function(){
     XDebugConsole.setXMLHttpRequestListener();
     XDebugConsole.setWebSocketListener();
@@ -125,7 +132,6 @@ exports = module.exports = function(jsh){
       settingsHtml += '<label for="' + k + '">' +
         '<input type="checkbox" name="sources" class="src" id="' + k + '" value="' + k + '"> ' + _.upperFirst(k.replace(/_/g,' ')) + '</label><br>';
     } );
-
     XDebugConsole.DebugDialog = jsh.$root('.xdebugconsole');
     XDebugConsole.DebugPanel  =  XDebugConsole.DebugDialog.find('#debug-panel');
     XDebugConsole.DebugPanel.find('.debug-settings').append($(settingsHtml));
@@ -152,30 +158,36 @@ exports = module.exports = function(jsh){
     }
     XDebugConsole.DebugPanel.on('click','.src', onSourcesChange);
     XDebugConsole.DebugDialog.find('.controls').on('click','i',onControlHit);
-  }
+  };
 
   function onControlHit(e){
-    var action = $(e.currentTarget).data("action");
+    return onControlAction($(e.currentTarget).data("action"));
+  }
+
+  function onControlAction(action){
     if (action ==='settings') return XDebugConsole.DebugPanel.find('.debug-settings').toggle();
     if (action ==='minimize') {
       XDebugConsole.DebugPanel.hide();
       XDebugConsole.DebugPanelMin.show();
       XDebugConsole.DebugDialog.removeClass('visible');
       XDebugConsole.settings.minimized=1;
-      jsh.XExt.SetSettingsCookie(XDebugConsole.SETTINGS_ID,XDebugConsole.settings);
+      return jsh.XExt.SetSettingsCookie(XDebugConsole.SETTINGS_ID,XDebugConsole.settings);
     }
     if (action ==='expand') {
       XDebugConsole.DebugPanel.show();
       XDebugConsole.DebugPanelMin.hide();
+      XDebugConsole.DebugDialog.show();
       XDebugConsole.DebugDialog.addClass('visible');
       XDebugConsole.settings.minimized=0;
-      jsh.XExt.SetSettingsCookie(XDebugConsole.SETTINGS_ID,XDebugConsole.settings);
+      return jsh.XExt.SetSettingsCookie(XDebugConsole.SETTINGS_ID,XDebugConsole.settings);
     }
     if (action ==='close') {
       XDebugConsole.DebugDialog.hide();
       XDebugConsole.settings.enabled=0;
-      XDebugConsole.showDebugMessage('closed',1);
-      jsh.XExt.SetSettingsCookie(XDebugConsole.SETTINGS_ID,XDebugConsole.settings);
+      XDebugConsole.setWebSocketListener();
+      XDebugConsole.setXMLHttpRequestListener();
+      XDebugConsole.showDebugMessage('Closed',1);
+      return jsh.XExt.SetSettingsCookie(XDebugConsole.SETTINGS_ID,XDebugConsole.settings);
     }
   }
 
