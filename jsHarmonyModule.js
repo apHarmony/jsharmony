@@ -23,7 +23,7 @@ var Helper = require('./Helper.js');
 function jsHarmonyModule(name){
   this.jsh = null;  //Set to target during jsh.AddModule
   this.name = name||null; //Set to typename if not defined during jsh.AddModule
-  this.typename = "jsHarmonyModule";
+  this.typename = 'jsHarmonyModule';
   this.parent = null;    //Parent module name
   this.Config = new jsHarmonyConfig.Base();
   this.using = [
@@ -38,7 +38,7 @@ function jsHarmonyModule(name){
 jsHarmonyModule.prototype.getModelPath = function(){
   if(this.Config.moduledir) return this.Config.moduledir+'/models/';
   return undefined;
-}
+};
 //Populate schema, namespace, and dependencies, or return false if parent not yet initialized
 jsHarmonyModule.prototype.SetModuleNamespace = function(){
   var _this = this;
@@ -64,18 +64,18 @@ jsHarmonyModule.prototype.SetModuleNamespace = function(){
     upath = this.jsh.getCanonicalNamespace(upath, parentNamespace);
     this.using[i] = upath;
   }
-}
+};
 jsHarmonyModule.prototype.Init = function(cb){
   if(cb) return cb();
-}
+};
 jsHarmonyModule.prototype.Application = function(){
   var jsHarmony = require('./jsHarmony.js');
   var jsh = new jsHarmony();
   jsh.AddModule(this);
   return jsh;
-}
+};
 jsHarmonyModule.prototype.onModuleAdded = function(){
-}
+};
 
 //Root Application Module
 jsHarmonyModule.ApplicationModule = function(jsh){
@@ -84,11 +84,11 @@ jsHarmonyModule.ApplicationModule = function(jsh){
   this.typename = '';
   this.schema = null;
   this.namespace = '';
-}
+};
 jsHarmonyModule.ApplicationModule.prototype = new jsHarmonyModule();
 jsHarmonyModule.ApplicationModule.prototype.getModelPath = function(){
   return this.jsh.Config.localmodeldir;
-}
+};
 
 //Root jsHarmony System Module
 jsHarmonyModule.jsHarmonySystemModule = function(jsh){
@@ -98,7 +98,7 @@ jsHarmonyModule.jsHarmonySystemModule = function(jsh){
   this.schema = null;
   this.namespace = 'jsHarmony/';
   this.Config = jsh.Config;
-}
+};
 jsHarmonyModule.jsHarmonySystemModule.prototype = new jsHarmonyModule();
 
 exports = module.exports = jsHarmonyModule;

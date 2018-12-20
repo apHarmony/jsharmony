@@ -105,7 +105,7 @@ AppSrvRpt.prototype.queueReport = function (req, res, fullmodelid, Q, P, params,
   
   db.ExecTasks(dbtasks, function (err, dbdata, stats) {
     if (err) {
-      if(jsh.Config.debug_params.report_debug) console.log(err);
+      if(jsh.Config.debug_params.report_debug) jsh.Log.debug(err);
       return thisapp.AppDBError(req, res, err, stats, errorHandler);
     }
     if (dbdata == null) dbdata = {};
@@ -502,7 +502,7 @@ AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, d
               
               var contentWidth = pageWidth - marginLeft - marginRight;
               var contentHeight = pageHeight - marginTop - marginBottom - headerHeightPx - footerHeightPx;
-              if (jsh.Config.debug_params.report_debug) { console.log('Calculated Page Size: '+contentHeight + 'x'+contentWidth); }
+              if (jsh.Config.debug_params.report_debug) { jsh.Log.debug('Calculated Page Size: '+contentHeight + 'x'+contentWidth); }
 
               pagesettings.margin = {
                 top: (marginTop+headerHeightPx)+'px',

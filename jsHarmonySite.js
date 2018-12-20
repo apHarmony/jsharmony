@@ -23,19 +23,21 @@ var Helper = require('./lib/Helper.js');
 ///////////////
 //jsHarmonySite
 ///////////////
-function jsHarmonySite(id, config){
+function jsHarmonySite(jsh, id, config){
+  //jsHarmony
+  this.jsh = jsh;
   //Site ID
   this.id = id;
   //"Home" button URL
-  this.home_url = "/";
+  this.home_url = '/';
   //Default EJS template for rendering pages on this site
-  this.basetemplate = "index";
+  this.basetemplate = 'index';
   //Root URL for models / images / JavaScript
   this.baseurl = '/';
   //Public folder URL (for shared public folder between multiple sites)
   this.publicurl = '/';
   //Client-side JSH Instance ID
-  this.instance = "jshInstance";
+  this.instance = 'jshInstance';
   //CSS Prefix for styles
   this.rootcss = '';
   //Whether to display debug information in the system errors (should be set to false for production)
@@ -76,13 +78,13 @@ function jsHarmonySite(id, config){
     on_passwordreset: function(req, jsh, params, cb){ /*cb(err, rslt)* / }
   } 
   */
- //Site menu generator
+  //Site menu generator
   this.menu = function(req,res,jsh,params,onComplete){ 
     params.showlisting = true; 
     params.startmodel = null;
     params.menudata = { MainMenu:[], SubMenus:{}  }; 
     onComplete(); 
-  }
+  };
   //Global parameters sent to the client front-end
   this.globalparams = {
     /* user_id: function (req) { return req.user_id; }, */
@@ -126,18 +128,18 @@ jsHarmonySite.prototype.Merge = function(config){
       else this[prop] = config[prop];
     }
   }
-}
+};
 
 jsHarmonySite.prototype.Validate = function(){
   var _this = this;
   if(!_this.id){
-    console.log('jsHarmony Site ID not set, setting value to "main"');
+    _this.jsh.Log.debug('jsHarmony Site ID not set, setting value to "main"');
     _this.id = 'main';
   }
   if(Helper.notset(_this.basetemplate)) _this.basetemplate = 'index';
   if(Helper.notset(_this.baseurl)) _this.baseurl = '/';
   if(Helper.notset(_this.show_system_errors)) _this.show_system_errors = true;
-  if(!_this.menu) _this.menu = function(req,res,jsh,params,onComplete){ params.showlisting = true; params.startmodel = null; params.menudata = { }; onComplete(); }
+  if(!_this.menu) _this.menu = function(req,res,jsh,params,onComplete){ params.showlisting = true; params.startmodel = null; params.menudata = { }; onComplete(); };
   if(!_this.globalparams) _this.globalparams = {};
   if(!_this.public_apps) _this.public_apps = [];
   if(!_this.private_apps) _this.private_apps = [];
@@ -163,10 +165,10 @@ jsHarmonySite.prototype.Validate = function(){
       jsh.AppSrv.ExecMultiRecordset('login', req.jshsite.auth.sql_auth, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
     };
   }
-}
+};
 
 jsHarmonySite.Placeholder = function(){
   this.initialized = false;
-}
+};
 
 exports = module.exports = jsHarmonySite;

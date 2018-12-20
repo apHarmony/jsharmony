@@ -121,7 +121,7 @@ exports = module.exports = function(jsh){
   }
 
   XEditableGrid.prototype.DebugLog = function (obj) {
-    if (this.Debug) console.log(obj);
+    if (this.Debug) console.log(obj); // eslint-disable-line no-console
   }
 
   XEditableGrid.prototype.ControlEnter = function (obj, e) {

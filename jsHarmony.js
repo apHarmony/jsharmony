@@ -87,11 +87,11 @@ jsHarmony.prototype.AddModule = function(module){
   this.Config.modules[moduleName] = module.Config;
   //Run onModuleAdded event
   module.onModuleAdded(this);
-}
+};
 
 jsHarmony.prototype.GetModule = function(moduleName){
   return this.Modules[moduleName];
-}
+};
 
 //Load models and initialize the configuration
 jsHarmony.prototype.Init = function(init_cb){
@@ -124,7 +124,7 @@ jsHarmony.prototype.Init = function(init_cb){
       }
 
       //Create Required Folders
-      requireFolder(_this.Config.datadir,'Data folder');
+      _this.requireFolder(_this.Config.datadir,'Data folder');
       HelperFS.createFolderIfNotExistsSync(_this.Config.localmodeldir);
       async.waterfall([
         async.apply(HelperFS.createFolderIfNotExists, _this.Config.logdir),
@@ -164,7 +164,7 @@ jsHarmony.prototype.Init = function(init_cb){
       return cb();
     },
     function(cb){
-      Helper.triggerAsync(_this.Config.onConfigLoaded, cb, _this)
+      Helper.triggerAsync(_this.Config.onConfigLoaded, cb, _this);
     },
     function(cb){
       //Load Views
@@ -182,10 +182,10 @@ jsHarmony.prototype.Init = function(init_cb){
       });
     },
     function(cb){
-      Helper.triggerAsync(_this.Config.onDBDriverLoaded, cb, _this)
+      Helper.triggerAsync(_this.Config.onDBDriverLoaded, cb, _this);
     },
     function(cb){
-      if(!_this.Config.silentStart) console.log('Loading models...');
+      if(!_this.Config.silentStart) _this.Log.console('Loading models...');
       _this.LoadDBSchemas(cb);
     },
     function(cb){
@@ -235,12 +235,12 @@ jsHarmony.prototype.Init = function(init_cb){
     function(cb){
       for(var siteid in _this.Sites){
         if(!_this.Sites[siteid].initialized){
-          _this.Sites[siteid] = new jsHarmonySite(siteid, _this.Sites[siteid]);
+          _this.Sites[siteid] = new jsHarmonySite(_this, siteid, _this.Sites[siteid]);
           if(siteid=='main') _this.Config.server.add_default_routes = true;
         }
       }
       _this.isInitialized = true;
-      if(!_this.Config.silentStart) console.log('::jsHarmony Server ready::');
+      if(!_this.Config.silentStart) _this.Log.console('::jsHarmony Server ready::');
       return cb();
     }
   ], init_cb);
@@ -284,9 +284,10 @@ jsHarmony.prototype.SetModuleNamespace = function(moduleName){
   var _this = this;
   //Set namespace of root modules
   if(!moduleName){
-    for(var moduleName in _this.Modules){
-      var module = _this.Modules[moduleName];
-      if(!module.parent) _this.SetModuleNamespace(module.name);
+    for(var rootModuleName in _this.Modules){
+      var module = _this.Modules[rootModuleName];
+      if(module.parent) continue;
+      _this.SetModuleNamespace(module.name);
     }
     return;
   }
@@ -297,12 +298,23 @@ jsHarmony.prototype.SetModuleNamespace = function(moduleName){
     if(childModule.parent !== moduleName) continue;
     _this.SetModuleNamespace(childModuleName);
   }
-}
+};
 
 //Set the Job Processor
 jsHarmony.prototype.SetJobProc = function(jobproc){
   this.AppSrv.JobProc = jobproc; 
-}
+};
+
+//Require a folder in order to start jsHarmony
+jsHarmony.prototype.requireFolder = function(fpath,desc){
+  var _this = this;
+  if(!fs.existsSync(fpath)){
+    if(!desc) desc = 'Path';
+    _this.Log.console('FATAL ERROR: '+desc+' '+fpath+' not found.');
+    _this.Log.console('Please create this folder or change the config to use a different path.');
+    process.exit(8);
+  }
+};
 
 jsHarmony.prototype.Auth = require('./lib/Auth.js');
 jsHarmony.prototype.AppSrvClass = AppSrv;
@@ -319,12 +331,3 @@ jsHarmony.prototype = _.extend(jsHarmony.prototype, require('./jsHarmony.LoadSQL
 jsHarmony.prototype = _.extend(jsHarmony.prototype, require('./jsHarmony.LoadViews.js'));
 
 module.exports = jsHarmony;
-
-function requireFolder(fpath,desc){
-  if(!fs.existsSync(fpath)){
-    if(!desc) desc = 'Path';
-    console.log ("FATAL ERROR: "+desc+" "+fpath+" not found.");
-    console.log("Please create this folder or change the config to use a different path.");
-    process.exit(8);
-  }
-}

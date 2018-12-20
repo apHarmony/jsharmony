@@ -29,9 +29,9 @@ exports.ExecDBFunc = function (dbfunc, context, sql, ptypes, params, callback, d
   var _this = this;
   if(!db) db = _this.jsh.getDB('default');
   db.ExecTasks([function (cb) {
-      dbfunc.call(db, context, sql, ptypes, params, undefined, function (err, rslt, stats) { cb(err, rslt, stats); }, dbconfig);
-    }], callback);
-}
+    dbfunc.call(db, context, sql, ptypes, params, undefined, function (err, rslt, stats) { cb(err, rslt, stats); }, dbconfig);
+  }], callback);
+};
 
 exports.ExecRecordset = function (context, sql, ptypes, params, callback, dbconfig, db) {
   if(!db) db = this.jsh.getDB('default');
@@ -78,13 +78,13 @@ exports.AppDBError = function (req, res, err, stats, errorHandler) {
   }
   //Not necessary because sql is printed out in node debug in log below
   //if ('sql' in err) { if (this.jsh.Config.debug_params.appsrv_logsql) err.message += ' SQL: ' + err.sql; }
-  if ((err.message) && (err.message == 'INVALID ACCESS')) return errorHandler(-12, "Invalid DataLock Access", stats);
+  if ((err.message) && (err.message == 'INVALID ACCESS')) return errorHandler(-12, 'Invalid DataLock Access', stats);
   if (this.jsh.Config.debug_params.appsrv_requests) this.jsh.Log.error(err);
   if ((err.message) && (err.message.indexOf('Application Error - ') == 0)) return errorHandler(-5, err.message, stats);
   if(('number' in err) && err.frontend_visible) return errorHandler(err.number, err.message, stats);
   //if ('number' in err) return errorHandler(err.number, err.message);  //This would prevent show_system_errors from functioning
   return errorHandler(-99999, err.message, stats);
-}
+};
 
 exports.DeformatParam = function (field, val, verrors) {
   function add_verror(verrors, err) {
@@ -92,78 +92,82 @@ exports.DeformatParam = function (field, val, verrors) {
     verrors[''].push(err);
   }
   if ((field.type == 'date') || (field.type == 'datetime')) {
-    if (val === '') return null;
-    if (val === null) return null;
-    var dtstmp = Date.parse(val);
-    if (isNaN(dtstmp)) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
-    
-    //Get time in original timezone
-    var has_timezone = false;
-    if (/Z|[+\-][0-9]+:[0-9]+$/.test(val)) has_timezone = true;
-    var mtstmp = null;
-    if (has_timezone) mtstmp = moment.parseZone(val);
-    else mtstmp = moment(Helper.ParseDate(val));
+    return (function(){
+      if (val === '') return null;
+      if (val === null) return null;
+      var dtstmp = Date.parse(val);
+      if (isNaN(dtstmp)) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
+      
+      //Get time in original timezone
+      var has_timezone = false;
+      if (/Z|[+\-][0-9]+:[0-9]+$/.test(val)) has_timezone = true; // eslint-disable-line no-useless-escape
+      var mtstmp = null;
+      if (has_timezone) mtstmp = moment.parseZone(val);
+      else mtstmp = moment(Helper.ParseDate(val));
 
-    if (!mtstmp.isValid()) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
-    if (mtstmp.year()>9999) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
-    if (mtstmp.year()<1753) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
-    
-    //Remove timezone, unless we need to preserve it
-    var dtrslt = null;
-    if(field.type=='date'){
-      dtrslt = moment(mtstmp.format("YYYY-MM-DDTHH:mm:ss.SSS")).toDate();
-    }
-    else if(field.type=='datetime'){
-      if(field.datatype_config.preserve_timezone){
-        //If no timezone specified, set to UTC
-        if(!has_timezone) mtstmp = moment.parseZone(mtstmp.format("YYYY-MM-DDTHH:mm:ss.SSS")+'Z');
-        dtrslt = mtstmp.toDate();
-        dtrslt.jsh_utcOffset = -1*mtstmp.utcOffset();
+      if (!mtstmp.isValid()) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
+      if (mtstmp.year()>9999) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
+      if (mtstmp.year()<1753) { add_verror(verrors, field.name + ': Invalid Date'); return ''; }
+      
+      //Remove timezone, unless we need to preserve it
+      var dtrslt = null;
+      if(field.type=='date'){
+        dtrslt = moment(mtstmp.format('YYYY-MM-DDTHH:mm:ss.SSS')).toDate();
       }
-      else dtrslt = moment(mtstmp.format("YYYY-MM-DDTHH:mm:ss.SSS")).toDate();
-      //Get microseconds
-      if(val){
-        var re_micros = /:\d\d\.\d\d\d(\d+)/.exec(val);
-        if(re_micros){ dtrslt.jsh_microseconds = parseFloat("0."+re_micros[1]) * 1000; }
+      else if(field.type=='datetime'){
+        if(field.datatype_config.preserve_timezone){
+          //If no timezone specified, set to UTC
+          if(!has_timezone) mtstmp = moment.parseZone(mtstmp.format('YYYY-MM-DDTHH:mm:ss.SSS')+'Z');
+          dtrslt = mtstmp.toDate();
+          dtrslt.jsh_utcOffset = -1*mtstmp.utcOffset();
+        }
+        else dtrslt = moment(mtstmp.format('YYYY-MM-DDTHH:mm:ss.SSS')).toDate();
+        //Get microseconds
+        if(val){
+          var re_micros_date = /:\d\d\.\d\d\d(\d+)/.exec(val);
+          if(re_micros_date){ dtrslt.jsh_microseconds = parseFloat('0.'+re_micros_date[1]) * 1000; }
+        }
       }
-    }
-    return dtrslt;
-    //return mtstmp.format("YYYY-MM-DDTHH:mm:ss.SSS")+'Z';
-    //return mtstmp.toDate();
-    //return new Date(dtstmp);
+      return dtrslt;
+      //return mtstmp.format("YYYY-MM-DDTHH:mm:ss.SSS")+'Z';
+      //return mtstmp.toDate();
+      //return new Date(dtstmp);
+    })();
   }
   else if (field.type == 'time') {
-    if (val === '') return null;
-    if (val === null) return null;
-    var fulldate = false;
-    var dtstmp = Date.parse('1970-01-01 ' + val);
-    if (isNaN(dtstmp)) { dtstmp = Date.parse(val); fulldate = true; }
-    if (isNaN(dtstmp)) { add_verror(verrors, field.name + ': Invalid Time'); return ''; }
-    var dt = new Date('1970-01-01');
-    
-    //Get time in original timezone
-    var has_timezone = false;
-    if (/Z|[+\-][0-9]+:[0-9]+$/.test(val)) has_timezone = true;
+    return (function(){
+      if (val === '') return null;
+      if (val === null) return null;
+      var fulldate = false;
+      var dtstmp = Date.parse('1970-01-01 ' + val);
+      if (isNaN(dtstmp)) { dtstmp = Date.parse(val); fulldate = true; }
+      if (isNaN(dtstmp)) { add_verror(verrors, field.name + ': Invalid Time'); return ''; }
+      var dt = new Date('1970-01-01');
+      
+      //Get time in original timezone
+      var has_timezone = false;
+      if (/Z|[+\-][0-9]+:[0-9]+$/.test(val)) has_timezone = true; // eslint-disable-line no-useless-escape
 
-    var mtstmp = null;
-    var prefix = (!fulldate?'1970-01-01 ':'');
-    if (has_timezone) mtstmp = moment.parseZone(prefix + val);
-    else mtstmp = moment(Helper.ParseDate(prefix + val));
+      var mtstmp = null;
+      var prefix = (!fulldate?'1970-01-01 ':'');
+      if (has_timezone) mtstmp = moment.parseZone(prefix + val);
+      else mtstmp = moment(Helper.ParseDate(prefix + val));
 
-    if(field.datatype_config.preserve_timezone){
-      //If no timezone specified, set to UTC
-      if(!has_timezone) mtstmp = moment.parseZone(mtstmp.format("YYYY-MM-DDTHH:mm:ss.SSS")+'Z');
-      dt = mtstmp.toDate();
-      dt.jsh_utcOffset = -1*mtstmp.utcOffset();
-    }
-    else dt = moment(mtstmp.format("YYYY-MM-DDTHH:mm:ss.SSS")).toDate();
+      if(field.datatype_config.preserve_timezone){
+        //If no timezone specified, set to UTC
+        if(!has_timezone) mtstmp = moment.parseZone(mtstmp.format('YYYY-MM-DDTHH:mm:ss.SSS')+'Z');
+        dt = mtstmp.toDate();
+        dt.jsh_utcOffset = -1*mtstmp.utcOffset();
+      }
+      else dt = moment(mtstmp.format('YYYY-MM-DDTHH:mm:ss.SSS')).toDate();
 
-    //Get microseconds
-    if(val){
-      var re_micros = /:\d\d\.\d\d\d(\d+)/.exec(val);
-      if(re_micros){ dt.jsh_microseconds = parseFloat("0."+re_micros[1]) * 1000; }
-    }
-    return dt;
+      //Get microseconds
+      if(val){
+        var re_micros_time = /:\d\d\.\d\d\d(\d+)/.exec(val);
+        if(re_micros_time){ dt.jsh_microseconds = parseFloat('0.'+re_micros_time[1]) * 1000; }
+      }
+      return dt;
+    })();
   }
   else if (field.type == 'encascii') {
     //return Helper.stringToASCIIBuffer(val);
@@ -196,7 +200,7 @@ exports.DeformatParam = function (field, val, verrors) {
     */
   }
   return val;
-}
+};
 
 //Static function - jsh parameter required for static call
 exports.getSQLParameters = function(sql, fields, jsh){
@@ -237,7 +241,7 @@ exports.getSQLParameters = function(sql, fields, jsh){
     }
   }
   return rslt;
-}
+};
 
 exports.ApplyAutomaticSQLParameters = function(ivars, sql, sql_ptypes, sql_params, fields){
   if(!ivars) return;
@@ -273,12 +277,12 @@ exports.ApplyAutomaticSQLParameters = function(ivars, sql, sql_ptypes, sql_param
       }
     }
   }
-}
+};
 
 exports.ApplyQueryParameters = function(Q, sql, sql_ptypes, sql_params, model){
   if(!Q) return;
   this.ApplyAutomaticSQLParameters(Q, sql, sql_ptypes, sql_params, model.fields);
-}
+};
 
 exports.getTransVars = function(transtbl){
   var transvars = {};
@@ -292,7 +296,7 @@ exports.getTransVars = function(transtbl){
     }
   }
   return transvars;
-}
+};
 
 exports.ApplyTransTblEscapedParameters = function(sql_params, transtbl) {
   if (typeof transtbl == 'undefined') return sql_params;
@@ -303,18 +307,18 @@ exports.ApplyTransTblEscapedParameters = function(sql_params, transtbl) {
     }
   }
   return sql_params;
-}
+};
 
 exports.ApplyTransTblChainedParameters = function(transtbl, sql, sql_ptypes, sql_params, fields){
   if(!transtbl) return;
   var transvars = this.getTransVars(transtbl);
-  for (sql_param in sql_params) {
+  for (var sql_param in sql_params) {
     if ((sql_params[sql_param] === null) && (sql_param in transvars)){
       sql_params[sql_param] = transvars[sql_param];
     }
   }
   this.ApplyAutomaticSQLParameters(transtbl, sql, sql_ptypes, sql_params, fields);
-}
+};
 
 exports.addSearchTerm = function (req, model, field, search_i, in_search_value, comparison, sql_ptypes, sql_params, verrors, options) {
   var _this = this;
@@ -383,7 +387,7 @@ exports.addSearchTerm = function (req, model, field, search_i, in_search_value, 
   var searchterm = db.sql.getSearchTerm(this.jsh, model, field, pname, in_search_value, comparison);
   if (searchterm) {
     if (!searchterm.dbtype) searchterm.dbtype = _this.getDBType(field);
-    //Dont deformat dates
+    //Don't deformat dates
     if ((ftype != 'datetime') && (ftype != 'date') && (ftype != 'time') && (ftype != 'binary')) searchterm.search_value = this.DeformatParam(field, searchterm.search_value, verrors);
     if((searchterm.search_value === null) && ((comparison != 'null') && (comparison != 'notnull'))){
       if(options.search_all) return '';
@@ -397,11 +401,11 @@ exports.addSearchTerm = function (req, model, field, search_i, in_search_value, 
     return searchterm.sql;
   }
   return '';
-}
+};
 
 exports.getDataLockSQL = function (req, model, fields, sql_ptypes, sql_params, verrors, fPerDataLock, nodatalock, descriptor, options) {
   if (!('datalock' in req.jshsite)) return;
-  if(!descriptor) descriptor = model.id
+  if(!descriptor) descriptor = model.id;
   descriptor =  (descriptor ? ' (' + descriptor + ')' : '');
   options = _.extend({ skipDataLocks: [] }, options);
   var _this = this;
@@ -409,30 +413,30 @@ exports.getDataLockSQL = function (req, model, fields, sql_ptypes, sql_params, v
   var arrayOptions = {};
   if(this.jsh.Config.system_settings.case_insensitive_datalocks) arrayOptions.caseInsensitive = true;
 
-  for (datalockid in req.jshsite.datalock) {
+  for (var datalockid in req.jshsite.datalock) {
     if ((typeof nodatalock != 'undefined') && (Helper.arrayIndexOf(nodatalock,datalockid,arrayOptions) >= 0)) continue;
     if(model && Helper.arrayIndexOf(model.nodatalock,datalockid,arrayOptions) >= 0) continue;
     var found_datalock = false;
-    datalockval = req.jshsite.datalock[datalockid](req);
-    for (i = 0; i < fields.length; i++) {
+    var datalockval = req.jshsite.datalock[datalockid](req);
+    for (var i = 0; i < fields.length; i++) {
       var field = fields[i];
       if(Helper.arrayIndexOf(options.skipDataLocks,field.name,arrayOptions) >= 0) continue;
       if ('datalock' in field) {
         var datalockqueryid = Helper.arrayItem(field.datalock,datalockid,arrayOptions);
         if (datalockqueryid) {
-          if (!('datalocks' in this.jsh.Config)) throw new Error("No datalocks in config");
+          if (!('datalocks' in this.jsh.Config)) throw new Error('No datalocks in config');
           if(!(req.jshsite.id in this.jsh.Config.datalocks)) throw new Error("Site '"+req.jshsite.id+"' not defined in datalocks");
           var datalocks = Helper.arrayItem(this.jsh.Config.datalocks[req.jshsite.id],datalockid,arrayOptions);
           if(!datalocks) throw new Error("Datalock '"+datalockid+"' not defined in site datalocks");
           var datalockquery = Helper.arrayItem(datalocks,datalockqueryid,arrayOptions);
-          if (!datalockquery) throw new Error("Datalock query '" + datalockqueryid + "' not defined in config for site "+req.jshsite.id+", datalock: "+datalockid);
+          if (!datalockquery) throw new Error("Datalock query '" + datalockqueryid + "' not defined in config for site "+req.jshsite.id+', datalock: '+datalockid);
           var frslt = fPerDataLock(datalockquery, field);
           if ((typeof frslt !== 'undefined') && (frslt === false)) continue;
           found_datalock = true;
           //Add field to parameters
           var datalockparamname = 'datalock_' + datalockid;
           if (!(datalockparamname in sql_params)) {
-            if (!('datalocktypes' in req.jshsite)) throw new Error('Missing datalocktypes in config' + descriptor);
+            if (!('datalocktypes' in req.jshsite)) throw new Error('Missing datalocktypes in config ' + descriptor);
             if (!(datalockid in req.jshsite.datalocktypes)) throw new Error('Missing DataLock type for ' + datalockid + descriptor);
             var datalocktype = req.jshsite.datalocktypes[datalockid];
             var dbtype = _this.getDBType(datalocktype);
@@ -445,7 +449,7 @@ exports.getDataLockSQL = function (req, model, fields, sql_ptypes, sql_params, v
       else if (('actions' in field) && (Helper.access(field.actions, 'F'))) throw new Error('Missing DataLock for foreign key ' + field.name + descriptor);
       else if (('actions' in field) && (Helper.access(field.actions, 'C'))) throw new Error('Missing DataLock for initial parameter ' + field.name + descriptor);
     }
-    //if(!found_datalock){ console.log(fields); } //Use for debugging
+    //if(!found_datalock){ this.jsh.Log.debug(fields); } //Use for debugging
     if (!found_datalock) throw new Error('No fields with DataLock ' + datalockid + ' found in ' + descriptor);
   }
 };
@@ -501,7 +505,7 @@ exports.getDBType = function (field) {
     return _this.DB.types.VarBinary(flen);
   }
   else throw new Error('Key ' + fname + ' has invalid type.');
-}
+};
 
 exports.TransformDBTasks = function(collection, f){
   return _.transform(collection, function(accumulator, value, key){
@@ -516,7 +520,7 @@ exports.TransformDBTasks = function(collection, f){
       //else delete accumulator[key]; //Transform does not require this
     }
   });
-}
+};
 
 exports.ExecTasks = function (req, res, dbtasks, trans, callback) {
   /*

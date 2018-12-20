@@ -55,6 +55,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     "main":   { "SYSADMIN": "*", "*": "B" },
     "client": { "C*": "B" }
   },
+  "using": ["jsHarmonyFactory"], //Namespaces used by this model
   "dev": 1, //Enable for users with the "DEV" role, not for users with the "SYSADMIN" role
   "db": "default", //Optional property - use an alternate database connection
   "popup": [ 1000, 900 ],
@@ -292,4 +293,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   //Auto-generated
   "_inherits": ["CL_X","CL"] //Array of parent models
   "_basemodel": "CL" //Base parent model
+  "_referencedby": ["C","C_CC"], //Forms that link to this form
+  "namespace": "jsHarmonyFactory",
 }

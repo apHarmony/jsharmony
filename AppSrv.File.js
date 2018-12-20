@@ -69,8 +69,8 @@ exports.Upload = function (req, res) {
     ], function (err, rslt) {
       //Handle error or return result
       if (err) {
-        if (_.isObject(err) && ('number' in err) && (err.number == -36)) return Helper.GenError(req, res, -36, "User exceeded max temp folder size");
-        return Helper.GenError(req, res, -99999, "Error occurred during file operation (" + err.toString() + ')');
+        if (_.isObject(err) && ('number' in err) && (err.number == -36)) return Helper.GenError(req, res, -36, 'User exceeded max temp folder size');
+        return Helper.GenError(req, res, -99999, 'Error occurred during file operation (' + err.toString() + ')');
       }
       else {
         rslt = { '_success': 1, 'FILE_SIZE': file_size, 'FILE_TOKEN': file_token, 'FILE_ORIGNAME': file_origname, 'FILE_EXT': file_ext };
@@ -79,7 +79,7 @@ exports.Upload = function (req, res) {
       }
     });
   });
-}
+};
 
 exports.UploadCKEditor = function (req, res) {
   var jsh = this.jsh;
@@ -101,7 +101,7 @@ exports.UploadCKEditor = function (req, res) {
     if (files.upload.length != 1) { return Helper.GenError(req, res, -30, 'Invalid file upload request.'); }
     
     var xfile = files.upload[0];
-    var file_size = xfile.size;
+    //var file_size = xfile.size;
     var file_origname = path.basename(xfile.originalFilename);
     var file_path = xfile.path;
     var file_ext = path.extname(path.basename(file_origname)).toLowerCase(); //Get extension
@@ -112,7 +112,7 @@ exports.UploadCKEditor = function (req, res) {
       async.apply(HelperFS.clearFiles, public_folder, jsh.Config.public_temp_expiration, -1),
       function (callback) {
         fs.exists(cmsfiles_folder + file_origname, function (exists) {
-          if (exists) return callback({ number: -37, message: "File already exists" });
+          if (exists) return callback({ number: -37, message: 'File already exists' });
           else return callback(null);
         });
       },
@@ -120,25 +120,25 @@ exports.UploadCKEditor = function (req, res) {
     ], function (err, rslt) {
       //Handle error or return result
       if (err) {
-        if (_.isObject(err) && ('number' in err) && (err.number == -36)) return Helper.GenError(req, res, -36, "User exceeded max temp folder size");
-        else if (_.isObject(err) && ('number' in err) && (err.number == -37)) return res.send("File name already exists on server - cannot overwrite");
-        return Helper.GenError(req, res, -99999, "Error occurred during file operation (" + err.toString() + ')');
+        if (_.isObject(err) && ('number' in err) && (err.number == -36)) return Helper.GenError(req, res, -36, 'User exceeded max temp folder size');
+        else if (_.isObject(err) && ('number' in err) && (err.number == -37)) return res.send('File name already exists on server - cannot overwrite');
+        return Helper.GenError(req, res, -99999, 'Error occurred during file operation (' + err.toString() + ')');
       }
       else {
-        var rslt = "\
-          <script type='text/javascript'>\
+        var rhtml = '\
+          <script type="text/javascript">\
             (function(){\
-              var funcNum = " + req.query.CKEditorFuncNum + ";\
-              var url = \"" + Helper.getFullURL(req, req.baseurl) + "cmsfiles/" + file_origname + "\";\
-              var message = \"Uploaded file successfully\";\
+              var funcNum = ' + req.query.CKEditorFuncNum + ';\
+              var url = "' + Helper.getFullURL(req, req.baseurl) + 'cmsfiles/' + file_origname + '";\
+              var message = "Uploaded file successfully";\
               window.parent.CKEDITOR.tools.callFunction(funcNum, url, message);\
             })();\
-          </script>";
-        return res.end(rslt);
+          </script>';
+        return res.end(rhtml);
       }
     });
   });
-}
+};
 
 exports.ClearUpload = function (req, res) {
   var jsh = this.jsh;
@@ -147,7 +147,7 @@ exports.ClearUpload = function (req, res) {
   HelperFS.clearFiles(user_folder, -1, -1, function (err) {
     res.end(JSON.stringify({ '_success': 1 }));
   });
-}
+};
 
 exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
   if (!options) options = {};
@@ -164,7 +164,7 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
       //Only executes upon error
       if (err != null) {
         if (('code' in err) && (err.code == 'ENOENT')) return Helper.GenError(req, res, -33, 'Download file not found.');
-        return Helper.GenError(req, res, -99999, "Error occurred during file operation (" + err.toString() + ')');
+        return Helper.GenError(req, res, -99999, 'Error occurred during file operation (' + err.toString() + ')');
       }
     }, serveoptions);
   };
@@ -177,7 +177,7 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
     serveFile(req, res, fpath, fname, fname);
   }
   else {
-    if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+    if (!this.jsh.hasModel(req, fullmodelid)) throw new Error('Error: Model ' + fullmodelid + ' not found in collection.');
     var model = this.jsh.getModel(req, fullmodelid);
     var db = this.jsh.getModelDB(req, fullmodelid);
     //Verify model access
@@ -192,8 +192,8 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
     //Make sure fieldid is in fields
     if (!_.includes(filelist, fieldid)) return Helper.GenError(req, res, -33, 'Download file not found.');
     var field = this.getFieldByName(model.fields, fieldid);
-    if (!('controlparams' in field)) { throw new Error('File ' + file + ' missing controlparams'); }
-    if (!('sqlparams' in field.controlparams)) { throw new Error('File ' + file + ' missing sqlparams'); }
+    if (!('controlparams' in field)) { throw new Error('File ' + fieldid + ' missing controlparams'); }
+    if (!('sqlparams' in field.controlparams)) { throw new Error('File ' + fieldid + ' missing sqlparams'); }
     if ('FILE_EXT' in field.controlparams.sqlparams) { fieldlist.push(field.controlparams.sqlparams.FILE_EXT); }
     if ('FILE_NAME' in field.controlparams.sqlparams) { fieldlist.push(field.controlparams.sqlparams.FILE_NAME); }
     //Get row from database
@@ -354,58 +354,62 @@ exports.ProcessFileOperations = function (keyval, fileops, rslt, stats, callback
       });
     }
     else if (fileop.op == 'img_crop') {
-      //Calculate w/h + x/y
-      //Optionally override output format
-      var img = imagick(filesrc);
-      img.size(function (err, size) {
-        if (err) return opcallback(err);
-        var cropw = fileop.size[0];
-        var croph = fileop.size[1];
-        var outerw = cropw;
-        var outerh = croph;
-        if ((size.width / cropw) > (size.height / croph)) {
-          outerw = Math.round(size.width * (croph / size.height));
-        }
-        else {
-          outerh = Math.round(size.height * (cropw / size.width));
-        }
-        var cropx = (outerw - cropw) / 2;
-        var cropy = (outerh - croph) / 2;
-        
+      (function(){
+        //Calculate w/h + x/y
+        //Optionally override output format
+        var img = imagick(filesrc);
+        img.size(function (err, size) {
+          if (err) return opcallback(err);
+          var cropw = fileop.size[0];
+          var croph = fileop.size[1];
+          var outerw = cropw;
+          var outerh = croph;
+          if ((size.width / cropw) > (size.height / croph)) {
+            outerw = Math.round(size.width * (croph / size.height));
+          }
+          else {
+            outerh = Math.round(size.height * (cropw / size.width));
+          }
+          var cropx = (outerw - cropw) / 2;
+          var cropy = (outerh - croph) / 2;
+          
+          if (fileop.format) {
+            img.setFormat(fileop.format);
+            if (_.includes(['jpeg', 'jpg'], fileop.format)) img.flatten();
+          }
+          img.quality(90);
+          img.resize(outerw, outerh);
+          img.crop(cropw, croph, cropx, cropy);
+          img.repage(0, 0, 0, 0);
+          img.noProfile().write(filedest, function (err) {
+            if (err) return opcallback(err);
+            return opcallback(null);
+          });
+        });
+      })();
+    }
+    else if (fileop.op == 'img_resize') {
+      (function(){
+        var img = imagick(filesrc);
+        var imgoptions = {};
+        if ((fileop.size.length >= 3) && fileop.size[2]) imgoptions = fileop.size[2];
         if (fileop.format) {
           img.setFormat(fileop.format);
-          if (_.includes(['jpeg', 'jpg'], fileop.format)) img.flatten();
+          if (_.includes(['jpeg', 'jpg'], fileop.format)) { img.flatten(); }
         }
         img.quality(90);
-        img.resize(outerw, outerh);
-        img.crop(cropw, croph, cropx, cropy);
-        img.repage(0, 0, 0, 0);
+        if (imgoptions.upsize) {
+          img.resize(fileop.size[0], fileop.size[1]);
+        }
+        else img.resize(fileop.size[0], fileop.size[1], '>');
+        if (imgoptions.extend) {
+          img.gravity('Center').extent(fileop.size[0], fileop.size[1]);
+        }
         img.noProfile().write(filedest, function (err) {
           if (err) return opcallback(err);
           return opcallback(null);
         });
-      });
-    }
-    else if (fileop.op == 'img_resize') {
-      var img = imagick(filesrc);
-      var imgoptions = {};
-      if ((fileop.size.length >= 3) && fileop.size[2]) imgoptions = fileop.size[2];
-      if (fileop.format) {
-        img.setFormat(fileop.format);
-        if (_.includes(['jpeg', 'jpg'], fileop.format)) { img.flatten(); }
-      }
-      img.quality(90);
-      if (imgoptions.upsize) {
-        img.resize(fileop.size[0], fileop.size[1]);
-      }
-      else img.resize(fileop.size[0], fileop.size[1], '>');
-      if (imgoptions.extend) {
-        img.gravity('Center').extent(fileop.size[0], fileop.size[1]);
-      }
-      img.noProfile().write(filedest, function (err) {
-        if (err) return opcallback(err);
-        return opcallback(null);
-      });
+      })();
     }
     else return opcallback(null);
   }, function (fileerr) {

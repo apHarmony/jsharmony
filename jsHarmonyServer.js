@@ -91,7 +91,7 @@ jsHarmonyServer.prototype.Init = function(cb){
     _this.addDefaultRoutes();
   }
   if(cb) return cb();
-}
+};
 
 jsHarmonyServer.prototype.addDefaultRoutes = function () {
   var _this = this;
@@ -114,7 +114,7 @@ jsHarmonyServer.prototype.addDefaultRoutes = function () {
       error: err,
     });
   });
-}
+};
 
 jsHarmonyServer.prototype.initDebugLogSocket = function(){
   var _this = this;
@@ -145,7 +145,7 @@ jsHarmonyServer.prototype.initDebugLogSocket = function(){
         try{
           jmsg = JSON.parse(data);
         }
-        catch(ex){}
+        catch(ex){} // eslint-disable-line no-empty
         //If message has "setSettings", read the "sources" object
         if(jmsg && jmsg.setSettings){
           var sources = jmsg.setSettings.sources;
@@ -204,7 +204,7 @@ jsHarmonyServer.prototype.initDebugLogSocket = function(){
       });
     });
   }
-}
+};
 
 //Add handler for WebSocket endpoints
 jsHarmonyServer.prototype.addWebSocketHandler = function(server){
@@ -266,14 +266,14 @@ jsHarmonyServer.prototype.addWebSocketHandler = function(server){
       }
     }
   });
-}
+};
 
 //ListenPortParams Object
 jsHarmonyServer.ListenPortParams = function(firstPort){
   this.firstRun = true;
   this.tryNextPort = false;
   this.currentPort = firstPort;
-}
+};
 
 //Bind port
 jsHarmonyServer.prototype.ListenPort = function(server, firstPort, ip, onSuccess, onError, params){
@@ -292,7 +292,7 @@ jsHarmonyServer.prototype.ListenPort = function(server, firstPort, ip, onSuccess
   }
   if(!params.currentPort){ params.currentPort = 8080; params.tryNextPort = true;  }
   server.listen(params.currentPort, ip);
-}
+};
 
 jsHarmonyServer.prototype.Run = function(cb){
   var _this = this;
@@ -302,6 +302,7 @@ jsHarmonyServer.prototype.Run = function(cb){
   var http_redirect = false;
   var http_server = false;
   var https_server = false;
+  var server = null;
 
   _this.initDebugLogSocket();
 
@@ -336,7 +337,7 @@ jsHarmonyServer.prototype.Run = function(cb){
   }
 
   if(http_server){
-    var server = http.createServer(_this.app);
+    server = http.createServer(_this.app);
     _this.servers.push(server);
     _this.addWebSocketHandler(server);
     server.timeout = _this.serverConfig.request_timeout;
@@ -350,9 +351,9 @@ jsHarmonyServer.prototype.Run = function(cb){
       Helper.triggerAsync(_this.jsh.Config.onServerReady, null, [server]);
       if (cb) cb([server]);
     }, function(err){
-      console.log('\r\n\r\nCANNOT START SERVER!!!!!!\r\n\r\n');
+      _this.jsh.Log.error('\r\n\r\n\r\nCANNOT START SERVER!!!!!!\r\n\r\n');
       if (err && (err.code == 'EADDRINUSE')) {
-        console.log('SERVER ALREADY RUNNING ON PORT '+_this.serverConfig.http_port+'\r\n\r\n');
+        _this.jsh.Log.error('SERVER ALREADY RUNNING ON PORT '+_this.serverConfig.http_port+'\r\n\r\n');
         Helper.triggerAsync(_this.jsh.Config.onServerReady); 
         if(cb) cb();
       } 
@@ -366,7 +367,7 @@ jsHarmonyServer.prototype.Run = function(cb){
       cert: f_cert
     };
     if(f_ca) https_options.ca = f_ca;
-    var server = https.createServer(https_options, _this.app);
+    server = https.createServer(https_options, _this.app);
     _this.servers.push(server);
     _this.addWebSocketHandler(server);
     server.timeout = _this.serverConfig.request_timeout;
@@ -392,9 +393,9 @@ jsHarmonyServer.prototype.Run = function(cb){
         Helper.triggerAsync(_this.jsh.Config.onServerReady, null, servers);
         if(cb_https) cb_https(servers);
       }, function(err){
-        console.log('\r\n\r\nCANNOT START SERVER!!!!!!\r\n\r\n');
+        _this.jsh.Log.error('\r\n\r\n\r\nCANNOT START SERVER!!!!!!\r\n\r\n');
         if (err && (err.code == 'EADDRINUSE')) {
-          console.log('SERVER ALREADY RUNNING ON PORT '+_this.serverConfig.https_port+'\r\n\r\n');
+          _this.jsh.Log.error('SERVER ALREADY RUNNING ON PORT '+_this.serverConfig.https_port+'\r\n\r\n');
           Helper.triggerAsync(_this.jsh.Config.onServerReady);
           if (cb_https) cb_https();
         } 
@@ -408,10 +409,10 @@ jsHarmonyServer.prototype.Run = function(cb){
       redirect_app.get('*', function (req, res) {
         var hostname = Helper.GetIP(req);
         if(req.headers && req.headers.host){
-          hostname = (req.headers.host.match(/:/g)) ? req.headers.host.slice(0, req.headers.host.indexOf(":")) : req.headers.host;
+          hostname = (req.headers.host.match(/:/g)) ? req.headers.host.slice(0, req.headers.host.indexOf(':')) : req.headers.host;
         }
         res.redirect('https://' + hostname + ':' + new_https_port + req.url);
-      })
+      });
       var redirect_server = http.createServer(redirect_app);
       _this.servers.push(redirect_server);
       redirect_server.timeout = _this.serverConfig.request_timeout;
@@ -419,9 +420,9 @@ jsHarmonyServer.prototype.Run = function(cb){
         new_http_port = redirect_server.address().port;
         start_https_server(cb,[redirect_server]);
       }, function(err){
-        console.log('\r\n\r\nCANNOT START SERVER!!!!!!\r\n\r\n');
+        _this.jsh.Log.error('\r\n\r\n\r\nCANNOT START SERVER!!!!!!\r\n\r\n');
         if (err && (err.code == 'EADDRINUSE')) {
-          console.log('SERVER ALREADY RUNNING ON PORT '+_this.serverConfig.http_port+'\r\n\r\n');
+          _this.jsh.Log.error('SERVER ALREADY RUNNING ON PORT '+_this.serverConfig.http_port+'\r\n\r\n');
           Helper.triggerAsync(_this.jsh.Config.onServerReady);
           if (cb) cb();
         } 
@@ -429,7 +430,7 @@ jsHarmonyServer.prototype.Run = function(cb){
       });
     }
   }
-}
+};
 
 jsHarmonyServer.prototype.Close = function(cb){
   var _this = this;
@@ -437,6 +438,6 @@ jsHarmonyServer.prototype.Close = function(cb){
   _this.servers = [];
   _this.running = false;
   if(cb) return cb();
-}
+};
 
 exports = module.exports = jsHarmonyServer;
