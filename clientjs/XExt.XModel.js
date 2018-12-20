@@ -26,8 +26,9 @@ exports = module.exports = function(jsh){
 
   XExtXModel.GetRowID = function (modelid,obj){
     var jobj = $(obj);
+    var xmodel = jsh.XModels[modelid];
     if(jobj.hasClass('row_independent')) return -1;
-    var cur_row = jobj.closest('.xrow_'+modelid);
+    var cur_row = jobj.closest('.xrow_'+xmodel.class);
     if (cur_row.length) {
       return cur_row.data('id');
     }
@@ -241,9 +242,9 @@ exports = module.exports = function(jsh){
     var show_lookup_when_readonly = false;
 
     var access = (_this._is_new?'I':'U');
-    if (xmodel.layout=='exec') access = 'B';
+    if ((xmodel.layout=='exec')||(xmodel.layout=='report')) access = 'B';
     var is_editable = jsh.XExt.HasAccess(field.actions, access);
-    if (is_editable && field.always_editable_on_insert && ((access == 'I') || (xmodel.layout=='exec'))){ }
+    if (is_editable && field.always_editable_on_insert && ((access == 'I') || ((xmodel.layout=='exec')||(xmodel.layout=='report')))){ }
     else {
       if (is_editable && ('readonly' in field) && (field.readonly == 1)) is_editable = false;
       if (_this._readonly && _.includes(_this._readonly, field.name)) is_editable = false;
@@ -376,6 +377,7 @@ exports = module.exports = function(jsh){
   XExtXModel.HasUpdates = function () {
     return function () {
       if (jsh.XModels[this._modelid].layout=='exec') return false;
+      if (jsh.XModels[this._modelid].layout=='report') return false;
       var _this = this;
       if (this._is_new) { return true; }
       var access = (this._is_new?'I':'U');
@@ -391,6 +393,7 @@ exports = module.exports = function(jsh){
   XExtXModel.HasUpdate = function () {
     return function (id) {
       if (jsh.XModels[this._modelid].layout=='exec') return false;
+      if (jsh.XModels[this._modelid].layout=='report') return false;
       var field = this.Fields[id];
       if (('virtual' in field) && field.virtual) return false;
       if (('static' in field) && field.static) return false;
@@ -419,7 +422,7 @@ exports = module.exports = function(jsh){
       //_is_new at record-level
       var _this = this;
       var access = (this._is_new?'I':'U');
-      if (xmodel.layout=='exec') access = 'B';
+      if ((xmodel.layout=='exec')||(xmodel.layout=='report')) access = 'B';
       if (this.HasUpdates()) {
         if (!this._is_dirty) {
           //Clone Data to Orig

@@ -5854,8 +5854,9 @@ exports = module.exports = function(jsh){
 
   XExtXModel.GetRowID = function (modelid,obj){
     var jobj = $(obj);
+    var xmodel = jsh.XModels[modelid];
     if(jobj.hasClass('row_independent')) return -1;
-    var cur_row = jobj.closest('.xrow_'+modelid);
+    var cur_row = jobj.closest('.xrow_'+xmodel.class);
     if (cur_row.length) {
       return cur_row.data('id');
     }
@@ -6069,9 +6070,9 @@ exports = module.exports = function(jsh){
     var show_lookup_when_readonly = false;
 
     var access = (_this._is_new?'I':'U');
-    if (xmodel.layout=='exec') access = 'B';
+    if ((xmodel.layout=='exec')||(xmodel.layout=='report')) access = 'B';
     var is_editable = jsh.XExt.HasAccess(field.actions, access);
-    if (is_editable && field.always_editable_on_insert && ((access == 'I') || (xmodel.layout=='exec'))){ }
+    if (is_editable && field.always_editable_on_insert && ((access == 'I') || ((xmodel.layout=='exec')||(xmodel.layout=='report')))){ }
     else {
       if (is_editable && ('readonly' in field) && (field.readonly == 1)) is_editable = false;
       if (_this._readonly && _.includes(_this._readonly, field.name)) is_editable = false;
@@ -6204,6 +6205,7 @@ exports = module.exports = function(jsh){
   XExtXModel.HasUpdates = function () {
     return function () {
       if (jsh.XModels[this._modelid].layout=='exec') return false;
+      if (jsh.XModels[this._modelid].layout=='report') return false;
       var _this = this;
       if (this._is_new) { return true; }
       var access = (this._is_new?'I':'U');
@@ -6219,6 +6221,7 @@ exports = module.exports = function(jsh){
   XExtXModel.HasUpdate = function () {
     return function (id) {
       if (jsh.XModels[this._modelid].layout=='exec') return false;
+      if (jsh.XModels[this._modelid].layout=='report') return false;
       var field = this.Fields[id];
       if (('virtual' in field) && field.virtual) return false;
       if (('static' in field) && field.static) return false;
@@ -6247,7 +6250,7 @@ exports = module.exports = function(jsh){
       //_is_new at record-level
       var _this = this;
       var access = (this._is_new?'I':'U');
-      if (xmodel.layout=='exec') access = 'B';
+      if ((xmodel.layout=='exec')||(xmodel.layout=='report')) access = 'B';
       if (this.HasUpdates()) {
         if (!this._is_dirty) {
           //Clone Data to Orig
@@ -7776,7 +7779,7 @@ exports = module.exports = function(jsh){
   XExt.popupReport = function (modelid, params, windowparams, win) {
     var url = jsh._BASEURL + '_d/_report/' + modelid + '/';
     var dfltwindowparams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
-    var modelmd5 = XExt.getModelMD5('_report_' + modelid);
+    var modelmd5 = XExt.getModelMD5(modelid);
     if (modelmd5 in jsh.popups) {
       default_popup_size = jsh.popups[modelmd5];
       dfltwindowparams.width = default_popup_size[0];
@@ -7942,6 +7945,23 @@ exports = module.exports = function(jsh){
     if (y < joff.top) return false;
     if (y > (joff.top + h)) return false;
     return true;
+  }
+  //Bind tab control events
+  XExt.bindTabControl = function(obj){
+    var jobj = $(obj);
+    var jtabbuttons = jobj.children('.xtab');
+    var jtabpanels = jobj.children('.xpanel').children('.xtabbody');
+    jtabbuttons.on('click', function(){
+      var jtabbutton = $(this);
+      if(jtabbutton.hasClass('selected')) return;
+      jtabbuttons.removeClass('selected');
+      jtabpanels.removeClass('selected');
+      jtabbutton.addClass('selected');
+      jtabpanels.filter('.'+jtabbutton.attr('for')).addClass('selected');
+    });
+    if(!jtabbuttons.filter('.selected').length) jtabbuttons.first().addClass('selected');
+    jtabpanels.filter('.'+jtabbuttons.filter('.selected').attr('for')).addClass('selected');
+    jobj.addClass('initialized');
   }
 
   return XExt;
@@ -20486,6 +20506,7 @@ jsHarmony.prototype.Init = function(){
     }
   });
   _this.InitDialogs();
+  _this.InitControls();
   _this.XMenu.Init();
   $(document).mousemove(function (e) {
     _this.mouseX = e.pageX;
@@ -20531,6 +20552,10 @@ jsHarmony.prototype.debugConsole = function (txt,clear) {
 jsHarmony.prototype.InitDialogs = function () {
   this.root.append($(XViews['jsh_system']));
 };
+jsHarmony.prototype.InitControls = function() {
+  var _this = this;
+  $('.xtabcontrol').not('.initialized').each(function(){ _this.XExt.bindTabControl(this); });
+}
 jsHarmony.prototype.XWindowResize = function (source) {
   var ww = $(window).width();
   var wh = $(window).height();

@@ -35,19 +35,20 @@ module.exports = exports = {};
 //Get array of all model folders
 exports.getModelDirs = function(){
   var rslt = [];
-  rslt.push({ module: 'jsharmony', path: this.Config.moduledir + '/models/' });
   for(var moduleName in this.Modules){
-    if(this.Modules[moduleName].Config.moduledir){
-      rslt.push({ module: moduleName, path: this.Modules[moduleName].Config.moduledir + '/models/' });
+    var module = this.Modules[moduleName];
+    var modelPath = module.getModelPath();
+    if(modelPath){
+      rslt.push({ module: moduleName, path: modelPath, namespace: module.namespace });
     }
   }
-  rslt.push({ module: 'application', path: this.Config.localmodeldir });
   return rslt;
 }
 
 exports.SetModels = function (models) { this.Models = models; }
 
-exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, module) {
+exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, module, options) {
+  options = _.extend(options, { isBaseDir: true });
   var _this = this;
   var dbDrivers = this.getDBDrivers();
   if (typeof prefix == 'undefined') prefix = '';
@@ -55,10 +56,20 @@ exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, module) {
   if(!fs.existsSync(modelbasedir)){ _this.LogInit_ERROR('Model folder ' + modelbasedir + ' not found'); return; }
   var fmodels = fs.readdirSync(modelbasedir);
   for (var i in fmodels) {
-    var fname = modelbasedir + fmodels[i];
+    var fname = fmodels[i];
+    var fpath = modelbasedir + fname;
+    var fstat = fs.lstatSync(fpath);
+    if(fstat.isDirectory()){
+      if(options.isBaseDir){
+        if(fname=='js') continue;
+        if(fname=='sql') continue;
+        if(fname=='public_css') continue;
+      }
+      _this.LoadModels(fpath + '/', modeldir, prefix + fname + '/', dbtype, module, { isBaseDir: false });
+    }
     if (fname.indexOf('.json', fname.length - 5) == -1) continue;
-    if (fmodels[i] == '_canonical.json') continue;
-    var modelname = prefix + fmodels[i].replace('.json', '');
+    if (fname == '_canonical.json') continue;
+    var modelname = prefix + fname.replace('.json', '');
     var isDBSpecific = false;
     if (dbtype && (fname.indexOf('.' + dbtype + '.') < 0)) {
       var found_other_dbtype = false;
@@ -66,27 +77,29 @@ exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, module) {
       if (found_other_dbtype) continue;
     }
     else{
-      modelname = prefix + fmodels[i].replace('.' + dbtype + '.', '.').replace('.json', '');
+      modelname = prefix + fname.replace('.' + dbtype + '.', '.').replace('.json', '');
       isDBSpecific = true;
     }
     _this.LogInit_INFO('Loading ' + modelname);
-    var model = _this.ParseJSON(fname, "Model " + modelname);
-    if (modelname == '_controls') {
+    var modelbasename = _this.getBaseModelName(modelname);
+    var model = _this.ParseJSON(fpath, "Model " + modelname);
+    if (modelbasename == '_controls') {
       for (var c in model) this.CustomControls[c] = model[c];
     }
-    else if (modelname == '_config') {
+    else if (modelbasename == '_config') {
       continue;
     }
     else {
       if (!('layout' in model) && !('inherits' in model)) {
         //Parse file as multiple-model file
         _.each(model, function (submodel, submodelname) {
-          submodelname = prefix + submodelname;
+          if(submodelname && (submodelname[0]=='/')) submodelname = submodelname.substr(1);
+          else submodelname = prefix + submodelname;
           _this.LogInit_INFO('Loading sub-model ' + submodelname);
-          _this.AddModel(submodelname, submodel, prefix, fname, modeldir);
+          _this.AddModel(submodelname, submodel, prefix, fpath, modeldir);
         });
       }
-      else this.AddModel(modelname, model, prefix, fname, modeldir);
+      else this.AddModel(modelname, model, prefix, fpath, modeldir);
     }
   }
 }
@@ -152,50 +165,59 @@ exports.MergeFolder = function (dir) {
 }
 
 exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
+
+  function prependPropFile(prop, path){
+    if (fs.existsSync(path)) {
+      var fcontent = fs.readFileSync(path, 'utf8');
+      if (prop in model) fcontent += "\r\n" + model[prop];
+      model[prop] = fcontent;
+    }
+  }
+
   if(!prefix) prefix = '';
   var _this = this;
   model['id'] = modelname;
   model['idmd5'] = crypto.createHash('md5').update(_this.Config.frontsalt + model.id).digest('hex');
-  model['access_models'] = {};
-  model['_inherits'] = [];
+  if('namespace' in model){ _this.LogInit_ERROR(model.id + ': "namespace" attribute should not be set, it is a read-only system parameter'); }
+  model.access_models = {};
+  model._inherits = [];
+  model._referencedby = [];
   if(!model.path && modelpath) model.path = modelpath;
-  if(!model.module && modeldir && modeldir.module)  model.module = modeldir.module;
+  if(!model.module && modeldir && modeldir.module) model.module = modeldir.module;
+  model.namespace = _this.getNamespace(modelname);
+
+  model.using = model.using || [];
+  if(!_.isArray(model.using)) model.using = [model.using];
+  for(var i=0;i<model.using.length;i++){
+    //Resolve "using" paths
+    var upath = model.using[i];
+    upath = _this.getCanonicalNamespace(upath, modeldir.namespace);
+    model.using[i] = upath;
+  }
   if ('actions' in model) model['access_models'][modelname] = model.actions;
-  if (('inherits' in model) && (model.inherits.indexOf(prefix)!=0)) model.inherits = prefix + model.inherits;
   if('css' in model) model.css = Helper.ParseMultiLine(model.css);
   //if (modelname in this.Models) throw new Error('Cannot add ' + modelname + '.  The model already exists.')
   var modelbasedir = '';
   if(model.path) modelbasedir = path.dirname(model.path) + '/';
   if(modelbasedir){
+    var modelpathbase = modelpath.substr(0,modelpath.length-5);
     //Load JS
-    var jsfname = (modelbasedir + modelname.substr(prefix.length) + '.js');
-    if (fs.existsSync(jsfname)) {
-      var newjs = fs.readFileSync(jsfname, 'utf8');
-      if ('js' in model) newjs += "\r\n" + model.js;
-      model['js'] = newjs;
-    }
+    prependPropFile('js',modelpathbase + '.js');
     //Load CSS
-    var cssfname = (modelbasedir + modelname.substr(prefix.length) + '.css');
-    if (fs.existsSync(cssfname)) {
-      var newcss = fs.readFileSync(cssfname, 'utf8');
-      if ('css' in model) newcss += "\r\n" + model.css;
-      model['css'] = newcss;
-    }
+    prependPropFile('css',modelpathbase + '.css');
     //Load EJS
-    var ejsfname = (modelbasedir + modelname.substr(prefix.length) + '.ejs');
-    if(prefix=='_report_') ejsfname = (modelbasedir + modelname.substr(prefix.length) + '.form.ejs');
-    if (fs.existsSync(ejsfname)) {
-      var newejs = fs.readFileSync(ejsfname, 'utf8');
-      if ('ejs' in model) newejs += "\r\n" + model.ejs;
-      model['ejs'] = newejs;
+    var ejsfname = (modelpathbase + '.ejs');
+    if(model.layout=='report') ejsfname = (modelpathbase + '.form.ejs');
+    prependPropFile('ejs',ejsfname);
+    //Load Report EJS
+    if(model.layout=='report'){
+      prependPropFile('pageheader',modelpathbase + '.header.ejs');
+      prependPropFile('pagefooter',modelpathbase + '.footer.ejs');
+      prependPropFile('reportbody',modelpathbase + '.ejs');
     }
     //Load "onroute" handler
-    var jsonroutefname = (modelbasedir + modelname.substr(prefix.length) + '.onroute.js');
-    if (fs.existsSync(jsonroutefname)) {
-      var newjs = fs.readFileSync(jsonroutefname, 'utf8');
-      if ('onroute' in model) newjs += "\r\n" + model.onroute;
-      model['onroute'] = newjs;
-    }
+    prependPropFile('onroute',modelpathbase + '.onroute.js');
+    var jsonroutefname = (modelpathbase + '.onroute.js');
   }
   if (!('helpid' in model) && !('inherits' in model)) model.helpid = modelname;
   if ('onroute' in model) model.onroute = (new Function('routetype', 'req', 'res', 'callback', 'require', 'jsh', 'modelid', 'params', model.onroute));
@@ -216,20 +238,22 @@ exports.ParseInheritance = function () {
   while (foundinheritance) {
     foundinheritance = false;
     _.forOwn(this.Models, function (model) {
-      if ('inherits' in _this.Models[model.id]) {
+      if ('inherits' in model) {
         foundinheritance = true;
-        if (!(model.inherits in _this.Models)) throw new Error('Model ' + model.id + ': Parent model ' + model.inherits + ' does not exist.');
-        if (model.inherits == model.id) throw new Error('Model ' + model.id + ' cyclic inheritance.')
-        var parentmodel = _this.Models[model.inherits];
+        var parentmodel = _this.getModel(null,model.inherits,model);
+        if (!parentmodel) throw new Error('Model ' + model.id + ': Parent model ' + model.inherits + ' does not exist.');
+        if (parentmodel.id == model.id) throw new Error('Model ' + model.id + ' cyclic inheritance.')
         var origparentmodel = parentmodel;
         var parentinheritance = parentmodel.inherits;
         if (typeof parentinheritance !== 'undefined') return;
         parentmodel = JSON.parse(JSON.stringify(parentmodel)); //Deep clone
         if(origparentmodel.onroute) parentmodel.onroute = origparentmodel.onroute;
         model._inherits = parentmodel._inherits.concat([model.inherits]);
+        if(!_.includes(model.using, parentmodel.namespace)) model.using.push(parentmodel.namespace);
 
         //Add Parent Model Groups
         model.groups = _.union(parentmodel.groups, model.groups);
+        model.using = _.union(parentmodel.using, model.using);
 
         //Merge Models
         //Extend this to enable delete existing values by making them NULL
@@ -521,7 +545,7 @@ exports.ParseEntities = function () {
       else model.commitlevel = 'auto';
     }
     if (!('actions' in model)){
-      if((model.layout=='exec')||(model.layout=='multisel')) model.actions = 'BU';
+      if((model.layout=='exec')||(model.layout=='report')||(model.layout=='multisel')) model.actions = 'BU';
       else if(model.layout=='grid'){
         if(!model.commitlevel || model.commitlevel=='none') model.actions = 'B';
         else model.actions = 'BIUD';
@@ -532,7 +556,7 @@ exports.ParseEntities = function () {
     var isReadOnlyGrid = modelExt.isReadOnlyGrid = (model.layout=='grid') && (!model.commitlevel || (model.commitlevel=='none') || !Helper.access(model.actions, 'IU'));
     if(tabledef){
       var autolayout = '';
-      if((model.layout=='form') || (model.layout=='form-m') || (model.layout=='exec')) autolayout = 'form';
+      if((model.layout=='form') || (model.layout=='form-m') || (model.layout=='exec') || (model.layout=='report')) autolayout = 'form';
       if(model.layout=='grid') autolayout = 'grid';
       if(model.layout=='multisel') autolayout = 'multisel';
 
@@ -567,7 +591,7 @@ exports.ParseEntities = function () {
       }
     }
     model.sites = Helper.GetRoleSites(model.roles);
-    if ((model.layout != 'exec') && !('table' in model) && !(model.unbound) && !model.sqlselect) _this.LogInit_WARNING('Model ' + model.id + ' missing table - use model.unbound property if this is intentional');
+    if ((model.layout != 'exec') && (model.layout != 'report') && !('table' in model) && !(model.unbound) && !model.sqlselect) _this.LogInit_WARNING('Model ' + model.id + ' missing table - use model.unbound property if this is intentional');
     //Read-only grids should only have "B" actions
     if ((model.layout=='grid') && model.actions){
       if(!model.commitlevel || (model.commitlevel=='none')){
@@ -581,16 +605,14 @@ exports.ParseEntities = function () {
     if (!('caption' in model)) {
       model.caption = ['', model.id, model.id];
       originalCaption = false;
-      if(!model.unbound && (model.layout != 'exec') && validation_level.strict) _this.LogInit_WARNING('Model ' + model.id + ' missing caption');
+      if(!model.unbound && (model.layout != 'exec') && (model.layout != 'report') && validation_level.strict) _this.LogInit_WARNING('Model ' + model.id + ' missing caption');
     }
     if(!model.caption) model.caption = ['','',''];
     else if(_.isString(model.caption) || !_.isArray(model.caption)) model.caption = ['',model.caption,model.caption];
     else if(model.caption.length==1) model.caption = ['',model.caption[0],model.caption[0]];
     else if(model.caption.length==2) model.caption = ['',model.caption[0],model.caption[1]];
 
-    model.class = model.id.replace(/[^a-zA-Z0-9_-]+/g, '_');
-    model.class = Helper.trimLeft(model.class,'-');
-    while(model.class.indexOf('__') > 0) model.class = Helper.ReplaceAll(model.class,'__','_');
+    model.class = Helper.getClassName(model.id);
 
     if (!('title' in model)){
       if(model.tabs && model.tabs.length && model.tabpos && (model.tabpos=='top')){ }
@@ -628,7 +650,7 @@ exports.ParseEntities = function () {
     _.each(model.fields, function (field) {
       if(field.key) foundkey = true;
     });
-    if (!foundkey && (model.layout != 'exec') && !model.unbound && !model.nokey){
+    if (!foundkey && (model.layout != 'exec') && (model.layout != 'report') && !model.unbound && !model.nokey){
       if(auto_attributes && tabledef){
         _.each(model.fields, function (field) {
           var fielddef = db.getFieldDefinition(model.table, field.name,tabledef);
@@ -779,7 +801,7 @@ exports.ParseEntities = function () {
             else if(field.foreignkey) {}
             else field.actions = 'B';
           }
-          else if(model.layout=='exec'){
+          else if((model.layout=='exec')||(model.layout=='report')){
             if(field.key) field.actions = 'B';
             else if(!('control' in field)) field.actions = 'B';
             else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
@@ -794,7 +816,7 @@ exports.ParseEntities = function () {
         else field.caption = field.name;
       }
       if(model.onecolumn){
-        if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')){
+        if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
           if(!firstfield && ('control' in field)) field.nl = 1;
         }
       }
@@ -1030,7 +1052,7 @@ exports.ParseEntities = function () {
       //Add C for any LOV field that can be used in truncate_lov
       if(field.lov){
         var lov = field.lov;
-        if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')){
+        if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
           if(!field.always_editable_on_insert && Helper.access(model.actions, 'I') && Helper.access(field.actions, 'I')){
             if(lov.sql||lov.sql2||lov.sqlmp||lov.sqlselect){
               if (!Helper.access(field.actions, 'C')) { if (!field.actions) field.actions = ''; field.actions += 'C'; }
@@ -1097,15 +1119,15 @@ exports.ParseEntities = function () {
 
     //Validate Model and Field Parameters
     var _v_model = [
-      'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites', 'class',
-      'samplerepeat', 'menu', 'id', 'idmd5', 'access_models', '_inherits', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
-      'pagesettings', 'pageheader', 'pageheaderjs', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
+      'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites', 'class', 'using',
+      'samplerepeat', 'menu', 'id', 'idmd5', 'access_models', '_inherits', '_referencedby','groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
+      'pagesettings', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_filter', 'grid_save_before_update', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
       'js', 'ejs', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
-      'path', 'module', 'templates', 'db', 'onecolumn',
+      'path', 'module', 'templates', 'db', 'onecolumn', 'namespace',
       //Report Parameters
       'subheader', 'footerheight', 'headeradd',
     ];
@@ -1210,7 +1232,7 @@ exports.ParseEntities = function () {
       for (var i=0; i<model.tabs.length; i++) {
         var tab = model.tabs[i];
         var tabname = tab.name;
-        var tabmodel = _this.Models[tab.target];
+        var tabmodel = _this.getModel(null,tab.target,model);
         if(!('actions' in tab)) tab.actions='*';
         for (var binding_child in tab.bindings) {
           if (!tabmodel) { continue; }
@@ -1306,7 +1328,7 @@ exports.ParseEntities = function () {
               else if(_.includes(all_foreignkeys, field.name)) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
               else if(_.includes(all_lovs, field.name)) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
               //Any Exec / U fields with a datalock defined
-              if ((model.layout=='exec') && Helper.access(field.actions, 'U') && Helper.arrayItem(_this.Config.datalocks[siteid][datalockid],field.name,datalockSearchOptions)) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
+              if (((model.layout=='exec')||(model.layout=='report')) && Helper.access(field.actions, 'U') && Helper.arrayItem(_this.Config.datalocks[siteid][datalockid],field.name,datalockSearchOptions)) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
 
               //If datalock was added, continue to next field
               if(field.datalock && Helper.arrayItem(field.datalock,datalockid,datalockSearchOptions)) return;
@@ -1434,8 +1456,8 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
 
   //Get binding target
   if (!('target' in element)) { options.log(model.id + ' > ' + elementname + ' Bindings: Missing target'); return }
-  if (!(element.target in _this.Models)) { options.log(model.id + ' > ' + elementname + ': Target model "' + element.target + '" not found'); return }
-  var tmodel = _this.getModel(options.req, element.target);
+  var tmodel = _this.getModel(options.req, element.target, model);
+  if (!tmodel) { options.log(model.id + ' > ' + elementname + ': Target model "' + element.target + '" not found'); return }
 
   //Get keys in parent model
   var parentKeys = _this.AppSrvClass.prototype.getKeyNames(model.fields);
@@ -1446,7 +1468,7 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
   //For each dynamic binding
   for(var modelgroup in this.Config.dynamic_bindings){
     //If the dynamic binding applies to this model
-    if(!this.isInModelGroup(tmodel.id, modelgroup)) continue;
+    if(!this.isInModelGroup(tmodel, modelgroup)) continue;
     found_bindings = true;
     var dynamic_binding = this.Config.dynamic_bindings[modelgroup];
     //Apply dynamic bindings
@@ -1491,7 +1513,7 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
         if(childField.key) return;
         var field = null;
         //Don't bind to parent fields if the parent is a grid
-        if((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec')){
+        if((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec') || (model.layout == 'report')){
           field = _this.AppSrvClass.prototype.getFieldByName(model.fields, childField.name);
         }
         if(field || _.includes(options.additionalFields,childField.name)){
@@ -1522,11 +1544,10 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
   return bindings;
 }
 
-exports.isInModelGroup = function(modelid, modelgroupid){
-  if(!(modelid in this.Models)) throw new Error('Invalid modelid: '+modelid);
-  if(modelid==modelgroupid) return true;
-  if(_.includes(this.Models[modelid].groups, modelgroupid)) return true;
-  if(_.includes(this.Models[modelid]._inherits, modelgroupid)) return true;
+exports.isInModelGroup = function(model, modelgroupid){
+  if(model.id==modelgroupid) return true;
+  if(_.includes(model.groups, modelgroupid)) return true;
+  if(_.includes(model._inherits, modelgroupid)) return true;
   return false;
 }
 
@@ -1551,8 +1572,8 @@ function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
     var linkTarget = jsh.parseLink(link);
     if(!linkTarget.modelid) return;
     if(linkTarget.modelid.substr(0,3)=='js:') return;
-    if (!(linkTarget.modelid in jsh.Models)) { _this.LogInit_ERROR((prefix||'') + 'Link Target model "' + linkTarget.modelid + '" not found'+(suffix?' in link expression "'+suffix+'"':'')); return }
-    var linkModel = jsh.Models[linkTarget.modelid];
+    var linkModel = jsh.getModel(null,linkTarget.modelid,model);
+    if (!linkModel) { _this.LogInit_ERROR((prefix||'') + 'Link Target model "' + linkTarget.modelid + '" not found'+(suffix?' in link expression "'+suffix+'"':'')); return }
     validateSiteAccess(model, linkModel, prefix, suffix, roles);
   }
 
@@ -1565,7 +1586,6 @@ function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
     if (!('name' in tab)) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Invalid tab format - missing name'); return }
     if (!('target' in tab)) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Invalid tab format - missing target'); return }
     if (!('bindings' in tab)) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Invalid tab format - missing bindings'); return }
-    if (!(tab.target in jsh.Models)) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Target model "' + tab.target + '" not found'); return }
     if (tab.roles) {
       if(_.isArray(tab.roles)) tab.roles = { "main": tab.roles };
       for(var siteid in tab.roles){
@@ -1576,14 +1596,15 @@ function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
         tab.roles[siteid] = rolesObj;
       }
     }
-    var tmodel = jsh.Models[tab.target];
+    var tmodel = jsh.getModel(null,tab.target,model);
+    if (!tmodel) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Target model "' + tab.target + '" not found'); return }
     tmodel.access_models[srcmodelid] = srcaccess;
     validateSiteAccess(model, tmodel, model.id + ' > Tab ' + tabname + ': ', '', tab.roles);
     ParseAccessModels(jsh, tmodel, srcmodelid, srcaccess);
   }
   if ('duplicate' in model) {
-    if (!(model.duplicate.target in jsh.Models)) { _this.LogInit_WARNING('Invalid duplicate model ' + model.duplicate + ' in ' + model.id); return }
-    var tmodel = jsh.Models[model.duplicate.target];
+    var tmodel = jsh.getModel(null,model.duplicate.target,model);
+    if (!tmodel) { _this.LogInit_WARNING('Invalid duplicate model ' + model.duplicate + ' in ' + model.id); return }
     tmodel.access_models[srcmodelid] = srcaccess;
     validateSiteAccess(model, tmodel, model.id + ' > Duplicate model ' + model.duplicate + ': ', '');
     validateSiteLinks(model, model.duplicate.link, model.id + ' > Duplicate model ' + model.duplicate + ' link: ', model.duplicate.link);
@@ -1594,12 +1615,19 @@ function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
   });
   _.each(model.fields, function (field) {
     if (('target' in field) && ((field.control == 'subform') || (field.popuplov))) {
-      if (!(field.target in jsh.Models)) { _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Invalid target model "' + field.target + '"'); return }
-      var tmodel = jsh.Models[field.target];
+      var tmodel = jsh.getModel(null,field.target,model);
+      if (!tmodel) { _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Invalid target model "' + field.target + '"'); return }
       tmodel.access_models[srcmodelid] = srcaccess;
       validateSiteAccess(model, tmodel, model.id + ' > ' + field.name + ': ', '', field.roles);
       validateSiteLinks(model, field.link, model.id + ' > ' + field.name + ' link: ', field.link, field.roles);
       ParseAccessModels(jsh, tmodel, srcmodelid, srcaccess);
+    }
+    else if(('link' in field)){
+      if(Helper.access(field.actions, 'B') && (field.control != 'hidden') && !('value' in field)){
+        if(field.link != 'select'){
+          validateSiteLinks(model, field.link, model.id + ' > ' + field.name + ' link: ', field.link, field.roles);
+        }
+      }
     }
     if ((field.control == 'subform') && !('bindings' in field)) _this.LogInit_WARNING('Model ' + model.id + ' subform ' + field.name + ' missing binding.');
   });

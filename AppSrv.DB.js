@@ -401,6 +401,7 @@ exports.addSearchTerm = function (req, model, field, search_i, in_search_value, 
 
 exports.getDataLockSQL = function (req, model, fields, sql_ptypes, sql_params, verrors, fPerDataLock, nodatalock, descriptor, options) {
   if (!('datalock' in req.jshsite)) return;
+  if(!descriptor) descriptor = model.id
   descriptor =  (descriptor ? ' (' + descriptor + ')' : '');
   options = _.extend({ skipDataLocks: [] }, options);
   var _this = this;
@@ -445,7 +446,7 @@ exports.getDataLockSQL = function (req, model, fields, sql_ptypes, sql_params, v
       else if (('actions' in field) && (Helper.access(field.actions, 'C'))) throw new Error('Missing DataLock for initial parameter ' + field.name + descriptor);
     }
     //if(!found_datalock){ console.log(fields); } //Use for debugging
-    if (!found_datalock) throw new Error('DataLock ' + datalockid + ' not found.' + descriptor);
+    if (!found_datalock) throw new Error('No fields with DataLock ' + datalockid + ' found in ' + descriptor);
   }
 };
 

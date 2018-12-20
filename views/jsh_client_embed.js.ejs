@@ -48,6 +48,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   %>
   var xmodel = jsh.XModels[modelid] = {
     id:modelid,
+    namespace:'<%=model.namespace%>',
     class:'<%=model.class%>',
     controller: null,
     datamodel: null,
@@ -128,6 +129,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   model.layout=='form-m','form',
   model.layout=='multisel','multisel',
   model.layout=='exec','exec',
+  model.layout=='report','exec',
   model.layout=='grid','grid'
   )+'.js',ejsparams)%>
 </script>

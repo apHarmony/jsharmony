@@ -22,9 +22,9 @@ var _ = require('lodash');
 
 module.exports = exports = {};
 
-exports.getModelExec = function (req, res, modelid, Q, P, form_m) {
-  var model = this.jsh.getModel(req, modelid);
-  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
+exports.getModelExec = function (req, res, fullmodelid, Q, P, form_m) {
+  var model = this.jsh.getModel(req, fullmodelid);
+  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   var _this = this;
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
   var filelist = this.getFileFieldNames(req, model.fields, 'B');
@@ -53,12 +53,12 @@ exports.getModelExec = function (req, res, modelid, Q, P, form_m) {
   return dbtasks;
 }
 
-exports.postModelExec = function (req, res, modelid, Q, P, onComplete) {
+exports.postModelExec = function (req, res, fullmodelid, Q, P, onComplete) {
   var _this = this;
-  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
-  var model = this.jsh.getModel(req, modelid);
-  if (!Helper.HasModelAccess(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
-  var db = _this.jsh.getModelDB(req, modelid);
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+  var model = this.jsh.getModel(req, fullmodelid);
+  if (!Helper.HasModelAccess(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+  var db = _this.jsh.getModelDB(req, fullmodelid);
   
   var fieldlist = this.getFieldNames(req, model.fields, 'U');
   
@@ -66,7 +66,7 @@ exports.postModelExec = function (req, res, modelid, Q, P, onComplete) {
   if (!_this.ParamCheck('Q', Q, [])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   if (!_this.ParamCheck('P', P, Pcheck)) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   
-  if (!('sqlexec' in model)) throw new Error("Error: Model " + modelid + " missing sqlexec.");
+  if (!('sqlexec' in model)) throw new Error("Error: Model " + fullmodelid + " missing sqlexec.");
   var sql_ptypes = [];
   var sql_params = {};
   var verrors = {};
@@ -102,7 +102,7 @@ exports.postModelExec = function (req, res, modelid, Q, P, onComplete) {
   var sql = db.sql.postModelExec(_this.jsh, model, param_datalocks, datalockqueries);
   
   var dbtasks = {};
-  dbtasks[modelid] = function (dbtrans, callback, transtbl) {
+  dbtasks[fullmodelid] = function (dbtrans, callback, transtbl) {
     sql_params = _this.ApplyTransTblEscapedParameters(sql_params, transtbl);
     var dbfunc = db.Recordset;
     if (model.sqltype && (model.sqltype == 'multirecordset')) dbfunc = db.MultiRecordset;

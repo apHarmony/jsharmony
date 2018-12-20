@@ -22,9 +22,9 @@ var _ = require('lodash');
 
 module.exports = exports = {};
 
-exports.getModelMultisel = function (req, res, modelid, Q, P) {
-  var model = this.jsh.getModel(req, modelid);
-  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
+exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
+  var model = this.jsh.getModel(req, fullmodelid);
+  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   var _this = this;
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
   var keylist = this.getKeyNames(model.fields);
@@ -40,7 +40,7 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
   if (lovfield == null) throw new Error('Invalid Multisel - No LOV field.');
   var allfieldslist = _.union([lovfield.name], fieldlist);
   var allfields = this.getFieldsByName(model.fields, allfieldslist);
-  var db = _this.jsh.getModelDB(req, modelid);
+  var db = _this.jsh.getModelDB(req, fullmodelid);
   
   var is_new = true;
   if (_this.ParamCheck('Q', Q, _.map(foreignkeylist, function (foreignkey) { return '&' + foreignkey; }), false)) { is_new = false; }
@@ -64,14 +64,14 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
     if ('lovkey' in dfield) return false; //DATALOCK validation handled  below in prefix
     datalockqueries.push(datalockquery);
     return true;
-  }, null, modelid);
+  }, null, fullmodelid);
   
   var lov = lovfield.lov;
   if ('sql' in lov) {
     var datalockstr = '';
     _this.getDataLockSQL(req, model, [lov], sql_ptypes, sql_params, verrors, function (datalockquery) {
       lov_datalockqueries.push(datalockquery);
-    }, null, modelid + '_lov');
+    }, null, fullmodelid + '_lov');
     
     //Add LOV parameters
     if ('sql_params' in lov) {
@@ -103,7 +103,7 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
         if (dfield != field) return false;
         param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
         return true;
-      }, null, modelid + "_key");
+      }, null, fullmodelid + "_key");
     }
     else { if (is_new) continue; _this.jsh.Log.warning('Missing parameter ' + fname); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   }
@@ -114,7 +114,7 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
   var sql = db.sql.getModelMultisel(_this.jsh, model, lovfield, allfields, sql_foreignkeyfields, datalockqueries, lov_datalockqueries, param_datalocks);
   
   var dbtasks = {};
-  dbtasks[modelid] = function (dbtrans, callback) {
+  dbtasks[fullmodelid] = function (dbtrans, callback) {
     db.Recordset(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
       if ((err == null) && (rslt == null)) err = Helper.NewError('Record not found', -1);
       if (err != null) { err.model = model; err.sql = sql; }
@@ -128,11 +128,11 @@ exports.getModelMultisel = function (req, res, modelid, Q, P) {
   return dbtasks;
 };
 
-exports.postModelMultisel = function (req, res, modelid, Q, P, onComplete) {
-  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
+exports.postModelMultisel = function (req, res, fullmodelid, Q, P, onComplete) {
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
   var _this = this;
-  var model = this.jsh.getModel(req, modelid);
-  if (!Helper.HasModelAccess(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
+  var model = this.jsh.getModel(req, fullmodelid);
+  if (!Helper.HasModelAccess(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   
   var lovfield = null;
   _.each(model.fields, function (field) {
@@ -144,7 +144,7 @@ exports.postModelMultisel = function (req, res, modelid, Q, P, onComplete) {
   if (lovfield == null) throw new Error('Invalid Multisel - No LOV field.');
   var foreignkeylist = _this.getFieldNames(req, model.fields, 'F');
   var foreignkeyfields = this.getFieldsByName(model.fields, foreignkeylist);
-  var db = _this.jsh.getModelDB(req, modelid);
+  var db = _this.jsh.getModelDB(req, fullmodelid);
   
   if (!_this.ParamCheck('Q', Q, _.map(foreignkeylist, function (foreignkey) { return '&' + foreignkey; }))) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   if (!_this.ParamCheck('P', P, ['&' + lovfield.name])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
@@ -227,7 +227,7 @@ exports.postModelMultisel = function (req, res, modelid, Q, P, onComplete) {
   var sql = db.sql.postModelMultisel(_this.jsh, model, lovfield, lovvals, foreignkeyfields, param_datalocks, datalockqueries, lov_datalockqueries);
   
   var dbtasks = {};
-  dbtasks[modelid] = function (dbtrans, callback, transtbl) {
+  dbtasks[fullmodelid] = function (dbtrans, callback, transtbl) {
     sql_params = _this.ApplyTransTblEscapedParameters(sql_params, transtbl);
     db.Row(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
       if (err != null) { err.model = model; err.sql = sql; }

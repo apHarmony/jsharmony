@@ -24,8 +24,8 @@ var fs = require('fs');
 
 module.exports = exports = {};
 
-exports.getReport = function (req, res, modelid, Q, P, callback) {
-  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Report " + modelid + " not found in collection.");
+exports.getReport = function (req, res, fullmodelid, Q, P, callback) {
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Report " + fullmodelid + " not found in collection.");
   var _this = this;
   if (typeof Q == 'undefined') Q = req.query;
   if (typeof P == 'undefined') P = req.body;
@@ -38,14 +38,14 @@ exports.getReport = function (req, res, modelid, Q, P, callback) {
       res.writeHead(200, {
         'Content-Type': 'application/pdf',
         'Content-Length': stat.size,
-        'Content-Disposition': 'filename = ' + encodeURIComponent(modelid + '.pdf')
+        'Content-Disposition': 'filename = ' + encodeURIComponent(fullmodelid + '.pdf')
       });
       var rs = fs.createReadStream(tmppath);
       rs.pipe(res).on('finish', function () { dispose(); });
     });
   }
   
-  this.rptsrv.queueReport(req, res, modelid, Q, P, {}, callback);
+  this.rptsrv.queueReport(req, res, fullmodelid, Q, P, {}, callback);
 }
 
 exports.parseReportHTML = function(rptcontent){
@@ -77,8 +77,8 @@ exports.parseReportHTML = function(rptcontent){
   return rslt;
 }
 
-exports.getReportHTML = function (req, res, modelid, Q, P, callback) {
-  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Report " + modelid + " not found in collection.");
+exports.getReportHTML = function (req, res, fullmodelid, Q, P, callback) {
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Report " + fullmodelid + " not found in collection.");
   var _this = this;
   if (typeof Q == 'undefined') Q = req.query;
   if (typeof P == 'undefined') P = req.body;
@@ -105,17 +105,17 @@ exports.getReportHTML = function (req, res, modelid, Q, P, callback) {
     res.end(rslt);
   }
   
-  this.rptsrv.queueReport(req, res, modelid, Q, P, {output:'html'}, callback);
+  this.rptsrv.queueReport(req, res, fullmodelid, Q, P, {output:'html'}, callback);
 }
 
-exports.getReportJob = function (req, res, modelid, Q, P, callback) {
-  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Report " + modelid + " not found in collection.");
+exports.getReportJob = function (req, res, fullmodelid, Q, P, callback) {
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Report " + fullmodelid + " not found in collection.");
   var _this = this;
   if (typeof Q == 'undefined') Q = req.query;
   if (typeof P == 'undefined') P = req.body;
   if (typeof callback == 'undefined') callback = function () { /* Report Done */ };
   
-  this.rptsrv.runReportJob(req, res, modelid, Q, P, callback);
+  this.rptsrv.runReportJob(req, res, fullmodelid, Q, P, callback);
 }
 
 return module.exports;

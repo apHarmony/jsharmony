@@ -294,7 +294,8 @@ jsHarmonyConfig.prototype.Merge = function(config){
   if(config){
     for(var prop in config){
       //Handle modules
-      if(prop=='modules'){
+      if(prop=='sourceModuleName') continue;
+      else if(prop=='modules'){
         for(var moduleName in config.modules){
           if((moduleName in this.modules) && (this.modules[moduleName].prototype) && (this.modules[moduleName].prototype.Merge)){
             this.modules[moduleName].Merge(config.modules[moduleName]);
@@ -354,13 +355,41 @@ jsHarmonyConfig.prototype.LoadJSConfigFolder = function(jsh, fpath){
   this.LoadJSConfigFile(jsh, fpath + '/app.config.' + os.hostname().toLowerCase() + '.js');
 }
 
-jsHarmonyConfig.prototype.LoadJSONConfigFile = function(jsh, fpath, dbDriver){
+jsHarmonyConfig.prototype.LoadJSONConfigFile = function(jsh, fpath, sourceModule, dbDriver){
+  //Add namespace where applicable
+  function addNamespace(modelid){
+    if(!modelid) return modelid;
+    if(modelid[0]=='/') return modelid;
+    return sourceModule.namespace + modelid;
+  }
+
   if(!fpath) throw new Error('Config file path is required');
   if (!fs.existsSync(fpath)) return;
   var config = jsh.ParseJSON(fpath, "Config");
+  //Add namespace to model names
+  if(config && sourceModule){
+    if(config.model_groups){
+      for (var model_group in config.model_groups){
+        var model_group_members = config.model_groups[model_group];
+        for(var i=0;i<model_group_members.length;i++){
+          model_group_members[i] = addNamespace(model_group_members[i]);
+        }
+      }
+    }
+    if(config.help_view){
+      if(_.isString(config.help_view)) config.help_view = addNamespace(config.help_view);
+      else{
+        for(var siteid in config.help_view){
+          config.help_view[siteid] = addNamespace(config.help_view[siteid]);
+        }
+      }
+    }
+  }
+  //Merge or delay-merge config
   if(dbDriver){
     //Add to database-specific config
     if(!(dbDriver in this.forDB)) this.forDB[dbDriver] = [];
+    config.sourceModuleName = sourceModule.name;
     this.forDB[dbDriver].push(config);
   }
   else {
@@ -369,7 +398,7 @@ jsHarmonyConfig.prototype.LoadJSONConfigFile = function(jsh, fpath, dbDriver){
   }
 }
 
-jsHarmonyConfig.prototype.LoadJSONConfigFolder = function(jsh, fpath){
+jsHarmonyConfig.prototype.LoadJSONConfigFolder = function(jsh, fpath, sourceModule){
   var _this = this;
 
   //Include appropriate config file based on Path
@@ -387,19 +416,19 @@ jsHarmonyConfig.prototype.LoadJSONConfigFolder = function(jsh, fpath){
   }
   fpath += '/models';
   //Load app.config.js
-  this.LoadJSONConfigFile(jsh, fpath + '/_config.json');
+  this.LoadJSONConfigFile(jsh, fpath + '/_config.json', sourceModule);
   //Load config based on Application Path
-  this.LoadJSONConfigFile(jsh, fpath + '/_config.' + patharr.join('_') + '.json');
+  this.LoadJSONConfigFile(jsh, fpath + '/_config.' + patharr.join('_') + '.json', sourceModule);
   //Load config based on Hostname
-  this.LoadJSONConfigFile(jsh, fpath + '/_config.' + os.hostname().toLowerCase() + '.json');
+  this.LoadJSONConfigFile(jsh, fpath + '/_config.' + os.hostname().toLowerCase() + '.json', sourceModule);
   //Load config based on Default Database Driver
   var dbDrivers = jsh.getDBDrivers();
   _.each(dbDrivers, function(dbDriver){
-    _this.LoadJSONConfigFile(jsh, fpath + '/_config.' + dbDriver + '.json', dbDriver);
+    _this.LoadJSONConfigFile(jsh, fpath + '/_config.' + dbDriver + '.json', sourceModule, dbDriver);
   });
   if(jsh.DBConfig['default'] && jsh.DBConfig['default']._driver){
     var defaultDBDriver = jsh.DBConfig['default']._driver.name;
-    this.LoadJSONConfigFile(jsh, fpath + '/_config.' + defaultDBDriver + '.json');
+    this.LoadJSONConfigFile(jsh, fpath + '/_config.' + defaultDBDriver + '.json', sourceModule);
   }
 }
 

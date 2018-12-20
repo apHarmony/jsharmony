@@ -258,6 +258,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           if (typeof xmodel.oninit != 'undefined') xmodel.oninit(xmodel);
         });
         jsh.XPage.Select(function () {
+          jsh.InitControls();
           jsh.XPage.LayoutOneColumn();
           jsh.XPage.Show();
           jsh.XWindowResize();
@@ -777,25 +778,25 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.XPage.RunReport = function() {
     var xmodel = jsh.XModels[jsh.XModels_root];
-    if (!(xmodel.layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+    if (!(xmodel.layout == 'report')) { XExt.Alert('Root model does not have a "report" layout'); return; }
     xmodel.controller.RunReport();
   }
 
   jsh.XPage.RunReportHTML = function() {
     var xmodel = jsh.XModels[jsh.XModels_root];
-    if (!(xmodel.layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+    if (!(xmodel.layout == 'report')) { XExt.Alert('Root model does not have a "report" layout'); return; }
     xmodel.controller.RunReport(undefined,{output:'html'});
   }
 
   jsh.XPage.TestQueue = function() {
     var xmodel = jsh.XModels[jsh.XModels_root];
-    if (!(xmodel.layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+    if (!(xmodel.layout == 'report')) { XExt.Alert('Root model does not have a "report" layout'); return; }
     xmodel.controller.TestQueue();
   }
 
   jsh.XPage.RunQueue = function() {
     var xmodel = jsh.XModels[jsh.XModels_root];
-    if (!(xmodel.layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+    if (!(xmodel.layout == 'report')) { XExt.Alert('Root model does not have a "report" layout'); return; }
 
     XExt.Confirm("Are you sure you want to start the Report Job?", function () {
       xmodel.controller.RunQueue();
@@ -824,7 +825,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     if(thisobj) xmodel = jsh.XModels[XExt.getModelIdFromObject(thisobj)];
     
-    if (!(xmodel.layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+    if (!(xmodel.layout == 'exec') && !(xmodel.layout == 'report')) { XExt.Alert('Root model does not have an exec or report layout'); return; }
     xmodel.controller.RunDBFunc(cb, options);
   }
 
@@ -892,7 +893,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.XPage.openDataURL = function(win, modelid, url, options) {
     var xmodel = jsh.XModels[modelid];
     if (!win) win = window.open('', '_blank', options);
-    if ((xmodel.layout == 'form') || (xmodel.layout == 'form-m') || (xmodel.layout == 'exec')) {
+    if ((xmodel.layout == 'form') || (xmodel.layout == 'form-m') || (xmodel.layout == 'exec') || (xmodel.layout == 'report')) {
       url = XExt.ReplaceAll(url, 'data[j]', 'data');
     }
     url = jsh.XPage.ParseEJS(url, modelid);

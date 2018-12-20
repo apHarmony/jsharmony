@@ -56,10 +56,10 @@ exports.RenderListing = function (req) {
   return rslt;
 }
 
-exports.RenderFormStarter = function(req, modelid){
+exports.RenderFormStarter = function(req, fullmodelid){
   var _this = this;
-  if (!_this.hasModel(req, modelid)) throw new Error('Model ID not found: ' + modelid);
-  var model = _this.getModel(req, modelid);
+  if (!_this.hasModel(req, fullmodelid)) throw new Error('Model ID not found: ' + fullmodelid);
+  var model = _this.getModel(req, fullmodelid);
   keys = _this.AppSrv.getKeyNames(model.fields);
   foreignkeys = _this.AppSrv.getFieldNames(req, model.fields, 'F');
   var rslt = ejs.render(_this.getEJS('jsh_formstarter'), {

@@ -23,16 +23,16 @@ var ejsext = require('./lib/ejsext.js');
 
 module.exports = exports = {};
 
-exports.getTabCode = function (req, res, modelid, onComplete) {
-  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
-  var model = this.jsh.getModel(req, modelid);
-  if (!(model.tabcode)) throw new Error("Error: Tabcode required for " + modelid + " tabcode lookup.");
+exports.getTabCode = function (req, res, fullmodelid, onComplete) {
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+  var model = this.jsh.getModel(req, fullmodelid);
+  if (!(model.tabcode)) throw new Error("Error: Tabcode required for " + fullmodelid + " tabcode lookup.");
   var Q = req.query;
-  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
+  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   var _this = this;
   var keylist = this.getKeyNames(model.fields);
   var tabcodelist = [model.tabcode];
-  var db = _this.jsh.getModelDB(req, modelid);
+  var db = _this.jsh.getModelDB(req, fullmodelid);
   
   if (req.query.action == 'add') { return onComplete(); }
   else if (req.query.action != 'edit') { Helper.GenError(req, res, -9, 'Action not supported'); return; }
@@ -59,7 +59,7 @@ exports.getTabCode = function (req, res, modelid, onComplete) {
     }
     else { _this.jsh.Log.warning('Missing parameter ' + fname); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   }
-  this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, modelid);
+  this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, fullmodelid + ' Tab Code');
   verrors = _.merge(verrors, model.xvalidate.Validate('K', sql_params));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   
@@ -120,7 +120,7 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
   this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) { 
     if(Helper.access(targetperm,'I') && dfield.key) return false;
     datalockqueries.push(datalockquery);
-  }, nodatalock, model.id);
+  }, nodatalock, model.id + ' Title');
   verrors = _.merge(verrors, model.xvalidate.Validate('*', sql_params, undefined, undefined, undefined, { ignoreUndefined: true }));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return false; }
   
@@ -139,12 +139,12 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
   }
 }
 
-exports.getTitle = function (req, res, modelid, targetperm, onComplete) {
-  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
-  var model = this.jsh.getModel(req, modelid);
+exports.getTitle = function (req, res, fullmodelid, targetperm, onComplete) {
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+  var model = this.jsh.getModel(req, fullmodelid);
   if (!Helper.HasModelAccess(req, model, targetperm)) { 
     targetperm = 'B';
-    if (!Helper.HasModelAccess(req, model, targetperm)) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
+    if (!Helper.HasModelAccess(req, model, targetperm)) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   }
 
   var dbtasks = {};
@@ -278,7 +278,7 @@ exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks, targetperm) 
     if(!(dfield.name in sql_params)) return false;
     bcrumb_sql_fields.push(dfield);
     datalockqueries.push(datalockquery);
-  }, nodatalock, model.id);
+  }, nodatalock, model.id + ' Breadcrumbs');
   verrors = _.merge(verrors, model.xvalidate.Validate('*', sql_params, undefined, undefined, undefined, { ignoreUndefined: true }));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return false; }
   
@@ -352,7 +352,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
         else if(model.layout=='grid'){
           if(!Helper.access(tgtaccess, 'IU')) no_lov_required = true;
         }
-        else if(model.layout=='exec'){
+        else if((model.layout=='exec')||(model.layout=='report')){
           if(field.name in req.query){
             if(!field.always_editable_on_insert){
               codeval = req.query[field.name];
@@ -395,7 +395,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
         }
       }
       if(truncate_lov){
-        codevalpname = field.name;
+        var codevalpname = field.name;
         //if(field.name in lov_params) { Helper.GenError(req, res, -4, 'Field parameter already in LOV SQL parameters: '+field.name); fatalError = true; return; }
         if(!(field.name in lov_params)){
           lov_ptypes.push(_this.getDBType(field));

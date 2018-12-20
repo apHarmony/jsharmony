@@ -1407,7 +1407,7 @@ exports = module.exports = function(jsh){
   XExt.popupReport = function (modelid, params, windowparams, win) {
     var url = jsh._BASEURL + '_d/_report/' + modelid + '/';
     var dfltwindowparams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
-    var modelmd5 = XExt.getModelMD5('_report_' + modelid);
+    var modelmd5 = XExt.getModelMD5(modelid);
     if (modelmd5 in jsh.popups) {
       default_popup_size = jsh.popups[modelmd5];
       dfltwindowparams.width = default_popup_size[0];
@@ -1573,6 +1573,23 @@ exports = module.exports = function(jsh){
     if (y < joff.top) return false;
     if (y > (joff.top + h)) return false;
     return true;
+  }
+  //Bind tab control events
+  XExt.bindTabControl = function(obj){
+    var jobj = $(obj);
+    var jtabbuttons = jobj.children('.xtab');
+    var jtabpanels = jobj.children('.xpanel').children('.xtabbody');
+    jtabbuttons.on('click', function(){
+      var jtabbutton = $(this);
+      if(jtabbutton.hasClass('selected')) return;
+      jtabbuttons.removeClass('selected');
+      jtabpanels.removeClass('selected');
+      jtabbutton.addClass('selected');
+      jtabpanels.filter('.'+jtabbutton.attr('for')).addClass('selected');
+    });
+    if(!jtabbuttons.filter('.selected').length) jtabbuttons.first().addClass('selected');
+    jtabpanels.filter('.'+jtabbuttons.filter('.selected').attr('for')).addClass('selected');
+    jobj.addClass('initialized');
   }
 
   return XExt;

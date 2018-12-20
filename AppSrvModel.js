@@ -86,21 +86,21 @@ function removeEmptyBytes(str){
   return rslt;
 }
 
-AppSrvModel.prototype.GetModel = function (req, res, modelid) {
+AppSrvModel.prototype.GetModel = function (req, res, fullmodelid) {
   var _this = this;
   var jsh = this.AppSrv.jsh;
-  var model = jsh.getModel(req, modelid);
-  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
-  req.curtabs = jsh.getTabs(req, modelid);
-  req.TopModel = modelid;
+  var model = jsh.getModel(req, fullmodelid);
+  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+  req.curtabs = jsh.getTabs(req, model);
+  req.TopModel = fullmodelid;
 
-  _this.genClientModel(req, res, modelid, true, null, function(rslt){
+  _this.genClientModel(req, res, fullmodelid, true, null, null, function(rslt){
     if(_.isString(rslt)){
-      _this.genClientModel(req, res, '_BASE_HTML_MESSAGE', true, null, function(model){
+      _this.genClientModel(req, res, 'jsHarmony/_BASE_HTML_MESSAGE', true, null, null, function(model){
         model = _.extend(model, { 
-          id: modelid, 
-          caption: ['',modelid,modelid],
-          title: modelid,
+          id: fullmodelid, 
+          caption: ['',fullmodelid,fullmodelid],
+          title: fullmodelid,
           helpurl: '',
           helpurl_onclick: '',
           ejs: rslt
@@ -113,11 +113,12 @@ AppSrvModel.prototype.GetModel = function (req, res, modelid) {
   });
 };
 
-AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, parentBindings, onComplete) {
+AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, parentBindings, sourceModel, onComplete) {
   var _this = this;
   var jsh = this.AppSrv.jsh;
-  if (!jsh.hasModel(req, modelid)) throw new Error('Model ID not found: ' + modelid);
-  var model = jsh.getModel(req, modelid);
+  var model = jsh.getModel(req, modelid, sourceModel);
+  if(!model) throw new Error('Model ID not found: ' + modelid);
+  var fullmodelid = model.id;
   
   var targetperm = 'B';
   if ('action' in req.query) {
@@ -141,19 +142,19 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
       if(!model.nokey && !model.unbound){
         var keys = _this.AppSrv.getKeys(model.fields);
         if(keys && keys.length){ 
-          return onComplete(jsh.RenderFormStarter(req, modelid))
+          return onComplete(jsh.RenderFormStarter(req, fullmodelid))
         }
       }
     }
     else if((model.layout=='multisel')||(model.layout=='form-m')){
-      return onComplete(jsh.RenderFormStarter(req, modelid));
+      return onComplete(jsh.RenderFormStarter(req, fullmodelid));
     }
   }
 
   var rslt = {};
 
   copyValues(rslt, model, [
-    'id', 'class', 'layout', 'caption', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onupdate', 'oncommit', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy', 'js', 'hide_system_buttons',
+    'id', 'namespace', 'class', 'layout', 'caption', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onupdate', 'oncommit', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy', 'js', 'hide_system_buttons',
     'popup', 'rowclass', 'rowstyle', 'tabpanelstyle', 'tablestyle', 'formstyle', 'sort', 'querystring', 'disableautoload', 'tabpos', 'templates', 'unbound',
     'reselectafteredit','newrowposition','validationlevel','grid_expand_filter','grid_rowcount', 'grid_require_filter','grid_save_before_update','noresultsmessage','ejs','css','onecolumn',
     //Commit Level
@@ -175,10 +176,10 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
     //General Data
     function () {
       return {
-        'helpurl': ejsext.getHelpURL(req, jsh, model.helpid), 
-        'helpurl_onclick': ejsext.getHelpOnClick(req, jsh),
+        'helpurl': ejsext.getHelpURL(req, jsh, model), 
+        'helpurl_onclick': ejsext.getHelpOnClick(req, jsh, model),
         'actions': ejsext.getaccess(req, model, 'BIUD'),
-        'breadcrumbs': ejsext.BreadCrumbs(req, jsh, modelid)
+        'breadcrumbs': ejsext.BreadCrumbs(req, jsh, fullmodelid)
       }
     },
     //Generate Buttons
@@ -202,13 +203,14 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
         var link_onclick = '';
         if (link_target && link_target.substr(0, 3) == 'js:') {
           link_url = '#';
-          link_onclick = "var modelid = '" + modelid + "'; "+link_target.substr(3)+'; return false;';
+          link_onclick = "var modelid = '" + fullmodelid + "'; "+link_target.substr(3)+'; return false;';
         }
         else {
           var link_parsed = jsh.parseLink(link_target);
+          var link_targetmodel = jsh.getModel(req, link_parsed.modelid, model);
           var link_targetmodelid = link_parsed.modelid;
-          var link_targetmodel = jsh.getModel(req, link_targetmodelid);
           if(link_targetmodel){
+            link_targetmodelid = link_targetmodel.id;
             //Hide the button if the user does not have target access to the model
             var link_targetperm = 'B';
             if(link_parsed.action=='add') link_targetperm = 'I';
@@ -218,7 +220,6 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
             link_text = link_text.replace(new RegExp('%%%CAPTIONS%%%', 'g'), link_targetmodel.caption[2]);
             //Add bindings, if applicable
             if(!link_bindings && _.isEmpty(link_parsed.keys)){
-              var tmodel = jsh.Models[link_targetmodelid];
               var link_bindingObj = { target: link_targetmodelid };
               var link_binding_additionalFields = _.keys(req.forcequery).concat(_.keys(rslt.bindings)).concat(_.pullAll(_.keys(req.query),['action','tabs']));
               if(link_parsed.action=='add'){
@@ -230,8 +231,8 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
             }
           }
           //Generate link
-          link_url = jsh.getURL(req, link_target, undefined, undefined, link_bindings);
-          link_onclick = jsh.getModelLinkOnClick(link_targetmodelid, req, link_target);
+          link_url = jsh.getURL(req, model, link_target, undefined, undefined, link_bindings);
+          link_onclick = jsh.getModelLinkOnClick(req, model, link_targetmodelid, link_target);
         }
         link_text = link_text.replace(new RegExp('%%%CAPTION%%%', 'g'), model.caption[1]);
         link_text = link_text.replace(new RegExp('%%%CAPTIONS%%%', 'g'), model.caption[2]);
@@ -258,7 +259,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
 
   //Define whether the model definition needs to be reselected after update
   rslt.modeltype = 'static';
-  if(req.jshlocal && (modelid in req.jshlocal.Models)) rslt.modeltype = 'dynamic'; //Model uses onroute to customize properties
+  if(req.jshlocal && (fullmodelid in req.jshlocal.Models)) rslt.modeltype = 'dynamic'; //Model uses onroute to customize properties
   else if(model.tabcode) rslt.modeltype = 'dynamic'; //Model has tabs calculated server-side
 
   var tabcode = null;
@@ -267,7 +268,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
     //Get tabcode, if applicable
     function(cb){
       if(model.tabcode){
-        _this.AppSrv.getTabCode(req, res, modelid, function(_tabcode){
+        _this.AppSrv.getTabCode(req, res, fullmodelid, function(_tabcode){
           tabcode = _tabcode;
           return cb();
         });
@@ -295,7 +296,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
           //  This should be handled via inheritance instead
           //Then, added it back, because it is such a hassle to need to
           //redeclare inheritance for nested forms just to remove one tab
-          //var tabmodel = jsh.getModel(req, tab.target);
+          //var tabmodel = jsh.getModel(req, tab.target, model);
           //if (!ejsext.access(req, model, targetperm, tab.actions)) continue;
           if('roles' in tab) if (!ejsext.access(req, tab, 'B')) continue;
           //if(!Helper.HasModelAccess(req, tabmodel, 'B')) continue;
@@ -323,9 +324,9 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
         }
         
         //Override Help URL to that of first tab
-        if (jsh.hasModel(req, req.curtabs[model.id])){
-          var firsttabmodel = jsh.getModel(req, req.curtabs[model.id]);
-          rslt.helpurl = ejsext.getHelpURL(req, jsh, firsttabmodel.helpid);
+        var firsttabmodel = jsh.getModel(req, req.curtabs[model.id], model);
+        if (firsttabmodel){
+          rslt.helpurl = ejsext.getHelpURL(req, jsh, firsttabmodel);
         }
 
         var rslttabs = [];
@@ -338,7 +339,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
           var linktabs = new Object();
           var tabmodelid = tab.target;
           linktabs[model.id] = tabmodelid;
-          var link = jsh.getURL(req, '', linktabs);
+          var link = jsh.getURL(req, model, '', linktabs);
           var caption = tab.caption;
           var tab_selected = false;
           if (!caption) caption = tabname;
@@ -355,7 +356,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
           rslttabs.push(rslttab);
         }
         //Get value of current tab
-        _this.genClientModel(req, res, req.curtabs[model.id], false, tabbindings, function(curtabmodel){
+        _this.genClientModel(req, res, req.curtabs[model.id], false, tabbindings, model, function(curtabmodel){
           rslt.tabs = rslttabs;
           rslt.curtabmodel = curtabmodel;
           return cb();
@@ -368,9 +369,9 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
       //Duplicate Model
       if (model.duplicate && ejsext.access(req, model, 'I')) {
         var dmodelid = model.duplicate.target;
-        if (!jsh.hasModel(req, dmodelid)) { throw new Error('Duplicate Model ID not found: ' + dmodelid); }
-        var dmodel = jsh.getModel(req, dmodelid);
-        _this.genClientModel(req, res, dmodelid, false, model.duplicate.bindings, function(dclientmodel){
+        var dmodel = jsh.getModel(req, dmodelid, model);
+        if (!dmodel) { throw new Error('Duplicate Model ID not found: ' + dmodelid); }
+        _this.genClientModel(req, res, dmodelid, false, model.duplicate.bindings, model, function(dclientmodel){
           if (!_.isString(dclientmodel)) {
             rslt.duplicate = {};
             rslt.duplicate.target = dmodelid;
@@ -388,11 +389,11 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
               'class': 'duplicate'
             });
             if ('link' in model.duplicate) {
-              rslt.duplicate.link = jsh.getURL(req, model.duplicate.link, undefined, dmodel.fields);
+              rslt.duplicate.link = jsh.getURL(req, model, model.duplicate.link, undefined, dmodel.fields);
               rslt.duplicate.link_options = "resizable=1,scrollbars=1";
               var ptarget = jsh.parseLink(model.duplicate.link);
-              if (!jsh.hasModel(req, ptarget.modelid)) throw new Error("Link Model " + ptarget.modelid + " not found.");
-              var link_model = jsh.getModel(req, ptarget.modelid);
+              var link_model = jsh.getModel(req, ptarget.modelid, model);
+              if (!link_model) throw new Error("Link Model " + ptarget.modelid + " not found.");
               if ('popup' in link_model) {
                 rslt.duplicate.link_options += ',width=' + link_model.popup[0] + ',height=' + link_model.popup[1];
               }
@@ -406,7 +407,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
 
     //Resolve title, if applicable
     function(cb){
-      _this.AppSrv.getTitle(req, res, modelid, (targetperm=='U'?'BU':targetperm), function(err, title){
+      _this.AppSrv.getTitle(req, res, fullmodelid, (targetperm=='U'?'BU':targetperm), function(err, title){
         if(typeof title !== 'undefined') rslt.title = (title||'');
         return cb();
       });
@@ -470,7 +471,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, onComplete) 
     }
     if (('link' in srcfield) && (srcfield.link)) {
       if (srcfield.link == 'select') {
-        dstfield.link = jsh.getURL(req, srcfield.link + ':' + model.id, undefined, model.fields);
+        dstfield.link = jsh.getURL(req, model, srcfield.link + ':' + model.id, undefined, model.fields);
         dstfield.link_onclick = "XExt.selectLOV(this);return false;";
       }
       else if (srcfield.link.substr(0,3)=='js:') {
@@ -478,9 +479,9 @@ AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, onComplete) 
         dstfield.link_onclick = srcfield.link.substr(3) + ' return false;';
       }
       else {
-        dstfield.link = jsh.getURL(req, srcfield.link, undefined, model.fields);
+        dstfield.link = jsh.getURL(req, model, srcfield.link, undefined, model.fields);
         if (!('onclick' in srcfield)) {
-          dstfield.onclick = jsh.getURL_onclick(req, srcfield, model);
+          dstfield.onclick = jsh.getURL_onclick(req, model, srcfield);
         }
       }
     }
@@ -501,7 +502,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, onComplete) 
     }
     dstfield.validate = jsh.GetValidatorClientStr(srcfield);
     if (('control' in dstfield) && ((dstfield.control == 'subform') || (dstfield.popuplov))) {
-      _this.genClientModel(req, res, srcfield.target, false, srcfield.bindings, function(subform){
+      _this.genClientModel(req, res, srcfield.target, false, srcfield.bindings, model, function(subform){
         dstfield.model = subform;
         rslt.push(dstfield);
         return cb();

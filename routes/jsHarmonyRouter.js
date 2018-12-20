@@ -154,9 +154,9 @@ var jsHarmonyRouter = function (jsh, siteid) {
   });
   //router.get('/_dl/:modelid/:keyid/:fieldid', function (req, res, next) {
   router.get(/\/\_dl\/(.*)\/([^/]*)\/([^/]*)/, function (req, res, next) {
-    var modelid = req.params[0];
-    modelid = Helper.trimRight(modelid,'/');
-    if (typeof modelid === 'undefined') { next(); return; }
+    var fullmodelid = req.params[0];
+    fullmodelid = Helper.trimRight(fullmodelid,'/');
+    if (typeof fullmodelid === 'undefined') { next(); return; }
     var keyid = req.params[1];
     if (typeof keyid === 'undefined') { next(); return; }
     var fieldid = req.params[2];
@@ -164,7 +164,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     var params = {};
     if (req.query && req.query.view) params.view = true;
     if (req.query && req.query.thumb) params.thumb = true;
-    jsh.AppSrv.Download(req, res, modelid, keyid, fieldid, params);
+    jsh.AppSrv.Download(req, res, fullmodelid, keyid, fieldid, params);
   });
   router.get('/_token', function (req, res) { 
     jsh.AppSrv.GetToken(req, res);
@@ -184,13 +184,13 @@ var jsHarmonyRouter = function (jsh, siteid) {
       if (!('method' in action)) throw new Error('Action missing method');
       if (!('model' in action)) throw new Error('Action missing model');
       var method = action.method;
-      var modelid = action.model
+      var fullmodelid = action.model
 
-      if (!jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
+      if (!jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
       //Parse query, post
       if ('query' in action) query = querystring.parse(action.query);
       if ('post' in action) post = querystring.parse(action.post);
-      processCustomRouting('d_transaction', req, res, jsh, modelid, function(){
+      processCustomRouting('d_transaction', req, res, jsh, fullmodelid, function(){
         //Queue up dbtasks
         var actionprocessed = function (err, curdbtasks) {
           if (typeof curdbtasks == 'undefined') { return callback(new Error('Error occurred while processing DB action')); /*Error has occurred*/ }
@@ -201,10 +201,10 @@ var jsHarmonyRouter = function (jsh, siteid) {
           }
           return callback(null);
         };
-        if (method == 'get') actionprocessed(null, jsh.AppSrv.getModel(req, res, modelid, true, query, post));
-        else if (method == 'put') jsh.AppSrv.putModel(req, res, modelid, true, query, post, actionprocessed);
-        else if (method == 'post') jsh.AppSrv.postModel(req, res, modelid, true, query, post, actionprocessed);
-        else if (method == 'delete') jsh.AppSrv.deleteModel(req, res, modelid, true, query, post, actionprocessed);
+        if (method == 'get') actionprocessed(null, jsh.AppSrv.getModel(req, res, fullmodelid, true, query, post));
+        else if (method == 'put') jsh.AppSrv.putModel(req, res, fullmodelid, true, query, post, actionprocessed);
+        else if (method == 'post') jsh.AppSrv.postModel(req, res, fullmodelid, true, query, post, actionprocessed);
+        else if (method == 'delete') jsh.AppSrv.deleteModel(req, res, fullmodelid, true, query, post, actionprocessed);
       }, { query: query, post: post });
     }, function (err) {
       if (err == null) {
@@ -213,40 +213,47 @@ var jsHarmonyRouter = function (jsh, siteid) {
       }
     });
   });
-  router.get('/_d/_report/:reportid/', function (req, res, next) {
-    var modelid = '_report_' + req.params.reportid;
-    if (typeof modelid === 'undefined') { next(); return; }
-    processModelQuerystring(jsh, req, modelid);
-    processCustomRouting('d_report', req, res, jsh, modelid, function(){
-      jsh.AppSrv.getReport(req, res, modelid);
+  // /_d/_report/:modelid
+  router.get(/\/\_d\/\_report\/(.*)/, function (req, res, next) {
+    var fullmodelid = req.params[0];
+    fullmodelid = Helper.trimRight(fullmodelid,'/');
+    if (typeof fullmodelid === 'undefined') { next(); return; }
+    processModelQuerystring(jsh, req, fullmodelid);
+    processCustomRouting('d_report', req, res, jsh, fullmodelid, function(){
+      jsh.AppSrv.getReport(req, res, fullmodelid);
     });
   });
-  router.get('/_d/_report_html/:reportid/', function (req, res, next) {
-    var modelid = '_report_' + req.params.reportid;
-    if (typeof modelid === 'undefined') { next(); return; }
-    processModelQuerystring(jsh, req, modelid);
-    processCustomRouting('d_report_html', req, res, jsh, modelid, function(){
-      jsh.AppSrv.getReportHTML(req, res, modelid);
+  // /_d/_report_html/:modelid
+  router.get(/\/\_d\/\_report_html\/(.*)/, function (req, res, next) {
+    var fullmodelid = req.params[0];
+    fullmodelid = Helper.trimRight(fullmodelid,'/');
+    if (typeof fullmodelid === 'undefined') { next(); return; }
+    processModelQuerystring(jsh, req, fullmodelid);
+    processCustomRouting('d_report_html', req, res, jsh, fullmodelid, function(){
+      jsh.AppSrv.getReportHTML(req, res, fullmodelid);
     });
   });
-  router.get('/_d/_reportjob/:reportid/', function (req, res, next) {
-    var modelid = '_report_' + req.params.reportid;
-    if (typeof modelid === 'undefined') { next(); return; }
-    processModelQuerystring(jsh, req, modelid);
-    processCustomRouting('d_reportjob', req, res, jsh, modelid, function(){
-      jsh.AppSrv.getReportJob(req, res, modelid);
+  // /_d/_reportjob/:modelid
+  router.get(/\/\_d\/\_reportjob\/(.*)/, function (req, res, next) {
+    var fullmodelid = req.params[0];
+    fullmodelid = Helper.trimRight(fullmodelid,'/');
+    if (typeof fullmodelid === 'undefined') { next(); return; }
+    processModelQuerystring(jsh, req, fullmodelid);
+    processCustomRouting('d_reportjob', req, res, jsh, fullmodelid, function(){
+      jsh.AppSrv.getReportJob(req, res, fullmodelid);
     });
   });
+  // /_csv/:modelid
   router.get(/\/\_csv\/(.*)/, function (req, res, next) {
-    var modelid = req.params[0];
-    modelid = Helper.trimRight(modelid,'/');
-    if (typeof modelid === 'undefined') { next(); return; }
-    if (!jsh.hasModel(req, modelid)) { next(); return; }
-    var model = jsh.getModel(req, modelid);
+    var fullmodelid = req.params[0];
+    fullmodelid = Helper.trimRight(fullmodelid,'/');
+    if (typeof fullmodelid === 'undefined') { next(); return; }
+    if (!jsh.hasModel(req, fullmodelid)) { next(); return; }
+    var model = jsh.getModel(req, fullmodelid);
     if (model.layout != 'grid') throw new Error('CSV Export only supported on Grid');
-    processCustomRouting('csv', req, res, jsh, modelid, function(){
-      var dbtask = jsh.AppSrv.getModelRecordset(req, res, modelid, req.query, req.body, jsh.Config.export_rowlimit, { 'export': false });
-      jsh.AppSrv.exportCSV(req, res, dbtask, modelid);
+    processCustomRouting('csv', req, res, jsh, fullmodelid, function(){
+      var dbtask = jsh.AppSrv.getModelRecordset(req, res, fullmodelid, req.query, req.body, jsh.Config.export_rowlimit, { 'export': false });
+      jsh.AppSrv.exportCSV(req, res, dbtask, fullmodelid);
     });
   });
   router.get('/_queue/:queueid', function (req, res, next) {
@@ -261,60 +268,57 @@ var jsHarmonyRouter = function (jsh, siteid) {
   });
   router.route(/\/\_d\/(.*)/)
 		.all(function (req, res, next) {
-    var modelid = req.params[0];
-    modelid = Helper.trimRight(modelid,'/');
-    if (typeof modelid === 'undefined') { next(); return; }
-    if (!jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
-    processCustomRouting('d', req, res, jsh, modelid, function(){
+    var fullmodelid = req.params[0];
+    fullmodelid = Helper.trimRight(fullmodelid,'/');
+    if (typeof fullmodelid === 'undefined') { next(); return; }
+    if (!jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+    processCustomRouting('d', req, res, jsh, fullmodelid, function(){
       var verb = req.method.toLowerCase();
-      if (verb == 'get') jsh.AppSrv.getModel(req, res, modelid);
-      else if (verb == 'put') jsh.AppSrv.putModel(req, res, modelid);
-      else if (verb == 'post') jsh.AppSrv.postModel(req, res, modelid);
-      else if (verb == 'delete') jsh.AppSrv.deleteModel(req, res, modelid);
+      if (verb == 'get') jsh.AppSrv.getModel(req, res, fullmodelid);
+      else if (verb == 'put') jsh.AppSrv.putModel(req, res, fullmodelid);
+      else if (verb == 'post') jsh.AppSrv.postModel(req, res, fullmodelid);
+      else if (verb == 'delete') jsh.AppSrv.deleteModel(req, res, fullmodelid);
     });
   });
   router.get('/', function (req, res) {
-    var modelid = jsh.getModelID(req);
-    if (modelid != '') {
-      return Helper.Redirect302(res,'/'+modelid);
-    }
-    else {
-      //Get root menu and render
-      var params = {};
-      req.jshsite.menu(req, res, jsh, params, function () {
-        if (params.startmodel && (params.startmodel != url.parse(req.originalUrl).pathname)) {
-          return Helper.Redirect302(res, params.startmodel);
-        }
-        //Show model listing, if no menu exists and user has access
-        if(params.showlisting || !siteConfig.auth || ('DEV' in req._roles)){
-          return jsh.RenderTemplate(req, res, 'index', {
-            title: 'Models', body: jsh.RenderListing(req), selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh
-          });
-        }
-        //Otherwise, show error
-        var no_forms_html = '<html><body>No forms available';
-        if(siteConfig.auth) no_forms_html += '<br/><br/><a href="'+req.baseurl+'logout">Logout</a>';
-        no_forms_html += '</body</html>';
-        res.end(no_forms_html);
-      });
-    }
-  });
-  router.get('/_report/:reportid/:reportkey?', function (req, res, next) {
-    var modelid = '_report_' + req.params.reportid;
-    if (!jsh.hasModel(req, modelid)) return next();
-    processModelQuerystring(jsh, req, modelid);
-    processCustomRouting('report', req, res, jsh, modelid, function(){
-      genSinglePage(jsh, req, res, modelid);
+    //Get root menu and render
+    var params = {};
+    req.jshsite.menu(req, res, jsh, params, function () {
+      if (params.startmodel && (params.startmodel != url.parse(req.originalUrl).pathname)) {
+        return Helper.Redirect302(res, params.startmodel);
+      }
+      //Show model listing, if no menu exists and user has access
+      if(params.showlisting || !siteConfig.auth || ('DEV' in req._roles)){
+        return jsh.RenderTemplate(req, res, 'index', {
+          title: 'Models', body: jsh.RenderListing(req), selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh
+        });
+      }
+      //Otherwise, show error
+      var no_forms_html = '<html><body>No forms available';
+      if(siteConfig.auth) no_forms_html += '<br/><br/><a href="'+req.baseurl+'logout">Logout</a>';
+      no_forms_html += '</body</html>';
+      res.end(no_forms_html);
     });
   });
+  // /_report/:modelid
+  router.get(/\/\_report\/(.*)/, function (req, res, next) {
+    var fullmodelid = req.params[0];
+    fullmodelid = Helper.trimRight(fullmodelid,'/');
+    if (!jsh.hasModel(req, fullmodelid)) return next();
+    processModelQuerystring(jsh, req, fullmodelid);
+    processCustomRouting('report', req, res, jsh, fullmodelid, function(){
+      genSinglePage(jsh, req, res, fullmodelid);
+    });
+  });
+  // /_model/:modelid
   router.get(/\/\_model\/(.*)/, function (req, res, next) {
     //Return model meta-data for SinglePage rendering
-    var modelid = req.params[0];
-    modelid = Helper.trimRight(modelid,'/');
-    if (!jsh.hasModel(req, modelid)) return next();
-    processModelQuerystring(jsh, req, modelid);
-    processCustomRouting('model', req, res, jsh, modelid, function(){
-      jsh.AppSrv.modelsrv.GetModel(req, res, modelid);
+    var fullmodelid = req.params[0];
+    fullmodelid = Helper.trimRight(fullmodelid,'/');
+    if (!jsh.hasModel(req, fullmodelid)) return next();
+    processModelQuerystring(jsh, req, fullmodelid);
+    processCustomRouting('model', req, res, jsh, fullmodelid, function(){
+      jsh.AppSrv.modelsrv.GetModel(req, res, fullmodelid);
     });
   });
   router.get('/_restart', function (req, res, next) {
@@ -356,12 +360,12 @@ var jsHarmonyRouter = function (jsh, siteid) {
   });
   router.get(/\/(.*)/, function (req, res, next) {
     //Verify model exists
-    var modelid = req.params[0];
-    modelid = Helper.trimRight(modelid,'/');
-    if (!jsh.hasModel(req, modelid)){ return next(); }
-    processModelQuerystring(jsh, req, modelid);
-    processCustomRouting('singlepage', req, res, jsh, modelid, function(){
-      genSinglePage(jsh, req, res, modelid);
+    var fullmodelid = req.params[0];
+    fullmodelid = Helper.trimRight(fullmodelid,'/');
+    if (!jsh.hasModel(req, fullmodelid)){ return next(); }
+    processModelQuerystring(jsh, req, fullmodelid);
+    processCustomRouting('singlepage', req, res, jsh, fullmodelid, function(){
+      genSinglePage(jsh, req, res, fullmodelid);
     });
   });
   router.get('*', function(req, res, next){
@@ -383,7 +387,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
   return router;
 };
 
-function genSinglePage(jsh, req, res, modelid){
+function genSinglePage(jsh, req, res, fullmodelid){
   //Render SinglePage body content
   var ejsbody = require('ejs').render(jsh.getEJS('jsh_singlepage'), {
     req: req, _: _, ejsext: ejsext, jsh: jsh,
@@ -392,7 +396,7 @@ function genSinglePage(jsh, req, res, modelid){
   });
   //Set template (popup vs full)
   var tmpl_name = req.jshsite.basetemplate;
-  var model = jsh.getModel(req, modelid);
+  var model = jsh.getModel(req, fullmodelid);
   if ('popup' in model){
     if('popup' in jsh.Views) tmpl_name = 'popup';
   }
@@ -402,10 +406,10 @@ function genSinglePage(jsh, req, res, modelid){
   });
 }
 
-function processModelQuerystring(jsh, req, modelid) {
-  if (!jsh.hasModel(req, modelid)) return;
+function processModelQuerystring(jsh, req, fullmodelid) {
+  if (!jsh.hasModel(req, fullmodelid)) return;
   req.forcequery = {};
-  var model = jsh.getModel(req, modelid);
+  var model = jsh.getModel(req, fullmodelid);
   var qs = model.querystring||{};
   var foundq = [];
   for (qkey in model.querystring) {
@@ -432,8 +436,8 @@ function processModelQuerystring(jsh, req, modelid) {
   }
 }
 
-function processCustomRouting(routetype, req, res, jsh, modelid, cb, params){
-  var model = jsh.getModel(req, modelid);
+function processCustomRouting(routetype, req, res, jsh, fullmodelid, cb, params){
+  var model = jsh.getModel(req, fullmodelid);
   if (model && model.onroute) {
     var onroute_params = { };
     
@@ -448,7 +452,7 @@ function processCustomRouting(routetype, req, res, jsh, modelid, cb, params){
     else if(routetype=='d_transaction'){ onroute_params = params; }
     else { onroute_params = { query: req.query, post: req.body }; }
 
-    return model.onroute(routetype, req, res, cb, require, jsh, modelid, onroute_params);
+    return model.onroute(routetype, req, res, cb, require, jsh, fullmodelid, onroute_params);
   }
   else return cb();
 }

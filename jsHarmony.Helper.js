@@ -67,8 +67,8 @@ exports.getAuxFields = function (req, res, model) {
         (model.fields[i].link.substr(0, 3) != 'js:')) {
       var link = model.fields[i]['link'];
       var ptarget = this.parseLink(link);
-      if (!this.hasModel(req, ptarget.modelid)) throw new Error("Link Model " + ptarget.modelid + " not found.");
-      var link_model = this.getModel(req, ptarget.modelid);
+      var link_model = this.getModel(req, ptarget.modelid, model);
+      if (!link_model) throw new Error("Link Model " + ptarget.modelid + " not found.");
       if (!Helper.HasModelAccess(req, link_model, 'BIU')) { rslt[i]['link_onclick'] = req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;"; }
       else {
         if(ptarget.action=='download'){
@@ -167,31 +167,33 @@ exports.parseFieldExpression = function(field, exp, params, options){
 //  fields: Array of the model's fields, for adding querystring parameters to the link, based on the link target parameters, ex: edit:EW&E_C_ID=C_ID
 //  bindings: Array of the link bindings, for adding additional querystring parameters to the link
 //            Bindings will be evaluated client-side, and overwrite any other querystring parameters
-exports.getURL = function (req, target, tabs, fields, bindings) {
+exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
   var ptarget = this.parseLink(target);
   var modelid = ptarget.modelid;
   var action = ptarget.action;
   if (modelid == '') modelid = req.TopModel;
-  if (!this.hasModel(req, modelid)) throw new Error('Model ' + modelid + ' not found');
-  var tmodel = this.getModel(req, modelid);
+  var tmodel = this.getModel(req, modelid, srcmodel);
+  if(!tmodel) throw new Error('Model ' + modelid + ' not found');
+  var fullmodelid = tmodel.id;
   if (!Helper.HasModelAccess(req, tmodel, 'BIU')) return "";
   tabs = typeof tabs !== 'undefined' ? tabs : new Object();
-  var rslt = req.baseurl + modelid;
+  var rslt = req.baseurl + fullmodelid;
   if(req.curtabs) for(var xmodelid in req.curtabs){
-    if(this.hasModel(req, xmodelid)){
-      if(!(xmodelid in tabs)) { tabs[xmodelid] = req.curtabs[xmodelid]; }
+    var tabmodel = this.getModel(req, xmodelid, srcmodel);
+    if(tabmodel){
+      if(!(tabmodel.id in tabs)) { tabs[tabmodel.id] = req.curtabs[xmodelid]; }
     }
   }
   var q = {};
   if (typeof fields == 'undefined') {
-    //if modelid = currentmodelid  (changing tab)
-    if (req.TopModel == modelid) {
+    //if fullmodelid = currentmodelid  (changing tab)
+    if (req.TopModel == fullmodelid) {
       _.extend(q, req.query); //Copy all parameters
     }
   }
   if (action != '') q['action'] = action;
   if (Helper.Size(tabs) > 0) {
-    if (req.TopModel == modelid) {
+    if (req.TopModel == fullmodelid) {
       q['tabs'] = JSON.stringify(tabs);
     }
   }
@@ -228,7 +230,7 @@ exports.getURL = function (req, target, tabs, fields, bindings) {
     }
     if(!keyfield) throw new Error('Error parsing link target "' + target + '".  Download key id not defined.');
     if(!fieldname) throw new Error('Error parsing link target "' + target + '".  Download field name not defined.');
-    rslt = req.baseurl + '_dl/' + modelid + '/<#=data[j][\'' + keyfield + '\']#>/' + fieldname;
+    rslt = req.baseurl + '_dl/' + fullmodelid + '/<#=data[j][\'' + keyfield + '\']#>/' + fieldname;
     return rslt;
   }
 
@@ -278,63 +280,115 @@ exports.getURL = function (req, target, tabs, fields, bindings) {
   return rslt;
 }
 
-exports.getURL_onclick = function (req, field, model) {
+//Generates the "onclick" event for a link, based on the field.link property
+exports.getURL_onclick = function (req, model, field) {
   var seturl = "var url = "+req.jshsite.instance+".$(this).attr('data-url'); ";
   var rslt = req.jshsite.instance+".XExt.navTo(url); return false;";
   if ('link' in field) {
     var link = field.link;
     var ptarget = this.parseLink(link);
-    if (!this.hasModel(req, ptarget.modelid)) throw new Error("Link Model " + ptarget.modelid + " not found.");
-    if (!Helper.HasModelAccess(req, this.getModel(req, ptarget.modelid), 'BIU')) return req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;";
-    if ((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec')) {
+    var tmodel = this.getModel(req, ptarget.modelid, model);
+    if (!tmodel) throw new Error("Link Model " + ptarget.modelid + " not found.");
+    if (!Helper.HasModelAccess(req, tmodel, 'BIU')) return req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;";
+    if ((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec') || (model.layout == 'report')) {
       seturl += "var jsh="+req.jshsite.instance+"; url=jsh.XExt.ReplaceAll(url,'data[j]','data'); var modelid='" + Helper.escapeHTML(model.id) + "'; var xmodel=jsh.XModels[modelid]; var xform = xmodel.controller.form; if(xform && xform.Data && !xform.Data.Commit()) return false; url = jsh.XPage.ParseEJS(url,modelid); ";
     }
-    var link_model = this.getModel(req, ptarget.modelid);
     if(ptarget.action=='download'){
       rslt = "url += '?format=js'; "+req.jshsite.instance+".getFileProxy().prop('src', url); return false;";
     }
-    else if ('popup' in link_model) {
-      rslt = "window.open(url,'_blank','width=" + link_model.popup[0] + ",height=" + link_model.popup[1] + ",resizable=1,scrollbars=1');return false;";
+    else if ('popup' in tmodel) {
+      rslt = "window.open(url,'_blank','width=" + tmodel.popup[0] + ",height=" + tmodel.popup[1] + ",resizable=1,scrollbars=1');return false;";
     }
   }
   return seturl + rslt;
 }
 
-exports.getModelID = function (req) {
-  var modelid = '';
-  if (typeof req.query['e'] != 'undefined') { modelid = req.query['e']; }
-  else {
-    if ('routes' in this.Config) {
-      var routes = this.Config['routes'];
-      var urlpath = url.parse(req.originalUrl).pathname;
-      if (urlpath in routes) {
-        modelid = routes[urlpath];
+exports.getModelClone = function(req, fullmodelid, options){
+  if(!options) options = {};
+  var model;
+  if(options.cloneLocal) model = this.getModel(req, fullmodelid);
+  else model = this.getModel(undefined, fullmodelid);
+
+  if(!model) return model;
+  return _.cloneDeep(model);
+}
+
+exports.getBaseModelName = function(modelid){
+  if(!modelid) return modelid;
+  if(modelid.indexOf('/')<0) return modelid;
+  modelid = modelid.substr(modelid.lastIndexOf('/')+1);
+  return modelid;
+}
+
+exports.getNamespace = function(modelid){
+  if(modelid.indexOf('/')>=0){
+    return modelid.substr(0,modelid.lastIndexOf('/')+1);
+  }
+  else return '';
+}
+
+exports.getCanonicalNamespace = function(namespace, parentNamespace){
+  namespace = namespace || '';
+  parentNamespace = parentNamespace || '';
+  //Add trailing slash to namespace if it does not exist
+  if(namespace && (namespace[namespace.length-1]!='/')) namespace += '/';
+  //Prepend parent namespace if the namespace does not begin with a "/"
+  if(!namespace || (namespace[0]!='/')) namespace = parentNamespace + namespace;
+  if(namespace && (namespace[0]=='/')) namespace = namespace.substr(1);
+  return namespace;
+}
+
+exports.resolveModelID = function(modelid, sourceModel){
+  if(!modelid) return undefined;
+  //Absolute
+  if(modelid.substr(0,1)=='/') return modelid.substr(1);
+  if(!sourceModel) return modelid;
+  //Relative to namespace
+  if(sourceModel.namespace){
+    var testmodel = sourceModel.namespace+modelid;
+    if(testmodel in this.Models) return testmodel;
+  }
+  //Model Using
+  if(sourceModel.using){
+    for(var i=0;i<sourceModel.using.length;i++){
+      var namespace = sourceModel.using[i];
+      var testmodel = namespace+modelid;
+      if(testmodel.substr(0,1)=='/') testmodel = testmodel.substr(1);
+      if(testmodel in this.Models) return testmodel;
+    }
+  }
+  //Module Using
+  if(sourceModel.module){
+    var module = this.Modules[sourceModel.module];
+    if(module.using){
+      for(var i=0;i<module.using.length;i++){
+        var namespace = module.using[i];
+        var testmodel = namespace+modelid;
+        if(testmodel.substr(0,1)=='/') testmodel = testmodel.substr(1);
+        if(testmodel in this.Models) return testmodel;
       }
     }
   }
   return modelid;
-};
-
-exports.getModelClone = function(req, modelid, options){
-  if(!options) options = {};
-  var model;
-  if(options.cloneLocal) model = this.getModel(req, modelid);
-  else model = this.getModel(undefined, modelid);
-
-  if(!model) return model;
-  //return JSON.parse(JSON.stringify(model));
-  return _.cloneDeep(model);
 }
 
-exports.getModel = function(req, modelid) {
+exports.getModel = function(req, modelid, sourceModel) {
+  modelid = this.resolveModelID(modelid, sourceModel);
   if(req){
     if(req.jshlocal && (modelid in req.jshlocal.Models)) return req.jshlocal.Models[modelid];
+  }
+  if(sourceModel && !this.isInitialized){
+    if(modelid in this.Models){
+      if(!_.includes(this.Models[modelid]._referencedby, sourceModel.id)){
+        this.Models[modelid]._referencedby.push(sourceModel.id);
+      }
+    }
   }
   return this.Models[modelid];
 }
 
-exports.getModelDB = function(req, modelid) {
-  var model = this.getModel(req, modelid);
+exports.getModelDB = function(req, fullmodelid) {
+  var model = this.getModel(req, fullmodelid);
   var dbid = '';
   if(model.db) dbid = model.db;
   return this.getDB(dbid);
@@ -346,28 +400,29 @@ exports.getDB = function(dbid){
   return this.DB[dbid];
 }
 
-exports.hasModel = function(req, modelid){
-  //if(!req){ }
-  return (modelid in this.Models);
+exports.hasModel = function(req, modelid, sourceModel){
+  var model = this.getModel(undefined, modelid, sourceModel);
+  return !!model;
 }
 
-exports.getTabs = function (req) {
+exports.getTabs = function (req, model) {
   var curtabs = {};
   if (typeof req.query['tabs'] != 'undefined') {
     var tabs = JSON.parse(req.query['tabs']);
     for (var xmodelid in tabs) {
-      if (this.hasModel(req, xmodelid)) {
-        curtabs[xmodelid] = tabs[xmodelid];
+      var tabmodel = this.getModel(req, xmodelid, model);
+      if (tabmodel) {
+        curtabs[tabmodel.id] = tabs[xmodelid];
       }
     }
   }
   return curtabs;
 };
 
-exports.getModelLinkOnClick = function (tgtmodelid, req, link_target) {
+exports.getModelLinkOnClick = function (req, srcmodel, tgtmodelid, link_target) {
   if (!tgtmodelid) tgtmodelid = req.TopModel;
-  if (!this.hasModel(req, tgtmodelid)) return '';
-  var model = this.getModel(req, tgtmodelid);
+  var model = this.getModel(req, tgtmodelid, srcmodel);
+  if (!model) return '';
   //XPage.ParseEJS if necessary
   if (link_target && (link_target.substr(0, 8) == 'savenew:')) {
     return req.jshsite.instance+".XPage.SaveNew(href);return false;";

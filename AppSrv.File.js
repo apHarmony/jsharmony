@@ -149,7 +149,7 @@ exports.ClearUpload = function (req, res) {
   });
 }
 
-exports.Download = function (req, res, modelid, keyid, fieldid, options) {
+exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
   if (!options) options = {};
   if (!('_DBContext' in req) || (req._DBContext == '') || (req._DBContext == null)) { return Helper.GenError(req, res, -10, 'Invalid Login / Not Authenticated'); }
   if (!keyid) return Helper.GenError(req, res, -33, 'Download file not found.');
@@ -169,7 +169,7 @@ exports.Download = function (req, res, modelid, keyid, fieldid, options) {
     }, serveoptions);
   };
   
-  if (modelid == '_temp') {
+  if (fullmodelid == '_temp') {
     var fname = path.basename(keyid);
     var file_ext = path.extname(fname).toLowerCase(); //Get extension
     if ((file_ext == '') || (!_.includes(jsh.Config.valid_extensions, file_ext))) { return Helper.GenError(req, res, -32, 'File extension is not supported.'); }
@@ -177,11 +177,11 @@ exports.Download = function (req, res, modelid, keyid, fieldid, options) {
     serveFile(req, res, fpath, fname, fname);
   }
   else {
-    if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
-    var model = this.jsh.getModel(req, modelid);
-    var db = this.jsh.getModelDB(req, modelid);
+    if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+    var model = this.jsh.getModel(req, fullmodelid);
+    var db = this.jsh.getModelDB(req, fullmodelid);
     //Verify model access
-    if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
+    if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
     if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
     //Get key name
     var keylist = this.getKeyNames(model.fields);

@@ -253,13 +253,27 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     jsh.Navigated(a);
 
     if(apath.indexOf(jsh._BASEURL)==0) apath = apath.substr(jsh._BASEURL.length);
-    if(apath.indexOf('_report/')==0) amodelid = '_report_'+apath.substr(8);
-    else amodelid = apath;
+    else if(apath.indexOf('/') == 0) return true;
+    amodelid = apath;
     if((amodelid.length > 0) && (amodelid[amodelid.length-1] == '/')) amodelid = amodelid.substr(0,amodelid.length-1);
 
     if(window.location.host != a.host) return true;
     
-    if(amodelid.indexOf('/') >= 0) return true;
+    //Check for built-in routes
+    if(amodelid.indexOf('/') == 0) amodelid = amodelid.substr(1);
+    var reserved_paths = [
+      '_d/',
+      '_csv/',
+      '_queue/',
+      '_report/',
+      '_model/',
+      '_ul/',
+      '_dl/',
+    ];
+    for(var i=0;i<reserved_paths.length;i++){
+      if(amodelid.indexOf(reserved_paths[i])==0) return;
+    }
+
     var new_jsh_state = {
       GET : XExt.parseGET(aqs),
       QS : aqs,
@@ -309,6 +323,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     else if(layout=='form-m') return jsh.RenderForm(model,parent);
     else if (layout == 'multisel') return jsh.RenderMultisel(model,parent);
     else if (layout == 'exec') return jsh.RenderForm(model,parent);
+    else if (layout == 'report') return jsh.RenderForm(model,parent);
     else throw new Error("Layout "+layout+" not defined");
   }
 
@@ -380,8 +395,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     rslt.QS = window.location.search;
     rslt.hash = window.location.hash;
     if(rslt.path.indexOf(jsh._BASEURL)==0) rslt.path = rslt.path.substr(jsh._BASEURL.length);
-    if(rslt.path.indexOf('_report/')==0) rslt.modelid = '_report_'+rslt.path.substr(8);
-    else rslt.modelid = rslt.path;
+    rslt.modelid = rslt.path;
     if((rslt.modelid.length > 0) && (rslt.modelid[rslt.modelid.length-1] == '/')) rslt.modelid = rslt.modelid.substr(0,rslt.modelid.length-1);
     return rslt;
   }

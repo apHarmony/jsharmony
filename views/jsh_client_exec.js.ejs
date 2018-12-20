@@ -70,12 +70,11 @@ _.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field
   xcontroller.RunReport = function(callback, params){
     if(!params) params = {};
     if(!xform.Data.Commit()) return;
-    if(modelid.indexOf('_report_') < 0){ XExt.Alert('Model is not a report'); return; }
-    var reportid = modelid.substr(8);
+    if(xmodel.layout !== 'report'){ XExt.Alert('Model is not a report'); return; }
     var url = '';
     if(params.output=='html') url = jsh._BASEURL + '_d/_report_html/';
     else url = jsh._BASEURL + '_d/_report/';
-    url += reportid+'/';
+    url += modelid+'/';
     url += '?'+ $.param(xform.GetFieldParams('B'));
     //Pull fields into URL
     window.open(url,'_blank');
@@ -83,20 +82,18 @@ _.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field
 
   xcontroller.TestQueue = function(callback){
     if(!xform.Data.Commit()) return;
-    if(modelid.indexOf('_report_') < 0){ XExt.Alert('Model is not a report'); return; }
-    var reportid = modelid.substr(8);
+    if(xmodel.layout !== 'report'){ XExt.Alert('Model is not a report'); return; }
     var url = '';
-    url = jsh._BASEURL + '_d/_reportjob/'+reportid+'/';
+    url = jsh._BASEURL + '_d/_reportjob/'+modelid+'/';
     url += '?_test=1&'+ $.param(xform.GetFieldParams('B'));
     window.open(url,'_blank');
   }
 
   xcontroller.RunQueue = function(callback){
     if(!xform.Data.Commit()) return;
-    if(modelid.indexOf('_report_') < 0){ XExt.Alert('Model is not a report'); return; }
-    var reportid = modelid.substr(8);
+    if(xmodel.layout !== 'report'){ XExt.Alert('Model is not a report'); return; }
     //XForm to XGet -> ReportJob
-    var xpostform = new jsh.XForm('_reportjob/'+reportid,'','');
+    var xpostform = new jsh.XForm('_reportjob/'+modelid,'','');
     xpostform.Data = xform.GetFieldParams('B');
     xpostform.Execute(function(rslt){ 
       if('_success' in rslt){

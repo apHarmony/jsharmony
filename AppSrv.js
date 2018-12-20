@@ -37,19 +37,19 @@ AppSrv.prototype.SQL_TERMINATORS = "(),.+-*/%<>=&|!@$?:~#; \t\r\n\f^`[]{}\\|'\""
 /*********************
 GET OPERATION / SELECT
 *********************/
-AppSrv.prototype.getModel = function (req, res, modelid, noexecute, Q, P) {
-  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
-  var model = this.jsh.getModel(req, modelid);
+AppSrv.prototype.getModel = function (req, res, fullmodelid, noexecute, Q, P) {
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+  var model = this.jsh.getModel(req, fullmodelid);
   if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   if (typeof Q == 'undefined') Q = req.query;
   if (typeof P == 'undefined') P = req.body;
   var dbtasks = {};
-  if (model.layout == 'grid') dbtasks = this.getModelRecordset(req, res, modelid, Q, P);
-  else if (model.layout == 'form') dbtasks = this.getModelForm(req, res, modelid, Q, P, false);
-  else if (model.layout == 'form-m') dbtasks = this.getModelForm(req, res, modelid, Q, P, true);
-  else if (model.layout == 'multisel') dbtasks = this.getModelMultisel(req, res, modelid, Q, P);
-  else if (model.layout == 'exec') dbtasks = this.getModelExec(req, res, modelid, Q, P);
-  else throw new Error('Model ' + modelid + ' operation not supported');
+  if (model.layout == 'grid') dbtasks = this.getModelRecordset(req, res, fullmodelid, Q, P);
+  else if (model.layout == 'form') dbtasks = this.getModelForm(req, res, fullmodelid, Q, P, false);
+  else if (model.layout == 'form-m') dbtasks = this.getModelForm(req, res, fullmodelid, Q, P, true);
+  else if (model.layout == 'multisel') dbtasks = this.getModelMultisel(req, res, fullmodelid, Q, P);
+  else if ((model.layout == 'exec')||(model.layout == 'report')) dbtasks = this.getModelExec(req, res, fullmodelid, Q, P);
+  else throw new Error('Model ' + fullmodelid + ' operation not supported');
   
   //	if(_.isUndefined(dbtasks)) dbtasks = {};
   if (_.isUndefined(dbtasks)) return;
@@ -60,9 +60,9 @@ AppSrv.prototype.getModel = function (req, res, modelid, noexecute, Q, P) {
 /*********************
 PUT OPERATION / INSERT
 *********************/
-AppSrv.prototype.putModel = function (req, res, modelid, noexecute, Q, P, onComplete) {
-  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
-  var model = this.jsh.getModel(req, modelid);
+AppSrv.prototype.putModel = function (req, res, fullmodelid, noexecute, Q, P, onComplete) {
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+  var model = this.jsh.getModel(req, fullmodelid);
   if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   var _this = this;
   if (typeof Q == 'undefined') Q = req.query;
@@ -78,18 +78,18 @@ AppSrv.prototype.putModel = function (req, res, modelid, noexecute, Q, P, onComp
     _this.ExecTasks(req, res, dbtasks, false, onComplete);
   }
   
-  if (model.layout == 'form') this.putModelForm(req, res, modelid, Q, P, fdone);
-  else if (model.layout == 'form-m') this.putModelForm(req, res, modelid, Q, P, fdone);
-  else if ((model.layout == 'grid') && (model.commitlevel) && (model.commitlevel != 'none')) this.putModelForm(req, res, modelid, Q, P, fdone);
-  else throw new Error('Model ' + modelid + ' operation not supported');
+  if (model.layout == 'form') this.putModelForm(req, res, fullmodelid, Q, P, fdone);
+  else if (model.layout == 'form-m') this.putModelForm(req, res, fullmodelid, Q, P, fdone);
+  else if ((model.layout == 'grid') && (model.commitlevel) && (model.commitlevel != 'none')) this.putModelForm(req, res, fullmodelid, Q, P, fdone);
+  else throw new Error('Model ' + fullmodelid + ' operation not supported');
 }
 
 /**********************
 POST OPERATION / UPDATE
 **********************/
-AppSrv.prototype.postModel = function (req, res, modelid, noexecute, Q, P, onComplete) {
-  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
-  var model = this.jsh.getModel(req, modelid);
+AppSrv.prototype.postModel = function (req, res, fullmodelid, noexecute, Q, P, onComplete) {
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+  var model = this.jsh.getModel(req, fullmodelid);
   if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   var _this = this;
   if (typeof Q == 'undefined') Q = req.query;
@@ -104,20 +104,20 @@ AppSrv.prototype.postModel = function (req, res, modelid, noexecute, Q, P, onCom
     _this.ExecTasks(req, res, dbtasks, false, onComplete);
   }
   
-  if (model.layout == 'form') _this.postModelForm(req, res, modelid, Q, P, fdone);
-  else if (model.layout == 'form-m') this.postModelForm(req, res, modelid, Q, P, fdone);
-  else if ((model.layout == 'grid') && (model.commitlevel) && (model.commitlevel != 'none')) this.postModelForm(req, res, modelid, Q, P, fdone);
-  else if (model.layout == 'multisel') this.postModelMultisel(req, res, modelid, Q, P, fdone);
-  else if (model.layout == 'exec') this.postModelExec(req, res, modelid, Q, P, fdone);
-  else throw new Error('Model ' + modelid + ' operation not supported');
+  if (model.layout == 'form') _this.postModelForm(req, res, fullmodelid, Q, P, fdone);
+  else if (model.layout == 'form-m') this.postModelForm(req, res, fullmodelid, Q, P, fdone);
+  else if ((model.layout == 'grid') && (model.commitlevel) && (model.commitlevel != 'none')) this.postModelForm(req, res, fullmodelid, Q, P, fdone);
+  else if (model.layout == 'multisel') this.postModelMultisel(req, res, fullmodelid, Q, P, fdone);
+  else if (model.layout == 'exec') this.postModelExec(req, res, fullmodelid, Q, P, fdone);
+  else throw new Error('Model ' + fullmodelid + ' operation not supported');
 }
 
 /************************
 DELETE OPERATION / DELETE
 ************************/
-AppSrv.prototype.deleteModel = function (req, res, modelid, noexecute, Q, P, onComplete) {
-  if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
-  var model = this.jsh.getModel(req, modelid);
+AppSrv.prototype.deleteModel = function (req, res, fullmodelid, noexecute, Q, P, onComplete) {
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+  var model = this.jsh.getModel(req, fullmodelid);
   if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   var _this = this;
   if (typeof Q == 'undefined') Q = req.query;
@@ -132,10 +132,10 @@ AppSrv.prototype.deleteModel = function (req, res, modelid, noexecute, Q, P, onC
     _this.ExecTasks(req, res, dbtasks, false, onComplete);
   }
   
-  if (model.layout == 'form') dbtasks = this.deleteModelForm(req, res, modelid, Q, P, fdone);
-  else if (model.layout == 'form-m') dbtasks = this.deleteModelForm(req, res, modelid, Q, P, fdone);
-  else if ((model.layout == 'grid') && (model.commitlevel) && (model.commitlevel != 'none')) this.deleteModelForm(req, res, modelid, Q, P, fdone);
-  else throw new Error('Model ' + modelid + ' operation not supported');
+  if (model.layout == 'form') dbtasks = this.deleteModelForm(req, res, fullmodelid, Q, P, fdone);
+  else if (model.layout == 'form-m') dbtasks = this.deleteModelForm(req, res, fullmodelid, Q, P, fdone);
+  else if ((model.layout == 'grid') && (model.commitlevel) && (model.commitlevel != 'none')) this.deleteModelForm(req, res, fullmodelid, Q, P, fdone);
+  else throw new Error('Model ' + fullmodelid + ' operation not supported');
 }
 
 /***************

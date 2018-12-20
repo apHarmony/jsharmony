@@ -173,6 +173,12 @@ BODY
 	padding:10px;
 	min-height:20px;
 }
+<%-rootcss%> .xtabbody {
+  display:none;
+}
+<%-rootcss%> .xtabbody.selected {
+  display:block;
+}
 
 /***************************
 CUSTOM CONTROL STYLES

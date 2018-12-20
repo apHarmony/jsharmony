@@ -231,6 +231,7 @@ jsHarmony.prototype.Init = function(){
     }
   });
   _this.InitDialogs();
+  _this.InitControls();
   _this.XMenu.Init();
   $(document).mousemove(function (e) {
     _this.mouseX = e.pageX;
@@ -276,6 +277,10 @@ jsHarmony.prototype.debugConsole = function (txt,clear) {
 jsHarmony.prototype.InitDialogs = function () {
   this.root.append($(XViews['jsh_system']));
 };
+jsHarmony.prototype.InitControls = function() {
+  var _this = this;
+  $('.xtabcontrol').not('.initialized').each(function(){ _this.XExt.bindTabControl(this); });
+}
 jsHarmony.prototype.XWindowResize = function (source) {
   var ww = $(window).width();
   var wh = $(window).height();

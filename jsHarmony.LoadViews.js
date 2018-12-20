@@ -42,14 +42,6 @@ exports.getEJSFilename = function (f) {
   }
   var fpath = '';
   var cpath = '';
-  if (f.indexOf('reports/') == 0) {
-    for (var i = modeldirs.length - 1; i >= 0; i--) {
-      fpath = modeldirs[i].path + f + '.ejs';
-      cpath = modeldirs[i].path + basefilename + '.ejs';
-      if(module && (modeldirs[i].module==module) && fs.existsSync(cpath)) return cpath;
-      if (fs.existsSync(fpath)) return fpath;
-    }
-  }
   fpath = appDir + '/views/' + f + '.ejs';
   if (fs.existsSync(fpath)) return fpath;
   for (var i = modeldirs.length - 1; i >= 0; i--) {
