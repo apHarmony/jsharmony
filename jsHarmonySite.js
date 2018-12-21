@@ -61,7 +61,7 @@ function jsHarmonySite(jsh, id, config){
     preprocess_account: function (AppSrv, account, onComplete, onFail) { onComplete(); },
     getToken = function (AppSrv, req, cb) {
       cb({
-        __auth_PE_ID: req.user_id,
+        __auth_pe_id: req.user_id,
         __auth_tstmp: tstmp,
         __auth_token: passhash
       });

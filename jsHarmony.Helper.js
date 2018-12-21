@@ -164,7 +164,7 @@ exports.parseFieldExpression = function(field, exp, params, options){
 //  req (Express.Request): Request
 //  target (string): Link target
 //  tabs: Array of selected tabs: { "PARENT_MODEL_ID": "SELECT_TAB_MODEL_ID" }
-//  fields: Array of the model's fields, for adding querystring parameters to the link, based on the link target parameters, ex: edit:EW&E_C_ID=C_ID
+//  fields: Array of the model's fields, for adding querystring parameters to the link, based on the link target parameters, ex: edit:EW&e_c_id=c_id
 //  bindings: Array of the link bindings, for adding additional querystring parameters to the link
 //            Bindings will be evaluated client-side, and overwrite any other querystring parameters
 exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
@@ -244,7 +244,7 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
         for (var i = 0; i < ptargetkeys.length; i++) {
           delete q[ptargetkeys[i]];
           rsltparams += '&amp;' + ptargetkeys[i] + '=<#=data[j][\'' + ptarget.keys[ptargetkeys[i]] + '\']#>';
-          /* Commented out for Amber COMH_CDUP form, so that C_ID=X1 would work
+          /* Commented out for Amber COMH_CDUP form, so that c_id=X1 would work
           for (var j = 0; j < fields.length; j++) {
             var field = fields[j];
             if (!('name' in field)) continue;
@@ -467,11 +467,11 @@ exports.GetValidatorFuncs = function (validators) {
   return rslt;
 };
 
-exports.SendTXTEmail = function (dbcontext, TXT_ATTRIB, email_to, email_cc, email_bcc, email_attachments, params, callback) {
+exports.SendTXTEmail = function (dbcontext, txt_attrib, email_to, email_cc, email_bcc, email_attachments, params, callback) {
   var _this = this;
   //Pull TXT data from database
   var dbtypes = _this.AppSrv.DB.types;
-  _this.AppSrv.ExecRecordset(dbcontext, "Helper_SendTXTEmail", [dbtypes.VarChar(32)], { 'TXT_ATTRIB': TXT_ATTRIB }, function (err, rslt) {
+  _this.AppSrv.ExecRecordset(dbcontext, "Helper_SendTXTEmail", [dbtypes.VarChar(32)], { 'txt_attrib': txt_attrib }, function (err, rslt) {
     if ((rslt != null) && (rslt.length == 1) && (rslt[0].length == 1)) {
       var TXT = rslt[0][0];
       var new_bcc = email_bcc;
@@ -486,7 +486,7 @@ exports.SendTXTEmail = function (dbcontext, TXT_ATTRIB, email_to, email_cc, emai
       else email_text = email_body;
       _this.SendBaseEmail(dbcontext, TXT[_this.map.txt_tval], email_text, email_html, email_to, email_cc, new_bcc, email_attachments, params, callback)
     }
-    else return callback(new Error('Email ' + TXT_ATTRIB + ' not found.'));
+    else return callback(new Error('Email ' + txt_attrib + ' not found.'));
   });
 };
 

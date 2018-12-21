@@ -26,15 +26,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "caption": [ "Client", "Clients" ], //Two-item array
   "title": 
     //Title string:
-    "CLIENT - @C_Name - STRD" //Can use dynamic parameters from jshsite.globalparams: @C_Name, or <#=data.C_Name#> for form data, or <#=bcrumbs.PL_YEAR_TXT#> for breadcrumb SQL data, <#=_GET.TO_ID#> for GET Parameters
+    "CLIENT - @c_name - STRD" //Can use dynamic parameters from jshsite.globalparams: @c_name, or <#=data.c_name#> for form data, or <#=bcrumbs.PL_YEAR_TXT#> for breadcrumb SQL data, <#=_GET.TO_ID#> for GET Parameters
     //Title with fields from form data:
-    "<#=data.C_Name#>"
+    "<#=data.c_name#>"
     //Title with fields from breadcrumb sql:
     "<#=bcrumbs.PL_YEAR_TXT#>"
     //Title with GET parameters:
     "<#=_GET.TO_ID#>"
     //Title with SQL lookup
-    { "sql":"select getdate()" } //"nodatalock":["C_ID"] (If applicable)
+    { "sql":"select getdate()" } //"nodatalock":["c_id"] (If applicable)
     //Title with separate Add/Edit titles
     {
       "add": "Add Customer",
@@ -42,8 +42,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     //Title with separate Add/Edit SQL lookups:
     {
-      "add": { "sql":"select getdate()" }, //"nodatalock":["C_ID"] (If applicable)
-      "edit": { "sql":"select c_name||' Contacts' from c where c_id=@c_id" } //"nodatalock":["C_ID"] (If applicable)
+      "add": { "sql":"select getdate()" }, //"nodatalock":["c_id"] (If applicable)
+      "edit": { "sql":"select c_name||' Contacts' from c where c_id=@c_id" } //"nodatalock":["c_id"] (If applicable)
     }
     //If the title is not set, the caption will be used.  If the caption is not set, the model ID will be used
     //The topmost form's title will be used in the window title
@@ -59,18 +59,18 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "dev": 1, //Enable for users with the "DEV" role, not for users with the "SYSADMIN" role
   "db": "default", //Optional property - use an alternate database connection
   "popup": [ 1000, 900 ],
-  "sort": [ "^E_Name asc", "^C_Name" ], //^ = Ascending or v = Descending
+  "sort": [ "^E_Name asc", "^c_name" ], //^ = Ascending or v = Descending
   //Alternate Syntax
-  "sort": [ {"E_Name": "asc"}, {"C_Name": "desc"} ],
+  "sort": [ {"E_Name": "asc"}, {"c_name": "desc"} ],
   "samplerepeat": 5,
   "rowlimit": 5, //Maximum rows returned per iteration in GridView
-  "querystring": { "&action": "edit", "|C_ID": "@C_ID" }, //QueryString Defaults/Overrides = &Override, |Default
+  "querystring": { "&action": "edit", "|c_id": "@c_id" }, //QueryString Defaults/Overrides = &Override, |Default
   "breadcrumbs":{
     "parents": ["QC_DBDW","CCL","<a href='PLRNDW?action=edit&PL_ID=<#=bcrumbs.PL_ID#>&tabs=%7B&quot;PLRNDW&quot;%3A&quot;PLRL&quot;%7D'>RND - <#=bcrumbs.PL_YEAR_TXT#> - <#=bcrumbs.PL_TYPE_TXT#></a>"], //Simple Breadcrumbs, array of parents.  Can also use HTML and Dynamic JS
     "title": "Client", //Title Override for Breadcrumbs, can use <#=bcrumbs.PL_YEAR_TXT#> for breadcrumb SQL data
     "sql": "select PL_ID,PL_YEAR_TXT,PL_TYPE_TXT from V_PLL where PL_ID=isnull(@PL_ID,(select PL_ID from PLR where PLR_ID=@PLR_ID))",
-    "sql_params":["C_ID","T_ID"],
-    "nodatalock": ["C_ID"],
+    "sql_params":["c_id","t_id"],
+    "nodatalock": ["c_id"],
     "add": { /* parents, title, sql, sql_params, nodatalock */ },
     "edit": { /* parents, title, sql, sql_params, nodatalock */ }
     }
@@ -83,7 +83,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   //"curtab":1, //VIRTUAL PROPERTY, DO NOT OVERWRITE
   //sqlselect, sqldownloadselect, sqlinsertencrypt, sqlupdate, sqldelete, sqlrowcount
   "sqlinsert":"insert into %%%TABLE%%%(%%%FIELDS%%%) values(%%%VALUES%%%);select scope_identity() as CHG_ID;",
-  "sqlexec": "exec dbo.PLE_NOTIF @C_ID,@MDate", //Used by EXEC.  Be sure to add %%%DATALOCKS%%% if applicable
+  "sqlexec": "exec dbo.PLE_NOTIF @c_id,@MDate", //Used by EXEC.  Be sure to add %%%DATALOCKS%%% if applicable
   "sqltype": "multirecordset", //recordset, multirecordset  Used by EXEC.
   "sqlwhere": "C_STS='ACTIVE'", //Additional filter for grid
   //onload(xmodel,callback) - Returns false to not bubble (Executed once all selects are complete, on every reselect.  Callback pulls execution away from main thread, return false, and reset links on completion,
@@ -100,10 +100,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   //    routetypes: singlepage, model, d, d_transaction, csv, report, d_report, d_report_html, d_reportjob
   //    params = { query: {...}, post: {...} }
   "nokey": 1, //No primary key - only browse
-  "nodatalock": ["C_ID"],
+  "nodatalock": ["c_id"],
   "unbound": 1, //Disable any AppSrv operations
   "tabs": [
-    { "name": "General", "caption": "General Info", "target": "C", "bindings": { "C_ID": "C_ID" }, "showcode": ["VIEW","EDIT"],
+    { "name": "General", "caption": "General Info", "target": "C", "bindings": { "c_id": "c_id" }, "showcode": ["VIEW","EDIT"],
       "roles": { "main": ["*"], "client": ["CX_B","CX_X"] }
     },
     { "name": "General", "__REMOVE__": 1 }
@@ -125,7 +125,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "icon": "add", 
       "text": "Add %%%CAPTION%%%", 
       "actions": "I", 
-      "bindings": { "N_SCOPE_ID": "N_SCOPE_ID", "N_SCOPE": "'C'", "C_ID":  "N_SCOPE_ID", "N_TYPE":  "'C'" }, 
+      "bindings": { "n_scope_id": "n_scope_id", "n_scope": "'C'", "c_id":  "n_scope_id", "n_type":  "'C'" }, 
       "style": "", 
       "class": "", 
       "roles": { "client": { "CLIENT": "*", "C_ADMIN": "B" } }, 
@@ -134,7 +134,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     {"link":"js:jsh.App.C_LOVBAR.Add(this,modelid);", "icon": "add", "text": "Add Customer", "actions": "B" },
     {"link": "savenew:", "icon": "add", "text": "Save and New", "actions": "IU" }
     {"link": "savenew:", "icon": "add", "text": "Save and New", "actions": "IU", "group":"Actions" }
-    //"link":"js:XExt.popupReport('I',{ C_ID: 97 },{ width:900, height:500 });"
+    //"link":"js:XExt.popupReport('I',{ c_id: 97 },{ width:900, height:500 });"
   ],
   "hide_system_buttons" : ["print","export","help","filter","clear","add"], //Current only on Grid
   "rowstyle": "<#=xejs.iif(1==1,'color:red;','color:yellow;')#>", //Used in grid to style rows dynamically
@@ -150,12 +150,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "grid_rowcount":  1,
   "grid_require_filter": 1, //Do not initially load results
   "grid_save_before_update": 1,
-  "duplicate": {"target": "E_DUPLICATE", "bindings": {"E_ID":"E_ID", "C_ID": "C_ID"},"link":"edit:EW&E_ID=NEW_E_ID","link_text": "Duplicate Item"},
+  "duplicate": {"target": "E_DUPLICATE", "bindings": {"e_id":"e_id", "c_id": "c_id"},"link":"edit:EW&e_id=new_e_id","link_text": "Duplicate Item"},
   "templates": { "grid": ".xgrid_calendar_template" },
   "onecolumn": true, //Add newline (nl) after each form field except the first. (form, form-m)  Automatically align width of captions
   "fields": [
     {
-      "name": "E_Name",
+      "name": "e_name",
       "type": "varchar", //bigint, varchar, date, decimal, float, int, datetime, char, smallint, tinyint, file, hash, encascii, time, boolean, binary
       "length": "255",
       "precision": [12,6], //For decimal, default is 10,4 if omitted
@@ -163,7 +163,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "key": 1, //If key exists, then this is a key field
       "lovkey": 1, //Used by Multisel to enable additional foreign key in LOV expression, without being a required parameter
       "virtual": 1, //Field is not bound on I/U, can be B, but will not pull updates or respond to HasUpdates
-      "static": "js:XExt.UndefinedBlank(jsh._GET['J_ID'])", //Static binding, overwrite existing data from form
+      "static": "js:XExt.UndefinedBlank(jsh._GET['j_id'])", //Static binding, overwrite existing data from form
       "unbound": 1, //Field is completely unbound, not added to Fields array
       "sqlselect": "@BXBUY_ID", //Override select sql for this field on Grid select
       "sqlupdate": "@BXBUY_ID+5",
@@ -174,14 +174,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "captionclass": "classname",
       "hidden": 1, //**Deprecated**, use "control":"hidden"
       "access": "B", //BIUD, or F for foreign key, S for Grid Filter/Search in addition to any B.  html and button controls auto-add "B" rights. **C - crumbparameter deprecated**
-      "datalock": { "C_ID": "client_C_ID" }, //Link DataLock ID to query in _config.datalocks.
+      "datalock": { "c_id": "client_c_id" }, //Link DataLock ID to query in _config.datalocks.
       "control": "label", //label,html(value),textbox,textzoom,dropdown,date,textarea,subform,html,hidden,password,file_upload,button,linkbutton,tree,checkbox
       "controlparams": { "dateformat": "mm/dd/y" }, //DatePicker Params - dateformat is parameter to jQuery datepicker control for date display
-                       {"sqlparams": {"FILE_SIZE": "D_SIZE",  //file_upload params - File Size
-                             "FILE_EXT": "D_EXT", //File Extension
-                             "FILE_UTSTMP": "D_UTstmp", //Upload Timestamp - will be combined with TSTMP sql
-                             "FILE_UU": "D_UU", //Upload User - will be combined with CUSER sql
-                             "FILE_NAME": "D_FileName" //Target file name for download
+                       {"sqlparams": {"FILE_SIZE": "d_size",  //file_upload params - File Size
+                             "FILE_EXT": "d_ext", //File Extension
+                             "FILE_UTSTMP": "d_utstmp", //Upload Timestamp - will be combined with TSTMP sql
+                             "FILE_UU": "d_uu", //Upload User - will be combined with CUSER sql
+                             "FILE_NAME": "d_filename" //Target file name for download
                            },
                            "image": {
                              "crop": [800,600], //Use either crop or resize
@@ -213,9 +213,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                        "value_hidden":""
                       },
                       { //**Deprecated** - moved to field.popuplov
-                       "codeval": "J_ID", //**Deprecated**
+                       "codeval": "j_id", //**Deprecated**
                        "popupstyle": "height:200px;", //**Deprecated**
-                       "popup_copy_results": { "C_NAME": "C_NAME" }, //**Deprecated**
+                       "popup_copy_results": { "c_name": "c_name" }, //**Deprecated**
                        "base_readonly":  1, //**Deprecated**
                        "onpopup" //**Deprecated**
                       },
@@ -234,42 +234,42 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "link": "edit:CW", //for grid, "add:", "select"...also added tab syntax: "edit:JW&tabs={\"JW\":\"J_QUICK\"}"
       //LOV sql_params must be defined as fields, and must be in the request QueryString
       "lov": { 
-        "sql": "select HP_CODE as CODEVal,HP_Desc as CODETxt from HP where 1=1 %%%TRUNCATE%%% order by HP_Desc", 
-        "datalock":{"C_ID":"client_C_ID"}, 
-        "sql_params":["C_ID","T_ID"],
+        "sql": "select HP_CODE as codeval,HP_Desc as codetxt from HP where 1=1 %%%TRUNCATE%%% order by HP_Desc", 
+        "datalock":{"c_id":"client_c_id"}, 
+        "sql_params":["c_id","t_id"],
         "sqlselect": "(select hp_desc from jsharmony.hp where hp.hp_code = h.hp_code)",
         "sqltruncate": "HP_CODE=@HP_CODE", //Limit list to one entry - parameter = field.name
         "always_get_full_lov": 1, //Do not truncate LOV to one value, when field is "B", readonly, or value is set in querystring.
         "db": "default" //Optional property - use an alternate database connection
-      }, //codeval = Value, codetxt = Desc    "nodatalock":["C_ID"] (If applicable)
-      "lov": { "sql": "select fcert_id as CODEID,fcert_parent_id as CODEParentID,fcert_id as CODEVal,fcert_name as CODETxt,'folder' as CODEIcon from fcert where C_ID=(select C_ID from E where E_ID=@E_ID) order by fcert_parent_id, fcert_name, fcert_id", "sql_params":["E_ID"] }, //For Tree Control
-      "lov": { "sql2": "select X_ID as CODEParent, HP_CODE as CODEVal,HP_Desc as CODETxt from HP order by HP_Desc","parent": "CA_COUNTRY", "datalock":{"C_ID":"client_C_ID"} }, //CODEParent = Parent Value, CODEVal = Value, CODETxt = Desc
-      "lov": { "sqlmp": "select X_ID as CODEParent1, Y_ID as CODEParent2, HP_CODE as CODEVal,HP_Desc as CODETxt from HP order by HP_Desc","parents": ["CA_COUNTRY","OTHER"], "datalock":{"C_ID":"client_C_ID"} }, //CODEParent[#] = Parent Value, CODEVal = Value, CODETxt = Desc
-      "lov": { "UCOD": "E_STS" },
-      "lov": { "UCOD2": "DSCOPE_DCTGR", "schema": "jsharmony","blank": 1,"parent": "CA_COUNTRY" }, //Alternatively, blank can be set to text: "blank":"(None)" otherwise defaults to "Please Select..."
-      "lov": { "GCOD": "E_CTGR", "showcode": 1 }, //showcode ignores the CODETxt and shows the CODEVal on the front-end.  Useful for States
-      "lov": { "GCOD2": "DSCOPE_DCTGR", "schema": "jsharmony","blank": 1,"parent": "CA_COUNTRY" },
+      }, //codeval = Value, codetxt = Desc    "nodatalock":["c_id"] (If applicable)
+      "lov": { "sql": "select fcert_id as codeid,fcert_parent_id as codeparentid,fcert_id as codeval,fcert_name as codetxt,'folder' as codeicon from fcert where c_id=(select c_id from E where e_id=@e_id) order by fcert_parent_id, fcert_name, fcert_id", "sql_params":["e_id"] }, //For Tree Control
+      "lov": { "sql2": "select X_ID as codeparent, HP_CODE as codeval,HP_Desc as codetxt from HP order by HP_Desc","parent": "ca_country", "datalock":{"c_id":"client_c_id"} }, //codeparent = Parent Value, codeval = Value, codetxt = Desc
+      "lov": { "sqlmp": "select X_ID as codeparent1, Y_ID as codeparent2, HP_CODE as codeval,HP_Desc as codetxt from HP order by HP_Desc","parents": ["ca_country","other"], "datalock":{"c_id":"client_c_id"} }, //codeparent[#] = Parent Value, codeval = Value, codetxt = Desc
+      "lov": { "UCOD": "e_sts" },
+      "lov": { "UCOD2": "dscope_dctgr", "schema": "jsharmony","blank": 1,"parent": "ca_country" }, //Alternatively, blank can be set to text: "blank":"(None)" otherwise defaults to "Please Select..."
+      "lov": { "GCOD": "e_ctgr", "showcode": 1 }, //showcode ignores the codetxt and shows the codeval on the front-end.  Useful for States
+      "lov": { "GCOD2": "dscope_dctgr", "schema": "jsharmony","blank": 1,"parent": "ca_country" },
       "eol": 1,
       "popuplov": {  //Enable POPUPLOV, requires target grid
                        "target":  "J",
-                       "codeval": "J_ID",
+                       "codeval": "j_id",
                        "popupstyle": "height:200px;",
-                       "popup_copy_results": { "C_NAME": "C_NAME" },
+                       "popup_copy_results": { "c_name": "c_name" },
                        "base_readonly":  1,
                        "onpopup": "console.log('popup');", //(popupmodelid, parentmodelid, fieldid, onComplete)
                        "popupiconstyle": "display:none;",
                       },
       "default": "USA",
       "default": "js:moment().format()",
-      "default": { "sql": "select C_Name from C where C_ID=@C_ID", "sql_params": ["C_ID"] }, //"nodatalock":["C_ID"] (If applicable)
+      "default": { "sql": "select c_name from c where c_id=@c_id", "sql_params": ["c_id"] }, //"nodatalock":["c_id"] (If applicable)
       "readonly": 1,
       "always_editable_on_insert": 1, //Make field editable on insert, even if value is set in querystring, or field is readonly
       //for subform, popuplov
       "target": "E_Name",
-      "bindings": { "C_ID": "C_ID" },
+      "bindings": { "c_id": "c_id" },
       "cellclass": "", //For Grid / Multisel table
       "cellstyle": "width:300px;"  //For Grid / Multisel table
-      "html": "<a href='/<#=data[j]['C_ID']#>'><#=data[j]['C_Name']#></a>" //**Deprecated**, used "control":"html"
+      "html": "<a href='/<#=data[j]['c_id']#>'><#=data[j]['c_name']#></a>" //**Deprecated**, used "control":"html"
       "serverejs": 1, //Evaluate EJS server-side (for HTML)
       "disable_sort": 1, //Only applies to grid
       "enable_search": 1, //Only applies to grid, enable search if it is a hidden column
@@ -277,7 +277,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "disable_search_all": 1, //Only applies to grid, do not query in "Any" filter search
       "sqlsort": "(case when X then 1 else 0 end)", //Only applies to grid
       "sqlsearch": "(case when X then 1 else 0 end)", //Only applies to grid
-      "sqlsearchsound": "C_ID in (select C_ID from SDX where SDX_COL='CN' and SDX_VAL=SOUNDEX(%%%FIELD%%%))",
+      "sqlsearchsound": "c_id in (select c_id from SDX where SDX_COL='CN' and SDX_VAL=SOUNDEX(%%%FIELD%%%))",
       "__REMOVE__":1, //Remove Model field in inherited child
       "__AFTER__": "FIELDNAME", "__START__", "__END__", //Position in inherited child
       //SYSTEM: datatype_config, sql_from_db, sql_to_db

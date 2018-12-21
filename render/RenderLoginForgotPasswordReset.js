@@ -52,8 +52,8 @@ exports = module.exports = function (req, res, onComplete) {
       var user_info = rslt[0][0][0];
       if (user_info[jsh.map.user_status].toUpperCase() == 'ACTIVE') {
         var user_id = user_info[jsh.map.user_id];
-        var PE_LL_Tstmp = user_info[jsh.map.user_last_tstmp];
-        var hash = crypto.createHash('sha1').update(user_id + req.jshsite.auth.salt + PE_LL_Tstmp).digest('hex');
+        var pe_ll_tstmp = user_info[jsh.map.user_last_tstmp];
+        var hash = crypto.createHash('sha1').update(user_id + req.jshsite.auth.salt + pe_ll_tstmp).digest('hex');
         if (hash == fdata.key) {
           //Key is Good
           if (req.method == 'POST') {
@@ -68,17 +68,17 @@ exports = module.exports = function (req, res, onComplete) {
             if (!_.isEmpty(verrors)) { onComplete(RenderPage(req, jsh, fdata, verrors)); return; }
             
             //Genereate new hash
-            var PE_Hash = crypto.createHash('sha1').update(user_id + fdata.password + req.jshsite.auth.salt).digest();
+            var pe_hash = crypto.createHash('sha1').update(user_id + fdata.password + req.jshsite.auth.salt).digest();
             var prehash = crypto.createHash('sha1').update(user_id + fdata.password + req.jshsite.auth.salt).digest('hex');
-            PE_LL_Tstmp = new Date();
-            var tstmp = Helper.DateToSQLISO(PE_LL_Tstmp);
+            pe_ll_tstmp = new Date();
+            var tstmp = Helper.DateToSQLISO(pe_ll_tstmp);
             var ipaddr = req.connection.remoteAddress;
             //Save to database
             var sqlparams = {};
-            sqlparams[jsh.map.user_hash] = PE_Hash;
+            sqlparams[jsh.map.user_hash] = pe_hash;
             sqlparams[jsh.map.user_last_ip] = ipaddr;
             sqlparams[jsh.map.user_id] = user_id;
-            sqlparams[jsh.map.user_last_tstmp] = PE_LL_Tstmp;
+            sqlparams[jsh.map.user_last_tstmp] = pe_ll_tstmp;
             req.jshsite.auth.on_passwordreset(req, jsh, sqlparams, function (err, rslt) {
               if ((rslt != null) && (rslt.length == 1) && (rslt[0][jsh.map.rowcount] == 1)) {
                 //Create authentication cookie
