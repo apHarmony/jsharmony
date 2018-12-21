@@ -168,9 +168,13 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
   }
   for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
     if(field.popuplov){
-      var popup_model = _.extend({},field.model);
-      popup_model.hide_system_buttons = _.union(popup_model.hide_system_buttons,['export']); 
-      popup_model.inlinepopup = 1;
+      var popup_model = null;
+      if(_.isString(field.model)) popup_model = field.model;
+      else {
+        popup_model = _.extend({},field.model);
+        popup_model.hide_system_buttons = _.union(popup_model.hide_system_buttons,['export']); 
+        popup_model.inlinepopup = 1;
+      }
       %>
       <div style="display:none;">
         <div class="xsubform xpopup xelem<%=model.class%> popup_<%=field.name%>">
@@ -184,9 +188,13 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
   }
 %>
 <% if(model.duplicate){
-  var popup_model = _.extend({},model.duplicate.model);
-  popup_model.hide_system_buttons = _.union(popup_model.hide_system_buttons,['export']); 
-  popup_model.inlinepopup = 1;
+  var popup_model = null;
+  if(_.isString(model.duplicate.model)) popup_model = model.duplicate.model;
+  else {
+    popup_model = _.extend({},model.duplicate.model);
+    popup_model.hide_system_buttons = _.union(popup_model.hide_system_buttons,['export']); 
+    popup_model.inlinepopup = 1;
+  }
   %>
   <div style="display:none;">
     <div class="xsubform xpopup xelem<%=model.class%> colorbox_inline popup_<%=model.class%>_duplicate">

@@ -30,9 +30,13 @@
 <%-jsh.RenderView('jsh_embed.js',ejsparams)%>
 <%-jsh.RenderView('jsh_controls',ejsparams)%>
 <% if(model.duplicate){
-  var popup_model = _.extend({},model.duplicate.model);
-  popup_model.hide_system_buttons = _.union(popup_model.hide_system_buttons,['export']); 
-  popup_model.inlinepopup = 1;
+  var popup_model = null;
+  if(_.isString(model.duplicate.model)) popup_model = model.duplicate.model;
+  else {
+    popup_model = _.extend({},model.duplicate.model);
+    popup_model.hide_system_buttons = _.union(popup_model.hide_system_buttons,['export']); 
+    popup_model.inlinepopup = 1;
+  }
   %>
   <div style="display:none;">
     <div class="xsubform xpopup xelem<%=model.class%> popup_<%=model.class%>_duplicate" class="colorbox_inline">
