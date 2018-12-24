@@ -26,10 +26,11 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
   	<tr>
       <th>Select</th>
       <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
-	  if(!('caption' in field)) continue; 
+	    if(!('caption' in field)) continue; 
       if(!('actions' in field)) continue; 
+      if(field.control=='hidden') continue;
       if(!XExt.access(field.actions,'B')) continue;
-	  %>
+	    %>
       <th nowrap><%=field.caption%></th>
       <% } %>
 		</tr>
@@ -38,7 +39,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
     <% for(var j=0;j<data.length;j++){ %>
     <tr class="<%=(j%2==1?'even':'odd')%>">
       <td align="center"><input type="checkbox" /></td>
-      <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; if(!('caption' in field)) continue; %>
+      <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; if(!('caption' in field)) continue; if(field.control=='hidden') continue; %>
       <td><%=data[j][field.name]%></td>
       <% } %>
     </tr>
@@ -51,6 +52,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
     <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
       if(!('caption' in field)) continue; 
       if(!('actions' in field)) continue; 
+      if(field.control=='hidden') continue;
       if(!XExt.access(field.actions,'B')) continue;
       var format = 'undefined';
       if('format' in field) format = JSON.stringify(field.format);

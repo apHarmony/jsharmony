@@ -97,6 +97,7 @@ AppSrvModel.prototype.GetModel = function (req, res, fullmodelid) {
   _this.genClientModel(req, res, fullmodelid, true, null, null, function(rslt){
     if(_.isString(rslt)){
       _this.genClientModel(req, res, 'jsHarmony/_BASE_HTML_MESSAGE', true, null, null, function(model){
+        if(_.isString(model)) return res.end(model);
         model = _.extend(model, { 
           id: fullmodelid, 
           caption: ['',fullmodelid,fullmodelid],
@@ -109,7 +110,9 @@ AppSrvModel.prototype.GetModel = function (req, res, fullmodelid) {
       });
       return;
     }
-    res.end(JSON.stringify(rslt));
+    else {
+      res.end(JSON.stringify(rslt));
+    }
   });
 };
 
@@ -124,6 +127,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
   if ('action' in req.query) {
     if (req.query.action == 'add') targetperm = 'I';
     else if (req.query.action == 'edit') targetperm = 'U'; //Browse is accessed the same way as update
+    else return onComplete('Invalid "action" in querystring');
   }
   if (!Helper.HasModelAccess(req, model, 'B'+targetperm)) { return onComplete("<div>You do not have access to this form.</div>"); }
   
@@ -286,6 +290,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
         
         var showtabs = [];
         var showmodels = [];
+        var modeltabids = [];
 
         for(var i=0; i<model.tabs.length;i++){
           var tab = model.tabs[i];
@@ -334,7 +339,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
           var tab = model.tabs[i];
           var tabname = tab.name;
           if (!_.includes(showtabs, tabname)) continue;
-          var acss = 'xtab xtab' + model.id;
+          var acss = 'xtab xtab' + model.class;
           if (i == (model.tabs.length-1)) acss += ' last';
           var linktabs = new Object();
           var tabmodelid = tab.target;

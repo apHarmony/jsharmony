@@ -194,6 +194,7 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
     upath = _this.getCanonicalNamespace(upath, modeldir.namespace);
     model.using[i] = upath;
   }
+  if(!('fields' in model)) model.fields = [];
   if ('actions' in model) model['access_models'][modelname] = model.actions;
   if('css' in model) model.css = Helper.ParseMultiLine(model.css);
   //if (modelname in this.Models) throw new Error('Cannot add ' + modelname + '.  The model already exists.')
@@ -514,6 +515,8 @@ exports.ParseEntities = function () {
   var base_datatypes = ['DATETIME','VARCHAR','CHAR','BOOLEAN','BIGINT','INT','SMALLINT','TINYINT','DECIMAL','FLOAT','DATE','DATETIME','TIME','ENCASCII','HASH','FILE','BINARY'];
   var auto_datatypes = _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.datatypes
   var auto_attributes = _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.attributes;
+  var auto_controls =  _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.controls;
+  var auto_keys =  _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.keys;
   var validation_level = { }
   switch(_this.Config.system_settings.validation_level){
     case 'strict': validation_level.strict = 1;
@@ -550,7 +553,10 @@ exports.ParseEntities = function () {
         if(!model.commitlevel || model.commitlevel=='none') model.actions = 'B';
         else model.actions = 'BIUD';
       }
-      else model.actions = 'BIUD';
+      else{
+        if(model.unbound) model.actions = 'B';
+        else model.actions = 'BIUD';
+      }
     }
 
     var isReadOnlyGrid = modelExt.isReadOnlyGrid = (model.layout=='grid') && (!model.commitlevel || (model.commitlevel=='none') || !Helper.access(model.actions, 'IU'));
@@ -614,6 +620,8 @@ exports.ParseEntities = function () {
 
     model.class = Helper.getClassName(model.id);
 
+    if(model.tabs && !('tabpos' in model)) model.tabpos = 'bottom';
+
     if (!('title' in model)){
       if(model.tabs && model.tabs.length && model.tabpos && (model.tabpos=='top')){ }
       else {
@@ -660,7 +668,61 @@ exports.ParseEntities = function () {
           }
         });
       }
+      //Add Primary Key if Key is not Found
+      if(!foundkey && auto_keys && tabledef){
+        _.each(tabledef.fields, function(fielddef){
+          if(fielddef.coldef && fielddef.coldef.primary_key){
+            model.fields.push({ 
+              name: fielddef.name, 
+              key: 1,
+              control: "hidden"
+            });
+            foundkey = true;
+          }
+        });
+      }
       if(!foundkey) _this.LogInit_WARNING('Model ' + model.id + ' missing key - use model.unbound or model.nokey properties if this is intentional');
+    }
+  });
+  //Automatically add bindings
+  _.forOwn(this.Models, function (model) {
+    if(_this.Config.system_settings.automatic_bindings || auto_keys){
+      if(('nokey' in model) && (model.nokey)){ }
+      else{
+        if ('tabs' in model) for (var i=0;i<model.tabs.length;i++) {
+          var tab = model.tabs[i]; //tab.target, tab.bindings
+          if(_this.Config.system_settings.automatic_bindings){
+            _this.AddAutomaticBindings(model, tab, 'Tab '+(tab.name||''), { noErrorOnMissingParentKey: true, log: function(msg){ _this.LogInit_ERROR(msg); } });
+          }
+          _this.ValidateBindingKeys(model, tab, 'Tab '+(tab.name||''), modelsExt);
+        }
+        if ('duplicate' in model) {
+          var duplicate = model.duplicate; //duplicate.target, duplicate,bindings
+          if(_this.Config.system_settings.automatic_bindings){
+            _this.AddAutomaticBindings(model, model.duplicate, "Duplicate action", { noErrorOnMissingParentKey: true, log: function(msg){ _this.LogInit_ERROR(msg); } });
+          }
+          _this.ValidateBindingKeys(model, model.duplicate, "Duplicate action", modelsExt);
+        }
+        _.each(model.fields, function (field) {
+          //Note: field.popuplov.target has not been converted to field.target at this point
+          if (field.control == 'subform') {
+            if(!field.name){
+              var fieldName = Helper.getClassName(field.target);
+              if(fieldName){
+                var conflictField = _this.AppSrvClass.prototype.getFieldByName(model.fields, fieldName);
+                if(!conflictField){
+                  field.name = fieldName;
+                }
+                else _this.LogInit_ERROR(model.id + ' > Subform ' + field.target + ' has conflicting name with another field.  Explicity set field.name.');
+              }
+            }
+            if(_this.Config.system_settings.automatic_bindings){
+              _this.AddAutomaticBindings(model, field, 'Subform '+field.name, { noErrorOnMissingParentKey: true, log: function(msg){ _this.LogInit_ERROR(msg); } });
+            }
+            _this.ValidateBindingKeys(model, field, 'Subform '+field.name, modelsExt);
+          }
+        });
+      }
     }
   });
   var all_keys = {};
@@ -708,7 +770,7 @@ exports.ParseEntities = function () {
                     _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Cannot initialize List of Values (LOV) - Parent field missing: '+field.lov.parent);
                     delete field.lov;
                     //Reset to textbox
-                    if(_this.Config.system_settings.automatic_schema.controls && !('control' in field) && (autofield.control=='dropdown')){
+                    if(auto_controls && !('control' in field) && (autofield.control=='dropdown')){
                       field.control = 'textbox';
                     }
                   }
@@ -716,8 +778,8 @@ exports.ParseEntities = function () {
               }
             }
             //Control
-            if(_this.Config.system_settings.automatic_schema.controls){
-              if(!('control' in field) && autofield.control){
+            if(auto_controls){
+              if(!('control' in field) && autofield.control && (!('actions' in field) || Helper.access(field.actions, 'B'))){
                 //Field Control
                 field.control = autofield.control;
                 if(autofield.captionclass) field.captionclass = autofield.captionclass + ' ' + (field.captionclass||'');
@@ -811,7 +873,18 @@ exports.ParseEntities = function () {
           //_this.LogInit_WARNING('Model ' + model.id + ' Field ' + (field.name || field.caption || JSON.stringify(field)) + ' missing actions - defaulting to "'+field.actions+'"');
         }
       }
-      if (!('caption' in field) && ('name' in field)) {
+      if(!('control' in field)){
+        if(auto_controls){
+          if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
+            if(Helper.access(field.actions, 'B') && !field.value && !field.html){
+              if(Helper.access(field.actions, 'IU')) field.control = 'textbox';
+              else field.control = 'label';
+            }
+          }
+        }
+      }
+      if(!('caption' in field) && _.includes(field.control,['subform'])) field.caption = '';
+      else if (!('caption' in field) && ('name' in field)) {
         if (('control' in field) && (field.control == 'hidden')) field.caption = '';
         else field.caption = field.name;
       }
@@ -1095,26 +1168,6 @@ exports.ParseEntities = function () {
         if (!sql_param_field) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Default sql param "' + sql_param + '" is not defined as a field');
         else if (!Helper.access(sql_param_field.actions, 'C')) { if (!sql_param_field.actions) sql_param_field.actions = ''; sql_param_field.actions += 'C'; }
       });
-    }
-
-    //Automatically add bindings
-    if(_this.Config.system_settings.automatic_bindings){
-      if(('nokey' in model) && (model.nokey)){ }
-      else{
-        if ('tabs' in model) for (var i=0;i<model.tabs.length;i++) {
-          var tab = model.tabs[i]; //tab.target, tab.bindings
-          _this.AddAutomaticBindings(model, tab, 'Tab '+(tab.name||''), { log: function(msg){ _this.LogInit_ERROR(msg); } });
-        }
-        if ('duplicate' in model) {
-          var duplicate = model.duplicate; //duplicate.target, duplicate,bindings
-          _this.AddAutomaticBindings(model, model.duplicate, "Duplicate action", { log: function(msg){ _this.LogInit_ERROR(msg); } });
-        }
-        _.each(model.fields, function (field) {
-          if (field.control == 'subform') {
-            _this.AddAutomaticBindings(model, field, 'Subform '+field.name, { log: function(msg){ _this.LogInit_ERROR(msg); } });
-          }
-        });
-      }
     }
 
     //Validate Model and Field Parameters
@@ -1419,9 +1472,9 @@ exports.AddFieldDatalock = function(model, field, siteid, datalockid, datalockSe
   else this.LogInit_ERROR(model.id + ' > ' + field.name + ': Could not auto-add datalock - please define in _config.datalocks.'+siteid+'.'+datalockid+'.'+field.name);
 }
 
-//_this.AddAutomaticBindings(model, tab, 'Tab '+(tab.name||''), { log: function(msg){ _this.LogInit_ERROR(msg); } });
-//_this.AddAutomaticBindings(model, model.duplicate, "Duplicate action", { log: function(msg){ _this.LogInit_ERROR(msg); } });
-//_this.AddAutomaticBindings(model, field, 'Subform '+field.name, { log: function(msg){ _this.LogInit_ERROR(msg); } });
+//_this.AddAutomaticBindings(model, tab, 'Tab '+(tab.name||''), { noErrorOnMissingParentKey: true, log: function(msg){ _this.LogInit_ERROR(msg); } });
+//_this.AddAutomaticBindings(model, model.duplicate, "Duplicate action", { noErrorOnMissingParentKey: true, log: function(msg){ _this.LogInit_ERROR(msg); } });
+//_this.AddAutomaticBindings(model, field, 'Subform '+field.name, { noErrorOnMissingParentKey: true, log: function(msg){ _this.LogInit_ERROR(msg); } });
 //Add: link_bindings = jsh.AddAutomaticBindings(model, link_bindingObj, 'Button '+(link_text||link_target), { req: req, bindType: 'nonKeyFields', additionalFields: link_binding_additionalFields });
 //Other: link_bindings = jsh.AddAutomaticBindings(model, link_bindingObj, 'Button '+(link_text||link_target), { req: req, bindType: 'childKey' });
 exports.AddAutomaticBindings = function(model, element, elementname, options){
@@ -1445,7 +1498,9 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
     //Express Request
     req: null, 
     //Logging function
-    log: function(msg){ _this.Log.error(msg); } 
+    log: function(msg){ _this.Log.error(msg); },
+    //Do not display an error if binding not parentKey Binding not found
+    noErrorOnMissingParentKey: false,
   }, options);
 
   //If automatic bindings are not enabled, return
@@ -1530,18 +1585,46 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
         bindings[field.name] = childKey;
       });
     }
-    else{
+    else{ //parentKey
       //Match parent keys with child fields
       _.each(parentKeys, function(parentKey){
         var field = _this.AppSrvClass.prototype.getFieldByName(tmodel.fields, parentKey);
-        if(!field) { options.log(model.id + ' > ' + elementname + ' Bindings: Key '+parentKey+' not found in target form.  Explicitly define bindings if necessary.'); return; }
-        bindings[field.name] = parentKey;
+        if(!field && !options.noErrorOnMissingParentKey) { options.log(model.id + ' > ' + elementname + ' Bindings: Key '+parentKey+' not found in target form.  Explicitly define bindings if necessary.'); return; }
+        bindings[parentKey] = parentKey;
       });
     }
   }
 
   element.bindings = bindings;
   return bindings;
+}
+
+exports.ValidateBindingKeys = function(model, element, elementname, modelsExt){
+  var _this = this;
+  var tmodel = _this.getModel(null, element.target, model);
+  var auto_keys = _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.keys;
+  if(tmodel){
+    var ttabledef = modelsExt[tmodel.id].tabledef;
+    //Check if all bindings exist
+    _.each(element.bindings, function(binding, childKey){
+      var tfield = _this.AppSrvClass.prototype.getFieldByName(tmodel.fields, childKey);
+      if(!tfield) { 
+        var created_field = false;
+        if(auto_keys){
+          //Add foreign key based on binding
+          if(childKey in ttabledef.fields){
+            tmodel.fields.push({ 
+              name: childKey, 
+              foreignkey: 1,
+              control: "hidden"
+            });
+            created_field = true;
+          }
+        }
+        if(!created_field) _this.LogInit_ERROR(model.id + ' > ' + elementname + ' Bindings: Field '+childKey+' not found in target form.  Explicitly define bindings if necessary.');
+      }
+    });
+  }
 }
 
 exports.isInModelGroup = function(model, modelgroupid){
@@ -1598,6 +1681,7 @@ function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
     }
     var tmodel = jsh.getModel(null,tab.target,model);
     if (!tmodel) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Target model "' + tab.target + '" not found'); return }
+    tab.target = tmodel.id;
     tmodel.access_models[srcmodelid] = srcaccess;
     validateSiteAccess(model, tmodel, model.id + ' > Tab ' + tabname + ': ', '', tab.roles);
     ParseAccessModels(jsh, tmodel, srcmodelid, srcaccess);
@@ -1605,6 +1689,7 @@ function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
   if ('duplicate' in model) {
     var tmodel = jsh.getModel(null,model.duplicate.target,model);
     if (!tmodel) { _this.LogInit_WARNING('Invalid duplicate model ' + model.duplicate + ' in ' + model.id); return }
+    model.duplicate.target = tmodel.id;
     tmodel.access_models[srcmodelid] = srcaccess;
     validateSiteAccess(model, tmodel, model.id + ' > Duplicate model ' + model.duplicate + ': ', '');
     validateSiteLinks(model, model.duplicate.link, model.id + ' > Duplicate model ' + model.duplicate + ' link: ', model.duplicate.link);
@@ -1617,6 +1702,7 @@ function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
     if (('target' in field) && ((field.control == 'subform') || (field.popuplov))) {
       var tmodel = jsh.getModel(null,field.target,model);
       if (!tmodel) { _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Invalid target model "' + field.target + '"'); return }
+      field.target = tmodel.id;
       tmodel.access_models[srcmodelid] = srcaccess;
       validateSiteAccess(model, tmodel, model.id + ' > ' + field.name + ': ', '', field.roles);
       validateSiteLinks(model, field.link, model.id + ' > ' + field.name + ' link: ', field.link, field.roles);

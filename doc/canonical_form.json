@@ -24,6 +24,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "table": "V_E001L",
   "caption": [ "", "Client", "Clients" ], //Three-item array, first item is ignored
   "caption": [ "Client", "Clients" ], //Two-item array
+  "caption": [ "Client Information" ], //One-item array
   "title": 
     //Title string:
     "CLIENT - @c_name - STRD" //Can use dynamic parameters from jshsite.globalparams: @c_name, or <#=data.c_name#> for form data, or <#=bcrumbs.PL_YEAR_TXT#> for breadcrumb SQL data, <#=_GET.TO_ID#> for GET Parameters
@@ -161,6 +162,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "precision": [12,6], //For decimal, default is 10,4 if omitted
       "precision": 53, //For float
       "key": 1, //If key exists, then this is a key field
+      "foreignkey": 1, //Field is a foreign key (used to ensure datalocks are correctly applied)
       "lovkey": 1, //Used by Multisel to enable additional foreign key in LOV expression, without being a required parameter
       "virtual": 1, //Field is not bound on I/U, can be B, but will not pull updates or respond to HasUpdates
       "static": "js:XExt.UndefinedBlank(jsh._GET['j_id'])", //Static binding, overwrite existing data from form

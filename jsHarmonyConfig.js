@@ -120,7 +120,8 @@ function jsHarmonyConfig(config){
       "datatypes": true,         //Load datatypes from the database (type, length, precision, required validation, primary key, read-only)
       "attributes": true,        //Load extended attributes from the database (required validation, primary key, read-only)
       "controls": true,          //Load controls from the database
-      "lovs": true               //Load LOVs (List of Values - UCOD/GCOD/UCOD2/GCOD2) from the database
+      "lovs": true,              //Load LOVs (List of Values - UCOD/GCOD/UCOD2/GCOD2) from the database
+      "keys": true               //Generate primary and foreign keys based on table keys
     },
     //Model validation level - "standard", "strict"
     //  Strict: MISSING_CAPTION
