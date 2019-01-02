@@ -241,10 +241,10 @@ exports = module.exports = function(jsh){
     //Make fields editable or locked / read-only
     var show_lookup_when_readonly = false;
 
-    var access = (_this._is_new?'I':'U');
-    if ((xmodel.layout=='exec')||(xmodel.layout=='report')) access = 'B';
-    var is_editable = jsh.XExt.HasAccess(field.actions, access);
-    if (is_editable && field.always_editable_on_insert && ((access == 'I') || ((xmodel.layout=='exec')||(xmodel.layout=='report')))){ }
+    var action = (_this._is_new?'I':'U');
+    if ((xmodel.layout=='exec')||(xmodel.layout=='report')) action = 'B';
+    var is_editable = jsh.XExt.hasAction(field.actions, action);
+    if (is_editable && field.always_editable_on_insert && ((action == 'I') || ((xmodel.layout=='exec')||(xmodel.layout=='report')))){ }
     else {
       if (is_editable && ('readonly' in field) && (field.readonly == 1)) is_editable = false;
       if (_this._readonly && _.includes(_this._readonly, field.name)) is_editable = false;
@@ -289,7 +289,7 @@ exports = module.exports = function(jsh){
     return function (perm) {
       var _this = this;
       _.each(this.Fields, function (field) {
-        if (!(('virtual' in field) && field.virtual) && !jsh.XExt.HasAccess(field.actions, perm)) return;
+        if (!(('virtual' in field) && field.virtual) && !jsh.XExt.hasAction(field.actions, perm)) return;
         var newval = _this.GetValue(field);
         //if (!('control' in field) && (newval == undefined)) return;
         _this[field.name] = newval;
@@ -380,10 +380,10 @@ exports = module.exports = function(jsh){
       if (jsh.XModels[this._modelid].layout=='report') return false;
       var _this = this;
       if (this._is_new) { return true; }
-      var access = (this._is_new?'I':'U');
+      var action = (this._is_new?'I':'U');
       var hasUpdates = false;
       _.each(this.Fields, function (field) {
-        if (!jsh.XExt.HasAccess(field.actions, access)) return;
+        if (!jsh.XExt.hasAction(field.actions, action)) return;
         if (_this.HasUpdate(field.name)) { hasUpdates = true; }
       });
       return hasUpdates;
@@ -421,8 +421,8 @@ exports = module.exports = function(jsh){
       }
       //_is_new at record-level
       var _this = this;
-      var access = (this._is_new?'I':'U');
-      if ((xmodel.layout=='exec')||(xmodel.layout=='report')) access = 'B';
+      var action = (this._is_new?'I':'U');
+      if ((xmodel.layout=='exec')||(xmodel.layout=='report')) action = 'B';
       if (this.HasUpdates()) {
         if (!this._is_dirty) {
           //Clone Data to Orig
@@ -430,11 +430,11 @@ exports = module.exports = function(jsh){
           this._is_dirty = true;
         }
       }
-      this.GetValues(access);
+      this.GetValues(action);
       var _xvalidate = xmodel.datamodel.prototype.xvalidate;
       if (_xvalidate) {
         this.xvalidate = _xvalidate;
-        var valid = xmodel.controller.form.Validate(access);
+        var valid = xmodel.controller.form.Validate(action);
         delete this.xvalidate;
         if (!valid) return false;
       }

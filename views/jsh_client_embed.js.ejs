@@ -38,7 +38,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   if(model.topmost && (typeof bindings == 'undefined')){
     if((model.layout=='form-m')||(model.layout=='multisel')){
       _.each(model.fields, function(field){
-        if(field.name && XExt.access(field.actions,'F') && (field.name in jsh._GET) && jsh._GET[field.name]){
+        if(field.name && XExt.hasAction(field.actions,'F') && (field.name in jsh._GET) && jsh._GET[field.name]){
           if(!bindings) bindings = {};
           bindings[field.name] = "'" + XExt.escapeJS(jsh._GET[field.name]) + "'";
         }

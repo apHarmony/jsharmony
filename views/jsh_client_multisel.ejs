@@ -29,7 +29,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
 	    if(!('caption' in field)) continue; 
       if(!('actions' in field)) continue; 
       if(field.control=='hidden') continue;
-      if(!XExt.access(field.actions,'B')) continue;
+      if(!XExt.hasAction(field.actions,'B')) continue;
 	    %>
       <th nowrap><%=field.caption%></th>
       <% } %>
@@ -48,12 +48,12 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
   <script class="xmultisel_<%=model.class%>_template" type="text/x-ejs-template">
     <# for(var j=0;j<data.length;j++){ var datarow=data[j]; #>
     <tr class="<#=(j%2==1?'even':'odd')#>">
-      <td align="center" style="vertical-align:middle;"><input type="checkbox" class="xselitem" value="<#=data[j][jsh.uimap.codeval]#>" <%-xejs.iif(!XExt.access(model.actions,'IU'),'disabled="disabled"')%> <# if(data[j]['<%=lovfield%>']!==null){ #>checked="checked"<# } #> /></td>
+      <td align="center" style="vertical-align:middle;"><input type="checkbox" class="xselitem" value="<#=data[j][jsh.uimap.codeval]#>" <%-xejs.iif(!XExt.hasAction(model.actions,'IU'),'disabled="disabled"')%> <# if(data[j]['<%=lovfield%>']!==null){ #>checked="checked"<# } #> /></td>
     <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
       if(!('caption' in field)) continue; 
       if(!('actions' in field)) continue; 
       if(field.control=='hidden') continue;
-      if(!XExt.access(field.actions,'B')) continue;
+      if(!XExt.hasAction(field.actions,'B')) continue;
       var format = 'undefined';
       if('format' in field) format = JSON.stringify(field.format);
       %>

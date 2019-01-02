@@ -179,7 +179,6 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
   model['id'] = modelname;
   model['idmd5'] = crypto.createHash('md5').update(_this.Config.frontsalt + model.id).digest('hex');
   if('namespace' in model){ _this.LogInit_ERROR(model.id + ': "namespace" attribute should not be set, it is a read-only system parameter'); }
-  model.access_models = {};
   model._inherits = [];
   model._referencedby = [];
   if(!model.path && modelpath) model.path = modelpath;
@@ -195,7 +194,6 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
     model.using[i] = upath;
   }
   if(!('fields' in model)) model.fields = [];
-  if ('actions' in model) model['access_models'][modelname] = model.actions;
   if('css' in model) model.css = Helper.ParseMultiLine(model.css);
   //if (modelname in this.Models) throw new Error('Cannot add ' + modelname + '.  The model already exists.')
   var modelbasedir = '';
@@ -543,7 +541,7 @@ exports.ParseEntities = function () {
     var automodel = undefined;
 
     if((model.layout=='grid') && !('commitlevel' in model)){
-      if(model.actions && !Helper.access(model.actions, 'IUD')) model.commitlevel = 'none';
+      if(model.actions && !Helper.hasAction(model.actions, 'IUD')) model.commitlevel = 'none';
       else if(tabledef && (tabledef.table_type=='view') && !('actions' in model)){ model.commitlevel = 'none'; }
       else model.commitlevel = 'auto';
     }
@@ -559,7 +557,7 @@ exports.ParseEntities = function () {
       }
     }
 
-    var isReadOnlyGrid = modelExt.isReadOnlyGrid = (model.layout=='grid') && (!model.commitlevel || (model.commitlevel=='none') || !Helper.access(model.actions, 'IU'));
+    var isReadOnlyGrid = modelExt.isReadOnlyGrid = (model.layout=='grid') && (!model.commitlevel || (model.commitlevel=='none') || !Helper.hasAction(model.actions, 'IU'));
     if(tabledef){
       var autolayout = '';
       if((model.layout=='form') || (model.layout=='form-m') || (model.layout=='exec') || (model.layout=='report')) autolayout = 'form';
@@ -601,7 +599,7 @@ exports.ParseEntities = function () {
     //Read-only grids should only have "B" actions
     if ((model.layout=='grid') && model.actions){
       if(!model.commitlevel || (model.commitlevel=='none')){
-        if(Helper.access(model.actions, 'IUD')){
+        if(Helper.hasAction(model.actions, 'IUD')){
           _this.LogInit_ERROR('Model ' + model.id + ' actions should be "B" if it is a read-only grid and "commitlevel" is not set');
         }
       }
@@ -765,7 +763,7 @@ exports.ParseEntities = function () {
                 if(field.lov.parent){
                   var foundparent = false;
                   _.each(model.fields, function(pfield){ if(pfield.name && (pfield.name.toLowerCase()==field.lov.parent)) foundparent = true; });
-                  var isReadOnlyField = isReadOnlyGrid || (field.actions && !Helper.access(field.actions, 'IU')) || (field.control == 'label');
+                  var isReadOnlyField = isReadOnlyGrid || (field.actions && !Helper.hasAction(field.actions, 'IU')) || (field.control == 'label');
                   if(!foundparent && !isReadOnlyField){
                     _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Cannot initialize List of Values (LOV) - Parent field missing: '+field.lov.parent);
                     delete field.lov;
@@ -779,7 +777,7 @@ exports.ParseEntities = function () {
             }
             //Control
             if(auto_controls){
-              if(!('control' in field) && autofield.control && (!('actions' in field) || Helper.access(field.actions, 'B'))){
+              if(!('control' in field) && autofield.control && (!('actions' in field) || Helper.hasAction(field.actions, 'B'))){
                 //Field Control
                 field.control = autofield.control;
                 if(autofield.captionclass) field.captionclass = autofield.captionclass + ' ' + (field.captionclass||'');
@@ -876,8 +874,8 @@ exports.ParseEntities = function () {
       if(!('control' in field)){
         if(auto_controls){
           if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
-            if(Helper.access(field.actions, 'B') && !field.value && !field.html){
-              if(Helper.access(field.actions, 'IU')) field.control = 'textbox';
+            if(Helper.hasAction(field.actions, 'B') && !field.value && !field.html){
+              if(Helper.hasAction(field.actions, 'IU')) field.control = 'textbox';
               else field.control = 'label';
             }
           }
@@ -901,7 +899,7 @@ exports.ParseEntities = function () {
       }
       if (field.key) { 
         field.actions += 'K'; 
-        if(Helper.access(field.actions, 'F') || field.foreignkey){ _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Key field should not also have foreignkey attribute.'); }
+        if(Helper.hasAction(field.actions, 'F') || field.foreignkey){ _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Key field should not also have foreignkey attribute.'); }
       }
       if ('__REMOVEFIELD__' in field){ 
         _this.LogDeprecated(model.id + ' > ' + field.name + ': __REMOVEFIELD__ has been deprecated.  Please use __REMOVE__ instead.'); 
@@ -916,8 +914,8 @@ exports.ParseEntities = function () {
         if ('popup_copy_results' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams popup_copy_results attribute has been deprecated - use "popuplov":{...}');
         if ('base_readonly' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams base_readonly attribute has been deprecated - use "popuplov":{...}');
         if ('onpopup' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams onpopup attribute has been deprecated - use "popuplov":{...}');
-        if (('image' in field.controlparams) && Helper.access(field.actions, 'IU') && (field.controlparams.image.resize || field.controlparams.image.crop)) _this.TestImageMagick(model.id + ' > ' + field.name);
-        if (('thumbnails' in field.controlparams) && Helper.access(field.actions, 'IU')) _.each(field.controlparams.thumbnails,function(thumbnail){ if(thumbnail.resize || thumbnail.crop) _this.TestImageMagick(model.id + ' > ' + field.name); });
+        if (('image' in field.controlparams) && Helper.hasAction(field.actions, 'IU') && (field.controlparams.image.resize || field.controlparams.image.crop)) _this.TestImageMagick(model.id + ' > ' + field.name);
+        if (('thumbnails' in field.controlparams) && Helper.hasAction(field.actions, 'IU')) _.each(field.controlparams.thumbnails,function(thumbnail){ if(thumbnail.resize || thumbnail.crop) _this.TestImageMagick(model.id + ' > ' + field.name); });
       }
       if ('popuplov' in field) {
         var has_own = false;
@@ -936,7 +934,7 @@ exports.ParseEntities = function () {
       }
       //Add foreign keys
       if(!field.key){
-        if(!Helper.access(field.actions, 'F')){
+        if(!Helper.hasAction(field.actions, 'F')){
           if(_this.Config.system_settings.automatic_parameters){
             var add_foreignkey = false;
             //Disabled this check, because lov's with "nodatalock" should not be tagged with the foreign key
@@ -952,14 +950,14 @@ exports.ParseEntities = function () {
           }
           if (field.foreignkey) { field.actions += 'F'; }
         }
-        else if(Helper.access(field.actions, 'F')){
+        else if(Helper.hasAction(field.actions, 'F')){
           _this.LogDeprecated(model.id + ' > ' + field.name + ': "F" action has been deprecated.  Please use foreignkey instead, or automatic parameters.');
           field.foreignkey = 1;
         }
       }
 
       //Apply "enable_search" property
-      if(Helper.access(field.actions, 'S')){
+      if(Helper.hasAction(field.actions, 'S')){
         _this.LogDeprecated(model.id + ' > ' + field.name + ': "S" action has been deprecated.  Please use the enable_search property instead.');
         field.enable_search = 1;
       }
@@ -1055,12 +1053,12 @@ exports.ParseEntities = function () {
           }
         }
       }
-      if(field.control && field.actions &&  !field.virtual && Helper.access(field.actions, 'BIUD') && (field.control!='hidden')) firstfield = false;
+      if(field.control && field.actions &&  !field.virtual && Helper.hasAction(field.actions, 'BIUD') && (field.control!='hidden')) firstfield = false;
     });
     
     //**DEPRECATED MESSAGES**
     if (model.fields) _.each(model.fields, function (field) {
-      if (field.actions && Helper.access(field.actions, 'C')) _this.LogDeprecated(model.id + ' > ' + field.name + ': Action \'C\' has been deprecated - use breadcrumbs.sql_params');
+      if (field.actions && Helper.hasAction(field.actions, 'C')) _this.LogDeprecated(model.id + ' > ' + field.name + ': Action \'C\' has been deprecated - use breadcrumbs.sql_params');
       if ('hidden' in field) _this.LogDeprecated(model.id + ' > ' + field.name + ': The hidden attribute has been deprecated - use "control":"hidden"');
       if ('html' in field) _this.LogDeprecated(model.id + ' > ' + field.name + ': The html attribute has been deprecated - use "control":"html"');
       if ('lovkey' in field) _this.LogDeprecated(model.id + ' > ' + field.name + ': The lovkey attribute has been deprecated');
@@ -1126,9 +1124,9 @@ exports.ParseEntities = function () {
       if(field.lov){
         var lov = field.lov;
         if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
-          if(!field.always_editable_on_insert && Helper.access(model.actions, 'I') && Helper.access(field.actions, 'I')){
+          if(!field.always_editable_on_insert && Helper.hasAction(model.actions, 'I') && Helper.hasAction(field.actions, 'I')){
             if(lov.sql||lov.sql2||lov.sqlmp||lov.sqlselect){
-              if (!Helper.access(field.actions, 'C')) { if (!field.actions) field.actions = ''; field.actions += 'C'; }
+              if (!Helper.hasAction(field.actions, 'C')) { if (!field.actions) field.actions = ''; field.actions += 'C'; }
             }
           }
         }
@@ -1166,14 +1164,14 @@ exports.ParseEntities = function () {
       _.each(default_params,function(sql_param){
         var sql_param_field = _this.AppSrvClass.prototype.getFieldByName(model.fields, sql_param);
         if (!sql_param_field) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Default sql param "' + sql_param + '" is not defined as a field');
-        else if (!Helper.access(sql_param_field.actions, 'C')) { if (!sql_param_field.actions) sql_param_field.actions = ''; sql_param_field.actions += 'C'; }
+        else if (!Helper.hasAction(sql_param_field.actions, 'C')) { if (!sql_param_field.actions) sql_param_field.actions = ''; sql_param_field.actions += 'C'; }
       });
     }
 
     //Validate Model and Field Parameters
     var _v_model = [
       'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites', 'class', 'using',
-      'samplerepeat', 'menu', 'id', 'idmd5', 'access_models', '_inherits', '_referencedby','groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
+      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby','groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
       'pagesettings', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_filter', 'grid_save_before_update', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
@@ -1204,7 +1202,7 @@ exports.ParseEntities = function () {
     var no_B = true;
     var no_key = true;
     if (model.fields) _.each(model.fields, function (field) {
-      if (Helper.access(field.actions, 'B') && (field.control != 'html') && (field.control != 'subform') && (field.control != 'button')) no_B = false;
+      if (Helper.hasAction(field.actions, 'B') && (field.control != 'html') && (field.control != 'subform') && (field.control != 'button')) no_B = false;
       if (field.key) no_key = false;
       if (field.hidden) { field.control = 'hidden'; }
       for (var f in field) {
@@ -1219,7 +1217,7 @@ exports.ParseEntities = function () {
       if (field.lov) {
         for (var f in field.lov) { if (!_.includes(_v_lov, f)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Invalid lov parameter: ' + f); }
       }
-      if ((field.control == 'label') && Helper.access(field.actions, 'IUD')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Label can only have action B');
+      if ((field.control == 'label') && Helper.hasAction(field.actions, 'IUD')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Label can only have action B');
       //Check unique target
       if (field.target) {
         if (!_.includes(existing_targets, field.target)) existing_targets.push(field.target);
@@ -1278,7 +1276,7 @@ exports.ParseEntities = function () {
   _.forOwn(_this.Models, function (model) {
 
     //Verify bindings are set up properly
-    ParseAccessModels(_this, model, model.id, model.actions);
+    ParseModelRoles(_this, model, model.id, model.actions);
 
     //Check Parent / Child Relationships for Potentially Missing Foreign keys  
     if (model.tabs) {
@@ -1292,7 +1290,7 @@ exports.ParseEntities = function () {
           if (!tabmodel.fields) _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Target model has no fields for binding');
           var binding_child_field = _this.AppSrvClass.prototype.getFieldByName(tabmodel.fields, binding_child);
           if (!binding_child_field) _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Bound field "' + binding_child + '" is not defined in the target model "' + tab.target + '"');
-          else if (!Helper.access(binding_child_field.actions, 'F') && !binding_child_field.key) _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Bound field "' + binding_child + '" in target model "' + tab.target + '" missing F action');
+          else if (!Helper.hasAction(binding_child_field.actions, 'F') && !binding_child_field.key) _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Bound field "' + binding_child + '" in target model "' + tab.target + '" missing F action');
         }
       }
     }
@@ -1371,7 +1369,7 @@ exports.ParseEntities = function () {
               //Check if any KFC field is missing a datalock
               if(field.key) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
               else if(field.foreignkey) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
-              else if(Helper.access(field.actions, 'C')) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
+              else if(Helper.hasAction(field.actions, 'C')) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
               //Lovkey parameters in multisel
               else if((model.layout=='multisel') && field.lovkey) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
               //Check if any custom LOV is missing a datalock
@@ -1381,7 +1379,7 @@ exports.ParseEntities = function () {
               else if(_.includes(all_foreignkeys, field.name)) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
               else if(_.includes(all_lovs, field.name)) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
               //Any Exec / U fields with a datalock defined
-              if (((model.layout=='exec')||(model.layout=='report')) && Helper.access(field.actions, 'U') && Helper.arrayItem(_this.Config.datalocks[siteid][datalockid],field.name,datalockSearchOptions)) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
+              if (((model.layout=='exec')||(model.layout=='report')) && Helper.hasAction(field.actions, 'U') && Helper.arrayItem(_this.Config.datalocks[siteid][datalockid],field.name,datalockSearchOptions)) _this.AddFieldDatalock(model, field, siteid, datalockid, datalockSearchOptions);
 
               //If datalock was added, continue to next field
               if(field.datalock && Helper.arrayItem(field.datalock,datalockid,datalockSearchOptions)) return;
@@ -1390,7 +1388,7 @@ exports.ParseEntities = function () {
             //Check if any KFC field is missing a datalock
             if(field.key) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Missing datalock '+siteid+'.'+datalockid +' for key '+field.name);
             else if(field.foreignkey) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Missing datalock '+siteid+'.'+datalockid +' for foreign key '+field.name);
-            else if(Helper.access(field.actions, 'C')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Missing datalock '+siteid+'.'+datalockid +' for '+field.name);
+            else if(Helper.hasAction(field.actions, 'C')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Missing datalock '+siteid+'.'+datalockid +' for '+field.name);
             //Lovkey parameters in multisel
             else if((model.layout=='multisel') && field.lovkey) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Missing datalock on multisel lovkey '+siteid+'::'+datalockid);
             //Check if any custom LOV is missing a datalock
@@ -1440,7 +1438,7 @@ exports.AddSqlParams = function(model, element, props){
     if(params.length){
       for(var i=0;i<params.length;i++){
         var pfield = _this.AppSrvClass.prototype.getFieldByName(model.fields, params[i]);
-        if (!Helper.access(pfield.actions, 'F') && !pfield.key){ pfield.actions += 'F'; }
+        if (!Helper.hasAction(pfield.actions, 'F') && !pfield.key){ pfield.actions += 'F'; }
       }
       element.sql_params = params;
     }
@@ -1453,7 +1451,7 @@ exports.AddSqlParamsFieldFlags = function(model, element, desc){
   else if (model.fields && element && element.sql_params) _.each(element.sql_params, function (sql_param) {
     var sql_param_field = _this.AppSrvClass.prototype.getFieldByName(model.fields, sql_param);
     if (!sql_param_field) _this.LogInit_ERROR(model.id + ' > ' + sql_param + ': '+desc+' sql param "' + sql_param + '" is not defined as a field');
-    else if (!Helper.access(sql_param_field.actions, 'C')) { if (!sql_param_field.actions) sql_param_field.actions = ''; sql_param_field.actions += 'C'; }
+    else if (!Helper.hasAction(sql_param_field.actions, 'C')) { if (!sql_param_field.actions) sql_param_field.actions = ''; sql_param_field.actions += 'C'; }
   });
 }
 
@@ -1634,10 +1632,10 @@ exports.isInModelGroup = function(model, modelgroupid){
   return false;
 }
 
-function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
+function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
   var _this = jsh;
 
-  function validateSiteAccess(model, tmodel, prefix, suffix, roles){
+  function validateSiteRoles(model, tmodel, prefix, suffix, roles){
     var childSites = _.intersection(model.sites, tmodel.sites);
     var parentSites = model.sites;
     if(roles){
@@ -1657,7 +1655,7 @@ function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
     if(linkTarget.modelid.substr(0,3)=='js:') return;
     var linkModel = jsh.getModel(null,linkTarget.modelid,model);
     if (!linkModel) { _this.LogInit_ERROR((prefix||'') + 'Link Target model "' + linkTarget.modelid + '" not found'+(suffix?' in link expression "'+suffix+'"':'')); return }
-    validateSiteAccess(model, linkModel, prefix, suffix, roles);
+    validateSiteRoles(model, linkModel, prefix, suffix, roles);
   }
 
   //-----------------------
@@ -1682,18 +1680,16 @@ function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
     var tmodel = jsh.getModel(null,tab.target,model);
     if (!tmodel) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Target model "' + tab.target + '" not found'); return }
     tab.target = tmodel.id;
-    tmodel.access_models[srcmodelid] = srcaccess;
-    validateSiteAccess(model, tmodel, model.id + ' > Tab ' + tabname + ': ', '', tab.roles);
-    ParseAccessModels(jsh, tmodel, srcmodelid, srcaccess);
+    validateSiteRoles(model, tmodel, model.id + ' > Tab ' + tabname + ': ', '', tab.roles);
+    ParseModelRoles(jsh, tmodel, srcmodelid, srcactions);
   }
   if ('duplicate' in model) {
     var tmodel = jsh.getModel(null,model.duplicate.target,model);
     if (!tmodel) { _this.LogInit_WARNING('Invalid duplicate model ' + model.duplicate + ' in ' + model.id); return }
     model.duplicate.target = tmodel.id;
-    tmodel.access_models[srcmodelid] = srcaccess;
-    validateSiteAccess(model, tmodel, model.id + ' > Duplicate model ' + model.duplicate + ': ', '');
+    validateSiteRoles(model, tmodel, model.id + ' > Duplicate model ' + model.duplicate + ': ', '');
     validateSiteLinks(model, model.duplicate.link, model.id + ' > Duplicate model ' + model.duplicate + ' link: ', model.duplicate.link);
-    ParseAccessModels(jsh, tmodel, srcmodelid, srcaccess);
+    ParseModelRoles(jsh, tmodel, srcmodelid, srcactions);
   }
   _.each(model.buttons, function (button) {
     validateSiteLinks(model, button.link, model.id + ' > Button link: ', button.link, button.roles);
@@ -1703,13 +1699,12 @@ function ParseAccessModels(jsh, model, srcmodelid, srcaccess) {
       var tmodel = jsh.getModel(null,field.target,model);
       if (!tmodel) { _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Invalid target model "' + field.target + '"'); return }
       field.target = tmodel.id;
-      tmodel.access_models[srcmodelid] = srcaccess;
-      validateSiteAccess(model, tmodel, model.id + ' > ' + field.name + ': ', '', field.roles);
+      validateSiteRoles(model, tmodel, model.id + ' > ' + field.name + ': ', '', field.roles);
       validateSiteLinks(model, field.link, model.id + ' > ' + field.name + ' link: ', field.link, field.roles);
-      ParseAccessModels(jsh, tmodel, srcmodelid, srcaccess);
+      ParseModelRoles(jsh, tmodel, srcmodelid, srcactions);
     }
     else if(('link' in field)){
-      if(Helper.access(field.actions, 'B') && (field.control != 'hidden') && !('value' in field)){
+      if(Helper.hasAction(field.actions, 'B') && (field.control != 'hidden') && !('value' in field)){
         if(field.link != 'select'){
           validateSiteLinks(model, field.link, model.id + ' > ' + field.name + ' link: ', field.link, field.roles);
         }

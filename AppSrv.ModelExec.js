@@ -24,7 +24,7 @@ module.exports = exports = {};
 
 exports.getModelExec = function (req, res, fullmodelid, Q, P, form_m) {
   var model = this.jsh.getModel(req, fullmodelid);
-  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   var _this = this;
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
   var filelist = this.getFileFieldNames(req, model.fields, 'B');
@@ -57,7 +57,7 @@ exports.postModelExec = function (req, res, fullmodelid, Q, P, onComplete) {
   var _this = this;
   if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
   var model = this.jsh.getModel(req, fullmodelid);
-  if (!Helper.HasModelAccess(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+  if (!Helper.hasModelAction(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   var db = _this.jsh.getModelDB(req, fullmodelid);
   
   var fieldlist = this.getFieldNames(req, model.fields, 'U');

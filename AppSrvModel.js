@@ -90,7 +90,7 @@ AppSrvModel.prototype.GetModel = function (req, res, fullmodelid) {
   var _this = this;
   var jsh = this.AppSrv.jsh;
   var model = jsh.getModel(req, fullmodelid);
-  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   req.curtabs = jsh.getTabs(req, model);
   req.TopModel = fullmodelid;
 
@@ -129,7 +129,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
     else if (req.query.action == 'edit') targetperm = 'U'; //Browse is accessed the same way as update
     else return onComplete('Invalid "action" in querystring');
   }
-  if (!Helper.HasModelAccess(req, model, 'B'+targetperm)) { return onComplete("<div>You do not have access to this form.</div>"); }
+  if (!Helper.hasModelAction(req, model, 'B'+targetperm)) { return onComplete("<div>You do not have access to this form.</div>"); }
   
   //Check if the bindings are based on the key value
   var allConstantBindings = true;
@@ -137,7 +137,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
     if(typeof jsh.getStaticBinding(value) == 'undefined') allConstantBindings = false;
   });
   //If insert, and the model has any dynamic bindings, show message that the user needs to save first to edit the data
-  if((targetperm=='I') && !Helper.HasModelAccess(req, model, 'I')){
+  if((targetperm=='I') && !Helper.hasModelAction(req, model, 'I')){
     if(!allConstantBindings) { return onComplete("<div>Please save to manage "+model.caption[1]+" data.</div>"); }
   }
 
@@ -165,7 +165,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
     function(){
       if(model.commitlevel){
         if(model.commitlevel=='auto'){
-          if(!Helper.HasModelAccess(req, model, 'IUD')) rslt.commitlevel = 'none';
+          if(!Helper.hasModelAction(req, model, 'IUD')) rslt.commitlevel = 'none';
           else if(topmost) rslt.commitlevel = 'row';
           else rslt.commitlevel = 'page';
         }
@@ -182,7 +182,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
       return {
         'helpurl': ejsext.getHelpURL(req, jsh, model), 
         'helpurl_onclick': ejsext.getHelpOnClick(req, jsh, model),
-        'actions': ejsext.getaccess(req, model, 'BIUD'),
+        'actions': ejsext.getActions(req, model, 'BIUD'),
         'breadcrumbs': ejsext.BreadCrumbs(req, jsh, fullmodelid)
       }
     },
@@ -201,8 +201,8 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
         var link_class = button['class'];
         var link_newline = button['nl'] ? 1 : 0;
         var link_group = button['group'] || '';
-        if (!ejsext.access(req, model, link_actions)) continue;
-        if('roles' in button) if (!ejsext.access(req, button, link_actions)) continue;
+        if (!ejsext.hasAction(req, model, link_actions)) continue;
+        if('roles' in button) if (!ejsext.hasAction(req, button, link_actions)) continue;
         var link_url = '';
         var link_onclick = '';
         if (link_target && link_target.substr(0, 3) == 'js:') {
@@ -218,7 +218,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
             //Hide the button if the user does not have target access to the model
             var link_targetperm = 'B';
             if(link_parsed.action=='add') link_targetperm = 'I';
-            if(button.hide_when_target_inaccessible && !Helper.HasModelAccess(req, link_targetmodel, link_targetperm)) continue;
+            if(button.hide_when_target_inaccessible && !Helper.hasModelAction(req, link_targetmodel, link_targetperm)) continue;
             //Apply text in button caption
             link_text = link_text.replace(new RegExp('%%%CAPTION%%%', 'g'), link_targetmodel.caption[1]);
             link_text = link_text.replace(new RegExp('%%%CAPTIONS%%%', 'g'), link_targetmodel.caption[2]);
@@ -302,9 +302,9 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
           //Then, added it back, because it is such a hassle to need to
           //redeclare inheritance for nested forms just to remove one tab
           //var tabmodel = jsh.getModel(req, tab.target, model);
-          //if (!ejsext.access(req, model, targetperm, tab.actions)) continue;
-          if('roles' in tab) if (!ejsext.access(req, tab, 'B')) continue;
-          //if(!Helper.HasModelAccess(req, tabmodel, 'B')) continue;
+          //if (!ejsext.hasAction(req, model, targetperm, tab.actions)) continue;
+          if('roles' in tab) if (!ejsext.hasAction(req, tab, 'B')) continue;
+          //if(!Helper.hasModelAction(req, tabmodel, 'B')) continue;
           if (tab.showcode) {
             if (_.includes(tab.showcode, tabcode)) {
               showtabs.push(tabname);
@@ -372,7 +372,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
 
     function(cb){
       //Duplicate Model
-      if (model.duplicate && ejsext.access(req, model, 'I')) {
+      if (model.duplicate && ejsext.hasAction(req, model, 'I')) {
         var dmodelid = model.duplicate.target;
         var dmodel = jsh.getModel(req, dmodelid, model);
         if (!dmodel) { throw new Error('Duplicate Model ID not found: ' + dmodelid); }
@@ -502,8 +502,8 @@ AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, onComplete) 
       else if ('sqlmp' in srcfield.lov) dstfield.lov.multilov = 1;
     }
     if ('actions' in srcfield) {
-      dstfield.actions = ejsext.getaccess(req, model, srcfield.actions);
-      if ('roles' in srcfield) dstfield.actions = ejsext.getaccess(req, srcfield, dstfield.actions);
+      dstfield.actions = ejsext.getActions(req, model, srcfield.actions);
+      if ('roles' in srcfield) dstfield.actions = ejsext.getActions(req, srcfield, dstfield.actions);
     }
     dstfield.validate = jsh.GetValidatorClientStr(srcfield);
     if (('control' in dstfield) && ((dstfield.control == 'subform') || (dstfield.popuplov))) {

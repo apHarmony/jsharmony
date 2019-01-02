@@ -473,7 +473,7 @@ function handleStylus(jsh, siteid, router, stylusName, options){
   if(options.public && !stylusConfig.public) return;
   if(!options.public && stylusConfig.public) return;
   if(_.includes(stylusSites, siteid)) router.get(stylusConfig.path, function(req, res){
-    if (!options.public && !Helper.HasModelAccess(req, { actions: 'B', roles: stylusConfig.roles }, 'B')) { Helper.GenError(req, res, -11, 'Invalid Access for '+stylusName); return; }
+    if (!options.public && !Helper.hasModelAction(req, { actions: 'B', roles: stylusConfig.roles }, 'B')) { Helper.GenError(req, res, -11, 'Invalid Access for '+stylusName); return; }
     jsh.getStylusCSS(stylusName, function(err, css){
       if(err) jsh.Log.error(err);
       else HelperFS.outputContent(req, res, css,'text/css');

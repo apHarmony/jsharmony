@@ -9,8 +9,8 @@
     <div class="navtext navtext_<%=model.class%>">1 of 1</div>
     <a href="#" onclick="<%-js('xmodel.controller.form.NavNext();')%>" class="navbar"><img src="/images/icon_next.png" alt="Next" title="Next" /></a>
     <a href="#" onclick="<%-js('xmodel.controller.form.NavLast();')%>" class="navbar"><img src="/images/icon_last.png" alt="Last" title="Last" /></a>
-    <a href="#" onclick="<%-js('xmodel.controller.form.NavAdd();')%>" style="<%-xejs.visible(XExt.access(model.actions,'IU'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a>
-    <a href="#" onclick="<%-js('xmodel.controller.form.NavDelete();')%>" style="<%-xejs.visible(XExt.access(model.actions,'D'))%>"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a>
+    <a href="#" onclick="<%-js('xmodel.controller.form.NavAdd();')%>" style="<%-xejs.visible(XExt.hasAction(model.actions,'IU'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a>
+    <a href="#" onclick="<%-js('xmodel.controller.form.NavDelete();')%>" style="<%-xejs.visible(XExt.hasAction(model.actions,'D'))%>"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a>
   <% } %>
   <%-jsh.RenderView('jsh_buttons',ejsparams)%>
   <% if(model.topmost){ %>

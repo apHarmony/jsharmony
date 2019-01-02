@@ -14,7 +14,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
   <%-jsh.RenderView('jsh_buttons',ejsparams)%>
   <% if(model.inlinepopup){ %><a href="#" onclick="<%-instance%>.XExt.popupClear('<%=model.id%>',this); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'clear'))%>"><img src="/images/icon_delete.png" alt="Clear" title="Clear" />Clear</a><% } %>
   <% if(model.topmost && (model.commitlevel) && (model.commitlevel != 'none')){ %><a href="#" class="save" onclick="<%-instance%>.XPage.Save();return false;" style="display:none;"><img src="/images/icon_save.png" alt="Save" title="Save" />Save</a><% } %>
-  <% if(!model.templates.grid){ %><a href="#" onclick="<%-js('xmodel.controller.AddRow();')%>" class="xbuttonadd" style="<%-xejs.visible(xejs.showSystemButton(model,'add') && model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'I'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a><% } %>
+  <% if(!model.templates.grid){ %><a href="#" onclick="<%-js('xmodel.controller.AddRow();')%>" class="xbuttonadd" style="<%-xejs.visible(xejs.showSystemButton(model,'add') && model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'I'))%>"><img src="/images/icon_add.png" alt="Add" title="Add" />Add</a><% } %>
   <a href="#" class="xfilterbutton xfilterbutton<%=model.class%>" onclick="<%-js('xmodel.controller.FilterButton();')%>" style="<%-xejs.visible(xejs.showSystemButton(model,'filter'))%>"><img src="/images/icon_filter.png" alt="Filter" title="Filter" /><span>Filter</span></a>
   <a href="/" onclick="<%-js('jsh.XPage.Print();')%>" style="<%-xejs.visible(model.topmost && xejs.showSystemButton(model,'print'))%>"><img src="/images/icon_print.png" alt="Print" title="Print" />Print</a>
   <a href="#" onclick="<%-js('xmodel.controller.Export();')%>" style="<%-xejs.visible(xejs.showSystemButton(model,'export'))%>"><img src="/images/icon_export.png" alt="Export" title="Export" />Export</a>
@@ -100,7 +100,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
         <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
           if(!('caption' in field)) continue;
           if(('actions' in field) && (field.actions != '')){
-            if(!XExt.access(field.actions,'B')) continue;
+            if(!XExt.hasAction(field.actions,'B')) continue;
           }
           else if (!('html' in field)) continue; 
           var fieldclass = '';
@@ -108,8 +108,8 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           %>
         <th nowrap class="<%=field.sortclass%> thead<%=field.name%> <%=field.captionclass%> <%=fieldclass%>" style="<%=field.captionstyle%>"><% if(field.disable_sort){ %><%=field.caption%><% } else { %><a href="#" onClick="<%-js('xmodel.controller.Sort(this, \''+XExt.escapeHTML((field.lov && !field.lov.showcode)?('__'+jsh.uimap.codetxt+'__'+field.name):field.name)+'\');')%>"><%=field.caption%></a><% } %></th>
         <% } %>
-        <%-xejs.iif(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'I'),'<th></th>')%>
-        <%-xejs.iif(model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'D'),'<th></th>')%>
+        <%-xejs.iif(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'I'),'<th></th>')%>
+        <%-xejs.iif(model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'D'),'<th></th>')%>
       </tr>
     </thead>
     <tbody class="xgrid_<%=model.class%>_placeholder"></tbody>
@@ -120,7 +120,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
         <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
           if(!('caption' in field)) continue;
           if(('actions' in field) && (field.actions != '')){ 
-            if(!XExt.access(field.actions,'B')) continue;
+            if(!XExt.hasAction(field.actions,'B')) continue;
           }
           else if (!('html' in field)) continue;
           var format = 'undefined';
@@ -158,8 +158,8 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           if(field.popuplov){ %><a href="#" data-id="<%=field.name%>_xlookup" class="xform_ctrl xlookup icon <%=field.name%>_xlookup" data-codeval="<%=field.controlparams.codeval%>" data-model="<%=model.id%>" onclick="<%-instance%>.XExt.popupShow('<%=field.model.id%>','<%=field.name%>','<%=field.caption_ext||field.caption%> Selection',<%-instance%>.$(this).prev('.<%=field.name%>'),this,{OnControlUpdate:function(obj,e){ <%-instance%>.XModels['<%=model.id%>'].controller.editablegrid.ControlUpdate(obj,e); }})"><img src="/images/icon_search.png" height="14" style="position:relative;top:-1px;" /></a><% }
             %></td>
           <% } %>
-        <% if(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'I')){ %><td align="center"><a href="#" data-model="<%=model.id%>" data-actions="I" class="row_independent" onclick="<%-js('xmodel.controller.DuplicateRow(\''+XExt.escapeHTML(model.duplicate.model.id)+'\',<#=rowid#>, this, \''+XExt.escapeHTML((model.duplicate.bindings?JSON.stringify(model.duplicate.bindings):'{}'))+'\');')%>" style="<%-xejs.visible(XExt.access(model.actions,'I'))%>"><img src="/images/icon_copy.png" height="14" alt="Duplicate" title="Duplicate" /></a></td><%}%>
-        <% if(model.commitlevel && (model.commitlevel != 'none') && XExt.access(model.actions,'D')){%><td align="center"><a href="#" onclick="<%-js('xmodel.controller.DeleteRow(<#=rowid#>);')%>" style="<%-xejs.visible(XExt.access(model.actions,'D'))%>"><img src="/images/icon_delete2.png" height="14" alt="Delete" title="Delete" /></a></td><%}%>
+        <% if(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'I')){ %><td align="center"><a href="#" data-model="<%=model.id%>" data-actions="I" class="row_independent" onclick="<%-js('xmodel.controller.DuplicateRow(\''+XExt.escapeHTML(model.duplicate.model.id)+'\',<#=rowid#>, this, \''+XExt.escapeHTML((model.duplicate.bindings?JSON.stringify(model.duplicate.bindings):'{}'))+'\');')%>" style="<%-xejs.visible(XExt.hasAction(model.actions,'I'))%>"><img src="/images/icon_copy.png" height="14" alt="Duplicate" title="Duplicate" /></a></td><%}%>
+        <% if(model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'D')){%><td align="center"><a href="#" onclick="<%-js('xmodel.controller.DeleteRow(<#=rowid#>);')%>" style="<%-xejs.visible(XExt.hasAction(model.actions,'D'))%>"><img src="/images/icon_delete2.png" height="14" alt="Delete" title="Delete" /></a></td><%}%>
       </tr>
       <# } #>
     </script>

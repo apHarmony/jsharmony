@@ -69,7 +69,7 @@ exports.getAuxFields = function (req, res, model) {
       var ptarget = this.parseLink(link);
       var link_model = this.getModel(req, ptarget.modelid, model);
       if (!link_model) throw new Error("Link Model " + ptarget.modelid + " not found.");
-      if (!Helper.HasModelAccess(req, link_model, 'BIU')) { rslt[i]['link_onclick'] = req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;"; }
+      if (!Helper.hasModelAction(req, link_model, 'BIU')) { rslt[i]['link_onclick'] = req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;"; }
       else {
         if(ptarget.action=='download'){
           rslt[i]['link_onclick'] = "var url = "+req.jshsite.instance+".$(this).attr('href') + '?format=js'; "+req.jshsite.instance+".getFileProxy().prop('src', url); return false;";
@@ -175,7 +175,7 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
   var tmodel = this.getModel(req, modelid, srcmodel);
   if(!tmodel) throw new Error('Model ' + modelid + ' not found');
   var fullmodelid = tmodel.id;
-  if (!Helper.HasModelAccess(req, tmodel, 'BIU')) return "";
+  if (!Helper.hasModelAction(req, tmodel, 'BIU')) return "";
   tabs = typeof tabs !== 'undefined' ? tabs : new Object();
   var rslt = req.baseurl + fullmodelid;
   if(req.curtabs) for(var xmodelid in req.curtabs){
@@ -289,7 +289,7 @@ exports.getURL_onclick = function (req, model, field) {
     var ptarget = this.parseLink(link);
     var tmodel = this.getModel(req, ptarget.modelid, model);
     if (!tmodel) throw new Error("Link Model " + ptarget.modelid + " not found.");
-    if (!Helper.HasModelAccess(req, tmodel, 'BIU')) return req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;";
+    if (!Helper.hasModelAction(req, tmodel, 'BIU')) return req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;";
     if ((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec') || (model.layout == 'report')) {
       seturl += "var jsh="+req.jshsite.instance+"; url=jsh.XExt.ReplaceAll(url,'data[j]','data'); var modelid='" + Helper.escapeHTML(model.id) + "'; var xmodel=jsh.XModels[modelid]; var xform = xmodel.controller.form; if(xform && xform.Data && !xform.Data.Commit()) return false; url = jsh.XPage.ParseEJS(url,modelid); ";
     }

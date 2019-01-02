@@ -56,7 +56,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
       if(!jsh.is_add){
         for(var fieldname in xmodel.bindings){
           var bfield = xmodel.datamodel.prototype.Fields[fieldname];
-          if((typeof bfield != 'undefined') && (jsh.XExt.HasAccess(bfield.actions,'F'))){
+          if((typeof bfield != 'undefined') && (jsh.XExt.hasAction(bfield.actions,'F'))){
             execparams[fieldname] = xmodel.bindings[fieldname]();
           }
         }
@@ -114,7 +114,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
     //Pass parameters from bindings
     for(var fieldname in xmodel.bindings){
       var bfield = xmodel.datamodel.prototype.Fields[fieldname];
-      if((typeof bfield != 'undefined') && !(jsh.XExt.HasAccess(bfield.actions,'F'))) return;
+      if((typeof bfield != 'undefined') && !(jsh.XExt.hasAction(bfield.actions,'F'))) return;
       _query[fieldname] = xmodel.bindings[fieldname]();
       if(jsh.is_add && (typeof  _query[fieldname] == 'undefined')){
         _query[fieldname] = '%%%'+fieldname+'%%%';

@@ -503,7 +503,7 @@ exports = module.exports = function(jsh){
     var _this = this;
     var rslt = {};
     _.each(_this.Data.Fields,function(field){
-      if (!jsh.XExt.HasAccess(field.actions, action)) return;
+      if (!jsh.XExt.hasAction(field.actions, action)) return;
       if((typeof _this.Data[field.name] == 'undefined') && (field.name in jsh.XModels[_this.q].bindings)){
         rslt[field.name] = '%%%'+field.name+'%%%';
       }

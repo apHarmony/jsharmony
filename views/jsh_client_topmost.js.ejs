@@ -65,7 +65,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.XPage.GetChanges = function() {  //Returns array of form names that have changed
     var foundchanges = [];
     _.each(jsh.XModels, function (xmodel) {
-      if (!jsh.XExt.HasAccess(xmodel.actions, 'IUD')) return;
+      if (!jsh.XExt.hasAction(xmodel.actions, 'IUD')) return;
       if (xmodel.controller.HasUpdates()) { foundchanges.push(xmodel.caption[1]); }
       else if (xmodel.controller.form && xmodel.controller.form.Data && xmodel.controller.form.Data._is_dirty) { foundchanges.push(xmodel.caption[1]); }
     });
@@ -79,12 +79,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var valid = true;
     jsh.XPage.traverseModels(null, function (xmodel) {
       if (!valid) return;
-      if (XExt.HasAccess(xmodel.actions, 'IU')) {
-        var access = 'U';
-        if (xmodel.layout == 'multisel') access = 'U';
-        else if (xmodel.layout == 'grid') access = 'IU';
-        else if (xmodel.controller.form.Data._is_new) access = 'I';
-        if (XExt.HasAccess(xmodel.actions, access)) {
+      if (XExt.hasAction(xmodel.actions, 'IU')) {
+        var action = 'U';
+        if (xmodel.layout == 'multisel') action = 'U';
+        else if (xmodel.layout == 'grid') action = 'IU';
+        else if (xmodel.controller.form.Data._is_new) action = 'I';
+        if (XExt.hasAction(xmodel.actions, action)) {
           var ftasks = xmodel.controller.Save();
           if (typeof ftasks == 'undefined') { valid = false; return; }
           dbtasks = _.union(dbtasks, ftasks);
@@ -210,12 +210,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var enable_delete = false;
     jsh.XPage.traverseModels(null, function (xmodel) {
       if ((xmodel.layout == 'form') || (xmodel.layout == 'multisel') || (xmodel.layout == 'form-m')) {
-        if (jsh.XExt.HasAccess(xmodel.actions, 'IU')) enable_save = true;
+        if (jsh.XExt.hasAction(xmodel.actions, 'IU')) enable_save = true;
         if ((xmodel.id == jsh.XModels_root) || (xmodel.parent == jsh.XModels_root))
-          if (jsh.XExt.HasAccess(xmodel.actions, 'D')) { enable_delete = true; jsh.delete_target = xmodel.id; }
+          if (jsh.XExt.hasAction(xmodel.actions, 'D')) { enable_delete = true; jsh.delete_target = xmodel.id; }
       }
       else if ((xmodel.layout == 'grid') && (xmodel.commitlevel) && (xmodel.commitlevel != 'none')) {
-        if (jsh.XExt.HasAccess(xmodel.actions, 'IUD')) enable_save = true;
+        if (jsh.XExt.hasAction(xmodel.actions, 'IUD')) enable_save = true;
       }
     });
 
@@ -228,8 +228,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         var button_groups = {};
         jsh.$root('.xform_button').each(function () {
           var jbtn = $(this);
-          var btnaccess = jbtn.data('actions');
-          if (jsh.is_add && !jsh.XExt.HasAccess(btnaccess, 'I')) jbtn.hide();
+          var btnactions = jbtn.data('actions');
+          if (jsh.is_add && !jsh.XExt.hasAction(btnactions, 'I')) jbtn.hide();
           else {
             if(jbtn.hasClass('grouped')){
               var modelid = jbtn.data('model');
@@ -265,7 +265,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           if (enable_save) jsh.$root('.xactions.top .save').show();
           if (enable_delete) jsh.$root('.xactions.top .delete').show();
           jsh.XPage.traverseModels(null, function (xmodel) {
-            if (!jsh.is_add && jsh.XExt.HasAccess(xmodel.actions, 'I')) jsh.$root('.xactions.xelem' + xmodel.class + ' .duplicate').show();
+            if (!jsh.is_add && jsh.XExt.hasAction(xmodel.actions, 'I')) jsh.$root('.xactions.xelem' + xmodel.class + ' .duplicate').show();
           });
           jsh.init_complete = true;
           //Update Browser History with URL/state
@@ -365,9 +365,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           done();
         };
         if (jsh.is_add){
-          if(!jsh.XExt.HasAccess(xmodel.actions, 'I')) { 
+          if(!jsh.XExt.hasAction(xmodel.actions, 'I')) { 
             if((xmodel.layout == 'form') || (xmodel.layout == 'form-m') || (xmodel.layout == 'grid')){
-              if(!jsh.XExt.HasAccess(xmodel.actions, 'B')) return done();
+              if(!jsh.XExt.hasAction(xmodel.actions, 'B')) return done();
               //If model bindings are dependent on key
               if(xmodel.bindings && (_.keys(xmodel.bindings).length != xmodel.constant_bindings.length)) return done();
             }
@@ -604,7 +604,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.XPage.GetState = function(url) {
     var rslt = {};
     _.each(jsh.XModels, function (xmodel) {
-      if (!XExt.HasAccess(xmodel.actions, 'B')) return;
+      if (!XExt.hasAction(xmodel.actions, 'B')) return;
       if (xmodel.layout != 'grid') return;
       rslt[xmodel.id] = xmodel.controller.GetState();
     });
@@ -663,7 +663,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     _.each(jsh.XModels, function (xmodel) {
       var modelid = xmodel.id;
-      if (!jsh.XExt.HasAccess(xmodel.actions, 'B')) return;
+      if (!jsh.XExt.hasAction(xmodel.actions, 'B')) return;
       if (xmodel.onloadstate) return xmodel.onloadstate(xmodel, state[modelid]);
       if (xmodel.layout != 'grid') return;
       if (modelid in state) {
@@ -924,7 +924,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.XPage.HasUpdates = function() {
     var rslt = false;
     _.each(jsh.XModels, function (xmodel) {
-      if (!XExt.HasAccess(xmodel.actions, 'IUD')) return;
+      if (!XExt.hasAction(xmodel.actions, 'IUD')) return;
       if (xmodel.controller.HasUpdates()) { rslt = true; }
     });
     return rslt;

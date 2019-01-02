@@ -188,7 +188,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         }
       }
 
-      if(!jsh.is_add || isInlinePopup || !XExt.HasAccess(xmodel.actions, 'I')) delete xgrid.Data._action;
+      if(!jsh.is_add || isInlinePopup || !XExt.hasAction(xmodel.actions, 'I')) delete xgrid.Data._action;
       else xgrid.Data._action = 'add';
 
       var check_load_complete = function(){

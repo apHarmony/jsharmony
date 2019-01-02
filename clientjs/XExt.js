@@ -201,15 +201,13 @@ exports = module.exports = function(jsh){
     return str.indexOf(prefix) === 0;
   }
 
-  XExt.HasAccess = function (access, perm) {
-    if (access === undefined) return false;
+  XExt.hasAction = function (actions, perm) {
+    if (actions === undefined) return false;
     for (var i = 0; i < perm.length; i++) {
-      if (access.indexOf(perm[i]) > -1) return true;
+      if (actions.indexOf(perm[i]) > -1) return true;
     }
     return false;
   };
-
-  XExt.access = XExt.HasAccess;
 
   XExt.UndefinedBlank = function (val) {
     if (typeof val == 'undefined') return '';
@@ -439,7 +437,7 @@ exports = module.exports = function(jsh){
       }
       return 'text';
     },
-    'getaccess': function () {
+    'getActions': function () {
       if (arguments.length == 0) return '';
       var kfc = '';
       var effperm = arguments[0];

@@ -19,7 +19,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 <%
 var no_B = true;
-_.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field.control != 'html') && (field.name) && (field.control != 'subform') && (field.control != 'button')) no_B = false; });
+_.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && (field.control != 'html') && (field.name) && (field.control != 'subform') && (field.control != 'button')) no_B = false; });
 %>
 
 (function(jsh){
@@ -49,7 +49,7 @@ _.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field
       else {
         //Add Record
         //Add parameters for breadcrumbs
-        <% _.each(model.fields,function(field){ if(!field.name) return; if(XExt.access(field.actions,'C')) { %>rslt.<%=field['name']%> = jsh.XExt.LiteralOrLookup('<%=field['name']%>',[jsh._GET,this.Data]);<% } }); %>
+        <% _.each(model.fields,function(field){ if(!field.name) return; if(XExt.hasAction(field.actions,'C')) { %>rslt.<%=field['name']%> = jsh.XExt.LiteralOrLookup('<%=field['name']%>',[jsh._GET,this.Data]);<% } }); %>
         <% _.each(model.fields,function(field){ if(!field.name) return; if(field.lovkey){ %>rslt.<%=field['name']%> = jsh.XExt.LiteralOrLookup('<%=field['name']%>',[jsh._GET,this.Data]);<% } }); %>
       }
       return rslt; 
@@ -63,7 +63,7 @@ _.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field
     jsh.$root('.xelem'+xmodel.class+'.dropdown').change(function(){ if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this); });
     jsh.$root('.xelem'+xmodel.class+'.checkbox').change(function(){ if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this); });
 
-    <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if((field.control=='date') && (XExt.access(field.actions,'IU'))) {%>
+    <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if((field.control=='date') && (XExt.hasAction(field.actions,'IU'))) {%>
     jsh.$root(".<%=field.name%>.xelem"+xmodel.class).datepicker({ changeMonth: true, changeYear: true, dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||jsh.DEFAULT_DATEFORMAT), onSelect: function(){ if(jsh.is_add) return; xform.Data.OnControlUpdate(this); } });
     <% } }); %>  
     callback();

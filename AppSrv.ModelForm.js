@@ -27,7 +27,7 @@ module.exports = exports = {};
 
 exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
   var model = this.jsh.getModel(req, fullmodelid);
-  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   var _this = this;
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
@@ -118,7 +118,7 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
   }
   
   var keys = [];
-  if (is_new && !Helper.HasModelAccess(req, model, 'I')) { Helper.GenError(req, res, -11, 'Invalid Model Access - ' + model.id + ' Insert'); return; }
+  if (is_new && !Helper.hasModelAction(req, model, 'I')) { Helper.GenError(req, res, -11, 'Invalid Model Access - ' + model.id + ' Insert'); return; }
   if (!is_new && !nokey) {
     //Add dynamic parameters from query string	
     if (selecttype == 'single') keys = this.getKeys(model.fields);
@@ -220,7 +220,7 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
 exports.putModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
   var _this = this;
   var model = this.jsh.getModel(req, fullmodelid);
-  if (!Helper.HasModelAccess(req, model, 'I')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+  if (!Helper.hasModelAction(req, model, 'I')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   var fieldlist = this.getFieldNames(req, model.fields, 'I');
   var filelist = this.getFileFieldNames(req, model.fields, 'I');
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'I');
@@ -302,7 +302,7 @@ exports.putModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
         if (P[fname] == '%%%' + fname + '%%%') { subs.push(fname); P[fname] = ''; }
         sql_params[fname] = _this.DeformatParam(field, P[fname], verrors);
         //Add PreCheck, if type='F'
-        if (Helper.access(field.actions, 'F')) {
+        if (Helper.hasAction(field.actions, 'F')) {
           _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
             if (dfield != field) return false;
             param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
@@ -383,7 +383,7 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
   var _this = this;
   if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
   var model = this.jsh.getModel(req, fullmodelid);
-  if (!Helper.HasModelAccess(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+  if (!Helper.hasModelAction(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   
   var fieldlist = this.getFieldNames(req, model.fields, 'U');
   var keylist = this.getKeyNames(model.fields);
@@ -446,7 +446,7 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
         sql_ptypes.push(dbtype);
         sql_params[fname] = _this.DeformatParam(field, P[fname], verrors);
         //Add PreCheck, if type='F'
-        if (Helper.access(field.actions, 'F')) {
+        if (Helper.hasAction(field.actions, 'F')) {
           _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
             if (dfield != field) return false;
             param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
@@ -525,7 +525,7 @@ exports.deleteModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
   if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
   var _this = this;
   var model = this.jsh.getModel(req, fullmodelid);
-  if (!Helper.HasModelAccess(req, model, 'D')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+  if (!Helper.hasModelAction(req, model, 'D')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   var keylist = this.getKeyNames(model.fields);
   var fieldlist = this.getFieldNames(req, model.fields, 'D');
   var filelist = this.getFileFieldNames(req, model.fields, '*');

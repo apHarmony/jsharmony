@@ -60,7 +60,7 @@ AppSrvRpt.prototype.queueReport = function (req, res, fullmodelid, Q, P, params,
   var errorHandler = function(num, txt, stats){ return Helper.GenError(req, res, num, txt, { stats: stats }); };
   if(params.errorHandler) errorHandler = params.errorHandler;
   if(req){
-    if (!Helper.HasModelAccess(req, model, 'B')) { return errorHandler(-11, 'Invalid Model Access for '+fullmodelid); }
+    if (!Helper.hasModelAction(req, model, 'B')) { return errorHandler(-11, 'Invalid Model Access for '+fullmodelid); }
     db = db || jsh.getModelDB(req, fullmodelid);
     dbcontext = dbcontext || req._DBContext || 'report';
   }
@@ -656,7 +656,7 @@ AppSrvRpt.prototype.runReportJob = function (req, res, fullmodelid, Q, P, onComp
   var _this = this;
   var model = jsh.getModel(req, fullmodelid);
   if(!model) throw new Error('Model '+fullmodelid+' not found');
-  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   if (!('jobqueue' in model)) throw new Error(fullmodelid + ' job queue not enabled');
   if (!thisapp.JobProc) throw new Error('Job Processor not configured');
   if (model.layout !== 'report') throw new Error('Model '+fullmodelid+' is not a report');

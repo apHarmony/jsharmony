@@ -27,7 +27,7 @@ module.exports = exports = {};
 exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, options) {
   if (!options) options = {};
   var model = this.jsh.getModel(req, fullmodelid);
-  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   var _this = this;
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
   var searchlist = this.getFieldNames(req, model.fields, 'BS', function(field){ if(field.disable_search){ return false; } return true; });

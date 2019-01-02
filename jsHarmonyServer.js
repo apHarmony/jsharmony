@@ -53,7 +53,7 @@ function jsHarmonyServer(serverConfig, jsh){
       {
         path: '/path',     //Path of the WebSocket for "upgrade" HTTP request
         server: wsServer,  //WebSocket.Server object handling the request - new WebSocket.Server({ noServer: true })
-        roles: {},         //jsHarmony roles { "DADMIN": "B" }   "B" access is used
+        roles: {},         //jsHarmony roles { "DADMIN": "B" }   "B" action is required for websocket access
         dev: 1             //Enable for users with the "DEV" role, not for users with the "SYSADMIN" role
       }
     ]
@@ -237,7 +237,7 @@ jsHarmonyServer.prototype.addWebSocketHandler = function(server){
               //Route returned WEBSOCKET
               if(txt=='WEBSOCKET'){
                 //Validate Roles
-                if(!Helper.HasModelAccess(req, { actions: 'B', roles: webSocket.roles, dev: webSocket.dev }, 'B')) {
+                if(!Helper.hasModelAction(req, { actions: 'B', roles: webSocket.roles, dev: webSocket.dev }, 'B')) {
                   _this.jsh.Log.error('Unauthorized access to WebSocket '+webSocket.path+' by '+Helper.GetIP(req));
                   socket.destroy();
                   return;
