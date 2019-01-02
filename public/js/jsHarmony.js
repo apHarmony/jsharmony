@@ -6662,11 +6662,13 @@ exports = module.exports = function(jsh){
 
   //Escape JavaScript string
   XExt.escapeJS = function (q) {
+    if(!q) return '';
     return q.replace(/[\\'"]/g, "\\$&");
   }
 
   //Escape just quotes (for XML/HTML key-value pairs)
   XExt.escapeHTMLQ = function (q) {
+    if(!q) return '';
     return q.replace(/["]/g, "&quot;");
   }
 
@@ -7643,11 +7645,11 @@ exports = module.exports = function(jsh){
     //If numeric, return the value
     if (!isNaN(str)) rslt = str;
     //If a literal 'TEXT', return the value
-    else if ((str.length >= 2) && (str[0] == "'") && (str[str.length - 1] == "'")) rslt = str.substr(1, str.length - 2);
+    else if (str && (str.length >= 2) && (str[0] == "'") && (str[str.length - 1] == "'")) rslt = str.substr(1, str.length - 2);
     //If "null", return null
-    else if(str.trim().toLowerCase()=='null') rslt = null; 
+    else if(str && str.trim().toLowerCase()=='null') rslt = null; 
     //If a binding, return the evaluated binding
-    else if (xmodel && xmodel.hasBindingOrRootKey(str)) rslt = xmodel.getBindingOrRootKey(str);
+    else if (str && xmodel && xmodel.hasBindingOrRootKey(str)) rslt = xmodel.getBindingOrRootKey(str);
     //If a lookup in the dictionary, return the value
     else if(dictionary) {
       if (_.isArray(dictionary)) {

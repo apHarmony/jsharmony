@@ -168,6 +168,7 @@ exports.parseFieldExpression = function(field, exp, params, options){
 //  bindings: Array of the link bindings, for adding additional querystring parameters to the link
 //            Bindings will be evaluated client-side, and overwrite any other querystring parameters
 exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
+  var _this = this;
   var ptarget = this.parseLink(target);
   var modelid = ptarget.modelid;
   var action = ptarget.action;
@@ -255,12 +256,24 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
         }
       }
       else {
-        _.each(fields, function (field) {
-          if (field.key) {
-            delete q[field['name']];
-            rsltparams += '&amp;' + field['name'] + '=<#=data[j][\'' + field['name'] + '\']#>';
-          }
-        });
+        var foundfield = false;
+        if(action=='edit'){
+          _.each(tmodel.fields, function (field) {
+            if (field.key && _this.AppSrvClass.prototype.getFieldByName(fields, field.name)) {
+              foundfield = true;
+              delete q[field['name']];
+              rsltparams += '&amp;' + field['name'] + '=<#=jsh.XExt.LiteralOrLookup(\'' + field['name'] + '\',[data[j], jsh._GET])#>';
+            }
+          });
+        }
+        if(!foundfield){
+          _.each(fields, function (field) {
+            if (field.key) {
+              delete q[field['name']];
+              rsltparams += '&amp;' + field['name'] + '=<#=data[j][\'' + field['name'] + '\']#>';
+            }
+          });
+        }
       }
     }
   }

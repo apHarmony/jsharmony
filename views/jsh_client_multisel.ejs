@@ -48,7 +48,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
   <script class="xmultisel_<%=model.class%>_template" type="text/x-ejs-template">
     <# for(var j=0;j<data.length;j++){ var datarow=data[j]; #>
     <tr class="<#=(j%2==1?'even':'odd')#>">
-      <td align="center" style="vertical-align:middle;"><input type="checkbox" class="xselitem" value="<#=data[j][jsh.uimap.codeval]#>" <%-xejs.iif(!XExt.hasAction(model.actions,'IU'),'disabled="disabled"')%> <# if(data[j]['<%=lovfield%>']!==null){ #>checked="checked"<# } #> /></td>
+      <td align="center" style="vertical-align:middle;"><div class="xform_ctrl checkbox_container xelem<%=model.class%>"><input type="checkbox" class="xselitem xform_ctrl checkbox xelem<%=model.class%> <%-xejs.iif(!XExt.hasAction(model.actions,'IU'),'uneditable','editable')%>" value="<#=data[j][jsh.uimap.codeval]#>" <%-xejs.iif(!XExt.hasAction(model.actions,'IU'),'disabled="disabled"')%> <# if(data[j]['<%=lovfield%>']!==null){ #>checked="checked"<# } #> data-orig-checked="<# if(data[j]['<%=lovfield%>']!==null){ #>checked<# } #>" /></div></td>
     <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
       if(!('caption' in field)) continue; 
       if(!('actions' in field)) continue; 
@@ -61,8 +61,10 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
         <% if('link' in field){ %><a href="<%-field.link%>" <%-xejs.showProp('onclick',field.link_onclick,undefined,'return (function(){'+jslocals,'}).call(this);')%> ><% } %>
         <% if('html' in field){ %>
           <%-field.html%>
+        <% } else if('value' in field){ %>
+          <%-field.value%>
         <% } else { %>
-          <#=<%-instance%>.XFormat.Apply(<%-format%>,data[j][<%-xejs.iif(field.name==lovfield,'jsh.uimap.codetxt',"'"+xejs.escapeJS(field.name)+"'")%>])#>
+          <span onclick="<%-js('$(this).closest("tr").find(".checkbox").click();')%>"><#=<%-instance%>.XFormat.Apply(<%-format%>,data[j][<%-xejs.iif(field.name==lovfield,'jsh.uimap.codetxt',"'"+xejs.escapeJS(field.name)+"'")%>])#></span>
         <% } %>
         <% if('link' in field){ %></a><% } %>
       </div></td>

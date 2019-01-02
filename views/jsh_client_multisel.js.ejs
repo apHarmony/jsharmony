@@ -93,6 +93,10 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
             });
             jsh.$root(xgrid.PlaceholderID).empty();
             jsh.$root(xgrid.PlaceholderID).append(ejsrslt);
+
+            //Attach events
+            jsh.$root('.xelem'+xmodel.class).keyup(function(){ if(!$(this).hasClass('editable')) return; xcontroller.OnControlUpdate(this); });
+            jsh.$root('.xelem'+xmodel.class+'.checkbox').change(function(){ if(!$(this).hasClass('editable')) return; xcontroller.OnControlUpdate(this); });
           }
           jsh.xLoader.StopLoading(xgrid);
           if(onComplete) onComplete();
@@ -101,6 +105,13 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
     };
 
     callback();
+  }
+
+  xcontroller.OnControlUpdate = function(obj){
+    var jobj = $(obj);
+    var curval = jobj.is(':checked');
+    var origval = !!jobj.data('orig-checked');
+    jobj.parent().toggleClass('updated',curval!=origval);
   }
 
   xcontroller.Save = function(){

@@ -548,7 +548,13 @@ exports.ParseEntities = function () {
     if (!('actions' in model)){
       if((model.layout=='exec')||(model.layout=='report')||(model.layout=='multisel')) model.actions = 'BU';
       else if(model.layout=='grid'){
-        if(!model.commitlevel || model.commitlevel=='none') model.actions = 'B';
+        if(!model.table && model.sqlselect){
+          model.actions = 'B';
+          if(model.sqlinsert) model.actions += 'I';
+          if(model.sqlupdate) model.actions += 'U';
+          if(model.sqldelete) model.actions += 'D';
+        }
+        else if(!model.commitlevel || model.commitlevel=='none') model.actions = 'B';
         else model.actions = 'BIUD';
       }
       else{
@@ -827,7 +833,7 @@ exports.ParseEntities = function () {
         field.actions = '';
         if((model.layout=='grid') && ((field.type=='encascii')||(field.type=='hash'))) field.actions = '';
         else if(field.type=='hash') field.actions = '';        
-        else if ((field.control == 'html') || (field.control == 'button') || (field.control == 'linkbutton') || (field.control == 'hidden')) field.actions = 'B';
+        else if ((field.control == 'html') || (field.control == 'button') || (field.control == 'linkbutton')) field.actions = 'B';
         else {
           if (model.layout=='grid'){
             if(isReadOnlyGrid){
@@ -869,6 +875,12 @@ exports.ParseEntities = function () {
             else field.actions = 'BIU';
           }
           //_this.LogInit_WARNING('Model ' + model.id + ' Field ' + (field.name || field.caption || JSON.stringify(field)) + ' missing actions - defaulting to "'+field.actions+'"');
+        }
+      }
+      if(field.name && !('type' in field) && Helper.access(field.actions, 'BIUD')){
+        if(!field.value && !field.html){
+          field.type = 'varchar';
+          if(!('length' in field)) field.length = -1;
         }
       }
       if(!('control' in field)){
