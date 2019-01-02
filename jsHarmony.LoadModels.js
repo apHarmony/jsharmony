@@ -879,10 +879,10 @@ exports.ParseEntities = function () {
           //_this.LogInit_WARNING('Model ' + model.id + ' Field ' + (field.name || field.caption || JSON.stringify(field)) + ' missing actions - defaulting to "'+field.actions+'"');
         }
       }
-      if(field.name && !('type' in field) && Helper.access(field.actions, 'B')){
-        if(!field.control && !field.value && !field.html){
+      if(field.name && !('type' in field) && Helper.access(field.actions, 'BIUD')){
+        if(!field.value && !field.html){
           field.type = 'varchar';
-          field.length = -1;
+          if(!('length' in field)) field.length = -1;
         }
       }
       if(!('control' in field)){
