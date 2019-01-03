@@ -587,6 +587,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       });
       jform.find('.leading').each(function(){ 
         $(this).width(max_width);
+        $(this).toggle((max_width>0));
       });
     });
   }

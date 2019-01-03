@@ -109,7 +109,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     },
     { "name": "General", "__REMOVE__": 1 }
     //showcode - If the value of the column defined in model.tabcode is not one of the values of showcode, hide the tab entirely
-    //To hide a tab in an inherited form, use "General": null
     //If no caption is specified, name will be used as the caption
   ],
   "tabcode": "A_TYPE", //The column used as a basis for "showcode" - hiding or showing tabs.  Must be defined as a parameter
