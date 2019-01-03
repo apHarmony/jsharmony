@@ -1384,42 +1384,55 @@ exports = module.exports = function(jsh){
   /***********************/
   /* UI Helper Functions */
   /***********************/
-  XExt.popupForm = function (modelid, action, params, windowparams, win) {
-    if (!params) params = {};
-    if (action) params.action = action;
+
+  // popupForm :: Open the target model as a popup
+  //
+  // Parameters
+  //   modelid (string):           The full path to the model, including any namespace
+  //   action (string):            Either "add" or "edit"
+  //   querystringParams (object): Querystring parameters appended to the model URL
+  //   windowParams (object):      JavaScript window.open parameters, as an object
+  //   existingWindow (Window):    (Optional) Existing JavaScript Window to use instead of opening a new window
+  //
+  // Returns
+  //   (Window) Either the newly created popup window, or the existing window passed as an input parameter
+  //
+  XExt.popupForm = function (modelid, action, querystringParams, windowParams, existingWindow) {
+    if (!querystringParams) querystringParams = {};
+    if (action) querystringParams.action = action;
     var url = jsh._BASEURL + modelid;
-    var dfltwindowparams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
+    var dfltwindowParams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
     var modelmd5 = XExt.getModelMD5(modelid);
     if (modelmd5 in jsh.popups) {
       default_popup_size = jsh.popups[modelmd5];
-      dfltwindowparams.width = default_popup_size[0];
-      dfltwindowparams.height = default_popup_size[1];
+      dfltwindowParams.width = default_popup_size[0];
+      dfltwindowParams.height = default_popup_size[1];
     }
-    if (!windowparams) windowparams = {};
-    if (params) url += '?' + $.param(params);
+    if (!windowParams) windowParams = {};
+    if (querystringParams) url += '?' + $.param(querystringParams);
     var windowstr = '';
-    for (var p in dfltwindowparams) { if (!(p in windowparams)) windowparams[p] = dfltwindowparams[p]; }
-    for (var p in windowparams) { windowstr += ',' + p + '=' + windowparams[p]; }
+    for (var p in dfltwindowParams) { if (!(p in windowParams)) windowParams[p] = dfltwindowParams[p]; }
+    for (var p in windowParams) { windowstr += ',' + p + '=' + windowParams[p]; }
     if (windowstr) windowstr = windowstr.substr(1);
-    if (win) { win.location = url; win.focus(); return win; }
+    if (existingWindow) { existingWindow.location = url; existingWindow.focus(); return existingWindow; }
     else return window.open(url, '_blank', windowstr);
   }
-  XExt.popupReport = function (modelid, params, windowparams, win) {
+  XExt.popupReport = function (modelid, querystringParams, windowParams, existingWindow) {
     var url = jsh._BASEURL + '_d/_report/' + modelid + '/';
-    var dfltwindowparams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
+    var dfltwindowParams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
     var modelmd5 = XExt.getModelMD5(modelid);
     if (modelmd5 in jsh.popups) {
       default_popup_size = jsh.popups[modelmd5];
-      dfltwindowparams.width = default_popup_size[0];
-      dfltwindowparams.height = default_popup_size[1];
+      dfltwindowParams.width = default_popup_size[0];
+      dfltwindowParams.height = default_popup_size[1];
     }
-    if (!windowparams) windowparams = {};
-    if (params) url += '?' + $.param(params);
+    if (!windowParams) windowParams = {};
+    if (querystringParams) url += '?' + $.param(querystringParams);
     var windowstr = '';
-    for (var p in dfltwindowparams) { if (!(p in windowparams)) windowparams[p] = dfltwindowparams[p]; }
-    for (var p in windowparams) { windowstr += ',' + p + '=' + windowparams[p]; }
+    for (var p in dfltwindowParams) { if (!(p in windowParams)) windowParams[p] = dfltwindowParams[p]; }
+    for (var p in windowParams) { windowstr += ',' + p + '=' + windowParams[p]; }
     if (windowstr) windowstr = windowstr.substr(1);
-    if (win) { win.location = url; win.focus(); return win; }
+    if (existingWindow) { existingWindow.location = url; existingWindow.focus(); return existingWindow; }
     else return window.open(url, '_blank', windowstr);
   }
   XExt.renderCanvasCheckboxes = function () {
