@@ -1253,6 +1253,9 @@ exports.ParseEntities = function () {
         }
       });
     }
+    if((model.layout=='exec')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_WARNING(model.id + ': Exec layout only supports BU actions');
+    else if((model.layout=='multisel')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_WARNING(model.id + ': Multisel layout only supports BU actions');
+    else if((model.layout=='report')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_WARNING(model.id + ': Report layout only supports BU actions');
 
     //Generate Validators
     _.each(model.fields, function (field) {
@@ -1669,6 +1672,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     if(linkTarget.modelid.substr(0,3)=='js:') return;
     var linkModel = jsh.getModel(null,linkTarget.modelid,model);
     if (!linkModel) { _this.LogInit_ERROR((prefix||'') + 'Link Target model "' + linkTarget.modelid + '" not found'+(suffix?' in link expression "'+suffix+'"':'')); return }
+    if((linkTarget.action=='add')&&!Helper.hasAction(linkModel.actions, 'I')) { _this.LogInit_ERROR((prefix||'') + 'Link Target model "' + linkTarget.modelid + '" does not have "I" action'+(suffix?' for link expression "'+suffix+'"':'')); }
     validateSiteRoles(model, linkModel, prefix, suffix, roles);
   }
 
