@@ -880,7 +880,7 @@ exports.ParseEntities = function () {
         }
       }
       if(field.name && !('type' in field) && Helper.hasAction(field.actions, 'BIUD')){
-        if(!field.value && !field.html){
+        if(!field.value && !field.html && !_.includes(['subform','html'],field.control)){
           field.type = 'varchar';
           if(!('length' in field)) field.length = -1;
         }
