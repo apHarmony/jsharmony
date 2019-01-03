@@ -326,6 +326,12 @@ var jsHarmonyRouter = function (jsh, siteid) {
     res.end('<html><body>System will restart in 1 sec...<script type="text/javascript">window.setTimeout(function(){document.write(\'Restart initiated...\');},1000); window.setTimeout(function(){window.location.href="/";},5000);</script></body></html>');
     setTimeout(function(){ process.exit(); },1000);
   });
+  router.get('/_listing', function (req, res, next) {
+    if(!('SYSADMIN' in req._roles) && !('DEV' in req._roles)) return next();
+    return jsh.RenderTemplate(req, res, 'index', {
+      title: 'Models', body: jsh.RenderListing(req), selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh
+    });
+  });
   router.post('/_db/exec', function (req, res, next) {
     if(!('SYSADMIN' in req._roles) && !('DEV' in req._roles)) return next();
     var sql = req.body.sql;

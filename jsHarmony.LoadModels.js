@@ -111,9 +111,9 @@ exports.ParseJSON = function(fname, desc){
     rslt = JSON.parse(ftext);
   }
   catch (ex) {
-    console.error("-------------------------------------------");
-    console.error("FATAL ERROR Parsing " + desc + " in " + fname);
-    console.log(ex.name + ': "' + ex.message + '"');
+    this.Log.console_error("-------------------------------------------");
+    this.Log.console_error("FATAL ERROR Parsing " + desc + " in " + fname);
+    this.Log.console(ex.name + ': "' + ex.message + '"');
     try {
       require('./lib/JSParser.js').Parse(ftext, fname);
     }
@@ -128,11 +128,11 @@ exports.ParseJSON = function(fname, desc){
         }
         errmsg += ex2.message + '\n';
         errmsg += ex2.stack;
-        console.log(errmsg);
+        this.Log.console(errmsg);
       }
-      else console.log(ex2);
+      else this.Log.console(ex2);
     }
-    console.error("-------------------------------------------");
+    this.Log.console_error("-------------------------------------------");
     process.exit(8);
     throw (ex);
   }

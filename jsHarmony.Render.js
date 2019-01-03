@@ -31,37 +31,36 @@ module.exports = exports = {};
 |    RENDER HTML   |
 *******************/
 exports.RenderListing = function (req) {
-  var rslt = '<br/>&nbsp;';
-  var modules = { 'Local':[] };
-  for (var modelid in this.Models) {
-    var module = this.Models[modelid].module||'Local';
+  let rslt = '<br/>&nbsp;';
+  let modules = { 'Local':[] };
+  for (let modelid in this.Models) {
+    let module = this.Models[modelid].module||'Local';
     if(!(module in modules)) modules[module] = [];
     modules[module].push(modelid);
   }
-  var has_models = false;
-  for(var module in modules){
-    var modelids = modules[module];
+  let has_models = false;
+  for(let module in modules){
+    let modelids = modules[module];
     modelids.sort();
     if(!modelids.length) continue;
     else has_models = true;
     rslt += '<h2>'+module+'</h2>';
     rslt += '<ul>';
-    for (var i = 0; i < modelids.length; i++) {
-      var modelid = modelids[i];
+    for (let i = 0; i < modelids.length; i++) {
+      let modelid = modelids[i];
       rslt += '<li><a href="' + req.baseurl + modelid + '" target="_blank">' + modelid + '</a></li>';
     }
     rslt += '</ul>';
   }
   if(!has_models) rslt += 'No models found';
   return rslt;
-}
+};
 
 exports.RenderFormStarter = function(req, fullmodelid){
   var _this = this;
   if (!_this.hasModel(req, fullmodelid)) throw new Error('Model ID not found: ' + fullmodelid);
   var model = _this.getModel(req, fullmodelid);
-  keys = _this.AppSrv.getKeyNames(model.fields);
-  foreignkeys = _this.AppSrv.getFieldNames(req, model.fields, 'F');
+  var keys = _this.AppSrv.getKeyNames(model.fields);
   var rslt = ejs.render(_this.getEJS('jsh_formstarter'), {
     model: model,
     keys: keys,
@@ -70,7 +69,7 @@ exports.RenderFormStarter = function(req, fullmodelid){
     querystring: req.query
   });
   return rslt;
-}
+};
 
 //Get global variables inserted into client window context
 exports.getJSClientParams = function (req) {
@@ -88,23 +87,22 @@ exports.getJSClientParams = function (req) {
   }
   rslt += '}';
   return rslt;
-}
+};
 
 exports.getJSLocals = function(req){
-  return 'var jsh = '+req.jshsite.instance+';var $ = jsh.$;var _ = jsh._;var async = jsh.async;var moment=jsh.moment;var ejs = jsh.ejs;var XExt = jsh.XExt;var XForm = jsh.XForm;var XValidate = jsh.XValidate;var XFormat = jsh.XFormat;var _GET = jsh._GET;var XBase = jsh.XBase; var XModels = jsh.XModels;'
-}
+  return 'var jsh = '+req.jshsite.instance+';var $ = jsh.$;var _ = jsh._;var async = jsh.async;var moment=jsh.moment;var ejs = jsh.ejs;var XExt = jsh.XExt;var XForm = jsh.XForm;var XValidate = jsh.XValidate;var XFormat = jsh.XFormat;var _GET = jsh._GET;var XBase = jsh.XBase; var XModels = jsh.XModels;';
+};
 
 exports.RenderView = function(view,ejsparams){
   var _this = this;
   return this.RenderEJS(_this.getEJS(view),ejsparams);
-}
+};
 
 exports.RenderEJS = function(code,ejsparams){
-  var _this = this;
   if(!ejsparams) ejsparams = {};
   if(!('ejsparams' in ejsparams)) ejsparams.ejsparams = ejsparams;
   return ejs.render(code,ejsparams);
-}
+};
 
 exports.getStylusCSS = function(stylusName, callback){
   var _this = this;
@@ -114,7 +112,7 @@ exports.getStylusCSS = function(stylusName, callback){
     callback = function(err, rslt){ 
       if(err) throw err; 
       else return rslt; 
-    }
+    };
   }
   if(!(stylusName in _this.Stylus)) return callback(new Error('Stylus CSS not defined for: '+stylusName));
   var stylusConfig = _this.Stylus[stylusName];
@@ -125,8 +123,8 @@ exports.getStylusCSS = function(stylusName, callback){
       var stylusExec = stylus(data)
         .set('filename', stylusConfig.source)
         .define('url', stylus.url());
-      var stylusFunc = function(stylusCallback){ stylusExec.render(stylusCallback); }
-      if(sync) stylusFunc = function(stylusCallback){ var rslt = stylusExec.render(); return stylusCallback(null, rslt); }
+      var stylusFunc = function(stylusCallback){ stylusExec.render(stylusCallback); };
+      if(sync) stylusFunc = function(stylusCallback){ var rslt = stylusExec.render(); return stylusCallback(null, rslt); };
       return stylusFunc(function(err, css){
         if(err) return callback(err);
         else {
@@ -136,7 +134,7 @@ exports.getStylusCSS = function(stylusName, callback){
       });
     }
   });
-}
+};
 
 exports.loadFonts = function(fonts, callback){
   var _this = this;
@@ -198,8 +196,8 @@ exports.loadFonts = function(fonts, callback){
       //Generate font css
       font_css += '@font-face {';
       if(font['font-family']) font_css += "font-family:'"+Helper.escapeCSS(font['font-family'].toString())+"';";
-      if(font['font-style']) font_css += "font-style:"+font['font-style'].toString()+";";
-      if(font['font-weight']) font_css += "font-weight:"+font['font-weight'].toString()+";";
+      if(font['font-style']) font_css += 'font-style:'+font['font-style'].toString()+';';
+      if(font['font-weight']) font_css += 'font-weight:'+font['font-weight'].toString()+';';
       font_css += 'src: ';
       if(font['local']){
         if(!_.isArray(font.local)) font.local = [font.local];
@@ -228,31 +226,7 @@ exports.loadFonts = function(fonts, callback){
     if(err) return callback(err);
     return callback(null, font_css);
   });
-  return;
-  //Modify jsharmony.js
-  //1. Parse + verify font format
-  //2. Load Report Fonts from Disk on Startup --> base64 to font cache by filepath
-  //3. Get mime type, and set as defualt value for format if not entered by the user
-  //--- Then set URL below / format based on font cache...
-  //Then load fonts into browser + add to header / footer template
-  //good to go!
-  for(var i=0;i<report_fonts.length;i++){
-    var font = report_fonts[i];
-    if(!font.local) font.local = [];
-    
-    font_css += "@font-face { ";
-    font_css += " font-family: '"+Helper.ReplaceAll(font['font-family'],"'","\\'")+"';";
-    font_css += " font-style: "+font['font-style']+";";
-    font_css += " font-weight: "+font['font-weight']+";";
-    font_css += " src: ";
-    for(var j=0;j<font.local.length;j++){
-      font_css += " src: local('"+Helper.ReplaceAll(font.local[j],"'","\\'")+"'), ";
-    }
-    font_css += " url('PT-Sans-Regular.svg') ";
-    font_css += " format('svg')";
-    font_css += " }\n";
-  }
-}
+};
 
 //Return a 404 error page
 exports.Gen404 = function (req, res) {
@@ -260,7 +234,7 @@ exports.Gen404 = function (req, res) {
   if (req.accepts('html')) { res.render(this.getView(req, '404', { disable_override: true }), { url: req.url }); return; }
   if (req.accepts('json')) { res.send({ error: 'Not found' }); return; }
   res.type('txt').send('Not found');
-}
+};
 
 exports.Redirect302 = Helper.Redirect302;
 exports.RenderLogin = require('./render/RenderLogin.js');

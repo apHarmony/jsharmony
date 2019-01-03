@@ -28,14 +28,14 @@ module.exports = exports = {};
 
 var _DBDRIVERS = ['pgsql', 'mssql', 'sqlite'];
 
-exports.getDBDrivers = function(){ return _DBDRIVERS; }
+exports.getDBDrivers = function(){ return _DBDRIVERS; };
 
 //Validate Database Drive and Load SQL Configuration
 exports.InitDB = function(dbid, cb){
   var dbconfig = this.DBConfig[dbid];
   var dbdriver = dbconfig._driver;
-  if(!dbconfig) { console.error("*** Fatal error: Database ID "+dbid+" not found"); process.exit(8); }
-  if(!dbdriver || !dbdriver.name) { console.error("*** Fatal error: Database ID "+dbid+" has missing or invalid _driver"); process.exit(8); }
+  if(!dbconfig) { this.Log.console_error('*** Fatal error: Database ID '+dbid+' not found'); process.exit(8); }
+  if(!dbdriver || !dbdriver.name) { this.Log.console_error('*** Fatal error: Database ID '+dbid+' has missing or invalid _driver'); process.exit(8); }
   var driverName = dbdriver.name;
   if(dbid=='default'){
     //Set MSSQL and PGSQL drivers to Pooled for default connection
@@ -48,7 +48,7 @@ exports.InitDB = function(dbid, cb){
   if(!(dbid in this.DB)) this.DB[dbid] = new DB(this.DBConfig[dbid], this);
   var db = this.DB[dbid];
   var modeldirs = this.getModelDirs();
-  for (var i = 0; i < modeldirs.length; i++) {
+  for (let i = 0; i < modeldirs.length; i++) {
     var modeldir = modeldirs[i];
     var fpath = modeldir.path;
     if(modeldir.module=='jsharmony') fpath = path.normalize(modeldir.path + '../');
@@ -57,7 +57,7 @@ exports.InitDB = function(dbid, cb){
   }
   this.AddGlobalSQLParams(db.SQLExt.Funcs, this.map, 'jsh.map.');
   if(cb) return cb();
-}
+};
 
 //Add items as global SQL parameters
 exports.AddGlobalSQLParams = function(sqlFuncs, items, prefix){
@@ -67,7 +67,7 @@ exports.AddGlobalSQLParams = function(sqlFuncs, items, prefix){
     if(fullkey in sqlFuncs) continue;
     sqlFuncs[fullkey] = items[key];
   }
-}
+};
 
 exports.LoadSQL = function (db, dir, type, module) {
   var rslt = this.LoadSQLFromFolder(dir, type, module);
@@ -75,7 +75,7 @@ exports.LoadSQL = function (db, dir, type, module) {
   for(var funcName in rslt.Funcs) sqlext.Funcs[funcName] = rslt.Funcs[funcName];
   for(var datatypeid in rslt.CustomDataTypes) sqlext.CustomDataTypes[datatypeid] = rslt.CustomDataTypes[datatypeid];
   sqlext.Scripts = _.merge(sqlext.Scripts, rslt.Scripts);
-}
+};
 
 exports.LoadSQLFiles = function(dir, options){
   options = _.extend({ ignoreDirectories: true, filterType: '' },options||{});
@@ -93,7 +93,7 @@ exports.LoadSQLFiles = function(dir, options){
     return abase > bbase;
   });
   var rslt = [];
-  for (var i=0; i<d.length; i++) {
+  for (let i=0; i<d.length; i++) {
     var fname = dir + d[i];
     var fstat = fs.lstatSync(fname);
     var fobj = {
@@ -109,7 +109,7 @@ exports.LoadSQLFiles = function(dir, options){
       }
       else {
         if (options.filterType && (fname!=options.filterType)) {
-          var found_other_dbtype = false;
+          let found_other_dbtype = false;
           _.each(dbDrivers, function (dbtype) { if (fname==dbtype) found_other_dbtype = true; });
           if (found_other_dbtype){
             continue;
@@ -119,7 +119,7 @@ exports.LoadSQLFiles = function(dir, options){
     }
 
     if (options.filterType && (fname.indexOf('.' + options.filterType + '.') < 0)) {
-      var found_other_dbtype = false;
+      let found_other_dbtype = false;
       _.each(dbDrivers, function (dbtype) { if (fname.indexOf('.' + dbtype + '.') >= 0) found_other_dbtype = true; });
       if (found_other_dbtype){
         continue;
@@ -129,9 +129,39 @@ exports.LoadSQLFiles = function(dir, options){
     rslt.push(fobj);
   }
   return rslt;
-}
+};
 
 exports.LoadSQLFromFolder = function (dir, type, module, rslt) {
+
+  //Post-process - extract script prefix if in aaa.bbb.sql format
+  function processScriptPrefix(node){
+    for(let key in node){
+      let val = node[key];
+      if(_.isString(val)){
+        //File has as least two periods
+        if(key.indexOf('.',key.indexOf('.')+1)>=0){
+          var prefix = key.substr(0,key.indexOf('.'));
+          var newkey = key.substr(key.indexOf('.')+1);
+          if(prefix && newkey){
+            if(!(prefix in node)) node[prefix] = {};
+            if(_.isString(node[prefix])) node[prefix] = { prefix: node[prefix] };
+            //Move node to element with prefix
+            if(!(newkey in node[prefix])) node[prefix][newkey] = '';
+            else node[prefix][newkey] += '\r\n';
+            node[prefix][newkey] += val;
+            if(_.isString(node[key])) delete node[key];
+          }
+        }
+      }
+    }
+    for(let key in node){
+      let val = node[key];
+      if(!_.isString(val)) processScriptPrefix(val);
+    }
+  }
+
+  //-----------------------------------
+
   if(!rslt) rslt = {};
   if(!rslt.CustomDataTypes) rslt.CustomDataTypes = {};
   if(!rslt.Funcs) rslt.Funcs = {};
@@ -139,18 +169,18 @@ exports.LoadSQLFromFolder = function (dir, type, module, rslt) {
 
   var _this = this;
   
-  var d = _this.LoadSQLFiles(dir, { ignoreDirectories: true, filterType: type })  
+  var d = _this.LoadSQLFiles(dir, { ignoreDirectories: true, filterType: type });  
 
   //Load Base SQL files
   if(d.length){
     var found_funcs = {};
 
-    for (var i=0; i<d.length; i++) {
+    for (let i=0; i<d.length; i++) {
       var fpath = d[i].path;
 
       _this.LogInit_INFO('Loading ' + fpath);
       //Parse text
-      var sql = _this.ParseJSON(fpath, "SQL");
+      var sql = _this.ParseJSON(fpath, 'SQL');
       if(path.basename(fpath).toLowerCase() == ('datatypes.'+type+'.json')){
         for (var datatypeid in sql) {
           rslt.CustomDataTypes[datatypeid] = sql[datatypeid];
@@ -180,7 +210,7 @@ exports.LoadSQLFromFolder = function (dir, type, module, rslt) {
     var scripts = {};
 
     //Process folders
-    for(var i=0;i<d.length;i++){
+    for(let i=0;i<d.length;i++){
       if(d[i].type=='folder'){
         var subdname = d[i].name;
         var subd1 = _this.LoadSQLFiles(scriptsdir+subdname+'/', { ignoreDirectories: true, filterType: type });
@@ -190,58 +220,32 @@ exports.LoadSQLFromFolder = function (dir, type, module, rslt) {
         for(var j=0;j<subd.length;j++){
           var fname = subd[j].name;
           if(!(fname in subd[j])) scripts[subdname][fname] = '';
-          else scripts[subdname][fname] += "\r\n";
+          else scripts[subdname][fname] += '\r\n';
           scripts[subdname][fname] += fs.readFileSync(subd[j].path, 'utf8');
         }
       }
     }
 
     //Process files
-    for(var i=0;i<d.length;i++){
+    for(let i=0;i<d.length;i++){
       if(d[i].type=='file'){
-        scripts[d[i].name] = fs.readFileSync(d[i].path, 'utf8')
+        scripts[d[i].name] = fs.readFileSync(d[i].path, 'utf8');
       }
     }
 
-    //Post-process - extract prefix if in aaa.bbb.sql format
-    function processScriptPrefix(node){
-      for(var key in node){
-        var val = node[key];
-        if(_.isString(val)){
-          //File has as least two periods
-          if(key.indexOf(".",key.indexOf(".")+1)>=0){
-            var prefix = key.substr(0,key.indexOf("."));
-            var newkey = key.substr(key.indexOf(".")+1);
-            if(prefix && newkey){
-              if(!(prefix in node)) node[prefix] = {};
-              if(_.isString(node[prefix])) node[prefix] = { prefix: node[prefix] };
-              //Move node to element with prefix
-              if(!(newkey in node[prefix])) node[prefix][newkey] = '';
-              else node[prefix][newkey] += "\r\n";
-              node[prefix][newkey] += val;
-              if(_.isString(node[key])) delete node[key];
-            }
-          }
-        }
-      }
-      for(var key in node){
-        var val = node[key];
-        if(!_.isString(val)) processScriptPrefix(val);
-      }
-    }
     processScriptPrefix(scripts);
 
     rslt.Scripts[module] = scripts;
   }
 
   return rslt;
-}
+};
 
 exports.LoadDBSchemas = function(cb){
 
   function hasForeignKey(list, fkey){
-    for(var i=0;i<list.length;i++){
-      var elem = list[i];
+    for(let i=0;i<list.length;i++){
+      let elem = list[i];
       if(elem.schema_name!=fkey.schema_name) return false;
       if(elem.table_name!=fkey.table_name) return false;
       if(elem.column_name!=fkey.column_name) return false;
@@ -251,11 +255,11 @@ exports.LoadDBSchemas = function(cb){
   }
 
   function getCODE(dbtype, schema_name, table_name){
-    var codetypes = ['ucod','ucod2','gcod','gcod2'];
-    for(var i=0;i<codetypes.length;i++){
-      var codetype = codetypes[i];
+    let codetypes = ['ucod','ucod2','gcod','gcod2'];
+    for(let i=0;i<codetypes.length;i++){
+      let codetype = codetypes[i];
       if(table_name.indexOf(codetype+'_')==0){
-        var codename = table_name.substr(codetype.length+1);
+        let codename = table_name.substr(codetype.length+1);
         return {
           codetype: codetype,
           codename: codename,
@@ -265,8 +269,8 @@ exports.LoadDBSchemas = function(cb){
       //SQLite additionally has optional schema prefix
       if(dbtype=='sqlite'){
         if(table_name.indexOf('_'+codetype+'_')>=0){
-          var codename = table_name.substr(table_name.indexOf('_'+codetype+'_')+codetype.length+2);
-          var codeschema = table_name.substr(0,table_name.indexOf('_'+codetype+'_'));
+          let codename = table_name.substr(table_name.indexOf('_'+codetype+'_')+codetype.length+2);
+          let codeschema = table_name.substr(0,table_name.indexOf('_'+codetype+'_'));
           return {
             codetype: codetype,
             codename: codename,
@@ -278,40 +282,40 @@ exports.LoadDBSchemas = function(cb){
     return undefined;
   }
 
-  var _this = this;
+  let _this = this;
   //Load Database Schemas
-  var codegen = new jsHarmonyCodeGen(_this);
+  let codegen = new jsHarmonyCodeGen(_this);
   if(!_this.Config.system_settings.automatic_schema) return cb();
   async.eachOf(_this.DBConfig, function(dbConfig, dbid, db_cb){
     codegen.getSchema({ db: dbid }, function(err, rslt){
       if(err) return db_cb(err);
 
-      var db = _this.DB[dbid];
+      let db = _this.DB[dbid];
       if(!db) return db_cb();
 
-      var defaultSchema = db.getDefaultSchema();
+      let defaultSchema = db.getDefaultSchema();
 
       //Handle rslt
-      var table_schemas = {};
-      var tables = {};
-      var field_idx = 0;
-      var lovs = {
+      let table_schemas = {};
+      let tables = {};
+      let field_idx = 0;
+      let lovs = {
         ucod: {},
         ucod2: {},
         gcod: {},
         gcod2: {}
       };
       //Process fields
-      for(var i=0;i<rslt.tables.length;i++){
-        var table = rslt.tables[i];
-        var table_schema = (table.schema||'').toLowerCase();
-        var table_name = (table.name||'').toLowerCase();
-        var full_table_name = table_schema + '.' + table_name;
+      for(let i=0;i<rslt.tables.length;i++){
+        let table = rslt.tables[i];
+        let table_schema = (table.schema||'').toLowerCase();
+        let table_name = (table.name||'').toLowerCase();
+        let full_table_name = table_schema + '.' + table_name;
         if(!(table_name in table_schemas)) table_schemas[table_name] = [];
         table_schemas[table_name].push(table_schema);
         table.fields = {};
         //Add table to LOVs, if applicable
-        var code = getCODE(dbConfig._driver.name, table_schema, table_name);
+        let code = getCODE(dbConfig._driver.name, table_schema, table_name);
         if(code){
           lovs[code.codetype][full_table_name] = 1;
           if(!lovs[code.codetype][code.codename]) lovs[code.codetype][code.codename] = [];
@@ -319,11 +323,11 @@ exports.LoadDBSchemas = function(cb){
         }
         //Add fields to array
         for(;field_idx<rslt.fields.length;field_idx++){
-          var field = rslt.fields[field_idx];
-          var coldef = field.coldef;
-          var field_name = field.name.toLowerCase();
-          var field_schema_name = (coldef.schema_name||'').toLowerCase();
-          var field_table_name = (coldef.table_name||'').toLowerCase();
+          let field = rslt.fields[field_idx];
+          let coldef = field.coldef;
+          let field_name = field.name.toLowerCase();
+          let field_schema_name = (coldef.schema_name||'').toLowerCase();
+          let field_table_name = (coldef.table_name||'').toLowerCase();
           if((field_schema_name==table_schema) && (field_table_name==table_name)){
             table.fields[field_name] = field;
           }
@@ -336,8 +340,8 @@ exports.LoadDBSchemas = function(cb){
 
       //Sort LOVs to put default schema first
       _.map(['ucod','gcod','ucod2','gcod2'],function(codetype){
-        for(var field_name in lovs[codetype]){
-          var field_lovs = lovs[codetype][field_name];
+        for(let field_name in lovs[codetype]){
+          let field_lovs = lovs[codetype][field_name];
           if(field_lovs.length >= 1){
             field_lovs.sort(function(a,b){
               if(a.schema==defaultSchema) return -1;
@@ -351,12 +355,12 @@ exports.LoadDBSchemas = function(cb){
       });
 
       //Index foreign keys by table name and column name
-      var foreignkeys = {
+      let foreignkeys = {
         tables: {},
         fields: {}
       };
-      for(var i=0;i<rslt.foreignkeys.length;i++){
-        var foreignkey = rslt.foreignkeys[i];
+      for(let i=0;i<rslt.foreignkeys.length;i++){
+        let foreignkey = rslt.foreignkeys[i];
         if(foreignkey.from){
           if(foreignkey.from.schema_name) foreignkey.from.schema_name = foreignkey.from.schema_name.toLowerCase();
           if(foreignkey.from.table_name) foreignkey.from.table_name = foreignkey.from.table_name.toLowerCase();
@@ -367,12 +371,12 @@ exports.LoadDBSchemas = function(cb){
           if(foreignkey.to.table_name) foreignkey.to.table_name = foreignkey.to.table_name.toLowerCase();
           if(foreignkey.to.column_name) foreignkey.to.column_name = foreignkey.to.column_name.toLowerCase();
         }
-        var table_schema = (foreignkey.from.schema_name||'').toLowerCase();
-        var table_name = (foreignkey.from.table_name||'').toLowerCase();
-        var full_table_name = table_schema + '.' + table_name;
-        var column_name = (foreignkey.from.column_name||'').toLowerCase()
+        let table_schema = (foreignkey.from.schema_name||'').toLowerCase();
+        let table_name = (foreignkey.from.table_name||'').toLowerCase();
+        let full_table_name = table_schema + '.' + table_name;
+        let column_name = (foreignkey.from.column_name||'').toLowerCase();
 
-        var code = getCODE(dbConfig._driver.name, foreignkey.to.schema_name, foreignkey.to.table_name);
+        let code = getCODE(dbConfig._driver.name, foreignkey.to.schema_name, foreignkey.to.table_name);
         if(code){
           foreignkey.to.codetype = code.codetype;
           foreignkey.to.codename = code.codename;
@@ -381,9 +385,9 @@ exports.LoadDBSchemas = function(cb){
             //If this is the child column
             if(foreignkey.to.column_name=='codeval2'){
               //Find the parent column
-              var prevKey = ((i>0) ? rslt.foreignkeys[i-1] : null);
-              var nextKey = (rslt.foreignkeys.length > (i+1) ? rslt.foreignkeys[i+1]: null);
-              var parentKey = null;
+              let prevKey = ((i>0) ? rslt.foreignkeys[i-1] : null);
+              let nextKey = (rslt.foreignkeys.length > (i+1) ? rslt.foreignkeys[i+1]: null);
+              let parentKey = null;
               if(prevKey && (prevKey.id==foreignkey.id)) parentKey = prevKey;
               else if(nextKey && (nextKey.id==foreignkey.id)) parentKey = nextKey;
               if(parentKey && (parentKey.to.column_name.toLowerCase()=='codeval1')){
@@ -406,10 +410,10 @@ exports.LoadDBSchemas = function(cb){
       }
 
       //Process foreign keys
-      for(var full_table_name in tables){
-        var table = tables[full_table_name];
-        for(var field_name in table.fields){
-          var field = table.fields[field_name];
+      for(let full_table_name in tables){
+        let table = tables[full_table_name];
+        for(let field_name in table.fields){
+          let field = table.fields[field_name];
           field.foreignkeys = {
             direct: [],
             indirect: [],
@@ -429,7 +433,7 @@ exports.LoadDBSchemas = function(cb){
           _.map(['ucod','gcod'],function(codetype){
             if(lovs[codetype][field_name]){
               _.each(lovs[codetype][field_name], function(lov){
-                var code = getCODE(dbConfig._driver.name, lov.schema, lov.table);
+                let code = getCODE(dbConfig._driver.name, lov.schema, lov.table);
                 field.foreignkeys.lov.push({ 
                   codetype: codetype,
                   codename: field_name,
@@ -455,4 +459,4 @@ exports.LoadDBSchemas = function(cb){
     if(err) _this.Log.error(err);
     return cb();
   });
-}
+};
