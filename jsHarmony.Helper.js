@@ -231,7 +231,7 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
     }
     if(!keyfield) throw new Error('Error parsing link target "' + target + '".  Download key id not defined.');
     if(!fieldname) throw new Error('Error parsing link target "' + target + '".  Download field name not defined.');
-    rslt = req.baseurl + '_dl/' + fullmodelid + '/<#=data[j][\'' + keyfield + '\']#>/' + fieldname;
+    rslt = req.baseurl + '_dl/' + fullmodelid + '/<#=encodeURI(data[j][\'' + keyfield + '\'])#>/' + fieldname;
     return rslt;
   }
 
@@ -244,7 +244,7 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
         var ptargetkeys = _.keys(ptarget.keys);
         for (var i = 0; i < ptargetkeys.length; i++) {
           delete q[ptargetkeys[i]];
-          rsltparams += '&amp;' + ptargetkeys[i] + '=<#=data[j][\'' + ptarget.keys[ptargetkeys[i]] + '\']#>';
+          rsltparams += '&amp;' + ptargetkeys[i] + '=<#=encodeURI(data[j][\'' + ptarget.keys[ptargetkeys[i]] + '\'])#>';
           /* Commented out for Amber COMH_CDUP form, so that c_id=X1 would work
           for (var j = 0; j < fields.length; j++) {
             var field = fields[j];
@@ -262,7 +262,7 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
             if (field.key && _this.AppSrvClass.prototype.getFieldByName(fields, field.name)) {
               foundfield = true;
               delete q[field['name']];
-              rsltparams += '&amp;' + field['name'] + '=<#=jsh.XExt.LiteralOrLookup(\'' + field['name'] + '\',[data[j], jsh._GET])#>';
+              rsltparams += '&amp;' + field['name'] + '=<#=encodeURI(jsh.XExt.LiteralOrLookup(\'' + field['name'] + '\',[data[j], jsh._GET]))#>';
             }
           });
         }
@@ -270,18 +270,19 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
           _.each(fields, function (field) {
             if (field.key) {
               delete q[field['name']];
-              rsltparams += '&amp;' + field['name'] + '=<#=data[j][\'' + field['name'] + '\']#>';
+              rsltparams += '&amp;' + field['name'] + '=<#=encodeURI(data[j][\'' + field['name'] + '\'])#>';
             }
           });
         }
       }
     }
   }
+  console.log(rsltparams);
   if (typeof bindings !== 'undefined') {
     _.each(bindings, function (binding, bindingid) {
       //Evaluate bindings
       delete q[bindingid];
-      rsltparams += '&amp;' + bindingid + '=<#='+req.jshsite.instance+'.XExt.LiteralOrLookup(' + JSON.stringify(binding).replace(/"/g, '&quot;') + ',data)#>';
+      rsltparams += '&amp;' + bindingid + '=<#=encodeURI('+req.jshsite.instance+'.XExt.LiteralOrLookup(' + JSON.stringify(binding).replace(/"/g, '&quot;') + ',data))#>';
     });
   }
   if (rsltoverride) return rsltoverride;
