@@ -271,7 +271,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
   async.waterfall([
     //Get tabcode, if applicable
     function(cb){
-      if(model.tabcode){
+      if(model.tabcode && (targetperm!='I')){
         _this.AppSrv.getTabCode(req, res, fullmodelid, function(_tabcode){
           tabcode = _tabcode;
           return cb();
@@ -303,7 +303,11 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
           //redeclare inheritance for nested forms just to remove one tab
           //var tabmodel = jsh.getModel(req, tab.target, model);
           //if (!ejsext.hasAction(req, model, targetperm, tab.actions)) continue;
-          if('roles' in tab) if (!ejsext.hasAction(req, tab, 'B')) continue;
+          var tabtargetperm = targetperm;
+          if(targetperm=='U') tabtargetperm = 'BU';
+
+          if('roles' in tab) if (!ejsext.hasAction(req, tab, tabtargetperm)) continue;
+          if('actions' in tab) if (!ejsext.hasAction(req, tab, tabtargetperm)) continue;
           //if(!Helper.hasModelAction(req, tabmodel, 'B')) continue;
           if (tab.showcode) {
             if (_.includes(tab.showcode, tabcode)) {
@@ -317,7 +321,12 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
           }
         }
         
-        if(showtabs.length == 0) { return Helper.GenError(req, res, -9, "No tabs available for display"); }
+        if(showtabs.length == 0) {
+          //return Helper.GenError(req, res, -9, "No tabs available for display");
+          rslt.tabs = [];
+          delete rslt.tabpos;
+          return cb();
+        }
         if (!(model.id in req.curtabs) || !(_.includes(showmodels, req.curtabs[model.id]))) req.curtabs[model.id] = showmodels[0];
 
         for(var i=0; i<model.tabs.length;i++){

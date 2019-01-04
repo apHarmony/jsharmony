@@ -144,7 +144,7 @@ HELPER FUNCTIONS
 AppSrv.prototype.ParamCheck = function(desc, col, params, show_errors){
   var log = this.jsh.Log;
   if(!show_errors && (typeof show_errors !== 'undefined')) log = false;
-  return Helper.ParamCheck(desc, col, params, show_errors, log);
+  return Helper.ParamCheck(desc, col, params, log);
 }
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.ModelGrid.js'));
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.ModelForm.js'));

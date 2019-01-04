@@ -39,7 +39,7 @@ exports.getTabCode = function (req, res, fullmodelid, onComplete) {
   
   for (var i = 0; i < keylist.length; i++) {
     var k = keylist[i];
-    if (!(k in Q)) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
+    if (!(k in Q)) { _this.jsh.Log.warning(fullmodelid + ' Tabcode: Missing querystring key ' + k); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   }
   
   var sql_ptypes = [];
@@ -57,7 +57,7 @@ exports.getTabCode = function (req, res, fullmodelid, onComplete) {
       sql_ptypes.push(dbtype);
       sql_params[fname] = _this.DeformatParam(field, Q[fname], verrors);
     }
-    else { _this.jsh.Log.warning('Missing parameter ' + fname); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
+    else { _this.jsh.Log.warning(fullmodelid + ' Tabcode: Missing parameter ' + fname); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   }
   this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, fullmodelid + ' Tab Code');
   verrors = _.merge(verrors, model.xvalidate.Validate('K', sql_params));

@@ -1259,7 +1259,7 @@ exports.ParseEntities = function () {
 
     //Generate Validators
     _.each(model.fields, function (field) {
-      model.xvalidate.AddValidator('_obj.' + field.name, field.caption, field.actions, _this.GetValidatorFuncs(field.validate), field.roles);
+      model.xvalidate.AddValidator('_obj.' + field.name, field.caption || field.name, field.actions, _this.GetValidatorFuncs(field.validate), field.roles);
     });
   });
 
@@ -1328,6 +1328,8 @@ exports.ParseEntities = function () {
     var datalockSearchOptions = {};
     if(_this.Config.system_settings.case_insensitive_datalocks) datalockSearchOptions.caseInsensitive = true;
 
+    if(model.sqlinsert && (model.sqlinsert.indexOf('%%%DATALOCKS%%%')>=0)) _this.LogInit_ERROR(model.id + ' : %%%DATALOCKS%%% query parameter not supported for sqlinsert');
+
     for(var siteid in _this.Config.datalocks){
       if((siteid=='main') || (model.roles && model.roles[siteid] && !_.isString(model.roles[siteid]))){
         for(var datalockid in _this.Config.datalocks[siteid]){
@@ -1355,7 +1357,7 @@ exports.ParseEntities = function () {
           }
           //Do not require breadcrumb datalocks, because in order to access them, the keys / foreign keys already need to be validated anyway
           //if(model.breadcrumbs) _this.CheckDatalockSQL(model, model.breadcrumbs.sql, 'Breadcrumbs');
-          _.each(['sqlselect','sqlinsert','sqlupdate','sqldelete','sqlexec','sqlrowcount','sqldownloadselect','sqlinsertencrypt'],
+          _.each(['sqlselect','sqlupdate','sqldelete','sqlexec','sqlrowcount','sqldownloadselect','sqlinsertencrypt'],
             function(sqlkey){ _this.CheckDatalockSQL(model, model[sqlkey], sqlkey); });
 
           _.each(model.fields, function (field) {
@@ -1672,7 +1674,9 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     if(linkTarget.modelid.substr(0,3)=='js:') return;
     var linkModel = jsh.getModel(null,linkTarget.modelid,model);
     if (!linkModel) { _this.LogInit_ERROR((prefix||'') + 'Link Target model "' + linkTarget.modelid + '" not found'+(suffix?' in link expression "'+suffix+'"':'')); return }
-    if((linkTarget.action=='add')&&!Helper.hasAction(linkModel.actions, 'I')) { _this.LogInit_ERROR((prefix||'') + 'Link Target model "' + linkTarget.modelid + '" does not have "I" action'+(suffix?' for link expression "'+suffix+'"':'')); }
+    if((linkTarget.action=='add')&&!Helper.hasAction(linkModel.actions, 'I')) { 
+      _this.LogInit_ERROR((prefix||'') + 'Link Target model "' + linkTarget.modelid + '" does not have "I" action'+(suffix?' for link expression "'+suffix+'"':'')); 
+    }
     validateSiteRoles(model, linkModel, prefix, suffix, roles);
   }
 

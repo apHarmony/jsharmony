@@ -545,7 +545,7 @@ XValidate.prototype.Validate = function (perms, _obj, field, ignore, roles, opti
       if (!has_role_access) { continue; }
     }
     for (var j = 0; j < v.Funcs.length; j++) {
-      var vrslt = v.Funcs[j](v.Caption, val);
+      var vrslt = v.Funcs[j](v.Caption || v.Field, val);
       if (vrslt) {
         this.Errors.push(vrslt);
         if (!(v.Control in rslt)) rslt[v.Control] = [];

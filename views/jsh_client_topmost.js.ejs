@@ -370,6 +370,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
               if(!jsh.XExt.hasAction(xmodel.actions, 'B')) return done();
               //If model bindings are dependent on key
               if(xmodel.bindings && (_.keys(xmodel.bindings).length != xmodel.constant_bindings.length)) return done();
+              //If this is a form with a missing key
+              for(var key in xmodel.keys){
+                if(xmodel.constant_bindings.indexOf(key)<0) return done();
+              }
             }
           }
         }
