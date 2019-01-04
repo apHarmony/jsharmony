@@ -277,7 +277,6 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
       }
     }
   }
-  console.log(rsltparams);
   if (typeof bindings !== 'undefined') {
     _.each(bindings, function (binding, bindingid) {
       //Evaluate bindings
