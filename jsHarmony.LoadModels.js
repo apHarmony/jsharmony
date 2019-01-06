@@ -754,6 +754,7 @@ exports.ParseEntities = function () {
     var firstfield = true;
     var fieldnames = [];
     _.each(model.fields, function (field) {
+      field._auto = field._auto || [];
       var fielddef = db.getFieldDefinition(model.table, field.name,tabledef);
       var coldef = undefined;
       if(fielddef) coldef = fielddef.coldef;
@@ -832,6 +833,7 @@ exports.ParseEntities = function () {
       if (field.name === '') delete field.name;
       //Apply default actions
       if (!('actions' in field)) {
+        field._auto.push('actions');
         field.actions = '';
         if((model.layout=='grid') && ((field.type=='encascii')||(field.type=='hash'))) field.actions = '';
         else if(field.type=='hash') field.actions = '';        
@@ -852,6 +854,7 @@ exports.ParseEntities = function () {
           }
           else if(model.layout=='form'){
             if(field.key) field.actions = 'B';
+            else if(field.type=='file') field.actions = 'BIU';
             else if(!('control' in field)) field.actions = 'B';
             else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
             else if(field.control=='label') field.actions = 'B';
@@ -887,7 +890,10 @@ exports.ParseEntities = function () {
       }
       if(!('control' in field)){
         if(auto_controls){
-          if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
+          if(field.type=='file'){
+            field.control = 'file_upload';
+          }
+          else if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
             if(Helper.hasAction(field.actions, 'B') && !field.value && !field.html){
               if(Helper.hasAction(field.actions, 'IU')) field.control = 'textbox';
               else field.control = 'label';
@@ -968,6 +974,21 @@ exports.ParseEntities = function () {
           _this.LogDeprecated(model.id + ' > ' + field.name + ': "F" action has been deprecated.  Please use foreignkey instead, or automatic parameters.');
           field.foreignkey = 1;
         }
+      }
+
+      //Initialize file control
+      if(field.control=='file_upload'){
+        if (!('controlparams' in field)) field.controlparams = {};
+        if (!('sqlparams' in field.controlparams)) field.controlparams.sqlparams = {};
+        if(('image' in field.controlparams)||('thumbnails' in field.controlparams)){
+          if (!('preview_button' in field.controlparams)) field.controlparams.preview_button = 'View';
+        }
+        else{
+          if (!('download_button' in field.controlparams)) field.controlparams.download_button = 'Download';
+        }
+        if(!('upload_button' in field.controlparams)) field.controlparams.upload_button = 'Upload';
+        if(!('delete_button' in field.controlparams)) field.controlparams.delete_button = 'Delete';
+        if(!field.controlparams.sqlparams.FILE_EXT) field.controlparams.save_file_with_extension = true;
       }
 
       //Apply "enable_search" property
@@ -1200,12 +1221,12 @@ exports.ParseEntities = function () {
       'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'foreignkey', 'serverejs', 'roles', 'static', 'cellclass',
       'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'enable_search', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
       'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'always_editable_on_insert', 'precision', 'password', 'hash', 'salt', 'unbound',
-      'sqlselect', 'sqlupdate', 'sqlinsert','sqlsort', 'sqlwhere', 'sqlsearchsound', 'sqlsearch', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVE__', '__AFTER__',
+      'sqlselect', 'sqlupdate', 'sqlinsert','sqlsort', 'sqlwhere', 'sqlsearchsound', 'sqlsearch', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVE__', '__AFTER__','_auto',
       'sql_from_db','sql_to_db','sqlsearch_to_db','datatype_config'
     ];
     var _v_controlparams = [
       'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'dateformat', 'base_readonly',
-      'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'sqlparams',
+      'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'sqlparams', 'save_file_with_extension',
       'image', 'thumbnails', 'expand_all', 'item_context_menu'
     ];
     var _v_popuplov = ['target', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
@@ -1724,6 +1745,11 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
       validateSiteRoles(model, tmodel, model.id + ' > ' + field.name + ': ', '', field.roles);
       validateSiteLinks(model, field.link, model.id + ' > ' + field.name + ' link: ', field.link, field.roles);
       ParseModelRoles(jsh, tmodel, srcmodelid, srcactions);
+      if(field.control=='subform'){
+        if((tmodel.layout=='form') && (field._auto.indexOf('actions')>=0)){
+          _this.LogInit_WARNING(model.id + ' > Subform ' + field.name + ': When using a subform that has a "form" layout, "actions" should be explicitly set on the subform control.  When both a subform and parent form target the same table, the subform should not have the "I" action.');
+        }
+      }
     }
     else if(('link' in field)){
       if(Helper.hasAction(field.actions, 'B') && (field.control != 'hidden') && !('value' in field)){

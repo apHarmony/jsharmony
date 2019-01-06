@@ -173,12 +173,22 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
             async.each(filelist, function (file, filecallback) {
               var filefield = _this.getFieldByName(model.fields, file);
               var fpath = _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + file + '_' + keyval;
-              HelperFS.exists(fpath, function (exists) {
-                filerslt[file] = exists;
-                filecallback(null);
+              if (filefield.controlparams.save_file_with_extension) fpath += '%%%EXT%%%';
+              HelperFS.getExtFileName(fpath, function(err, filename){
+                if(err){
+                  filerslt[file] = false;
+                  return filecallback(null);
+                }
+                HelperFS.exists(filename, function (exists) {
+                  filerslt[file] = exists;
+                  return filecallback(null);
+                });
               });
             }, function (err) {
-              if (err != null) return callback(Helper.NewError('Error performing file operation', -99999));
+              if (err != null){
+                _this.jsh.Log.error(err);
+                return callback(Helper.NewError('Error performing file operation', -99999));
+              }
               _.merge(rslt, filerslt);
               callback(null, rslt, stats);
             });
@@ -437,86 +447,99 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
     
     //Add fields from post	
     var fields = _this.getFieldsByName(model.fields, fieldlist);
-    if (fields.length == 0) return onComplete(null, {});
-    _.each(fields, function (field) {
-      var fname = field.name;
-      if(field.sqlupdate==='') return;
-      if (fname in P) {
-        var dbtype = _this.getDBType(field);
-        sql_ptypes.push(dbtype);
-        sql_params[fname] = _this.DeformatParam(field, P[fname], verrors);
-        //Add PreCheck, if type='F'
-        if (Helper.hasAction(field.actions, 'F')) {
-          _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
-            if (dfield != field) return false;
-            param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
-            return true;
-          });
-        }
-      }
-      else throw new Error('Missing parameter ' + fname);
-    });
-    
-    //Add DataLock parameters to SQL 
-    _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
-    
-    verrors = _.merge(verrors, model.xvalidate.Validate('UK', _.merge(vfiles, sql_params), '', vignorefiles, req._roles));
-    if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
-    
-    if (encryptedfields.length > 0) {
-      //Add encrypted field
-      var keyval = '';
-      if (keys.length == 1) keyval = sql_params[keys[0].name];
-      else throw new Error('File uploads require one key');
-      _.each(encryptedfields, function (field) {
-        var clearval = sql_params[field.name];
-        if (clearval.length == 0) {
-          sql_params[field.name] = null;
-          if ('hash' in field) {
-            var hashfield = hashfields[field.name];
-            sql_ptypes.push(_this.getDBType(hashfield));
-            sql_params[hashfield.name] = null;
+    var dbtasks = {};
+
+    if (fields.length > 0){
+      _.each(fields, function (field) {
+        var fname = field.name;
+        if(field.sqlupdate==='') return;
+        if (fname in P) {
+          var dbtype = _this.getDBType(field);
+          sql_ptypes.push(dbtype);
+          sql_params[fname] = _this.DeformatParam(field, P[fname], verrors);
+          //Add PreCheck, if type='F'
+          if (Helper.hasAction(field.actions, 'F')) {
+            _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
+              if (dfield != field) return false;
+              param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
+              return true;
+            });
           }
         }
-        else {
-          if (field.type == 'encascii') {
-            if (!(field.password in _this.jsh.Config.passwords)) throw new Error('Encryption password not defined.');
-            var cipher = crypto.createCipher('aes128', keyval + _this.jsh.Config.passwords[field.password]);
-            cipher.update(clearval, 'ascii');
-            sql_params[field.name] = cipher.final();
+        else throw new Error('Missing parameter ' + fname);
+      });
+      
+      //Add DataLock parameters to SQL 
+      _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
+      
+      verrors = _.merge(verrors, model.xvalidate.Validate('UK', _.merge(vfiles, sql_params), '', vignorefiles, req._roles));
+      if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
+      
+      if (encryptedfields.length > 0) {
+        //Add encrypted field
+        var keyval = '';
+        if (keys.length == 1) keyval = sql_params[keys[0].name];
+        else throw new Error('File uploads require one key');
+        _.each(encryptedfields, function (field) {
+          var clearval = sql_params[field.name];
+          if (clearval.length == 0) {
+            sql_params[field.name] = null;
             if ('hash' in field) {
               var hashfield = hashfields[field.name];
-              if (!(hashfield.salt in _this.jsh.Config.salts)) throw new Error('Hash salt not defined.');
               sql_ptypes.push(_this.getDBType(hashfield));
-              sql_params[hashfield.name] = crypto.createHash('sha1').update(clearval + _this.jsh.Config.salts[hashfield.salt]).digest();;
+              sql_params[hashfield.name] = null;
             }
           }
-        }
-      });
+          else {
+            if (field.type == 'encascii') {
+              if (!(field.password in _this.jsh.Config.passwords)) throw new Error('Encryption password not defined.');
+              var cipher = crypto.createCipher('aes128', keyval + _this.jsh.Config.passwords[field.password]);
+              cipher.update(clearval, 'ascii');
+              sql_params[field.name] = cipher.final();
+              if ('hash' in field) {
+                var hashfield = hashfields[field.name];
+                if (!(hashfield.salt in _this.jsh.Config.salts)) throw new Error('Hash salt not defined.');
+                sql_ptypes.push(_this.getDBType(hashfield));
+                sql_params[hashfield.name] = crypto.createHash('sha1').update(clearval + _this.jsh.Config.salts[hashfield.salt]).digest();;
+              }
+            }
+          }
+        });
+      }
+      
+      var sql = db.sql.postModelForm(_this.jsh, model, fields, keys, sql_extfields, sql_extvalues, hashfields, param_datalocks, datalockqueries);
+      
+      dbtasks[fullmodelid] = function (dbtrans, callback, transtbl) {
+        sql_params = _this.ApplyTransTblEscapedParameters(sql_params, transtbl);
+        db.Row(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
+          if (stats) stats.model = model;
+          if ((err == null) && (rslt != null) && (_this.jsh.map.rowcount in rslt) && (rslt[_this.jsh.map.rowcount] == 0)) err = Helper.NewError('No records affected', -3, stats);
+          if (err != null) { err.model = model; err.sql = sql; }
+          else if (fileops.length > 0) {
+            //Set keyval and move files, if applicable
+            var keyval = '';
+            if (keys.length == 1) keyval = sql_params[keys[0].name];
+            else throw new Error('File uploads require one key');
+            return _this.ProcessFileOperations(keyval, fileops, rslt, stats, callback);
+          }
+          callback(err, rslt, stats);
+        });
+      };
     }
-    
-    var sql = db.sql.postModelForm(_this.jsh, model, fields, keys, sql_extfields, sql_extvalues, hashfields, param_datalocks, datalockqueries);
-    
-    var dbtasks = {};
-    dbtasks[fullmodelid] = function (dbtrans, callback, transtbl) {
-      sql_params = _this.ApplyTransTblEscapedParameters(sql_params, transtbl);
-      db.Row(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
-        if (stats) stats.model = model;
-        if ((err == null) && (rslt != null) && (_this.jsh.map.rowcount in rslt) && (rslt[_this.jsh.map.rowcount] == 0)) err = Helper.NewError('No records affected', -3, stats);
-        if (err != null) { err.model = model; err.sql = sql; }
-        else if (fileops.length > 0) {
-          //Set keyval and move files, if applicable
-          var keyval = '';
-          if (keys.length == 1) keyval = sql_params[keys[0].name];
-          else throw new Error('File uploads require one key');
-          return _this.ProcessFileOperations(keyval, fileops, rslt, stats, callback);
-        }
-        callback(err, rslt, stats);
-      });
-    };
+    else if(fileops.length > 0){
+      dbtasks[fullmodelid] = function(dbtrans, callback, transtbl){
+        sql_params = _this.ApplyTransTblEscapedParameters(sql_params, transtbl);
+        var keyval = '';
+        if (keys.length == 1) keyval = sql_params[keys[0].name];
+        else throw new Error('File uploads require one key');
+        return _this.ProcessFileOperations(keyval, fileops, {}, {}, callback);
+      };
+    }
+
     if (fileops.length > 0) dbtasks['_POSTPROCESS'] = function (callback) {
       _this.ProcessFileOperationsDone(fileops, callback);
     }
+
     return onComplete(null, dbtasks);
   });
 }
@@ -580,10 +603,10 @@ exports.deleteModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
     _.each(filelist, function (file) {
       var filefield = _this.getFieldByName(model.fields, file);
       //Delete file in post-processing
-      fileops.push({ op: 'move', src: _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + file + '_' + keyval, dst: '' });
+      fileops.push({ op: 'move', src: _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + file + '_' + keyval + ((filefield.controlparams.save_file_with_extension)?'%%%EXT%%%':''), dst: '' });
       //Delete thumbnails in post-processing
       if (filefield.controlparams.thumbnails) for (var tname in filefield.controlparams.thumbnails) {
-        fileops.push({ op: 'move', src: _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + tname + '_' + keyval, dst: '' });
+        fileops.push({ op: 'move', src: _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + tname + '_' + keyval + ((filefield.controlparams.save_file_with_extension)?'%%%EXT%%%':''), dst: '' });
       }
     });
     dbtasks['_POSTPROCESS'] = function (callback) {

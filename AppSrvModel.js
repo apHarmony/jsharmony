@@ -437,7 +437,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
         if ('title' in rslt) rslt['toptitle'] = rslt.title;
         rslt['forcequery'] = req.forcequery;
       }
-      if ('fields' in model) _this.copyModelFields(req,res,model,function(fields){
+      if ('fields' in model) _this.copyModelFields(req,res,model,targetperm,function(fields){
         rslt.fields = fields;
         return cb();
       });
@@ -451,7 +451,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
   });
 }
 
-AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, onComplete) {
+AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, targetperm, onComplete) {
   var jsh = this.AppSrv.jsh;
   var model = srcobj;
   var rslt = [];
@@ -517,6 +517,9 @@ AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, onComplete) 
     dstfield.validate = jsh.GetValidatorClientStr(srcfield);
     if (('control' in dstfield) && ((dstfield.control == 'subform') || (dstfield.popuplov))) {
       _this.genClientModel(req, res, srcfield.target, false, srcfield.bindings, model, function(subform){
+        if(srcfield.control=='subform'){
+          if(!ejsext.hasAction(req, subform, targetperm, (('actions' in dstfield)?dstfield.actions:'BIU'))) return cb();
+        }
         dstfield.model = subform;
         rslt.push(dstfield);
         return cb();

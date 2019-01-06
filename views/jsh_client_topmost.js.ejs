@@ -212,7 +212,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if ((xmodel.layout == 'form') || (xmodel.layout == 'multisel') || (xmodel.layout == 'form-m')) {
         if (jsh.XExt.hasAction(xmodel.actions, 'IU')) enable_save = true;
         if ((xmodel.id == jsh.XModels_root) || (xmodel.parent == jsh.XModels_root))
-          if (jsh.XExt.hasAction(xmodel.actions, 'D')) { enable_delete = true; jsh.delete_target = xmodel.id; }
+          if (!enable_delete && jsh.XExt.hasAction(xmodel.actions, 'D')) { enable_delete = true; jsh.delete_target = xmodel.id; }
       }
       else if ((xmodel.layout == 'grid') && (xmodel.commitlevel) && (xmodel.commitlevel != 'none')) {
         if (jsh.XExt.hasAction(xmodel.actions, 'IUD')) enable_save = true;
@@ -586,12 +586,16 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       var jform = $(this);
       var max_width = 0;
       jform.find('.leading').each(function(){ 
-        var width = $(this).width(); 
+        var jobj = $(this);
+        if(jobj.closest('.xform')[0]!=jform[0]) return;
+        var width = jobj.width(); 
         if(width > max_width) max_width = width;
       });
       jform.find('.leading').each(function(){ 
-        $(this).width(max_width);
-        $(this).toggle((max_width>0));
+        var jobj = $(this);
+        if(jobj.closest('.xform')[0]!=jform[0]) return;
+        jobj.width(max_width);
+        jobj.toggle((max_width>0));
       });
     });
   }

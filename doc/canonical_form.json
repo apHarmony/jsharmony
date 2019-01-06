@@ -202,7 +202,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                            "preview_button": "View Image", //Text for preview button - opens within new browser window
                            "upload_button": "Upload New File", //Text for upload button
                            "delete_button": "Delete File", //Text for delete button
-                           "data_folder": "D"}, //Folder for files, must be unique per model
+                           "data_folder": "D",//Folder for files, must be unique per model
+                           "save_file_with_extension": true, //Slower because a directory search is required on each request.  Automatically set to true if sqlparams.FILE_EXT not set
+                      }, 
                       {"item_context_menu": [ //tree params - Context Menu for an Item
                         { "icon": "add", "text": "Add", "command": "XExt.Alert('add' + context_item);", "actions": "IUD" }
                         ],

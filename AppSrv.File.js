@@ -231,7 +231,12 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
           break;
         }
       }
-      serveFile(req, res, fpath, fname, fname);
+      if (field.controlparams.save_file_with_extension) fpath += '%%%EXT%%%';
+      HelperFS.getExtFileName(fpath, function(err, filename){
+        if(err) return Helper.GenError(req, res, -33, 'Download file not found.');
+        if(field.controlparams.save_file_with_extension && !('FILE_EXT' in field.controlparams.sqlparams)) fname += path.extname(filename);
+        serveFile(req, res, filename, fname, fname);
+      });
     }, undefined, db);
   }
 };
@@ -262,6 +267,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
     }
     if (!('_DBContext' in req) || (req._DBContext == '') || (req._DBContext == null)) { return filecallback(Helper.GenError(req, res, -10, 'Invalid Login / Not Authenticated')); }
     var filedest = jsh.Config.datadir + field.controlparams.data_folder + '/' + file + '_%%%KEY%%%';
+    if (field.controlparams.save_file_with_extension) filedest += '%%%EXT%%%';
     if (P[file] == '') {
       if ('FILE_SIZE' in field.controlparams.sqlparams) {
         if (field.controlparams.sqlparams.FILE_SIZE in P) throw new Error('Parameter conflict - ' + field.controlparams.sqlparams.FILE_SIZE);
@@ -276,6 +282,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
       //Delete Thumbnails in main operation
       if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
         var tdest = jsh.Config.datadir + field.controlparams.data_folder + '/' + tname + '_%%%KEY%%%';
+        if (field.controlparams.save_file_with_extension) filedest += '%%%EXT%%%';
         fileops.push({ op: 'move', src: '', dest: tdest });
       }
       filecallback(null);
@@ -313,6 +320,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
           //Create Thumbnails, if applicable
           if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
             var tdest = jsh.Config.datadir + field.controlparams.data_folder + '/' + tname + '_%%%KEY%%%';
+            if (field.controlparams.save_file_with_extension) tdest += '.' + field.controlparams.thumbnails[tname].format;
             if (_.includes(jsh.Config.supported_images, file_ext)) {
               if (field.controlparams.thumbnails[tname].resize) fileops.push({ op: 'img_resize', src: fpath, dest: tdest, size: field.controlparams.thumbnails[tname].resize, format: field.controlparams.thumbnails[tname].format });
               else if (field.controlparams.thumbnails[tname].crop) fileops.push({ op: 'img_crop', src: fpath, dest: tdest, size: field.controlparams.thumbnails[tname].crop, format: field.controlparams.thumbnails[tname].format });
@@ -320,6 +328,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
             }
           }
           
+          filedest = Helper.ReplaceAll(filedest, '%%%EXT%%%', '.' + field.controlparams.image.format);
           if (field.controlparams.image.resize) fileops.push({ op: 'img_resize', src: fpath, dest: filedest, size: field.controlparams.image.resize, format: field.controlparams.image.format });
           else if (field.controlparams.image.crop) fileops.push({ op: 'img_crop', src: fpath, dest: filedest, size: field.controlparams.image.crop, format: field.controlparams.image.format });
           else throw new Error('No image resize or crop operation in ' + field.name);
@@ -327,6 +336,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
         }
         else {
           //On completion (of entire SQL statement), move file (Add another dbtask to be executed)
+          filedest = Helper.ReplaceAll(filedest, '%%%EXT%%%', file_ext);
           fileops.push({ op: 'move', src: fpath, dest: filedest });
         }
         
@@ -346,72 +356,93 @@ exports.ProcessFileOperations = function (keyval, fileops, rslt, stats, callback
     var filedest = '';
     if (fileop.src) filesrc = Helper.ReplaceAll(fileop.src, '%%%KEY%%%', keyval);
     if (fileop.dest) filedest = Helper.ReplaceAll(fileop.dest, '%%%KEY%%%', keyval);
-    
-    if (fileop.op == 'move') {
-      HelperFS.copyFile(fileop.src, filedest, function (fileerr) {
-        if (fileerr != null) return opcallback(fileerr);
-        return opcallback(null);
-      });
-    }
-    else if (fileop.op == 'img_crop') {
-      (function(){
-        //Calculate w/h + x/y
-        //Optionally override output format
-        var img = imagick(filesrc);
-        img.size(function (err, size) {
-          if (err) return opcallback(err);
-          var cropw = fileop.size[0];
-          var croph = fileop.size[1];
-          var outerw = cropw;
-          var outerh = croph;
-          if ((size.width / cropw) > (size.height / croph)) {
-            outerw = Math.round(size.width * (croph / size.height));
-          }
-          else {
-            outerh = Math.round(size.height * (cropw / size.width));
-          }
-          var cropx = (outerw - cropw) / 2;
-          var cropy = (outerh - croph) / 2;
-          
+
+    var allfiles = [];
+
+    async.waterfall([
+      function(filehandlercb){
+        //Get src file extension
+        HelperFS.getExtFileName(filesrc, function(err, filename){
+          if(err) return callback(Helper.NewError('File not found', -33));
+          filesrc = filename;
+          return filehandlercb();
+        });
+      },
+      function(filehandlercb){
+        //Get dest file extension
+        HelperFS.getExtFileName(filedest, function(err, filename){
+          if(err) return callback(Helper.NewError('File not found', -33));
+          filedest = filename;
+          return filehandlercb();
+        });
+      },
+    ], function(){
+      if (fileop.op == 'move') {
+        HelperFS.copyFile(fileop.src, filedest, function (fileerr) {
+          if (fileerr != null) return opcallback(fileerr);
+          return opcallback(null);
+        });
+      }
+      else if (fileop.op == 'img_crop') {
+        (function(){
+          //Calculate w/h + x/y
+          //Optionally override output format
+          var img = imagick(filesrc);
+          img.size(function (err, size) {
+            if (err) return opcallback(err);
+            var cropw = fileop.size[0];
+            var croph = fileop.size[1];
+            var outerw = cropw;
+            var outerh = croph;
+            if ((size.width / cropw) > (size.height / croph)) {
+              outerw = Math.round(size.width * (croph / size.height));
+            }
+            else {
+              outerh = Math.round(size.height * (cropw / size.width));
+            }
+            var cropx = (outerw - cropw) / 2;
+            var cropy = (outerh - croph) / 2;
+            
+            if (fileop.format) {
+              img.setFormat(fileop.format);
+              if (_.includes(['jpeg', 'jpg'], fileop.format)) img.flatten();
+            }
+            img.quality(90);
+            img.resize(outerw, outerh);
+            img.crop(cropw, croph, cropx, cropy);
+            img.repage(0, 0, 0, 0);
+            img.noProfile().write(filedest, function (err) {
+              if (err) return opcallback(err);
+              return opcallback(null);
+            });
+          });
+        })();
+      }
+      else if (fileop.op == 'img_resize') {
+        (function(){
+          var img = imagick(filesrc);
+          var imgoptions = {};
+          if ((fileop.size.length >= 3) && fileop.size[2]) imgoptions = fileop.size[2];
           if (fileop.format) {
             img.setFormat(fileop.format);
-            if (_.includes(['jpeg', 'jpg'], fileop.format)) img.flatten();
+            if (_.includes(['jpeg', 'jpg'], fileop.format)) { img.flatten(); }
           }
           img.quality(90);
-          img.resize(outerw, outerh);
-          img.crop(cropw, croph, cropx, cropy);
-          img.repage(0, 0, 0, 0);
+          if (imgoptions.upsize) {
+            img.resize(fileop.size[0], fileop.size[1]);
+          }
+          else img.resize(fileop.size[0], fileop.size[1], '>');
+          if (imgoptions.extend) {
+            img.gravity('Center').extent(fileop.size[0], fileop.size[1]);
+          }
           img.noProfile().write(filedest, function (err) {
             if (err) return opcallback(err);
             return opcallback(null);
           });
-        });
-      })();
-    }
-    else if (fileop.op == 'img_resize') {
-      (function(){
-        var img = imagick(filesrc);
-        var imgoptions = {};
-        if ((fileop.size.length >= 3) && fileop.size[2]) imgoptions = fileop.size[2];
-        if (fileop.format) {
-          img.setFormat(fileop.format);
-          if (_.includes(['jpeg', 'jpg'], fileop.format)) { img.flatten(); }
-        }
-        img.quality(90);
-        if (imgoptions.upsize) {
-          img.resize(fileop.size[0], fileop.size[1]);
-        }
-        else img.resize(fileop.size[0], fileop.size[1], '>');
-        if (imgoptions.extend) {
-          img.gravity('Center').extent(fileop.size[0], fileop.size[1]);
-        }
-        img.noProfile().write(filedest, function (err) {
-          if (err) return opcallback(err);
-          return opcallback(null);
-        });
-      })();
-    }
-    else return opcallback(null);
+        })();
+      }
+      else return opcallback(null);
+    });
   }, function (fileerr) {
     if ((fileerr != null) && ('code' in fileerr) && (fileerr.code == 'ENOENT')) { /* Ignore this error */ }
     else if (fileerr != null) {
