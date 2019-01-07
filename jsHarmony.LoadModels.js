@@ -523,6 +523,10 @@ exports.ParseEntities = function () {
 
   var modelsExt = {};
   _.forOwn(this.Models, function (model) {
+    //Remove null values
+    for(var prop in model) if(model[prop]===null) delete model[prop];
+    if(model.fields) _.each(model.fields, function(field){ for(var prop in field) if(field[prop]===null) delete field[prop]; });
+
     var modelExt = modelsExt[model.id] = {
       db: undefined,
       sqlext: undefined,
