@@ -49,10 +49,17 @@ exports = module.exports = function(jsh){
   }
 
   XDebugConsole.reInit = function(){
-    XDebugConsole.settings.enabled = 1;
+    var action='';
+    if (XDebugConsole.settings.enabled){
+      XDebugConsole.settings.enabled = 0;
+      action='close';
+    }else{
+      XDebugConsole.settings.enabled = 1;
+      action='expand';
+    }
     XDebugConsole.setWebSocketListener();
     XDebugConsole.setXMLHttpRequestListener();
-    return onControlAction('expand');
+    return onControlAction(action);
   };
 
   XDebugConsole.setXMLHttpRequestListener = function(){
@@ -61,7 +68,15 @@ exports = module.exports = function(jsh){
       this.addEventListener("load", function(){
         if (XDebugConsole.settings.sources["client_requests"] && XDebugConsole.settings.enabled){
           var t = new Date();
-          XDebugConsole.showDebugMessage(t.toLocaleString() + ' - Client Request: '+this.responseURL+'<br>Client Response: '+JSON.stringify(JSON.parse(this.responseText), null, 2).replace(/\\r\\n/g, '<br>'));
+          var client_resp='';
+          try{
+           client_resp=JSON.stringify(JSON.parse(this.responseText), null, 2);
+          }catch (e) {
+            if(e instanceof SyntaxError){
+              client_resp= this.responseText;
+            }
+          }
+          XDebugConsole.showDebugMessage(t.toLocaleString() + ' - Client Request: '+decodeURIComponent(this.responseURL)+'<br>Client Response: '+client_resp);
         }
       }, false);
       this.baseSend(value);
@@ -70,18 +85,18 @@ exports = module.exports = function(jsh){
 
   function getSourcesForWebSocket(){
     var sources = _.extend({},XDebugConsole.settings.sources);
-    _.forOwn(XDebugConsole.client_sources,function (v,k) {
-      delete sources[k]
-    });
-    _.forOwn(sources,function (v,k){
-      if (!v) delete sources[k]
-    });
+    for (var k in XDebugConsole.client_sources){
+      delete sources[k];
+    }
+    for (var k in sources){
+      if (!sources[k]) delete sources[k];
+    }
     return sources;
   }
 
   XDebugConsole.setWebSocketListener = function(){
     var settings = {sources: getSourcesForWebSocket()};
-    if (!_.isEmpty(settings.sources) && XDebugConsole.settings.enabled) {
+    if (Object.keys(settings.sources).length && XDebugConsole.settings.enabled) {
       if (typeof XDebugConsole.socket.readyState === 'undefined'){
         XDebugConsole.socket = new WebSocket(XDebugConsole.socket_url);
         XDebugConsole.socket.onopen = function (e) {
@@ -94,7 +109,7 @@ exports = module.exports = function(jsh){
             XDebugConsole.showDebugMessage(
               '<span style="color: red;">'+ t.toLocaleString() + ' - ' +
               ' Can\'t connect to Web Socket (URL: '+XDebugConsole.socket_url
-              +'; Code: '+e.code+') Will try to reconnect in 10 sec.</span>'
+              +'; Code: '+e.code+') Will try to reconnect in 2 sec.</span>'
             );
             XDebugConsole.socket={};
             setTimeout(function(){
@@ -103,15 +118,25 @@ exports = module.exports = function(jsh){
                 '<span style="color: green;">'+ t.toLocaleString() + ' - ' + 'Trying to reconnect to Web Socket.</span>'
               );
               XDebugConsole.setWebSocketListener()
-            }, 10000);
+            }, 2000);
           }
         };
         XDebugConsole.socket.onmessage = function (e) {
-          var m = JSON.parse(e.data);
-          var t = new Date( m.timestamp);
-          XDebugConsole.showDebugMessage(
-            '<span style="color: ' + m.color + '">'+ t.toLocaleString() + ' - ' + _.startCase(m.source) + ': ' +  m.txt + '</span>'
-          );
+          try{
+            var m = JSON.parse(e.data);
+            var t = new Date( m.timestamp);
+            XDebugConsole.showDebugMessage(
+              '<span style="color: ' + m.color + '">'+ t.toLocaleString() + ' - ' + _.startCase(m.source) + ': ' +  m.txt + '</span>'
+            );
+          }catch (e) {
+            if(e instanceof SyntaxError){
+              XDebugConsole.showDebugMessage(
+                '<span style="color: red">Can\'t parse json. Error: ' +  e.message + '</span>'
+              );
+            }else{
+              throw e;
+            }
+          }
         }
       }else{
         XDebugConsole.socket.send(JSON.stringify({setSettings: settings}));
@@ -128,10 +153,10 @@ exports = module.exports = function(jsh){
     XDebugConsole.setWebSocketListener();
     var default_sources = XDebugConsole.default_settings.sources;
     var settingsHtml = '';
-    _.forOwn(default_sources, function(v, k) {
+    for(var k in default_sources){
       settingsHtml += '<label for="' + k + '">' +
-        '<input type="checkbox" name="sources" class="src" id="' + k + '" value="' + k + '"> ' + _.upperFirst(k.replace(/_/g,' ')) + '</label><br>';
-    } );
+        '<input type="checkbox" name="sources" class="src" id="' + k + '" value="' + k + '"> ' + _.upperFirst(k.replace(/_/g,' ')) + '</label>';
+    }
     XDebugConsole.DebugDialog = jsh.$root('.xdebugconsole');
     XDebugConsole.DebugPanel  =  XDebugConsole.DebugDialog.find('#debug-panel');
     XDebugConsole.DebugPanel.find('.debug-settings').append($(settingsHtml));
@@ -157,9 +182,8 @@ exports = module.exports = function(jsh){
       XDebugConsole.DebugDialog.hide().removeClass('visible');
     }
     XDebugConsole.DebugPanel.on('click','.src', onSourcesChange);
-    XDebugConsole.DebugDialog.find('.controls').on('click','i',onControlHit);
+    XDebugConsole.DebugDialog.find('.controls i').on('click',onControlHit);
   };
-
   function onControlHit(e){
     return onControlAction($(e.currentTarget).data("action"));
   }
@@ -221,7 +245,7 @@ exports = module.exports = function(jsh){
   XDebugConsole.showDebugMessage = function (txt, clear) {
     var body = XDebugConsole.DebugPanel.find('.xdebuginfo-body');
     if(clear) body.empty();
-    body.prepend('<div class="info-message"><pre>'+txt+'</pre></div>');
+    body.prepend('<div class="info-message">'+txt+'</div>');
   };
 
   return XDebugConsole;
