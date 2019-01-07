@@ -700,14 +700,14 @@ exports.ParseEntities = function () {
           if(_this.Config.system_settings.automatic_bindings){
             _this.AddAutomaticBindings(model, tab, 'Tab '+(tab.name||''), { noErrorOnMissingParentKey: true, log: function(msg){ _this.LogInit_ERROR(msg); } });
           }
-          _this.ValidateBindingKeys(model, tab, 'Tab '+(tab.name||''), modelsExt);
+          _this.AddBindingKeys(model, tab, 'Tab '+(tab.name||''), modelsExt);
         }
         if ('duplicate' in model) {
           var duplicate = model.duplicate; //duplicate.target, duplicate,bindings
           if(_this.Config.system_settings.automatic_bindings){
             _this.AddAutomaticBindings(model, model.duplicate, "Duplicate action", { noErrorOnMissingParentKey: true, log: function(msg){ _this.LogInit_ERROR(msg); } });
           }
-          _this.ValidateBindingKeys(model, model.duplicate, "Duplicate action", modelsExt);
+          _this.AddBindingKeys(model, model.duplicate, "Duplicate action", modelsExt);
         }
         _.each(model.fields, function (field) {
           //Note: field.popuplov.target has not been converted to field.target at this point
@@ -725,7 +725,7 @@ exports.ParseEntities = function () {
             if(_this.Config.system_settings.automatic_bindings){
               _this.AddAutomaticBindings(model, field, 'Subform '+field.name, { noErrorOnMissingParentKey: true, log: function(msg){ _this.LogInit_ERROR(msg); } });
             }
-            _this.ValidateBindingKeys(model, field, 'Subform '+field.name, modelsExt);
+            _this.AddBindingKeys(model, field, 'Subform '+field.name, modelsExt);
           }
         });
       }
@@ -733,6 +733,11 @@ exports.ParseEntities = function () {
   });
   var all_keys = {};
   _.forOwn(this.Models, function (model) {
+    var parentBindings = {};
+    _.each(model.tabs, function(tab){ for(var key in tab.bindings){ parentBindings[tab.bindings[key]] = 1; } });
+    _.each(model.fields, function(field){ if((field.control=='subform')||field.popuplov) for(var key in field.bindings){ parentBindings[field.bindings[key]] = 1; } });
+    if(model.duplicate) for(var key in model.duplicate.bindings){ parentBindings[model.duplicate.bindings[key]] = 1; };
+    model['_parentbindings'] = parentBindings;
     _.each(model.fields, function (field) {
       if(field.name){
         if(field.key){
@@ -788,7 +793,8 @@ exports.ParseEntities = function () {
             if(auto_controls){
               if(!('control' in field) && autofield.control && (!('actions' in field) || Helper.hasAction(field.actions, 'B'))){
                 //Field Control
-                field.control = autofield.control;
+                if('lov' in field) field.control = 'dropdown';
+                else field.control = autofield.control;
                 if(autofield.captionclass) field.captionclass = autofield.captionclass + ' ' + (field.captionclass||'');
               }
             }
@@ -849,6 +855,7 @@ exports.ParseEntities = function () {
               if(field.key) field.actions = 'B';
               else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
               else if(field.control=='label') field.actions = 'B';
+              else if(model._parentbindings[field.name]) field.actions = 'BI';
               else field.actions = 'BIU';
             }
           }
@@ -858,6 +865,7 @@ exports.ParseEntities = function () {
             else if(!('control' in field)) field.actions = 'B';
             else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
             else if(field.control=='label') field.actions = 'B';
+            else if(model._parentbindings[field.name]) field.actions = 'BI';
             else field.actions = 'BIU';
           }
           else if(model.layout=='form-m'){
@@ -865,6 +873,7 @@ exports.ParseEntities = function () {
             else if(field.foreignkey && !('control' in field)) field.actions = 'I';
             else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
             else if(field.control=='label') field.actions = 'B';
+            else if(model._parentbindings[field.name]) field.actions = 'BI';
             else field.actions = 'BIU';
           }
           else if(model.layout=='multisel'){
@@ -893,6 +902,7 @@ exports.ParseEntities = function () {
           if(field.type=='file'){
             field.control = 'file_upload';
           }
+          else if('lov' in field) field.control = 'dropdown';
           else if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
             if(Helper.hasAction(field.actions, 'B') && !field.value && !field.html){
               if(Helper.hasAction(field.actions, 'IU')) field.control = 'textbox';
@@ -1206,7 +1216,7 @@ exports.ParseEntities = function () {
     //Validate Model and Field Parameters
     var _v_model = [
       'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites', 'class', 'using',
-      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby','groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
+      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings','groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
       'pagesettings', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_filter', 'grid_save_before_update', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
@@ -1530,7 +1540,8 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
     //                Also, for parent form, form-m, and exec models, bind any field that is in both the parent and child, that is not the Child Form's key.
     //                "ADDITIONAL_FIELD": "ADDITONAL_FIELD"
     //                "CHILD_FIELD": "CHILD_FIELD" (When parent is a Form, Form-m, and Exec)
-    bindType: 'parentKey', 
+    // auto: parentKey and then childKey
+    bindType: 'auto', 
     //Array of field names used for binding nonKeyFields
     additionalFields: [], 
     //Express Request
@@ -1600,6 +1611,27 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
 
   //If dynamic bindings were not applied
   if(!found_bindings){ 
+    if((options.bindType=='auto')||(options.bindType=='parentKey')){ //parentKey
+      //Match parent keys with child fields
+      _.each(parentKeys, function(parentKey){
+        var field = _this.AppSrvClass.prototype.getFieldByName(tmodel.fields, parentKey);
+        if(!field && !options.noErrorOnMissingParentKey) { options.log(model.id + ' > ' + elementname + ' Bindings: Key '+parentKey+' not found in target form.  Explicitly define bindings if necessary.'); return; }
+        if(!field) return;
+        bindings[parentKey] = parentKey;
+        found_bindings = true;
+      });
+    }
+    if(((options.bindType=='auto')&&!found_bindings)||(options.bindType=='childKey')){
+      //Match parent keys with child fields
+      var childKeys = _this.AppSrvClass.prototype.getKeyNames(tmodel.fields);
+      _.each(childKeys, function(childKey){
+        var field = _this.AppSrvClass.prototype.getFieldByName(model.fields, childKey);
+        if(!field && !options.noErrorOnMissingParentKey) { options.log(model.id + ' > ' + elementname + ' Bindings: Key '+childKey+' not found in parent form.  Explicitly define bindings if necessary.'); return; }
+        if(!field) return;
+        bindings[field.name] = childKey;
+        found_bindings = true;
+      });
+    }
     if(options.bindType=='nonKeyFields'){
       //Match all child fields that are not keys (for add operations)
       _.each(tmodel.fields, function(childField){
@@ -1611,24 +1643,8 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
         }
         if(field || _.includes(options.additionalFields,childField.name)){
           bindings[childField.name] = childField.name;
+          found_bindings = true;
         }
-      });
-    }
-    else if(options.bindType=='childKey'){
-      //Match parent keys with child fields
-      var childKeys = _this.AppSrvClass.prototype.getKeyNames(tmodel.fields);
-      _.each(childKeys, function(childKey){
-        var field = _this.AppSrvClass.prototype.getFieldByName(model.fields, childKey);
-        if(!field) { options.log(model.id + ' > ' + elementname + ' Bindings: Key '+childKey+' not found in parent form.  Explicitly define bindings if necessary.'); return; }
-        bindings[field.name] = childKey;
-      });
-    }
-    else{ //parentKey
-      //Match parent keys with child fields
-      _.each(parentKeys, function(parentKey){
-        var field = _this.AppSrvClass.prototype.getFieldByName(tmodel.fields, parentKey);
-        if(!field && !options.noErrorOnMissingParentKey) { options.log(model.id + ' > ' + elementname + ' Bindings: Key '+parentKey+' not found in target form.  Explicitly define bindings if necessary.'); return; }
-        bindings[parentKey] = parentKey;
       });
     }
   }
@@ -1637,7 +1653,7 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
   return bindings;
 }
 
-exports.ValidateBindingKeys = function(model, element, elementname, modelsExt){
+exports.AddBindingKeys = function(model, element, elementname, modelsExt){
   var _this = this;
   var tmodel = _this.getModel(null, element.target, model);
   var auto_keys = _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.keys;
@@ -1648,7 +1664,7 @@ exports.ValidateBindingKeys = function(model, element, elementname, modelsExt){
       var tfield = _this.AppSrvClass.prototype.getFieldByName(tmodel.fields, childKey);
       if(!tfield) { 
         var created_field = false;
-        if(auto_keys){
+        if(auto_keys && ttabledef){
           //Add foreign key based on binding
           if(childKey in ttabledef.fields){
             tmodel.fields.push({ 
@@ -1701,6 +1717,21 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     validateSiteRoles(model, linkModel, prefix, suffix, roles);
   }
 
+  function validateBindings(bindings, model, tmodel, prefix){
+    if(!bindings) return;
+    for(var childFieldName in bindings){
+      var parentFieldName = bindings[childFieldName];
+      var childField = _this.AppSrvClass.prototype.getFieldByName(tmodel.fields, childFieldName);
+      var parentField = _this.AppSrvClass.prototype.getFieldByName(model.fields, parentFieldName);
+      if(childFieldName && (childFieldName[0]=="'")){}
+      else if(!childField) { _this.LogInit_ERROR((prefix||'') + 'Missing binding target field: '+childFieldName); }
+      else if((!_.includes(['exec','report'],tmodel.layout)) && Helper.hasAction(childField.actions, 'U')) { _this.LogInit_WARNING((prefix||'') + 'Binding target field '+childFieldName+' should not have "U" action.  Please explicitly define "actions" if necessary.'); }
+      if(parentFieldName && (parentFieldName[0]=="'")){}
+      else if(!parentField) { _this.LogInit_ERROR((prefix||'') + 'Missing binding source field: '+parentFieldName); }
+      else if((!_.includes(['exec','report'],tmodel.layout)) && Helper.hasAction(parentField.actions, 'U')) { _this.LogInit_WARNING((prefix||'') + 'Binding source field '+parentFieldName+' should not have "U" action.'); }
+    }
+  }
+
   //-----------------------
 
   if ('tabs' in model) for (var i=0;i<model.tabs.length;i++) {
@@ -1724,6 +1755,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     if (!tmodel) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Target model "' + tab.target + '" not found'); return }
     tab.target = tmodel.id;
     validateSiteRoles(model, tmodel, model.id + ' > Tab ' + tabname + ': ', '', tab.roles);
+    validateBindings(tab.bindings, model, tmodel, model.id + ' > Tab ' + tabname + ': ');
     ParseModelRoles(jsh, tmodel, srcmodelid, srcactions);
   }
   if ('duplicate' in model) {
@@ -1732,6 +1764,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     model.duplicate.target = tmodel.id;
     validateSiteRoles(model, tmodel, model.id + ' > Duplicate model ' + model.duplicate + ': ', '');
     validateSiteLinks(model, model.duplicate.link, model.id + ' > Duplicate model ' + model.duplicate + ' link: ', model.duplicate.link);
+    validateBindings(model.duplicate.bindings, model, tmodel, model.id + ' > Duplicate model ' + model.duplicate + ': ');
     ParseModelRoles(jsh, tmodel, srcmodelid, srcactions);
   }
   _.each(model.buttons, function (button) {
@@ -1744,6 +1777,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
       field.target = tmodel.id;
       validateSiteRoles(model, tmodel, model.id + ' > ' + field.name + ': ', '', field.roles);
       validateSiteLinks(model, field.link, model.id + ' > ' + field.name + ' link: ', field.link, field.roles);
+      validateBindings(field.bindings, model, tmodel, model.id + ' > ' + field.name + ': ');
       ParseModelRoles(jsh, tmodel, srcmodelid, srcactions);
       if(field.control=='subform'){
         if((tmodel.layout=='form') && (field._auto.indexOf('actions')>=0)){
