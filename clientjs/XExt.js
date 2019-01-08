@@ -1102,9 +1102,11 @@ exports = module.exports = function(jsh){
       var codeval = $(obj).data('codeval');
       if (codeval) popupData[modelid].codeval = codeval;
       var xgrid = xmodel.controller.grid;
-      xgrid.RowCount = 0;
-      if (xgrid.Prop) xgrid.Prop.Enabled = true;
-      jsh.$root(xgrid.PlaceholderID).html('');
+      if(xgrid){
+        xgrid.RowCount = 0;
+        if (xgrid.Prop) xgrid.Prop.Enabled = true;
+        jsh.$root(xgrid.PlaceholderID).html('');
+      }
       var orig_jsh_ignorefocusHandler = jsh.ignorefocusHandler;
       jsh.ignorefocusHandler = true;
       var popup_options = {};
@@ -1117,7 +1119,7 @@ exports = module.exports = function(jsh){
         },
         onComplete: function () {
           numOpens++;
-          if(numOpens==1) xgrid.Select();
+          if(xgrid && (numOpens==1)) xgrid.Select();
           if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass + ' .xfilter_value').first().is(':visible')) jsh.$root('.popup_' + fieldid + ' .xfilter_value').first().focus();
           else if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('td a').length) jsh.$root('.popup_' + fieldid).find('td a').first().focus();
             //else jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('input,select,textarea').first().focus();

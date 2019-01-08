@@ -912,7 +912,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.XPage.Duplicate = function(modelid, link, link_options) {
     var win = null;
-    var xmodel = jsh.XModels[jsh.delete_target];
+    var xmodel = jsh.XModels[modelid];
     xmodel.controller.RunDBFunc(function (rslt) {
       //On success
       if(link){
