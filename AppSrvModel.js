@@ -518,7 +518,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, targetperm, 
     if (('control' in dstfield) && ((dstfield.control == 'subform') || (dstfield.popuplov))) {
       _this.genClientModel(req, res, srcfield.target, false, srcfield.bindings, model, function(subform){
         if(srcfield.control=='subform'){
-          if(!ejsext.hasAction(req, subform, targetperm, (('actions' in dstfield)?dstfield.actions:'BIU'))) return cb();
+          if(!ejsext.hasAction(req, subform, (targetperm=='U'?'BU':targetperm), (('actions' in dstfield)?dstfield.actions:'BIU'))) return cb();
         }
         dstfield.model = subform;
         rslt.push(dstfield);

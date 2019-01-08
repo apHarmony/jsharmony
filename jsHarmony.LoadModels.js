@@ -797,7 +797,7 @@ exports.ParseEntities = function () {
             if(auto_controls){
               if(!('control' in field) && autofield.control && (!('actions' in field) || Helper.hasAction(field.actions, 'B'))){
                 //Field Control
-                if('lov' in field) field.control = 'dropdown';
+                if(('lov' in field) && !isReadOnlyGrid) field.control = 'dropdown';
                 else field.control = autofield.control;
                 if(autofield.captionclass) field.captionclass = autofield.captionclass + ' ' + (field.captionclass||'');
               }
@@ -906,7 +906,7 @@ exports.ParseEntities = function () {
           if(field.type=='file'){
             field.control = 'file_upload';
           }
-          else if('lov' in field) field.control = 'dropdown';
+          else if(('lov' in field) && !isReadOnlyGrid) field.control = 'dropdown';
           else if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
             if(Helper.hasAction(field.actions, 'B') && !field.value && !field.html){
               if(Helper.hasAction(field.actions, 'IU')) field.control = 'textbox';

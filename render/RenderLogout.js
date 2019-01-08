@@ -28,7 +28,7 @@ exports = module.exports = function (req, res, onComplete) {
     remember: false,
     tstmp: ''
   };
-  var accountCookie = Helper.GetCookie(req, res, jsh, 'account');
+  var accountCookie = Helper.GetCookie(req, jsh, 'account');
   if (accountCookie) {
     if ('username' in accountCookie) account.username = accountCookie.username;
     if ('remember' in accountCookie) account.remember = (accountCookie.remember == 1);

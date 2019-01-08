@@ -240,6 +240,15 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid) {
   if (!jsh.hasModel(req, fullmodelid)) throw new Error('Model not found');
   var model = jsh.getModel(req, fullmodelid);
   var db = _this.jsh.getModelDB(req, fullmodelid);
+
+  //Get list of columns to display
+  var exportColumns = _this.getFieldNames(req, model.fields, 'B', function(field){
+    if(!('caption' in field)) return false;
+    if(field.control=='hidden') return false;
+    return true;
+  });
+
+  //Execute SQL
   dbtasks = _.reduce(dbtasks, function (rslt, dbtask, key) { rslt[key] = async.apply(dbtask, undefined); return rslt; }, {});
   db.ExecTasks(dbtasks, function (err, rslt, stats) {
     if (err != null) { _this.AppDBError(req, res, err, stats); return; }
@@ -254,6 +263,7 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid) {
       var header = {};
       var frow = rslt[fullmodelid][0];
       for (var fcol in frow) {
+        if(!_.includes(exportColumns, fcol)) continue;
         var field = _this.getFieldByName(model.fields, fcol);
         if (field && ('caption' in field)) { header[fcol] = field.caption_ext || field.caption; }
         else if (fcol.indexOf('__' + jsh.map.codetxt + '__') == 0) {
@@ -276,9 +286,15 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid) {
         rslt[fullmodelid].unshift(eofrow);
       }
       //Escape Dates
-      for (var i = 0; i < rslt[fullmodelid].length; i++) {
+      for (var i = 1; i < rslt[fullmodelid].length; i++) {
         var crow = rslt[fullmodelid][i];
         for (ccol in crow) {
+          if(!ccol) continue;
+          //Overwrite codeval with codetxt
+          if(Helper.beginsWith(ccol, '__'+jsh.map.codetxt+'__')){
+            crow[ccol.substr(jsh.map.codetxt.length+4)] = crow[ccol];
+          }
+          //Replace Dates with ISO String
           if (_.isDate(crow[ccol])) {
             crow[ccol] = crow[ccol].toISOString();//.replace('T', ' ').replace('Z', '');
           }
