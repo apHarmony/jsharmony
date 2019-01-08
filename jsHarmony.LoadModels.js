@@ -1728,11 +1728,11 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
       var childField = _this.AppSrvClass.prototype.getFieldByName(tmodel.fields, childFieldName);
       var parentField = _this.AppSrvClass.prototype.getFieldByName(model.fields, parentFieldName);
       if(childFieldName && (childFieldName[0]=="'")){}
-      else if(!childField) { _this.LogInit_ERROR((prefix||'') + 'Missing binding target field: '+childFieldName); }
-      else if((!_.includes(['exec','report'],tmodel.layout)) && Helper.hasAction(childField.actions, 'U')) { _this.LogInit_WARNING((prefix||'') + 'Binding target field '+childFieldName+' should not have "U" action.  Please explicitly define "actions" if necessary.'); }
+      else if(!childField) { _this.LogInit_ERROR((prefix||'') + 'Missing binding target field: '+tmodel.id+'::'+childFieldName); }
+      else if((!_.includes(['exec','report'],tmodel.layout)) && Helper.hasAction(childField.actions, 'U')) { _this.LogInit_WARNING((prefix||'') + 'Binding target field '+tmodel.id+'::'+childFieldName+' should not have "U" action.  Please explicitly define "actions" if necessary.'); }
       if(parentFieldName && (parentFieldName[0]=="'")){}
-      else if(!parentField) { _this.LogInit_ERROR((prefix||'') + 'Missing binding source field: '+parentFieldName); }
-      else if((!_.includes(['exec','report'],tmodel.layout)) && Helper.hasAction(parentField.actions, 'U')) { _this.LogInit_WARNING((prefix||'') + 'Binding source field '+parentFieldName+' should not have "U" action.'); }
+      else if(!parentField) { _this.LogInit_ERROR((prefix||'') + 'Missing binding source field: '+model.id+'::'+parentFieldName); }
+      else if((!_.includes(['exec','report'],tmodel.layout)) && Helper.hasAction(parentField.actions, 'U')) { _this.LogInit_WARNING((prefix||'') + 'Binding source field '+model.id+'::'+parentFieldName+' should not have "U" action.'); }
     }
   }
 
