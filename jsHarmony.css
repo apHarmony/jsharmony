@@ -596,6 +596,20 @@ LOADING ANIMATION
 DIALOG BOXES
 ============
 */
+<%-rootcss%> .xdebugconsole .resizer{
+  background-color: #aaa;
+  }
+<%-rootcss%> .xdebugconsole .res-ns{
+  cursor: row-resize;
+  height: 3px;
+  }
+<%-rootcss%> .xdebugconsole .res-ew{
+  display: inline-block;
+  cursor: col-resize;
+  height: 100%;
+  width: 3px;
+  float: left;
+  }
 <%-rootcss%> .xdebuginfo {
   display:none;
   position:absolute;
@@ -613,14 +627,23 @@ DIALOG BOXES
 <%-rootcss%> .xdebugconsole #debug-panel {
   display:none;
   position: fixed;
-  bottom: 0;
   height: 300px;
   width: 100%;
-  right:0px;
   z-index:1;
-  border-top: 3px solid #aaa;
   border-bottom: 3px solid #aaa;
   background-color: #fff;
+  }
+<%-rootcss%> .xdebugconsole.visible.bottom #debug-panel {
+  bottom: 0;
+  right: 0;
+  }
+<%-rootcss%> .xdebugconsole.visible.right #debug-panel {
+  width: 600px;
+  bottom: 0;
+  right: 0;
+  }
+<%-rootcss%> .xdebugconsole.bottom .res-ew, .xdebugconsole.bottom .pos-bottom, .xdebugconsole.right .pos-right {
+  display: none;
   }
 <%-rootcss%> .xdebugconsole header{
   padding: 5px 29px;
@@ -629,6 +652,7 @@ DIALOG BOXES
   font-size: 1.8em;
   background-color: #e1e1e1;
   border-bottom: 1px solid #aaa;
+  cursor: auto;
   }
 <%-rootcss%> .xdebugconsole .controls{
   float: right;
@@ -638,10 +662,24 @@ DIALOG BOXES
   padding: 5px 29px;
   border-bottom: 1px solid #aaa;
   display: none;
+  position: relative;
+  z-index: 1;
+  background-color: #fff;
+  }
+<%-rootcss%> .xdebugconsole.right .debug-settings{
+  margin-left: 3px;
+  }
+<%-rootcss%> .xdebugconsole .debug-settings label{
+  display: inline-flex;
+  margin-right: 10px;
+  margin-bottom: 3px;
   }
 <%-rootcss%> .xdebugconsole .info-message{
   padding: 2px 29px;
   border-bottom: 1px solid #999;
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 26px;
   }
 <%-rootcss%> .xdebugconsole .controls i {
   cursor: pointer;
@@ -652,16 +690,15 @@ DIALOG BOXES
   overflow: auto;
   width: 100%;
   }
+<%-rootcss%> .xdebugconsole.visible.right .xdebuginfo-body {
+  width: 600px;
+  margin-left: 3px;
+  word-break: break-word;
+  }
 <%-rootcss%> .xdebugconsole #debug-panel-minimized{
   position: fixed;
   bottom: 0;
   right: 0;
-  }
-<%-rootcss%> .xdebugconsole pre{
-  word-wrap: break-word;
-  background-color: unset;
-  padding: 2px 0;
-  font-size: 14px;
   }
 <%-rootcss%> .xdialogblock {
 	position:fixed;

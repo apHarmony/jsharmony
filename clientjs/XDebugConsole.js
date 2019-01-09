@@ -27,6 +27,7 @@ exports = module.exports = function(jsh){
   XDebugConsole.socket = {};
   XDebugConsole.socket_url = "ws://" + window.location.hostname + ":" + window.location.port + jsh._BASEURL + "_log";
   XDebugConsole.settings = {};
+  XDebugConsole.avaliable_positions = ['bottom','right'];
   XDebugConsole.client_sources = {
     "client_requests": true
   };
@@ -39,6 +40,7 @@ exports = module.exports = function(jsh){
   XDebugConsole.default_settings = {
     "enabled":0,
     "minimized":0,
+    "position":'bottom',
     "sources": _.extend({},XDebugConsole.client_sources,XDebugConsole.server_sources)
   };
   function isEnabled(){
@@ -167,6 +169,17 @@ exports = module.exports = function(jsh){
         $(checkboxes[i]).click();
       }
     }
+    setVisibility();
+    setPosition();
+    XDebugConsole.DebugPanel.on('click','.src', onSourcesChange);
+    jsh.XExt.makeResizableDiv('#debug-panel',[
+      {selector:'.xdebuginfo-body',correction_y:-39,correction_x:0},
+      {selector:'.xdebugconsole.visible',correction_y:0,correction_x:0},
+    ]);
+    XDebugConsole.DebugDialog.find('.controls i').on('click',onControlHit);
+  };
+
+  function setVisibility(){
     if (isEnabled()){
       XDebugConsole.DebugDialog.show().addClass('visible');
       if (isMinimized()){
@@ -181,9 +194,15 @@ exports = module.exports = function(jsh){
     }else{
       XDebugConsole.DebugDialog.hide().removeClass('visible');
     }
-    XDebugConsole.DebugPanel.on('click','.src', onSourcesChange);
-    XDebugConsole.DebugDialog.find('.controls i').on('click',onControlHit);
-  };
+  }
+
+  function setPosition() {
+    for(var i=0; i<XDebugConsole.avaliable_positions.length; i++){
+      XDebugConsole.DebugDialog.removeClass(XDebugConsole.avaliable_positions[i]);
+    }
+    return XDebugConsole.DebugDialog.addClass(XDebugConsole.settings.position)
+  }
+
   function onControlHit(e){
     return onControlAction($(e.currentTarget).data("action"));
   }
@@ -211,6 +230,22 @@ exports = module.exports = function(jsh){
       XDebugConsole.setWebSocketListener();
       XDebugConsole.setXMLHttpRequestListener();
       XDebugConsole.showDebugMessage('Closed',1);
+      return jsh.XExt.SetSettingsCookie(XDebugConsole.SETTINGS_ID,XDebugConsole.settings);
+    }
+    if (action ==='pos-right') {
+      XDebugConsole.settings.position='right';
+      XDebugConsole.showDebugMessage('Position-right');
+      setPosition();
+      return jsh.XExt.SetSettingsCookie(XDebugConsole.SETTINGS_ID,XDebugConsole.settings);
+    }
+    if (action ==='pos-bottom') {
+      XDebugConsole.settings.position='bottom';
+      XDebugConsole.showDebugMessage('Position-bottom');
+      XDebugConsole.DebugDialog.attr('style',null);
+      XDebugConsole.DebugPanel.attr('style',null);
+      XDebugConsole.DebugPanel.show();
+      XDebugConsole.DebugPanel.find('.xdebuginfo-body').attr('style',null);
+      setPosition();
       return jsh.XExt.SetSettingsCookie(XDebugConsole.SETTINGS_ID,XDebugConsole.settings);
     }
   }
