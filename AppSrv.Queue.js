@@ -39,7 +39,7 @@ exports.SubscribeToQueue = function (req, res, next, queueid) {
   if (!this.JobProc) { return Helper.GenError(req, res, -1, 'Job Processor not configured'); }
   if (this.jsh.Config.debug_params.appsrv_requests) this.jsh.Log.info('User subscribing to queue ' + queueid);
   var queue = this.jsh.Config.queues[queueid];
-  if (!Helper.HasModelAccess(req, queue, 'B')) { Helper.GenError(req, res, -11, 'Invalid Access'); return; }
+  if (!Helper.hasModelAction(req, queue, 'B')) { Helper.GenError(req, res, -11, 'Invalid Access'); return; }
   //Check if queue has a message, otherwise, add to subscriptions
   this.JobProc.SubscribeToQueue(req, res, queueid);
 }
@@ -62,7 +62,7 @@ exports.PopQueue = function (req, res, queueid) {
   var verrors = validate.Validate('B', P);
   if (!_.isEmpty(verrors)) { return Helper.GenError(req, res, -2, verrors[''].join('\n')); }
   
-  if (!Helper.HasModelAccess(req, queue, 'D')) { return Helper.GenError(req, res, -11, 'Invalid Access'); }
+  if (!Helper.hasModelAction(req, queue, 'D')) { return Helper.GenError(req, res, -11, 'Invalid Access'); }
   this.JobProc.PopQueue(req, res, queueid, P, function () { res.end(JSON.stringify({ '_success': 1 })); });
 }
 

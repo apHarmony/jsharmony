@@ -38,7 +38,10 @@
 
             if (type.match(imageType) || clipboardData.items[i].type.match(imageType)) {
                 readImageAsBase64(clipboardData.items[i], editor);
-                return found = true;
+                found = true;
+                $event.preventDefault();
+                $event.stopPropagation();
+                return;
             }
         });
     }

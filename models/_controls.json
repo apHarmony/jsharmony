@@ -73,6 +73,34 @@
 		"control":"label",
 		"controlclass":"xlabel_VL"
 	},
+  "label_h1":{
+		"control":"label",
+		"controlclass":"xlabel_h1"
+	},
+  "label_h2":{
+		"control":"label",
+		"controlclass":"xlabel_h2"
+	},
+  "label_h3":{
+		"control":"label",
+		"controlclass":"xlabel_h3"
+	},
+  "label_h4":{
+		"control":"label",
+		"controlclass":"xlabel_h4"
+	},
+  "label_h5":{
+		"control":"label",
+		"controlclass":"xlabel_h5"
+	},
+  "label_h6":{
+		"control":"label",
+		"controlclass":"xlabel_h6"
+	},
+  "label_notification":{
+		"control":"label",
+		"controlclass":"xlabel_notification"
+	},
 	"textbox_VS":{
 		"control":"textbox",
 		"controlclass":"xtextbox_VS"

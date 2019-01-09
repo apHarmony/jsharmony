@@ -25,9 +25,7 @@ exports = module.exports = function(jsh){
 
   var XExt = function(){ }
 
-  XExt.COOKIE_MAX_EXPIRATION = 2147483647;
-
-  XExt.XForm = require('./XExt.XForm.js')(jsh);
+  XExt.XModel = require('./XExt.XModel.js')(jsh);
 
   XExt.parseGET = function (qs) {
     if (typeof qs == 'undefined') qs = window.location.search;
@@ -134,14 +132,14 @@ exports = module.exports = function(jsh){
         }
       }
       //All variables ready, run main operation
-      var xpost = new jsh.XPost(q, '', '');
-      xpost.Data = d;
+      var xform = new jsh.XForm(q, '', '');
+      xform.Data = d;
       var dq = {}, dp = {};
       if (method == 'get') dq = d;
       else if (method == 'postq') { dq = d; method = 'post'; }
       else if (method == 'putq') { dq = d; method = 'put'; if (options.post) { dp = options.post; } }
       else dp = d;
-      xpost.qExecute(xpost.PrepExecute(method, xpost.q, dq, dp, function (rslt) {
+      xform.qExecute(xform.PrepExecute(method, xform.q, dq, dp, function (rslt) {
         if ('_success' in rslt) {
           if (onComplete) onComplete(rslt);
           else XExt.Alert('Operation completed successfully.');
@@ -203,15 +201,13 @@ exports = module.exports = function(jsh){
     return str.indexOf(prefix) === 0;
   }
 
-  XExt.HasAccess = function (access, perm) {
-    if (access === undefined) return false;
+  XExt.hasAction = function (actions, perm) {
+    if (actions === undefined) return false;
     for (var i = 0; i < perm.length; i++) {
-      if (access.indexOf(perm[i]) > -1) return true;
+      if (actions.indexOf(perm[i]) > -1) return true;
     }
     return false;
   };
-
-  XExt.access = XExt.HasAccess;
 
   XExt.UndefinedBlank = function (val) {
     if (typeof val == 'undefined') return '';
@@ -220,6 +216,42 @@ exports = module.exports = function(jsh){
 
   XExt.ReplaceAll = function (val, find, replace) {
     return val.split(find).join(replace);
+  }
+
+  XExt.trim = function(str,chr,dir){
+    if(!chr) chr = ' \t\n\r\v\f';
+    var foundchr = true;
+    var rslt = str||'';
+
+    if(!dir){
+      rslt = XExt.trim(str, chr, 1);
+      rslt = XExt.trim(rslt, chr, -1);
+      return rslt;
+    }
+
+    while(foundchr){
+      foundchr = false;
+      if(!rslt) break;
+      var tgtchr = '';
+      if(dir>0) tgtchr = rslt[rslt.length-1];
+      else tgtchr = rslt[0];
+      for(var i=0;i<chr.length;i++){
+        if(tgtchr==chr[i]){ foundchr = true; break; }
+      }
+      if(foundchr){
+        if(dir>0) rslt = rslt.substr(0,rslt.length - 1);
+        else rslt = rslt.substr(1);
+      }
+    }
+    return rslt;
+  }
+
+  XExt.trimRight = function(str, chr){
+    return XExt.trim(str, chr, 1);
+  }
+
+  XExt.trimLeft = function(str, chr){
+    return XExt.trim(str, chr, -1);
   }
 
   XExt.AddHistory = function (url, obj, title) {
@@ -248,7 +280,9 @@ exports = module.exports = function(jsh){
   };
 
   XExt.hideTab = function (modelid, tabname) {
-    jsh.$root('.xtab' + modelid).each(function (i, obj) {
+    var modelclass = modelid;
+    if(modelid in jsh.XModels) modelclass = jsh.XModels[modelid].class;
+    jsh.$root('.xtab' + modelclass).each(function (i, obj) {
       var jobj = $(obj);
       if (jobj.html() == tabname) jobj.hide();
     });
@@ -256,11 +290,13 @@ exports = module.exports = function(jsh){
 
   //Escape JavaScript string
   XExt.escapeJS = function (q) {
+    if(!q) return '';
     return q.replace(/[\\'"]/g, "\\$&");
   }
 
   //Escape just quotes (for XML/HTML key-value pairs)
   XExt.escapeHTMLQ = function (q) {
+    if(!q) return '';
     return q.replace(/["]/g, "&quot;");
   }
 
@@ -403,7 +439,7 @@ exports = module.exports = function(jsh){
       }
       return 'text';
     },
-    'getaccess': function () {
+    'getActions': function () {
       if (arguments.length == 0) return '';
       var kfc = '';
       var effperm = arguments[0];
@@ -465,16 +501,17 @@ exports = module.exports = function(jsh){
     if (window.opener) {
       var pjsh = window.opener[jsh.getInstance()];
       var hasCapabilities = true;
+      if(!pjsh.XPage) return;
       if(capabilities) _.each(capabilities, function(capability){
-        if(!pjsh[capability]) hasCapabilities = false;
+        if(!pjsh.XPage[capability]) hasCapabilities = false;
       });
       if(hasCapabilities) return pjsh;
     }
   }
   XExt.notifyPopupComplete = function (id, rslt) {
-    var jshOpener = XExt.getOpenerJSH(['XPopupComplete']);
+    var jshOpener = XExt.getOpenerJSH(['PopupComplete']);
     if (jshOpener) {
-      jshOpener.XPopupComplete(id, rslt);
+      jshOpener.XPage.PopupComplete(id, rslt);
     }
   }
   XExt.unescapeEJS = function (ejssrc) {
@@ -540,71 +577,6 @@ exports = module.exports = function(jsh){
     obj.innerHTML = val;
     return obj.value;
   }
-
-  //
-  XExt.makeResizableDiv = function(main_elem_s, depended_s) {
-    var m_e = document.querySelector(main_elem_s);
-    var dep_elements = []
-    for(var i=0;i<depended_s.length; i++){
-      dep_elements.push(document.querySelector(depended_s[i]['selector']));
-    }
-    var resizers = document.querySelectorAll(main_elem_s + ' .resizer');
-    var minimum_size = 100;
-    var counter = 0;
-    var original_width = 0;
-    var original_height = 0;
-    var original_x = 0;
-    var original_y = 0;
-    var original_mouse_x = 0;
-    var original_mouse_y = 0;
-
-    for (var i = 0;i < resizers.length; i++) {
-      const currentResizer = resizers[i];
-      currentResizer.addEventListener('mousedown', function(e) {
-        e.preventDefault()
-        original_width = parseFloat(getComputedStyle(m_e, null).getPropertyValue('width').replace('px', ''));
-        original_height = parseFloat(getComputedStyle(m_e, null).getPropertyValue('height').replace('px', ''));
-        original_x = m_e.getBoundingClientRect().left;
-        original_y = m_e.getBoundingClientRect().top;
-        original_mouse_x = e.pageX;
-        original_mouse_y = e.pageY;
-        window.addEventListener('mousemove', resize);
-        window.addEventListener('mouseup', stopResize);
-      });
-
-      function resize(e) {
-        counter++;
-        if (counter%2) return counter=1; // ignore 50% to perform better
-        if (currentResizer.classList.contains('res-ew')) {
-          var width = original_width - (e.pageX - original_mouse_x);
-          if (width > minimum_size) {
-            m_e.style.width = width + 'px';
-            m_e.style.left = original_x + (e.pageX - original_mouse_x) + 'px';
-            for(var i=0;i<depended_s.length; i++){
-              dep_elements[i].style.width = (width+depended_s[i]['correction_x']) + 'px';
-              dep_elements[i].style.left = original_x + (e.pageX - original_mouse_x-depended_s[i]['correction_x']) + 'px';
-            }
-          }
-        }
-        else if (currentResizer.classList.contains('res-ns')) {
-          var height = original_height - (e.pageY - original_mouse_y);
-          if (height > minimum_size) {
-            m_e.style.height = height + 'px';
-            m_e.style.top = original_y + (e.pageY - original_mouse_y) + 'px';
-            for(var i=0;i<depended_s.length; i++){
-              dep_elements[i].style.height = (height+depended_s[i]['correction_y']) + 'px';
-              dep_elements[i].style.top = original_y + (e.pageY - original_mouse_y-depended_s[i]['correction_y']) + 'px'
-            }
-          }
-        }
-      }
-
-      function stopResize() {
-        window.removeEventListener('mousemove', resize)
-      }
-    }
-  }
-
   XExt.readCookie = function(id){
     var rslt = [];
     var cookies = document.cookie.split(';');
@@ -615,58 +587,6 @@ exports = module.exports = function(jsh){
     }
     return rslt;
   }
-
-  XExt.GetCookieNameWithSuffix = function(cname){return cname+jsh.cookie_suffix}
-  XExt.GetCookie = function(cname){
-    cname= XExt.GetCookieNameWithSuffix(cname);
-    var rslt = [];
-    var c_a = XExt.readCookie(cname);
-    if (c_a.length>0){
-      for(var i=0;i<c_a.length;i++) {
-        rslt.push(decodeURIComponent(c_a[i]));
-      }
-    }
-    return rslt;
-  }
-  XExt.SetCookie = function(cname,cvalue,exmin){
-    cname= XExt.GetCookieNameWithSuffix(cname);
-    var expires = '';
-    if (exmin !== 0){
-      var d = new Date();
-      d.setTime(d.getTime() + (exmin*60*1000));
-      expires = ";expires="+ d.toUTCString();
-    }
-    document.cookie = cname + "=" + encodeURIComponent(cvalue) + expires + "; path="+jsh._BASEURL;
-  }
-  XExt.ClearCookie = function(cname){
-    return XExt.SetCookie(cname,'',-100000);
-  }
-  XExt.GetSettingsCookie = function(module_name){
-    var settings ={};
-    try{
-      settings = JSON.parse(jsh.XExt.GetCookie('settings')[0]);
-    }catch (e) {
-      return settings;
-    }
-    if (!_.isEmpty(module_name)){
-      if (settings.hasOwnProperty(module_name)){
-        settings = settings[module_name];
-      }else {
-        settings = {}
-      }
-    }
-    return settings;
-  }
-
-  XExt.SetSettingsCookie = function(module_name,cvalue){
-    if (typeof module_name === undefined || module_name.length <=0){
-      throw "Please provide module name!";
-    }
-    var settings = XExt.GetSettingsCookie();
-    settings[module_name]=cvalue;
-    return XExt.SetCookie('settings',JSON.stringify(settings),XExt.COOKIE_MAX_EXPIRATION);
-  }
-
   XExt.currentURL = function(){
     var rslt = window.location.href.toString().split(window.location.host)[1];
     rslt = rslt.split('?')[0];
@@ -751,7 +671,7 @@ exports = module.exports = function(jsh){
 
   XExt.getJSLocals = function(modelid){
     var rslt = jsh.jslocals;
-    if(modelid) rslt += "var modelid = '"+modelid+"'; var _this = jsh.App[modelid]; ";
+    if(modelid) rslt += "var modelid = '"+modelid+"'; var _this = jsh.App[modelid]; var xmodel = jsh.XModels[modelid]; ";
     return rslt;
   }
 
@@ -774,7 +694,7 @@ exports = module.exports = function(jsh){
   }
 
   XExt.wrapJS = function(code,modelid){
-    return 'return (function(){'+XExt.escapeHTML(XExt.getJSLocals(modelid))+' '+XExt.escapeHTML(code)+'; return false; }).call(this);';
+    return 'return (function(){'+XExt.escapeHTML(XExt.getJSLocals(modelid))+' '+XExt.unescapeEJS(XExt.escapeHTML(code))+'; return false; }).call(this);';
   }
 
   XExt.TreeItemContextMenu = function (ctrl, n) {
@@ -1164,37 +1084,45 @@ exports = module.exports = function(jsh){
   XExt.popupShow = function (modelid, fieldid, title, parentobj, obj, options) {
     if (typeof options == 'undefined') options = {};
     var parentmodelid = $(obj).data('model');
+    var parentmodelclass = parentmodelid;
     var parentfield = null;
-    if (parentmodelid) parentfield = jsh.App['XForm' + parentmodelid].prototype.Fields[fieldid];
-    if (!parentobj) parentobj = jsh.$root('.' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelid);
+    if (parentmodelid){
+      var parentmodel = jsh.XModels[parentmodelid];
+      parentfield = parentmodel.datamodel.prototype.Fields[fieldid];
+      parentmodelclass = parentmodel.class;
+    }
+    if (!parentobj) parentobj = jsh.$root('.' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelclass);
     var numOpens = 0;
-    
+    var xmodel = jsh.XModels[modelid];
+
     popupData[modelid] = {};
     XExt.execif(parentfield && parentfield.controlparams && parentfield.controlparams.onpopup,
       function (f) { parentfield.controlparams.onpopup(modelid, parentmodelid, fieldid, f); },
       function () {
       var codeval = $(obj).data('codeval');
       if (codeval) popupData[modelid].codeval = codeval;
-      var xdata = jsh.App['xform_' + modelid];
-      xdata.RowCount = 0;
-      if (xdata.Prop) xdata.Prop.Enabled = true;
-      jsh.$root(xdata.PlaceholderID).html('');
+      var xgrid = xmodel.controller.grid;
+      if(xgrid){
+        xgrid.RowCount = 0;
+        if (xgrid.Prop) xgrid.Prop.Enabled = true;
+        jsh.$root(xgrid.PlaceholderID).html('');
+      }
       var orig_jsh_ignorefocusHandler = jsh.ignorefocusHandler;
       jsh.ignorefocusHandler = true;
       var popup_options = {};
       popup_options = {
         modelid: modelid,
-        href: ".popup_" + fieldid + '.xelem' + parentmodelid, inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, title: title, fixed: true,
+        href: ".popup_" + fieldid + '.xelem' + parentmodelclass, inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, title: title, fixed: true,
         fadeOut:0,
         onOpen: function () {
           //When nested popUps are called, onOpen is not called
         },
         onComplete: function () {
           numOpens++;
-          if(numOpens==1) xdata.Select();
-          if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelid + ' .xfilter_value').first().is(':visible')) jsh.$root('.popup_' + fieldid + ' .xfilter_value').first().focus();
-          else if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelid).find('td a').length) jsh.$root('.popup_' + fieldid).find('td a').first().focus();
-            //else jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelid).find('input,select,textarea').first().focus();
+          if(xgrid && (numOpens==1)) xgrid.Select();
+          if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass + ' .xfilter_value').first().is(':visible')) jsh.$root('.popup_' + fieldid + ' .xfilter_value').first().focus();
+          else if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('td a').length) jsh.$root('.popup_' + fieldid).find('td a').first().focus();
+            //else jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('input,select,textarea').first().focus();
         },
         onClosed: function () {
           var found_popup = false;
@@ -1225,28 +1153,26 @@ exports = module.exports = function(jsh){
 
   XExt.popupSelect = function (modelid, obj) {
     var rslt = null;
-    var rowid = XExt.XForm.GetRowID(modelid, obj);
-    var xdata = jsh.App['xform_' + modelid];
-    var xpost = jsh.App['xform_post_' + modelid];
+    var rowid = XExt.XModel.GetRowID(modelid, obj);
+    var xmodel = jsh.XModels[modelid];
     
-    if (popupData[modelid].codeval) rslt = xpost.DataSet[rowid][popupData[modelid].codeval];
+    if (popupData[modelid].codeval) rslt = xmodel.controller.form.DataSet[rowid][popupData[modelid].codeval];
     if (!rslt) rslt = '';
     popupData[modelid].result = rslt;
     popupData[modelid].rowid = rowid;
-    popupData[modelid].resultrow = xpost.DataSet[rowid];
-    xdata.Prop.Enabled = false;
+    popupData[modelid].resultrow = xmodel.controller.form.DataSet[rowid];
+    xmodel.controller.grid.Prop.Enabled = false;
     $.colorbox.close();
   }
 
   XExt.popupClear = function (modelid, obj) {
     var rslt = null;
-    var xdata = jsh.App['xform_' + modelid];
-    var xpost = jsh.App['xform_post_' + modelid];
+    var xmodel = jsh.XModels[modelid];
     
     popupData[modelid].result = rslt;
     popupData[modelid].rowid = -1;
-    popupData[modelid].resultrow = new xpost.DataType();
-    xdata.Prop.Enabled = false;
+    popupData[modelid].resultrow = new xmodel.controller.form.DataType();
+    xmodel.controller.grid.Prop.Enabled = false;
     $.colorbox.close();
   }
 
@@ -1258,7 +1184,7 @@ exports = module.exports = function(jsh){
     var xid = $(obj).closest('.xtbl').data('id');
     if (!xid) xid = $(obj).closest('.xform').data('id');
     if (!xid) return null;
-    return xid.substr(5);
+    return xid;
   }
 
   XExt.getModelMD5 = function (modelid) {
@@ -1342,6 +1268,35 @@ exports = module.exports = function(jsh){
     else f();
   }
 
+  XExt.LiteralOrLookup = function(str, dictionary, xmodel) {
+    //console.log("Evaluating: "+str);
+    var rslt = undefined;
+
+    //If numeric, return the value
+    if (!isNaN(str)) rslt = str;
+    //If a literal 'TEXT', return the value
+    else if (str && (str.length >= 2) && (str[0] == "'") && (str[str.length - 1] == "'")) rslt = str.substr(1, str.length - 2);
+    //If "null", return null
+    else if(str && str.trim().toLowerCase()=='null') rslt = null;
+    //If a binding, return the evaluated binding
+    else if (str && xmodel && xmodel.hasBindingOrRootKey(str)) rslt = xmodel.getBindingOrRootKey(str);
+    //If a lookup in the dictionary, return the value
+    else if(dictionary) {
+      if (_.isArray(dictionary)) {
+        //Array of collections
+        for (var i = 0; i < dictionary.length; i++) {
+          if (str in dictionary[i]) return dictionary[i][str];
+        }
+      }
+      else{
+        //Single Collection
+        rslt = dictionary[str];
+      }
+    }
+    //Return the value
+    return rslt;
+  }
+
   XExt.findClosest = function (elem, sel) {
     var jobj = $(elem).find(sel);
     if (jobj.length) return jobj;
@@ -1352,7 +1307,7 @@ exports = module.exports = function(jsh){
 
   XExt.getToken = function (onComplete, onFail) {
     if(!jsh) throw new Error('XExt requires jsHarmony instance to run getToken');
-    jsh.XPost.prototype.XExecute('../_token', {}, onComplete, onFail);
+    jsh.XForm.prototype.XExecute('../_token', {}, onComplete, onFail);
   }
 
   XExt.triggerAsync = function(handlers, cb /*, param1, param2 */){
@@ -1387,23 +1342,22 @@ exports = module.exports = function(jsh){
   }
   XExt.getFormBase = function (id) {
     if (!jsh.XBase[id]) { XExt.Alert('ERROR: Base form ' + id + ' not found.'); return; }
-    var fname = jsh.XBase[id][0];
-    if (fname) return jsh.App['xform_' + fname];
+    var basemodelid = jsh.XBase[id][0];
+    if (basemodelid) return jsh.XModels[basemodelid].controller.form;
     return undefined;
   }
   XExt.getForm = function (id) {
-    if (!(id in jsh.XForms)) { XExt.Alert('ERROR: Form ' + id + ' not found.'); return; }
-    if (jsh.XForms[id]._layout == 'grid') return jsh.App['xform_post_' + id];
-    return jsh.App['xform_' + id];
+    if (!(id in jsh.XModels)) { XExt.Alert('ERROR: Form ' + id + ' not found.'); return; }
+    return jsh.XModels[id].controller.form;
   }
   XExt.getFormFromObject = function (ctrl) {
-    var fname = $(ctrl).closest('.xform').data('id');
-    if (fname) return jsh.App['xform_' + fname.substr(5)];
+    var modelid = $(ctrl).closest('.xform').data('id');
+    if (modelid) return jsh.XModels[modelid].controller.form;
     return undefined;
   }
   XExt.getModelIdFromObject = function (ctrl) {
-    var fname = $(ctrl).closest('.xform').data('id');
-    if (fname) return fname.substr(5);
+    var modelid = $(ctrl).closest('.xform').data('id');
+    if (modelid) return modelid;
     return undefined;
   }
   XExt.getFieldFromObject = function (ctrl) {
@@ -1422,52 +1376,65 @@ exports = module.exports = function(jsh){
   XExt.setFormField = function (xform, fieldname, fieldval) {
     if (!xform) { XExt.Alert('ERROR: Cannot set field ' + fieldname + ' - Parent form not found.'); return; }
     if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
-    XExt.XForm.SetFieldValue(xform.Data, xform.Data.Fields[fieldname], fieldval);
+    XExt.XModel.SetFieldValue(xform.Data, xform.Data.Fields[fieldname], fieldval);
   }
   XExt.setFormControl = function (xform, fieldname, fieldval) { //Set fieldval to undefined for refresh
     if (!xform) { XExt.Alert('ERROR: Cannot set field ' + fieldname + ' - Parent form not found.'); return; }
     if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
-    XExt.XForm.SetControlValue(xform.Data, xform.Data.Fields[fieldname], fieldval);
+    XExt.XModel.SetControlValue(xform.Data, xform.Data.Fields[fieldname], fieldval);
   }
   /***********************/
   /* UI Helper Functions */
   /***********************/
-  XExt.popupForm = function (modelid, action, params, windowparams, win) {
-    if (!params) params = {};
-    if (action) params.action = action;
+
+  // popupForm :: Open the target model as a popup
+  //
+  // Parameters
+  //   modelid (string):           The full path to the model, including any namespace
+  //   action (string):            Either "add" or "edit"
+  //   querystringParams (object): Querystring parameters appended to the model URL
+  //   windowParams (object):      JavaScript window.open parameters, as an object
+  //   existingWindow (Window):    (Optional) Existing JavaScript Window to use instead of opening a new window
+  //
+  // Returns
+  //   (Window) Either the newly created popup window, or the existing window passed as an input parameter
+  //
+  XExt.popupForm = function (modelid, action, querystringParams, windowParams, existingWindow) {
+    if (!querystringParams) querystringParams = {};
+    if (action) querystringParams.action = action;
     var url = jsh._BASEURL + modelid;
-    var dfltwindowparams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
+    var dfltwindowParams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
     var modelmd5 = XExt.getModelMD5(modelid);
     if (modelmd5 in jsh.popups) {
       default_popup_size = jsh.popups[modelmd5];
-      dfltwindowparams.width = default_popup_size[0];
-      dfltwindowparams.height = default_popup_size[1];
+      dfltwindowParams.width = default_popup_size[0];
+      dfltwindowParams.height = default_popup_size[1];
     }
-    if (!windowparams) windowparams = {};
-    if (params) url += '?' + $.param(params);
+    if (!windowParams) windowParams = {};
+    if (querystringParams) url += '?' + $.param(querystringParams);
     var windowstr = '';
-    for (var p in dfltwindowparams) { if (!(p in windowparams)) windowparams[p] = dfltwindowparams[p]; }
-    for (var p in windowparams) { windowstr += ',' + p + '=' + windowparams[p]; }
+    for (var p in dfltwindowParams) { if (!(p in windowParams)) windowParams[p] = dfltwindowParams[p]; }
+    for (var p in windowParams) { windowstr += ',' + p + '=' + windowParams[p]; }
     if (windowstr) windowstr = windowstr.substr(1);
-    if (win) { win.location = url; win.focus(); return win; }
+    if (existingWindow) { existingWindow.location = url; existingWindow.focus(); return existingWindow; }
     else return window.open(url, '_blank', windowstr);
   }
-  XExt.popupReport = function (modelid, params, windowparams, win) {
+  XExt.popupReport = function (modelid, querystringParams, windowParams, existingWindow) {
     var url = jsh._BASEURL + '_d/_report/' + modelid + '/';
-    var dfltwindowparams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
-    var modelmd5 = XExt.getModelMD5('_report_' + modelid);
+    var dfltwindowParams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
+    var modelmd5 = XExt.getModelMD5(modelid);
     if (modelmd5 in jsh.popups) {
       default_popup_size = jsh.popups[modelmd5];
-      dfltwindowparams.width = default_popup_size[0];
-      dfltwindowparams.height = default_popup_size[1];
+      dfltwindowParams.width = default_popup_size[0];
+      dfltwindowParams.height = default_popup_size[1];
     }
-    if (!windowparams) windowparams = {};
-    if (params) url += '?' + $.param(params);
+    if (!windowParams) windowParams = {};
+    if (querystringParams) url += '?' + $.param(querystringParams);
     var windowstr = '';
-    for (var p in dfltwindowparams) { if (!(p in windowparams)) windowparams[p] = dfltwindowparams[p]; }
-    for (var p in windowparams) { windowstr += ',' + p + '=' + windowparams[p]; }
+    for (var p in dfltwindowParams) { if (!(p in windowParams)) windowParams[p] = dfltwindowParams[p]; }
+    for (var p in windowParams) { windowstr += ',' + p + '=' + windowParams[p]; }
     if (windowstr) windowstr = windowstr.substr(1);
-    if (win) { win.location = url; win.focus(); return win; }
+    if (existingWindow) { existingWindow.location = url; existingWindow.focus(); return existingWindow; }
     else return window.open(url, '_blank', windowstr);
   }
   XExt.renderCanvasCheckboxes = function () {
@@ -1621,6 +1588,23 @@ exports = module.exports = function(jsh){
     if (y < joff.top) return false;
     if (y > (joff.top + h)) return false;
     return true;
+  }
+  //Bind tab control events
+  XExt.bindTabControl = function(obj){
+    var jobj = $(obj);
+    var jtabbuttons = jobj.children('.xtab');
+    var jtabpanels = jobj.children('.xpanel').children('.xtabbody');
+    jtabbuttons.on('click', function(){
+      var jtabbutton = $(this);
+      if(jtabbutton.hasClass('selected')) return;
+      jtabbuttons.removeClass('selected');
+      jtabpanels.removeClass('selected');
+      jtabbutton.addClass('selected');
+      jtabpanels.filter('.'+jtabbutton.attr('for')).addClass('selected');
+    });
+    if(!jtabbuttons.filter('.selected').length) jtabbuttons.first().addClass('selected');
+    jtabpanels.filter('.'+jtabbuttons.filter('.selected').attr('for')).addClass('selected');
+    jobj.addClass('initialized');
   }
 
   return XExt;

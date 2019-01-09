@@ -29,49 +29,41 @@ exports.getEJS = function (f, onError) {
   if (!(f in this.EJS)) this.EJS[f] = this.LoadEJS(f, onError);
   this.EJS[f] = this.LoadEJS(f, onError); //Disable caching
   return this.EJS[f];
-}
+};
 
 exports.getEJSFilename = function (f) {
   var appDir = path.dirname(require.main.filename);
   var modeldirs = this.getModelDirs();
-  var component = '';
+  var module = '';
   var basefilename = '';
   if(f.indexOf('/') >= 0){
-    component = f.substr(0,f.indexOf('/'));
+    module = f.substr(0,f.indexOf('/'));
     basefilename = f.substr(f.indexOf('/')+1);
   }
   var fpath = '';
   var cpath = '';
-  if (f.indexOf('reports/') == 0) {
-    for (var i = modeldirs.length - 1; i >= 0; i--) {
-      fpath = modeldirs[i].path + f + '.ejs';
-      cpath = modeldirs[i].path + basefilename + '.ejs';
-      if(component && (modeldirs[i].component==component) && fs.existsSync(cpath)) return cpath;
-      if (fs.existsSync(fpath)) return fpath;
-    }
-  }
   fpath = appDir + '/views/' + f + '.ejs';
   if (fs.existsSync(fpath)) return fpath;
   for (var i = modeldirs.length - 1; i >= 0; i--) {
     fpath = path.normalize(modeldirs[i].path + '../views/' + f + '.ejs');
     cpath = path.normalize(modeldirs[i].path + '../views/' + basefilename + '.ejs');
-    if(component && (modeldirs[i].component==component) && fs.existsSync(cpath)) return cpath;
+    if(module && (modeldirs[i].module==module) && fs.existsSync(cpath)) return cpath;
     if (fs.existsSync(fpath)) return fpath;
   }
   fpath = appDir + '/views/' + f + '.ejs';
   return fpath;
-}
+};
 
 exports.LoadEJS = function (f, onError) {
   var fpath = this.getEJSFilename(f);
   if (!fs.existsSync(fpath)) { 
-    var errmsg = "EJS path not found: " + f + " at " + fpath;
+    var errmsg = 'EJS path not found: ' + f + ' at ' + fpath;
     if(onError) onError(errmsg);
     else this.LogInit_ERROR(errmsg);
     return null; 
   }
-  return fs.readFileSync(fpath, 'utf8')
-}
+  return fs.readFileSync(fpath, 'utf8');
+};
 
 exports.LoadViewsFolder = function (dpath, dont_overwrite) {
   var _this = this;
@@ -83,7 +75,7 @@ exports.LoadViewsFolder = function (dpath, dont_overwrite) {
     if(dont_overwrite && (viewname in _this.Views)) continue;
     _this.Views[viewname] = dpath + '/' + files[i];
   }
-}
+};
 
 exports.LoadViews = function(){
   var modeldirs = this.getModelDirs();
@@ -91,21 +83,21 @@ exports.LoadViews = function(){
     var fpath = path.normalize(modeldirs[i].path + '../views/');
     this.LoadViewsFolder(fpath, true);
   }
-}
+};
 
 exports.LoadFilesToString = function(files,cb){
   var rslt = '';
   async.eachSeries(files, function(file, file_cb){
     fs.readFile(file,'utf8',function(err,data){
       if(err) return file_cb(err);
-      rslt += data + "\r\n";
+      rslt += data + '\r\n';
       return file_cb(null);
     });
   }, function(err){
     if(err) return cb(err);
     return cb(null, rslt);
   });
-}
+};
 
 exports.getView = function (req, tmpl, options){
   if(!options) options = {};
@@ -113,4 +105,4 @@ exports.getView = function (req, tmpl, options){
   if(!options.disable_override && req._override_basetemplate) tmpl = req._override_basetemplate;
   if (tmpl in this.Views) return this.Views[tmpl];
   return tmpl;
-}
+};

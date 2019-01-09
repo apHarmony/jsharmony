@@ -49,19 +49,19 @@ AppSrvRpt.prototype.InitReportQueue = function () {
   }, 1);
 }
 
-AppSrvRpt.prototype.queueReport = function (req, res, modelid, Q, P, params, onComplete) {
+AppSrvRpt.prototype.queueReport = function (req, res, fullmodelid, Q, P, params, onComplete) {
   if(!params) params = {};
   var thisapp = this.AppSrv;
   var jsh = thisapp.jsh;
   var _this = this;
-  var model = jsh.getModel(req, modelid);
+  var model = jsh.getModel(req, fullmodelid);
   var db = params.db;
   var dbcontext = params.dbcontext;
   var errorHandler = function(num, txt, stats){ return Helper.GenError(req, res, num, txt, { stats: stats }); };
   if(params.errorHandler) errorHandler = params.errorHandler;
   if(req){
-    if (!Helper.HasModelAccess(req, model, 'B')) { return errorHandler(-11, 'Invalid Model Access for '+modelid); }
-    db = db || jsh.getModelDB(req, modelid);
+    if (!Helper.hasModelAction(req, model, 'B')) { return errorHandler(-11, 'Invalid Model Access for '+fullmodelid); }
+    db = db || jsh.getModelDB(req, fullmodelid);
     dbcontext = dbcontext || req._DBContext || 'report';
   }
   else if(!db) throw new Error('Either req or db is required.');
@@ -105,16 +105,16 @@ AppSrvRpt.prototype.queueReport = function (req, res, modelid, Q, P, params, onC
   
   db.ExecTasks(dbtasks, function (err, dbdata, stats) {
     if (err) {
-      if(jsh.Config.debug_params.report_debug) console.log(err);
+      if(jsh.Config.debug_params.report_debug) jsh.Log.debug(err);
       return thisapp.AppDBError(req, res, err, stats, errorHandler);
     }
     if (dbdata == null) dbdata = {};
     _this.MergeReportData(dbdata, model.reportdata, null);
     if(params.output=='html'){
-      return onComplete(null,_this.genReportContent(req, res, modelid, sql_params, dbdata));
+      return onComplete(null,_this.genReportContent(req, res, fullmodelid, sql_params, dbdata));
     }
     else{
-      _this.browserqueue.push({ req: req, res: res, modelid: modelid, params: sql_params, data: dbdata }, onComplete);
+      _this.browserqueue.push({ req: req, res: res, modelid: fullmodelid, params: sql_params, data: dbdata }, onComplete);
     }
   });
 };
@@ -312,41 +312,20 @@ function stringToAscii(s) {
   return (ascii);
 }
 
-AppSrvRpt.prototype.genReportContent = function(req, res, modelid, params, data){
+AppSrvRpt.prototype.genReportContent = function(req, res, fullmodelid, params, data){
   var rslt = { header: '', body: '', footer: '' };
   var _this = this;
   var jsh = _this.AppSrv.jsh;
-  if (modelid.indexOf('_report_') != 0) throw new Error('Model '+modelid+' is not a report');
-  var reportid = modelid.substr(8);
-  var model = jsh.getModel(req, modelid);
-  var ejsname = 'reports/' + reportid;
-  var ejsbody = jsh.getEJS(ejsname,function(){});
-  var ejsbody_header = jsh.getEJS(ejsname+'.header',function(){});
-  var ejsbody_footer = jsh.getEJS(ejsname+'.footer',function(){});
-  for (var i = model._inherits.length - 1; i >= 0; i--) {
-    var ejsid = model._inherits[i];
-    if (ejsid.substr(0, 8) == '_report_') {
-      ejsid = ejsid.substr(8);
-      if (ejsbody == null) ejsbody = jsh.getEJS('reports/' + ejsid,function(){});
-      if (ejsbody_header == null) ejsbody_header = jsh.getEJS('reports/' + ejsid + '.header',function(){});
-      if (ejsbody_footer == null) ejsbody_footer = jsh.getEJS('reports/' + ejsid + '.footer',function(){});
-    }
+  var model = jsh.getModel(req, fullmodelid);
+  if(!model) throw new Error('Model '+fullmodelid+' not found');
+  if (model.layout !== 'report') throw new Error('Model '+fullmodelid+' is not a report');
+  var ejsbody_header = Helper.ParseMultiLine(model.pageheader||'');
+  var ejsbody_footer = Helper.ParseMultiLine(model.pagefooter||'');
+  var ejsbody = Helper.ParseMultiLine(model.reportbody||'');
+  if (!ejsbody && ((typeof model.reportbody == 'undefined') || (model.reportbody === null))){
+    ejsbody = 'REPORT BODY NOT FOUND';
   }
-
-  if(model.pageheader){
-    var pageheader = model.pageheader;
-    if (_.isArray(pageheader)) pageheader = pageheader.join('');
-    ejsbody_header = pageheader+(ejsbody_header||'');
-  }
-  if(!ejsbody_header) ejsbody_header = '';
-  if(model.pagefooter){
-    var pagefooter = model.pagefooter;
-    if (_.isArray(pagefooter)) pagefooter = pagefooter.join('');
-    ejsbody_footer = pagefooter+(ejsbody_footer||'');
-  }
-  if(!ejsbody_footer) ejsbody_footer = '';
-
-  if (ejsbody == null) ejsbody = 'REPORT BODY NOT FOUND';
+  
   if (jsh.Config.debug_params.report_debug) {
     ejsbody = ejsbody.replace(/{{(.*?)}}/g, '<%=ejsext.null_log(jsh.Log,$1,\'$1\')%>');
     ejsbody_header = ejsbody_header.replace(/{{(.*?)}}/g, '<%=ejsext.null_log(jsh.Log,$1,\'$1\')%>');
@@ -369,7 +348,7 @@ AppSrvRpt.prototype.genReportContent = function(req, res, modelid, params, data)
     data: data,
     params: params,
     _: _,
-    filename: jsh.getEJSFilename(ejsname)
+    filename: model.path
   });
 
   if(ejsbody_header){
@@ -405,13 +384,13 @@ AppSrvRpt.prototype.genReportContent = function(req, res, modelid, params, data)
   return rslt;
 }
 
-AppSrvRpt.prototype.genReport = function (req, res, modelid, params, data, done) {
+AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, done) {
   var _this = this;
   var jsh = _this.AppSrv.jsh;
   var report_folder = jsh.Config.datadir + 'temp/report/';
-  if (modelid.indexOf('_report_') != 0) throw new Error('Model is not a report');
-  var reportid = modelid.substr(8);
-  var model = jsh.getModel(req, modelid);
+  var model = jsh.getModel(req, fullmodelid);
+  if(!model) throw new Error('Model '+fullmodelid+' not found');
+  if (model.layout !== 'report') throw new Error('Model '+fullmodelid+' is not a report');
 
   HelperFS.createFolderIfNotExists(report_folder, function (err) {
     if (err) throw err;
@@ -426,7 +405,7 @@ AppSrvRpt.prototype.genReport = function (req, res, modelid, params, data, done)
               var tmphtmlpath = tmppath + '.html';
               page = _page;
 
-              var rptcontent = _this.genReportContent(req, res, modelid, params, data);
+              var rptcontent = _this.genReportContent(req, res, fullmodelid, params, data);
 
               var pagesettings = {
                 format: 'Letter',
@@ -523,7 +502,7 @@ AppSrvRpt.prototype.genReport = function (req, res, modelid, params, data, done)
               
               var contentWidth = pageWidth - marginLeft - marginRight;
               var contentHeight = pageHeight - marginTop - marginBottom - headerHeightPx - footerHeightPx;
-              if (jsh.Config.debug_params.report_debug) { console.log('Calculated Page Size: '+contentHeight + 'x'+contentWidth); }
+              if (jsh.Config.debug_params.report_debug) { jsh.Log.debug('Calculated Page Size: '+contentHeight + 'x'+contentWidth); }
 
               pagesettings.margin = {
                 top: (marginTop+headerHeightPx)+'px',
@@ -671,16 +650,16 @@ AppSrvRpt.prototype.getBrowser = function (callback) {
     .catch(function(err){ jsh.Log.error(err); });
 }
 
-AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete) {
+AppSrvRpt.prototype.runReportJob = function (req, res, fullmodelid, Q, P, onComplete) {
   var thisapp = this.AppSrv;
   var jsh = thisapp.jsh;
   var _this = this;
-  var model = jsh.getModel(req, modelid);
-  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
-  if (!('jobqueue' in model)) throw new Error(modelid + ' job queue not enabled');
+  var model = jsh.getModel(req, fullmodelid);
+  if(!model) throw new Error('Model '+fullmodelid+' not found');
+  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+  if (!('jobqueue' in model)) throw new Error(fullmodelid + ' job queue not enabled');
   if (!thisapp.JobProc) throw new Error('Job Processor not configured');
-  if (modelid.indexOf('_report_') != 0) throw new Error('Model '+modelid+' is not a report');
-  var reportid = modelid.substr(8);
+  if (model.layout !== 'report') throw new Error('Model '+fullmodelid+' is not a report');
   //Validate Parameters
   var fieldlist = thisapp.getFieldNames(req, model.fields, 'B');
   _.map(fieldlist, function (field) { if (!(field in Q)) Q[field] = ''; });
@@ -692,7 +671,7 @@ AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete
   var sql_ptypes = [];
   var sql_params = {};
   var verrors = {};
-  var db = jsh.getModelDB(req, modelid);
+  var db = jsh.getModelDB(req, fullmodelid);
   
   var fields = thisapp.getFieldsByName(model.fields, fieldlist);
   if (fields.length == 0) return onComplete(null, {});
@@ -708,7 +687,7 @@ AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete
   verrors = _.merge(verrors, model.xvalidate.Validate('B', sql_params));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   
-  if (!('sql' in model.jobqueue)) throw new Error(modelid + ' missing job queue sql');
+  if (!('sql' in model.jobqueue)) throw new Error(fullmodelid + ' missing job queue sql');
   
   //Add DataLock parameters to SQL 
   var datalockqueries = [];
@@ -731,7 +710,7 @@ AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete
     if (rslt == null) rslt = {};
     if (('_test' in Q) && (Q._test == 1)) {
       for (var i = 0; i < rslt.jobqueue.length; i++) {
-        var reporturl = req.baseurl + '_d/_report/' + reportid + '/?';
+        var reporturl = req.baseurl + '_d/_report/' + model.id + '/?';
         var jrow = rslt.jobqueue[i];
         var rparams = {};
         var verrors = {};
@@ -766,7 +745,7 @@ AppSrvRpt.prototype.runReportJob = function (req, res, modelid, Q, P, onComplete
         verrors = _.merge(verrors, model.xvalidate.Validate('B', rparams));
         if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -99999, 'Error during job queue: ' + verrors[''].join('\n') + ' ' + JSON.stringify(rparams)); return; }
         
-        if(!thisapp.JobProc.AddDBJob(req, res, jobtasks, i, jrow, reportid, rparams)) return;
+        if(!thisapp.JobProc.AddDBJob(req, res, jobtasks, i, jrow, model.id, rparams)) return;
       }
       thisapp.JobProc.db.ExecTransTasks(jobtasks, function (err, rslt, stats) {
         if (err != null) { thisapp.AppDBError(req, res, err, stats); return; }

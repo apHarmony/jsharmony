@@ -22,6 +22,8 @@ var fs = require('fs');
 var path = require('path');
 var os = require('os');
 
+/* eslint-disable quotes */
+
 function jsHarmonyConfigBase(){
 }
 //Validate Configuration, if applicable
@@ -36,15 +38,15 @@ jsHarmonyConfigBase.prototype.Validate = function(jsh, desc){
   }
 
   return true;
-}
+};
 //Initialize Configuration - Apply Default Values
 jsHarmonyConfigBase.prototype.Init = function(cb){
   if(cb) return cb();
-}
+};
 //Merge target configuration with existing
 jsHarmonyConfigBase.prototype.Merge = function(config){
   _.merge(this, config);
-}
+};
 
 /////////////////
 //jsHarmonyConfig
@@ -118,7 +120,8 @@ function jsHarmonyConfig(config){
       "datatypes": true,         //Load datatypes from the database (type, length, precision, required validation, primary key, read-only)
       "attributes": true,        //Load extended attributes from the database (required validation, primary key, read-only)
       "controls": true,          //Load controls from the database
-      "lovs": true               //Load LOVs (List of Values - UCOD/GCOD/UCOD2/GCOD2) from the database
+      "lovs": true,              //Load LOVs (List of Values - UCOD/GCOD/UCOD2/GCOD2) from the database
+      "keys": true               //Generate primary and foreign keys based on table keys
     },
     //Model validation level - "standard", "strict"
     //  Strict: MISSING_CAPTION
@@ -240,7 +243,7 @@ function jsHarmonyConfig(config){
       "src": "jsharmony/public/fonts/Roboto-Regular.ttf",
       "format": "truetype", //embedded-opentype, woff2, woff, truetype, svg
       "local": ["Roboto","Roboto-Regular"],
-      "css": "body { font-family: \'Roboto\'; }"
+      "css": "body { font-family: 'Roboto'; }"
     }
   ];
 
@@ -289,12 +292,13 @@ jsHarmonyConfig.prototype.Init = function(cb){
   if(!this.logdir) this.logdir = this.datadir + 'log/';
   if(!this.localmodeldir) this.localmodeldir = this.appbasepath + '/models/';
   if(cb) return cb();
-}
+};
 jsHarmonyConfig.prototype.Merge = function(config){
   if(config){
     for(var prop in config){
       //Handle modules
-      if(prop=='modules'){
+      if(prop=='sourceModuleName') continue;
+      else if(prop=='modules'){
         for(var moduleName in config.modules){
           if((moduleName in this.modules) && (this.modules[moduleName].prototype) && (this.modules[moduleName].prototype.Merge)){
             this.modules[moduleName].Merge(config.modules[moduleName]);
@@ -318,7 +322,7 @@ jsHarmonyConfig.prototype.Merge = function(config){
       else this[prop] = config[prop];
     }
   }
-}
+};
 
 jsHarmonyConfig.prototype.LoadJSConfigFile = function(jsh, fpath){
   if(!fpath) throw new Error('Config file path is required');
@@ -331,7 +335,7 @@ jsHarmonyConfig.prototype.LoadJSConfigFile = function(jsh, fpath){
     jsh.LogInit_ERROR('Error loading config file: '+fpath + ', '+ex.toString());
     process.exit(1);
   }
-}
+};
 
 jsHarmonyConfig.prototype.LoadJSConfigFolder = function(jsh, fpath){
   //Include appropriate config file based on Path
@@ -342,7 +346,7 @@ jsHarmonyConfig.prototype.LoadJSConfigFolder = function(jsh, fpath){
   var fbasepath = fpath;
   var fbasename = '';
   var patharr = [];
-  while (fbasename = path.basename(fbasepath)) {
+  while ((fbasename = path.basename(fbasepath))) {
     patharr.unshift(fbasename);
     fbasepath = path.dirname(fbasepath);
   }
@@ -352,24 +356,52 @@ jsHarmonyConfig.prototype.LoadJSConfigFolder = function(jsh, fpath){
   if(patharr.length) this.LoadJSConfigFile(jsh, fpath + '/app.config.' + patharr.join('_') + '.js');
   //Load config based on Hostname
   this.LoadJSConfigFile(jsh, fpath + '/app.config.' + os.hostname().toLowerCase() + '.js');
-}
+};
 
-jsHarmonyConfig.prototype.LoadJSONConfigFile = function(jsh, fpath, dbDriver){
+jsHarmonyConfig.prototype.LoadJSONConfigFile = function(jsh, fpath, sourceModule, dbDriver){
+  //Add namespace where applicable
+  function addNamespace(modelid){
+    if(!modelid) return modelid;
+    if(modelid[0]=='/') return modelid;
+    return sourceModule.namespace + modelid;
+  }
+
   if(!fpath) throw new Error('Config file path is required');
   if (!fs.existsSync(fpath)) return;
   var config = jsh.ParseJSON(fpath, "Config");
+  //Add namespace to model names
+  if(config && sourceModule){
+    if(config.model_groups){
+      for (var model_group in config.model_groups){
+        var model_group_members = config.model_groups[model_group];
+        for(var i=0;i<model_group_members.length;i++){
+          model_group_members[i] = addNamespace(model_group_members[i]);
+        }
+      }
+    }
+    if(config.help_view){
+      if(_.isString(config.help_view)) config.help_view = addNamespace(config.help_view);
+      else{
+        for(var siteid in config.help_view){
+          config.help_view[siteid] = addNamespace(config.help_view[siteid]);
+        }
+      }
+    }
+  }
+  //Merge or delay-merge config
   if(dbDriver){
     //Add to database-specific config
     if(!(dbDriver in this.forDB)) this.forDB[dbDriver] = [];
+    config.sourceModuleName = sourceModule.name;
     this.forDB[dbDriver].push(config);
   }
   else {
     //Merge config
     this.Merge(config);
   }
-}
+};
 
-jsHarmonyConfig.prototype.LoadJSONConfigFolder = function(jsh, fpath){
+jsHarmonyConfig.prototype.LoadJSONConfigFolder = function(jsh, fpath, sourceModule){
   var _this = this;
 
   //Include appropriate config file based on Path
@@ -381,27 +413,27 @@ jsHarmonyConfig.prototype.LoadJSONConfigFolder = function(jsh, fpath){
   var fbasepath = fpath;
   var fbasename = '';
   var patharr = [];
-  while (fbasename = path.basename(fbasepath)) {
+  while ((fbasename = path.basename(fbasepath))) {
     patharr.unshift(fbasename);
     fbasepath = path.dirname(fbasepath);
   }
   fpath += '/models';
   //Load app.config.js
-  this.LoadJSONConfigFile(jsh, fpath + '/_config.json');
+  this.LoadJSONConfigFile(jsh, fpath + '/_config.json', sourceModule);
   //Load config based on Application Path
-  this.LoadJSONConfigFile(jsh, fpath + '/_config.' + patharr.join('_') + '.json');
+  this.LoadJSONConfigFile(jsh, fpath + '/_config.' + patharr.join('_') + '.json', sourceModule);
   //Load config based on Hostname
-  this.LoadJSONConfigFile(jsh, fpath + '/_config.' + os.hostname().toLowerCase() + '.json');
+  this.LoadJSONConfigFile(jsh, fpath + '/_config.' + os.hostname().toLowerCase() + '.json', sourceModule);
   //Load config based on Default Database Driver
   var dbDrivers = jsh.getDBDrivers();
   _.each(dbDrivers, function(dbDriver){
-    _this.LoadJSONConfigFile(jsh, fpath + '/_config.' + dbDriver + '.json', dbDriver);
+    _this.LoadJSONConfigFile(jsh, fpath + '/_config.' + dbDriver + '.json', sourceModule, dbDriver);
   });
   if(jsh.DBConfig['default'] && jsh.DBConfig['default']._driver){
     var defaultDBDriver = jsh.DBConfig['default']._driver.name;
-    this.LoadJSONConfigFile(jsh, fpath + '/_config.' + defaultDBDriver + '.json');
+    this.LoadJSONConfigFile(jsh, fpath + '/_config.' + defaultDBDriver + '.json', sourceModule);
   }
-}
+};
 
 jsHarmonyConfig.Base = jsHarmonyConfigBase;
 

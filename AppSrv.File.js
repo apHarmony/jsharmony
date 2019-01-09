@@ -69,8 +69,8 @@ exports.Upload = function (req, res) {
     ], function (err, rslt) {
       //Handle error or return result
       if (err) {
-        if (_.isObject(err) && ('number' in err) && (err.number == -36)) return Helper.GenError(req, res, -36, "User exceeded max temp folder size");
-        return Helper.GenError(req, res, -99999, "Error occurred during file operation (" + err.toString() + ')');
+        if (_.isObject(err) && ('number' in err) && (err.number == -36)) return Helper.GenError(req, res, -36, 'User exceeded max temp folder size');
+        return Helper.GenError(req, res, -99999, 'Error occurred during file operation (' + err.toString() + ')');
       }
       else {
         rslt = { '_success': 1, 'FILE_SIZE': file_size, 'FILE_TOKEN': file_token, 'FILE_ORIGNAME': file_origname, 'FILE_EXT': file_ext };
@@ -79,7 +79,7 @@ exports.Upload = function (req, res) {
       }
     });
   });
-}
+};
 
 exports.UploadCKEditor = function (req, res) {
   var jsh = this.jsh;
@@ -101,7 +101,7 @@ exports.UploadCKEditor = function (req, res) {
     if (files.upload.length != 1) { return Helper.GenError(req, res, -30, 'Invalid file upload request.'); }
     
     var xfile = files.upload[0];
-    var file_size = xfile.size;
+    //var file_size = xfile.size;
     var file_origname = path.basename(xfile.originalFilename);
     var file_path = xfile.path;
     var file_ext = path.extname(path.basename(file_origname)).toLowerCase(); //Get extension
@@ -112,7 +112,7 @@ exports.UploadCKEditor = function (req, res) {
       async.apply(HelperFS.clearFiles, public_folder, jsh.Config.public_temp_expiration, -1),
       function (callback) {
         fs.exists(cmsfiles_folder + file_origname, function (exists) {
-          if (exists) return callback({ number: -37, message: "File already exists" });
+          if (exists) return callback({ number: -37, message: 'File already exists' });
           else return callback(null);
         });
       },
@@ -120,25 +120,25 @@ exports.UploadCKEditor = function (req, res) {
     ], function (err, rslt) {
       //Handle error or return result
       if (err) {
-        if (_.isObject(err) && ('number' in err) && (err.number == -36)) return Helper.GenError(req, res, -36, "User exceeded max temp folder size");
-        else if (_.isObject(err) && ('number' in err) && (err.number == -37)) return res.send("File name already exists on server - cannot overwrite");
-        return Helper.GenError(req, res, -99999, "Error occurred during file operation (" + err.toString() + ')');
+        if (_.isObject(err) && ('number' in err) && (err.number == -36)) return Helper.GenError(req, res, -36, 'User exceeded max temp folder size');
+        else if (_.isObject(err) && ('number' in err) && (err.number == -37)) return res.send('File name already exists on server - cannot overwrite');
+        return Helper.GenError(req, res, -99999, 'Error occurred during file operation (' + err.toString() + ')');
       }
       else {
-        var rslt = "\
-          <script type='text/javascript'>\
+        var rhtml = '\
+          <script type="text/javascript">\
             (function(){\
-              var funcNum = " + req.query.CKEditorFuncNum + ";\
-              var url = \"" + Helper.getFullURL(req, req.baseurl) + "cmsfiles/" + file_origname + "\";\
-              var message = \"Uploaded file successfully\";\
+              var funcNum = ' + req.query.CKEditorFuncNum + ';\
+              var url = "' + Helper.getFullURL(req, req.baseurl) + 'cmsfiles/' + file_origname + '";\
+              var message = "Uploaded file successfully";\
               window.parent.CKEDITOR.tools.callFunction(funcNum, url, message);\
             })();\
-          </script>";
-        return res.end(rslt);
+          </script>';
+        return res.end(rhtml);
       }
     });
   });
-}
+};
 
 exports.ClearUpload = function (req, res) {
   var jsh = this.jsh;
@@ -147,9 +147,9 @@ exports.ClearUpload = function (req, res) {
   HelperFS.clearFiles(user_folder, -1, -1, function (err) {
     res.end(JSON.stringify({ '_success': 1 }));
   });
-}
+};
 
-exports.Download = function (req, res, modelid, keyid, fieldid, options) {
+exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
   if (!options) options = {};
   if (!('_DBContext' in req) || (req._DBContext == '') || (req._DBContext == null)) { return Helper.GenError(req, res, -10, 'Invalid Login / Not Authenticated'); }
   if (!keyid) return Helper.GenError(req, res, -33, 'Download file not found.');
@@ -164,12 +164,12 @@ exports.Download = function (req, res, modelid, keyid, fieldid, options) {
       //Only executes upon error
       if (err != null) {
         if (('code' in err) && (err.code == 'ENOENT')) return Helper.GenError(req, res, -33, 'Download file not found.');
-        return Helper.GenError(req, res, -99999, "Error occurred during file operation (" + err.toString() + ')');
+        return Helper.GenError(req, res, -99999, 'Error occurred during file operation (' + err.toString() + ')');
       }
     }, serveoptions);
   };
   
-  if (modelid == '_temp') {
+  if (fullmodelid == '_temp') {
     var fname = path.basename(keyid);
     var file_ext = path.extname(fname).toLowerCase(); //Get extension
     if ((file_ext == '') || (!_.includes(jsh.Config.valid_extensions, file_ext))) { return Helper.GenError(req, res, -32, 'File extension is not supported.'); }
@@ -177,11 +177,11 @@ exports.Download = function (req, res, modelid, keyid, fieldid, options) {
     serveFile(req, res, fpath, fname, fname);
   }
   else {
-    if (!this.jsh.hasModel(req, modelid)) throw new Error("Error: Model " + modelid + " not found in collection.");
-    var model = this.jsh.getModel(req, modelid);
-    var db = this.jsh.getModelDB(req, modelid);
+    if (!this.jsh.hasModel(req, fullmodelid)) throw new Error('Error: Model ' + fullmodelid + ' not found in collection.');
+    var model = this.jsh.getModel(req, fullmodelid);
+    var db = this.jsh.getModelDB(req, fullmodelid);
     //Verify model access
-    if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
+    if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
     if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
     //Get key name
     var keylist = this.getKeyNames(model.fields);
@@ -192,8 +192,8 @@ exports.Download = function (req, res, modelid, keyid, fieldid, options) {
     //Make sure fieldid is in fields
     if (!_.includes(filelist, fieldid)) return Helper.GenError(req, res, -33, 'Download file not found.');
     var field = this.getFieldByName(model.fields, fieldid);
-    if (!('controlparams' in field)) { throw new Error('File ' + file + ' missing controlparams'); }
-    if (!('sqlparams' in field.controlparams)) { throw new Error('File ' + file + ' missing sqlparams'); }
+    if (!('controlparams' in field)) { throw new Error('File ' + fieldid + ' missing controlparams'); }
+    if (!('sqlparams' in field.controlparams)) { throw new Error('File ' + fieldid + ' missing sqlparams'); }
     if ('FILE_EXT' in field.controlparams.sqlparams) { fieldlist.push(field.controlparams.sqlparams.FILE_EXT); }
     if ('FILE_NAME' in field.controlparams.sqlparams) { fieldlist.push(field.controlparams.sqlparams.FILE_NAME); }
     //Get row from database
@@ -231,7 +231,12 @@ exports.Download = function (req, res, modelid, keyid, fieldid, options) {
           break;
         }
       }
-      serveFile(req, res, fpath, fname, fname);
+      if (field.controlparams.save_file_with_extension) fpath += '%%%EXT%%%';
+      HelperFS.getExtFileName(fpath, function(err, filename){
+        if(err) return Helper.GenError(req, res, -33, 'Download file not found.');
+        if(field.controlparams.save_file_with_extension && !('FILE_EXT' in field.controlparams.sqlparams)) fname += path.extname(filename);
+        serveFile(req, res, filename, fname, fname);
+      });
     }, undefined, db);
   }
 };
@@ -262,6 +267,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
     }
     if (!('_DBContext' in req) || (req._DBContext == '') || (req._DBContext == null)) { return filecallback(Helper.GenError(req, res, -10, 'Invalid Login / Not Authenticated')); }
     var filedest = jsh.Config.datadir + field.controlparams.data_folder + '/' + file + '_%%%KEY%%%';
+    if (field.controlparams.save_file_with_extension) filedest += '%%%EXT%%%';
     if (P[file] == '') {
       if ('FILE_SIZE' in field.controlparams.sqlparams) {
         if (field.controlparams.sqlparams.FILE_SIZE in P) throw new Error('Parameter conflict - ' + field.controlparams.sqlparams.FILE_SIZE);
@@ -276,6 +282,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
       //Delete Thumbnails in main operation
       if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
         var tdest = jsh.Config.datadir + field.controlparams.data_folder + '/' + tname + '_%%%KEY%%%';
+        if (field.controlparams.save_file_with_extension) filedest += '%%%EXT%%%';
         fileops.push({ op: 'move', src: '', dest: tdest });
       }
       filecallback(null);
@@ -313,6 +320,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
           //Create Thumbnails, if applicable
           if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
             var tdest = jsh.Config.datadir + field.controlparams.data_folder + '/' + tname + '_%%%KEY%%%';
+            if (field.controlparams.save_file_with_extension) tdest += '.' + field.controlparams.thumbnails[tname].format;
             if (_.includes(jsh.Config.supported_images, file_ext)) {
               if (field.controlparams.thumbnails[tname].resize) fileops.push({ op: 'img_resize', src: fpath, dest: tdest, size: field.controlparams.thumbnails[tname].resize, format: field.controlparams.thumbnails[tname].format });
               else if (field.controlparams.thumbnails[tname].crop) fileops.push({ op: 'img_crop', src: fpath, dest: tdest, size: field.controlparams.thumbnails[tname].crop, format: field.controlparams.thumbnails[tname].format });
@@ -320,6 +328,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
             }
           }
           
+          filedest = Helper.ReplaceAll(filedest, '%%%EXT%%%', '.' + field.controlparams.image.format);
           if (field.controlparams.image.resize) fileops.push({ op: 'img_resize', src: fpath, dest: filedest, size: field.controlparams.image.resize, format: field.controlparams.image.format });
           else if (field.controlparams.image.crop) fileops.push({ op: 'img_crop', src: fpath, dest: filedest, size: field.controlparams.image.crop, format: field.controlparams.image.format });
           else throw new Error('No image resize or crop operation in ' + field.name);
@@ -327,6 +336,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
         }
         else {
           //On completion (of entire SQL statement), move file (Add another dbtask to be executed)
+          filedest = Helper.ReplaceAll(filedest, '%%%EXT%%%', file_ext);
           fileops.push({ op: 'move', src: fpath, dest: filedest });
         }
         
@@ -346,68 +356,93 @@ exports.ProcessFileOperations = function (keyval, fileops, rslt, stats, callback
     var filedest = '';
     if (fileop.src) filesrc = Helper.ReplaceAll(fileop.src, '%%%KEY%%%', keyval);
     if (fileop.dest) filedest = Helper.ReplaceAll(fileop.dest, '%%%KEY%%%', keyval);
-    
-    if (fileop.op == 'move') {
-      HelperFS.copyFile(fileop.src, filedest, function (fileerr) {
-        if (fileerr != null) return opcallback(fileerr);
-        return opcallback(null);
-      });
-    }
-    else if (fileop.op == 'img_crop') {
-      //Calculate w/h + x/y
-      //Optionally override output format
-      var img = imagick(filesrc);
-      img.size(function (err, size) {
-        if (err) return opcallback(err);
-        var cropw = fileop.size[0];
-        var croph = fileop.size[1];
-        var outerw = cropw;
-        var outerh = croph;
-        if ((size.width / cropw) > (size.height / croph)) {
-          outerw = Math.round(size.width * (croph / size.height));
-        }
-        else {
-          outerh = Math.round(size.height * (cropw / size.width));
-        }
-        var cropx = (outerw - cropw) / 2;
-        var cropy = (outerh - croph) / 2;
-        
-        if (fileop.format) {
-          img.setFormat(fileop.format);
-          if (_.includes(['jpeg', 'jpg'], fileop.format)) img.flatten();
-        }
-        img.quality(90);
-        img.resize(outerw, outerh);
-        img.crop(cropw, croph, cropx, cropy);
-        img.repage(0, 0, 0, 0);
-        img.noProfile().write(filedest, function (err) {
-          if (err) return opcallback(err);
+
+    var allfiles = [];
+
+    async.waterfall([
+      function(filehandlercb){
+        //Get src file extension
+        HelperFS.getExtFileName(filesrc, function(err, filename){
+          if(err) return callback(Helper.NewError('File not found', -33));
+          filesrc = filename;
+          return filehandlercb();
+        });
+      },
+      function(filehandlercb){
+        //Get dest file extension
+        HelperFS.getExtFileName(filedest, function(err, filename){
+          if(err) return callback(Helper.NewError('File not found', -33));
+          filedest = filename;
+          return filehandlercb();
+        });
+      },
+    ], function(){
+      if (fileop.op == 'move') {
+        HelperFS.copyFile(fileop.src, filedest, function (fileerr) {
+          if (fileerr != null) return opcallback(fileerr);
           return opcallback(null);
         });
-      });
-    }
-    else if (fileop.op == 'img_resize') {
-      var img = imagick(filesrc);
-      var imgoptions = {};
-      if ((fileop.size.length >= 3) && fileop.size[2]) imgoptions = fileop.size[2];
-      if (fileop.format) {
-        img.setFormat(fileop.format);
-        if (_.includes(['jpeg', 'jpg'], fileop.format)) { img.flatten(); }
       }
-      img.quality(90);
-      if (imgoptions.upsize) {
-        img.resize(fileop.size[0], fileop.size[1]);
+      else if (fileop.op == 'img_crop') {
+        (function(){
+          //Calculate w/h + x/y
+          //Optionally override output format
+          var img = imagick(filesrc);
+          img.size(function (err, size) {
+            if (err) return opcallback(err);
+            var cropw = fileop.size[0];
+            var croph = fileop.size[1];
+            var outerw = cropw;
+            var outerh = croph;
+            if ((size.width / cropw) > (size.height / croph)) {
+              outerw = Math.round(size.width * (croph / size.height));
+            }
+            else {
+              outerh = Math.round(size.height * (cropw / size.width));
+            }
+            var cropx = (outerw - cropw) / 2;
+            var cropy = (outerh - croph) / 2;
+            
+            if (fileop.format) {
+              img.setFormat(fileop.format);
+              if (_.includes(['jpeg', 'jpg'], fileop.format)) img.flatten();
+            }
+            img.quality(90);
+            img.resize(outerw, outerh);
+            img.crop(cropw, croph, cropx, cropy);
+            img.repage(0, 0, 0, 0);
+            img.noProfile().write(filedest, function (err) {
+              if (err) return opcallback(err);
+              return opcallback(null);
+            });
+          });
+        })();
       }
-      else img.resize(fileop.size[0], fileop.size[1], '>');
-      if (imgoptions.extend) {
-        img.gravity('Center').extent(fileop.size[0], fileop.size[1]);
+      else if (fileop.op == 'img_resize') {
+        (function(){
+          var img = imagick(filesrc);
+          var imgoptions = {};
+          if ((fileop.size.length >= 3) && fileop.size[2]) imgoptions = fileop.size[2];
+          if (fileop.format) {
+            img.setFormat(fileop.format);
+            if (_.includes(['jpeg', 'jpg'], fileop.format)) { img.flatten(); }
+          }
+          img.quality(90);
+          if (imgoptions.upsize) {
+            img.resize(fileop.size[0], fileop.size[1]);
+          }
+          else img.resize(fileop.size[0], fileop.size[1], '>');
+          if (imgoptions.extend) {
+            img.gravity('Center').extent(fileop.size[0], fileop.size[1]);
+          }
+          img.noProfile().write(filedest, function (err) {
+            if (err) return opcallback(err);
+            return opcallback(null);
+          });
+        })();
       }
-      img.noProfile().write(filedest, function (err) {
-        if (err) return opcallback(err);
-        return opcallback(null);
-      });
-    }
-    else return opcallback(null);
+      else return opcallback(null);
+    });
   }, function (fileerr) {
     if ((fileerr != null) && ('code' in fileerr) && (fileerr.code == 'ENOENT')) { /* Ignore this error */ }
     else if (fileerr != null) {

@@ -19,30 +19,37 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 <%
 var no_B = true;
-_.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field.control != 'html') && (field.control != 'subform') && (field.control != 'button')) no_B = false; });
+_.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && (field.control != 'html') && (field.control != 'subform') && (field.control != 'button')) no_B = false; });
 %>
 
 (function(jsh){
   var _ = jsh._;
   var $ = jsh.$;
   var XExt = jsh.XExt;
+  var modelid = '<%=model.id%>';
+  var xmodel = jsh.XModels[modelid];
 
-  jsh.App.XForm<%=model.id%>_Init = function(callback){
-    var xform_<%=model.id%> = jsh.App.xform_<%=model.id%> = new jsh.XPost('<%=model.id%>','','');
-    xform_<%=model.id%>.Data = new jsh.App.XForm<%=model.id%>();
+  var xcontroller = xmodel.controller = new XExt.XModel.XController(xmodel);
+  var xform = null;
 
-    <% xejs.eachKey(model.fields,function(field){ if(!field.name) return; %>xform_<%=model.id%>.Data.<%=field['name']%> = jsh.XForms['<%=model.id%>'].<%=field['name']%>();<%}); %>
-    xform_<%=model.id%>.GetKeys = function(){
+  xcontroller.Init = function(callback){
+    xform = xcontroller.form = new jsh.XForm(modelid,'','');
+    xform.Data = new xmodel.datamodel();
+
+    <% xejs.eachKey(model.fields,function(field){ if(!field.name) return; %>xform.Data['<%=field['name']%>'] = xmodel.getBindingOrRootKey('<%=field['name']%>');<%}); %>
+    xform.GetKeys = function(){
       var rslt = new Object();
       if(!jsh.is_add){
-        _.each(jsh.XForms['<%=model.id%>']._bindings,function(binding){
-          xform_<%=model.id%>.Data[binding] = jsh.XForms['<%=model.id%>'][binding]();
-        });
-        <% xejs.eachKey(model.fields,function(field){ if(!field.name) return; %>rslt.<%=field['name']%> = this.Data.<%=field['name']%>;<%}); %>
+        //Browse / Edit Record
+        for(var fieldname in xmodel.bindings){
+          xform.Data[fieldname] = xmodel.bindings[fieldname]();
         }
+        <% xejs.eachKey(model.fields,function(field){ if(!field.name) return; %>rslt['<%=field['name']%>'] = this.Data['<%=field['name']%>'];<%}); %>
+      }
       else {
+        //Add Record
         //Add parameters for breadcrumbs
-        <% _.each(model.fields,function(field){  if(!field.name) return; if(XExt.access(field.actions,'C')) { %>rslt.<%=field['name']%> = jsh.LiteralOrCollection('<%=field['name']%>',[jsh._GET,this.Data]);<% } }); %>
+        <% _.each(model.fields,function(field){  if(!field.name) return; if(XExt.hasAction(field.actions,'C')) { %>rslt.<%=field['name']%> = jsh.XExt.LiteralOrLookup('<%=field['name']%>',[jsh._GET,this.Data]);<% } }); %>
       }
       return rslt; 
     };
@@ -50,51 +57,45 @@ _.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field
     //Pull keys from parent
     //Get recordset
 
-    jsh.$root('.xelem<%=model.id%>').keyup(function(){ if(jsh.is_add) return; if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this);; });
-    jsh.$root('.xelem<%=model.id%>.dropdown').change(function(){ if(jsh.is_add) return; if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
-    jsh.$root('.xelem<%=model.id%>.checkbox').change(function(){ if(jsh.is_add) return; if(!$(this).hasClass('editable')) return; xform_<%=model.id%>.Data.OnControlUpdate(this); });
+    jsh.$root('.xelem'+xmodel.class).keyup(function(){ if(jsh.is_add) return; if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this);; });
+    jsh.$root('.xelem'+xmodel.class+'.dropdown').change(function(){ if(jsh.is_add) return; if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this); });
+    jsh.$root('.xelem'+xmodel.class+'.checkbox').change(function(){ if(jsh.is_add) return; if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this); });
 
     <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if(field.control=='date') {%>
-    jsh.$root(".<%=field.name%>.xelem<%=model.id%>").datepicker({ changeMonth: true, changeYear: true, dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||jsh.DEFAULT_DATEFORMAT), onSelect: function(){ if(jsh.is_add) return; xform_<%=model.id%>.Data.OnControlUpdate(this); } });
+    jsh.$root(".<%=field.name%>.xelem"+xmodel.class).datepicker({ changeMonth: true, changeYear: true, dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||jsh.DEFAULT_DATEFORMAT), onSelect: function(){ if(jsh.is_add) return; xform.Data.OnControlUpdate(this); } });
     <% } }); %>  
     callback();
   }
 
-  jsh.App.XForm<%=model.id%>_RunReport = function(callback, params){
+  xcontroller.RunReport = function(callback, params){
     if(!params) params = {};
-    if(!jsh.App.xform_<%=model.id%>.Data.Commit()) return;
-    var modelid = '<%=model.id%>';
-    if(modelid.indexOf('_report_') < 0){ XExt.Alert('Model is not a report'); return; }
-    var reportid = modelid.substr(8);
+    if(!xform.Data.Commit()) return;
+    if(xmodel.layout !== 'report'){ XExt.Alert('Model is not a report'); return; }
     var url = '';
     if(params.output=='html') url = jsh._BASEURL + '_d/_report_html/';
     else url = jsh._BASEURL + '_d/_report/';
-    url += reportid+'/';
-    url += '?'+ $.param(jsh.App.xform_<%=model.id%>.GetFieldParams('B'));
+    url += modelid+'/';
+    url += '?'+ $.param(xform.GetFieldParams('B'));
     //Pull fields into URL
     window.open(url,'_blank');
   }
 
-  jsh.App.XForm<%=model.id%>_TestQueue = function(callback){
-    if(!jsh.App.xform_<%=model.id%>.Data.Commit()) return;
-    var modelid = '<%=model.id%>';
-    if(modelid.indexOf('_report_') < 0){ XExt.Alert('Model is not a report'); return; }
-    var reportid = modelid.substr(8);
+  xcontroller.TestQueue = function(callback){
+    if(!xform.Data.Commit()) return;
+    if(xmodel.layout !== 'report'){ XExt.Alert('Model is not a report'); return; }
     var url = '';
-    url = jsh._BASEURL + '_d/_reportjob/'+reportid+'/';
-    url += '?_test=1&'+ $.param(jsh.App.xform_<%=model.id%>.GetFieldParams('B'));
+    url = jsh._BASEURL + '_d/_reportjob/'+modelid+'/';
+    url += '?_test=1&'+ $.param(xform.GetFieldParams('B'));
     window.open(url,'_blank');
   }
 
-  jsh.App.XForm<%=model.id%>_RunQueue = function(callback){
-    if(!jsh.App.xform_<%=model.id%>.Data.Commit()) return;
-    var modelid = '<%=model.id%>';
-    if(modelid.indexOf('_report_') < 0){ XExt.Alert('Model is not a report'); return; }
-    var reportid = modelid.substr(8);
-    //XPost to XGet -> ReportJob
-    var xpost = new jsh.XPost('_reportjob/'+reportid,'','');
-    xpost.Data = jsh.App.xform_<%=model.id%>.GetFieldParams('B');
-    xpost.Execute(function(rslt){ 
+  xcontroller.RunQueue = function(callback){
+    if(!xform.Data.Commit()) return;
+    if(xmodel.layout !== 'report'){ XExt.Alert('Model is not a report'); return; }
+    //XForm to XGet -> ReportJob
+    var xpostform = new jsh.XForm('_reportjob/'+modelid,'','');
+    xpostform.Data = xform.GetFieldParams('B');
+    xpostform.Execute(function(rslt){ 
       if('_success' in rslt){
         XExt.Alert('Successfully queued '+rslt._success+' '+((rslt._success==1) ? 'report':'reports')+'.');
       }
@@ -102,7 +103,7 @@ _.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field
     //Show message box with result
   }
 
-  jsh.App.XForm<%=model.id%>_RunDBFunc = function(cb,options){
+  xcontroller.RunDBFunc = function(cb,options){
     if(typeof options == 'undefined') options = {};
     var callback = cb;
     if(cb && !_.isFunction(cb)){
@@ -111,20 +112,19 @@ _.each(model.fields,function(field){ if(XExt.access(field.actions,'B') && (field
         callback = function(){ XExt.navTo(data_url); };
       }
     }
-    if(!jsh.App.xform_<%=model.id%>.Data.Commit()) return;
-    var modelid = '<%=model.id%>';
+    if(!xform.Data.Commit()) return;
     //Execute DBFunc
-    var xpost = new jsh.XPost(modelid,'','');
-    xpost.GetUpdateParams = function(){ return jsh.App.xform_<%=model.id%>.GetFieldParams('U'); }
+    var xpostform = new jsh.XForm(modelid,'','');
+    xpostform.GetUpdateParams = function(){ return xform.GetFieldParams('U'); }
     if(options.onBeforeUpdate) options.onBeforeUpdate();
-    xpost.Update(function(rslt){ 
+    xpostform.Update(function(rslt){ 
       if('_success' in rslt){
         //Merge data back
         if((modelid in rslt) && rslt[modelid]){
           if(rslt[modelid].length > 0){
             for(var k in rslt[modelid][0]){
-              if(k in jsh.App.xform_<%=model.id%>.Data){
-                jsh.App.xform_<%=model.id%>.Data[k] = rslt[modelid][0][k];
+              if(k in xform.Data){
+                xform.Data[k] = rslt[modelid][0][k];
               }
             }
           }

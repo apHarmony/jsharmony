@@ -37,9 +37,35 @@ exports.phone_decode = function(val){
 	return rslt;
 }
 
+exports.parseDate = function(val){
+  if(!val) return moment(null);
+  val = val.trim();
+  val = val.replace(/,/g,' ');
+  val = val.replace(/  /g,' ');
+  var rslt = moment(val, "YYYY-MM-DDTHH:mm:ss.SSS", true);
+  if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH:mm:ss", true);
+  if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH:mm", true);
+  if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH", true);
+  if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH:mm:ss.SSSZ", true);
+  if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH:mm:ssZ", true);
+  if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH:mmZ", true);
+  if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHHZ", true);
+  if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DD", true);
+  if(!rslt.isValid()) rslt = moment(val, "YY-MM-DD", true);
+  if(!rslt.isValid()) rslt = moment(val, "MM/DD/YYYY", true);
+  if(!rslt.isValid()) rslt = moment(val, "MM/DD/YY", true);
+  if(!rslt.isValid()) rslt = moment(val, "M/D/YYYY", true);
+  if(!rslt.isValid()) rslt = moment(val, "M/D/YY", true);
+  if(!rslt.isValid()) rslt = moment(val, "MMM D YYYY", true);
+  if(!rslt.isValid()) rslt = moment(val, "MMM DD YYYY", true);
+  if(!rslt.isValid()) rslt = moment(val, "MMMM D YYYY", true);
+  if(!rslt.isValid()) rslt = moment(val, "MMMM DD YYYY", true);
+  return rslt;
+}
+
 exports.date = function (format, val){
   if (val == null) return val;
-  var rslt = moment(val.trim(), "YYYY-MM-DDTHH:mm:ss.SSS", true); //Strict parsing
+  var rslt = this.parseDate(val);
   if(!rslt.isValid()) rslt = moment(new Date(val));
 	if(rslt.isValid()) return rslt.format(format);
 	return '';
@@ -148,7 +174,7 @@ exports.time = function (format, val) {
   if (val == "") return val;
   if (val instanceof Date) return val;
   
-  var d = moment(val.trim(), "YYYY-MM-DDTHH:mm:ss.SSS", true); //Strict parsing
+  var d = this.parseDate(val); //Strict parsing
   if (!d.isValid()) d = moment(new Date(val));
   if (!d.isValid()) d = moment(val.trim(), "hh:mm", true); //Strict parsing
   if (!d.isValid()) d = moment(val.trim(), "hh:mm a");

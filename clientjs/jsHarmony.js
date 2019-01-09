@@ -29,8 +29,8 @@ var _ = require('lodash');
 var ejs = require('ejs');
 var async = require('async');
 var moment = require('moment');
-var XData = require('./XData.js');
-var XPost = require('./XPost.js');
+var XGrid = require('./XGrid.js');
+var XForm = require('./XForm.js');
 var XExt = require('./XExt.js');
 var XFormat = require('./XFormat.js');
 var XValidate = require('jsharmony-validate');
@@ -38,7 +38,7 @@ var XSearch = require('./XSearch.js');
 var XPayment = require('./XPayment.js');
 var XBarcode = require('./XBarcode.js');
 var XScanner = require('./XScanner.js');
-var XGrid = require('./XGrid.js');
+var XEditableGrid = require('./XEditableGrid.js');
 var XMenu = require('./XMenu.js');
 var JSHFind = require('./JSHFind.js');
 var XLoader = require('./XLoader.js');
@@ -78,8 +78,8 @@ var jsHarmony = function(options){
   this.ejs = ejs;
   this.async = async;
   this.moment = moment;
-  this.XData = XData(this);
-  this.XPost = XPost(this);
+  this.XGrid = XGrid(this);
+  this.XForm = XForm(this);
   this.XExt = XExt(this);
   this.XFormat = XFormat;
   this.XValidate = XValidate;
@@ -88,7 +88,7 @@ var jsHarmony = function(options){
   this.XPayment = XPayment(this);
   this.XBarcode = XBarcode(this);
   this.XScanner = XScanner(this);
-  this.XGrid = XGrid(this);
+  this.XEditableGrid = XEditableGrid(this);
   this.XMenu = XMenu(this);
   this.JSHFind = JSHFind;
   this.XLoader = XLoader(this);
@@ -99,11 +99,14 @@ var jsHarmony = function(options){
   //jsh_client_embed
   this.App = {};    //Functions and variables related to the current page - reset between SPA page loads
   this.System = {}; //Global System Functions - unchanged between SPA page loads
-  this.XForms = {};
+  this.XModels = {};
   this.XBase = {};
-  this.XForms_root = '';
+  this.XModels_root = '';
   this.XPopups = {};
   this.is_popup = false;
+
+  this.XPage = {};
+  this.XPage.CustomShortcutKeys = function(e){ return false; /*  Return true if the shortcut key is handled */ };
 
   //global
   this.isHTML5 = (document.createElement('canvas').getContext);
@@ -129,14 +132,13 @@ var jsHarmony = function(options){
   this.init_complete = false;
   this.delete_target = null;
   this.xfileupload_ctrl = null;
-  this._bcrumbs = {};
+  this.bcrumbs = {};
   this.orig_bcrumbs = '';
   this.jsproxy_hooks = {};
   this.intervals = [];
   this.cur_history_url = ''; //Last URL, to check if link is an anchor # or regular link
-  window.onbeforeunload = function(){ if(_this.XForm_OnExit) return _this.XForm_OnExit(); };
+  window.onbeforeunload = function(){ if(_this.XPage.OnExit) return _this.XPage.OnExit(); };
   this.cancelExit = false;
-  this.XForm_CustomShortcutKeys = function(e){ return false; /*  Return true if the shortcut key is handled */ };
 
   this.root = $(document);
   this.globalsMonitorCache = {};
@@ -206,7 +208,7 @@ jsHarmony.prototype.BindEvents = function(){
   $(document).ready(function () { _this.XWindowResize(); });
   $(window).resize(function () { _this.XWindowResize(); });
   $(window).scroll(function () { _this.XWindowResize('scroll'); });
-  $(document).keydown(function (e) { if(_this.XForm_ShortcutKeys) _this.XForm_ShortcutKeys(e); })
+  $(document).keydown(function (e) { if(_this.XPage.handleShortcutKeys) _this.XPage.handleShortcutKeys(e); })
 }
 
 jsHarmony.prototype.Init = function(){
@@ -231,6 +233,7 @@ jsHarmony.prototype.Init = function(){
     }
   });
   _this.InitDialogs();
+  _this.InitControls();
   _this.XMenu.Init();
   _this.XDebugConsole.Init();
   $(document).mousemove(function (e) {
@@ -277,6 +280,10 @@ jsHarmony.prototype.XDebugInfo = function (txt,clear) {
 jsHarmony.prototype.InitDialogs = function () {
   this.root.append($(XViews['jsh_system']));
 };
+jsHarmony.prototype.InitControls = function() {
+  var _this = this;
+  $('.xtabcontrol').not('.initialized').each(function(){ _this.XExt.bindTabControl(this); });
+}
 jsHarmony.prototype.XWindowResize = function (source) {
   var ww = $(window).width();
   var wh = $(window).height();
@@ -330,7 +337,7 @@ jsHarmony.prototype.XDialogResize = function (source, params) {
   });
 }
 
-jsHarmony.prototype.InitXFileUpload = function () {
+jsHarmony.prototype.InitFileUpload = function () {
   if (this.xfileuploadLoader != null) return;
   this.xfileuploadLoader = new Object();
   document.write('\
@@ -347,7 +354,7 @@ jsHarmony.prototype.InitXFileUpload = function () {
             <tr>\
               <td></td>\
               <td style="padding-top:10px;">\
-                <a class="linkbutton" style="padding-right:15px;" href="#" onClick="'+this.getInstance()+'.XUpload_submit();return false;"><img src="/images/icon_ok.png" alt="Upload" title="Upload" />Upload</a>\
+                <a class="linkbutton" style="padding-right:15px;" href="#" onClick="'+this.getInstance()+'.XPage.FileUploadSubmit();return false;"><img src="/images/icon_ok.png" alt="Upload" title="Upload" />Upload</a>\
                 <a class="linkbutton" href="javascript:'+this.getInstance()+'.$.colorbox.close()"><img src="/images/icon_cancel.png" alt="Cancel" title="Cancel" />Cancel</a></td>\
             </tr>\
           </table>\

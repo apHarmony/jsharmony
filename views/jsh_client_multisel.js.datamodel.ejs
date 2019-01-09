@@ -16,18 +16,22 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
-//DataModel <%=model.id%>
+//DataModel
 (function(jsh){
+  var modelid = '<%=model.id%>';
+  var xmodel = jsh.XModels[modelid];
+  var XExt = jsh.XExt;
 
-  var XForm<%=model.id%> = jsh.App.XForm<%=model.id%> = function(){ }
+  var xdatamodel = xmodel.datamodel = function(){ }
 
-  XForm<%=model.id%>.prototype.Fields = {
+  xdatamodel.prototype.Fields = {
     <% _.each(model.fields,function(field){ if(!('actions' in field)) return; if(field.control=='subform') return; if(field.control=='html') return; if(!field.name) return; %>
       "<%=field.name%>":{"name":"<%=field.name%>",
         "caption":<%-JSON.stringify(field.caption_ext||field.caption)%>,
       <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
       <%-xejs.iif('actions' in field,'"actions":'+JSON.stringify(field.actions)+',') %>
       <%-xejs.iif('static' in field,'"static":'+JSON.stringify(field.static)+',') %>
+      <%-xejs.iif('key' in field,'"key":'+JSON.stringify(field.key)+',') %>
       <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>
       }, <%});%>
   };

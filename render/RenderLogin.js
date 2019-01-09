@@ -35,7 +35,7 @@ exports = module.exports = function (req, res, onComplete) {
     remember: false,
     tstmp: ''
   };
-  var accountCookie = Helper.GetCookie(req, res, jsh, 'account');
+  var accountCookie = Helper.GetCookie(req, jsh, 'account');
   if (accountCookie) {
     if ('username' in accountCookie) account.username = accountCookie.username;
     if ('remember' in accountCookie) account.remember = (accountCookie.remember == 1);
@@ -85,13 +85,13 @@ exports = module.exports = function (req, res, onComplete) {
             if (dbhash == prehash) {
               var user_id = user_info[jsh.map.user_id];
               good_login = true;
-              var PE_LL_Tstmp = new Date();
-              account.tstmp = Helper.DateToSQLISO(PE_LL_Tstmp);
+              var pe_ll_tstmp = new Date();
+              account.tstmp = Helper.DateToSQLISO(pe_ll_tstmp);
               account.password = crypto.createHash('sha1').update(prehash + account.tstmp).digest('hex');
               var sqlparams = {};
               sqlparams[jsh.map.user_last_ip] = ipaddr;
               sqlparams[jsh.map.user_id] = user_id;
-              sqlparams[jsh.map.user_last_tstmp] = PE_LL_Tstmp;
+              sqlparams[jsh.map.user_last_tstmp] = pe_ll_tstmp;
               if(jsh.Config.debug_params.auth_debug) jsh.Log('Login: Success', { source: 'authentication' });
               req.jshsite.auth.on_loginsuccess(req, jsh, sqlparams, function (err, rslt) {
                 if ((rslt != null) && (rslt.length == 1) && (rslt[0] != null) && (rslt[0][jsh.map.rowcount] == 1)) {

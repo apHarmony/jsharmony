@@ -32,7 +32,7 @@ exports = module.exports = function(jsh){
     if(this.IsLoading) return;
     jsh.root.css('cursor','wait');
     this.IsLoading = true;
-    jsh.$root('input').blur();
+    if(!jsh.xDialog.length) jsh.$root('input').blur();
     jsh.$root('.xloadingbox').stop().fadeTo(0,0);
     jsh.$root('.xloadingblock').show();
     jsh.$root('.xloadingbox').fadeTo(2000,1);

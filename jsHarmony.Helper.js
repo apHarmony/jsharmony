@@ -67,9 +67,9 @@ exports.getAuxFields = function (req, res, model) {
         (model.fields[i].link.substr(0, 3) != 'js:')) {
       var link = model.fields[i]['link'];
       var ptarget = this.parseLink(link);
-      if (!this.hasModel(req, ptarget.modelid)) throw new Error("Link Model " + ptarget.modelid + " not found.");
-      var link_model = this.getModel(req, ptarget.modelid);
-      if (!Helper.HasModelAccess(req, link_model, 'BIU')) { rslt[i]['link_onclick'] = req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;"; }
+      var link_model = this.getModel(req, ptarget.modelid, model);
+      if (!link_model) throw new Error("Link Model " + ptarget.modelid + " not found.");
+      if (!Helper.hasModelAction(req, link_model, 'BIU')) { rslt[i]['link_onclick'] = req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;"; }
       else {
         if(ptarget.action=='download'){
           rslt[i]['link_onclick'] = "var url = "+req.jshsite.instance+".$(this).attr('href') + '?format=js'; "+req.jshsite.instance+".getFileProxy().prop('src', url); return false;";
@@ -164,34 +164,37 @@ exports.parseFieldExpression = function(field, exp, params, options){
 //  req (Express.Request): Request
 //  target (string): Link target
 //  tabs: Array of selected tabs: { "PARENT_MODEL_ID": "SELECT_TAB_MODEL_ID" }
-//  fields: Array of the model's fields, for adding querystring parameters to the link, based on the link target parameters, ex: edit:EW&E_C_ID=C_ID
+//  fields: Array of the model's fields, for adding querystring parameters to the link, based on the link target parameters, ex: edit:EW&e_c_id=c_id
 //  bindings: Array of the link bindings, for adding additional querystring parameters to the link
 //            Bindings will be evaluated client-side, and overwrite any other querystring parameters
-exports.getURL = function (req, target, tabs, fields, bindings) {
+exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
+  var _this = this;
   var ptarget = this.parseLink(target);
   var modelid = ptarget.modelid;
   var action = ptarget.action;
   if (modelid == '') modelid = req.TopModel;
-  if (!this.hasModel(req, modelid)) throw new Error('Model ' + modelid + ' not found');
-  var tmodel = this.getModel(req, modelid);
-  if (!Helper.HasModelAccess(req, tmodel, 'BIU')) return "";
+  var tmodel = this.getModel(req, modelid, srcmodel);
+  if(!tmodel) throw new Error('Model ' + modelid + ' not found');
+  var fullmodelid = tmodel.id;
+  if (!Helper.hasModelAction(req, tmodel, 'BIU')) return "";
   tabs = typeof tabs !== 'undefined' ? tabs : new Object();
-  var rslt = req.baseurl + modelid;
+  var rslt = req.baseurl + fullmodelid;
   if(req.curtabs) for(var xmodelid in req.curtabs){
-    if(this.hasModel(req, xmodelid)){
-      if(!(xmodelid in tabs)) { tabs[xmodelid] = req.curtabs[xmodelid]; }
+    var tabmodel = this.getModel(req, xmodelid, srcmodel);
+    if(tabmodel){
+      if(!(tabmodel.id in tabs)) { tabs[tabmodel.id] = req.curtabs[xmodelid]; }
     }
   }
   var q = {};
   if (typeof fields == 'undefined') {
-    //if modelid = currentmodelid  (changing tab)
-    if (req.TopModel == modelid) {
+    //if fullmodelid = currentmodelid  (changing tab)
+    if (req.TopModel == fullmodelid) {
       _.extend(q, req.query); //Copy all parameters
     }
   }
   if (action != '') q['action'] = action;
   if (Helper.Size(tabs) > 0) {
-    if (req.TopModel == modelid) {
+    if (req.TopModel == fullmodelid) {
       q['tabs'] = JSON.stringify(tabs);
     }
   }
@@ -228,7 +231,7 @@ exports.getURL = function (req, target, tabs, fields, bindings) {
     }
     if(!keyfield) throw new Error('Error parsing link target "' + target + '".  Download key id not defined.');
     if(!fieldname) throw new Error('Error parsing link target "' + target + '".  Download field name not defined.');
-    rslt = req.baseurl + '_dl/' + modelid + '/<#=data[j][\'' + keyfield + '\']#>/' + fieldname;
+    rslt = req.baseurl + '_dl/' + fullmodelid + '/<#=encodeURI(data[j][\'' + keyfield + '\'])#>/' + fieldname;
     return rslt;
   }
 
@@ -241,8 +244,8 @@ exports.getURL = function (req, target, tabs, fields, bindings) {
         var ptargetkeys = _.keys(ptarget.keys);
         for (var i = 0; i < ptargetkeys.length; i++) {
           delete q[ptargetkeys[i]];
-          rsltparams += '&amp;' + ptargetkeys[i] + '=<#=data[j][\'' + ptarget.keys[ptargetkeys[i]] + '\']#>';
-          /* Commented out for Amber COMH_CDUP form, so that C_ID=X1 would work
+          rsltparams += '&amp;' + ptargetkeys[i] + '=<#=encodeURI(data[j][\'' + ptarget.keys[ptargetkeys[i]] + '\'])#>';
+          /* Commented out for Amber COMH_CDUP form, so that c_id=X1 would work
           for (var j = 0; j < fields.length; j++) {
             var field = fields[j];
             if (!('name' in field)) continue;
@@ -253,12 +256,24 @@ exports.getURL = function (req, target, tabs, fields, bindings) {
         }
       }
       else {
-        _.each(fields, function (field) {
-          if (field.key) {
-            delete q[field['name']];
-            rsltparams += '&amp;' + field['name'] + '=<#=data[j][\'' + field['name'] + '\']#>';
-          }
-        });
+        var foundfield = false;
+        if(action=='edit'){
+          _.each(tmodel.fields, function (field) {
+            if (field.key && _this.AppSrvClass.prototype.getFieldByName(fields, field.name)) {
+              foundfield = true;
+              delete q[field['name']];
+              rsltparams += '&amp;' + field['name'] + '=<#=encodeURI(jsh.XExt.LiteralOrLookup(\'' + field['name'] + '\',[data[j], jsh._GET]))#>';
+            }
+          });
+        }
+        if(!foundfield){
+          _.each(fields, function (field) {
+            if (field.key) {
+              delete q[field['name']];
+              rsltparams += '&amp;' + field['name'] + '=<#=encodeURI(data[j][\'' + field['name'] + '\'])#>';
+            }
+          });
+        }
       }
     }
   }
@@ -266,7 +281,7 @@ exports.getURL = function (req, target, tabs, fields, bindings) {
     _.each(bindings, function (binding, bindingid) {
       //Evaluate bindings
       delete q[bindingid];
-      rsltparams += '&amp;' + bindingid + '=<#='+req.jshsite.instance+'.LiteralOrCollection(' + JSON.stringify(binding).replace(/"/g, '&quot;') + ',data)#>';
+      rsltparams += '&amp;' + bindingid + '=<#=encodeURI('+req.jshsite.instance+'.XExt.LiteralOrLookup(' + JSON.stringify(binding).replace(/"/g, '&quot;') + ',data))#>';
     });
   }
   if (rsltoverride) return rsltoverride;
@@ -278,63 +293,115 @@ exports.getURL = function (req, target, tabs, fields, bindings) {
   return rslt;
 }
 
-exports.getURL_onclick = function (req, field, model) {
+//Generates the "onclick" event for a link, based on the field.link property
+exports.getURL_onclick = function (req, model, field) {
   var seturl = "var url = "+req.jshsite.instance+".$(this).attr('data-url'); ";
   var rslt = req.jshsite.instance+".XExt.navTo(url); return false;";
   if ('link' in field) {
     var link = field.link;
     var ptarget = this.parseLink(link);
-    if (!this.hasModel(req, ptarget.modelid)) throw new Error("Link Model " + ptarget.modelid + " not found.");
-    if (!Helper.HasModelAccess(req, this.getModel(req, ptarget.modelid), 'BIU')) return req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;";
-    if ((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec')) {
-      seturl += "url="+req.jshsite.instance+".XExt.ReplaceAll(url,'data[j]','data'); var xform = "+req.jshsite.instance+".App['xform_" + model.id + "']; if(xform && xform.Data && !xform.Data.Commit()) return false; url = "+req.jshsite.instance+".ParseEJS(url,'" + model.id + "'); ";
+    var tmodel = this.getModel(req, ptarget.modelid, model);
+    if (!tmodel) throw new Error("Link Model " + ptarget.modelid + " not found.");
+    if (!Helper.hasModelAction(req, tmodel, 'BIU')) return req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;";
+    if ((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec') || (model.layout == 'report')) {
+      seturl += "var jsh="+req.jshsite.instance+"; url=jsh.XExt.ReplaceAll(url,'data[j]','data'); var modelid='" + Helper.escapeHTML(model.id) + "'; var xmodel=jsh.XModels[modelid]; var xform = xmodel.controller.form; if(xform && xform.Data && !xform.Data.Commit()) return false; url = jsh.XPage.ParseEJS(url,modelid); ";
     }
-    var link_model = this.getModel(req, ptarget.modelid);
     if(ptarget.action=='download'){
       rslt = "url += '?format=js'; "+req.jshsite.instance+".getFileProxy().prop('src', url); return false;";
     }
-    else if ('popup' in link_model) {
-      rslt = "window.open(url,'_blank','width=" + link_model.popup[0] + ",height=" + link_model.popup[1] + ",resizable=1,scrollbars=1');return false;";
+    else if ('popup' in tmodel) {
+      rslt = "window.open(url,'_blank','width=" + tmodel.popup[0] + ",height=" + tmodel.popup[1] + ",resizable=1,scrollbars=1');return false;";
     }
   }
   return seturl + rslt;
 }
 
-exports.getModelID = function (req) {
-  var modelid = '';
-  if (typeof req.query['e'] != 'undefined') { modelid = req.query['e']; }
-  else {
-    if ('routes' in this.Config) {
-      var routes = this.Config['routes'];
-      var urlpath = url.parse(req.originalUrl).pathname;
-      if (urlpath in routes) {
-        modelid = routes[urlpath];
+exports.getModelClone = function(req, fullmodelid, options){
+  if(!options) options = {};
+  var model;
+  if(options.cloneLocal) model = this.getModel(req, fullmodelid);
+  else model = this.getModel(undefined, fullmodelid);
+
+  if(!model) return model;
+  return _.cloneDeep(model);
+}
+
+exports.getBaseModelName = function(modelid){
+  if(!modelid) return modelid;
+  if(modelid.indexOf('/')<0) return modelid;
+  modelid = modelid.substr(modelid.lastIndexOf('/')+1);
+  return modelid;
+}
+
+exports.getNamespace = function(modelid){
+  if(modelid.indexOf('/')>=0){
+    return modelid.substr(0,modelid.lastIndexOf('/')+1);
+  }
+  else return '';
+}
+
+exports.getCanonicalNamespace = function(namespace, parentNamespace){
+  namespace = namespace || '';
+  parentNamespace = parentNamespace || '';
+  //Add trailing slash to namespace if it does not exist
+  if(namespace && (namespace[namespace.length-1]!='/')) namespace += '/';
+  //Prepend parent namespace if the namespace does not begin with a "/"
+  if(!namespace || (namespace[0]!='/')) namespace = parentNamespace + namespace;
+  if(namespace && (namespace[0]=='/')) namespace = namespace.substr(1);
+  return namespace;
+}
+
+exports.resolveModelID = function(modelid, sourceModel){
+  if(!modelid) return undefined;
+  //Absolute
+  if(modelid.substr(0,1)=='/') return modelid.substr(1);
+  if(!sourceModel) return modelid;
+  //Relative to namespace
+  if(sourceModel.namespace){
+    var testmodel = sourceModel.namespace+modelid;
+    if(testmodel in this.Models) return testmodel;
+  }
+  //Model Using
+  if(sourceModel.using){
+    for(var i=0;i<sourceModel.using.length;i++){
+      var namespace = sourceModel.using[i];
+      var testmodel = namespace+modelid;
+      if(testmodel.substr(0,1)=='/') testmodel = testmodel.substr(1);
+      if(testmodel in this.Models) return testmodel;
+    }
+  }
+  //Module Using
+  if(sourceModel.module){
+    var module = this.Modules[sourceModel.module];
+    if(module.using){
+      for(var i=0;i<module.using.length;i++){
+        var namespace = module.using[i];
+        var testmodel = namespace+modelid;
+        if(testmodel.substr(0,1)=='/') testmodel = testmodel.substr(1);
+        if(testmodel in this.Models) return testmodel;
       }
     }
   }
   return modelid;
-};
-
-exports.getModelClone = function(req, modelid, options){
-  if(!options) options = {};
-  var model;
-  if(options.cloneLocal) model = this.getModel(req, modelid);
-  else model = this.getModel(undefined, modelid);
-
-  if(!model) return model;
-  //return JSON.parse(JSON.stringify(model));
-  return _.cloneDeep(model);
 }
 
-exports.getModel = function(req, modelid) {
+exports.getModel = function(req, modelid, sourceModel) {
+  modelid = this.resolveModelID(modelid, sourceModel);
   if(req){
     if(req.jshlocal && (modelid in req.jshlocal.Models)) return req.jshlocal.Models[modelid];
+  }
+  if(sourceModel && !this.isInitialized){
+    if(modelid in this.Models){
+      if(!_.includes(this.Models[modelid]._referencedby, sourceModel.id)){
+        this.Models[modelid]._referencedby.push(sourceModel.id);
+      }
+    }
   }
   return this.Models[modelid];
 }
 
-exports.getModelDB = function(req, modelid) {
-  var model = this.getModel(req, modelid);
+exports.getModelDB = function(req, fullmodelid) {
+  var model = this.getModel(req, fullmodelid);
   var dbid = '';
   if(model.db) dbid = model.db;
   return this.getDB(dbid);
@@ -346,34 +413,35 @@ exports.getDB = function(dbid){
   return this.DB[dbid];
 }
 
-exports.hasModel = function(req, modelid){
-  //if(!req){ }
-  return (modelid in this.Models);
+exports.hasModel = function(req, modelid, sourceModel){
+  var model = this.getModel(undefined, modelid, sourceModel);
+  return !!model;
 }
 
-exports.getTabs = function (req) {
+exports.getTabs = function (req, model) {
   var curtabs = {};
   if (typeof req.query['tabs'] != 'undefined') {
     var tabs = JSON.parse(req.query['tabs']);
     for (var xmodelid in tabs) {
-      if (this.hasModel(req, xmodelid)) {
-        curtabs[xmodelid] = tabs[xmodelid];
+      var tabmodel = this.getModel(req, xmodelid, model);
+      if (tabmodel) {
+        curtabs[tabmodel.id] = tabs[xmodelid];
       }
     }
   }
   return curtabs;
 };
 
-exports.getModelLinkOnClick = function (tgtmodelid, req, link_target) {
+exports.getModelLinkOnClick = function (req, srcmodel, tgtmodelid, link_target) {
   if (!tgtmodelid) tgtmodelid = req.TopModel;
-  if (!this.hasModel(req, tgtmodelid)) return '';
-  var model = this.getModel(req, tgtmodelid);
-  //ParseEJS if necessary
+  var model = this.getModel(req, tgtmodelid, srcmodel);
+  if (!model) return '';
+  //XPage.ParseEJS if necessary
   if (link_target && (link_target.substr(0, 8) == 'savenew:')) {
-    return req.jshsite.instance+".XForm_SaveNew(href);return false;";
+    return req.jshsite.instance+".XPage.SaveNew(href);return false;";
   }
   else if ('popup' in model) {
-    return (" window.open(href,'_blank','width=" + model['popup'][0] + ",height=" + model['popup'][1] + ",resizable=1,scrollbars=1');return false;");
+    return ("window.open(this.href,'_blank','width=" + model['popup'][0] + ",height=" + model['popup'][1] + ",resizable=1,scrollbars=1');return false;");
   }
   return "";
 };
@@ -412,11 +480,11 @@ exports.GetValidatorFuncs = function (validators) {
   return rslt;
 };
 
-exports.SendTXTEmail = function (dbcontext, TXT_ATTRIB, email_to, email_cc, email_bcc, email_attachments, params, callback) {
+exports.SendTXTEmail = function (dbcontext, txt_attrib, email_to, email_cc, email_bcc, email_attachments, params, callback) {
   var _this = this;
   //Pull TXT data from database
   var dbtypes = _this.AppSrv.DB.types;
-  _this.AppSrv.ExecRecordset(dbcontext, "Helper_SendTXTEmail", [dbtypes.VarChar(32)], { 'TXT_ATTRIB': TXT_ATTRIB }, function (err, rslt) {
+  _this.AppSrv.ExecRecordset(dbcontext, "Helper_SendTXTEmail", [dbtypes.VarChar(32)], { 'txt_attrib': txt_attrib }, function (err, rslt) {
     if ((rslt != null) && (rslt.length == 1) && (rslt[0].length == 1)) {
       var TXT = rslt[0][0];
       var new_bcc = email_bcc;
@@ -431,7 +499,7 @@ exports.SendTXTEmail = function (dbcontext, TXT_ATTRIB, email_to, email_cc, emai
       else email_text = email_body;
       _this.SendBaseEmail(dbcontext, TXT[_this.map.txt_tval], email_text, email_html, email_to, email_cc, new_bcc, email_attachments, params, callback)
     }
-    else return callback(new Error('Email ' + TXT_ATTRIB + ' not found.'));
+    else return callback(new Error('Email ' + txt_attrib + ' not found.'));
   });
 };
 

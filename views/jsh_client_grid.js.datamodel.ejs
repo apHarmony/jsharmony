@@ -16,30 +16,34 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
-//DataModel <%=model.id%>
+//DataModel
 (function(jsh){
   var $ = jsh.$;
   var XExt = jsh.XExt;
   var XValidate = jsh.XValidate;
+  var modelid = '<%=model.id%>';
+  var xmodel = jsh.XModels[modelid];
 
-  var XForm<%=model.id%> = jsh.App.XForm<%=model.id%> = function(){
+  var xdatamodel = xmodel.datamodel = function(){
     this._jrow = undefined;
     this._is_new = true;
     this._is_dirty = true;
     this._is_deleted = false;
     this._orig = null;
-    this._modelid = '<%=model.id%>';
+    this._modelid = modelid;
     <% _.each(model.fields,function(field){ if(!field.name) return; %>this.<%=field.name%> = '';<%});%>
-    XExt.XForm.ApplyDefaults(this);
+    XExt.XModel.ApplyDefaults(this);
   }
 
-  XForm<%=model.id%>.prototype.Fields = {
+  xdatamodel.prototype.Fields = {
     <% _.each(model.fields,function(field){ if(!('actions' in field)) return; if(field.control=='subform') return; if(field.control=='html') return; if(!field.name) return; %>
       "<%=field.name%>":{"name":"<%=field.name%>",
       "caption":<%-JSON.stringify(field.caption_ext||field.caption)%>,
       <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
       <%-xejs.iif('type' in field,'"type":'+JSON.stringify(field.type)+',') %>
       <%-xejs.iif('actions' in field,'"actions":'+JSON.stringify(field.actions)+',') %>
+      <%-xejs.iif('key' in field,'"key":'+JSON.stringify(field.key)+',') %>
+      <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>
       <%-xejs.iif('readonly' in field,'"readonly":'+JSON.stringify(field.readonly)+',') %>
       <%-xejs.iif('control' in field,'"control":'+JSON.stringify(field.control)+',') %>
       <%-xejs.iif('virtual' in field,'"virtual":'+JSON.stringify(field.virtual)+',') %>
@@ -67,17 +71,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       }, <%});%>
   };
 
-  XForm<%=model.id%>.prototype.OnRender = XExt.XForm.OnRender('<%=model.id%>');
-  XForm<%=model.id%>.prototype.GetValues = XExt.XForm.GetValues();
-  XForm<%=model.id%>.prototype.GetValue = XExt.XForm.GetValue('<%=model.id%>');
-  XForm<%=model.id%>.prototype.HasUpdates = XExt.XForm.HasUpdates();
-  XForm<%=model.id%>.prototype.HasUpdate = XExt.XForm.HasUpdate();
-  XForm<%=model.id%>.prototype.OnControlUpdate = XExt.XForm.OnControlUpdate();
-  XForm<%=model.id%>.prototype.Commit = XExt.XForm.Commit('<%=model.id%>','xform_post_<%=model.id%>');
-  XForm<%=model.id%>.prototype.BindLOV = XExt.XForm.BindLOV('<%=model.id%>');
+  xdatamodel.prototype.OnRender = XExt.XModel.OnRender(modelid);
+  xdatamodel.prototype.GetValues = XExt.XModel.GetValues();
+  xdatamodel.prototype.GetValue = XExt.XModel.GetValue(modelid);
+  xdatamodel.prototype.HasUpdates = XExt.XModel.HasUpdates();
+  xdatamodel.prototype.HasUpdate = XExt.XModel.HasUpdate();
+  xdatamodel.prototype.OnControlUpdate = XExt.XModel.OnControlUpdate();
+  xdatamodel.prototype.Commit = XExt.XModel.Commit(xmodel);
+  xdatamodel.prototype.BindLOV = XExt.XModel.BindLOV(modelid);
 
-  XForm<%=model.id%>.prototype.xvalidate = new XValidate(jsh);
+  xdatamodel.prototype.xvalidate = new XValidate(jsh);
   <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; %>
-  XForm<%=model.id%>.prototype.xvalidate.AddControlValidator('.<%=field.name%>.xelem<%=model.id%>','_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getaccess(model.actions,"BIU"):field.actions)%>',[<%-field.validate%>]);<%});%>
+  xdatamodel.prototype.xvalidate.AddControlValidator('.<%=field.name%>.xelem'+xmodel.class,'_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getActions(model.actions,"BIU"):field.actions)%>',[<%-field.validate%>]);<%});%>
 
 })(<%-instance%>);

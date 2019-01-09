@@ -52,10 +52,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
   ],
   "fields": [
-    {"name":"C_ID","type":"bigint","datalock":{"C_ID":"client_C_C_ID"},"nl":1,
+    {"name":"c_id","type":"bigint","datalock":{"c_id":"client_c_c_id"},"nl":1,
 	      "control":"dropdown_L","actions": "B",
-        "lov": { "sql": "select C_ID as CODEVal,C_Name as CODETxt from C where 1=1 %%%DATALOCKS%%% order by C_Name", "datalock":{"C_ID":"client_C_ID"}, "blank": "(All)" },
-        "default": "js:XExt.UndefinedBlank(jsh._GET['C_ID'])", //Set a default value for the field if in query string
+        "lov": { "sql": "select c_id as codeval,c_name as codetxt from c where 1=1 %%%DATALOCKS%%% order by c_name", "datalock":{"c_id":"client_c_id"}, "blank": "(All)" },
+        "default": "js:XExt.UndefinedBlank(jsh._GET['c_id'])", //Set a default value for the field if in query string
         "caption":"Company Name"},
     {"name": "MDate","type": "date","nl": 1,"actions": "B",
       "control": "date_mmddyy","sample": "01/28/11","validate": [ "Required" ],
@@ -64,41 +64,43 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     },
     {"nl": 1,"control":"html","value":"Sample Comment."},
     //Button with onclick event to Run the Report in the browser
-    {"nl": 1,"control":"button","value":"Run Report","controlstyle": "padding:3px 8px;", "onclick": "jsh.XRunReport();"},
+    {"nl": 1,"control":"button","value":"Run Report","controlstyle": "padding:3px 8px;", "onclick": "jsh.XPage.RunReport();"},
     //Button with onclick event to Test the Job Queue - show a listing of what will be sent to the Queue
-    {"control":"button","value":"Test Job Queue","controlstyle": "padding:3px 8px;", "onclick": "jsh.XTestQueue();"},
+    {"control":"button","value":"Test Job Queue","controlstyle": "padding:3px 8px;", "onclick": "jsh.XPage.TestQueue();"},
     //Button with onclick event to Start the Job Queue
-    {"control":"button","value":"Email to Clients","controlstyle": "padding:3px 8px;", "onclick": "jsh.XRunQueue();"}
+    {"control":"button","value":"Email to Clients","controlstyle": "padding:3px 8px;", "onclick": "jsh.XPage.RunQueue();"}
   ],
   //Code to disable an element if its value has been set in the query string
-  "onload": "if(jsh.App.xform__report_REPORTNAME.Data.C_ID){ jsh.XDisable(jsh.$root('.C_ID.xelem_report_REPORTNAME')); }",
+  "onload": "if(xmodel.controller.form.Data.c_id){ jsh.XPage.Disable(jsh.$root('.c_id.xelemreports_REPORTNAME')); }",
   //onload,oninit,oninsert
   //Page header can contain styles and images, and refer to the page number.  Any image used in the header must be also included in the report body.  Set body image style to "display:none" if necessary.
-  "pageheader" : "<h3 style=\"font-size:20px;font-family:'Roboto';\"><center><%=data.GPP[0].GPP_NAME%><img width='200' style='position:fixed;right:-0px;top:-12px;' src='file:<%='/'+'/'+'/'%><%=jsh.Config.datadir%>../public/images/logo.png' align='right' /></center></h3>",
+  "pageheader" : "<h3 style=\"font-size:20px;font-family:'Roboto';\"><center><%=data.GPP[0].gpp_name%><img width='200' style='position:fixed;right:-0px;top:-12px;' src='file:<%='/'+'/'+'/'%><%=jsh.Config.datadir%>../public/images/logo.png' align='right' /></center></h3>",
   //Page footer is similar to the page header.  Refer to page numbers with <%-pageNum%> of <%-numPages%> max pages.
   "pagefooter" : "<p align='center' style=\"font-family:'Roboto';\">Page Footer <%-pageNum%> / <%-numPages%></p>",
+  //EJS content for the body of the report
+  "reportbody": "",
   //Data used by the report
   "reportdata" : {
     //Simple non-joined header data.  Datalock ignore is turned on since we are accessing global data
-    "GPP": { "sql": "select (select gpp_val from gpp where gpp_attrib='NAME') as GPP_NAME", "nodatalock": ["C_ID"] },
+    "GPP": { "sql": "select (select gpp_val from gpp where gpp_attrib='NAME') as gpp_name", "nodatalock": ["c_id"] },
     //Nested data example with multiple children.  Data is merged up the tree.
     //Use <pre><%=JSON.stringify(data,null,2)%></pre> in the Report body to debug and print out the full resulting data structure
     //All data is processed in memory several times
     //Try to limit the amount of data returned, do not use * (select all) if possible.
     "C":{
-      "sql":"select * from C where C_ID=isnull(@C_ID,C_ID) and C_StartDt<=@MDate %%%DATALOCKS%%%",
+      "sql":"select * from c where c_id=isnull(@c_id,c_id) and c_startdt<=@mdate %%%DATALOCKS%%%",
       "children":{
         "CA":{
-         "bindings":{"C_ID":"C_ID"},
-         "sql":"select * from CA where C_ID in (select C_ID from C where C_ID=isnull(@C_ID,C_ID) and C_StartDt<=@MDate %%%DATALOCKS%%%)"
+         "bindings":{"c_id":"c_id"},
+         "sql":"select * from CA where c_id in (select c_id from c where c_id=isnull(@c_id,c_id) and c_startdt<=@mdate %%%DATALOCKS%%%)"
         },
         "NTYPE":{
-          "bindings":{"C_ID":"C_ID"},
-          "sql":"select distinct N.C_ID,N_TYPE from N inner join C on C.C_ID=N.C_ID where N.C_ID=isnull(@C_ID,N.C_ID) and C_StartDt<=@MDate %%%DATALOCKS%%%",
+          "bindings":{"c_id":"c_id"},
+          "sql":"select distinct n.c_id,n_type from n inner join c on c.c_id=n.c_id where n.c_id=isnull(@c_id,n.c_id) and c_startdt<=@mdate %%%DATALOCKS%%%",
           "children":{
             "N":{
-             "bindings":{"C_ID":"C_ID","N_TYPE": "N_TYPE"},
-             "sql":"select N.C_ID,N_TYPE,N_EU,format(N_ETstmp,'MM/dd/yyyy') as N_ETstmp,N_Note from N inner join C on C.C_ID=N.C_ID where N.C_ID=isnull(@C_ID,N.C_ID) and C_StartDt<=@MDate %%%DATALOCKS%%%"
+             "bindings":{"c_id":"c_id","n_type": "n_type"},
+             "sql":"select n.c_id,n_type,n_eu,format(n_etstmp,'MM/dd/yyyy') as n_etstmp,n_note from n inner join c on c.c_id=n.c_id where n.c_id=isnull(@c_id,n.c_id) and c_startdt<=@mdate %%%DATALOCKS%%%"
             }
           }
         }
@@ -111,6 +113,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   },
   //SQL used by the Job Queue to define how the elements will be queued.
   "jobqueue": {
-    "sql": "select 'MAIN' as RQST_SOURCE, 'C' as D_SCOPE,C_ID as D_SCOPE_ID,'DOCUMENT' as D_CTGR,'Sample Report' as D_Desc, C_Email as EMAIL_TO,null as EMAIL_CC,null as EMAIL_BCC,'SMPLRPT' as EMAIL_TXT_ATTRIB,1 as EMAIL_ATTACH, 'C' as N_SCOPE,C_ID as N_SCOPE_ID,'S' as N_TYPE,'Report created and sent' as N_Note, C_ID from C where C_ID=isnull(@C_ID,C_ID) and C_StartDt<=@MDate %%%DATALOCKS%%%"
+    "sql": "select 'MAIN' as rqst_source, 'C' as d_scope,c_id as d_scope_id,'DOCUMENT' as d_ctgr,'Sample Report' as d_desc, c_email as email_to,null as email_cc,null as email_bcc,'SMPLRPT' as email_txt_attrib,1 as email_attach, 'C' as n_scope,c_id as n_scope_id,'S' as n_type,'Report created and sent' as n_note, c_id from c where c_id=isnull(@c_id,c_id) and c_startdt<=@mdate %%%DATALOCKS%%%"
   }
 }

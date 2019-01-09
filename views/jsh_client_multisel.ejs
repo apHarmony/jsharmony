@@ -1,11 +1,11 @@
 <% if(!model.topmost && (model.title)) { %>
-<h1 class="xtitle xelem<%=model.id%>" style="display:inline-block;padding:0px 0 20px 0;"><%-xejs.iif((model.title.indexOf('<'+'#') < 0),XExt.escapeHTML(model.title),'&nbsp;')%></h1>
+<h1 class="xtitle xelem<%=model.class%>" style="display:inline-block;padding:0px 0 20px 0;"><%-xejs.iif((model.title.indexOf('<'+'#') < 0),XExt.escapeHTML(model.title),'&nbsp;')%></h1>
 <% } %>
 <% if(model.topmost){ %>
-<div class="xactions top xelem<%=model.id%>">
-  <a href="#" class="save" onclick="<%-instance%>.XForm_Save();return false;" style="display:none;"><img src="/images/icon_save.png" alt="Save" title="Save" />Save</a>
-  <a href="#" class="delete" onclick=""<%-instance%>.XForm_Delete();return false;" style="display:none;"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a>
-  <a href="#" onclick=""<%-instance%>.XPrint(); return false;"><img src="/images/icon_print.png" alt="Print" title="Print" />Print</a>
+<div class="xactions top xelem<%=model.class%>">
+  <a href="#" class="save" onclick="<%-instance%>.XPage.Save();return false;" style="display:none;"><img src="/images/icon_save.png" alt="Save" title="Save" />Save</a>
+  <a href="#" class="delete" onclick=""<%-instance%>.XPage.Delete();return false;" style="display:none;"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a>
+  <a href="#" onclick=""<%-instance%>.XPage.Print(); return false;"><img src="/images/icon_print.png" alt="Print" title="Print" />Print</a>
   <a href="<%-model.helpurl%>" onclick="<%-model.helpurl_onclick%>"><img src="/images/icon_help.png" alt="Help" title="Help" />Help</a>
 </div>
 <% } %>
@@ -21,37 +21,39 @@ for(var i=0;i<model.fields.length;i++){
 }
 if(lovfield == '') throw new Error('Multisel requires one LOV.');
 %>
-<table class="xtbl xelem<%=model.id%> xform<%=model.id%>" data-id="xform<%=model.id%>">
+<table class="xtbl xelem<%=model.class%> xform<%=model.class%>" data-id="<%=model.id%>">
 	<thead>
   	<tr>
       <th>Select</th>
       <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
-	  if(!('caption' in field)) continue; 
+	    if(!('caption' in field)) continue; 
       if(!('actions' in field)) continue; 
-      if(!XExt.access(field.actions,'B')) continue;
-	  %>
+      if(field.control=='hidden') continue;
+      if(!XExt.hasAction(field.actions,'B')) continue;
+	    %>
       <th nowrap><%=field.caption%></th>
       <% } %>
 		</tr>
 	</thead>
-	<tbody class="xmultisel_<%=model.id%>_placeholder">
+	<tbody class="xmultisel_<%=model.class%>_placeholder">
     <% for(var j=0;j<data.length;j++){ %>
     <tr class="<%=(j%2==1?'even':'odd')%>">
       <td align="center"><input type="checkbox" /></td>
-      <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; if(!('caption' in field)) continue; %>
+      <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; if(!('caption' in field)) continue; if(field.control=='hidden') continue; %>
       <td><%=data[j][field.name]%></td>
       <% } %>
     </tr>
     <% } %>
 	</tbody>
-  <script class="xmultisel_<%=model.id%>_template" type="text/x-ejs-template">
+  <script class="xmultisel_<%=model.class%>_template" type="text/x-ejs-template">
     <# for(var j=0;j<data.length;j++){ var datarow=data[j]; #>
     <tr class="<#=(j%2==1?'even':'odd')#>">
-      <td align="center" style="vertical-align:middle;"><input type="checkbox" class="xselitem" value="<#=data[j][jsh.uimap.codeval]#>" <%-xejs.iif(!XExt.access(model.actions,'IU'),'disabled="disabled"')%> <# if(data[j]['<%=lovfield%>']!==null){ #>checked="checked"<# } #> /></td>
+      <td align="center" style="vertical-align:middle;"><div class="xform_ctrl checkbox_container xelem<%=model.class%>"><input type="checkbox" class="xselitem xform_ctrl checkbox xelem<%=model.class%> <%-xejs.iif(!XExt.hasAction(model.actions,'IU'),'uneditable','editable')%>" value="<#=data[j][jsh.uimap.codeval]#>" <%-xejs.iif(!XExt.hasAction(model.actions,'IU'),'disabled="disabled"')%> <# if(data[j]['<%=lovfield%>']!==null){ #>checked="checked"<# } #> data-orig-checked="<# if(data[j]['<%=lovfield%>']!==null){ #>checked<# } #>" /></div></td>
     <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
       if(!('caption' in field)) continue; 
       if(!('actions' in field)) continue; 
-      if(!XExt.access(field.actions,'B')) continue;
+      if(field.control=='hidden') continue;
+      if(!XExt.hasAction(field.actions,'B')) continue;
       var format = 'undefined';
       if('format' in field) format = JSON.stringify(field.format);
       %>
@@ -59,8 +61,10 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
         <% if('link' in field){ %><a href="<%-field.link%>" <%-xejs.showProp('onclick',field.link_onclick,undefined,'return (function(){'+jslocals,'}).call(this);')%> ><% } %>
         <% if('html' in field){ %>
           <%-field.html%>
+        <% } else if('value' in field){ %>
+          <%-field.value%>
         <% } else { %>
-          <#=<%-instance%>.XFormat.Apply(<%-format%>,data[j][<%-xejs.iif(field.name==lovfield,'jsh.uimap.codetxt',"'"+xejs.escapeJS(field.name)+"'")%>])#>
+          <span onclick="<%-js('$(this).closest("tr").find(".checkbox").click();')%>"><#=<%-instance%>.XFormat.Apply(<%-format%>,data[j][<%-xejs.iif(field.name==lovfield,'jsh.uimap.codetxt',"'"+xejs.escapeJS(field.name)+"'")%>])#></span>
         <% } %>
         <% if('link' in field){ %></a><% } %>
       </div></td>

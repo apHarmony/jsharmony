@@ -13,7 +13,7 @@
     "grid_require_filter": 0,
     "grid_rowcount":1,
 	"fields":[
-	  {"name":"c_id","type":"bigint","actions":"FB","key":1,"link":"edit:C","caption": "ID","datalock":{"C_ID":"client_C_ID"}},
+	  {"name":"c_id","type":"bigint","actions":"FB","key":1,"link":"edit:C","caption": "ID","datalock":{"c_id":"client_c_id"}},
 	  {"name":"c_sts","type":"varchar","length":"8","caption":"Status","actions":"B"},
 	  {"name":"c_name","type":"varchar","length":"50","caption":"Customer","caption_ext": "Customer Name","actions":"B","link":"edit:C"},
       {"name":"c_co_name","type":"varchar","length":"50","caption":"Company Name","actions":"S"},

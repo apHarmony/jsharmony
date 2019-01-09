@@ -33,7 +33,7 @@ exports = module.exports = function(jsh){
     if (typeof model !== 'undefined') {
       var _this = this;
       _.each(model.Fields, function (field) {
-        if (jsh.XExt.HasAccess(field.actions, 'BS') && !field.disable_search) {
+        if (jsh.XExt.hasAction(field.actions, 'BS') && !field.disable_search) {
           var comparison_type = 'none';
           if (field.lov) comparison_type = 'lov';
           else if ('type' in field) {

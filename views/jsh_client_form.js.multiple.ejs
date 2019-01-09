@@ -23,17 +23,21 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var XExt = jsh.XExt;
   var xform = null;
   var modelid = '<%=model.id%>';
+  var xmodel = jsh.XModels[modelid];
 
-  jsh.App.XForm<%=model.id%>_Init = function(callback){
-    xform = jsh.App['xform_'+modelid] = new jsh.XPost(modelid,'','');
-    xform.DataType = jsh.App['XForm'+modelid];
+  var xcontroller = xmodel.controller = new XExt.XModel.XController(xmodel);
+  var xform = null;
+
+  xcontroller.Init = function(callback){
+    xform = xcontroller.form = new jsh.XForm(modelid,'','');
+    xform.DataType = xmodel.datamodel;
     xform.Data = new xform.DataType();
     xform.GetSelectParams = function(){
       var rslt = new Object();
       if(!jsh.is_add){
-        _.each(jsh.XForms[modelid]._bindings,function(binding){
-          rslt[binding] = jsh.XForms[modelid][binding]();
-        });
+        for(var fieldname in xmodel.bindings){
+          rslt[fieldname] = xmodel.bindings[fieldname]();
+        }
       }
       else{
         rslt._action = 'add';
@@ -46,9 +50,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         <% xejs.eachKey(model.fields,function(field){  if(!field.name) return; %>rslt.<%=field['name']%> = this.Data.<%=field['name']%>;<%}); %>
       }
       else{
-        _.each(jsh.XForms[modelid]._bindings,function(binding){
-          rslt[binding] = '%%%'+binding+'%%%';
-        });
+        for(var fieldname in xmodel.bindings){
+          rslt[fieldname] = '%%%'+fieldname+'%%%';
+        }
       }
       return rslt; 
     };
@@ -56,22 +60,22 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //Pull keys from parent
     //Get recordset
     
-    jsh.$root('.xelem'+modelid).keyup(function(){ if(jsh.is_add) return; if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this);; });
-    jsh.$root('.xelem'+modelid+'.dropdown').change(function(){ if(jsh.is_add) return; if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this); });
-    jsh.$root('.xelem'+modelid+'.checkbox').change(function(){ if(jsh.is_add) return; if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this); });
+    jsh.$root('.xelem'+xmodel.class).keyup(function(){ if(jsh.is_add) return; if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this);; });
+    jsh.$root('.xelem'+xmodel.class+'.dropdown').change(function(){ if(jsh.is_add) return; if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this); });
+    jsh.$root('.xelem'+xmodel.class+'.checkbox').change(function(){ if(jsh.is_add) return; if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this); });
 
     <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if(field.control=='date') {%>
-    jsh.$root(".<%=field.name%>.xelem"+modelid).datepicker({ changeMonth: true, changeYear: true, dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||jsh.DEFAULT_DATEFORMAT), onSelect: function(){ if(jsh.is_add) return; xform.Data.OnControlUpdate(this); } });
+    jsh.$root(".<%=field.name%>.xelem"+xmodel.class).datepicker({ changeMonth: true, changeYear: true, dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||jsh.DEFAULT_DATEFORMAT), onSelect: function(){ if(jsh.is_add) return; xform.Data.OnControlUpdate(this); } });
     <% } }); %>  
     callback();
   }
 
-  jsh.App.XForm<%=model.id%>_Save = function(){
+  xcontroller.Save = function(){
     return xform.PrepSaveDataSet();
   }
 
-  jsh.App.XForm<%=model.id%>_Delete = function(){
-    var is_new =  jsh.XForms[modelid]._is_new;
+  xcontroller.Delete = function(){
+    var is_new =  xmodel._is_new;
     if(!is_new){
       XExt.Confirm("Are you sure you want to delete this <%=model.caption[1]%>?",function(){
         xform.Delete.call(xform,function(rslt){

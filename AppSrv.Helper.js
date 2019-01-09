@@ -29,7 +29,7 @@ exports.getFieldNames = function (req, fields, perm, fcond) {
 exports.getFields = function (req, fields, perm, fcond) {
   var rslt = [];
   _.each(fields, function (field) {
-    if (ejsext.accessField(req, field, perm)) {
+    if (ejsext.hasFieldAction(req, field, perm)) {
       if (('type' in field) && (field.type == 'file')) return;
       if (!('type' in field)) return;
       if(fcond && (!fcond(field))) return;
@@ -97,7 +97,7 @@ exports.getKeys = function (fields) {
 exports.getEncryptedFields = function (req, fields, perm) {
   var rslt = [];
   _.each(fields, function (field) {
-    if (('type' in field) && ((field.type == 'encascii') || (field.type == 'hash')) && ejsext.accessField(req, field, perm)) rslt.push(field);
+    if (('type' in field) && ((field.type == 'encascii') || (field.type == 'hash')) && ejsext.hasFieldAction(req, field, perm)) rslt.push(field);
   });
   return rslt;
 };
@@ -105,7 +105,7 @@ exports.getEncryptedFields = function (req, fields, perm) {
 exports.getFileFieldNames = function (req, fields, perm) {
   var rslt = [];
   _.each(fields, function (field) {
-    if (('type' in field) && (field.type == 'file') && ejsext.accessField(req, field, perm)) rslt.push(field.name);
+    if (('type' in field) && (field.type == 'file') && ejsext.hasFieldAction(req, field, perm)) rslt.push(field.name);
   });
   return rslt;
 };

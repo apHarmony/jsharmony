@@ -24,10 +24,10 @@ var csv = require('csv');
 
 module.exports = exports = {};
 
-exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options) {
+exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, options) {
   if (!options) options = {};
-  var model = this.jsh.getModel(req, modelid);
-  if (!Helper.HasModelAccess(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+modelid); return; }
+  var model = this.jsh.getModel(req, fullmodelid);
+  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   var _this = this;
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
   var searchlist = this.getFieldNames(req, model.fields, 'BS', function(field){ if(field.disable_search){ return false; } return true; });
@@ -40,7 +40,7 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
   if (encryptedfields.length > 0) throw new Error('Encrypted fields not supported on GRID');
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'S');
   if ((encryptedfields.length > 0) && !(req.secure) && (!_this.jsh.Config.system_settings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
-  var db = _this.jsh.getModelDB(req, modelid);
+  var db = _this.jsh.getModelDB(req, fullmodelid);
   if ('d' in Q) P = JSON.parse(Q.d);
   
   if (!_this.ParamCheck('Q', Q, ['|rowstart', '|rowcount', '|sort', '|search', '|searchjson', '|d', '|meta', '|getcount'])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
@@ -89,7 +89,7 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
     var field = _this.getFieldByName(model.fields, sortfield);
     var sortfieldname = sortfield;
     if(lovtxtfield && field.lov && !field.lov.showcode) sortfieldname = lovtxtfield;
-    sortfields.push({ 'field': sortfieldname, 'dir': sortdir, 'sql': (field.sql_sort || '') });
+    sortfields.push({ 'field': sortfieldname, 'dir': sortdir, 'sql': (field.sqlsort || '') });
     
     if (_.includes(unsortedkeys, sortfield)) unsortedkeys = _.without(unsortedkeys, sortfield);
   });
@@ -183,7 +183,7 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
     }
   }
   //Add DataLock parameters to SQL 
-  this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, modelid);
+  this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, fullmodelid);
   verrors = _.merge(verrors, model.xvalidate.Validate('BFK', sql_params, undefined, undefined, undefined, { ignoreUndefined: true }));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   
@@ -191,7 +191,7 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
   
   //Add dynamic parameters from query string
   var dbtasks = {};
-  var dbtaskname = modelid;
+  var dbtaskname = fullmodelid;
   if (!is_new) {
     dbtasks[dbtaskname] = function (dbtans, callback) {
       db.Recordset(req._DBContext, dbsql.sql, sql_ptypes, sql_params, dbtans, function (err, rslt, stats) {
@@ -209,7 +209,7 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
     };
   }
   else {
-    dbtasks[modelid] = function (dbtrans, callback) {
+    dbtasks[fullmodelid] = function (dbtrans, callback) {
       var rslt = [];
       callback(null, rslt);
     };
@@ -234,26 +234,36 @@ exports.getModelRecordset = function (req, res, modelid, Q, P, rowlimit, options
   return dbtasks;
 }
 
-exports.exportCSV = function (req, res, dbtasks, modelid) {
+exports.exportCSV = function (req, res, dbtasks, fullmodelid) {
   var _this = this;
   var jsh = _this.jsh;
-  if (!jsh.hasModel(req, modelid)) throw new Error('Model not found');
-  var model = jsh.getModel(req, modelid);
-  var db = _this.jsh.getModelDB(req, modelid);
+  if (!jsh.hasModel(req, fullmodelid)) throw new Error('Model not found');
+  var model = jsh.getModel(req, fullmodelid);
+  var db = _this.jsh.getModelDB(req, fullmodelid);
+
+  //Get list of columns to display
+  var exportColumns = _this.getFieldNames(req, model.fields, 'B', function(field){
+    if(!('caption' in field)) return false;
+    if(field.control=='hidden') return false;
+    return true;
+  });
+
+  //Execute SQL
   dbtasks = _.reduce(dbtasks, function (rslt, dbtask, key) { rslt[key] = async.apply(dbtask, undefined); return rslt; }, {});
   db.ExecTasks(dbtasks, function (err, rslt, stats) {
     if (err != null) { _this.AppDBError(req, res, err, stats); return; }
-    if (!modelid in rslt) throw new Error('DB result missing model.');
+    if (!fullmodelid in rslt) throw new Error('DB result missing model.');
     var eof = false;
-    if (_.isArray(rslt[modelid]) && (_.isObject(rslt[modelid][rslt[modelid].length - 1])) && ('_eof' in rslt[modelid][rslt[modelid].length - 1])) {
-      var eof = rslt[modelid].pop();
+    if (_.isArray(rslt[fullmodelid]) && (_.isObject(rslt[fullmodelid][rslt[fullmodelid].length - 1])) && ('_eof' in rslt[fullmodelid][rslt[fullmodelid].length - 1])) {
+      var eof = rslt[fullmodelid].pop();
       eof = eof._eof;
     }
     //Add header
-    if (rslt[modelid].length > 0) {
+    if (rslt[fullmodelid].length > 0) {
       var header = {};
-      var frow = rslt[modelid][0];
-      for (fcol in frow) {
+      var frow = rslt[fullmodelid][0];
+      for (var fcol in frow) {
+        if(!_.includes(exportColumns, fcol)) continue;
         var field = _this.getFieldByName(model.fields, fcol);
         if (field && ('caption' in field)) { header[fcol] = field.caption_ext || field.caption; }
         else if (fcol.indexOf('__' + jsh.map.codetxt + '__') == 0) {
@@ -263,22 +273,28 @@ exports.exportCSV = function (req, res, dbtasks, modelid) {
         }
         else header[fcol] = fcol;
       }
-      rslt[modelid].unshift(header);
+      rslt[fullmodelid].unshift(header);
       if (!eof) {
         var eofrow = {};
-        for (fcol in frow) {
+        for (var fcol in frow) {
           eofrow[fcol] = '';
         }
-        for (fcol in frow) {
+        for (var fcol in frow) {
           eofrow[fcol] = 'Data exceeded limit of ' + _this.jsh.Config.export_rowlimit + ' rows, data has been truncated.';
           break;
         }
-        rslt[modelid].unshift(eofrow);
+        rslt[fullmodelid].unshift(eofrow);
       }
       //Escape Dates
-      for (var i = 0; i < rslt[modelid].length; i++) {
-        var crow = rslt[modelid][i];
+      for (var i = 1; i < rslt[fullmodelid].length; i++) {
+        var crow = rslt[fullmodelid][i];
         for (ccol in crow) {
+          if(!ccol) continue;
+          //Overwrite codeval with codetxt
+          if(Helper.beginsWith(ccol, '__'+jsh.map.codetxt+'__')){
+            crow[ccol.substr(jsh.map.codetxt.length+4)] = crow[ccol];
+          }
+          //Replace Dates with ISO String
           if (_.isDate(crow[ccol])) {
             crow[ccol] = crow[ccol].toISOString();//.replace('T', ' ').replace('Z', '');
           }
@@ -289,9 +305,9 @@ exports.exportCSV = function (req, res, dbtasks, modelid) {
     res.writeHead(200, {
       'Content-Type': 'text/csv',
       //'Content-Length': stat.size,
-      'Content-Disposition': 'attachment; filename = ' + encodeURIComponent(modelid + '.csv')
+      'Content-Disposition': 'attachment; filename = ' + encodeURIComponent(fullmodelid + '.csv')
     });
-    csv.stringify(rslt[modelid], { quotedString: true }).pipe(res);
+    csv.stringify(rslt[fullmodelid], { quotedString: true }).pipe(res);
   });
 }
 

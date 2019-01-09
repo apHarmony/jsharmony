@@ -19,25 +19,25 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 (function(){
 
-  jsh.on('jsh_ready', function(){ jsh.topmost_jsh_ready(); });
+  jsh.on('jsh_ready', function(){ jsh.XPage.onReady(); });
 
   window.onpopstate = function(event) {
     var state = event.state;
     jsh._GET = XExt.parseGET();
 
     var f = function () {
-      if (!jsh.XForm_LoadState(state, {addBackHistoryOnCancel: true})) return;
-      jsh.XForm_Select(function () { });
+      if (!jsh.XPage.LoadState(state, {addBackHistoryOnCancel: true})) return;
+      jsh.XPage.Select(function () { });
     };
 
     if (_.isObject(state)) {
-      var drslt = jsh.XForm_OnExit();
+      var drslt = jsh.XPage.OnExit();
       if (drslt) {
         XExt.Confirm(drslt + '\r\n\r\nAre you sure you want to leave this page?', function(){
           jsh.cancelExit = true;
           f();
         }, function () {
-          jsh.XForm_AddHistory(jsh.state, true);
+          jsh.XPage.AddHistory(jsh.state, true);
         });
         return;
       }
@@ -45,10 +45,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     f();
   };
 
-  jsh.XForm_OnExit = function() {
+  jsh.XPage.OnExit = function() {
     if (!jsh.init_complete) return;
 
-    var foundchanges = jsh.XForm_GetChanges();
+    var foundchanges = jsh.XPage.GetChanges();
 
     if (foundchanges.length > 0) {
       var msg = 'You have unsaved changes to ';
@@ -62,76 +62,74 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
   }
 
-  jsh.XForm_GetChanges = function() {  //Returns array of form names that have changed
+  jsh.XPage.GetChanges = function() {  //Returns array of form names that have changed
     var foundchanges = [];
-    _.each(jsh.XForms, function (xform) {
-      if (!jsh.XExt.HasAccess(xform._actions, 'IUD')) return;
-      if (jsh.App['xform_' + xform._id].HasUpdates()) { foundchanges.push(xform._caption[1]); }
-      else if ((jsh.App['xform_' + xform._id].Data) && (jsh.App['xform_' + xform._id].Data._is_dirty)) { foundchanges.push(xform._caption[1]); }
+    _.each(jsh.XModels, function (xmodel) {
+      if (!jsh.XExt.hasAction(xmodel.actions, 'IUD')) return;
+      if (xmodel.controller.HasUpdates()) { foundchanges.push(xmodel.caption[1]); }
+      else if (xmodel.controller.form && xmodel.controller.form.Data && xmodel.controller.form.Data._is_dirty) { foundchanges.push(xmodel.caption[1]); }
     });
     return foundchanges;
   }
 
-  jsh.XForm_Save = function(options) {
+  jsh.XPage.Save = function(options) {
     if (!options) options = {};
     if (!options.onFail) options.onFail = function () { };
     var dbtasks = [];
     var valid = true;
-    jsh.XFormTree(null, function (xform) {
+    jsh.XPage.traverseModels(null, function (xmodel) {
       if (!valid) return;
-      var xformid = xform._id;
-      if (XExt.HasAccess(xform._actions, 'IU')) {
-        var access = 'U';
-        if (xform._layout == 'multisel') access = 'U';
-        else if (xform._layout == 'grid') access = 'IU';
-        else if (jsh.App['xform_' + xformid].Data._is_new) access = 'I';
-        if (XExt.HasAccess(xform._actions, access)) {
-          var ftasks = jsh.App['XForm' + xformid + '_Save']();
+      if (XExt.hasAction(xmodel.actions, 'IU')) {
+        var action = 'U';
+        if (xmodel.layout == 'multisel') action = 'U';
+        else if (xmodel.layout == 'grid') action = 'IU';
+        else if (xmodel.controller.form.Data._is_new) action = 'I';
+        if (XExt.hasAction(xmodel.actions, action)) {
+          var ftasks = xmodel.controller.Save();
           if (typeof ftasks == 'undefined') { valid = false; return; }
           dbtasks = _.union(dbtasks, ftasks);
         }
       }
     });
     if (!valid) return options.onFail('validation');
-    jsh.XFormAsyncTree(jsh.XForms_root, function (xform, done) {
+    jsh.XPage.traverseModelsAsync(jsh.XModels_root, function (xmodel, done) {
       if (!valid) return;
-      if (typeof xform._onvalidate != 'undefined') xform._onvalidate(xform, function (rslt) { valid = (rslt === true); done(); });
+      if (typeof xmodel.onvalidate != 'undefined') xmodel.onvalidate(xmodel, function (rslt) { valid = (rslt === true); done(); });
       else done();
     }, function () {
       if (!valid) return options.onFail('form_validation');
-      jsh.XForm_Save_Operation(dbtasks,options);
+      jsh.XPage.Save_Operation(dbtasks,options);
     }, { series: true });
   }
 
-  jsh.XForm_Save_Operation = function(dbtasks, options) {
+  jsh.XPage.Save_Operation = function(dbtasks, options) {
     if (!options) options = {};
     if (!options.onFail) options.onFail = function () { };
     //Handle async validation, if applicable
-    var rootxform = jsh.App['xform_' + jsh.XForms_root];
-    var rootlayout = jsh.XForms[jsh.XForms_root]._layout
-    if ((rootlayout == 'grid') || (rootlayout == 'multisel')) rootxform = jsh.App['xform_post_' + jsh.XForms_root]
-    rootxform.ExecuteTrans(dbtasks, function (rslt) {
+    var rootxmodel = jsh.XModels[jsh.XModels_root];
+    rootxmodel.controller.form.ExecuteTrans(dbtasks, function (rslt) {
       if (options.onComplete && (options.onComplete(rslt) === false)) return;
-      jsh.XForm_RefreshParent();
+      jsh.XPage.RefreshParent();
       if (jsh.is_add) {
         var url = XExt.currentURL() + '?action=edit';
         var urlkeys = {};
         //Scan results for key
-        _.each(jsh.XForms[jsh.XForms_root]._keys, function (key) {
+        _.each(rootxmodel.keys, function (key) {
           //Find keys in results
           var foundkey = false;
           _.each(rslt, function (mrslt, modelid) {
             if (_.isObject(mrslt)) {
               if (key in mrslt) {
                 var keyval = mrslt[key];
-                jsh.XForms[jsh.XForms_root][key] = function () { return keyval; }
-                rootxform.Data[key] = keyval;
+                if(!rootxmodel.bindings) rootxmodel.bindings = {};
+                rootxmodel.bindings[key] = function () { return keyval; }
+                rootxmodel.controller.form.Data[key] = keyval;
                 urlkeys[key] = keyval;
                 foundkey = true;
               }
             }
           });
-          if (!foundkey) urlkeys[key] = jsh.XForms[jsh.XForms_root][key]();
+          if (!foundkey) urlkeys[key] = rootxmodel.getBindingOrRootKey(key);
         });
         jsh.is_add = false;
         if (!_.isEmpty(urlkeys)) url = url + '&' + $.param(urlkeys, false);
@@ -139,9 +137,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         jsh.cancelExit = true;
         //Execute oninsert Handler
         var bubble = true;
-        jsh.XFormTree(null, function (xform) {
+        jsh.XPage.traverseModels(null, function (xmodel) {
           if (!bubble) return;
-          if (typeof xform._oninsert != 'undefined') if (xform._oninsert(xform, urlkeys, url) === false) bubble = false;
+          if (typeof xmodel.oninsert != 'undefined') if (xmodel.oninsert(xmodel, urlkeys, url) === false) bubble = false;
         });
         if (!bubble) return;
 
@@ -151,23 +149,23 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
       //Execute onupdate Handler
       var bubble = true;
-      jsh.XFormTree(null, function (xform) {
+      jsh.XPage.traverseModels(null, function (xmodel) {
         if (!bubble) return;
-        if (typeof xform._onupdate != 'undefined') if (xform._onupdate(xform) === false) bubble = false;
+        if (typeof xmodel.onupdate != 'undefined') if (xmodel.onupdate(xmodel) === false) bubble = false;
       });
       if (!bubble) return;
 
       console.log('Save complete');
-      jsh.XForm_Select(function () {
+      jsh.XPage.Select(function () {
         console.log('Reselect complete');
       });
     }, options.onFail);
   }
 
-  jsh.XForm_SaveNew = function(add_url) {
-    jsh.XForm_Save({
+  jsh.XPage.SaveNew = function(add_url) {
+    jsh.XPage.Save({
       onComplete: function () {
-        jsh.XForm_RefreshParent();
+        jsh.XPage.RefreshParent();
         window.onbeforeunload = null;
         jsh.cancelExit = true;
         window.location.href = add_url;
@@ -176,9 +174,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     });
   }
 
-  jsh.XForm_Delete = function() {
-    jsh.App['XForm' + jsh.delete_target + '_Delete'](function () {
-      jsh.XForm_RefreshParent();
+  jsh.XPage.Delete = function() {
+    var xmodel = jsh.XModels[jsh.delete_target];
+    xmodel.controller.Delete(function () {
+      jsh.XPage.RefreshParent();
       window.onbeforeunload = null;
       jsh.cancelExit = true;
       if (jsh.is_popup) {
@@ -201,43 +200,45 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     });
   }
 
-  jsh.topmost_jsh_ready = function() {
-    jsh.XForms_Hide();
-    if (!jsh.XForms[jsh.XForms_root]._actions) { jsh.XExt.Alert('ERROR - No effective access to root form'); return; }
+  jsh.XPage.onReady = function() {
+    jsh.XPage.Hide();
+    if (!jsh.XModels[jsh.XModels_root].actions) { jsh.XExt.Alert('ERROR - No effective access to root form'); return; }
 
-    //  jsh.XFormTree(null,function(xform){ console.log(xform._id); },function(){ jsh.$root('.xelemX').show(); });
-    //  jsh.XFormAsyncTree(jsh.XForms_root,function(xform,done){ done(); },function(){ jsh.$root('.xelemX').show(); console.log('all done'); });
+    //  jsh.XPage.traverseModels(null,function(xmodel){ console.log(xmodel.id); },function(){ jsh.$root('.xelemX').show(); });
+    //  jsh.XPage.traverseModelsAsync(jsh.XModels_root,function(xmodel,done){ done(); },function(){ jsh.$root('.xelemX').show(); console.log('all done'); });
     var enable_save = false;
     var enable_delete = false;
-    jsh.XFormTree(null, function (xform) {
-      if ((xform._layout == 'form') || (xform._layout == 'multisel') || (xform._layout == 'form-m')) {
-        if (jsh.XExt.HasAccess(xform._actions, 'IU')) enable_save = true;
-        if ((xform._id == jsh.XForms_root) || (xform._parent == jsh.XForms_root))
-          if (jsh.XExt.HasAccess(xform._actions, 'D')) { enable_delete = true; jsh.delete_target = xform._id; }
+    jsh.XPage.traverseModels(null, function (xmodel) {
+      if ((xmodel.layout == 'form') || (xmodel.layout == 'multisel') || (xmodel.layout == 'form-m')) {
+        if (jsh.XExt.hasAction(xmodel.actions, 'IU')) enable_save = true;
+        if ((xmodel.id == jsh.XModels_root) || (xmodel.parent == jsh.XModels_root))
+          if (!enable_delete && jsh.XExt.hasAction(xmodel.actions, 'D')) { enable_delete = true; jsh.delete_target = xmodel.id; }
       }
-      else if ((xform._layout == 'grid') && (xform._commitlevel) && (xform._commitlevel != 'none')) {
-        if (jsh.XExt.HasAccess(xform._actions, 'IUD')) enable_save = true;
+      else if ((xmodel.layout == 'grid') && (xmodel.commitlevel) && (xmodel.commitlevel != 'none')) {
+        if (jsh.XExt.hasAction(xmodel.actions, 'IUD')) enable_save = true;
       }
     });
 
-    jsh.XFormAsyncTree(jsh.XForms_root,
-      function (xform, done) {
-        jsh.App['XForm' + xform._id + '_Init'](done);
+    jsh.XPage.traverseModelsAsync(jsh.XModels_root,
+      function (xmodel, done) {
+        xmodel.controller.Init(done);
       },
       function () {
-        if ('state' in jsh._GET) jsh.XForm_LoadState(JSON.parse(jsh._GET.state));
+        if ('state' in jsh._GET) jsh.XPage.LoadState(JSON.parse(jsh._GET.state));
         var button_groups = {};
         jsh.$root('.xform_button').each(function () {
           var jbtn = $(this);
-          var btnaccess = jbtn.data('actions');
-          if (jsh.is_add && !jsh.XExt.HasAccess(btnaccess, 'I')) jbtn.hide();
+          var btnactions = jbtn.data('actions');
+          if (jsh.is_add && !jsh.XExt.hasAction(btnactions, 'I')) jbtn.hide();
           else {
             if(jbtn.hasClass('grouped')){
               var modelid = jbtn.data('model');
+              var buttonmodel = jsh.XModels[modelid];
               var group = jbtn.data('group');
               var button_group_name = modelid+'_'+group;
               if(!(button_group_name in button_groups)) button_groups[button_group_name] = {
                 modelid: modelid,
+                modelclass: buttonmodel.class,
                 group: group,
                 jbutton: []
               };
@@ -247,68 +248,69 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         });
         for(var button_group_name in button_groups){
           var button_group = button_groups[button_group_name];
-          jsh.$root('.xbody').append('<div class="xactions_group xcontext_menu xelem'+button_group.modelid+'" data-group="'+button_group.group+'" style="display:none;"></div>');
-          var jgroup = jsh.$root('.xactions_group.xelem'+button_group.modelid+'[data-group="'+button_group.group+'"]');
+          jsh.$root('.xbody').append('<div class="xactions_group xcontext_menu xelem'+button_group.modelclass+'" data-group="'+button_group.group+'" style="display:none;"></div>');
+          var jgroup = jsh.$root('.xactions_group.xelem'+button_group.modelclass+'[data-group="'+button_group.group+'"]');
           _.each(button_group.jbutton,function(jbutton){
             jgroup.append(jbutton);
           });
         }
-        jsh.XFormTree(null, function (xform) {
-          if (typeof xform._oninit != 'undefined') xform._oninit(xform);
+        jsh.XPage.traverseModels(null, function (xmodel) {
+          if (typeof xmodel.oninit != 'undefined') xmodel.oninit(xmodel);
         });
-        jsh.XForm_Select(function () {
-          jsh.XForms_LayoutOneColumn();
-          jsh.XForms_Show();
+        jsh.XPage.Select(function () {
+          jsh.InitControls();
+          jsh.XPage.LayoutOneColumn();
+          jsh.XPage.Show();
           jsh.XWindowResize();
           if (enable_save) jsh.$root('.xactions.top .save').show();
           if (enable_delete) jsh.$root('.xactions.top .delete').show();
-          jsh.XFormTree(null, function (xform) {
-            if (!jsh.is_add && jsh.XExt.HasAccess(xform._actions, 'I')) jsh.$root('.xactions.xelem' + xform._id + ' .duplicate').show();
+          jsh.XPage.traverseModels(null, function (xmodel) {
+            if (!jsh.is_add && jsh.XExt.hasAction(xmodel.actions, 'I')) jsh.$root('.xactions.xelem' + xmodel.class + ' .duplicate').show();
           });
           jsh.init_complete = true;
           //Update Browser History with URL/state
           if (jsh.XExt.isSinglePage()) {
             var new_url = jsh.state.fullpath + jsh.state.QS + jsh.state.hash;
-            jsh.XExt.ReplaceHistory(new_url, jsh.XForm_GetState(new_url));
+            jsh.XExt.ReplaceHistory(new_url, jsh.XPage.GetState(new_url));
             if (jsh.state.hash) {
               jsh.XExt.jumpAnchor(jsh.state.hash);
             }
           }
-          else jsh.XExt.ReplaceHistory(window.location.href.toString(), jsh.XForm_GetState());
+          else jsh.XExt.ReplaceHistory(window.location.href.toString(), jsh.XPage.GetState());
 
           //Select first Filter by default, if form is open
           jsh.$root('.xfilter_value:visible').first().select().focus();
 
           console.log('Initialization Complete');
-        }, jsh.XForms_root);
+        }, jsh.XModels_root);
       });
   }
 
-  jsh.XForm_Refresh = function(modelid) {
+  jsh.XPage.Refresh = function(modelid) {
     //Handle modelid
-    if (jsh.XForm_OnGridExit(null, function () { jsh.XForm_Refresh(modelid); })) return;
+    if (jsh.XPage.onGridExit(null, function () { jsh.XPage.Refresh(modelid); })) return;
     //Modify grid refresh to load multiple pages
-    var foundchanges = jsh.XForm_GetChanges();
+    var foundchanges = jsh.XPage.GetChanges();
     if (foundchanges.length > 0) return;
 
-    jsh.XForm_Select(function () { jsh.XForm_RefreshParent(modelid); console.log('Reselect complete'); }, modelid);
+    jsh.XPage.Select(function () { jsh.XPage.RefreshParent(modelid); console.log('Reselect complete'); }, modelid);
   }
 
-  jsh.XForm_RefreshParent = function(modelid) {
-    var jshOpener = XExt.getOpenerJSH(['XForm_Refresh']);
+  jsh.XPage.RefreshParent = function(modelid) {
+    var jshOpener = XExt.getOpenerJSH(['Refresh']);
     if (jshOpener) {
-      jshOpener.XForm_Refresh(modelid);
+      jshOpener.XPage.Refresh(modelid);
     }
   }
 
-  jsh.XForm_Reload = function() {
+  jsh.XPage.Reload = function() {
     XExt.navTo(window.location.href.toString() + '&tstmp=' + Date.now());
   }
 
-  jsh.XForm_PreDestroy = function() {
+  jsh.XPage.PreDestroy = function() {
     //Call OnDestroy Handlers
-    _.each(jsh.XForms, function (xform) {
-      if (typeof xform._ondestroy != 'undefined') xform._ondestroy(xform);
+    _.each(jsh.XModels, function (xmodel) {
+      if (typeof xmodel.ondestroy != 'undefined') xmodel.ondestroy(xmodel);
     });
     //Clear CKEDITORs
     if ((typeof CKEDITOR != 'undefined') && (CKEDITOR.instances)) {
@@ -318,11 +320,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
   }
 
-  jsh.XForm_Destroy = function() {
+  jsh.XPage.Destroy = function() {
     jsh.off('jsh_ready');
     for(var key in jsh.App){
       var elem = jsh.App[key];
-      if (elem instanceof jsh.XData) elem.Destroy();
+      if (elem instanceof jsh.XGrid) elem.Destroy();
       delete jsh.App[key];
     }
     for (var i = 0; i < jsh.intervals.length; i++) {
@@ -330,58 +332,62 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     jsh.App = {};
     jsh.intervals = [];
-    jsh.on('jsh_ready', function(){ jsh.topmost_jsh_ready(); });
+    jsh.on('jsh_ready', function(){ jsh.XPage.onReady(); });
   }
 
-  jsh.forEachModelTree = function(model,modelParent,modelEach,onComplete,options){ //modelcb(model,modelParent)
+  jsh.XPage.traverseModelDefinitions = function(model,modelParent,modelEach,onComplete,options){ //modelcb(model,modelParent)
     if(!options) options = { ignoreFields: false, ignoreTabs: false };
     if(!model) return;
     modelEach(model,modelParent);
-    if(!options.ignoreTabs && model.curtabmodel) jsh.forEachModelTree(model.curtabmodel,model,modelEach,undefined,options);
+    if(!options.ignoreTabs && model.curtabmodel) jsh.XPage.traverseModelDefinitions(model.curtabmodel,model,modelEach,undefined,options);
     if(!options.ignoreFields && model.fields) for(var i=0;i<model.fields.length;i++){
-      if(model.fields[i].model) jsh.forEachModelTree(model.fields[i].model,model,modelEach,undefined,options);
+      if(model.fields[i].model) jsh.XPage.traverseModelDefinitions(model.fields[i].model,model,modelEach,undefined,options);
     }
     if(onComplete) onComplete();
   }
 
-  //Calling XForm_Select with a null root model will check the model definition for updates
-  jsh.XForm_Select = function(callback, root) {
+  //Calling XPage.Select with a null root model will check the model definition for updates
+  jsh.XPage.Select = function(callback, root) {
     //If the Model itself is dynamic, reload the model definition before reloading the data
     if (typeof root == 'undefined'){
       var isDynamic = false;
-      jsh.forEachModelTree(jsh.cur_model, null, function (model, modelParent) {
+      jsh.XPage.traverseModelDefinitions(jsh.cur_model, null, function (model, modelParent) {
         if(model.modeltype=='dynamic') isDynamic = true;
       });
-      if(isDynamic) return jsh.Load({ addHistory: false, onRefreshNoChange: function(){ jsh.XForm_Select(callback, jsh.XForms_root); } });
-      else root = jsh.XForms_root;
+      if(isDynamic) return jsh.Load({ addHistory: false, onRefreshNoChange: function(){ jsh.XPage.Select(callback, jsh.XModels_root); } });
+      else root = jsh.XModels_root;
     }
     //Call Select on each model
-    jsh.XFormAsyncTree(root,
-      function (xform, done) {
+    jsh.XPage.traverseModelsAsync(root,
+      function (xmodel, done) {
         var onDone = function () {
-          if (typeof xform._onloadimmediate != 'undefined') xform._onloadimmediate(xform);
+          if (typeof xmodel.onloadimmediate != 'undefined') xmodel.onloadimmediate(xmodel);
           done();
         };
         if (jsh.is_add){
-          if(!jsh.XExt.HasAccess(xform._actions, 'I')) { 
-            if((xform._layout == 'form') || (xform._layout == 'form-m') || (xform._layout == 'grid')){
-              if(!jsh.XExt.HasAccess(xform._actions, 'B')) return done();
+          if(!jsh.XExt.hasAction(xmodel.actions, 'I')) { 
+            if((xmodel.layout == 'form') || (xmodel.layout == 'form-m') || (xmodel.layout == 'grid')){
+              if(!jsh.XExt.hasAction(xmodel.actions, 'B')) return done();
               //If model bindings are dependent on key
-              if(xform._bindings && (xform._bindings.length != xform._constant_bindings.length)) return done();
+              if(xmodel.bindings && (_.keys(xmodel.bindings).length != xmodel.constant_bindings.length)) return done();
+              //If this is a form with a missing key
+              for(var key in xmodel.keys){
+                if(xmodel.constant_bindings.indexOf(key)<0) return done();
+              }
             }
           }
         }
-        if(jsh.XForms[xform._id].unbound) return onDone();
-        jsh.App['xform_' + xform._id].Select(onDone);
+        if(jsh.XModels[xmodel.id].unbound) return onDone();
+        xmodel.controller.Select(onDone);
       },
       function () {
         //Update title and other dynamic elements with in-place EJS
-        jsh.XFormsParseEJS(function () {
+        jsh.XPage.RenderEJS(function () {
           //Trigger the onload event for each model
           var bubble = true;
-          jsh.XFormTree(null, function (xform) {
+          jsh.XPage.traverseModels(null, function (xmodel) {
             if (!bubble) return;
-            if (typeof xform._onload != 'undefined') if (xform._onload(xform, callback) === false) bubble = false;
+            if (typeof xmodel.onload != 'undefined') if (xmodel.onload(xmodel, callback) === false) bubble = false;
           });
           if (bubble && callback) callback();
           if (jsh.XExt.isSinglePage()) jsh.ResetLinks();
@@ -389,34 +395,34 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       });
   }
 
-  jsh.XForm_UpdateWindowTitle = function(options){
+  jsh.XPage.UpdateWindowTitle = function(options){
     options = _.extend({ resolveEJS: true }, options);
 
     //If Title = blank, pull title from Tabs
-    var curform = jsh.XForms[jsh.XForms_root];
+    var xmodel = jsh.XModels[jsh.XModels_root];
     var window_title = '';
     //Apply child tab's title to window if the form's title is blank
-    while(!window_title && curform){
-      if(curform._title){
-        window_title = curform._title||'';
+    while(!window_title && xmodel){
+      if(xmodel.title){
+        window_title = xmodel.title||'';
         if(!options.resolveEJS && (window_title.indexOf('<#') >= 0)) return;
         if(window_title && (window_title.indexOf('<#') >= 0)){
-          window_title = jsh.ParseEJS(window_title,curform._id);
+          window_title = jsh.XPage.ParseEJS(window_title,xmodel.id);
         }
         window_title = XExt.StripTags(window_title).trim();
       }
-      curform = jsh.XForms[curform._curtab];
+      xmodel = jsh.XModels[xmodel.curtab];
     }
-    if(!window_title) window_title = jsh.XForms_root;
+    if(!window_title) window_title = jsh.XModels_root;
     document.title = XExt.StripTags(jsh.title.replace('%%%PAGETITLE%%%',window_title));
   }
 
-  jsh.XForm_UpdateTitle = function(options){
-    jsh.XForm_UpdateWindowTitle(options);
+  jsh.XPage.UpdateTitle = function(options){
+    jsh.XPage.UpdateWindowTitle(options);
 
-    var root_title = jsh.XForms[jsh.XForms_root]._title;
+    var root_title = jsh.XModels[jsh.XModels_root].title;
     if(root_title && (root_title.indexOf('<#') >= 0)){
-      root_title = jsh.ParseEJS(root_title, jsh.XForms_root);
+      root_title = jsh.XPage.ParseEJS(root_title, jsh.XModels_root);
       jsh.$root('.xform_title').html(root_title);
     }
     else {
@@ -424,38 +430,39 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
   }
 
-  jsh.XFormsParseEJS = function(onComplete) {
+  jsh.XPage.RenderEJS = function(onComplete) {
     //Get breadcrumbs
-    var root_data = jsh.App['xform_' + jsh.XForms_root];
-    if ('_bcrumbs' in root_data) jsh._bcrumbs = root_data._bcrumbs;
+    var rootxmodel = jsh.XModels[jsh.XModels_root];
+    if (rootxmodel.controller.HasBreadCrumbs()) jsh.bcrumbs = rootxmodel.controller.GetBreadCrumbs();
 
     //Check for new titles in returned data
-    jsh.XFormTree(null, function(xform) {
-      if(!jsh.App['xform_' + xform._id]) return;
-      if(!('_title' in jsh.App['xform_' + xform._id])) return;
-      if(jsh.App['xform_' + xform._id]._title===null) return;
-      var title = jsh.App['xform_' + xform._id]._title||'';
-      if(title != xform._title){
-        xform._title = title;
+    jsh.XPage.traverseModels(null, function(xmodel) {
+      if(!xmodel.controller) return;
+      if(!xmodel.controller.HasTitle()) return;
+      var title = xmodel.controller.GetTitle();
+      if(title===null) return;
+      title = title||'';
+      if(title != xmodel.title){
+        xmodel.title = title;
       }
     });
 
     //Update title
-    jsh.XForm_UpdateTitle();
+    jsh.XPage.UpdateTitle();
 
     //Update Breadcrumbs
     if (jsh.orig_bcrumbs.indexOf('<#') >= 0) {
-      jsh.$root('div.bcrumbs').html(jsh.ParseEJS(jsh.orig_bcrumbs, jsh.XForms_root));
+      jsh.$root('div.bcrumbs').html(jsh.XPage.ParseEJS(jsh.orig_bcrumbs, jsh.XModels_root));
     }
 
-    jsh.XFormTree(null, function (xform) {
-      jsh.$root(".xtitle.xelem" + xform._id).each(function () {
+    jsh.XPage.traverseModels(null, function (xmodel) {
+      jsh.$root(".xtitle.xelem" + xmodel.class).each(function () {
         //Update each form title
-        var title_text = xform._title;
-        if (title_text.indexOf('<#') >= 0) $(this).html(jsh.ParseEJS(title_text, xform._id));
+        var title_text = xmodel.title;
+        if (title_text.indexOf('<#') >= 0) $(this).html(jsh.XPage.ParseEJS(title_text, xmodel.id));
         else $(this).html(title_text);
       });
-      jsh.$root(".xform_button.xelem" + xform._id).each(function () {
+      jsh.$root(".xform_button.xelem" + xmodel.class).each(function () {
         var href = $(this).attr('href');
         //Store / retrieve original URL
         if ($(this).data('orighref')) href = $(this).data('orighref');
@@ -463,15 +470,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         //Parse URL EJS
         if (href.indexOf('<#') >= 0) {
           /* Resolve EJS */
-          $(this).attr('href', jsh.ParseEJS(href, xform._id));
+          $(this).attr('href', jsh.XPage.ParseEJS(href, xmodel.id));
         }
       });
     }, onComplete);
   }
 
-  jsh.RemoveEJSTags = function(jobj) {
+  jsh.XPage.RemoveEJSTags = function(jobj) {
     if (jobj.size() == 0) return '';
-    var rslt = jsh.getObjEJS(jobj);
+    var rslt = jsh.XPage.getObjEJS(jobj);
     if (rslt.indexOf('<#') >= 0) {
       //jobj.html(rslt.replace(/<#(.*?)#>/g,''));
       jobj.html('');
@@ -479,7 +486,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     return rslt;
   }
 
-  jsh.getObjEJS = function(jobj) {
+  jsh.XPage.getObjEJS = function(jobj) {
     if (jobj.size() == 0) return '';
     var rslt = jobj.html();
     rslt = XExt.ReplaceAll(rslt, '&lt;#', '<#');
@@ -487,30 +494,30 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     return rslt;
   }
 
-  jsh.XFormTree = function(parentid, callback, oncomplete, options) {
+  jsh.XPage.traverseModels = function(parentid, callback, oncomplete, options) {
     if(!options) options = {};
-    _.each(jsh.XForms, function (xform, xformid) {
-      if (xform._parent == parentid) {
-        callback(xform);
-        if(!options.childrenOnly) jsh.XFormTree(xform._id, callback, undefined, options);
+    _.each(jsh.XModels, function (xmodel, xmodelid) {
+      if (xmodel.parent == parentid) {
+        callback(xmodel);
+        if(!options.childrenOnly) jsh.XPage.traverseModels(xmodel.id, callback, undefined, options);
       }
     });
     if (typeof oncomplete != 'undefined') oncomplete();
   }
 
-  jsh.XFormAsyncTree = function(rootid, xformfunc, done, options) {
+  jsh.XPage.traverseModelsAsync = function(rootid, xmodelfunc, done, options) {
     if (!options) options = { };
-    xformfunc(jsh.XForms[rootid], function () {
-      jsh.XFormAsyncTreeWorker(rootid, xformfunc, done, options);
+    xmodelfunc(jsh.XModels[rootid], function () {
+      jsh.XPage.traverseModelsAsyncWorker(rootid, xmodelfunc, done, options);
     });
   }
 
-  jsh.XFormAsyncTreeWorker = function(parentid, xformfunc, done, options) {
+  jsh.XPage.traverseModelsAsyncWorker = function(parentid, xmodelfunc, done, options) {
     var childf = [];
-    _.each(jsh.XForms, function (xform, xformid) {
-      if (xform._parent == parentid) {
+    _.each(jsh.XModels, function (xmodel, xmodelid) {
+      if (xmodel.parent == parentid) {
         childf.push(function (cb) {
-          xformfunc(xform, function () { jsh.XFormAsyncTreeWorker(xform._id, xformfunc, cb, options); });
+          xmodelfunc(xmodel, function () { jsh.XPage.traverseModelsAsyncWorker(xmodel.id, xmodelfunc, cb, options); });
         });
       }
     });
@@ -521,52 +528,40 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     else jsh.async.parallel(childf, done);
   }
 
-  jsh.LiteralOrCollection = function(str, col, funccol) {
-    //console.log("Evaluating: "+str);
-    var rslt = undefined;
-    if (!isNaN(str)) rslt = str;
-    else if ((str.length >= 2) && (str[0] == "'") && (str[str.length - 1] == "'")) rslt = str.substr(1, str.length - 2);
-    else if(str.trim().toLowerCase()=='null') rslt = null;
-    else if ((typeof funccol !== 'undefined') && (str in funccol)) rslt = funccol[str]();
-    else if(col) {
-      //console.log('Array check'); console.log(col);
-      if (_.isArray(col)) {
-        for (var i = 0; i < col.length; i++) {
-          if (str in col[i]) return col[i][str];
-        }
-      }
-      else rslt = col[str];
-    }
-    //console.log('Result: '+rslt);
-    return rslt;
-  }
-
-  jsh.XBCrumbs = function(){
+  jsh.XPage.getBreadcrumbs = function(){
     var rslt = {};
-    for(var f in jsh.XForms){
-      var xform = jsh.App['xform_'+f];
-      if(xform && xform._bcrumbs) rslt = _.extend(rslt, xform._bcrumbs);
+    for(var modelid in jsh.XModels){
+      var xmodel = jsh.XModels[modelid];
+      if(xmodel.controller){
+        var bcrumbs = xmodel.controller.GetBreadCrumbs();
+        if(bcrumbs) rslt = _.extend(rslt, bcrumbs);
+      }
     }
-    var root_data = jsh.App['xform_' + jsh.XForms_root];
-    rslt = _.extend(rslt, jsh._bcrumbs);
+    var rootxmodel = jsh.XModels[jsh.XModels_root];
+    if(rootxmodel.controller && rootxmodel.controller.HasBreadCrumbs()){
+      rslt = _.extend(rslt, jsh.bcrumbs);
+    }
     return rslt;
   }
 
-  jsh.ParseEJS = function(_ejssrc, modelid) {
+  jsh.XPage.ParseEJS = function(_ejssrc, modelid) {
     var ejssrc = _ejssrc;
     var data = {};
-    if (!(modelid in jsh.XForms)) { XExt.Alert('Error: Model ' + modelid + ' not found.'); return; }
-    _.merge(data, jsh.forcequery, jsh.App['xform_' + modelid].Data);
-    //_.extend(data, jsh.forcequery, jsh.App['xform_' + modelid].Data); //Previously
-    _.each(jsh.XForms[modelid]._bindings, function (binding) {
-      data[binding] = jsh.XForms[modelid][binding]();
-    });
+    if (!(modelid in jsh.XModels)) { XExt.Alert('Error: Model ' + modelid + ' not found.'); return; }
+    var xmodel = jsh.XModels[modelid];
+    _.merge(data, jsh.forcequery);
+    if(xmodel.controller && xmodel.controller.grid) _.merge(data, xmodel.controller.grid.Data);
+    else if(xmodel.controller && xmodel.controller.form) _.merge(data, xmodel.controller.form.Data);
+    
+    for(var fieldname in xmodel.bindings){
+      data[fieldname] = xmodel.bindings[fieldname]();
+    }
     ejssrc = ejssrc.replace(/<#/g, '<' + '%').replace(/#>/g, '%' + '>');
 
     var ejsrslt = jsh.ejs.render(ejssrc, {
       data: data,
-      LiteralOrCollection: jsh.LiteralOrCollection,
-      bcrumbs: jsh.XBCrumbs(),
+      LiteralOrLookup: jsh.XExt.LiteralOrLookup,
+      bcrumbs: jsh.XPage.getBreadcrumbs(),
       jsh: jsh,
       instance: jsh.getInstance(),
       _GET: jsh._GET,
@@ -576,52 +571,57 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     return ejsrslt;
   }
 
-  jsh.XForms_Hide = function() {
-    _.each(jsh.XForms, function (xform, xformid) {
-      if (xform._layout == 'grid') jsh.$root('.xtbl.xelem' + xformid + ',.xbodyhead.xelem' + xformid).hide();
+  jsh.XPage.Hide = function() {
+    _.each(jsh.XModels, function (xmodel, xmodelid) {
+      if (xmodel.layout == 'grid') jsh.$root('.xtbl.xelem' + xmodel.class + ',.xbodyhead.xelem' + xmodel.class).hide();
       else {
-        //jsh.$root('.xform'+xformid).hide(); 
-        //jsh.$root('.xtabcontrol'+xformid).hide(); 
+        //jsh.$root('.xform'+xmodel.class).hide(); 
+        //jsh.$root('.xtabcontrol'+xmodel.class).hide(); 
       }
     });
   }
 
-  jsh.XForms_LayoutOneColumn = function(){
+  jsh.XPage.LayoutOneColumn = function(){
     jsh.$root('.xform.onecolumn').each(function(){
       var jform = $(this);
       var max_width = 0;
       jform.find('.leading').each(function(){ 
-        var width = $(this).width(); 
+        var jobj = $(this);
+        if(jobj.closest('.xform')[0]!=jform[0]) return;
+        var width = jobj.width(); 
         if(width > max_width) max_width = width;
       });
       jform.find('.leading').each(function(){ 
-        $(this).width(max_width);
+        var jobj = $(this);
+        if(jobj.closest('.xform')[0]!=jform[0]) return;
+        jobj.width(max_width);
+        jobj.toggle((max_width>0));
       });
     });
   }
 
-  jsh.XForms_Show = function() {
-    _.each(jsh.XForms, function (xform, xformid) {
-      if (xform._layout == 'grid') jsh.$root('.xtbl.xelem' + xformid + ',.xbodyhead.xelem' + xformid).show();
+  jsh.XPage.Show = function() {
+    _.each(jsh.XModels, function (xmodel, xmodelid) {
+      if (xmodel.layout == 'grid') jsh.$root('.xtbl.xelem' + xmodel.class + ',.xbodyhead.xelem' + xmodel.class).show();
       else {
-        jsh.$root('.xform' + xformid).show();
-        jsh.$root('.xtabcontrol' + xformid).show();
+        jsh.$root('.xform' + xmodel.class).show();
+        jsh.$root('.xtabcontrol' + xmodel.class).show();
       }
     });
   }
 
-  jsh.XForm_GetState = function(url) {
+  jsh.XPage.GetState = function(url) {
     var rslt = {};
-    _.each(jsh.XForms, function (xform) {
-      if (!XExt.HasAccess(xform._actions, 'B')) return;
-      if (xform._layout != 'grid') return;
-      rslt[xform._id] = jsh.App['XForm' + xform._id + '_GetState']();
+    _.each(jsh.XModels, function (xmodel) {
+      if (!XExt.hasAction(xmodel.actions, 'B')) return;
+      if (xmodel.layout != 'grid') return;
+      rslt[xmodel.id] = xmodel.controller.GetState();
     });
     if ((typeof url != 'undefined') && (url != '')) rslt['_url'] = url;
     return rslt;
   }
 
-  jsh.XForm_AddHistory = function(new_jsh_state, use_cur_state, options) {
+  jsh.XPage.AddHistory = function(new_jsh_state, use_cur_state, options) {
     options = _.extend({ replaceHistory: false }, options);
     //Add Full URL to history (PATH+GET+HASH)
     var url = '';
@@ -629,7 +629,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if ((typeof new_jsh_state != 'undefined') && new_jsh_state) {
       url = new_jsh_state.fullpath + new_jsh_state.QS + new_jsh_state.hash;//$.param(JSON.parse(JSON.stringify(new_jsh_state.GET)));
       jsh.cur_history_url = url;
-      if (use_cur_state) state = jsh.XForm_GetState(jsh.cur_history_url);
+      if (use_cur_state) state = jsh.XPage.GetState(jsh.cur_history_url);
     }
     else {
       url = window.location.href.toString().split(window.location.host)[1];
@@ -637,7 +637,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       url = url.split('#')[0];
       var nget = JSON.parse(JSON.stringify(jsh._GET));
 
-      state = jsh.XForm_GetState(jsh.cur_history_url);
+      state = jsh.XPage.GetState(jsh.cur_history_url);
       var nget_state = JSON.parse(JSON.stringify(state));
       if ('_url' in nget_state) delete nget_state._url;
 
@@ -648,7 +648,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     else XExt.AddHistory(url, state);
   }
 
-  jsh.XForm_LoadState = function(state, options) {
+  jsh.XPage.LoadState = function(state, options) {
     if(!options) options = { addBackHistoryOnCancel: false };
     if (!_.isObject(state)) return;
 
@@ -664,66 +664,73 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         jsh.cur_history_url = state._url;
         jsh.Navigate(a, false, orig_url, function () {
           if (options.addBackHistoryOnCancel) {
-            jsh.XForm_AddHistory(jsh.state, true);
+            jsh.XPage.AddHistory(jsh.state, true);
           }
         });
         return false;
       }
     }
-    _.each(jsh.XForms, function (xform) {
-      if (!jsh.XExt.HasAccess(xform._actions, 'B')) return;
-      if (xform._onloadstate) return xform._onloadstate(xform, state[xform._id]);
-      if (xform._layout != 'grid') return;
-      if (xform._id in state) {
-        jsh.App['XForm' + xform._id + '_LoadState'](state[xform._id]);
+    _.each(jsh.XModels, function (xmodel) {
+      var modelid = xmodel.id;
+      if (!jsh.XExt.hasAction(xmodel.actions, 'B')) return;
+      if (xmodel.onloadstate) return xmodel.onloadstate(xmodel, state[modelid]);
+      if (xmodel.layout != 'grid') return;
+      if (modelid in state) {
+        xmodel.controller.LoadState(state[modelid]);
       }
     });
     if ('state' in jsh._GET) delete jsh._GET.state;
     return true;
   }
 
-  jsh.XFileDownload = function(model, field, title) {
-    var jctrl_token = jsh.$root('.xelem' + model + ' .' + field + '_token');
+  jsh.XPage.DownloadFile = function(modelid, field, title) {
+    var xmodel = jsh.XModels[modelid];
+    var jctrl_token = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_token');
     var file_token = jctrl_token.val();
     var url = '';
     if (file_token) url = jsh._BASEURL + '_dl/_temp/' + file_token;
     else {
-      var keys = jsh.App['xform_' + model].GetKeys();
-      if (jsh.XForms[model]._keys.length != 1) { throw new Error('File models require one key.'); }
-      url = jsh._BASEURL + '_dl/' + model + '/' + keys[jsh.XForms[model]._keys[0]] + '/' + field;
+      var xmodel = jsh.XModels[modelid];
+      var keys = xmodel.controller.form.GetKeys();
+      if (xmodel.keys.length != 1) { throw new Error('File models require one key.'); }
+      url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field;
     }
     jsh.getFileProxy().prop('src', url);
     //window.open(url,'_blank'); 
   }
 
-  jsh.XFilePreview = function(model, field, title) {
-    var jctrl_token = jsh.$root('.xelem' + model + ' .' + field + '_token');
+  jsh.XPage.FilePreview = function(modelid, field, title) {
+    var xmodel = jsh.XModels[modelid];
+    var jctrl_token = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_token');
     var file_token = jctrl_token.val();
     var url = '';
     if (file_token) url = jsh._BASEURL + '_dl/_temp/' + file_token + '?view=1';
     else {
-      var keys = jsh.App['xform_' + model].GetKeys();
-      if (jsh.XForms[model]._keys.length != 1) { throw new Error('File models require one key.'); }
-      url = jsh._BASEURL + '_dl/' + model + '/' + keys[jsh.XForms[model]._keys[0]] + '/' + field + '?view=1';
+      var xmodel = jsh.XModels[modelid];
+      var keys = xmodel.controller.form.GetKeys();
+      if (xmodel.keys.length != 1) { throw new Error('File models require one key.'); }
+      url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field + '?view=1';
       url += '&_=' + (new Date().getTime());
     }
     //jsh.getFileProxy().prop('src', url);
     window.open(url,'_blank',"height=600, width=800"); 
   }
 
-  jsh.XFileDelete = function(model, field, title) {
-    var jctrl_token = jsh.$root('.xelem' + model + ' .' + field + '_token');
-    var jctrl_dbexists = jsh.$root('.xelem' + model + ' .' + field + '_dbexists');
-    var jctrl_dbdelete = jsh.$root('.xelem' + model + ' .' + field + '_dbdelete');
-    var jctrl = jsh.$root('.' + field + '.xelem' + model);
+  jsh.XPage.FileDelete = function(modelid, field, title) {
+    var xmodel = jsh.XModels[modelid];
+    var jctrl_token = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_token');
+    var jctrl_dbexists = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_dbexists');
+    var jctrl_dbdelete = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_dbdelete');
+    var jctrl = jsh.$root('.' + field + '.xelem' + xmodel.class);
     if (jctrl_dbexists.val() == '1') jctrl_dbdelete.val('1');
     jctrl_token.val('');
     jctrl.addClass('nodocument');
   }
 
-  jsh.XFileUpload = function(model, field, title) {
+  jsh.XPage.FileUploadDialog = function(modelid, field, title) {
+    var xmodel = jsh.XModels[modelid];
     //Get PrevToken, if Applicable
-    jsh.xfileupload_ctrl = jsh.$root('.' + field + '.xelem' + model);
+    jsh.xfileupload_ctrl = jsh.$root('.' + field + '.xelem' + xmodel.class);
     if (jsh.xfileupload_ctrl.size() != 1) return;
     $.colorbox({
       href: jsh.$root(".xfileuploader"), inline: true, closeButton: false, arrowKey: false, preloading: false, overlayClose: false, title: title, fixed: true,
@@ -736,7 +743,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     });
   }
 
-  jsh.XUpload_submit = function() {
+  jsh.XPage.FileUploadSubmit = function() {
     //Validate file selected
     if (!jsh.$root(".xfileuploader_file").val()) { XExt.Alert('Please select a file and then click Upload.'); return; }
     jsh.xLoader.StartLoading(jsh.xfileuploadLoader)
@@ -746,7 +753,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //Submit that field to the server on update/insert
   }
 
-  jsh.XUpload_complete = function(rslt) {
+  jsh.XPage.FileUploadComplete = function(rslt) {
     $.colorbox.close();
     if (!('FILE_TOKEN' in rslt)) return;
     jsh.xfileupload_ctrl.children('.xform_file_token').val(rslt.FILE_TOKEN);
@@ -757,7 +764,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     XExt.setFormControl(XExt.getFormFromObject(jsh.xfileupload_ctrl), jsh.xfileupload_ctrl.data('id'), val);
   }
 
-  jsh.js_proxy_complete = function(id, data) {
+  jsh.XPage.onJSProxyComplete = function(id, data) {
     var _this = this;
     jsh.xLoader.StopLoading(jsh.xfileuploadLoader);
     if ((typeof data) == 'object'){
@@ -769,7 +776,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         return;
       }
       else if ('_success' in data) {
-        if (id == 'xfileuploader') jsh.XUpload_complete(data);
+        if (id == 'xfileuploader') jsh.XPage.FileUploadComplete(data);
         else if (id in jsh.jsproxy_hooks) { jsh.jsproxy_hooks[id](null,data); }
         else XExt.Alert(JSON.stringify(data));
         return;
@@ -778,46 +785,60 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     XExt.Alert(JSON.stringify(data));
   }
 
-  jsh.XRunReport = function() {
-    var rpt = jsh.XForms[jsh.XForms_root];
-    if (!(rpt._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
-    jsh.App['XForm' + rpt._id + '_RunReport']();
+  jsh.XPage.RunReport = function() {
+    var xmodel = jsh.XModels[jsh.XModels_root];
+    if (!(xmodel.layout == 'report')) { XExt.Alert('Root model does not have a "report" layout'); return; }
+    xmodel.controller.RunReport();
   }
 
-  jsh.XRunReportHTML = function() {
-    var rpt = jsh.XForms[jsh.XForms_root];
-    if (!(rpt._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
-    jsh.App['XForm' + rpt._id + '_RunReport'](undefined,{output:'html'});
+  jsh.XPage.RunReportHTML = function() {
+    var xmodel = jsh.XModels[jsh.XModels_root];
+    if (!(xmodel.layout == 'report')) { XExt.Alert('Root model does not have a "report" layout'); return; }
+    xmodel.controller.RunReport(undefined,{output:'html'});
   }
 
-  jsh.XTestQueue = function() {
-    var rpt = jsh.XForms[jsh.XForms_root];
-    if (!(rpt._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
-    jsh.App['XForm' + rpt._id + '_TestQueue']();
+  jsh.XPage.TestQueue = function() {
+    var xmodel = jsh.XModels[jsh.XModels_root];
+    if (!(xmodel.layout == 'report')) { XExt.Alert('Root model does not have a "report" layout'); return; }
+    xmodel.controller.TestQueue();
   }
 
-  jsh.XRunQueue = function() {
-    var rpt = jsh.XForms[jsh.XForms_root];
-    if (!(rpt._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
+  jsh.XPage.RunQueue = function() {
+    var xmodel = jsh.XModels[jsh.XModels_root];
+    if (!(xmodel.layout == 'report')) { XExt.Alert('Root model does not have a "report" layout'); return; }
 
     XExt.Confirm("Are you sure you want to start the Report Job?", function () {
-      jsh.App['XForm' + rpt._id + '_RunQueue']();
+      xmodel.controller.RunQueue();
     });
   }
 
-  jsh.XRunDBFunc = function() {
+  jsh.XPage.RunDBFunc = function() { /* (cb), (object, cb), (cb, options), or (object, cb, options) */
     var cb = arguments[0];
-    var xform = jsh.XForms[jsh.XForms_root];
+    var xmodel = jsh.XModels[jsh.XModels_root];
+    var options = {};
+    var thisobj = null;
     if(arguments.length==2){
-      xform = jsh.XForms[XExt.getModelIdFromObject(arguments[0])];
-      cb = arguments[1];
+      if(_.isFunction(arguments[1])){
+        thisobj = arguments[0];
+        cb = arguments[1];
+      }
+      else if(_.isFunction(arguments[0])){
+        cb = arguments[0];
+        options = arguments[1];
+      }
     }
+    else if(arguments.length==3){
+      thisobj = arguments[0];
+      cb = arguments[1];
+      options = arguments[2];
+    }
+    if(thisobj) xmodel = jsh.XModels[XExt.getModelIdFromObject(thisobj)];
     
-    if (!(xform._layout == 'exec')) { XExt.Alert('Root model is not an exec'); return; }
-    jsh.App['XForm' + xform._id + '_RunDBFunc'](cb);
+    if (!(xmodel.layout == 'exec') && !(xmodel.layout == 'report')) { XExt.Alert('Root model does not have an exec or report layout'); return; }
+    xmodel.controller.RunDBFunc(cb, options);
   }
 
-  jsh.XDisable = function(jctrl,show_lookup) {
+  jsh.XPage.Disable = function(jctrl,show_lookup) {
     jctrl.removeClass('editable');
     jctrl.addClass('uneditable');
 
@@ -827,7 +848,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if (!show_lookup && jctrl.next().hasClass('xlookup')) jctrl.next().hide();
   }
 
-  jsh.XEnable = function(jctrl) {
+  jsh.XPage.Enable = function(jctrl) {
     jctrl.removeClass('uneditable');
     jctrl.addClass('editable');
 
@@ -837,12 +858,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if (jctrl.next().hasClass('xlookup')) jctrl.next().show();
   }
 
-  jsh.XPrint = function() {
+  jsh.XPage.Print = function() {
     window.print();
   }
 
   //Clear Popups on Reset
-  jsh.XPopupCreate = function(onComplete) {
+  jsh.XPage.PopupCreate = function(onComplete) {
     var popup_id = '';
     do {
       popup_id = 'P' + Math.floor(Math.random() * 100000);
@@ -851,24 +872,24 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     return popup_id;
   }
 
-  jsh.XPopupComplete = function(id, rslt) {
+  jsh.XPage.PopupComplete = function(id, rslt) {
     if (!(id in jsh.XPopups)) return;
     jsh.XPopups[id](rslt);
   }
 
-  jsh.XForm_OnGridExit = function(obj, f) {
+  jsh.XPage.onGridExit = function(obj, f) {
     var has_changes = false;
-    jsh.XFormTree(null, function (xform) {
+    jsh.XPage.traverseModels(null, function (xmodel) {
       if (has_changes) return;
-      if ((xform._layout == 'grid') && (xform._commitlevel) && (xform._commitlevel != 'none')) {
-        if (xform._commitlevel == 'page') {
-          if (jsh.App['xform_post_' + xform._id].IsDirty) {
+      if ((xmodel.layout == 'grid') && (xmodel.commitlevel) && (xmodel.commitlevel != 'none')) {
+        if (xmodel.commitlevel == 'page') {
+          if (xmodel.controller.form.IsDirty) {
             XExt.Alert('Please save changes before performing grid operations.');
             has_changes = true;
             return;
           }
         }
-        if (jsh.App['xgrid_' + xform._id] && jsh.App['xgrid_' + xform._id].CurrentCell) {
+        if (xmodel.controller.editablegrid && xmodel.controller.editablegrid.CurrentCell) {
           jsh.qInputAction = new XExt.XInputAction(obj, f);
           has_changes = true;
           return;
@@ -878,28 +899,29 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     return has_changes;
   }
 
-  jsh.XForm_OpenDataURL = function(win, modelid, url, options) {
-    var model = jsh.XForms[modelid];
+  jsh.XPage.openDataURL = function(win, modelid, url, options) {
+    var xmodel = jsh.XModels[modelid];
     if (!win) win = window.open('', '_blank', options);
-    if ((model._layout == 'form') || (model._layout == 'form-m') || (model._layout == 'exec')) {
+    if ((xmodel.layout == 'form') || (xmodel.layout == 'form-m') || (xmodel.layout == 'exec') || (xmodel.layout == 'report')) {
       url = XExt.ReplaceAll(url, 'data[j]', 'data');
     }
-    url = jsh.ParseEJS(url, modelid);
+    url = jsh.XPage.ParseEJS(url, modelid);
     win.location = url;
     win.focus();
   }
 
-  jsh.XForm_Duplicate = function(modelid, link, link_options) {
+  jsh.XPage.Duplicate = function(modelid, link, link_options) {
     var win = null;
-    jsh.App['XForm' + modelid + '_RunDBFunc'](function (rslt) {
+    var xmodel = jsh.XModels[modelid];
+    xmodel.controller.RunDBFunc(function (rslt) {
       //On success
       if(link){
-        jsh.XForm_OpenDataURL(win, modelid, link, link_options, rslt);
+        jsh.XPage.openDataURL(win, modelid, link, link_options, rslt);
         win.opener = window.opener;
       }
-      jsh.XForm_RefreshParent();
+      jsh.XPage.RefreshParent();
       $.colorbox.close();
-      jsh.XForm_Refresh();
+      jsh.XPage.Refresh();
     }, {
       onBeforeUpdate: function () {
         if(link) win = window.open('', '_blank', link_options);
@@ -908,18 +930,18 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       onFail: function (err) { if(win) win.close(); }
     });
   }
-  jsh.XForm_HasUpdates = function() {
+  jsh.XPage.HasUpdates = function() {
     var rslt = false;
-    _.each(jsh.XForms, function (xform) {
-      if (!XExt.HasAccess(xform._actions, 'IUD')) return;
-      if (jsh.App['xform_' + xform._id].HasUpdates()) { rslt = true; }
+    _.each(jsh.XModels, function (xmodel) {
+      if (!XExt.hasAction(xmodel.actions, 'IUD')) return;
+      if (xmodel.controller.HasUpdates()) { rslt = true; }
     });
     return rslt;
   }
 
-  jsh.XForm_ShortcutKeys = function(e) {
+  jsh.XPage.handleShortcutKeys = function(e) {
     var handled = false;
-    if (jsh.XForm_CustomShortcutKeys && jsh.XForm_CustomShortcutKeys(e)) {
+    if (jsh.XPage.CustomShortcutKeys && jsh.XPage.CustomShortcutKeys(e)) {
       handled = true;
     }
     else if ((e.which == 83) && (e.altKey)) {//ALT+S = SAVE
@@ -935,7 +957,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       handled = true;
     }
     else if ((e.which == 80) && (e.altKey)) {//ALT+P = PRINT
-      jsh.XPrint();
+      jsh.XPage.Print();
       handled = true;
     }
     else if ((e.which == 68) && (e.altKey) && (e.ctrlKey)) { //ALT+CTRL+D = ENABLE DEBUG CONSOLE
@@ -948,11 +970,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
   }
 
-  jsh.XForm_ShowButtonGroup = function(e,obj){
+  jsh.XPage.ShowButtonGroup = function(e,obj){
     var jobj = $(obj);
     var modelid = $(jobj).data('model');
     var group = $(jobj).data('group');
-    var jgroup = jsh.$root('.xactions_group.xelem'+modelid+'[data-group="'+group+'"]');
+    var xmodel = jsh.XModels[modelid];
+    var jgroup = jsh.$root('.xactions_group.xelem'+xmodel.class+'[data-group="'+group+'"]');
     
     jsh.$root('.xcontext_menu').hide();
     jgroup.css('visibility', 'hidden');
