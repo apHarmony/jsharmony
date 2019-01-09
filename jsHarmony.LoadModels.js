@@ -174,6 +174,10 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
     }
   }
 
+  //-------------------------
+
+  if(model===null){ delete this.Models[modelname]; return; }
+
   if(!prefix) prefix = '';
   var _this = this;
   model['id'] = modelname;
