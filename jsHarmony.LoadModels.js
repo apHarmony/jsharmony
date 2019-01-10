@@ -1799,8 +1799,8 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
         if((tmodel.layout=='form') && (field._auto.indexOf('actions')>=0)){
           _this.LogInit_WARNING(model.id + ' > Subform ' + field.name + ': When using a subform that has a "form" layout, "actions" should be explicitly set on the subform control.  When both a subform and parent form target the same table, the subform should not have the "I" action.');
         }
-        if((tmodel.layout=='grid') && Helper.hasAction(field.actions, 'I') && _.includes(['row','cell'],tmodel.commitlevel) && !_.isEmpty(field.bindings) && !tmodel.grid_save_before_update){
-          _this.LogInit_WARNING(model.id + ' > Subform ' + field.name + ': When using a subform that has "I" actions and a target with a "grid" layout and, the target model\'s "commitlevel" should be set to "auto" so that the "commitlevel" will be set to "page" on insert and have the data executed in one transaction.  Alternatively, set "grid_save_before_update" to true on the target model.');
+        if((tmodel.layout=='grid') && Helper.hasAction(field.actions, 'I') && _.includes(['row','cell'],tmodel.commitlevel) && !_.isEmpty(field.bindings) && !tmodel.grid_save_before_update && Helper.hasAction(model.actions, "I")){
+          _this.LogInit_WARNING(model.id + ' > Subform ' + field.name + ': When using a subform that has "I" actions and a target with a "grid" layout and, the target model\'s "commitlevel" should be set to "auto" so that the "commitlevel" will be set to "page" on insert and have both parent and child data saved in one transaction.  Alternatively, set "grid_save_before_update" to true on the target model to that no grid data can be entered until the parent is saved.');
         }
       }
     }
