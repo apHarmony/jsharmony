@@ -185,6 +185,7 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
   if('namespace' in model){ _this.LogInit_ERROR(model.id + ': "namespace" attribute should not be set, it is a read-only system parameter'); }
   model._inherits = [];
   model._referencedby = [];
+  model._parentmodels = { tab: {}, duplicate: {}, subform: {}, popuplov: {} };
   if(!model.path && modelpath) model.path = modelpath;
   if(!model.module && modeldir && modeldir.module) model.module = modeldir.module;
   model.namespace = _this.getNamespace(modelname);
@@ -203,7 +204,9 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
   var modelbasedir = '';
   if(model.path) modelbasedir = path.dirname(model.path) + '/';
   if(modelbasedir){
-    var modelpathbase = modelpath.substr(0,modelpath.length-5);
+    //var modelpathbase = modelpath.substr(0,modelpath.length-5);
+    var modelpathbase = modelbasedir + _this.getBaseModelName(model.id);
+
     //Load JS
     prependPropFile('js',modelpathbase + '.js');
     //Load CSS
@@ -1224,10 +1227,10 @@ exports.ParseEntities = function () {
     //Validate Model and Field Parameters
     var _v_model = [
       'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites', 'class', 'using',
-      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings','groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
+      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings', '_parentmodels', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
       'pagesettings', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
-      'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
-      'grid_require_filter', 'grid_save_before_update', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
+      'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
+      'grid_require_search', 'grid_save_before_update', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
       'js', 'ejs', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
@@ -1761,6 +1764,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     }
     var tmodel = jsh.getModel(null,tab.target,model);
     if (!tmodel) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Target model "' + tab.target + '" not found'); return }
+    tmodel._parentmodels.tab[model.id] = 1;
     tab.target = tmodel.id;
     validateSiteRoles(model, tmodel, model.id + ' > Tab ' + tabname + ': ', '', tab.roles);
     validateBindings(tab.bindings, model, tmodel, model.id + ' > Tab ' + tabname + ': ');
@@ -1770,6 +1774,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     var tmodel = jsh.getModel(null,model.duplicate.target,model);
     if (!tmodel) { _this.LogInit_WARNING('Invalid duplicate model ' + model.duplicate + ' in ' + model.id); return }
     if(tmodel.layout != 'exec') { _this.LogInit_ERROR(model.id + ' > Duplicate: Target model should have "exec" layout'); }
+    tmodel._parentmodels.duplicate[model.id] = 1;
     model.duplicate.target = tmodel.id;
     validateSiteRoles(model, tmodel, model.id + ' > Duplicate model ' + model.duplicate + ': ', '');
     validateSiteLinks(model, model.duplicate.link, model.id + ' > Duplicate model ' + model.duplicate + ' link: ', model.duplicate.link);
@@ -1783,6 +1788,8 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     if (('target' in field) && ((field.control == 'subform') || (field.popuplov))) {
       var tmodel = jsh.getModel(null,field.target,model);
       if (!tmodel) { _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Invalid target model "' + field.target + '"'); return }
+      if(field.control=='subform') tmodel._parentmodels.subform[model.id] = 1;
+      else if(field.popuplov) tmodel._parentmodels.popuplov[model.id] = 1;
       field.target = tmodel.id;
       validateSiteRoles(model, tmodel, model.id + ' > ' + field.name + ': ', '', field.roles);
       validateSiteLinks(model, field.link, model.id + ' > ' + field.name + ' link: ', field.link, field.roles);
@@ -1791,6 +1798,9 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
       if(field.control=='subform'){
         if((tmodel.layout=='form') && (field._auto.indexOf('actions')>=0)){
           _this.LogInit_WARNING(model.id + ' > Subform ' + field.name + ': When using a subform that has a "form" layout, "actions" should be explicitly set on the subform control.  When both a subform and parent form target the same table, the subform should not have the "I" action.');
+        }
+        if((tmodel.layout=='grid') && Helper.hasAction(field.actions, 'I') && _.includes(['row','cell'],tmodel.commitlevel) && !_.isEmpty(field.bindings) && !tmodel.grid_save_before_update){
+          _this.LogInit_WARNING(model.id + ' > Subform ' + field.name + ': When using a subform that has "I" actions and a target with a "grid" layout and, the target model\'s "commitlevel" should be set to "auto" so that the "commitlevel" will be set to "page" on insert and have the data executed in one transaction.  Alternatively, set "grid_save_before_update" to true on the target model.');
         }
       }
     }

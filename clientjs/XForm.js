@@ -80,18 +80,18 @@ exports = module.exports = function(jsh){
     return this.Data.HasUpdates(this.PlaceholderID);
   };
   XForm.prototype.Validate = function(perms,obj){
-    obj = obj || this.Data;
-    if(!obj) return;
+    obj = obj || (this.Index>=0?this.Data:undefined);
+    if(!obj) return true;
     var validator;
     if(this.Data && this.Data.xvalidate) validator = this.Data.xvalidate;
     else if(obj.xvalidate) validator = obj.xvalidate;
-    else return;
+    else return true;
     var parentobj = undefined;
     if (this.xData) parentobj = this.Data._jrow;
     return validator.ValidateControls(perms,obj,'',parentobj);
   }
   XForm.prototype.ResetValidation = function(obj){
-    obj = obj || this.Data;
+    obj = obj || (this.Index>=0?this.Data:undefined);
     if(!obj) return;
     if(!obj.xvalidate) return;
     return obj.xvalidate.ResetValidation();

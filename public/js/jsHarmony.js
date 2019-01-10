@@ -7492,7 +7492,7 @@ exports = module.exports = function(jsh){
         onComplete: function () {
           numOpens++;
           if(xgrid && (numOpens==1)) xgrid.Select();
-          if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass + ' .xfilter_value').first().is(':visible')) jsh.$root('.popup_' + fieldid + ' .xfilter_value').first().focus();
+          if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass + ' .xsearch_value').first().is(':visible')) jsh.$root('.popup_' + fieldid + ' .xsearch_value').first().focus();
           else if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('td a').length) jsh.$root('.popup_' + fieldid).find('td a').first().focus();
             //else jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('input,select,textarea').first().focus();
         },
@@ -8064,18 +8064,18 @@ exports = module.exports = function(jsh){
     return this.Data.HasUpdates(this.PlaceholderID);
   };
   XForm.prototype.Validate = function(perms,obj){
-    obj = obj || this.Data;
-    if(!obj) return;
+    obj = obj || (this.Index>=0?this.Data:undefined);
+    if(!obj) return true;
     var validator;
     if(this.Data && this.Data.xvalidate) validator = this.Data.xvalidate;
     else if(obj.xvalidate) validator = obj.xvalidate;
-    else return;
+    else return true;
     var parentobj = undefined;
     if (this.xData) parentobj = this.Data._jrow;
     return validator.ValidateControls(perms,obj,'',parentobj);
   }
   XForm.prototype.ResetValidation = function(obj){
-    obj = obj || this.Data;
+    obj = obj || (this.Index>=0?this.Data:undefined);
     if(!obj) return;
     if(!obj.xvalidate) return;
     return obj.xvalidate.ResetValidation();
@@ -8818,7 +8818,8 @@ exports = module.exports = function(jsh){
     this.scrollFunc = null;
     this.EOF = true;
     this.NoResultsMessage = 'No results %%%FORSEARCHPHRASE%%%';
-    this.RequireFilterMessage = 'Please select a filter';
+    this.NoDataMessage = null;
+    this.RequireSearchMessage = 'Please search';
     this.RowCount = 0;
     this.AutoLoadMore = true;
     if(this.Paging) this.EnableScrollUpdate();
@@ -8838,7 +8839,7 @@ exports = module.exports = function(jsh){
     this.OnLoadMoreData = null; //()
     this.OnLoadComplete = null;
     this.OnLoadError = null;
-    this.RequireFilter = false;
+    this.RequireSearch = false;
     this.State = {};
     this.Prop = {};
     this.GetMeta = true;
@@ -8950,11 +8951,9 @@ exports = module.exports = function(jsh){
         //else { jsh.XExt.Alert('Error retrieving total row count.'); }
         //onComplete = null;  //Clear onComplete event, already handled
       }
-      if ((data[this.q].length == 0) && ((_this.NoResultsMessage) || (_this.RequireFilter && _this.RequireFilterMessage))) {
+      if ((data[this.q].length == 0) && ((_this.NoResultsMessage) || (_this.RequireSearch && _this.RequireSearchMessage))) {
         _this.EOF = true;
-        var noresultsmessage = _this.NoResultsMessage.replace(/%%%FORSEARCHPHRASE%%%/g, (($.trim(_this.Search) != '')?'for selected search phrase':''));
-        if (_this.RequireFilter && !reqdata.search && !reqdata.searchjson) noresultsmessage = _this.RequireFilterMessage;
-        jsh.$root(_this.PlaceholderID).html('<tr class="xtbl_noresults"><td colspan="' + _this.ColSpan + '" align="center" class="xtbl_noresults">' + noresultsmessage + '</td></tr>');
+        _this.RenderNoResultsMessage({ search: (((reqdata.search||'').trim()) || ((reqdata.searchjson||'').trim())) });
         _this.RowCount = 0;
         if (_this.OnResetDataSet) _this.OnResetDataSet(data);
       }
@@ -9010,6 +9009,14 @@ exports = module.exports = function(jsh){
     _this.IsLoading = false;
     if (_this.OnLoadComplete) _this.OnLoadComplete();
     if(onComplete) onComplete();
+  }
+  XGrid.prototype.RenderNoResultsMessage = function(options){
+    if(!options) options = { search: false };
+    var _this = this;
+    var noresultsmessage = _this.NoResultsMessage.replace(/%%%FORSEARCHPHRASE%%%/g, (($.trim(_this.Search) != '')?'for selected search phrase':''));
+    if (_this.RequireSearch && !options.search) noresultsmessage = _this.RequireSearchMessage;
+    else if (!options.search && _this.NoDataMessage) noresultsmessage = _this.NoDataMessage;
+    jsh.$root(_this.PlaceholderID).html('<tr class="xtbl_noresults"><td colspan="' + _this.ColSpan + '" align="center" class="xtbl_noresults">' + noresultsmessage + '</td></tr>');
   }
   XGrid.prototype.ResetSortGlyphs = function (tblobj){
     var xhtml_thead = tblobj.find('thead tr');
@@ -9905,11 +9912,11 @@ exports = module.exports = function(jsh){
   SearchQuery.prototype.GetValues = function (_PlaceholderID) {
     var _this = this;
     _this.Items = [];
-    jsh.$root(_PlaceholderID + ' div.xfilter_expression').each(function (i, obj) {
-      var v_column = $(obj).find('select.xfilter_column').val();
-      var v_value = $(obj).find('input.xfilter_value').val();
-      var v_join = $(obj).find('input.xfilter_join').val();
-      var v_comparison = $(obj).find('select.xfilter_comparison').val();
+    jsh.$root(_PlaceholderID + ' div.xsearch_expression').each(function (i, obj) {
+      var v_column = $(obj).find('select.xsearch_column').val();
+      var v_value = $(obj).find('input.xsearch_value').val();
+      var v_join = $(obj).find('input.xsearch_join').val();
+      var v_comparison = $(obj).find('select.xsearch_comparison').val();
       if ((v_column==='ALL') || !v_comparison) v_comparison = 'contains';
       _this.Items.push(new SearchItem(v_column, v_value, v_join, v_comparison));
     });
@@ -9918,10 +9925,10 @@ exports = module.exports = function(jsh){
     var _this = this;
     var newitems = [];
     jsh.$root(_PlaceholderID + ' div').each(function (i, obj) {
-      var v_value = $(obj).find('input.xfilter_value').val();
-      var v_join = $(obj).find('input.xfilter_join').val();
-      var v_comparison = $(obj).find('select.xfilter_comparison').val();
-      newitems.push(new SearchItem($(obj).find('select.xfilter_column').val(), v_value, v_join, v_comparison));
+      var v_value = $(obj).find('input.xsearch_value').val();
+      var v_join = $(obj).find('input.xsearch_join').val();
+      var v_comparison = $(obj).find('select.xsearch_comparison').val();
+      newitems.push(new SearchItem($(obj).find('select.xsearch_column').val(), v_value, v_join, v_comparison));
     });
     if (newitems.length != _this.Items.length) return true;
     for (var i = 0; i < newitems.length; i++) {

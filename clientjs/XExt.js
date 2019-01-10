@@ -1120,7 +1120,7 @@ exports = module.exports = function(jsh){
         onComplete: function () {
           numOpens++;
           if(xgrid && (numOpens==1)) xgrid.Select();
-          if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass + ' .xfilter_value').first().is(':visible')) jsh.$root('.popup_' + fieldid + ' .xfilter_value').first().focus();
+          if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass + ' .xsearch_value').first().is(':visible')) jsh.$root('.popup_' + fieldid + ' .xsearch_value').first().focus();
           else if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('td a').length) jsh.$root('.popup_' + fieldid).find('td a').first().focus();
             //else jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('input,select,textarea').first().focus();
         },

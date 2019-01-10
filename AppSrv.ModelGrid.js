@@ -34,8 +34,8 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   var keylist = this.getKeyNames(model.fields);
   var allfieldslist = _.union(keylist, fieldlist);
   var availablesortfieldslist = this.getFieldNames(req, model.fields, 'BFK');
-  var filterlist = this.getFieldNames(req, model.fields, 'BFK');
-  filterlist = _.union(keylist, filterlist);
+  var searchlist = this.getFieldNames(req, model.fields, 'BFK');
+  searchlist = _.union(keylist, searchlist);
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'B');
   if (encryptedfields.length > 0) throw new Error('Encrypted fields not supported on GRID');
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'S');
@@ -44,7 +44,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   if ('d' in Q) P = JSON.parse(Q.d);
   
   if (!_this.ParamCheck('Q', Q, ['|rowstart', '|rowcount', '|sort', '|search', '|searchjson', '|d', '|meta', '|getcount'])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
-  if (!_this.ParamCheck('P', P, _.map(_.union(filterlist, ['_action']), function (filter) { return '|' + filter; }))) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
+  if (!_this.ParamCheck('P', P, _.map(_.union(searchlist, ['_action']), function (search) { return '|' + search; }))) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
 
   var getcount = ((('rowcount' in Q) && (Q.rowcount == -1)) || (('getcount' in Q) && (Q['getcount'] != '')));
   var is_new = (('_action' in P) && (P['_action'] == 'add'));
@@ -56,12 +56,12 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   var sql_ptypes = [];
   var sql_params = {};
   var verrors = {};
-  var filterfields = this.getFieldsByName(model.fields, filterlist);
+  var searchfields = this.getFieldsByName(model.fields, searchlist);
   var allfields = this.getFieldsByName(model.fields, allfieldslist);
-  var sql_filterfields = [];
-  _.each(filterfields, function (field) { if (field.name in P) { sql_filterfields.push(field); } });
+  var sql_searchfields = [];
+  _.each(searchfields, function (field) { if (field.name in P) { sql_searchfields.push(field); } });
   var sortfields = [];
-  var searchfields = [];
+  var searchparams = [];
   var datalockqueries = [];
   
   //Merge sort parameters with parameters from querystring
@@ -97,7 +97,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
     sortfields.push({ 'field': keyname, 'dir': 'asc', 'sql': '' });
   });
   
-  //Set filter parameters
+  //Set search parameters
   if (('searchjson' in Q) && (Q.searchjson != '')) {
     var search_items = JSON.parse(Q.searchjson);
     var search_join = 'and';
@@ -137,23 +137,23 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
             }
           });
           if (searchall.length) {
-            if (searchfields.length) searchfields.push(search_join);
-            searchfields.push(searchall);
+            if (searchparams.length) searchparams.push(search_join);
+            searchparams.push(searchall);
           }
         }
         else {
           var field = this.getFieldByName(model.fields, search_column);
           var searchtermsql = this.addSearchTerm(req, model, field, i, search_value, search_comparison, sql_ptypes, sql_params, verrors);
           if (searchtermsql) {
-            if (searchfields.length) searchfields.push(search_join);
-            searchfields.push(searchtermsql);
+            if (searchparams.length) searchparams.push(search_join);
+            searchparams.push(searchtermsql);
           }
         }
       }
     }
   }
   
-  if (model.grid_require_filter && !searchfields.length) searchfields.push('1=0');
+  if (model.grid_require_search && !searchparams.length) searchparams.push('1=0');
   
   //Apply rowstart
   var rowstart = 0;
@@ -172,7 +172,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
     if (rowcount > rowlimit) rowcount = rowlimit;
   }
   
-  var keys = filterfields;
+  var keys = searchfields;
   for (var i = 0; i < keys.length; i++) {
     var field = keys[i];
     var fname = field.name;
@@ -187,7 +187,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   verrors = _.merge(verrors, model.xvalidate.Validate('BFK', sql_params, undefined, undefined, undefined, { ignoreUndefined: true }));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   
-  var dbsql = db.sql.getModelRecordset(_this.jsh, model, sql_filterfields, allfields, sortfields, searchfields, datalockqueries, rowstart, rowcount + 1);
+  var dbsql = db.sql.getModelRecordset(_this.jsh, model, sql_searchfields, allfields, sortfields, searchparams, datalockqueries, rowstart, rowcount + 1);
   
   //Add dynamic parameters from query string
   var dbtasks = {};

@@ -23,7 +23,11 @@
 <% } %>
 <% if(model.layout == 'form-m') { %>
   <div class="clear"></div>
-  <div class="xnorecords xelem<%=model.class%>" style="display:none;">No <%=model.caption[1]%> Records</div>
+  <% if(XExt.hasAction(model.actions, 'I')){ %>
+    <div class="xnorecords xelem<%=model.class%>" style="display:none;"><a href="#" onclick="<%-js('xmodel.controller.form.NavAdd();')%>">Add <%=model.caption[1]%></a></div>
+  <% } else { %>
+    <div class="xnorecords xelem<%=model.class%>" style="display:none;">No <%=model.caption[2]%></div>
+  <% } %>
   <div class="xformcontainer xelem<%=model.class%>">
 <% } %>
 <div class="xform xelem<%=model.class%> xform<%=model.class%> <%=xejs.iif(model.onecolumn,'onecolumn')%>" data-id="<%=model.id%>" style="<%=model.formstyle%>">

@@ -73,7 +73,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.on('jsh_ready', function(){ xdatamodel.prototype.BindLOV(xmodel.controller.form); });
 
   xdatamodel.prototype.xvalidate = new XValidate(jsh);
-  <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; %>
+  <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if(jsh.is_add && !model.topmost && model.bindings && (field.name in model.bindings)) return;  %>
   xdatamodel.prototype.xvalidate.AddControlValidator('.<%=field.name%>.xelem'+xmodel.class,'_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getActions(model.actions,"BIU"):field.actions)%>',[<%-field.validate%>]);<%});%>
 
 })(<%-instance%>);
