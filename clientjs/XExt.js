@@ -338,6 +338,11 @@ exports = module.exports = function(jsh){
   XExt.escapeRegEx = function (q) {
     return q.replace(/[-[\]{}()*+?.,\\/^$|#\s]/g, "\\$&");
   }
+  XExt.encodeEJSURI = function (val){
+    if(val === null) return '';
+    if(typeof val == 'undefined') return '';
+    return encodeURI(val);
+  }
   XExt.pad = function (val, padding, length) {
     var rslt = val.toString();
     while (rslt.length < length) rslt = padding + rslt;

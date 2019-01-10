@@ -1186,6 +1186,10 @@ exports.ParseEntities = function () {
             }
           }
         }
+        if(lov.sqlselect && !('sqlselect_params' in lov)){
+          lov.sqlselect_params = [];
+          _this.forEachSqlParam(model, lov.sqlselect, function(pfield_name, pfield){ lov.sqlselect_params.push(pfield_name); });
+        }
       }
       //Check if sqltruncate also has %%%TRUNCATE%%% in sql
       if(field.lov){
@@ -1251,7 +1255,7 @@ exports.ParseEntities = function () {
       'image', 'thumbnails', 'expand_all', 'item_context_menu'
     ];
     var _v_popuplov = ['target', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
-    var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db'];
+    var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db'];
     //lov
     var existing_targets = [];
     for (var f in model) { if (f.substr(0, 7) == 'comment') continue; if (!_.includes(_v_model, f)) _this.LogInit_ERROR(model.id + ': Invalid model property: ' + f); }
@@ -1483,6 +1487,19 @@ exports.ParseEntities = function () {
 
 function ParseMultiLineProperties(obj, arr) {
   _.each(arr, function (p) { if (p in obj) obj[p] = Helper.ParseMultiLine(obj[p]); });
+}
+
+exports.forEachSqlParam = function(model, sql, f){ /* f(pfield_name) */
+  var _this = this;
+  sql = _this.AppSrvClass.prototype.getSQL(model, sql, _this);
+  if(sql){
+    var params = _this.AppSrvClass.prototype.getSQLParameters(sql, model.fields, _this);
+    if(params.length){
+      for(var i=0;i<params.length;i++){
+        if(f) f(params[i]);
+      }
+    }
+  }
 }
 
 exports.AddSqlParams = function(model, element, props){

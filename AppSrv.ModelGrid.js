@@ -182,6 +182,14 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
       sql_params[fname] = _this.DeformatParam(field, P[fname], verrors);
     }
   }
+  for (var i = 0; i < model.fields.length; i++){
+    var field = model.fields[i];
+    if(field.lov && field.lov.sqlselect && field.lov.sqlselect_params){
+      for(var j = 0; j < field.lov.sqlselect_params.length; j++){
+        if(!(field.lov.sqlselect_params[j] in P)){ Helper.GenError(req, res, -99999, model.id + ' > ' + field.name + ': Missing lov.sqlselect parameter @'+field.lov.sqlselect_params[j] + ' - grid parameters must be passed in the querystring or bindings.  The lov.sqlselect is inserted into the grid select statement; if this is a per-record lookup, use the expression LOVSQLTABLE.FIELD = MODELTABLE.FIELD'); return; }
+      }
+    }
+  }
   //Add DataLock parameters to SQL 
   this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, fullmodelid);
   verrors = _.merge(verrors, model.xvalidate.Validate('BFK', sql_params, undefined, undefined, undefined, { ignoreUndefined: true }));
