@@ -1053,6 +1053,9 @@ exports.ParseEntities = function () {
         }
         if (field.sql_from_db) field.sql_from_db = _this.parseFieldExpression(field, field.sql_from_db, {}, { ejs:true });
         if (field.sql_to_db) field.sql_to_db = _this.parseFieldExpression(field, field.sql_to_db, {}, { ejs:true });
+        if (field.sqlsort) field.sqlsort = _this.parseFieldExpression(field, field.sqlsort, {}, { ejs:true });
+        if (field.sqlsearch) field.sqlsearch = _this.parseFieldExpression(field, field.sqlsearch, {}, { ejs:true });
+        if (field.sqlsearch_to_db) field.sqlsearch = _this.parseFieldExpression(field, field.sqlsearch_to_db, {}, { ejs:true });
         var has_datatype_validator = false;
         if (field.datatype_config){
           if(field.datatype_config.override_length){
