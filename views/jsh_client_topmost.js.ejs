@@ -960,6 +960,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh.XPage.Print();
       handled = true;
     }
+    else if ((e.which == 68) && (e.altKey) && (e.ctrlKey)) { //ALT+CTRL+D = ENABLE DEBUG CONSOLE
+      jsh.xDebugConsole.reInit();
+      handled = true;
+    }
     if (handled) {
       e.preventDefault();
       e.stopImmediatePropagation();

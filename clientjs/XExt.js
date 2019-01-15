@@ -26,6 +26,9 @@ exports = module.exports = function(jsh){
   var XExt = function(){ }
 
   XExt.XModel = require('./XExt.XModel.js')(jsh);
+  XExt.COOKIE_MAX_EXPIRATION = 2147483647;
+
+  XExt.XForm = require('./XForm.js')(jsh);
 
   XExt.parseGET = function (qs) {
     if (typeof qs == 'undefined') qs = window.location.search;
@@ -222,13 +225,13 @@ exports = module.exports = function(jsh){
     if(!chr) chr = ' \t\n\r\v\f';
     var foundchr = true;
     var rslt = str||'';
-  
+
     if(!dir){
       rslt = XExt.trim(str, chr, 1);
       rslt = XExt.trim(rslt, chr, -1);
       return rslt;
     }
-  
+
     while(foundchr){
       foundchr = false;
       if(!rslt) break;
@@ -243,7 +246,7 @@ exports = module.exports = function(jsh){
         else rslt = rslt.substr(1);
       }
     }
-    return rslt;  
+    return rslt;
   }
 
   XExt.trimRight = function(str, chr){
@@ -582,6 +585,71 @@ exports = module.exports = function(jsh){
     obj.innerHTML = val;
     return obj.value;
   }
+
+  //
+  XExt.makeResizableDiv = function(main_elem_s, depended_s) {
+    var m_e = document.querySelector(main_elem_s);
+    var dep_elements = []
+    for(var i=0;i<depended_s.length; i++){
+      dep_elements.push(document.querySelector(depended_s[i]['selector']));
+    }
+    var resizers = document.querySelectorAll(main_elem_s + ' .resizer');
+    var minimum_size = 100;
+    var counter = 0;
+    var original_width = 0;
+    var original_height = 0;
+    var original_x = 0;
+    var original_y = 0;
+    var original_mouse_x = 0;
+    var original_mouse_y = 0;
+
+    for (var i = 0;i < resizers.length; i++) {
+      const currentResizer = resizers[i];
+      currentResizer.addEventListener('mousedown', function(e) {
+        e.preventDefault()
+        original_width = parseFloat(getComputedStyle(m_e, null).getPropertyValue('width').replace('px', ''));
+        original_height = parseFloat(getComputedStyle(m_e, null).getPropertyValue('height').replace('px', ''));
+        original_x = m_e.getBoundingClientRect().left;
+        original_y = m_e.getBoundingClientRect().top;
+        original_mouse_x = e.pageX;
+        original_mouse_y = e.pageY;
+        window.addEventListener('mousemove', resize);
+        window.addEventListener('mouseup', stopResize);
+      });
+
+      function resize(e) {
+        counter++;
+        if (counter%2) return counter=1; // ignore 50% to perform better
+        if (currentResizer.classList.contains('res-ew')) {
+          var width = original_width - (e.pageX - original_mouse_x);
+          if (width > minimum_size) {
+            m_e.style.width = width + 'px';
+            m_e.style.left = original_x + (e.pageX - original_mouse_x) + 'px';
+            for(var i=0;i<depended_s.length; i++){
+              dep_elements[i].style.width = (width+depended_s[i]['correction_x']) + 'px';
+              dep_elements[i].style.left = original_x + (e.pageX - original_mouse_x-depended_s[i]['correction_x']) + 'px';
+            }
+          }
+        }
+        else if (currentResizer.classList.contains('res-ns')) {
+          var height = original_height - (e.pageY - original_mouse_y);
+          if (height > minimum_size) {
+            m_e.style.height = height + 'px';
+            m_e.style.top = original_y + (e.pageY - original_mouse_y) + 'px';
+            for(var i=0;i<depended_s.length; i++){
+              dep_elements[i].style.height = (height+depended_s[i]['correction_y']) + 'px';
+              dep_elements[i].style.top = original_y + (e.pageY - original_mouse_y-depended_s[i]['correction_y']) + 'px'
+            }
+          }
+        }
+      }
+
+      function stopResize() {
+        window.removeEventListener('mousemove', resize)
+      }
+    }
+  }
+
   XExt.readCookie = function(id){
     var rslt = [];
     var cookies = document.cookie.split(';');
@@ -592,6 +660,58 @@ exports = module.exports = function(jsh){
     }
     return rslt;
   }
+
+  XExt.GetCookieNameWithSuffix = function(cname){return cname+jsh.cookie_suffix}
+  XExt.GetCookie = function(cname){
+    cname= XExt.GetCookieNameWithSuffix(cname);
+    var rslt = [];
+    var c_a = XExt.readCookie(cname);
+    if (c_a.length>0){
+      for(var i=0;i<c_a.length;i++) {
+        rslt.push(decodeURIComponent(c_a[i]));
+      }
+    }
+    return rslt;
+  }
+  XExt.SetCookie = function(cname,cvalue,exmin){
+    cname= XExt.GetCookieNameWithSuffix(cname);
+    var expires = '';
+    if (exmin !== 0){
+      var d = new Date();
+      d.setTime(d.getTime() + (exmin*60*1000));
+      expires = ";expires="+ d.toUTCString();
+    }
+    document.cookie = cname + "=" + encodeURIComponent(cvalue) + expires + "; path="+jsh._BASEURL;
+  }
+  XExt.ClearCookie = function(cname){
+    return XExt.SetCookie(cname,'',-100000);
+  }
+  XExt.GetSettingsCookie = function(module_name){
+    var settings ={};
+    try{
+      settings = JSON.parse(jsh.XExt.GetCookie('settings')[0]);
+    }catch (e) {
+      return settings;
+    }
+    if (!_.isEmpty(module_name)){
+      if (settings.hasOwnProperty(module_name)){
+        settings = settings[module_name];
+      }else {
+        settings = {}
+      }
+    }
+    return settings;
+  }
+
+  XExt.SetSettingsCookie = function(module_name,cvalue){
+    if (typeof module_name === "undefined" || module_name.length <=0){
+      throw "Please provide module name!";
+    }
+    var settings = XExt.GetSettingsCookie();
+    settings[module_name]=cvalue;
+    return XExt.SetCookie('settings',JSON.stringify(settings),XExt.COOKIE_MAX_EXPIRATION);
+  }
+
   XExt.currentURL = function(){
     var rslt = window.location.href.toString().split(window.location.host)[1];
     rslt = rslt.split('?')[0];
@@ -1099,7 +1219,7 @@ exports = module.exports = function(jsh){
     if (!parentobj) parentobj = jsh.$root('.' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelclass);
     var numOpens = 0;
     var xmodel = jsh.XModels[modelid];
-    
+
     popupData[modelid] = {};
     XExt.execif(parentfield && parentfield.controlparams && parentfield.controlparams.onpopup,
       function (f) { parentfield.controlparams.onpopup(modelid, parentmodelid, fieldid, f); },
@@ -1282,7 +1402,7 @@ exports = module.exports = function(jsh){
     //If a literal 'TEXT', return the value
     else if (str && (str.length >= 2) && (str[0] == "'") && (str[str.length - 1] == "'")) rslt = str.substr(1, str.length - 2);
     //If "null", return null
-    else if(str && str.trim().toLowerCase()=='null') rslt = null; 
+    else if(str && str.trim().toLowerCase()=='null') rslt = null;
     //If a binding, return the evaluated binding
     else if (str && xmodel && xmodel.hasBindingOrRootKey(str)) rslt = xmodel.getBindingOrRootKey(str);
     //If a lookup in the dictionary, return the value
