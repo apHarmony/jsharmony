@@ -163,6 +163,9 @@ BODY
 	padding-top:5px;
 	padding-bottom:5px;
 }
+<%-rootcss%> .xtbl td.xtbl_noresults a,<%-rootcss%> .xtbl td.xtbl_noresults a:visited {
+  color:#000000;
+}
 <%-rootcss%> .xtbl .xtbl_loadmore td {
 	border-bottom:none;
 	border-right:none;
@@ -251,6 +254,9 @@ BODY
 	position:relative;
 	height:0px;
 }
+<%-rootcss%> .xnorecords a,<%-rootcss%> .xnorecords a:visited {
+  color:#000;
+}
 <%-rootcss%> input.updated, 
 <%-rootcss%> select.updated, 
 <%-rootcss%> textarea.updated,
@@ -299,7 +305,7 @@ BODY
 <%-rootcss%> .xtitlecaption a:hover{
   text-decoration:none;
 }
-<%-rootcss%> .xfilter {
+<%-rootcss%> .xsearch {
   padding-bottom:11px;
   font-size:13px;
   display:none;
@@ -308,14 +314,14 @@ BODY
   min-width:500px;
   clear:both;
 }
-<%-rootcss%> .xfilter div {
+<%-rootcss%> .xsearch div {
   padding-bottom:2px;
 }
-<%-rootcss%> .xfilter a {
+<%-rootcss%> .xsearch a {
   display:inline-block;
   color:#000000;
 }
-<%-rootcss%> .xfilter a img {
+<%-rootcss%> .xsearch a img {
   position:relative;
   top:5px;
   padding-left:8px;

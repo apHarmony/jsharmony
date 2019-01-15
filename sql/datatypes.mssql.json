@@ -2,6 +2,7 @@
   "decimal":{ 
     "sql_from_db": "cast(%%%SQL%%% as nvarchar)",
     "sqlsearch": "%%%SQL%%%",
+    "sqlsort": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "sql_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "sqlsearch_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "datatype_config": {
@@ -11,6 +12,7 @@
   "float":{ 
     "sql_from_db": "convert(varchar(50), %%%SQL%%%, 3)",
     "sqlsearch": "%%%SQL%%%",
+    "sqlsort": "cast(%%%SQL%%% as float(%%%PREC%%%))",
     "sql_to_db": "cast(%%%SQL%%% as float(%%%PREC%%%))",
     "sqlsearch_to_db": "cast(%%%SQL%%% as float(%%%PREC%%%))",
     "datatype_config": {
@@ -27,6 +29,7 @@
   "money":{ 
     "sql_from_db": "cast(%%%SQL%%% as nvarchar)",
     "sqlsearch": "%%%SQL%%%",
+    "sqlsort": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "sql_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "sqlsearch_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "datatype_config": {
@@ -41,6 +44,7 @@
   "smallmoney":{ 
     "sql_from_db": "cast(%%%SQL%%% as nvarchar)",
     "sqlsearch": "%%%SQL%%%",
+    "sqlsort": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "sql_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "sqlsearch_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "datatype_config": {

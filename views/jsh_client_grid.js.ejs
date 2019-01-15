@@ -27,23 +27,23 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var xmodel = jsh.XModels[modelid];
 
   var xcontroller = xmodel.controller = new XExt.XModel.XController(xmodel);
-  var xfilter = null;
+  var xsearch = null;
   var xeditablegrid = null;
   var xgrid = null;
   var xform = null;
 
   xcontroller.Init = function(callback){
-    xfilter = xcontroller.filter = new jsh.XForm('','.xfilter_template_'+xmodel.class,'.xfilter_'+xmodel.class);
-    xfilter.Data = new jsh.XSearch.SearchQuery(new xmodel.datamodel());
-    xfilter.Data.Items.unshift(new jsh.XSearch.SearchItem('ALL','','and','contains'));
-    xfilter.OnAfterRender = function(){ 
-      jsh.$root('.xfilter_'+xmodel.class+' input.xfilter_value').each(function(){ jsh.XBarcode.EnableScanner($(this)); }); 
-      jsh.$root('.xfilter_'+xmodel.class+' input.xfilter_value.datepicker').each(function(){ 
+    xsearch = xcontroller.search = new jsh.XForm('','.xsearch_template_'+xmodel.class,'.xsearch_'+xmodel.class);
+    xsearch.Data = new jsh.XSearch.SearchQuery(new xmodel.datamodel());
+    xsearch.Data.Items.unshift(new jsh.XSearch.SearchItem('ALL','','and','contains'));
+    xsearch.OnAfterRender = function(){ 
+      jsh.$root('.xsearch_'+xmodel.class+' input.xsearch_value').each(function(){ jsh.XBarcode.EnableScanner($(this)); }); 
+      jsh.$root('.xsearch_'+xmodel.class+' input.xsearch_value.datepicker').each(function(){ 
         $(this).datepicker({ constrainInput: false, changeMonth: true, changeYear: true, dateFormat: jsh.DEFAULT_DATEFORMAT });
       }); 
     };
-    xfilter.Render();
-    <% if(model.grid_expand_filter){ %>xcontroller.FilterExpand(0);<% } %>
+    xsearch.Render();
+    <% if(model.grid_expand_search){ %>xcontroller.SearchExpand(0);<% } %>
 
     xform = xcontroller.form = new jsh.XForm(modelid,'','');
     xform.Data = new xmodel.datamodel();
@@ -54,7 +54,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var grid_placeholder = jsh.$root(grid_template).data('target');
     var scrollControl = (isInlinePopup ? jsh.$root(grid_placeholder).closest('.xpanel')[0] : window);
     xgrid = xcontroller.grid = new jsh.XGrid(modelid,grid_template,grid_placeholder,undefined,true,scrollControl);
-    xgrid.NoResultsMessage = '<%-xejs.iif(('noresultsmessage' in model) && (model.noresultsmessage || (model.noresultsmessage==='')),model.noresultsmessage,'No results found %%%FORSEARCHPHRASE%%%')%>';
+    xgrid.NoResultsMessage = '<%-xejs.iif(('noresultsmessage' in model) && (model.noresultsmessage || (model.noresultsmessage==='')),model.noresultsmessage,'No results %%%FORSEARCHPHRASE%%%')%>';
+    <% if(!('noresultsmessage' in model)){ %>
+    if(xmodel.caption && xmodel.caption[2]){
+      if(XExt.hasAction(xmodel.actions, 'I') && xmodel.commitlevel && (xmodel.commitlevel != 'none')){
+        xgrid.NoDataMessage = '<a href="#" onclick="<%-js('xmodel.controller.AddRow();')%>">Add ' + xmodel.caption[1] + '</a>';
+      }
+      else {
+        xgrid.NoDataMessage = 'No ' + xmodel.caption[2];
+      }
+    }
+    <% } %>
     <% if(typeof model.sort != 'undefined'){ for(var i=0;i<model.sort.length;i++){ %> 
       xgrid.Sort.push('<%-model.sort[i]%>');
     <% } } %>
@@ -66,7 +76,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xgrid.Prop.ModifiedSinceLoad = false;
     xgrid.Prop.Enabled = (isInlinePopup ? false : true);
     xgrid.Prop.isInlinePopup = isInlinePopup;
-    xgrid.RequireFilter = <%-xejs.iif(model.grid_require_filter,'true','false')%>;;
+    xgrid.RequireSearch = <%-xejs.iif(model.grid_require_search,'true','false')%>;;
     xgrid.GetDBRowCount = <%-xejs.iif(('grid_rowcount' in model) && (model.grid_rowcount),'true','false')%>;
 
     <% if(!model.templates.grid){ %>
@@ -149,16 +159,16 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
 
     xform.xData = xgrid;
-    xgrid.State.Search = xfilter.Data.Items;
+    xgrid.State.Search = xsearch.Data.Items;
     xgrid.State.Sort = xgrid.Sort;
     <%=xejs.iif(('disableautoload' in model) && (model.disableautoload),'xgrid.AutoLoadMore = false;') %>
     xgrid.OnBeforeSelect = function(){
       var has_search_items = xcontroller.HasSearchItems(this.SearchJSON);
       if(has_search_items){ 
-        jsh.$root('.xfilterbutton<%=model.class%> span').html('Remove Filter');
+        jsh.$root('.xsearchbutton<%=model.class%> span').html('Remove Search');
       }
       else{
-        jsh.$root('.xfilterbutton<%=model.class%> span').html('Filter');
+        jsh.$root('.xsearchbutton<%=model.class%> span').html('Search');
       }
       xcontroller.UpdateTitleCaption();
     };
@@ -455,6 +465,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         xform.DataSet[rowid]._is_dirty = false;
         xform.DataSet[rowid]._orig = null;
         jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']").remove();
+        if(!jsh.$root(xgrid.PlaceholderID).find('tr').length) xgrid.RenderNoResultsMessage();
         xeditablegrid.CurrentCell = null;
         if(xform.Index==rowid){ 
           xform.Data._is_new = false;
@@ -517,8 +528,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     if('Search' in state){
       xgrid.State.Search = state.Search;
-      xfilter.Data.Items = state.Search;
-      xfilter.Render();
+      xsearch.Data.Items = state.Search;
+      xsearch.Render();
       xgrid.SearchJSON = JSON.stringify(state.Search);
     }
   }
@@ -549,19 +560,19 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     return rslt;
   }
 
-  xcontroller.FilterColumnChange = function(){
-    xfilter.GetValues();
-    xfilter.Render();
+  xcontroller.SearchColumnChange = function(){
+    xsearch.GetValues();
+    xsearch.Render();
   }
 
-  xcontroller.FilterComparisonChange = function(){
-    xfilter.GetValues();
-    xfilter.Render();
+  xcontroller.SearchComparisonChange = function(){
+    xsearch.GetValues();
+    xsearch.Render();
   }
 
-  xcontroller.FilterJoinChange = function(){
-    xfilter.GetValues();
-    var d = xfilter.Data;
+  xcontroller.SearchJoinChange = function(){
+    xsearch.GetValues();
+    var d = xsearch.Data;
     if(d.Items.length > 0){
       var curjoin = d.Items[0].Join;
       if(curjoin == 'and') curjoin = 'or';
@@ -569,51 +580,51 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       for(var i=0;i<d.Items.length;i++){
         d.Items[i].Join = curjoin;
       }
-      xfilter.Render();
+      xsearch.Render();
     }
   }
 
-  xcontroller.FilterExpand = function(timeout){
-    if(jsh.$root('.xfilter_'+xmodel.class).is(':visible')) return;
-    if(xfilter.Data.Items.length == 0){
-      xcontroller.FilterAdd();
-      jsh.$root('.xfilter_'+xmodel.class).slideDown(timeout,function(){ jsh.$root('.xfilter_'+xmodel.class+' .xfilter_value').first().select().focus(); });
+  xcontroller.SearchExpand = function(timeout){
+    if(jsh.$root('.xsearch_'+xmodel.class).is(':visible')) return;
+    if(xsearch.Data.Items.length == 0){
+      xcontroller.SearchAdd();
+      jsh.$root('.xsearch_'+xmodel.class).slideDown(timeout,function(){ jsh.$root('.xsearch_'+xmodel.class+' .xsearch_value').first().select().focus(); });
     }
     else {
-      jsh.$root('.xfilter_'+xmodel.class).slideDown(timeout,function(){ jsh.$root('.xfilter_'+xmodel.class+' .xfilter_value').first().select().focus(); });
+      jsh.$root('.xsearch_'+xmodel.class).slideDown(timeout,function(){ jsh.$root('.xsearch_'+xmodel.class+' .xsearch_value').first().select().focus(); });
     }
   }
 
-  xcontroller.FilterButton = function(){
-    if(jsh.$root('.xfilterbutton'+xmodel.class+' span').html()=='Remove Filter'){
-      xfilter.Data.Items = [];
-      xfilter.Render();
-      jsh.$root('.xfilter_'+xmodel.class).hide();
-      xcontroller.FilterExpand(400);
-      xcontroller.FilterApply();
+  xcontroller.SearchButtonClick = function(){
+    if(jsh.$root('.xsearchbutton'+xmodel.class+' span').html()=='Remove Search'){
+      xsearch.Data.Items = [];
+      xsearch.Render();
+      jsh.$root('.xsearch_'+xmodel.class).hide();
+      xcontroller.SearchExpand(400);
+      xcontroller.RunSearch();
     }
     else{
-      if(jsh.$root('.xfilter_'+xmodel.class).is(':visible')) jsh.$root('.xfilter_'+xmodel.class).slideUp();
-      else xcontroller.FilterExpand(400);
+      if(jsh.$root('.xsearch_'+xmodel.class).is(':visible')) jsh.$root('.xsearch_'+xmodel.class).slideUp();
+      else xcontroller.SearchExpand(400);
     }
   }
 
-  xcontroller.FilterKeyUp = function(event){
-    if(event.keyCode==13) xcontroller.FilterApply();
+  xcontroller.SearchKeyUp = function(event){
+    if(event.keyCode==13) xcontroller.RunSearch();
   }
 
-  xcontroller.SetFilter = function(searchitems,hide){
-    if(hide) jsh.$root('.xfilter_'+xmodel.class).hide();
-    xfilter.Data.Items = searchitems;
-    xfilter.Render();
+  xcontroller.SetSearch = function(searchitems,hide){
+    if(hide) jsh.$root('.xsearch_'+xmodel.class).hide();
+    xsearch.Data.Items = searchitems;
+    xsearch.Render();
     xgrid.State.Search = searchitems;
     xgrid.SearchJSON = JSON.stringify(searchitems);
   }
 
-  xcontroller.FilterApply = function(cb){
-    if(!xgrid.Prop.isInlinePopup) if(jsh.XPage.onGridExit(null,function(){ xcontroller.FilterApply(); })) return;
-    xfilter.GetValues();
-    var searchitems = JSON.parse(JSON.stringify(xfilter.Data.Items));
+  xcontroller.RunSearch = function(cb){
+    if(!xgrid.Prop.isInlinePopup) if(jsh.XPage.onGridExit(null,function(){ xcontroller.RunSearch(); })) return;
+    xsearch.GetValues();
+    var searchitems = JSON.parse(JSON.stringify(xsearch.Data.Items));
     var has_search_items = false;
     _.each(searchitems,function(val){ 
       if(val.Value.trim() != '') has_search_items = true; 
@@ -629,17 +640,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xgrid.NewSearchJSON(sjson, cb);
   }
 
-  xcontroller.FilterAdd = function(){
-    xfilter.GetValues();
-    xfilter.Data.Items.unshift(new jsh.XSearch.SearchItem('ALL','','and','contains'));
-    xfilter.Render();
+  xcontroller.SearchAdd = function(){
+    xsearch.GetValues();
+    xsearch.Data.Items.unshift(new jsh.XSearch.SearchItem('ALL','','and','contains'));
+    xsearch.Render();
   }
 
-  xcontroller.FilterRemove = function(obj){
-    xfilter.GetValues();
-    var idx = jsh.$root(xfilter.PlaceholderID).children().index($(obj).parent());
-    xfilter.Data.Items.splice(idx,1);
-    xfilter.Render();
+  xcontroller.SearchRemove = function(obj){
+    xsearch.GetValues();
+    var idx = jsh.$root(xsearch.PlaceholderID).children().index($(obj).parent());
+    xsearch.Data.Items.splice(idx,1);
+    xsearch.Render();
   }
 
   xcontroller.Export = function(){
@@ -652,8 +663,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   xcontroller.UpdateTitleCaption = function(){
     var has_search_items = xcontroller.HasSearchItems(this.SearchJSON);
     var txt = '(';
-    if(has_search_items) txt += 'filtered';
-    if(xgrid.DBRowCount >= 0) txt += ((txt=='(')?'':' - ') + xgrid.DBRowCount.toLocaleString() + ' rows';
+    if(has_search_items) txt += 'Search';
+    if((xgrid.DBRowCount == 0) && !has_search_items && xgrid.RequireSearch){}
+    else if(xgrid.DBRowCount >= 0) txt += ((txt=='(')?'':' - ') + xgrid.DBRowCount.toLocaleString() + ' results';
     if(txt == '(') txt = '';
     else txt += ')';
     if(txt){

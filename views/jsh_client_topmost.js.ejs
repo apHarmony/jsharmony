@@ -278,8 +278,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           }
           else jsh.XExt.ReplaceHistory(window.location.href.toString(), jsh.XPage.GetState());
 
-          //Select first Filter by default, if form is open
-          jsh.$root('.xfilter_value:visible').first().select().focus();
+          //Select first search value by default, if form is open
+          jsh.$root('.xsearch_value:visible').first().select().focus();
 
           console.log('Initialization Complete');
         }, jsh.XModels_root);
@@ -952,8 +952,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       XExt.findClosest(e.target, '.xbuttonadd:visible').first().trigger('click');
       handled = true;
     }
-    else if ((e.which == 70) && (e.altKey)) {//ALT+F = FILTER
-      jsh.$root('.xfilterbutton:visible').first().trigger('click');
+    else if ((e.which == 70) && (e.altKey)) {//ALT+Q = Search
+      jsh.$root('.xsearchbutton:visible').first().trigger('click');
       handled = true;
     }
     else if ((e.which == 80) && (e.altKey)) {//ALT+P = PRINT

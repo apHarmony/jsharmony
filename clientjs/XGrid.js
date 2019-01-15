@@ -51,7 +51,8 @@ exports = module.exports = function(jsh){
     this.scrollFunc = null;
     this.EOF = true;
     this.NoResultsMessage = 'No results %%%FORSEARCHPHRASE%%%';
-    this.RequireFilterMessage = 'Please select a filter';
+    this.NoDataMessage = null;
+    this.RequireSearchMessage = 'Please search';
     this.RowCount = 0;
     this.AutoLoadMore = true;
     if(this.Paging) this.EnableScrollUpdate();
@@ -71,7 +72,7 @@ exports = module.exports = function(jsh){
     this.OnLoadMoreData = null; //()
     this.OnLoadComplete = null;
     this.OnLoadError = null;
-    this.RequireFilter = false;
+    this.RequireSearch = false;
     this.State = {};
     this.Prop = {};
     this.GetMeta = true;
@@ -183,11 +184,9 @@ exports = module.exports = function(jsh){
         //else { jsh.XExt.Alert('Error retrieving total row count.'); }
         //onComplete = null;  //Clear onComplete event, already handled
       }
-      if ((data[this.q].length == 0) && ((_this.NoResultsMessage) || (_this.RequireFilter && _this.RequireFilterMessage))) {
+      if ((data[this.q].length == 0) && ((_this.NoResultsMessage) || (_this.RequireSearch && _this.RequireSearchMessage))) {
         _this.EOF = true;
-        var noresultsmessage = _this.NoResultsMessage.replace(/%%%FORSEARCHPHRASE%%%/g, (($.trim(_this.Search) != '')?'for selected search phrase':''));
-        if (_this.RequireFilter && !reqdata.search && !reqdata.searchjson) noresultsmessage = _this.RequireFilterMessage;
-        jsh.$root(_this.PlaceholderID).html('<tr class="xtbl_noresults"><td colspan="' + _this.ColSpan + '" align="center" class="xtbl_noresults">' + noresultsmessage + '</td></tr>');
+        _this.RenderNoResultsMessage({ search: (((reqdata.search||'').trim()) || ((reqdata.searchjson||'').trim())) });
         _this.RowCount = 0;
         if (_this.OnResetDataSet) _this.OnResetDataSet(data);
       }
@@ -243,6 +242,14 @@ exports = module.exports = function(jsh){
     _this.IsLoading = false;
     if (_this.OnLoadComplete) _this.OnLoadComplete();
     if(onComplete) onComplete();
+  }
+  XGrid.prototype.RenderNoResultsMessage = function(options){
+    if(!options) options = { search: false };
+    var _this = this;
+    var noresultsmessage = _this.NoResultsMessage.replace(/%%%FORSEARCHPHRASE%%%/g, (($.trim(_this.Search) != '')?'for selected search phrase':''));
+    if (_this.RequireSearch && !options.search) noresultsmessage = _this.RequireSearchMessage;
+    else if (!options.search && _this.NoDataMessage) noresultsmessage = _this.NoDataMessage;
+    jsh.$root(_this.PlaceholderID).html('<tr class="xtbl_noresults"><td colspan="' + _this.ColSpan + '" align="center" class="xtbl_noresults">' + noresultsmessage + '</td></tr>');
   }
   XGrid.prototype.ResetSortGlyphs = function (tblobj){
     var xhtml_thead = tblobj.find('thead tr');

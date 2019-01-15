@@ -138,7 +138,12 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
   });
   //If insert, and the model has any dynamic bindings, show message that the user needs to save first to edit the data
   if((targetperm=='I') && !Helper.hasModelAction(req, model, 'I')){
-    if(!allConstantBindings) { return onComplete("<div>Please save to manage "+model.caption[1]+" data.</div>"); }
+    if(!allConstantBindings) {
+      if(!topmost && _.includes(['exec','report','multisel'], model.layout)){ }
+      else {
+        return onComplete("<div>Please save to manage "+model.caption[1]+" data.</div>");
+      }
+    }
   }
 
   if(!req.query.action){
@@ -160,7 +165,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
   copyValues(rslt, model, [
     'id', 'namespace', 'class', 'layout', 'caption', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onupdate', 'oncommit', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy', 'js', 'hide_system_buttons',
     'popup', 'rowclass', 'rowstyle', 'tabpanelstyle', 'tablestyle', 'formstyle', 'sort', 'querystring', 'disableautoload', 'tabpos', 'templates', 'unbound',
-    'reselectafteredit','newrowposition','validationlevel','grid_expand_filter','grid_rowcount', 'grid_require_filter','grid_save_before_update','noresultsmessage','ejs','css','onecolumn',
+    'reselectafteredit','newrowposition','validationlevel','grid_expand_search','grid_rowcount', 'grid_require_search','grid_save_before_update','noresultsmessage','ejs','css','onecolumn',
     //Commit Level
     function(){
       if(model.commitlevel){
@@ -307,7 +312,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
           if(targetperm=='U') tabtargetperm = 'BU';
 
           if('roles' in tab) if (!ejsext.hasAction(req, tab, tabtargetperm)) continue;
-          if('actions' in tab) if (!ejsext.hasAction(req, tab, tabtargetperm)) continue;
+          if('actions' in tab) if (!ejsext.hasAction(req, model, tab.actions, tabtargetperm)) continue;
           //if(!Helper.hasModelAction(req, tabmodel, 'B')) continue;
           if (tab.showcode) {
             if (_.includes(tab.showcode, tabcode)) {
@@ -518,7 +523,36 @@ AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, targetperm, 
     if (('control' in dstfield) && ((dstfield.control == 'subform') || (dstfield.popuplov))) {
       _this.genClientModel(req, res, srcfield.target, false, srcfield.bindings, model, function(subform){
         if(srcfield.control=='subform'){
-          if(!ejsext.hasAction(req, subform, (targetperm=='U'?'BU':targetperm), (('actions' in dstfield)?dstfield.actions:'BIU'))) return cb();
+          //targetperm
+          //field.actions (dstfield.actions
+          //field.roles (applied to dstfield.actions)
+          //subformModel.actions
+          //subformModel.roles
+          //subformModel.layout
+          //
+          //If targetperm==I
+          //  If dstfield.actions has I
+          //  If subformModel.layout == multisel, exec, report
+          //    If subformModel.actions && subformModel.roles has B/U
+          //  If subformModel.layout == form, form-m, grid
+          //    If subformModel.actions && subformModel.roles has B/I
+          //If targetperm==B
+          //  If dstfield.actions has B
+          //  If subformModel.actions && subformModel.roles has B
+          //If targetperm==U
+          //  If dstfield.actions has B/U
+          //  If subformModel.actions && subformModel.roles has B/U
+
+          if(('actions' in dstfield) && !Helper.hasAction(dstfield.actions, (targetperm=='U'?'BU':targetperm))) return cb();
+
+          var subformmodel = jsh.getModel(req, srcfield.target, model.id);
+          var subformtargetperm = targetperm;
+          if(targetperm=='U') subformtargetperm = 'BU';
+          else if(targetperm=='I'){
+            if(_.includes(['multisel','exec','report'],subformmodel.layout)) subformtargetperm = 'BU';
+            else subformtargetperm = 'BI';
+          }
+          if(!ejsext.hasAction(req, subformmodel, subformtargetperm)) return cb();
         }
         dstfield.model = subform;
         rslt.push(dstfield);

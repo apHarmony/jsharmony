@@ -408,6 +408,7 @@ exports.ProcessFileOperations = function (keyval, fileops, rslt, stats, callback
               if (_.includes(['jpeg', 'jpg'], fileop.format)) img.flatten();
             }
             img.quality(90);
+            img.autoOrient();
             img.resize(outerw, outerh);
             img.crop(cropw, croph, cropx, cropy);
             img.repage(0, 0, 0, 0);
@@ -428,6 +429,7 @@ exports.ProcessFileOperations = function (keyval, fileops, rslt, stats, callback
             if (_.includes(['jpeg', 'jpg'], fileop.format)) { img.flatten(); }
           }
           img.quality(90);
+          img.autoOrient();
           if (imgoptions.upsize) {
             img.resize(fileop.size[0], fileop.size[1]);
           }

@@ -322,8 +322,9 @@ exports.putModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
       }
       else throw new Error('Missing parameter ' + fname);
     });
-    
-    verrors = _.merge(verrors, model.xvalidate.Validate('I', _.merge(vfiles, enc_sql_params, sql_params)));
+
+    var ignore_subs = _.map(subs, function(val){ return '_obj.'+val });
+    verrors = _.merge(verrors, model.xvalidate.Validate('I', _.merge(vfiles, enc_sql_params, sql_params), '', ignore_subs));
     if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
     
     var dbsql = db.sql.putModelForm(_this.jsh, model, fields, keys, sql_extfields, sql_extvalues, encryptedfields, hashfields, enc_datalockqueries, param_datalocks);

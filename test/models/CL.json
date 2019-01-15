@@ -9,8 +9,8 @@
 	"sort":["^c_name"], 
 	"buttons":[{"link":"add:C"}],
 	"menu":"clients",
-    "grid_expand_filter": 1,
-    "grid_require_filter": 0,
+    "grid_expand_search": 1,
+    "grid_require_search": 0,
     "grid_rowcount":1,
 	"fields":[
 	  {"name":"c_id","type":"bigint","actions":"FB","key":1,"link":"edit:C","caption": "ID","datalock":{"c_id":"client_c_id"}},

@@ -52,11 +52,11 @@ exports = module.exports = function(jsh){
   SearchQuery.prototype.GetValues = function (_PlaceholderID) {
     var _this = this;
     _this.Items = [];
-    jsh.$root(_PlaceholderID + ' div.xfilter_expression').each(function (i, obj) {
-      var v_column = $(obj).find('select.xfilter_column').val();
-      var v_value = $(obj).find('input.xfilter_value').val();
-      var v_join = $(obj).find('input.xfilter_join').val();
-      var v_comparison = $(obj).find('select.xfilter_comparison').val();
+    jsh.$root(_PlaceholderID + ' div.xsearch_expression').each(function (i, obj) {
+      var v_column = $(obj).find('select.xsearch_column').val();
+      var v_value = $(obj).find('input.xsearch_value').val();
+      var v_join = $(obj).find('input.xsearch_join').val();
+      var v_comparison = $(obj).find('select.xsearch_comparison').val();
       if ((v_column==='ALL') || !v_comparison) v_comparison = 'contains';
       _this.Items.push(new SearchItem(v_column, v_value, v_join, v_comparison));
     });
@@ -65,10 +65,10 @@ exports = module.exports = function(jsh){
     var _this = this;
     var newitems = [];
     jsh.$root(_PlaceholderID + ' div').each(function (i, obj) {
-      var v_value = $(obj).find('input.xfilter_value').val();
-      var v_join = $(obj).find('input.xfilter_join').val();
-      var v_comparison = $(obj).find('select.xfilter_comparison').val();
-      newitems.push(new SearchItem($(obj).find('select.xfilter_column').val(), v_value, v_join, v_comparison));
+      var v_value = $(obj).find('input.xsearch_value').val();
+      var v_join = $(obj).find('input.xsearch_join').val();
+      var v_comparison = $(obj).find('select.xsearch_comparison').val();
+      newitems.push(new SearchItem($(obj).find('select.xsearch_column').val(), v_value, v_join, v_comparison));
     });
     if (newitems.length != _this.Items.length) return true;
     for (var i = 0; i < newitems.length; i++) {

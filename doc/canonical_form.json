@@ -86,7 +86,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "sqlinsert":"insert into %%%TABLE%%%(%%%FIELDS%%%) values(%%%VALUES%%%);select scope_identity() as CHG_ID;",
   "sqlexec": "exec dbo.PLE_NOTIF @c_id,@MDate", //Used by EXEC.  Be sure to add %%%DATALOCKS%%% if applicable
   "sqltype": "multirecordset", //recordset, multirecordset  Used by EXEC.
-  "sqlwhere": "C_STS='ACTIVE'", //Additional filter for grid
+  "sqlwhere": "C_STS='ACTIVE'", //Additional search query for grid
   //onload(xmodel,callback) - Returns false to not bubble (Executed once all selects are complete, on every reselect.  Callback pulls execution away from main thread, return false, and reset links on completion,
   //onloadimmediate(xmodel) - Runs immediately once select is complete, instead of when all selects are complete for all subforms
   //oninit(xmodel) (Executed when form is first loaded)
@@ -136,7 +136,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     {"link": "savenew:", "icon": "add", "text": "Save and New", "actions": "IU", "group":"Actions" }
     //"link":"js:XExt.popupReport('I',{ c_id: 97 },{ width:900, height:500 });"
   ],
-  "hide_system_buttons" : ["print","export","help","filter","clear","add"], //Current only on Grid
+  "hide_system_buttons" : ["print","export","help","search","clear","add"], //Current only on Grid
   "rowstyle": "<#=xejs.iif(1==1,'color:red;','color:yellow;')#>", //Used in grid to style rows dynamically
   "rowclass": "<#-xejs.case(datarow['PLE_SEL_NOTIF'],'xgrid_row_highlight',!datarow['PLE_SEL_NOTIF_OK'],'xgrid_row_disabled')#>", //Used in grid to style rows dynamically
     //xejs.iif(condition,true,[false])  [false] result is optional
@@ -146,9 +146,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "commitlevel": "row",          "comment3":"cell, row, page, auto, or none", //auto=(if not editable, "none" - if top-level, "row", if subform "page"
   "validationlevel": "cell",     "comment4":"cell, or row",
   "noresultsmessage":  "No results found %%%FORSEARCHPHRASE%%%",
-  "grid_expand_filter": 1,
+  "grid_expand_search": 1,
   "grid_rowcount":  1,
-  "grid_require_filter": 1, //Do not initially load results
+  "grid_require_search": 1, //Do not initially load results
   "grid_save_before_update": 1,
   "duplicate": {"target": "E_DUPLICATE", "bindings": {"e_id":"e_id", "c_id": "c_id"},"link":"edit:EW&e_id=new_e_id","link_text": "Duplicate Item"},
   "templates": { "grid": ".xgrid_calendar_template" },
@@ -170,11 +170,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "sqlupdate": "@BXBUY_ID+5",
       "sqlwhere": "x like @E_Name", //Custom where express for "F" fields in Grid
       "caption": "Employee",
-      "caption_ext":  "Employee Name", //Optional longer caption for Filter & Validation
+      "caption_ext":  "Employee Name", //Optional longer caption for Search & Validation
       "captionstyle": "font-size:12px;",
       "captionclass": "classname",
       "hidden": 1, //**Deprecated**, use "control":"hidden"
-      "actions": "B", //BIUD, or F for foreign key, S for Grid Filter/Search in addition to any B.  html and button controls auto-add "B" rights. **C - crumbparameter deprecated**
+      "actions": "B", //BIUD, or F for foreign key, S for Grid Search in addition to any B.  html and button controls auto-add "B" rights. **C - crumbparameter deprecated**
       "datalock": { "c_id": "client_c_id" }, //Link DataLock ID to query in _config.datalocks.
       "control": "label", //label,html(value),textbox,textzoom,dropdown,date,textarea,subform,html,hidden,password,file_upload,button,linkbutton,tree,checkbox
       "controlparams": { "dateformat": "mm/dd/y" }, //DatePicker Params - dateformat is parameter to jQuery datepicker control for date display
@@ -276,8 +276,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "serverejs": 1, //Evaluate EJS server-side (for HTML)
       "disable_sort": 1, //Only applies to grid
       "enable_search": 1, //Only applies to grid, enable search if it is a hidden column
-      "disable_search": 1, //Only applies to grid, do not display as a filter column
-      "disable_search_all": 1, //Only applies to grid, do not query in "Any" filter search
+      "disable_search": 1, //Only applies to grid, do not display as a search column
+      "disable_search_all": 1, //Only applies to grid, do not query in "Any" search
       "sqlsort": "(case when X then 1 else 0 end)", //Only applies to grid
       "sqlsearch": "(case when X then 1 else 0 end)", //Only applies to grid
       "sqlsearchsound": "c_id in (select c_id from SDX where SDX_COL='CN' and SDX_VAL=SOUNDEX(%%%FIELD%%%))",

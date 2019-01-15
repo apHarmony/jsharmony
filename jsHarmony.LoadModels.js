@@ -174,6 +174,10 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
     }
   }
 
+  //-------------------------
+
+  if(model===null){ delete this.Models[modelname]; return; }
+
   if(!prefix) prefix = '';
   var _this = this;
   model['id'] = modelname;
@@ -181,6 +185,7 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
   if('namespace' in model){ _this.LogInit_ERROR(model.id + ': "namespace" attribute should not be set, it is a read-only system parameter'); }
   model._inherits = [];
   model._referencedby = [];
+  model._parentmodels = { tab: {}, duplicate: {}, subform: {}, popuplov: {} };
   if(!model.path && modelpath) model.path = modelpath;
   if(!model.module && modeldir && modeldir.module) model.module = modeldir.module;
   model.namespace = _this.getNamespace(modelname);
@@ -199,7 +204,9 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
   var modelbasedir = '';
   if(model.path) modelbasedir = path.dirname(model.path) + '/';
   if(modelbasedir){
-    var modelpathbase = modelpath.substr(0,modelpath.length-5);
+    //var modelpathbase = modelpath.substr(0,modelpath.length-5);
+    var modelpathbase = modelbasedir + _this.getBaseModelName(model.id);
+
     //Load JS
     prependPropFile('js',modelpathbase + '.js');
     //Load CSS
@@ -1046,6 +1053,9 @@ exports.ParseEntities = function () {
         }
         if (field.sql_from_db) field.sql_from_db = _this.parseFieldExpression(field, field.sql_from_db, {}, { ejs:true });
         if (field.sql_to_db) field.sql_to_db = _this.parseFieldExpression(field, field.sql_to_db, {}, { ejs:true });
+        if (field.sqlsort) field.sqlsort = _this.parseFieldExpression(field, field.sqlsort, {}, { ejs:true });
+        if (field.sqlsearch) field.sqlsearch = _this.parseFieldExpression(field, field.sqlsearch, {}, { ejs:true });
+        if (field.sqlsearch_to_db) field.sqlsearch = _this.parseFieldExpression(field, field.sqlsearch_to_db, {}, { ejs:true });
         var has_datatype_validator = false;
         if (field.datatype_config){
           if(field.datatype_config.override_length){
@@ -1179,6 +1189,10 @@ exports.ParseEntities = function () {
             }
           }
         }
+        if(lov.sqlselect && !('sqlselect_params' in lov)){
+          lov.sqlselect_params = [];
+          _this.forEachSqlParam(model, lov.sqlselect, function(pfield_name, pfield){ lov.sqlselect_params.push(pfield_name); });
+        }
       }
       //Check if sqltruncate also has %%%TRUNCATE%%% in sql
       if(field.lov){
@@ -1220,10 +1234,10 @@ exports.ParseEntities = function () {
     //Validate Model and Field Parameters
     var _v_model = [
       'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites', 'class', 'using',
-      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings','groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
+      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings', '_parentmodels', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
       'pagesettings', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
-      'hide_system_buttons', 'grid_expand_filter', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
-      'grid_require_filter', 'grid_save_before_update', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
+      'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
+      'grid_require_search', 'grid_save_before_update', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
       'js', 'ejs', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
@@ -1244,7 +1258,7 @@ exports.ParseEntities = function () {
       'image', 'thumbnails', 'expand_all', 'item_context_menu'
     ];
     var _v_popuplov = ['target', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
-    var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db'];
+    var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db'];
     //lov
     var existing_targets = [];
     for (var f in model) { if (f.substr(0, 7) == 'comment') continue; if (!_.includes(_v_model, f)) _this.LogInit_ERROR(model.id + ': Invalid model property: ' + f); }
@@ -1476,6 +1490,19 @@ exports.ParseEntities = function () {
 
 function ParseMultiLineProperties(obj, arr) {
   _.each(arr, function (p) { if (p in obj) obj[p] = Helper.ParseMultiLine(obj[p]); });
+}
+
+exports.forEachSqlParam = function(model, sql, f){ /* f(pfield_name) */
+  var _this = this;
+  sql = _this.AppSrvClass.prototype.getSQL(model, sql, _this);
+  if(sql){
+    var params = _this.AppSrvClass.prototype.getSQLParameters(sql, model.fields, _this);
+    if(params.length){
+      for(var i=0;i<params.length;i++){
+        if(f) f(params[i]);
+      }
+    }
+  }
 }
 
 exports.AddSqlParams = function(model, element, props){
@@ -1757,6 +1784,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     }
     var tmodel = jsh.getModel(null,tab.target,model);
     if (!tmodel) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Target model "' + tab.target + '" not found'); return }
+    tmodel._parentmodels.tab[model.id] = 1;
     tab.target = tmodel.id;
     validateSiteRoles(model, tmodel, model.id + ' > Tab ' + tabname + ': ', '', tab.roles);
     validateBindings(tab.bindings, model, tmodel, model.id + ' > Tab ' + tabname + ': ');
@@ -1766,6 +1794,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     var tmodel = jsh.getModel(null,model.duplicate.target,model);
     if (!tmodel) { _this.LogInit_WARNING('Invalid duplicate model ' + model.duplicate + ' in ' + model.id); return }
     if(tmodel.layout != 'exec') { _this.LogInit_ERROR(model.id + ' > Duplicate: Target model should have "exec" layout'); }
+    tmodel._parentmodels.duplicate[model.id] = 1;
     model.duplicate.target = tmodel.id;
     validateSiteRoles(model, tmodel, model.id + ' > Duplicate model ' + model.duplicate + ': ', '');
     validateSiteLinks(model, model.duplicate.link, model.id + ' > Duplicate model ' + model.duplicate + ' link: ', model.duplicate.link);
@@ -1779,6 +1808,8 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     if (('target' in field) && ((field.control == 'subform') || (field.popuplov))) {
       var tmodel = jsh.getModel(null,field.target,model);
       if (!tmodel) { _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Invalid target model "' + field.target + '"'); return }
+      if(field.control=='subform') tmodel._parentmodels.subform[model.id] = 1;
+      else if(field.popuplov) tmodel._parentmodels.popuplov[model.id] = 1;
       field.target = tmodel.id;
       validateSiteRoles(model, tmodel, model.id + ' > ' + field.name + ': ', '', field.roles);
       validateSiteLinks(model, field.link, model.id + ' > ' + field.name + ' link: ', field.link, field.roles);
@@ -1787,6 +1818,9 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
       if(field.control=='subform'){
         if((tmodel.layout=='form') && (field._auto.indexOf('actions')>=0)){
           _this.LogInit_WARNING(model.id + ' > Subform ' + field.name + ': When using a subform that has a "form" layout, "actions" should be explicitly set on the subform control.  When both a subform and parent form target the same table, the subform should not have the "I" action.');
+        }
+        if((tmodel.layout=='grid') && Helper.hasAction(field.actions, 'I') && _.includes(['row','cell'],tmodel.commitlevel) && !_.isEmpty(field.bindings) && !tmodel.grid_save_before_update && Helper.hasAction(model.actions, "I")){
+          _this.LogInit_WARNING(model.id + ' > Subform ' + field.name + ': When using a subform that has "I" actions and a target with a "grid" layout and, the target model\'s "commitlevel" should be set to "auto" so that the "commitlevel" will be set to "page" on insert and have both parent and child data saved in one transaction.  Alternatively, set "grid_save_before_update" to true on the target model to that no grid data can be entered until the parent is saved.');
         }
       }
     }
