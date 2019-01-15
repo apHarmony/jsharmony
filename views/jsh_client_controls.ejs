@@ -90,7 +90,7 @@ for(var i=0;i<model.fields.length;i++){
     </div>
   <% }
   if(field.control=='button'){ 
-    if('link' in field){ %><input <%-xejs.showProp('data-id',field.name)%> type="button" class="xform_ctrl xelem<%=model.class%> <%=field.name%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%-xejs.escapeHTMLN(field.value)%>" data-url="<%=field.link%>" onclick="return (function(){<%-jslocals%><%-field.onclick%>}).call(this);" /><% }
+    if('link' in field){ %><input <%-xejs.showProp('data-id',field.name)%> type="button" class="xform_ctrl xelem<%=model.class%> <%=field.name%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%-xejs.escapeHTMLN(field.value)%>" data-url="<%-field.link%>" onclick="return (function(){<%-jslocals%><%-field.onclick%>}).call(this);" /><% }
     else{ %><input <%-xejs.showProp('data-id',field.name)%> type="button" data-model="<%=model.id%>" class="xform_ctrl xelem<%=model.class%> <%=field.name%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%-xejs.escapeHTMLN(field.value)%>" onclick="return (function(){<%-jslocals%><%-field.onclick%>}).call(this);" /><% }
   }
   if(field.control=='linkbutton'){ 

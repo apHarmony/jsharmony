@@ -167,6 +167,13 @@ jsHarmonySite.prototype.Validate = function(){
   }
 };
 
+jsHarmonySite.prototype.getGlobalParams = function(req){
+  var _this = this;
+  if(!_this.globalparams) return {};
+  var rslt = _.mapValues(_this.globalparams,function(val,key){ if(_.isFunction(val)) return val(req); return val; });
+  return rslt;
+}
+
 jsHarmonySite.Placeholder = function(){
   this.initialized = false;
 };

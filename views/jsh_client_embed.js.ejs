@@ -59,7 +59,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     parent:<%-((typeof parent == 'undefined')?'null':"'"+parent.id+"'")%>,
     bindings:<% if(!bindings){ %>null<% } else { 
       %>{<%
-      if(model.topmost) _.each(model.fields,function(field){ if(field.name in bindings) {%><%=field['name']%>: function(){return jsh.XExt.LiteralOrLookup(<%-JSON.stringify(field['name'])%>,jsh._GET);},<%	}});
+      if(model.topmost) _.each(model.fields,function(field){ if(field.name in bindings) {%><%=field['name']%>: function(){return jsh.XExt.LiteralOrLookup(<%-JSON.stringify(bindings[field['name']])%>,jsh._GET);},<%	}});
       else if(typeof bindings != 'undefined') _.each(bindings,function(val,key){%><%=key%>: function(){ var xparentmodel = jsh.XModels['<%=parent.id%>']; return jsh.XExt.LiteralOrLookup(<%-JSON.stringify(val)%>,xparentmodel.controller.form.Data,xparentmodel);},<%}); 
       %>}<%
     } %>,
