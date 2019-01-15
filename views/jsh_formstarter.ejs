@@ -2,23 +2,27 @@
 This model must be run with the "action" querystring parameter.  The following action(s) are available:<br/>
 &nbsp;
 <% if(model.layout=='form'){ %>
-  <h2>"add"</h2>
-  Add new records.
-  <pre>?action=add</pre>
-  <form>
-    <input type="hidden" name="action" value="add">
-    <input type="button" value="Add New Record" onclick="<%=instance%>.$(this).closest('form').submit();" style="margin-top:8px;" />
-  </form>
-  <h3>"edit"</h3>
-  View or edit data.
-  <pre>?action=edit<% _.each(keys, function(key){ %>&<%=key%>=VALUE<% }); %></pre>
-  <form>
-    <input type="hidden" name="action" value="edit">
-    <% _.each(keys, function(key){ %>
-    <label><%=key%>: <input type="text" name="<%=key%>" class="required" value="<%=(querystring[key]||'')%>" /></label><br/>
-    <% }); %>
-    <input type="button" value="Browse / Edit Record" onclick="var $ = <%=instance%>.$; var XExt = <%=instance%>.XExt; var form = <%=instance%>.$(this).closest('form'); var hasErrors = false; form.find('.required').each(function(){ if(!$(this).val()){ XExt.Alert('Please enter a value for '+$(this).prop('name')); hasErrors = true; } }); if(hasErrors) return; form.submit();" style="margin-top:8px;" />
-  </form>
+  <% if(Helper.hasModelAction(req, model, 'I')){ %>
+    <h2>"add"</h2>
+    Add new records.
+    <pre>?action=add</pre>
+    <form>
+      <input type="hidden" name="action" value="add">
+      <input type="button" value="Add New Record" onclick="<%=instance%>.$(this).closest('form').submit();" style="margin-top:8px;" />
+    </form>
+  <% } %>
+  <% if(Helper.hasModelAction(req, model, 'BU')){ %>
+    <h3>"edit"</h3>
+    View or edit data.
+    <pre>?action=edit<% _.each(keys, function(key){ %>&<%=key%>=VALUE<% }); %></pre>
+    <form>
+      <input type="hidden" name="action" value="edit">
+      <% _.each(keys, function(key){ %>
+      <label><%=key%>: <input type="text" name="<%=key%>" class="required" value="<%=(querystring[key]||'')%>" /></label><br/>
+      <% }); %>
+      <input type="button" value="Browse / Edit Record" onclick="var $ = <%=instance%>.$; var XExt = <%=instance%>.XExt; var form = <%=instance%>.$(this).closest('form'); var hasErrors = false; form.find('.required').each(function(){ if(!$(this).val()){ XExt.Alert('Please enter a value for '+$(this).prop('name')); hasErrors = true; } }); if(hasErrors) return; form.submit();" style="margin-top:8px;" />
+    </form>
+  <% } %>
 <% } else if((model.layout=='multisel')||(model.layout=='form-m')){ %>
   <h3>"edit"</h3>
   View or edit data.

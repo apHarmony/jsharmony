@@ -303,8 +303,22 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
   }
 
-  jsh.XPage.Reload = function() {
-    XExt.navTo(window.location.href.toString() + '&tstmp=' + Date.now());
+  jsh.XPage.Reload = function(options) {
+    options = _.extend({ force: false, browserRefresh: false }, options);
+    var a = XExt.getURLObj(window.location.href);
+    var qs = XExt.parseGET(a.search);
+    qs.tstmp = Date.now();
+    a.search = '?' + $.param(qs);
+    if(options.force){
+      window.onbeforeunload = null;
+      jsh.cancelExit = true;
+    }
+    if(options.browserRefresh){
+      window.location = a.href.toString();
+    }
+    else {
+      XExt.navTo(a.href.toString());
+    }
   }
 
   jsh.XPage.PreDestroy = function() {
