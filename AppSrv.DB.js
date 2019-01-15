@@ -79,8 +79,11 @@ exports.AppDBError = function (req, res, err, stats, errorHandler) {
   //Not necessary because sql is printed out in node debug in log below
   //if ('sql' in err) { if (this.jsh.Config.debug_params.appsrv_logsql) err.message += ' SQL: ' + err.sql; }
   if ((err.message) && (err.message == 'INVALID ACCESS')) return errorHandler(-12, 'Invalid DataLock Access', stats);
-  if (this.jsh.Config.debug_params.appsrv_requests) this.jsh.Log.error(err);
-  if ((err.message) && (err.message.indexOf('Application Error - ') == 0)) return errorHandler(-5, err.message, stats);
+  if(err.message){
+    if(err.message.indexOf('Application Error - ') == 0) return errorHandler(-5, err.message, stats);
+    if(err.message.indexOf('Application Warning - ') == 0) return errorHandler(-5, err.message, stats);
+    if(err.message.indexOf('Execute Form - ') == 0) return errorHandler(-5, err.message, stats);
+  }
   if(('number' in err) && err.frontend_visible) return errorHandler(err.number, err.message, stats);
   //if ('number' in err) return errorHandler(err.number, err.message);  //This would prevent show_system_errors from functioning
   return errorHandler(-99999, err.message, stats);
