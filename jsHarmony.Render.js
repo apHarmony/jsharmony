@@ -88,8 +88,8 @@ exports.getJSClientParams = function (req) {
     if (_this.Config.google_settings && _this.Config.google_settings.API_KEY) rslt += 'google_api_key: ' + JSON.stringify(_this.Config.google_settings.API_KEY) + ',';
     rslt += 'isAuthenticated: true,';
   }
-  if ('DEV' in req._roles){
-    rslt += 'dev: ' + JSON.stringify(1) + ',';
+  if (req._roles && ('DEV' in req._roles)){
+    rslt += 'dev: 1,';
   }
   rslt += '}';
   return rslt;

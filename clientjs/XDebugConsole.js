@@ -24,7 +24,7 @@ exports = module.exports = function(jsh){
   var XDebugConsole = function(){
     this.SETTINGS_ID = 'debugconsole';
     this.socket = {};
-    this.socket_url = "ws://" + window.location.hostname + ":" + window.location.port + jsh._BASEURL + "_log";
+    this.socket_url = (window.location.protocol=='https:'?'wss:':'ws:')+"//" + window.location.hostname + ":" + window.location.port + jsh._BASEURL + "_log";
     this.settings = {};
     this.avaliable_positions = ['bottom','right'];
     this.client_sources = {
