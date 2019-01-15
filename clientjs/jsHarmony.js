@@ -94,6 +94,7 @@ var jsHarmony = function(options){
   this.XLoader = XLoader(this);
   this.XImageLoader = XImageLoader(this);
   this.XDebugConsole = XDebugConsole(this);
+  this.xDebugConsole = new this.XDebugConsole();
   this.XViews = XViews;
 
   //jsh_client_embed
@@ -235,7 +236,7 @@ jsHarmony.prototype.Init = function(){
   _this.InitDialogs();
   _this.InitControls();
   _this.XMenu.Init();
-  _this.XDebugConsole.Init();
+  _this.xDebugConsole.Init();
   $(document).mousemove(function (e) {
     _this.mouseX = e.pageX;
     _this.mouseY = e.pageY;

@@ -704,7 +704,7 @@ exports = module.exports = function(jsh){
   }
 
   XExt.SetSettingsCookie = function(module_name,cvalue){
-    if (typeof module_name === undefined || module_name.length <=0){
+    if (typeof module_name === "undefined" || module_name.length <=0){
       throw "Please provide module name!";
     }
     var settings = XExt.GetSettingsCookie();
