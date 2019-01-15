@@ -692,7 +692,7 @@ DIALOG BOXES
   display:block;
   height: 300px;
   }
-<%-rootcss%> .xdebugconsole #debug-panel {
+<%-rootcss%> .xdebugconsole .debug-panel {
   display:none;
   position: fixed;
   height: 300px;
@@ -701,11 +701,11 @@ DIALOG BOXES
   border-bottom: 3px solid #aaa;
   background-color: #fff;
   }
-<%-rootcss%> .xdebugconsole.visible.bottom #debug-panel {
+<%-rootcss%> .xdebugconsole.visible.bottom .debug-panel {
   bottom: 0;
   right: 0;
   }
-<%-rootcss%> .xdebugconsole.visible.right #debug-panel {
+<%-rootcss%> .xdebugconsole.visible.right .debug-panel {
   width: 600px;
   bottom: 0;
   right: 0;
@@ -763,7 +763,7 @@ DIALOG BOXES
   margin-left: 3px;
   word-break: break-word;
   }
-<%-rootcss%> .xdebugconsole #debug-panel-minimized{
+<%-rootcss%> .xdebugconsole .debug-panel-minimized{
   position: fixed;
   bottom: 0;
   right: 0;

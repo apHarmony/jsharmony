@@ -28,8 +28,6 @@ exports = module.exports = function(jsh){
   XExt.XModel = require('./XExt.XModel.js')(jsh);
   XExt.COOKIE_MAX_EXPIRATION = 2147483647;
 
-  XExt.XForm = require('./XForm.js')(jsh);
-
   XExt.parseGET = function (qs) {
     if (typeof qs == 'undefined') qs = window.location.search;
     if (qs == "" || qs.length == 1) return {};
@@ -586,14 +584,12 @@ exports = module.exports = function(jsh){
     return obj.value;
   }
 
-  //
-  XExt.makeResizableDiv = function(main_elem_s, depended_s) {
-    var m_e = document.querySelector(main_elem_s);
-    var dep_elements = []
-    for(var i=0;i<depended_s.length; i++){
-      dep_elements.push(document.querySelector(depended_s[i]['selector']));
+  XExt.makeResizableDiv = function(selector, children) {
+    var obj = document.querySelector(selector);
+    for(var i=0;i<children.length; i++){
+      children[i].obj = document.querySelector(children[i].selector);
     }
-    var resizers = document.querySelectorAll(main_elem_s + ' .resizer');
+    var resizers = document.querySelectorAll(selector + ' .resizer');
     var minimum_size = 100;
     var counter = 0;
     var original_width = 0;
@@ -607,10 +603,10 @@ exports = module.exports = function(jsh){
       const currentResizer = resizers[i];
       currentResizer.addEventListener('mousedown', function(e) {
         e.preventDefault()
-        original_width = parseFloat(getComputedStyle(m_e, null).getPropertyValue('width').replace('px', ''));
-        original_height = parseFloat(getComputedStyle(m_e, null).getPropertyValue('height').replace('px', ''));
-        original_x = m_e.getBoundingClientRect().left;
-        original_y = m_e.getBoundingClientRect().top;
+        original_width = parseFloat(getComputedStyle(obj, null).getPropertyValue('width').replace('px', ''));
+        original_height = parseFloat(getComputedStyle(obj, null).getPropertyValue('height').replace('px', ''));
+        original_x = obj.getBoundingClientRect().left;
+        original_y = obj.getBoundingClientRect().top;
         original_mouse_x = e.pageX;
         original_mouse_y = e.pageY;
         window.addEventListener('mousemove', resize);
@@ -623,29 +619,30 @@ exports = module.exports = function(jsh){
         if (currentResizer.classList.contains('res-ew')) {
           var width = original_width - (e.pageX - original_mouse_x);
           if (width > minimum_size) {
-            m_e.style.width = width + 'px';
-            m_e.style.left = original_x + (e.pageX - original_mouse_x) + 'px';
-            for(var i=0;i<depended_s.length; i++){
-              dep_elements[i].style.width = (width+depended_s[i]['correction_x']) + 'px';
-              dep_elements[i].style.left = original_x + (e.pageX - original_mouse_x-depended_s[i]['correction_x']) + 'px';
+            obj.style.width = width + 'px';
+            obj.style.left = original_x + (e.pageX - original_mouse_x) + 'px';
+            for(var i=0;i<children.length; i++){
+              children[i].obj.style.width = (width + children[i].correction_x) + 'px';
+              children[i].obj.style.left = original_x + (e.pageX - original_mouse_x - children[i].correction_x) + 'px';
             }
           }
         }
         else if (currentResizer.classList.contains('res-ns')) {
           var height = original_height - (e.pageY - original_mouse_y);
           if (height > minimum_size) {
-            m_e.style.height = height + 'px';
-            m_e.style.top = original_y + (e.pageY - original_mouse_y) + 'px';
-            for(var i=0;i<depended_s.length; i++){
-              dep_elements[i].style.height = (height+depended_s[i]['correction_y']) + 'px';
-              dep_elements[i].style.top = original_y + (e.pageY - original_mouse_y-depended_s[i]['correction_y']) + 'px'
+            obj.style.height = height + 'px';
+            obj.style.top = original_y + (e.pageY - original_mouse_y) + 'px';
+            for(var i=0;i<children.length; i++){
+              children[i].obj.style.height = (height + children[i].correction_y) + 'px';
+              children[i].obj.style.top = original_y + (e.pageY - original_mouse_y - children[i].correction_y) + 'px'
             }
           }
         }
       }
 
       function stopResize() {
-        window.removeEventListener('mousemove', resize)
+        window.removeEventListener('mousemove', resize);
+        window.removeEventListener('mouseup', stopResize)
       }
     }
   }

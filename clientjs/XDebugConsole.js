@@ -45,6 +45,20 @@ exports = module.exports = function(jsh){
 
   };
 
+  XDebugConsole.prototype.Init = function(){
+    this.settings = jsh.XExt.GetSettingsCookie(this.SETTINGS_ID);
+    if (!this.settings.hasOwnProperty('enabled')
+      && !this.settings.hasOwnProperty('sources')
+      && !this.settings.hasOwnProperty('minimized')
+      && !(typeof this.settings.sources === 'object')
+    ){
+      this.settings = {};
+    }
+    this.settings = _.extend(this.default_settings, this.settings);
+    jsh.XExt.SetSettingsCookie(this.SETTINGS_ID,this.settings);
+    this.CreatePanel();
+  };
+
   XDebugConsole.prototype.isEnabled = function(){
     return (jsh.dev && this.settings.enabled);
   }
@@ -63,7 +77,7 @@ exports = module.exports = function(jsh){
     return sources;
   }
 
-  XDebugConsole.prototype.reInit = function(){
+  XDebugConsole.prototype.Show = function(){
     var action='';
     if (this.settings.enabled){
       this.settings.enabled = 0;
@@ -116,7 +130,7 @@ exports = module.exports = function(jsh){
         this.socket.onclose = function (e) {
           if (!e.wasClean){
             var t = new Date();
-            this.showDebugMessage(
+            _this.showDebugMessage(
               '<span style="color: red;">'+ t.toLocaleString() + ' - ' +
               ' Can\'t connect to Web Socket (URL: '+XDebugConsole.socket_url
               +'; Code: '+e.code+') Will try to reconnect in 2 sec.</span>'
@@ -159,7 +173,7 @@ exports = module.exports = function(jsh){
     }
   };
 
-  XDebugConsole.prototype.InitDebugPanel = function(){
+  XDebugConsole.prototype.CreatePanel = function(){
     this.setXMLHttpRequestListener();
     this.setWebSocketListener();
     var default_sources = this.default_settings.sources;
@@ -169,9 +183,9 @@ exports = module.exports = function(jsh){
         '<input type="checkbox" name="sources" class="src" id="' + k + '" value="' + k + '"> ' + _.upperFirst(k.replace(/_/g,' ')) + '</label>';
     }
     this.DebugDialog = jsh.$root('.xdebugconsole');
-    this.DebugPanel  =  this.DebugDialog.find('#debug-panel');
+    this.DebugPanel  =  this.DebugDialog.find('.debug-panel');
     this.DebugPanel.find('.debug-settings').append($(settingsHtml));
-    this.DebugPanelMin  = this.DebugDialog.find('#debug-panel-minimized');
+    this.DebugPanelMin  = this.DebugDialog.find('.debug-panel-minimized');
     var checkboxes = this.DebugPanel.find('.src');
     for (var i=0; i<checkboxes.length; i++){
       if (this.settings.sources[checkboxes[i].value]){
@@ -181,9 +195,9 @@ exports = module.exports = function(jsh){
     this.setVisibility();
     this.setPosition();
     this.DebugPanel.on('click','.src', this.onSourcesChange.bind(this));
-    jsh.XExt.makeResizableDiv('#debug-panel',[
+    jsh.XExt.makeResizableDiv('.debug-panel',[
       {selector:'.xdebuginfo-body',correction_y:-39,correction_x:0},
-      {selector:'.xdebugconsole.visible',correction_y:0,correction_x:0},
+      {selector:'.xdebugconsole',correction_y:0,correction_x:0},
     ]);
     this.DebugDialog.find('.controls i').on('click',this.onControlHit.bind(this));
   };
@@ -258,20 +272,6 @@ exports = module.exports = function(jsh){
       return jsh.XExt.SetSettingsCookie(this.SETTINGS_ID,this.settings);
     }
   }
-
-  XDebugConsole.prototype.Init = function(){
-    this.settings = jsh.XExt.GetSettingsCookie(this.SETTINGS_ID);
-    if (!this.settings.hasOwnProperty('enabled')
-      && !this.settings.hasOwnProperty('sources')
-      && !this.settings.hasOwnProperty('minimized')
-      && !(typeof this.settings.sources === 'object')
-    ){
-      this.settings = {};
-    }
-    this.settings = _.extend(this.default_settings, this.settings);
-    jsh.XExt.SetSettingsCookie(this.SETTINGS_ID,this.settings);
-    this.InitDebugPanel();
-  };
 
   XDebugConsole.prototype.onSourcesChange = function(e){
     var jobj = $(e.currentTarget);
