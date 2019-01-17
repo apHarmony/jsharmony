@@ -912,6 +912,7 @@ exports.ParseEntities = function () {
             else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
             else if(field.control=='label') field.actions = 'B';
             else if(model._parentbindings[field.name] || model._childbindings[field.name]) field.actions = 'BI';
+            else if(!('name' in field) && !('control' in field)) field.actions = 'B';
             //else if(!('control' in field)) field.actions = 'B';
             else field.actions = 'BIU';
           }
