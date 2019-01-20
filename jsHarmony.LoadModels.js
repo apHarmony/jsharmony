@@ -831,6 +831,7 @@ exports.ParseEntities = function () {
                     //Reset to textbox
                     if(auto_controls && !('control' in field) && (autofield.control=='dropdown')){
                       field.control = 'textbox';
+                      field._auto.control = true;
                     }
                   }
                 }
@@ -842,6 +843,7 @@ exports.ParseEntities = function () {
                 //Field Control
                 if(('lov' in field) && !isReadOnlyGrid) field.control = 'dropdown';
                 else field.control = autofield.control;
+                field._auto.control = true;
                 if(autofield.captionclass) field.captionclass = autofield.captionclass + ' ' + (field.captionclass||'');
               }
             }
@@ -957,6 +959,7 @@ exports.ParseEntities = function () {
               else field.control = 'label';
             }
           }
+          if('control' in field) field._auto.control = true;
         }
       }
       if(!('caption' in field) && _.includes(['subform'],field.control)) field.caption = '';
