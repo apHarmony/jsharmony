@@ -97,9 +97,15 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
         else if(model.title.browse.sql){ sql = model.title.browse.sql; fieldlist = model.title.browse.sql_params; nodatalock = model.title.browse.nodatalock; }
       }
     }
-    else if(model.title.browse && Helper.hasAction(targetperm,'B')){
-      if(_.isString(model.title.browse)) title = model.title.browse;
-      else if(model.title.browse.sql){ sql = model.title.browse.sql; fieldlist = model.title.browse.sql_params; nodatalock = model.title.browse.nodatalock; }
+    else if((model.title.update||model.title.browse) && Helper.hasAction(targetperm,'B')){
+      if(model.title.browse){
+        if(_.isString(model.title.browse)) title = model.title.browse;
+        else if(model.title.browse.sql){ sql = model.title.browse.sql; fieldlist = model.title.browse.sql_params; nodatalock = model.title.browse.nodatalock; }
+      }
+      else if(model.title.update){
+        if(_.isString(model.title.update)) title = model.title.update;
+        else if(model.title.update.sql){ sql = model.title.update.sql; fieldlist = model.title.update.sql_params; nodatalock = model.title.update.nodatalock; }
+      }
     }
     else if(model.title.sql){ sql = model.title.sql; fieldlist = model.title.sql_params; nodatalock = model.title.nodatalock; }
   }
@@ -256,11 +262,20 @@ exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks, targetperm) 
     if(model.breadcrumbs.insert.sql){ sql = model.breadcrumbs.insert.sql; fieldlist = model.breadcrumbs.insert.sql_params; nodatalock = model.breadcrumbs.insert.nodatalock; }
   }
   else if((model.breadcrumbs.update||model.breadcrumbs.browse) && Helper.hasAction(targetperm,'U')){
-    if(model.breadcrumbs.update && model.breadcrumbs.update.sql){ sql = model.breadcrumbs.update.sql; fieldlist = model.breadcrumbs.update.sql_params; nodatalock = model.breadcrumbs.update.nodatalock; }
-    else if(model.breadcrumbs.browse && model.breadcrumbs.browse.sql){ sql = model.breadcrumbs.browse.sql; fieldlist = model.breadcrumbs.browse.sql_params; nodatalock = model.breadcrumbs.browse.nodatalock; }
+    if(model.breadcrumbs.update){
+      if(model.breadcrumbs.update.sql){ sql = model.breadcrumbs.update.sql; fieldlist = model.breadcrumbs.update.sql_params; nodatalock = model.breadcrumbs.update.nodatalock; }
+    }
+    else if(model.breadcrumbs.browse){
+      if(model.breadcrumbs.browse.sql){ sql = model.breadcrumbs.browse.sql; fieldlist = model.breadcrumbs.browse.sql_params; nodatalock = model.breadcrumbs.browse.nodatalock; }
+    }
   }
-  else if(model.breadcrumbs.browse && Helper.hasAction(targetperm,'B')){
-    if(model.breadcrumbs.browse.sql){ sql = model.breadcrumbs.browse.sql; fieldlist = model.breadcrumbs.browse.sql_params; nodatalock = model.breadcrumbs.browse.nodatalock; }
+  else if((model.breadcrumbs.update||model.breadcrumbs.browse) && Helper.hasAction(targetperm,'B')){
+    if(model.breadcrumbs.browse){
+      if(model.breadcrumbs.browse.sql){ sql = model.breadcrumbs.browse.sql; fieldlist = model.breadcrumbs.browse.sql_params; nodatalock = model.breadcrumbs.browse.nodatalock; }
+    }
+    else if(model.breadcrumbs.update){
+      if(model.breadcrumbs.update.sql){ sql = model.breadcrumbs.update.sql; fieldlist = model.breadcrumbs.update.sql_params; nodatalock = model.breadcrumbs.update.nodatalock; }
+    }
   }
   else if(model.breadcrumbs.sql){ sql = model.breadcrumbs.sql; fieldlist = model.breadcrumbs.sql_params; nodatalock = model.breadcrumbs.nodatalock; }
 
