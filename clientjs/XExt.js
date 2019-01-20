@@ -489,8 +489,11 @@ exports = module.exports = function(jsh){
       if (!val) return '';
       return val.toString().replace(/[^a-zA-Z0-9]+/g, '');
     },
-    'is_add': function (_GET) {
-      return (_GET['action'] == 'add');
+    'is_insert': function (_GET) {
+      return (_GET['action'] == 'insert');
+    },
+    'is_browse': function (_GET) {
+      return (_GET['action'] == 'browse');
     }
   };
 
@@ -1513,7 +1516,7 @@ exports = module.exports = function(jsh){
   //
   // Parameters
   //   modelid (string):           The full path to the model, including any namespace
-  //   action (string):            Either "add" or "edit"
+  //   action (string):            Either "browse", "insert", or "update"
   //   querystringParams (object): Querystring parameters appended to the model URL
   //   windowParams (object):      JavaScript window.open parameters, as an object
   //   existingWindow (Window):    (Optional) Existing JavaScript Window to use instead of opening a new window

@@ -21,7 +21,8 @@ var dflt_captionstyle = "";
 var leadingfield = true;
 for(var i=0;i<model.fields.length;i++){ 
   var field = model.fields[i];
-  if(!('control' in field)) continue; if(!('virtual' in field && field.virtual) && !(XExt.hasAction(field.actions,'B'))) continue;
+  //hasAction previously validated against "B" - expanded to BIU to render "I"-only fields
+  if(!('control' in field)) continue; if(!('virtual' in field && field.virtual) && !(XExt.hasAction(field.actions,'BIU'))) continue;
   if(('caption' in field) && (field.control!='subform') && 
      ('captionstyle' in field) && (field.captionstyle != "") && (dflt_captionstyle == "")){
     dflt_captionstyle = field.captionstyle;

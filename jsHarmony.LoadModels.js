@@ -726,7 +726,7 @@ exports.ParseEntities = function () {
           var button = model.buttons[i]; //button.target, button.bindings
           if(button.link){
             var linkTarget = _this.parseLink(button.link);
-            if(linkTarget.action!='edit') continue;
+            if((linkTarget.action!='update')&&(linkTarget.action!='browse')) continue;
             if(!linkTarget.modelid) continue;
             if(linkTarget.modelid.substr(0,3)=='js:') continue;
             var linkModel = _this.getModel(null,linkTarget.modelid,model);
@@ -806,7 +806,7 @@ exports.ParseEntities = function () {
     var firstfield = true;
     var fieldnames = [];
     _.each(model.fields, function (field) {
-      field._auto = field._auto || [];
+      field._auto = field._auto || {};
       var fielddef = db.getFieldDefinition(model.table, field.name,tabledef);
       var coldef = undefined;
       if(fielddef) coldef = fielddef.coldef;
@@ -1198,13 +1198,15 @@ exports.ParseEntities = function () {
       });
       if(model.breadcrumbs){
         _this.AddSqlParams(model, model.breadcrumbs);
-        _this.AddSqlParams(model, model.breadcrumbs.add);
-        _this.AddSqlParams(model, model.breadcrumbs.edit);
+        _this.AddSqlParams(model, model.breadcrumbs.insert);
+        _this.AddSqlParams(model, model.breadcrumbs.update);
+        _this.AddSqlParams(model, model.breadcrumbs.browse);
       }
       if(model.title){
         _this.AddSqlParams(model, model.title);
-        _this.AddSqlParams(model, model.title.add);
-        _this.AddSqlParams(model, model.title.edit);
+        _this.AddSqlParams(model, model.title.insert);
+        _this.AddSqlParams(model, model.title.update);
+        _this.AddSqlParams(model, model.title.browse);
       }
     }
     
@@ -1250,13 +1252,15 @@ exports.ParseEntities = function () {
     //Automatically add C (breadcrumb parameter) for breadcrumb and title sql_params
     if(model.breadcrumbs){
       _this.AddSqlParamsFieldFlags(model, model.breadcrumbs, 'Breadcrumbs');
-      _this.AddSqlParamsFieldFlags(model, model.breadcrumbs.add, 'Breadcrumbs.Add');
-      _this.AddSqlParamsFieldFlags(model, model.breadcrumbs.edit, 'Breadcrumbs.Edit');
+      _this.AddSqlParamsFieldFlags(model, model.breadcrumbs.insert, 'Breadcrumbs.Insert');
+      _this.AddSqlParamsFieldFlags(model, model.breadcrumbs.update, 'Breadcrumbs.Update');
+      _this.AddSqlParamsFieldFlags(model, model.breadcrumbs.browse, 'Breadcrumbs.Browse');
     }
     if(model.title){
       _this.AddSqlParamsFieldFlags(model, model.title, 'Title');
-      _this.AddSqlParamsFieldFlags(model, model.title.add, 'Title.Add');
-      _this.AddSqlParamsFieldFlags(model, model.title.edit, 'Title.Edit');
+      _this.AddSqlParamsFieldFlags(model, model.title.insert, 'Title.Insert');
+      _this.AddSqlParamsFieldFlags(model, model.title.update, 'Title.Update');
+      _this.AddSqlParamsFieldFlags(model, model.title.browse, 'Title.Browse');
     }
 
     //Automatically add C based on default fields
@@ -1429,11 +1433,13 @@ exports.ParseEntities = function () {
 
           var skip_datalock_model = skip_datalock(model, datalockid, datalockSearchOptions);
           var skip_datalock_breadcrumbs = skip_datalock(model.breadcrumbs, datalockid, datalockSearchOptions);
-          var skip_datalock_breadcrumbs_add = model.breadcrumbs && skip_datalock(model.breadcrumbs.add, datalockid, datalockSearchOptions);
-          var skip_datalock_breadcrumbs_edit = model.breadcrumbs && skip_datalock(model.breadcrumbs.edit, datalockid, datalockSearchOptions);
+          var skip_datalock_breadcrumbs_insert = model.breadcrumbs && skip_datalock(model.breadcrumbs.insert, datalockid, datalockSearchOptions);
+          var skip_datalock_breadcrumbs_update = model.breadcrumbs && skip_datalock(model.breadcrumbs.update, datalockid, datalockSearchOptions);
+          var skip_datalock_breadcrumbs_browse = model.breadcrumbs && skip_datalock(model.breadcrumbs.browse, datalockid, datalockSearchOptions);
           var skip_datalock_title = skip_datalock(model.title, datalockid, datalockSearchOptions);
-          var skip_datalock_title_add = model.title && skip_datalock(model.title.add, datalockid, datalockSearchOptions);
-          var skip_datalock_title_edit = model.title && skip_datalock(model.title.edit, datalockid, datalockSearchOptions);
+          var skip_datalock_title_insert = model.title && skip_datalock(model.title.insert, datalockid, datalockSearchOptions);
+          var skip_datalock_title_update = model.title && skip_datalock(model.title.update, datalockid, datalockSearchOptions);
+          var skip_datalock_title_browse = model.title && skip_datalock(model.title.browse, datalockid, datalockSearchOptions);
 
           if(skip_datalock_model) continue;
 
@@ -1441,8 +1447,9 @@ exports.ParseEntities = function () {
           //Breadcrumbs do not require datalocks - parameters are individually validated if %%%DATALOCKS%%% is missing
           if(model.title){
             if(!skip_datalock_title) _this.CheckDatalockSQL(model, model.title.sql, 'Title');
-            if(model.title.add && !skip_datalock_title_add) _this.CheckDatalockSQL(model, model.title.add.sql, 'Title.Add');
-            if(model.title.edit && !skip_datalock_title_edit) _this.CheckDatalockSQL(model, model.title.edit.sql, 'Title.Edit');
+            if(model.title.insert && !skip_datalock_title_insert) _this.CheckDatalockSQL(model, model.title.insert.sql, 'Title.Insert');
+            if(model.title.update && !skip_datalock_title_update) _this.CheckDatalockSQL(model, model.title.update.sql, 'Title.Update');
+            if(model.title.browse && !skip_datalock_title_browse) _this.CheckDatalockSQL(model, model.title.browse.sql, 'Title.Browse');
           }
           //Do not require breadcrumb datalocks, because in order to access them, the keys / foreign keys already need to be validated anyway
           //if(model.breadcrumbs) _this.CheckDatalockSQL(model, model.breadcrumbs.sql, 'Breadcrumbs');
@@ -1594,8 +1601,8 @@ exports.AddFieldDatalock = function(model, field, siteid, datalockid, datalockSe
 //_this.AddAutomaticBindings(model, tab, 'Tab '+(tab.name||''), { noErrorOnMissingParentKey: true, log: function(msg){ _this.LogInit_ERROR(msg); } });
 //_this.AddAutomaticBindings(model, model.duplicate, "Duplicate action", { noErrorOnMissingParentKey: true, log: function(msg){ _this.LogInit_ERROR(msg); } });
 //_this.AddAutomaticBindings(model, field, 'Subform '+field.name, { noErrorOnMissingParentKey: true, log: function(msg){ _this.LogInit_ERROR(msg); } });
-//Add: link_bindings = jsh.AddAutomaticBindings(model, link_bindingObj, 'Button '+(link_text||link_target), { req: req, bindType: 'nonKeyFields', additionalFields: link_binding_additionalFields });
-//Other: link_bindings = jsh.AddAutomaticBindings(model, link_bindingObj, 'Button '+(link_text||link_target), { req: req, bindType: 'childKey' });
+//insert: link_bindings = jsh.AddAutomaticBindings(model, link_bindingObj, 'Button '+(link_text||link_target), { req: req, bindType: 'nonKeyFields', additionalFields: link_binding_additionalFields });
+//other: link_bindings = jsh.AddAutomaticBindings(model, link_bindingObj, 'Button '+(link_text||link_target), { req: req, bindType: 'childKey' });
 exports.AddAutomaticBindings = function(model, element, elementname, options){
   var _this = this;
   //bindType: parentKey, childKey, nonKeyFields
@@ -1822,7 +1829,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     if(linkTarget.modelid.substr(0,3)=='js:') return;
     var linkModel = jsh.getModel(null,linkTarget.modelid,model);
     if (!linkModel) { _this.LogInit_ERROR((prefix||'') + 'Link Target model "' + linkTarget.modelid + '" not found'+(suffix?' in link expression "'+suffix+'"':'')); return }
-    if((linkTarget.action=='add')&&!Helper.hasAction(linkModel.actions, 'I')) { 
+    if((linkTarget.action=='insert')&&!Helper.hasAction(linkModel.actions, 'I')) { 
       _this.LogInit_ERROR((prefix||'') + 'Link Target model "' + linkTarget.modelid + '" does not have "I" action'+(suffix?' for link expression "'+suffix+'"':'')); 
     }
     validateSiteRoles(model, linkModel, prefix, suffix, roles);
@@ -1836,7 +1843,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
       var parentField = _this.AppSrvClass.prototype.getFieldByName(model.fields, parentFieldName);
       if(childFieldName && (childFieldName[0]=="'")){}
       else if(!childField) { _this.LogInit_ERROR((prefix||'') + 'Missing binding target field: '+tmodel.id+'::'+childFieldName); }
-      else if((!_.includes(['exec','report'],tmodel.layout)) && Helper.hasAction(childField.actions, 'U')) {
+      else if((!_.includes(['exec','report'],tmodel.layout)) && Helper.hasAction(childField.actions, 'U') && childField._auto.actions) {
         _this.LogInit_WARNING((prefix||'') + 'Binding target field '+tmodel.id+'::'+childFieldName+' should not have "U" action.  Please explicitly define "actions" if necessary.');
       }
       if(parentFieldName && (parentFieldName[0]=="'")){}

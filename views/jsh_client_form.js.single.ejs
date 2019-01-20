@@ -37,9 +37,19 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && (fi
     xform.Data = new xmodel.datamodel();
 
     <% xejs.eachKey(model.fields,function(field){  if(!field.name) return; %>xform.Data['<%=field['name']%>'] = xmodel.getBindingOrRootKey('<%=field['name']%>');<%}); %>
+    xform.GetSelectParams = function(){
+      var rslt = xform.GetKeys();
+      if(!jsh.is_insert){
+        if(jsh.is_browse) rslt._action = 'browse';
+      }
+      else{
+        rslt._action = 'insert';
+      }
+      return rslt; 
+    };
     xform.GetKeys = function(){
       var rslt = new Object();
-      if(!jsh.is_add){
+      if(!jsh.is_insert){
         //Browse / Edit Record
         for(var fieldname in xmodel.bindings){
           xform.Data[fieldname] = xmodel.bindings[fieldname]();
@@ -73,7 +83,7 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && (fi
     jsh.$root('.xelem'+xmodel.class+'.checkbox').change(function(){ if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this); });
 
     <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if((field.control=='date') && (XExt.hasAction(field.actions,'IU'))) {%>
-    jsh.$root(".<%=field.name%>.xelem"+xmodel.class).datepicker({ changeMonth: true, changeYear: true, dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||jsh.DEFAULT_DATEFORMAT), onSelect: function(){ if(jsh.is_add) return; xform.Data.OnControlUpdate(this); } });
+    jsh.$root(".<%=field.name%>.xelem"+xmodel.class).datepicker({ changeMonth: true, changeYear: true, dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||jsh.DEFAULT_DATEFORMAT), onSelect: function(){ if(jsh.is_insert) return; xform.Data.OnControlUpdate(this); } });
     <% } }); %>  
     callback();
   }
@@ -83,23 +93,23 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && (fi
     if(!data.Commit()) return;
 
     var q;
-    if(data._is_new) q = xform.PrepInsert;
+    if(data._is_insert) q = xform.PrepInsert;
     else q = xform.PrepUpdate;
     
     var dbtask = q.call(xform,function(rslt){
-      if(data._is_new){
+      if(data._is_insert){
         //Pull keys
-        data._is_new = false;
+        data._is_insert = false;
       }
     });
     return [dbtask];
   }
   
   xcontroller.Delete = function(callback){
-    var is_new =  xform.Data._is_new;
+    var is_insert =  xform.Data._is_insert;
     
-    XExt.Confirm("Are you sure you want to delete this "+(is_new ? 'new ':'')+"<%=model.caption[1]%>?",function(){
-      if(!is_new){
+    XExt.Confirm("Are you sure you want to delete this "+(is_insert ? 'new ':'')+"<%=model.caption[1]%>?",function(){
+      if(!is_insert){
         xform.Delete.call(xform,function(rslt){
           callback();
         });

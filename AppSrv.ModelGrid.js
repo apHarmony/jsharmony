@@ -47,7 +47,8 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   if (!_this.ParamCheck('P', P, _.map(_.union(searchlist, ['_action']), function (search) { return '|' + search; }))) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
 
   var getcount = ((('rowcount' in Q) && (Q.rowcount == -1)) || (('getcount' in Q) && (Q['getcount'] != '')));
-  var is_new = (('_action' in P) && (P['_action'] == 'add'));
+  var is_insert = (('_action' in P) && (P['_action'] == 'insert'));
+  var is_browse = (('_action' in P) && (P['_action'] == 'browse'));
   delete P['_action'];
 
   //getQueryVars
@@ -200,7 +201,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   //Add dynamic parameters from query string
   var dbtasks = {};
   var dbtaskname = fullmodelid;
-  if (!is_new) {
+  if (!is_insert) {
     dbtasks[dbtaskname] = function (dbtans, callback) {
       db.Recordset(req._DBContext, dbsql.sql, sql_ptypes, sql_params, dbtans, function (err, rslt, stats) {
         if (err != null) { err.model = model; err.sql = dbsql.sql; }
@@ -237,7 +238,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
     if(_this.addDefaultTasks(req, res, model, P, dbtasks)===false) return;
     if(_this.addLOVTasks(req, res, model, P, dbtasks, { action: model.actions })===false) return;
     if(_this.addBreadcrumbTasks(req, res, model, P, dbtasks, 'B')===false) return;
-    if(_this.addTitleTasks(req, res, model, P, dbtasks, 'B')===false) return;
+    if(_this.addTitleTasks(req, res, model, P, dbtasks, (is_browse?'B':'U'))===false) return;
   }
   return dbtasks;
 }

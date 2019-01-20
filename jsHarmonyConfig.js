@@ -208,8 +208,9 @@ function jsHarmonyConfig(config){
   this.help_panelid = "";
   //Default Button Definitions
   this.default_buttons = {
-    "add": { "icon": "add", "text": "Add %%%CAPTION%%%", "class": "xbuttonadd" },
-    "edit": { "icon": "edit", "text": "Edit %%%CAPTION%%%" } 
+    "insert": { "icon": "insert", "text": "Add %%%CAPTION%%%", "class": "xbuttoninsert" },
+    "update": { "icon": "update", "text": "Edit %%%CAPTION%%%" },
+    "browse": { "icon": "browse", "text": "View %%%CAPTION%%%" }
   };
   //Model Groups for Dynamic Bindings
   this.model_groups = {};

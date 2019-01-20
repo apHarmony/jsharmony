@@ -26,7 +26,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   var xdatamodel = xmodel.datamodel = function(){
     this._jrow = undefined;
-    this._is_new = true;
+    this._is_insert = true;
     this._is_dirty = true;
     this._is_deleted = false;
     this._orig = null;
@@ -81,7 +81,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   xdatamodel.prototype.BindLOV = XExt.XModel.BindLOV(modelid);
 
   xdatamodel.prototype.xvalidate = new XValidate(jsh);
-  <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if(jsh.is_add && !model.topmost && model.bindings && (field.name in model.bindings)) return; %>
+  <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if(jsh.is_insert && !model.topmost && model.bindings && (field.name in model.bindings)) return; %>
   xdatamodel.prototype.xvalidate.AddControlValidator('.<%=field.name%>.xelem'+xmodel.class,'_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getActions(model.actions,"BIU"):field.actions)%>',[<%-field.validate%>]);<%});%>
 
 })(<%-instance%>);

@@ -25,7 +25,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var xmodel = jsh.XModels[modelid];
 
   var xdatamodel = xmodel.datamodel = function(){
-    this._is_new = true;
+    this._is_insert = true;
     this._modelid = modelid;
     <% _.each(model.fields,function(field){ if(!field.name) return; %>this.<%=field.name%> = '';<%});%>
     XExt.XModel.ApplyDefaults(this);

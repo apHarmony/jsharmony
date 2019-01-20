@@ -42,11 +42,13 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
   if ((encryptedfields.length > 0) && !(req.secure) && (!_this.jsh.Config.system_settings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
   
 
-  var is_new;
+  var is_insert = false;
+  var is_browse = false;
   var selecttype = 'single';
   if (typeof form_m == 'undefined') form_m = false;
   if (form_m) {
-    is_new = (('_action' in Q) && (Q['_action'] == 'add'));
+    is_insert = (('_action' in Q) && (Q['_action'] == 'insert'));
+    is_browse = (('_action' in Q) && (Q['_action'] == 'browse'));
     //Check if multiple or single and validate parameters
     if (_this.ParamCheck('Q', Q, _.map(keylist, function (key) { return '&' + key; }), false)) { /* Default */ }
     else if (_this.ParamCheck('Q', Q, _.union(_.map(foreignkeylist, function (field) { return '|' + field; }), ['|_action']), false)) {
@@ -60,10 +62,11 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
     }
   }
   else {
-    is_new = (_.isEmpty(Q));
-    if (!_this.ParamCheck('Q', Q, _.map(keylist, function (key) { return '|' + key; }), false)) {
-      is_new = true;
-      if (!_this.ParamCheck('Q', Q, _.union(_.map(_.union(crumbfieldlist, lovkeylist), function (field) { return '|' + field; })), true)) {
+    is_insert = (_.isEmpty(Q)) || (Q && ('_action' in Q) && (Q['_action'] == 'insert'));
+    is_browse = (Q && ('_action' in Q) && (Q['_action'] == 'browse'));
+    if (!_this.ParamCheck('Q', Q, _.union(_.map(keylist, function (key) { return '|' + key; }), ['|_action']), false)) {
+      is_insert = true;
+      if (!_this.ParamCheck('Q', Q, _.union(_.map(_.union(crumbfieldlist, lovkeylist), function (field) { return '|' + field; }), ['|_action']), true)) {
         Helper.GenError(req, res, -4, 'Invalid Parameters'); return;
       }
     }
@@ -71,7 +74,7 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
   if (!_this.ParamCheck('P', P, [])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   
   var nokey = (('nokey' in model) && (model.nokey));
-  if (nokey) is_new = false;
+  if (nokey) is_insert = false;
   
   var sql_ptypes = [];
   var sql_params = {};
@@ -90,7 +93,7 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
   
   //Add DataLock parameters to SQL
   var skipDataLocks = [];
-  if(is_new) skipDataLocks = skipDataLocks.concat(keylist);
+  if(is_insert) skipDataLocks = skipDataLocks.concat(keylist);
   this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, fullmodelid, { skipDataLocks: skipDataLocks });
   
   if (selecttype == 'multiple') {
@@ -118,8 +121,8 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
   }
   
   var keys = [];
-  if (is_new && !Helper.hasModelAction(req, model, 'I')) { Helper.GenError(req, res, -11, 'Invalid Model Access - ' + model.id + ' Insert'); return; }
-  if (!is_new && !nokey) {
+  if (is_insert && !Helper.hasModelAction(req, model, 'I')) { Helper.GenError(req, res, -11, 'Invalid Model Access - ' + model.id + ' Insert'); return; }
+  if (!is_insert && !nokey) {
     //Add dynamic parameters from query string	
     if (selecttype == 'single') keys = this.getKeys(model.fields);
     else if (selecttype == 'multiple') keys = this.getFields(req, model.fields, 'F');
@@ -142,7 +145,7 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
   
   //Return applicable drop-down lists
   var dbtasks = [{},{}];
-  if (!is_new) dbtasks[0][fullmodelid] = function (dbtrans, callback) {
+  if (!is_insert) dbtasks[0][fullmodelid] = function (dbtrans, callback) {
     var dbfunc = db.Row;
     if (selecttype == 'multiple') dbfunc = db.Recordset;
     dbfunc.call(db, req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
@@ -203,20 +206,21 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
       callback(err, rslt, stats);
     });
   }
-  else if (is_new && (selecttype == 'multiple')) {
+  else if (is_insert && (selecttype == 'multiple')) {
     dbtasks[0][fullmodelid] = function (dbtrans, callback) {
       var rslt = [];
       callback(null, rslt);
     };
   }
   //Default Values
-  if (is_new || (selecttype == 'multiple')) {
+  if (is_insert || (selecttype == 'multiple')) {
     if(_this.addDefaultTasks(req, res, model, Q, dbtasks[1])===false) return;
   }
   //Titles
   var targetperm = 'U';
-  if(selecttype == 'multiple') targetperm = 'U';
-  else if(is_new) targetperm = 'I';
+  if(is_browse) targetperm = 'B';
+  else if(is_insert) targetperm = 'I';
+  else if(selecttype == 'multiple') targetperm = 'U';
   if(_this.addTitleTasks(req, res, model, Q, dbtasks[1], targetperm)===false) return;
 
   //Breadcrumbs

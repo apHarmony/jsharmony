@@ -125,8 +125,9 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
   
   var targetperm = 'B';
   if ('action' in req.query) {
-    if (req.query.action == 'add') targetperm = 'I';
-    else if (req.query.action == 'edit') targetperm = 'U'; //Browse is accessed the same way as update
+    if (req.query.action == 'insert') targetperm = 'I';
+    else if (req.query.action == 'update') targetperm = 'U';
+    else if (req.query.action == 'browse') targetperm = 'B';
     else return onComplete('Invalid "action" in querystring');
   }
   if (!Helper.hasModelAction(req, model, 'B'+targetperm)) { return onComplete("<div>You do not have access to this form.</div>"); }
@@ -222,7 +223,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
             link_targetmodelid = link_targetmodel.id;
             //Hide the button if the user does not have target access to the model
             var link_targetperm = 'B';
-            if(link_parsed.action=='add') link_targetperm = 'I';
+            if(link_parsed.action=='insert') link_targetperm = 'I';
             if(button.hide_when_target_inaccessible && !Helper.hasModelAction(req, link_targetmodel, link_targetperm)) continue;
             //Apply text in button caption
             link_text = link_text.replace(new RegExp('%%%CAPTION%%%', 'g'), link_targetmodel.caption[1]);
@@ -231,7 +232,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
             if(!link_bindings && _.isEmpty(link_parsed.keys)){
               var link_bindingObj = { target: link_targetmodelid };
               var link_binding_additionalFields = _.keys(req.forcequery).concat(_.keys(rslt.bindings)).concat(_.pullAll(_.keys(req.query),['action','tabs']));
-              if(link_parsed.action=='add'){
+              if(link_parsed.action=='insert'){
                 link_bindings = jsh.AddAutomaticBindings(model, link_bindingObj, 'Button '+(link_text||link_target), { req: req, bindType: 'nonKeyFields', additionalFields: link_binding_additionalFields });
               }
               else{
@@ -363,7 +364,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
           var tab_selected = false;
           if (!caption) caption = tabname;
           if (req.curtabs[model.id] == tabmodelid){ acss += ' selected'; tab_selected = true; }
-          else if (('action' in req.query) && (req.query.action == 'add')) { link = '#'; acss += ' disabled'; }
+          else if (('action' in req.query) && (req.query.action == 'insert')) { link = '#'; acss += ' disabled'; }
           var rslttab = {
             'acss': acss,
             'link': link,

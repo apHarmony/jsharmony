@@ -31,22 +31,24 @@ exports.getModelExec = function (req, res, fullmodelid, Q, P, form_m) {
   var keylist = this.getKeyNames(model.fields);
   var crumbfieldlist = this.getFieldNames(req, model.fields, 'C');
   
-  if (!_this.ParamCheck('Q', Q, _.union(_.map(crumbfieldlist, function (field) { return '|' + field; })), false)) {
+  if (!_this.ParamCheck('Q', Q, _.union(_.map(crumbfieldlist, function (field) { return '|' + field; }), ['|_action']), false)) {
     Helper.GenError(req, res, -4, 'Invalid Parameters'); return;
   }
   if (!_this.ParamCheck('P', P, [])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   
   var nokey = (('nokey' in model) && (model.nokey));
+  var is_browse = (('_action' in Q) && (Q['_action'] == 'browse'));
   
   //Return applicable drop-down lists
   var verrors = {};
   var dbtasks = {};
+  var targetperm = (is_browse ? 'B' : 'BU');
   //Default Values
   if(_this.addDefaultTasks(req, res, model, Q, dbtasks)===false) return;
   //Title
-  if(_this.addTitleTasks(req, res, model, Q, dbtasks, 'B')===false) return;
+  if(_this.addTitleTasks(req, res, model, Q, dbtasks, targetperm)===false) return;
   //Breadcrumbs
-  if(_this.addBreadcrumbTasks(req, res, model, Q, dbtasks, 'B')===false) return;
+  if(_this.addBreadcrumbTasks(req, res, model, Q, dbtasks, targetperm)===false) return;
   //LOV
   if(_this.addLOVTasks(req, res, model, Q, dbtasks)===false) return;
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }

@@ -22,19 +22,20 @@ var _ = require('lodash');
 
 exports = module.exports = function(jsh){
   var XDebugConsole = function(){
+    this.isInitialized = false;
     this.SETTINGS_ID = 'debugconsole';
     this.socket = {};
     this.socket_url = (window.location.protocol=='https:'?'wss:':'ws:')+"//" + window.location.hostname + ":" + window.location.port + jsh._BASEURL + "_log";
     this.settings = {};
     this.avaliable_positions = ['bottom','right'];
     this.client_sources = {
-      "client_requests": true
+      "client_requests": false
     };
     this.server_sources = {
       "webserver":true,
       "system": true,
-      "database": true,
-      "authentication": true
+      "database": false,
+      "authentication": false
     };
     this.default_settings = {
       "enabled":0,
@@ -45,18 +46,13 @@ exports = module.exports = function(jsh){
 
   };
 
+  //XDebugConsole.Init - Called during jsHarmony.Init on page load
   XDebugConsole.prototype.Init = function(){
-    this.settings = jsh.XExt.GetSettingsCookie(this.SETTINGS_ID);
-    if (!this.settings.hasOwnProperty('enabled')
-      && !this.settings.hasOwnProperty('sources')
-      && !this.settings.hasOwnProperty('minimized')
-      && !(typeof this.settings.sources === 'object')
-    ){
-      this.settings = {};
-    }
+    this.settings = jsh.XExt.GetSettingsCookie(this.SETTINGS_ID)||{};
     this.settings = _.extend(this.default_settings, this.settings);
     jsh.XExt.SetSettingsCookie(this.SETTINGS_ID,this.settings);
     this.CreatePanel();
+    this.isInitialized = true;
   };
 
   XDebugConsole.prototype.isEnabled = function(){
@@ -77,8 +73,10 @@ exports = module.exports = function(jsh){
     return sources;
   }
 
-  XDebugConsole.prototype.Show = function(){
+  XDebugConsole.prototype.Toggle = function(){
+    if(!this.isInitialized) this.Init();
     var action='';
+
     if (this.settings.enabled){
       this.settings.enabled = 0;
       action='close';

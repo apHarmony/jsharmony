@@ -38,13 +38,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     { "sql":"select getdate()" } //"nodatalock":["c_id"] (If applicable)
     //Title with separate Add/Edit titles
     {
-      "add": "Add Customer",
-      "edit": "Edit Customer"
+      "insert": "Add Customer",
+      "update": "Edit Customer",
+      "browse": "View Customer",
     }
     //Title with separate Add/Edit SQL lookups:
     {
-      "add": { "sql":"select getdate()" }, //"nodatalock":["c_id"] (If applicable)
-      "edit": { "sql":"select c_name||' Contacts' from c where c_id=@c_id" } //"nodatalock":["c_id"] (If applicable)
+      "insert": { "sql":"select getdate()" }, //"nodatalock":["c_id"] (If applicable)
+      "update": { "sql":"select c_name||' Contacts' from c where c_id=@c_id" }, //"nodatalock":["c_id"] (If applicable)
+      "browse": { "sql":"select c_name||' Contacts' from c where c_id=@c_id" }, //"nodatalock":["c_id"] (If applicable)
     }
     //If the title is not set, the caption will be used.  If the caption is not set, the model ID will be used
     //The topmost form's title will be used in the window title
@@ -65,15 +67,16 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "sort": [ {"E_Name": "asc"}, {"c_name": "desc"} ],
   "samplerepeat": 5,
   "rowlimit": 5, //Maximum rows returned per iteration in GridView
-  "querystring": { "&action": "edit", "|c_id": "@c_id" }, //QueryString Defaults/Overrides = &Override, |Default
+  "querystring": { "&action": "update", "|c_id": "@c_id" }, //QueryString Defaults/Overrides = &Override, |Default
   "breadcrumbs":{
-    "parents": ["QC_DBDW","CCL","<a href='PLRNDW?action=edit&PL_ID=<#=bcrumbs.PL_ID#>&tabs=%7B&quot;PLRNDW&quot;%3A&quot;PLRL&quot;%7D'>RND - <#=bcrumbs.PL_YEAR_TXT#> - <#=bcrumbs.PL_TYPE_TXT#></a>"], //Simple Breadcrumbs, array of parents.  Can also use HTML and Dynamic JS
+    "parents": ["QC_DBDW","CCL","<a href='PLRNDW?action=update&PL_ID=<#=bcrumbs.PL_ID#>&tabs=%7B&quot;PLRNDW&quot;%3A&quot;PLRL&quot;%7D'>RND - <#=bcrumbs.PL_YEAR_TXT#> - <#=bcrumbs.PL_TYPE_TXT#></a>"], //Simple Breadcrumbs, array of parents.  Can also use HTML and Dynamic JS
     "title": "Client", //Title Override for Breadcrumbs, can use <#=bcrumbs.PL_YEAR_TXT#> for breadcrumb SQL data
     "sql": "select PL_ID,PL_YEAR_TXT,PL_TYPE_TXT from V_PLL where PL_ID=isnull(@PL_ID,(select PL_ID from PLR where PLR_ID=@PLR_ID))",
     "sql_params":["c_id","t_id"],
     "nodatalock": ["c_id"],
-    "add": { /* parents, title, sql, sql_params, nodatalock */ },
-    "edit": { /* parents, title, sql, sql_params, nodatalock */ }
+    "insert": { /* parents, title, sql, sql_params, nodatalock */ },
+    "update": { /* parents, title, sql, sql_params, nodatalock */ },
+    "browse": { /* parents, title, sql, sql_params, nodatalock */ }
     }
   },
   "helpid": "CL",
@@ -121,22 +124,22 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "disableautoload": 1, //Disables autoload in grid on scroll to bottom
   "buttons": [
     { 
-      "link": "add:H", 
-      "icon": "add", 
+      "link": "insert:H", 
+      "icon": "insert", 
       "text": "Add %%%CAPTION%%%", 
       "actions": "I", 
       "bindings": { "n_scope_id": "n_scope_id", "n_scope": "'C'", "c_id":  "n_scope_id", "n_type":  "'C'" }, 
       "style": "", 
       "class": "", 
       "roles": { "client": { "CLIENT": "*", "C_ADMIN": "B" } }, 
-      "hide_when_target_inaccessible": true, //If true, Add buttons will not show if "I" permission is not on the target form.  True by default.
+      "hide_when_target_inaccessible": true, //If true, Insert buttons will not show if "I" permission is not on the target form.  True by default.
       "nl": 1 }, //or just put the link for add
-    {"link":"js:jsh.App.C_LOVBAR.Add(this,modelid);", "icon": "add", "text": "Add Customer", "actions": "B" },
-    {"link": "savenew:", "icon": "add", "text": "Save and New", "actions": "IU" }
-    {"link": "savenew:", "icon": "add", "text": "Save and New", "actions": "IU", "group":"Actions" }
+    {"link":"js:jsh.App.C_LOVBAR.Add(this,modelid);", "icon": "insert", "text": "Add Customer", "actions": "B" },
+    {"link": "savenew:", "icon": "insert", "text": "Save and New", "actions": "IU" }
+    {"link": "savenew:", "icon": "insert", "text": "Save and New", "actions": "IU", "group":"Actions" }
     //"link":"js:XExt.popupReport('I',{ c_id: 97 },{ width:900, height:500 });"
   ],
-  "hide_system_buttons" : ["print","export","help","search","clear","add"], //Current only on Grid
+  "hide_system_buttons" : ["print","export","help","search","clear","insert"], //Current only on Grid
   "rowstyle": "<#=xejs.iif(1==1,'color:red;','color:yellow;')#>", //Used in grid to style rows dynamically
   "rowclass": "<#-xejs.case(datarow['PLE_SEL_NOTIF'],'xgrid_row_highlight',!datarow['PLE_SEL_NOTIF_OK'],'xgrid_row_disabled')#>", //Used in grid to style rows dynamically
     //xejs.iif(condition,true,[false])  [false] result is optional
@@ -206,7 +209,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                            "save_file_with_extension": true, //Slower because a directory search is required on each request.  Automatically set to true if sqlparams.FILE_EXT not set
                       }, 
                       {"item_context_menu": [ //tree params - Context Menu for an Item
-                        { "icon": "add", "text": "Add", "command": "XExt.Alert('add' + context_item);", "actions": "IUD" }
+                          { "icon": "insert", "text": "Add", "command": "XExt.Alert('insert' + context_item);", "actions": "IUD" }
                         ],
                        "expand_all": false, //Show nodes expanded by default
                        "expand_to_selected": true
@@ -234,7 +237,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       // File can be , ["Required", "MaxSize:5000000" (bytes), "Extension:['.PDF','.JPEG']"]
       "sample": "John Smith",
       "value": "John Smith",
-      "link": "edit:CW", //for grid, "add:", "select"...also added tab syntax: "edit:JW&tabs={\"JW\":\"J_QUICK\"}"
+      "link": "update:CW", //for grid, "insert:", "browse":, "select"...also added tab syntax: "edit:JW&tabs={\"JW\":\"J_QUICK\"}"
       //LOV sql_params must be defined as fields, and must be in the request QueryString
       "lov": { 
         "sql": "select HP_CODE as codeval,HP_Desc as codetxt from HP where 1=1 %%%TRUNCATE%%% order by HP_Desc", 

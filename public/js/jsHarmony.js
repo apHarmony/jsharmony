@@ -5539,19 +5539,20 @@ var _ = require('lodash');
 
 exports = module.exports = function(jsh){
   var XDebugConsole = function(){
+    this.isInitialized = false;
     this.SETTINGS_ID = 'debugconsole';
     this.socket = {};
     this.socket_url = (window.location.protocol=='https:'?'wss:':'ws:')+"//" + window.location.hostname + ":" + window.location.port + jsh._BASEURL + "_log";
     this.settings = {};
     this.avaliable_positions = ['bottom','right'];
     this.client_sources = {
-      "client_requests": true
+      "client_requests": false
     };
     this.server_sources = {
       "webserver":true,
       "system": true,
-      "database": true,
-      "authentication": true
+      "database": false,
+      "authentication": false
     };
     this.default_settings = {
       "enabled":0,
@@ -5562,18 +5563,13 @@ exports = module.exports = function(jsh){
 
   };
 
+  //XDebugConsole.Init - Called during jsHarmony.Init on page load
   XDebugConsole.prototype.Init = function(){
-    this.settings = jsh.XExt.GetSettingsCookie(this.SETTINGS_ID);
-    if (!this.settings.hasOwnProperty('enabled')
-      && !this.settings.hasOwnProperty('sources')
-      && !this.settings.hasOwnProperty('minimized')
-      && !(typeof this.settings.sources === 'object')
-    ){
-      this.settings = {};
-    }
+    this.settings = jsh.XExt.GetSettingsCookie(this.SETTINGS_ID)||{};
     this.settings = _.extend(this.default_settings, this.settings);
     jsh.XExt.SetSettingsCookie(this.SETTINGS_ID,this.settings);
     this.CreatePanel();
+    this.isInitialized = true;
   };
 
   XDebugConsole.prototype.isEnabled = function(){
@@ -5594,8 +5590,10 @@ exports = module.exports = function(jsh){
     return sources;
   }
 
-  XDebugConsole.prototype.Show = function(){
+  XDebugConsole.prototype.Toggle = function(){
+    if(!this.isInitialized) this.Init();
     var action='';
+
     if (this.settings.enabled){
       this.settings.enabled = 0;
       action='close';
@@ -6365,7 +6363,7 @@ exports = module.exports = function(jsh){
     //Make fields editable or locked / read-only
     var show_lookup_when_readonly = false;
 
-    var action = (_this._is_new?'I':'U');
+    var action = (_this._is_insert?'I':'U');
     if ((xmodel.layout=='exec')||(xmodel.layout=='report')) action = 'B';
     var is_editable = jsh.XExt.hasAction(field.actions, action);
     if (is_editable && field.always_editable_on_insert && ((action == 'I') || ((xmodel.layout=='exec')||(xmodel.layout=='report')))){ }
@@ -6391,7 +6389,7 @@ exports = module.exports = function(jsh){
       var id = $(obj).data('id');
       var field = this.Fields[id];
       var _this = this;
-      if (!jsh.is_add) {
+      if (!jsh.is_insert) {
         if (this.HasUpdate(id)) {
           if (!jobj.hasClass('updated')) {
             jobj.addClass('updated');
@@ -6503,8 +6501,8 @@ exports = module.exports = function(jsh){
       if (jsh.XModels[this._modelid].layout=='exec') return false;
       if (jsh.XModels[this._modelid].layout=='report') return false;
       var _this = this;
-      if (this._is_new) { return true; }
-      var action = (this._is_new?'I':'U');
+      if (this._is_insert) { return true; }
+      var action = (this._is_insert?'I':'U');
       var hasUpdates = false;
       _.each(this.Fields, function (field) {
         if (!jsh.XExt.hasAction(field.actions, action)) return;
@@ -6543,9 +6541,9 @@ exports = module.exports = function(jsh){
       if ((xmodel.layout == 'form-m') || (xmodel.layout == 'grid')) {
         if (xmodel.controller.form.Count()==0) return true;
       }
-      //_is_new at record-level
+      //_is_insert at record-level
       var _this = this;
-      var action = (this._is_new?'I':'U');
+      var action = (this._is_insert?'I':'U');
       if ((xmodel.layout=='exec')||(xmodel.layout=='report')) action = 'B';
       if (this.HasUpdates()) {
         if (!this._is_dirty) {
@@ -6573,7 +6571,7 @@ exports = module.exports = function(jsh){
       if (key == '_defaults') return;
       if (key == '_title') return;
       if (key == '_bcrumbs') return;
-      if (key == '_is_new') return;
+      if (key == '_is_insert') return;
       if (key == '_is_dirty') return;
       if (key == '_is_deleted') return;
       if (key == '_orig') return;
@@ -7157,8 +7155,11 @@ exports = module.exports = function(jsh){
       if (!val) return '';
       return val.toString().replace(/[^a-zA-Z0-9]+/g, '');
     },
-    'is_add': function (_GET) {
-      return (_GET['action'] == 'add');
+    'is_insert': function (_GET) {
+      return (_GET['action'] == 'insert');
+    },
+    'is_browse': function (_GET) {
+      return (_GET['action'] == 'browse');
     }
   };
 
@@ -8181,7 +8182,7 @@ exports = module.exports = function(jsh){
   //
   // Parameters
   //   modelid (string):           The full path to the model, including any namespace
-  //   action (string):            Either "add" or "edit"
+  //   action (string):            Either "browse", "insert", or "update"
   //   querystringParams (object): Querystring parameters appended to the model URL
   //   windowParams (object):      JavaScript window.open parameters, as an object
   //   existingWindow (Window):    (Optional) Existing JavaScript Window to use instead of opening a new window
@@ -8435,7 +8436,7 @@ exports = module.exports = function(jsh){
     this.DataSet = null;
     this.DeleteSet = [];
     this.GetSelectParams = function(){ return this.GetKeys(); };
-    this.GetReselectParams = function(){ return this.GetKeys(); };
+    this.GetReselectParams = function(){ return this.GetSelectParams(); };
     this.GetUpdateParams = function(){ return this.GetFieldParams('U'); };
     this.GetInsertParams = function(){ return this.GetFieldParams('I'); };
     this.GetDeleteParams = function(){ return this.GetKeys(); };
@@ -8473,9 +8474,9 @@ exports = module.exports = function(jsh){
       if(this.DeleteSet.length > 0) return true;
       if(this.Count() == 0) return false;
       //If current num rows == 0
-      if(this.Data._is_new) return true;
+      if(this.Data._is_insert) return true;
       for(var i= 0; i< this.DataSet.length; i++){
-        if(this.DataSet[i]._is_new) return true;
+        if(this.DataSet[i]._is_insert) return true;
       }
     }
     if(!this.Data) return false;
@@ -8504,10 +8505,10 @@ exports = module.exports = function(jsh){
     if (_.isArray(this.DataSet)) {
       for (var i = 0; i < this.DataSet.length; i++) {
         if(this.DataSet[i]._is_dirty) rsltDirty = true;
-        if(this.DataSet[i]._is_new) rsltDirty = true;
+        if(this.DataSet[i]._is_insert) rsltDirty = true;
       }
       if(this.Data._is_dirty) rsltDirty = true;
-      if(this.Data._is_new) rsltDirty = true;
+      if(this.Data._is_insert) rsltDirty = true;
     }
     this.IsDirty = rsltDirty;
   }
@@ -8516,11 +8517,11 @@ exports = module.exports = function(jsh){
       this.DeleteSet = [];
       for (var i = 0; i < this.DataSet.length; i++) {
         this.DataSet[i]._is_dirty = false;
-        this.DataSet[i]._is_new = false;
+        this.DataSet[i]._is_insert = false;
         this.DataSet[i]._orig = null;
       }
       this.Data._is_dirty = false;
-      this.Data._is_new = false;
+      this.Data._is_insert = false;
       this.Data._orig = null;
     }
     if (this.xData) {
@@ -8587,7 +8588,7 @@ exports = module.exports = function(jsh){
   XForm.prototype.NavDelete = function(){
     if(this.Count() == 0) return;
     this.DataSet[this.Index] = _.extend(this.DataSet[this.Index],this.Data);
-    if(!this.Data._is_new) this.DeleteSet.push(this.DataSet[this.Index]);
+    if(!this.Data._is_insert) this.DeleteSet.push(this.DataSet[this.Index]);
     this.DataSet.splice(this.Index,1);
     if(this.Count() == 0){
       this.Index = -1;
@@ -8628,7 +8629,7 @@ exports = module.exports = function(jsh){
         if(_.isArray(rslt[_this.q])){
           _this.DataSet = rslt[_this.q];
           for (var i = 0; i < _this.DataSet.length; i++) {
-            _this.DataSet[i]['_is_new'] = false;
+            _this.DataSet[i]['_is_insert'] = false;
             _this.DataSet[i]['_is_dirty'] = false;
             _this.DataSet[i]['_is_deleted'] = false;
             _this.DataSet[i]['_orig'] = null;
@@ -8646,13 +8647,15 @@ exports = module.exports = function(jsh){
         }
         else {
           _this.Data = _.extend(_this.Data,rslt[_this.q]);
-          _this.Data._is_new = false;
+          _this.Data._is_insert = false;
           _this.Data._is_dirty = false;
           _this.Data._is_deleted = false;
           _this.Data._orig = null;
         }
       }
-      else if(_this.Data._is_new) _this.Data = _this.ApplyDefaults(_this.Data);
+      else if(_this.Data._is_insert){
+        _this.Data = _this.ApplyDefaults(_this.Data);
+      }
       //NavTo already calls render
       if (_this.DataSet == null) _this.Render();
       if(onComplete) onComplete(rslt);
@@ -8661,7 +8664,7 @@ exports = module.exports = function(jsh){
   XForm.prototype.ApplyDefaults = function(data){
     var _this = this;
     var rslt = data;
-    if(rslt._is_new && ('defaults' in this)){
+    if(rslt._is_insert && ('defaults' in this)){
       _.each(this.defaults, function (val, fieldname){
         if(rslt[fieldname]) return; //If field is set via GET, do not overwrite
         if(fieldname in rslt){
@@ -8717,7 +8720,7 @@ exports = module.exports = function(jsh){
       this.Data = _.extend(this.Data, this.DataSet[i]);
       if (this.Data._is_deleted) continue;
       if (this.DataSet[i] in this.DeleteSet) continue;
-      if (this.Data._is_new) {
+      if (this.Data._is_insert) {
         dbtasks.push(this.PrepInsert());
         this.DBTaskRows['insert_' + dbtasks.length] = i;
       }
@@ -20870,7 +20873,8 @@ var jsHarmony = function(options){
   this.xfileuploadLoader = null;
 
   //jsh_client_topmost
-  this.is_add = false;
+  this.is_insert = false;
+  this.is_browse = false;
   this.init_complete = false;
   this.delete_target = null;
   this.xfileupload_ctrl = null;
@@ -20916,7 +20920,8 @@ var jsHarmony = function(options){
 
   this._GET = this.XExt.parseGET();
   _.extend(this._GET, this.forcequery);
-  this.is_add = (this._GET['action'] == 'add');
+  this.is_insert = (this._GET['action'] == 'insert');
+  this.is_browse = (this._GET['action'] == 'browse');
 
   this.BindEvents();
   jsHarmony.Instances.push(this);
@@ -20978,7 +20983,6 @@ jsHarmony.prototype.Init = function(){
   _this.InitControls();
   _this.XMenu.Init();
   _this.xDebugConsole = new _this.XDebugConsole();
-  _this.xDebugConsole.Init();
   $(document).mousemove(function (e) {
     _this.mouseX = e.pageX;
     _this.mouseY = e.pageY;

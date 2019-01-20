@@ -42,11 +42,13 @@ exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
   var allfields = this.getFieldsByName(model.fields, allfieldslist);
   var db = _this.jsh.getModelDB(req, fullmodelid);
   
-  var is_new = true;
-  if (_this.ParamCheck('Q', Q, _.map(foreignkeylist, function (foreignkey) { return '&' + foreignkey; }), false)) { is_new = false; }
+  var is_insert = true;
+  if (_this.ParamCheck('Q', Q, _.union(_.map(foreignkeylist, function (foreignkey) { return '&' + foreignkey; }), ['|_action']), false)) { is_insert = false; }
   else if (_this.ParamCheck('Q', Q, _.map(lovkeylist, function (lovkey) { return '|' + lovkey; }), false)) { /* OK */ }
   else { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   if (!_this.ParamCheck('P', P, [])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
+
+  var is_browse = (('_action' in Q) && (Q['_action'] == 'browse'));
   
   var sql_ptypes = [];
   var sql_params = {};
@@ -56,7 +58,7 @@ exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
   var param_datalocks = [];
   var sql_foreignkeys = [];
   
-  if (!is_new) _.each(foreignkeylist, function (val) { sql_foreignkeys.push(val); });
+  if (!is_insert) _.each(foreignkeylist, function (val) { sql_foreignkeys.push(val); });
   var sql_foreignkeyfields = this.getFieldsByName(model.fields, sql_foreignkeys);
   
   //Add DataLock parameters to SQL 
@@ -90,7 +92,7 @@ exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
   
   //Add dynamic parameters from query string	
   var keys = [];
-  if (is_new) keys = this.getFieldsByName(model.fields, lovkeylist);
+  if (is_insert) keys = this.getFieldsByName(model.fields, lovkeylist);
   else keys = this.getFieldsByName(model.fields, foreignkeylist);
   for (var i = 0; i < keys.length; i++) {
     var field = keys[i];
@@ -105,7 +107,7 @@ exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
         return true;
       }, null, fullmodelid + "_key");
     }
-    else { if (is_new) continue; _this.jsh.Log.warning('Missing parameter ' + fname); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
+    else { if (is_insert) continue; _this.jsh.Log.warning('Missing parameter ' + fname); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   }
   
   verrors = _.merge(verrors, model.xvalidate.Validate('KF', sql_params));
@@ -123,7 +125,7 @@ exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
     });
   }
   //Title Tasks
-  if(_this.addTitleTasks(req, res, model, Q, dbtasks, 'B')===false) return;
+  if(_this.addTitleTasks(req, res, model, Q, dbtasks, (is_insert?'I':(is_browse?'B':'U')))===false) return;
   
   return dbtasks;
 };

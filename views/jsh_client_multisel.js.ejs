@@ -52,8 +52,11 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
     xgrid.Select = function(onComplete){
       var execparams = {};
 
+      if(jsh.is_insert){}
+      else if(jsh.is_browse) execparams._action = 'browse';
+
       //Pass parameters from bindings
-      if(!jsh.is_add){
+      if(!jsh.is_insert){
         for(var fieldname in xmodel.bindings){
           var bfield = xmodel.datamodel.prototype.Fields[fieldname];
           if((typeof bfield != 'undefined') && (jsh.XExt.hasAction(bfield.actions,'F'))){
@@ -86,6 +89,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
           else{
             var ejssource = jsh.$root(xgrid.TemplateID).html();
             ejssource = ejssource.replace(/<#/g,'<'+'%').replace(/#>/g,'%'+'>')
+            if('_title' in data) xgrid.title = data._title;
             var ejsrslt = jsh.ejs.render(ejssource,{
               data:data[xgrid.q],
               jsh: jsh,
@@ -127,7 +131,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
       var bfield = xmodel.datamodel.prototype.Fields[fieldname];
       if((typeof bfield != 'undefined') && !(jsh.XExt.hasAction(bfield.actions,'F'))) return;
       _query[fieldname] = xmodel.bindings[fieldname]();
-      if(jsh.is_add && (typeof  _query[fieldname] == 'undefined')){
+      if(jsh.is_insert && (typeof  _query[fieldname] == 'undefined')){
         _query[fieldname] = '%%%'+fieldname+'%%%';
       }
     }

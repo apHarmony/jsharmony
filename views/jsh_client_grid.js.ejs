@@ -109,7 +109,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       xform.DataSet = xform.DataSet.concat(data[this.q]);
       for (var i = 0; i < data[this.q].length; i++) {
         var rowid = this.RowCount + i;
-        xform.DataSet[rowid]['_is_new'] = false;
+        xform.DataSet[rowid]['_is_insert'] = false;
         xform.DataSet[rowid]['_is_dirty'] = false;
         xform.DataSet[rowid]['_is_deleted'] = false;
         xform.DataSet[rowid]['_orig'] = null;
@@ -198,8 +198,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         }
       }
 
-      if(!jsh.is_add || isInlinePopup || !XExt.hasAction(xmodel.actions, 'I')) delete xgrid.Data._action;
-      else xgrid.Data._action = 'add';
+      if(jsh.is_browse) xgrid.Data._action = 'browse';
+      else if(!jsh.is_insert || isInlinePopup || !XExt.hasAction(xmodel.actions, 'I')) delete xgrid.Data._action;
+      else xgrid.Data._action = 'insert';
 
       var check_load_complete = function(){
         if(!xgrid) return;
@@ -219,13 +220,13 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
     xform.GetSelectParams = function(){
       var rslt = new Object();
-      if(!jsh.is_add || isInlinePopup){
+      if(!jsh.is_insert || isInlinePopup){
         for(var fieldname in xmodel.bindings){
           rslt[fieldname] = xmodel.bindings[fieldname]();
         }
       }
       else{
-        rslt._action = 'add';
+        rslt._action = 'insert';
       }
       return rslt; 
     };
@@ -248,7 +249,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //    return _.extend(this.GetFieldParams('D'), this.GetKeys()); 
     xform.GetKeys = function(){
       var rslt = new Object();
-      if(!jsh.is_add){
+      if(!jsh.is_insert){
         <% xejs.eachKey(model.fields,function(field){ if(!field.name) return; %>rslt.<%=field['name']%> = this.Data.<%=field['name']%>;<%}); %>
       }
       else{
@@ -319,7 +320,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if('_success' in rslt){
         if((_this.q in rslt) && (rslt[_this.q].length > 0)){
           _this.DataSet[rowid] = _.extend(_this.DataSet[rowid],rslt[_this.q][0]);
-          _this.DataSet[rowid]['_is_new'] = false;
+          _this.DataSet[rowid]['_is_insert'] = false;
           _this.DataSet[rowid]['_is_dirty'] = false;
           _this.DataSet[rowid]['_orig'] = null;
 
@@ -363,7 +364,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if(oldobj) oldrowid = XExt.XModel.GetRowID(modelid,oldobj);
 
     //Get Data, if data is new, delete row from both grid and ...
-    if(xform.DataSet[rowid]._is_new) return xcontroller.DeleteRow(rowid);
+    if(xform.DataSet[rowid]._is_insert) return xcontroller.DeleteRow(rowid);
     //If HasChanges
     if(oldrowid == rowid){ 
       if(xform.Data._orig != null)      xform.Data = _.extend(xform.Data, xform.Data._orig);
@@ -461,14 +462,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       var exec_delete = function(){
         xgrid.Prop.ModifiedSinceLoad = true;
         xform.DataSet[rowid]._is_deleted = true;
-        xform.DataSet[rowid]._is_new = false;
+        xform.DataSet[rowid]._is_insert = false;
         xform.DataSet[rowid]._is_dirty = false;
         xform.DataSet[rowid]._orig = null;
         jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']").remove();
         if(!jsh.$root(xgrid.PlaceholderID).find('tr').length) xgrid.RenderNoResultsMessage();
         xeditablegrid.CurrentCell = null;
         if(xform.Index==rowid){ 
-          xform.Data._is_new = false;
+          xform.Data._is_insert = false;
           xform.Data._is_dirty = false;
           xform.Data._orig = null;
           xform.Index = -1;
@@ -482,7 +483,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         xform.RecheckDirty();
       }
 
-      if(!(xform.DataSet[rowid]._is_new)){
+      if(!(xform.DataSet[rowid]._is_insert)){
         if(!(xform.DataSet[rowid] in xform.DeleteSet)) xform.DeleteSet.push(xform.DataSet[rowid]);
 
         if(xmodel.commitlevel == 'page'){

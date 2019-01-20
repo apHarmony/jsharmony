@@ -90,10 +90,11 @@ exports.parseLink = function (target) {
   var keys = {};
   var tabs = null;
   if (typeof target != 'undefined') {
-    if (target.indexOf('edit:') == 0) { action = 'edit'; modelid = target.substring(5); }
-    else if (target.indexOf('add:') == 0) { action = 'add'; modelid = target.substring(4); }
+    if (target.indexOf('update:') == 0) { action = 'update'; modelid = target.substring(7); }
+    else if (target.indexOf('insert:') == 0) { action = 'insert'; modelid = target.substring(7); }
+    else if (target.indexOf('browse:') == 0) { action = 'browse'; modelid = target.substring(7); }
     else if (target.indexOf('download:') == 0) { action = 'download'; modelid = target.substring(9); }
-    else if (target.indexOf('savenew:') == 0) { action = 'add'; modelid = target.substring(8); }
+    else if (target.indexOf('savenew:') == 0) { action = 'insert'; modelid = target.substring(8); }
     else if (target.indexOf('select:') == 0) { action = 'select'; modelid = target.substring(7); }
     else modelid = target;
     
@@ -237,7 +238,7 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
   }
 
   //Add keys
-  if ((action == 'edit') || (action == 'add') || (action == 'select')) {
+  if ((action == 'update') || (action == 'insert') || (action == 'browse') || (action == 'select')) {
     if (action == 'select') { rsltoverride = '#select'; }
     if (typeof fields !== 'undefined') {
       //Get keys
@@ -258,7 +259,7 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
       }
       else {
         var foundfield = false;
-        if(action=='edit'){
+        if((action=='update')||(action=='browse')){
           _.each(tmodel.fields, function (field) {
             if (field.key && _this.AppSrvClass.prototype.getFieldByName(fields, field.name)) {
               foundfield = true;

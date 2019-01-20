@@ -241,7 +241,7 @@ exports = module.exports = function(jsh){
     //Make fields editable or locked / read-only
     var show_lookup_when_readonly = false;
 
-    var action = (_this._is_new?'I':'U');
+    var action = (_this._is_insert?'I':'U');
     if ((xmodel.layout=='exec')||(xmodel.layout=='report')) action = 'B';
     var is_editable = jsh.XExt.hasAction(field.actions, action);
     if (is_editable && field.always_editable_on_insert && ((action == 'I') || ((xmodel.layout=='exec')||(xmodel.layout=='report')))){ }
@@ -267,7 +267,7 @@ exports = module.exports = function(jsh){
       var id = $(obj).data('id');
       var field = this.Fields[id];
       var _this = this;
-      if (!jsh.is_add) {
+      if (!jsh.is_insert) {
         if (this.HasUpdate(id)) {
           if (!jobj.hasClass('updated')) {
             jobj.addClass('updated');
@@ -379,8 +379,8 @@ exports = module.exports = function(jsh){
       if (jsh.XModels[this._modelid].layout=='exec') return false;
       if (jsh.XModels[this._modelid].layout=='report') return false;
       var _this = this;
-      if (this._is_new) { return true; }
-      var action = (this._is_new?'I':'U');
+      if (this._is_insert) { return true; }
+      var action = (this._is_insert?'I':'U');
       var hasUpdates = false;
       _.each(this.Fields, function (field) {
         if (!jsh.XExt.hasAction(field.actions, action)) return;
@@ -419,9 +419,9 @@ exports = module.exports = function(jsh){
       if ((xmodel.layout == 'form-m') || (xmodel.layout == 'grid')) {
         if (xmodel.controller.form.Count()==0) return true;
       }
-      //_is_new at record-level
+      //_is_insert at record-level
       var _this = this;
-      var action = (this._is_new?'I':'U');
+      var action = (this._is_insert?'I':'U');
       if ((xmodel.layout=='exec')||(xmodel.layout=='report')) action = 'B';
       if (this.HasUpdates()) {
         if (!this._is_dirty) {
@@ -449,7 +449,7 @@ exports = module.exports = function(jsh){
       if (key == '_defaults') return;
       if (key == '_title') return;
       if (key == '_bcrumbs') return;
-      if (key == '_is_new') return;
+      if (key == '_is_insert') return;
       if (key == '_is_dirty') return;
       if (key == '_is_deleted') return;
       if (key == '_orig') return;

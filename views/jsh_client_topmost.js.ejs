@@ -83,7 +83,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         var action = 'U';
         if (xmodel.layout == 'multisel') action = 'U';
         else if (xmodel.layout == 'grid') action = 'IU';
-        else if (xmodel.controller.form.Data._is_new) action = 'I';
+        else if (xmodel.controller.form.Data._is_insert) action = 'I';
         if (XExt.hasAction(xmodel.actions, action)) {
           var ftasks = xmodel.controller.Save();
           if (typeof ftasks == 'undefined') { valid = false; return; }
@@ -110,8 +110,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     rootxmodel.controller.form.ExecuteTrans(dbtasks, function (rslt) {
       if (options.onComplete && (options.onComplete(rslt) === false)) return;
       jsh.XPage.RefreshParent();
-      if (jsh.is_add) {
-        var url = XExt.currentURL() + '?action=edit';
+      if (jsh.is_insert) {
+        var url = XExt.currentURL() + '?action=update';
         var urlkeys = {};
         //Scan results for key
         _.each(rootxmodel.keys, function (key) {
@@ -131,7 +131,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           });
           if (!foundkey) urlkeys[key] = rootxmodel.getBindingOrRootKey(key);
         });
-        jsh.is_add = false;
+        jsh.is_insert = false;
         if (!_.isEmpty(urlkeys)) url = url + '&' + $.param(urlkeys, false);
         window.onbeforeunload = null;
         jsh.cancelExit = true;
@@ -229,7 +229,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         jsh.$root('.xform_button').each(function () {
           var jbtn = $(this);
           var btnactions = jbtn.data('actions');
-          if (jsh.is_add && !jsh.XExt.hasAction(btnactions, 'I')) jbtn.hide();
+          if (jsh.is_insert && !jsh.XExt.hasAction(btnactions, 'I')) jbtn.hide();
           else {
             if(jbtn.hasClass('grouped')){
               var modelid = jbtn.data('model');
@@ -265,7 +265,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           if (enable_save) jsh.$root('.xactions.top .save').show();
           if (enable_delete) jsh.$root('.xactions.top .delete').show();
           jsh.XPage.traverseModels(null, function (xmodel) {
-            if (!jsh.is_add && jsh.XExt.hasAction(xmodel.actions, 'I')) jsh.$root('.xactions.xelem' + xmodel.class + ' .duplicate').show();
+            if (!jsh.is_insert && jsh.XExt.hasAction(xmodel.actions, 'I')) jsh.$root('.xactions.xelem' + xmodel.class + ' .duplicate').show();
           });
           jsh.init_complete = true;
           //Update Browser History with URL/state
@@ -378,7 +378,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           if (typeof xmodel.onloadimmediate != 'undefined') xmodel.onloadimmediate(xmodel);
           done();
         };
-        if (jsh.is_add){
+        if (jsh.is_insert){
           if(!jsh.XExt.hasAction(xmodel.actions, 'I')) { 
             if((xmodel.layout == 'form') || (xmodel.layout == 'form-m') || (xmodel.layout == 'grid')){
               if(!jsh.XExt.hasAction(xmodel.actions, 'B')) return done();
@@ -963,7 +963,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       handled = true;
     }
     else if ((e.which == 78) && (e.altKey)) {//ALT+N = NEW
-      XExt.findClosest(e.target, '.xbuttonadd:visible').first().trigger('click');
+      XExt.findClosest(e.target, '.xbuttoninsert:visible').first().trigger('click');
       handled = true;
     }
     else if ((e.which == 70) && (e.altKey)) {//ALT+Q = Search
@@ -975,7 +975,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       handled = true;
     }
     else if ((e.which == 68) && (e.altKey) && (e.ctrlKey)) { //ALT+CTRL+D = ENABLE DEBUG CONSOLE
-      jsh.xDebugConsole.Show();
+      jsh.xDebugConsole.Toggle();
       handled = true;
     }
     if (handled) {

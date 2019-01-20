@@ -33,7 +33,7 @@ exports = module.exports = function(jsh){
     this.DataSet = null;
     this.DeleteSet = [];
     this.GetSelectParams = function(){ return this.GetKeys(); };
-    this.GetReselectParams = function(){ return this.GetKeys(); };
+    this.GetReselectParams = function(){ return this.GetSelectParams(); };
     this.GetUpdateParams = function(){ return this.GetFieldParams('U'); };
     this.GetInsertParams = function(){ return this.GetFieldParams('I'); };
     this.GetDeleteParams = function(){ return this.GetKeys(); };
@@ -71,9 +71,9 @@ exports = module.exports = function(jsh){
       if(this.DeleteSet.length > 0) return true;
       if(this.Count() == 0) return false;
       //If current num rows == 0
-      if(this.Data._is_new) return true;
+      if(this.Data._is_insert) return true;
       for(var i= 0; i< this.DataSet.length; i++){
-        if(this.DataSet[i]._is_new) return true;
+        if(this.DataSet[i]._is_insert) return true;
       }
     }
     if(!this.Data) return false;
@@ -102,10 +102,10 @@ exports = module.exports = function(jsh){
     if (_.isArray(this.DataSet)) {
       for (var i = 0; i < this.DataSet.length; i++) {
         if(this.DataSet[i]._is_dirty) rsltDirty = true;
-        if(this.DataSet[i]._is_new) rsltDirty = true;
+        if(this.DataSet[i]._is_insert) rsltDirty = true;
       }
       if(this.Data._is_dirty) rsltDirty = true;
-      if(this.Data._is_new) rsltDirty = true;
+      if(this.Data._is_insert) rsltDirty = true;
     }
     this.IsDirty = rsltDirty;
   }
@@ -114,11 +114,11 @@ exports = module.exports = function(jsh){
       this.DeleteSet = [];
       for (var i = 0; i < this.DataSet.length; i++) {
         this.DataSet[i]._is_dirty = false;
-        this.DataSet[i]._is_new = false;
+        this.DataSet[i]._is_insert = false;
         this.DataSet[i]._orig = null;
       }
       this.Data._is_dirty = false;
-      this.Data._is_new = false;
+      this.Data._is_insert = false;
       this.Data._orig = null;
     }
     if (this.xData) {
@@ -185,7 +185,7 @@ exports = module.exports = function(jsh){
   XForm.prototype.NavDelete = function(){
     if(this.Count() == 0) return;
     this.DataSet[this.Index] = _.extend(this.DataSet[this.Index],this.Data);
-    if(!this.Data._is_new) this.DeleteSet.push(this.DataSet[this.Index]);
+    if(!this.Data._is_insert) this.DeleteSet.push(this.DataSet[this.Index]);
     this.DataSet.splice(this.Index,1);
     if(this.Count() == 0){
       this.Index = -1;
@@ -226,7 +226,7 @@ exports = module.exports = function(jsh){
         if(_.isArray(rslt[_this.q])){
           _this.DataSet = rslt[_this.q];
           for (var i = 0; i < _this.DataSet.length; i++) {
-            _this.DataSet[i]['_is_new'] = false;
+            _this.DataSet[i]['_is_insert'] = false;
             _this.DataSet[i]['_is_dirty'] = false;
             _this.DataSet[i]['_is_deleted'] = false;
             _this.DataSet[i]['_orig'] = null;
@@ -244,13 +244,15 @@ exports = module.exports = function(jsh){
         }
         else {
           _this.Data = _.extend(_this.Data,rslt[_this.q]);
-          _this.Data._is_new = false;
+          _this.Data._is_insert = false;
           _this.Data._is_dirty = false;
           _this.Data._is_deleted = false;
           _this.Data._orig = null;
         }
       }
-      else if(_this.Data._is_new) _this.Data = _this.ApplyDefaults(_this.Data);
+      else if(_this.Data._is_insert){
+        _this.Data = _this.ApplyDefaults(_this.Data);
+      }
       //NavTo already calls render
       if (_this.DataSet == null) _this.Render();
       if(onComplete) onComplete(rslt);
@@ -259,7 +261,7 @@ exports = module.exports = function(jsh){
   XForm.prototype.ApplyDefaults = function(data){
     var _this = this;
     var rslt = data;
-    if(rslt._is_new && ('defaults' in this)){
+    if(rslt._is_insert && ('defaults' in this)){
       _.each(this.defaults, function (val, fieldname){
         if(rslt[fieldname]) return; //If field is set via GET, do not overwrite
         if(fieldname in rslt){
@@ -315,7 +317,7 @@ exports = module.exports = function(jsh){
       this.Data = _.extend(this.Data, this.DataSet[i]);
       if (this.Data._is_deleted) continue;
       if (this.DataSet[i] in this.DeleteSet) continue;
-      if (this.Data._is_new) {
+      if (this.Data._is_insert) {
         dbtasks.push(this.PrepInsert());
         this.DBTaskRows['insert_' + dbtasks.length] = i;
       }

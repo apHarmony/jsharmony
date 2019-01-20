@@ -129,7 +129,8 @@ var jsHarmony = function(options){
   this.xfileuploadLoader = null;
 
   //jsh_client_topmost
-  this.is_add = false;
+  this.is_insert = false;
+  this.is_browse = false;
   this.init_complete = false;
   this.delete_target = null;
   this.xfileupload_ctrl = null;
@@ -175,7 +176,8 @@ var jsHarmony = function(options){
 
   this._GET = this.XExt.parseGET();
   _.extend(this._GET, this.forcequery);
-  this.is_add = (this._GET['action'] == 'add');
+  this.is_insert = (this._GET['action'] == 'insert');
+  this.is_browse = (this._GET['action'] == 'browse');
 
   this.BindEvents();
   jsHarmony.Instances.push(this);
@@ -237,7 +239,6 @@ jsHarmony.prototype.Init = function(){
   _this.InitControls();
   _this.XMenu.Init();
   _this.xDebugConsole = new _this.XDebugConsole();
-  _this.xDebugConsole.Init();
   $(document).mousemove(function (e) {
     _this.mouseX = e.pageX;
     _this.mouseY = e.pageY;
