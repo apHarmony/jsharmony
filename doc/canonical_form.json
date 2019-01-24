@@ -272,6 +272,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "always_editable_on_insert": 1, //Make field editable on insert, even if value is set in querystring, or field is readonly
       //for subform, popuplov
       "target": "E_Name",
+      "insert_link": "add:CA", //In case of subform with "form" layout, link is used for "insert" button when record not found
       "bindings": { "c_id": "c_id" },
       "cellclass": "", //For Grid / Multisel table
       "cellstyle": "width:300px;"  //For Grid / Multisel table

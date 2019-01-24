@@ -28,8 +28,14 @@
   <% } else { %>
     <div class="xnorecords xelem<%=model.class%>" style="display:none;">No <%=model.caption[2]%></div>
   <% } %>
-  <div class="xformcontainer xelem<%=model.class%>">
+<% } else { %>
+  <% if(parentfield && XExt.hasAction(model.actions, 'I') && parentfield.insert_link){ %>
+    <div class="xnorecords xelem<%=model.class%>" style="display:none;"><a href="<%-parentfield.insert_link%>" onclick="return (function(){<%-jslocals%><%-parentfield.insert_link_onclick%>}).call(this);"><img src="/images/icon_insert.png" alt="Add" title="Add" />Add <%=model.caption[1]%></a></div>
+  <% } else { %>
+    <div class="xnorecords xelem<%=model.class%>" style="display:none;">No <%=model.caption[1]%></div>
+  <% } %>
 <% } %>
+<div class="xformcontainer xelem<%=model.class%>">
 <div class="xform xelem<%=model.class%> xform<%=model.class%> <%=xejs.iif(model.onecolumn,'onecolumn')%>" data-id="<%=model.id%>" style="<%=model.formstyle%>">
 <%-jsh.RenderView('jsh_embed.js',ejsparams)%>
 <%-jsh.RenderView('jsh_controls',ejsparams)%>
@@ -45,7 +51,7 @@
   <div style="display:none;">
     <div class="xsubform xpopup xelem<%=model.class%> popup_<%=model.class%>_duplicate" class="colorbox_inline">
       <div class="xpanel" style="<%=model.duplicate.popupstyle%>">
-        <%-jsh.Render(popup_model,model)%>
+        <%-jsh.Render(popup_model,model,model.duplicate)%>
         <div style="text-align:center;padding-top:8px;">
           <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.class%>" style="padding:3px 8px;" value="Duplicate" onclick="<%-instance%>.XPage.Duplicate('<%=popup_model.id%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link))%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link_options))%>'); return false;" />
           <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.class%>" style="padding:3px 8px;" value="Cancel" onclick="<%-instance%>.$.colorbox.close(); return false;" />
@@ -55,5 +61,5 @@
   </div>
 <% } %>
 <%-jsh.RenderEJS(model.ejs,ejsparams)%>
-</div>
-<%-xejs.iif(model.layout == 'form-m','</div>')%>
+</div><!-- xform -->
+</div><!-- xformcontainer -->

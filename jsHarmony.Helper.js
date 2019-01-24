@@ -150,15 +150,17 @@ exports.parseFieldExpression = function(field, exp, params, options){
 
 // getURL :: Generate a URL for a link, based on the "target" string
 //Button Links
-//  jsh.getURL(req, link_target, undefined, undefined, link_bindings);
+//  jsh.getURL(req, model, link_target, undefined, undefined, link_bindings);
 //Tab Links: linktabs[model.id] = tabmodelid
-//  jsh.getURL(req, '', linktabs); 
+//  jsh.getURL(req, model, '', linktabs); 
 //Duplicate Model Links
-//  jsh.getURL(req, model.duplicate.link, undefined, dmodel.fields);
+//  jsh.getURL(req, model, model.duplicate.link, undefined, dmodel.fields);
 //Select Links: 'select'
-//  jsh.getURL(req, srcfield.link + ':' + model.id, undefined, model.fields); 
-//Field Links
-//  jsh.getURL(req, srcfield.link, undefined, model.fields);
+//  jsh.getURL(req, model, srcfield.link + ':' + model.id, undefined, model.fields); 
+//Field link
+//  jsh.getURL(req, model, srcfield.link, undefined, model.fields);
+//Field insert_link
+//  jsh.getURL(req, model, srcfield.insert_link, undefined, undefined, srcfield.bindings);
 //
 //ex: edit:EW&E_ID
 //Parameters:
@@ -240,42 +242,46 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
   //Add keys
   if ((action == 'update') || (action == 'insert') || (action == 'browse') || (action == 'select')) {
     if (action == 'select') { rsltoverride = '#select'; }
-    if (typeof fields !== 'undefined') {
-      //Get keys
-      if (_.size(ptarget.keys) > 0) {
-        var ptargetkeys = _.keys(ptarget.keys);
-        for (var i = 0; i < ptargetkeys.length; i++) {
-          delete q[ptargetkeys[i]];
-          rsltparams += '&amp;' + ptargetkeys[i] + '=<#='+ENCODE_URI+'(data[j][\'' + ptarget.keys[ptargetkeys[i]] + '\'])#>';
-          /* Commented out for Amber COMH_CDUP form, so that c_id=X1 would work
-          for (var j = 0; j < fields.length; j++) {
-            var field = fields[j];
-            if (!('name' in field)) continue;
-            if (field.name == ptargetkeys[i]) {
-              rslt += '&amp;' + field['name'] + '=<#=data[j][\'' + ptarget.keys[ptargetkeys[i]] + '\']#>';
-            }
-          }*/
+    if (_.size(ptarget.keys) > 0) {
+      var ptargetkeys = _.keys(ptarget.keys);
+      for (var i = 0; i < ptargetkeys.length; i++) {
+        delete q[ptargetkeys[i]];
+        var keyval = ptarget.keys[ptargetkeys[i]];
+        if (!isNaN(keyval)) {}
+        else if(keyval && (keyval[0]=="'")){
+          keyval = keyval.trim();
+          keyval = Helper.escapeHTML(keyval.substr(1,keyval.length-2));
         }
+        else keyval = '<#='+ENCODE_URI+'(data[j][\'' + keyval + '\'])#>';
+        rsltparams += '&amp;' + ptargetkeys[i] + '=' + keyval;
+        /* Commented out for Amber COMH_CDUP form, so that c_id=X1 would work
+        for (var j = 0; j < fields.length; j++) {
+          var field = fields[j];
+          if (!('name' in field)) continue;
+          if (field.name == ptargetkeys[i]) {
+            rslt += '&amp;' + field['name'] + '=<#=data[j][\'' + ptarget.keys[ptargetkeys[i]] + '\']#>';
+          }
+        }*/
       }
-      else {
-        var foundfield = false;
-        if((action=='update')||(action=='browse')){
-          _.each(tmodel.fields, function (field) {
-            if (field.key && _this.AppSrvClass.prototype.getFieldByName(fields, field.name)) {
-              foundfield = true;
-              delete q[field['name']];
-              rsltparams += '&amp;' + field['name'] + '=<#='+ENCODE_URI+'(jsh.XExt.LiteralOrLookup(\'' + field['name'] + '\',[data[j], jsh._GET]))#>';
-            }
-          });
-        }
-        if(!foundfield){
-          _.each(fields, function (field) {
-            if (field.key) {
-              delete q[field['name']];
-              rsltparams += '&amp;' + field['name'] + '=<#='+ENCODE_URI+'(data[j][\'' + field['name'] + '\'])#>';
-            }
-          });
-        }
+    }
+    else if (typeof fields !== 'undefined') {
+      var foundfield = false;
+      if((action=='update')||(action=='browse')){
+        _.each(tmodel.fields, function (field) {
+          if (field.key && _this.AppSrvClass.prototype.getFieldByName(fields, field.name)) {
+            foundfield = true;
+            delete q[field['name']];
+            rsltparams += '&amp;' + field['name'] + '=<#='+ENCODE_URI+'(jsh.XExt.LiteralOrLookup(\'' + field['name'] + '\',[data[j], jsh._GET]))#>';
+          }
+        });
+      }
+      if(!foundfield){
+        _.each(fields, function (field) {
+          if (field.key) {
+            delete q[field['name']];
+            rsltparams += '&amp;' + field['name'] + '=<#='+ENCODE_URI+'(data[j][\'' + field['name'] + '\'])#>';
+          }
+        });
       }
     }
   }
@@ -296,11 +302,11 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
 }
 
 //Generates the "onclick" event for a link, based on the field.link property
-exports.getURL_onclick = function (req, model, field) {
+exports.getURL_onclick = function (req, model, link) {
   var seturl = "var url = "+req.jshsite.instance+".$(this).attr('data-url'); ";
   var rslt = req.jshsite.instance+".XExt.navTo(url); return false;";
-  if ('link' in field) {
-    var link = field.link;
+  if (typeof link != 'undefined') {
+    var link = link;
     var ptarget = this.parseLink(link);
     var tmodel = this.getModel(req, ptarget.modelid, model);
     if (!tmodel) throw new Error("Link Model " + ptarget.modelid + " not found.");

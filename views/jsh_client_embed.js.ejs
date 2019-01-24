@@ -54,6 +54,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     datamodel: null,
     actions:'<%=model.actions%>',
     layout:'<%=model.layout%>',
+    enabled: true,
     title: <%-xejs.iif(model.title,JSON.stringify(model.title),"''")%>,
     caption:<%-JSON.stringify(model.caption)%>,
     parent:<%-((typeof parent == 'undefined')?'null':"'"+parent.id+"'")%>,
@@ -80,6 +81,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if('onrowbind' in model){ %> onrowbind:function(xmodel, jobj, datarow){<%-jslocals%><%-model.onrowbind%>}, <% }
 
     if(model.unbound){ %> unbound:true, <% } %>
+
+    flags: {
+      no_form_record: false
+    }
   };
   xmodel.getBindingOrRootKey = function(bindingname){
     if(xmodel.bindings && (bindingname in xmodel.bindings)) return xmodel.bindings[bindingname]();
@@ -109,6 +114,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   xmodel.set = function(fieldname,value){
     if(xmodel.controller && xmodel.controller.form) XExt.setFormControl(xmodel.controller.form, fieldname, value);
     else XExt.Alert('Could not set value - model.controller.form not initialized');
+  }
+  xmodel.isEnabled = function(){
+    if(xmodel.flags.no_form_record) return false;
+    return true;
   }
   if(!(basemodelid in jsh.XBase)) jsh.XBase[basemodelid] = [];
   jsh.XBase[basemodelid].push(modelid);

@@ -443,7 +443,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
         if ('title' in rslt) rslt['toptitle'] = rslt.title;
         rslt['forcequery'] = req.forcequery;
       }
-      if ('fields' in model) _this.copyModelFields(req,res,model,targetperm,function(fields){
+      if ('fields' in model) _this.copyModelFields(req,res,rslt,model,targetperm,function(fields){
         rslt.fields = fields;
         return cb();
       });
@@ -457,7 +457,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
   });
 }
 
-AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, targetperm, onComplete) {
+AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, targetperm, onComplete) {
   var jsh = this.AppSrv.jsh;
   var model = srcobj;
   var rslt = [];
@@ -501,9 +501,13 @@ AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, targetperm, 
       else {
         dstfield.link = jsh.getURL(req, model, srcfield.link, undefined, model.fields);
         if (!('onclick' in srcfield)) {
-          dstfield.onclick = jsh.getURL_onclick(req, model, srcfield);
+          dstfield.onclick = jsh.getURL_onclick(req, model, srcfield.link);
         }
       }
+    }
+    if (('insert_link' in srcfield) && (srcfield.insert_link)) {
+      dstfield.insert_link = jsh.getURL(req, model, srcfield.insert_link, undefined, undefined, srcfield.bindings);
+      dstfield.insert_link_onclick = jsh.getModelLinkOnClick(req, model, srcfield.target, srcfield.insert_link);
     }
     if (auxfields) {
       copyValues(dstfield, auxfields[i], [
@@ -543,8 +547,10 @@ AppSrvModel.prototype.copyModelFields = function (req, res, srcobj, targetperm, 
           //If targetperm==U
           //  If dstfield.actions has B/U
           //  If subformModel.actions && subformModel.roles has B/U
+          var parentFieldActions = srcfield.actions;
+          if ('roles' in srcfield) parentFieldActions = ejsext.getActions(req, srcfield, parentFieldActions);
 
-          if(('actions' in dstfield) && !Helper.hasAction(dstfield.actions, (targetperm=='U'?'BU':targetperm))) return cb();
+          if(!Helper.hasAction(parentFieldActions, (targetperm=='U'?'BU':targetperm))) return cb();
 
           var subformmodel = jsh.getModel(req, srcfield.target, model.id);
           var subformtargetperm = targetperm;

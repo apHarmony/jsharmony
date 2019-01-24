@@ -257,6 +257,11 @@ BODY
 <%-rootcss%> .xnorecords a,<%-rootcss%> .xnorecords a:visited {
   color:#000;
 }
+<%-rootcss%> .xnorecords a img {
+  position:relative;
+  top:4px;
+  padding-right:8px;
+}
 <%-rootcss%> input.updated, 
 <%-rootcss%> select.updated, 
 <%-rootcss%> textarea.updated,

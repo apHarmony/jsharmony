@@ -55,6 +55,18 @@ exports = module.exports = function(jsh){
           jsh.$root('.xelem'+xmodel.class+'.xformcontainer').css('visibility', 'visible');
         }
       }
+      else if(xmodel.layout == 'form') {
+        if(!jsh.is_insert){
+          if (xmodel.controller.form.Data._is_insert) {
+            jsh.$root('.xelem'+xmodel.class+'.xnorecords').show();
+            jsh.$root('.xelem'+xmodel.class+'.xformcontainer').css('visibility', 'hidden');
+          }
+          else {
+            jsh.$root('.xelem'+xmodel.class+'.xnorecords').hide();
+            jsh.$root('.xelem'+xmodel.class+'.xformcontainer').css('visibility', 'visible');
+          }
+        }
+      }
     
       //Set List of Values
       if ('_LOVs' in this) {
@@ -267,7 +279,7 @@ exports = module.exports = function(jsh){
       var id = $(obj).data('id');
       var field = this.Fields[id];
       var _this = this;
-      if (!jsh.is_insert) {
+      if (!this._is_insert) {
         if (this.HasUpdate(id)) {
           if (!jobj.hasClass('updated')) {
             jobj.addClass('updated');

@@ -65,6 +65,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.XPage.GetChanges = function() {  //Returns array of form names that have changed
     var foundchanges = [];
     _.each(jsh.XModels, function (xmodel) {
+      if (!xmodel.isEnabled()){ return; }
       if (!jsh.XExt.hasAction(xmodel.actions, 'IUD')) return;
       if (xmodel.controller.HasUpdates()) { foundchanges.push(xmodel.caption[1]); }
       else if (xmodel.controller.form && xmodel.controller.form.Data && xmodel.controller.form.Data._is_dirty) { foundchanges.push(xmodel.caption[1]); }
@@ -201,7 +202,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.onReady = function() {
-    jsh.XPage.Hide();
+    jsh.XPage.Hide(null,function(xmodel){ return xmodel.layout=='grid'; });
     if (!jsh.XModels[jsh.XModels_root].actions) { jsh.XExt.Alert('ERROR - No effective access to root form'); return; }
 
     //  jsh.XPage.traverseModels(null,function(xmodel){ console.log(xmodel.id); },function(){ jsh.$root('.xelemX').show(); });
@@ -362,6 +363,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   //Calling XPage.Select with a null root model will check the model definition for updates
   jsh.XPage.Select = function(callback, root) {
+    //Clear data from models that are disabled due to missing record
+    jsh.XPage.traverseModels(root, function (xmodel) {
+      if(xmodel.flags.no_form_record) xmodel.flags.no_form_record = false;
+    }, undefined, { disabledModels: true });
     //If the Model itself is dynamic, reload the model definition before reloading the data
     if (typeof root == 'undefined'){
       var isDynamic = false;
@@ -383,16 +388,19 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
             if((xmodel.layout == 'form') || (xmodel.layout == 'form-m') || (xmodel.layout == 'grid')){
               if(!jsh.XExt.hasAction(xmodel.actions, 'B')) return done();
               //If model bindings are dependent on key
-              if(xmodel.bindings && (_.keys(xmodel.bindings).length != xmodel.constant_bindings.length)) return done();
+              if(xmodel.bindings && (_.keys(xmodel.bindings).length != xmodel.constant_bindings.length)){ jsh.XPage.DisableModelControls(xmodel); return done(); }
               //If this is a form with a missing key
               for(var key in xmodel.keys){
-                if(xmodel.constant_bindings.indexOf(key)<0) return done();
+                if(xmodel.constant_bindings.indexOf(key)<0){ jsh.XPage.DisableModelControls(xmodel); return done(); }
               }
             }
           }
         }
         if(jsh.XModels[xmodel.id].unbound) return onDone();
-        xmodel.controller.Select(onDone);
+        xmodel.controller.Select(function(){
+          if((xmodel.layout=='form') && !jsh.is_insert && xmodel.controller.form && xmodel.controller.form.Data && xmodel.controller.form.Data._is_insert) xmodel.flags.no_form_record = true;
+          return onDone();
+        });
       },
       function () {
         //Update title and other dynamic elements with in-place EJS
@@ -476,7 +484,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         if (title_text.indexOf('<#') >= 0) $(this).html(jsh.XPage.ParseEJS(title_text, xmodel.id));
         else $(this).html(title_text);
       });
-      jsh.$root(".xform_button.xelem" + xmodel.class).each(function () {
+      jsh.$root(".xform_button.xelem" + xmodel.class+', .xnorecords.xelem'+xmodel.class+' a').each(function () {
         var href = $(this).attr('href');
         //Store / retrieve original URL
         if ($(this).data('orighref')) href = $(this).data('orighref');
@@ -484,10 +492,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         //Parse URL EJS
         if (href.indexOf('<#') >= 0) {
           /* Resolve EJS */
-          $(this).attr('href', jsh.XPage.ParseEJS(href, xmodel.id));
+          var datamodelid = xmodel.id;
+          if(xmodel.parent) datamodelid = xmodel.parent;
+          $(this).attr('href', jsh.XPage.ParseEJS(href, datamodelid));
         }
       });
-    }, onComplete);
+    }, onComplete, { disabledModels: true });
   }
 
   jsh.XPage.RemoveEJSTags = function(jobj) {
@@ -509,8 +519,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.traverseModels = function(parentid, callback, oncomplete, options) {
-    if(!options) options = {};
+    if(!options) options = { disabledModels: false, childrenOnly: false };
     _.each(jsh.XModels, function (xmodel, xmodelid) {
+      if (!options.disabledModels && !xmodel.isEnabled()){ return; }
       if (xmodel.parent == parentid) {
         callback(xmodel);
         if(!options.childrenOnly) jsh.XPage.traverseModels(xmodel.id, callback, undefined, options);
@@ -527,8 +538,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.traverseModelsAsyncWorker = function(parentid, xmodelfunc, done, options) {
+    if(!options) options = { disabledModels: false, series: false };
+
     var childf = [];
     _.each(jsh.XModels, function (xmodel, xmodelid) {
+      if (!options.disabledModels && !xmodel.isEnabled()){ return; }
       if (xmodel.parent == parentid) {
         childf.push(function (cb) {
           xmodelfunc(xmodel, function () { jsh.XPage.traverseModelsAsyncWorker(xmodel.id, xmodelfunc, cb, options); });
@@ -570,6 +584,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     for(var fieldname in xmodel.bindings){
       data[fieldname] = xmodel.bindings[fieldname]();
     }
+    ejssrc=jsh.XExt.ReplaceAll(ejssrc,'data[j]','data');
     ejssrc = ejssrc.replace(/<#/g, '<' + '%').replace(/#>/g, '%' + '>');
 
     var ejsrslt = jsh.ejs.render(ejssrc, {
@@ -583,16 +598,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
     });
     return ejsrslt;
-  }
-
-  jsh.XPage.Hide = function() {
-    _.each(jsh.XModels, function (xmodel, xmodelid) {
-      if (xmodel.layout == 'grid') jsh.$root('.xtbl.xelem' + xmodel.class + ',.xbodyhead.xelem' + xmodel.class).hide();
-      else {
-        //jsh.$root('.xform'+xmodel.class).hide(); 
-        //jsh.$root('.xtabcontrol'+xmodel.class).hide(); 
-      }
-    });
   }
 
   jsh.XPage.LayoutOneColumn = function(){
@@ -613,9 +618,23 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       });
     });
   }
-
-  jsh.XPage.Show = function() {
+  
+  jsh.XPage.Hide = function(modelid,cond) {
     _.each(jsh.XModels, function (xmodel, xmodelid) {
+      if(modelid && (modelid!=xmodelid)) return;
+      if(cond && !cond(xmodel)) return;
+      if (xmodel.layout == 'grid') jsh.$root('.xtbl.xelem' + xmodel.class + ',.xbodyhead.xelem' + xmodel.class).hide();
+      else {
+        jsh.$root('.xform'+xmodel.class).hide(); 
+        jsh.$root('.xtabcontrol'+xmodel.class).hide(); 
+      }
+    });
+  }
+
+  jsh.XPage.Show = function(modelid, cond) {
+    _.each(jsh.XModels, function (xmodel, xmodelid) {
+      if(modelid && (modelid!=xmodelid)) return;
+      if(cond && !cond(xmodel)) return;
       if (xmodel.layout == 'grid') jsh.$root('.xtbl.xelem' + xmodel.class + ',.xbodyhead.xelem' + xmodel.class).show();
       else {
         jsh.$root('.xform' + xmodel.class).show();
@@ -627,6 +646,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.XPage.GetState = function(url) {
     var rslt = {};
     _.each(jsh.XModels, function (xmodel) {
+      if (!xmodel.isEnabled()) return;
       if (!XExt.hasAction(xmodel.actions, 'B')) return;
       if (xmodel.layout != 'grid') return;
       rslt[xmodel.id] = xmodel.controller.GetState();
@@ -686,6 +706,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     _.each(jsh.XModels, function (xmodel) {
       var modelid = xmodel.id;
+      if (!xmodel.isEnabled()) return;
       if (!jsh.XExt.hasAction(xmodel.actions, 'B')) return;
       if (xmodel.onloadstate) return xmodel.onloadstate(xmodel, state[modelid]);
       if (xmodel.layout != 'grid') return;
@@ -852,6 +873,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xmodel.controller.RunDBFunc(cb, options);
   }
 
+  jsh.XPage.DisableModelControls = function(xmodel){
+    var isGrid = (xmodel.layout == 'grid');
+    if(!xmodel.datamodel) return;
+    _.each(xmodel.datamodel.prototype.Fields, function(field){
+      var fieldselector = '.' + field.name + '.xelem' + xmodel.class;
+      if (isGrid) fieldselector = '.' + field.name + '.xelem' + xmodel.class;
+      var jctrl = jsh.root.find(fieldselector);
+      if(jctrl.length) jsh.XPage.Disable(jctrl);
+    });
+  }
+
   jsh.XPage.Disable = function(jctrl,show_lookup) {
     jctrl.removeClass('editable');
     jctrl.addClass('uneditable');
@@ -947,6 +979,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.XPage.HasUpdates = function() {
     var rslt = false;
     _.each(jsh.XModels, function (xmodel) {
+      if (!xmodel.isEnabled()) return;
       if (!XExt.hasAction(xmodel.actions, 'IUD')) return;
       if (xmodel.controller.HasUpdates()) { rslt = true; }
     });

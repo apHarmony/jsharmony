@@ -86,7 +86,7 @@ for(var i=0;i<model.fields.length;i++){
     <div class="<%=field.name%> xsubform <%=field.controlclass%>" data-id="<%=field.name%>" style="<%=field.controlstyle%>">
       <% if(field.caption){ %><a class="xtab selected last"><%=field.caption%></a><% } %>
       <div class="xpanel">
-	      <%-jsh.Render(field.model,model)%>
+	      <%-jsh.Render(field.model,model,field)%>
       </div>
     </div>
   <% }
@@ -122,7 +122,7 @@ for(var i=0;i<model.fields.length;i++){
     <div style="display:none;">
       <div class="xsubform xpopup xelem<%=model.class%> popup_<%=field.name%>">
         <div class="xpanel" style="<%=field.controlparams.popupstyle%>">
-	        <%-jsh.Render(popup_model,model)%>
+	        <%-jsh.Render(popup_model,model,field)%>
         </div>
       </div>
     </div>

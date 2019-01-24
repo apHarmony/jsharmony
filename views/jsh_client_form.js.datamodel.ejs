@@ -70,6 +70,22 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   xdatamodel.prototype.OnControlUpdate = XExt.XModel.OnControlUpdate();
   xdatamodel.prototype.Commit = XExt.XModel.Commit(xmodel);
   xdatamodel.prototype.BindLOV = XExt.XModel.BindLOV(modelid);
+  xdatamodel.prototype.OnDBError = function(err, stats, execParams, data){
+    if(xmodel.layout=='form'){
+      //If result not found
+      if(err.Number==-1){
+        //If this is a subform
+        if(xmodel.parent){
+          if(!jsh.is_insert){
+            xmodel.controller.form.Data = new xmodel.datamodel();
+            //Do not display popup message  / default error handler
+            if(execParams.onComplete) execParams.onComplete(data);
+            return false;
+          }
+        }
+      }
+    }
+  }
   jsh.on('jsh_ready', function(){ xdatamodel.prototype.BindLOV(xmodel.controller.form); });
 
   xdatamodel.prototype.xvalidate = new XValidate(jsh);

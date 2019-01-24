@@ -202,7 +202,7 @@ exports = module.exports = function(jsh){
     this.IsDirty = true;
     return rslt;
   }
-  XForm.prototype.Select = function(onComplete){
+  XForm.prototype.Select = function(onComplete, onFailure){
     var _this = this;
 
     this.qExecute(this.PrepExecute('get', this.q, this.GetSelectParams(), {}, function (rslt){
@@ -256,7 +256,7 @@ exports = module.exports = function(jsh){
       //NavTo already calls render
       if (_this.DataSet == null) _this.Render();
       if(onComplete) onComplete(rslt);
-    }));
+    }, onFailure));
   }
   XForm.prototype.ApplyDefaults = function(data){
     var _this = this;
@@ -394,7 +394,7 @@ exports = module.exports = function(jsh){
         if(loader) loader.StopLoading(_this);
         if ((data instanceof Object) && ('_error' in data)) {
           if(jsh.DefaultErrorHandler(data._error.Number,data._error.Message)) { }
-          else if(!(_this.OnDBError(data._error,data._stats))) { }
+          else if(!(_this.OnDBError(data._error,data._stats,ExecParams, data))) { }
           else if((data._error.Number == -9) || (data._error.Number == -5)){ jsh.XExt.Alert(data._error.Message); }
           else { jsh.XExt.Alert('Error #' + data._error.Number + ': ' + data._error.Message); }
           if ('onFail' in ExecParams) ExecParams.onFail(data._error);
@@ -421,7 +421,7 @@ exports = module.exports = function(jsh){
         var jdata = data.responseJSON;
         if ((jdata instanceof Object) && ('_error' in jdata)) {
           if (jsh.DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { }
-          else if (!(_this.OnDBError(jdata._error,jdata._stats))) { }
+          else if (!(_this.OnDBError(jdata._error,jdata._stats,ExecParams,data))) { }
           else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { jsh.XExt.Alert(jdata._error.Message); }
           else { jsh.XExt.Alert('Error #' + jdata._error.Number + ': ' + jdata._error.Message); }
           if ('onFail' in ExecParams) ExecParams.onFail(jdata._error);
@@ -479,13 +479,13 @@ exports = module.exports = function(jsh){
     }
     return true;
   };
-  XForm.prototype.OnDBError = function (error, stats){
+  XForm.prototype.OnDBError = function (error, stats, execParams, data){
     if(this.OnDBMessage(error)===false) return false;
 
     if(!this.Data) return true;
     
     if(this.Data.OnDBError){
-      if(this.Data.OnDBError(error)===false) return false;
+      if(this.Data.OnDBError(error, stats, execParams, data)===false) return false;
     }
 
     return true;

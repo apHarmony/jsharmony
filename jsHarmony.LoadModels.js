@@ -188,6 +188,7 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
   model._parentmodels = { tab: {}, duplicate: {}, subform: {}, popuplov: {}, button: {} };
   model._parentbindings = {};
   model._childbindings = {};
+  model._auto = {};
   if(!model.path && modelpath) model.path = modelpath;
   if(!model.module && modeldir && modeldir.module) model.module = modeldir.module;
   model.namespace = _this.getNamespace(modelname);
@@ -682,6 +683,7 @@ exports.ParseEntities = function () {
           if(fielddef && fielddef.coldef && fielddef.coldef.primary_key){
             field.key = 1;
             foundkey = true;
+            model._auto.primary_key = 1;
           }
         });
       }
@@ -695,6 +697,7 @@ exports.ParseEntities = function () {
               control: "hidden"
             });
             foundkey = true;
+            model._auto.primary_key = 1;
           }
         });
       }
@@ -887,6 +890,14 @@ exports.ParseEntities = function () {
       }
       if (field.name === '') delete field.name;
       //Apply default actions
+      if (!('actions' in field)){
+        if(field.key && !model._auto.primary_key && (model.layout != 'multisel') && !isReadOnlyGrid && tabledef && (tabledef.table_type=='table') && Helper.hasAction(model.actions, 'I')){
+          if(fielddef && fielddef.coldef && !fielddef.coldef.primary_key && !fielddef.coldef.readonly){
+            field._auto.actions = 1;
+            field.actions = 'BI';
+          }
+        }
+      }
       if (!('actions' in field)) {
         field._auto.actions = 1;
         field.actions = '';
@@ -962,13 +973,19 @@ exports.ParseEntities = function () {
           if('control' in field) field._auto.control = true;
         }
       }
-      if(!('caption' in field) && _.includes(['subform'],field.control)) field.caption = '';
-      else if(_.includes(['linkbutton','button'],field.control) && ('value' in field)) field.caption = field.value;
-      else if (!('caption' in field) && ('name' in field)) {
-        if (('control' in field) && (field.control == 'hidden')) field.caption = '';
-        else field.caption = field.name;
+      if(!('caption' in field)){
+        if(_.includes(['subform'],field.control)) field.caption = '';
+        else if(_.includes(['linkbutton','button'],field.control) && ('value' in field)) field.caption = field.value;
+        else if ('name' in field) {
+          if (('control' in field) && (field.control == 'hidden')) field.caption = '';
+          else field.caption = field.name;
+        }
       }
       if(_.includes(['linkbutton','button'],field.control) && ('caption' in field) && !('value' in field)) field.value = field.caption;
+      if((field.control=='subform') && !('insert_link' in field)){
+        var tmodel = _this.getModel(null, field.target, model);
+        if(tmodel && Helper.hasAction(tmodel.actions, 'I')) field.insert_link = "insert:"+field.target;
+      }
       if(model.onecolumn){
         if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
           if(!firstfield && ('control' in field)) field.nl = 1;
@@ -1280,7 +1297,7 @@ exports.ParseEntities = function () {
     //Validate Model and Field Parameters
     var _v_model = [
       'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites', 'class', 'using',
-      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings', '_childbindings', '_parentmodels', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
+      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings', '_childbindings', '_parentmodels', '_auto', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
       'pagesettings', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_search', 'grid_save_before_update', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
@@ -1293,7 +1310,7 @@ exports.ParseEntities = function () {
     ];
     var _v_field = [
       'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'foreignkey', 'serverejs', 'roles', 'static', 'cellclass',
-      'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'enable_search', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
+      'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'insert_link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'enable_search', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
       'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'always_editable_on_insert', 'precision', 'password', 'hash', 'salt', 'unbound',
       'sqlselect', 'sqlupdate', 'sqlinsert','sqlsort', 'sqlwhere', 'sqlsearchsound', 'sqlsearch', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVE__', '__AFTER__','_auto',
       'sql_from_db','sql_to_db','sqlsearch_to_db','datatype_config'
@@ -1917,7 +1934,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
       ParseModelRoles(jsh, tmodel, srcmodelid, srcactions);
       if(field.control=='subform'){
         if((tmodel.layout=='form') && field._auto.actions){
-          _this.LogInit_WARNING(model.id + ' > Subform ' + field.name + ': When using a subform that has a "form" layout, "actions" should be explicitly set on the subform control.  When both a subform and parent form target the same table, the subform should not have the "I" action.');
+          _this.LogInit_WARNING(model.id + ' > Subform ' + field.name + ': When using a subform that has a "form" layout, "actions" should be explicitly set on the subform control.  If both a subform and parent form target the same table, either the parent model should be read-only (model.actions="B"), or the subform control should not have the "I" action, so that it will not be displayed on insert (field.actions="BU").');
         }
         if((tmodel.layout=='grid') && Helper.hasAction(field.actions, 'I') && _.includes(['row','cell'],tmodel.commitlevel) && !_.isEmpty(field.bindings) && !tmodel.grid_save_before_update && Helper.hasAction(model.actions, "I")){
           _this.LogInit_WARNING(model.id + ' > Subform ' + field.name + ': When using a subform that has "I" actions and a target with a "grid" layout and, the target model\'s "commitlevel" should be set to "auto" so that the "commitlevel" will be set to "page" on insert and have both parent and child data saved in one transaction.  Alternatively, set "grid_save_before_update" to true on the target model to that no grid data can be entered until the parent is saved.');

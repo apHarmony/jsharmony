@@ -187,7 +187,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
       <div style="display:none;">
         <div class="xsubform xpopup xelem<%=model.class%> popup_<%=field.name%>">
           <div class="xpanel" style="<%=field.controlparams.popupstyle%>">
-            <%-jsh.Render(popup_model,model)%>
+            <%-jsh.Render(popup_model,model,field)%>
           </div>
         </div>
       </div>
@@ -207,7 +207,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
   <div style="display:none;">
     <div class="xsubform xpopup xelem<%=model.class%> colorbox_inline popup_<%=model.class%>_duplicate">
       <div class="xpanel" style="<%=model.duplicate.popupstyle%>">
-        <%-jsh.Render(popup_model,model)%>
+        <%-jsh.Render(popup_model,model,model.duplicate)%>
         <div style="text-align:center;padding-top:8px;">
           <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.class%> style="padding:3px 8px;" value="Duplicate" onclick="<%-instance%>.XPage.Duplicate('<%=popup_model.id%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link||''))%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link_options||''))%>'); return false;" />
           <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.class%> style="padding:3px 8px;" value="Cancel" onclick="<%-instance%>.$.colorbox.close(); return false;" />
