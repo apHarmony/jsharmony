@@ -88,7 +88,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       xeditablegrid.IsDirty = function(){ return xform.IsDirty; }
       xeditablegrid.OnCommit = xcontroller.OnCommit;
       xeditablegrid.OnCancelEdit = function(rowid,obj){ xcontroller.ResetRow(rowid); }
-      xeditablegrid.SaveBeforeUpdate = <%=(model.grid_save_before_update?'true':'false')%>;
+      xeditablegrid.SaveBeforeUpdate = <%=(parentfield && parentfield.controlparams && parentfield.controlparams.grid_save_before_update?'true':'false')%>;
     <% } %>
 
     xgrid.OnRowBind = function(jobj,datarow){

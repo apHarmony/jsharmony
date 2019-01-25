@@ -123,13 +123,13 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.XBase[basemodelid].push(modelid);
   <% if('js' in model){ %>
     if(!(modelid in jsh.App)) jsh.App[modelid] = {};
-    <%-XExt.ReplaceAll(model.js,'<'+'%=model.id%'+'>',model.id)%>
+    <%-jsh.RenderEJS(model.js,ejsparams)%>
   <% } %>
 })(<%-instance%>);
 </script>
 <% if(('css' in model) && model.css && model.css.trim()){ %>
 <style type="text/css">
-<%-model.css%>
+<%-jsh.RenderEJS(model.css,ejsparams)%>
 </style>
 <% } %>
 <script type="text/javascript">

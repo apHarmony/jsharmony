@@ -166,7 +166,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
   copyValues(rslt, model, [
     'id', 'namespace', 'class', 'layout', 'caption', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onupdate', 'oncommit', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy', 'js', 'hide_system_buttons',
     'popup', 'rowclass', 'rowstyle', 'tabpanelstyle', 'tablestyle', 'formstyle', 'sort', 'querystring', 'disableautoload', 'tabpos', 'templates', 'unbound',
-    'reselectafteredit','newrowposition','validationlevel','grid_expand_search','grid_rowcount', 'grid_require_search','grid_save_before_update','noresultsmessage','ejs','css','onecolumn',
+    'reselectafteredit','newrowposition','validationlevel','grid_expand_search','grid_rowcount', 'grid_require_search','noresultsmessage','ejs','css','onecolumn',
     //Commit Level
     function(){
       if(model.commitlevel){
@@ -477,13 +477,17 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
     if ('controlparams' in srcfield) {
       dstfield.controlparams = {};
       copyValues(dstfield.controlparams, srcfield.controlparams, [
-        'download_button', 'preview_button', 'upload_button', 'delete_button', 'dateformat', 'item_context_menu', 'expand_all', 'expand_to_selected', 'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup','base_readonly'
+        'download_button', 'preview_button', 'upload_button', 'delete_button', 'dateformat', 'item_context_menu', 'expand_all', 'expand_to_selected', 'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup','base_readonly','grid_save_before_update'
       ]);
       if ('thumbnails' in srcfield.controlparams) for (var tname in srcfield.controlparams.thumbnails) {
         var thumb = srcfield.controlparams.thumbnails[tname];
         if (thumb.resize) dstfield.controlparams.thumbnail_width = thumb.resize[0];
         else if (thumb.crop) dstfield.controlparams.thumbnail_width = thumb.crop[0];
         break;
+      }
+      if (('insert_link' in srcfield.controlparams) && (srcfield.controlparams.insert_link)) {
+        dstfield.controlparams.insert_link = jsh.getURL(req, model, srcfield.controlparams.insert_link, undefined, undefined, srcfield.bindings);
+        dstfield.controlparams.insert_link_onclick = jsh.getModelLinkOnClick(req, model, srcfield.target, srcfield.controlparams.insert_link);
       }
     }
     if (('serverejs' in srcfield) && (srcfield.serverejs)) {
@@ -504,10 +508,6 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
           dstfield.onclick = jsh.getURL_onclick(req, model, srcfield.link);
         }
       }
-    }
-    if (('insert_link' in srcfield) && (srcfield.insert_link)) {
-      dstfield.insert_link = jsh.getURL(req, model, srcfield.insert_link, undefined, undefined, srcfield.bindings);
-      dstfield.insert_link_onclick = jsh.getModelLinkOnClick(req, model, srcfield.target, srcfield.insert_link);
     }
     if (auxfields) {
       copyValues(dstfield, auxfields[i], [

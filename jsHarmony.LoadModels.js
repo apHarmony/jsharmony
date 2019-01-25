@@ -25,6 +25,7 @@ require('./lib/ext-validation.js')(XValidate);
 var Helper = require('./lib/Helper.js');
 var HelperFS = require('./lib/HelperFS.js');
 var jsHarmonyCodeGen = require('./lib/CodeGen.js');
+var jsParser = require('./lib/JSParser.js');
 
 module.exports = exports = {};
 
@@ -105,36 +106,33 @@ exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, module, o
 }
 
 exports.ParseJSON = function(fname, desc){
+  var _this = this;
   var ftext = Helper.JSONstrip(fs.readFileSync(fname, 'utf8'));
   var rslt  = null;
   try {
-    rslt = JSON.parse(ftext);
+    rslt = jsParser.Parse(ftext, fname).Tree;
   }
-  catch (ex) {
-    this.Log.console_error("-------------------------------------------");
-    this.Log.console_error("FATAL ERROR Parsing " + desc + " in " + fname);
-    this.Log.console(ex.name + ': "' + ex.message + '"');
-    try {
-      require('./lib/JSParser.js').Parse(ftext, fname);
-    }
-    catch (ex2) {
-      if('startpos' in ex2){
-        var errmsg = 'Error: Parse error on line ' + ex2.startpos.line + ', char ' + ex2.startpos.char + '\n';
-        var eline = Helper.getLine(ftext, ex2.startpos.line);
-        if(typeof eline != 'undefined'){
-          errmsg += eline + '\n';
-          for(var i=0;i<ex2.startpos.char;i++) errmsg += '-';
-          errmsg += '^\n';
-        }
-        errmsg += ex2.message + '\n';
-        errmsg += ex2.stack;
-        this.Log.console(errmsg);
+  catch (ex2) {
+    _this.Log.console_error("-------------------------------------------");
+    _this.Log.console_error("FATAL ERROR Parsing " + desc + " in " + fname);
+
+    if('startpos' in ex2){
+      var errmsg = 'Error: Parse error on line ' + ex2.startpos.line + ', char ' + ex2.startpos.char + '\n';
+      var eline = Helper.getLine(ftext, ex2.startpos.line);
+      if(typeof eline != 'undefined'){
+        errmsg += eline + '\n';
+        for(var i=0;i<ex2.startpos.char;i++) errmsg += '-';
+        errmsg += '^\n';
       }
-      else this.Log.console(ex2);
+      errmsg += ex2.message + '\n';
+      errmsg += ex2.stack;
+      _this.Log.console(errmsg);
     }
-    this.Log.console_error("-------------------------------------------");
+    else _this.Log.console(ex2);
+
+    _this.Log.console_error("-------------------------------------------");
     process.exit(8);
-    throw (ex);
+    throw (ex2);
   }
   return rslt;
 }
@@ -213,7 +211,9 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
     //Load JS
     prependPropFile('js',modelpathbase + '.js');
     //Load CSS
-    prependPropFile('css',modelpathbase + '.css');
+    var cssfname = (modelpathbase + '.css');
+    if(model.layout=='report') cssfname = (modelpathbase + '.form.css');
+    prependPropFile('css',cssfname);
     //Load EJS
     var ejsfname = (modelpathbase + '.ejs');
     if(model.layout=='report') ejsfname = (modelpathbase + '.form.ejs');
@@ -975,16 +975,22 @@ exports.ParseEntities = function () {
       }
       if(!('caption' in field)){
         if(_.includes(['subform'],field.control)) field.caption = '';
-        else if(_.includes(['linkbutton','button'],field.control) && ('value' in field)) field.caption = field.value;
+        else if(_.includes(['linkbutton','button'],field.control) && ('value' in field)){
+          if(model.layout=='grid') field.caption = field.value;
+          else field.caption = '';
+        }
         else if ('name' in field) {
           if (('control' in field) && (field.control == 'hidden')) field.caption = '';
           else field.caption = field.name;
         }
       }
       if(_.includes(['linkbutton','button'],field.control) && ('caption' in field) && !('value' in field)) field.value = field.caption;
-      if((field.control=='subform') && !('insert_link' in field)){
+      if((field.control=='subform') && !(field.controlparams && ('insert_link' in field.controlparams))){
         var tmodel = _this.getModel(null, field.target, model);
-        if(tmodel && Helper.hasAction(tmodel.actions, 'I')) field.insert_link = "insert:"+field.target;
+        if(tmodel && Helper.hasAction(tmodel.actions, 'I')){
+          if(!field.controlparams) field.controlparams = {};
+          field.controlparams.insert_link = "insert:"+field.target;
+        }
       }
       if(model.onecolumn){
         if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
@@ -1300,7 +1306,7 @@ exports.ParseEntities = function () {
       'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings', '_childbindings', '_parentmodels', '_auto', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
       'pagesettings', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
-      'grid_require_search', 'grid_save_before_update', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
+      'grid_require_search', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
       'js', 'ejs', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
@@ -1310,7 +1316,7 @@ exports.ParseEntities = function () {
     ];
     var _v_field = [
       'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'foreignkey', 'serverejs', 'roles', 'static', 'cellclass',
-      'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'insert_link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'enable_search', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
+      'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'enable_search', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
       'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'always_editable_on_insert', 'precision', 'password', 'hash', 'salt', 'unbound',
       'sqlselect', 'sqlupdate', 'sqlinsert','sqlsort', 'sqlwhere', 'sqlsearchsound', 'sqlsearch', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVE__', '__AFTER__','_auto',
       'sql_from_db','sql_to_db','sqlsearch_to_db','datatype_config'
@@ -1318,7 +1324,7 @@ exports.ParseEntities = function () {
     var _v_controlparams = [
       'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'dateformat', 'base_readonly',
       'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'sqlparams', 'save_file_with_extension',
-      'image', 'thumbnails', 'expand_all', 'item_context_menu'
+      'image', 'thumbnails', 'expand_all', 'item_context_menu', 'insert_link', 'grid_save_before_update'
     ];
     var _v_popuplov = ['target', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
     var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db'];
@@ -1855,21 +1861,21 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     validateSiteRoles(model, linkModel, prefix, suffix, roles);
   }
 
-  function validateBindings(bindings, model, tmodel, prefix){
+  function validateBindings(bindings, model, tmodel, prefix, targetField){
     if(!bindings) return;
     for(var childFieldName in bindings){
       var parentFieldName = bindings[childFieldName];
       var childField = _this.AppSrvClass.prototype.getFieldByName(tmodel.fields, childFieldName);
       var parentField = _this.AppSrvClass.prototype.getFieldByName(model.fields, parentFieldName);
       if(childFieldName && (childFieldName[0]=="'")){}
-      else if(!childField) { _this.LogInit_ERROR((prefix||'') + 'Missing binding target field: '+tmodel.id+'::'+childFieldName); }
+      else if(!childField) { _this.LogInit_ERROR((prefix||'') + 'Missing binding target field: '+tmodel.id+' > '+childFieldName); }
       else if((!_.includes(['exec','report'],tmodel.layout)) && Helper.hasAction(childField.actions, 'U') && childField._auto.actions) {
-        _this.LogInit_WARNING((prefix||'') + 'Binding target field '+tmodel.id+'::'+childFieldName+' should not have "U" action.  Please explicitly define "actions" if necessary.');
+        _this.LogInit_WARNING((prefix||'') + 'Binding target field '+tmodel.id+' > '+childFieldName+' should not have "U" action.  Please explicitly define "actions" if necessary.');
       }
       if(parentFieldName && (parentFieldName[0]=="'")){}
-      else if(!parentField) { _this.LogInit_ERROR((prefix||'') + 'Missing binding source field: '+model.id+'::'+parentFieldName); }
-      else if((!_.includes(['exec','report'],tmodel.layout)) && Helper.hasAction(parentField.actions, 'U')) {
-        _this.LogInit_WARNING((prefix||'') + 'Binding source field '+model.id+'::'+parentFieldName+' should not have "U" action.');
+      else if(!parentField) { _this.LogInit_ERROR((prefix||'') + 'Missing binding source field: '+model.id+' > '+parentFieldName); }
+      else if((!_.includes(['exec','report'],tmodel.layout)) && Helper.hasAction(parentField.actions, 'U') && !(targetField.controlparams && targetField.controlparams.grid_save_before_update)) {
+        _this.LogInit_WARNING((prefix||'') + 'Binding source field '+model.id+' > '+parentFieldName+' should not have "U" action'+((targetField.control=='subform')?', unless "controlparams.grid_save_before_update" is specified on the subform control':'')+'.');
       }
     }
   }
@@ -1898,7 +1904,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     tmodel._parentmodels.tab[model.id] = 1;
     tab.target = tmodel.id;
     validateSiteRoles(model, tmodel, model.id + ' > Tab ' + tabname + ': ', '', tab.roles);
-    validateBindings(tab.bindings, model, tmodel, model.id + ' > Tab ' + tabname + ': ');
+    validateBindings(tab.bindings, model, tmodel, model.id + ' > Tab ' + tabname + ': ', tab);
     ParseModelRoles(jsh, tmodel, srcmodelid, srcactions);
   }
   if ('duplicate' in model) {
@@ -1909,7 +1915,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     model.duplicate.target = tmodel.id;
     validateSiteRoles(model, tmodel, model.id + ' > Duplicate model ' + model.duplicate + ': ', '');
     validateSiteLinks(model, model.duplicate.link, model.id + ' > Duplicate model ' + model.duplicate + ' link: ', model.duplicate.link);
-    validateBindings(model.duplicate.bindings, model, tmodel, model.id + ' > Duplicate model ' + model.duplicate + ': ');
+    validateBindings(model.duplicate.bindings, model, tmodel, model.id + ' > Duplicate model ' + model.duplicate + ': ', model.duplicate);
     ParseModelRoles(jsh, tmodel, srcmodelid, srcactions);
   }
   _.each(model.buttons, function (button) {
@@ -1918,7 +1924,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
       var tmodel = jsh.getModel(null,button.target,model);
       if (!tmodel) { _this.LogInit_ERROR(model.id + ' > Button ' + button.link + ': Target model "' + button.target + '" not found'); return }
       tmodel._parentmodels.button[model.id] = 1;
-      validateBindings(button.bindings, model, tmodel, model.id + ' > Button ' + button.link + ': ');
+      validateBindings(button.bindings, model, tmodel, model.id + ' > Button ' + button.link + ': ', button);
     }
   });
   _.each(model.fields, function (field) {
@@ -1930,14 +1936,14 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
       field.target = tmodel.id;
       validateSiteRoles(model, tmodel, model.id + ' > ' + field.name + ': ', '', field.roles);
       validateSiteLinks(model, field.link, model.id + ' > ' + field.name + ' link: ', field.link, field.roles);
-      validateBindings(field.bindings, model, tmodel, model.id + ' > ' + field.name + ': ');
+      validateBindings(field.bindings, model, tmodel, model.id + ' > ' + field.name + ': ', field);
       ParseModelRoles(jsh, tmodel, srcmodelid, srcactions);
       if(field.control=='subform'){
         if((tmodel.layout=='form') && field._auto.actions){
           _this.LogInit_WARNING(model.id + ' > Subform ' + field.name + ': When using a subform that has a "form" layout, "actions" should be explicitly set on the subform control.  If both a subform and parent form target the same table, either the parent model should be read-only (model.actions="B"), or the subform control should not have the "I" action, so that it will not be displayed on insert (field.actions="BU").');
         }
-        if((tmodel.layout=='grid') && Helper.hasAction(field.actions, 'I') && _.includes(['row','cell'],tmodel.commitlevel) && !_.isEmpty(field.bindings) && !tmodel.grid_save_before_update && Helper.hasAction(model.actions, "I")){
-          _this.LogInit_WARNING(model.id + ' > Subform ' + field.name + ': When using a subform that has "I" actions and a target with a "grid" layout and, the target model\'s "commitlevel" should be set to "auto" so that the "commitlevel" will be set to "page" on insert and have both parent and child data saved in one transaction.  Alternatively, set "grid_save_before_update" to true on the target model to that no grid data can be entered until the parent is saved.');
+        if((tmodel.layout=='grid') && Helper.hasAction(field.actions, 'I') && _.includes(['row','cell'],tmodel.commitlevel) && !_.isEmpty(field.bindings) && !(field.controlparams && field.controlparams.grid_save_before_update) && Helper.hasAction(model.actions, "I")){
+          _this.LogInit_WARNING(model.id + ' > Subform ' + field.name + ': When using a subform that has "I" actions and a target with a "grid" layout and, the target model\'s "commitlevel" should be set to "auto" so that the "commitlevel" will be set to "page" on insert and have both parent and child data saved in one transaction.  Alternatively, set "grid_save_before_update" to true on the subform control so that no grid data can be entered until the parent is saved.');
         }
       }
     }

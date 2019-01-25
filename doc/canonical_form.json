@@ -152,7 +152,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "grid_expand_search": 1,
   "grid_rowcount":  1,
   "grid_require_search": 1, //Do not initially load results
-  "grid_save_before_update": 1,
   "duplicate": {"target": "E_DUPLICATE", "bindings": {"e_id":"e_id", "c_id": "c_id"},"link":"edit:EW&e_id=new_e_id","link_text": "Duplicate Item"},
   "templates": { "grid": ".xgrid_calendar_template" },
   "onecolumn": true, //Add newline (nl) after each form field except the first. (form, form-m)  Automatically align width of captions
@@ -218,6 +217,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                        "value_false":"OFF",
                        "value_hidden":""
                       },
+                      {"grid_save_before_update": 1, //subform params
+                       "insert_link": "add:CA", //In case of subform with "form" layout, link is used for "insert" button when record not found
+                      },
                       { //**Deprecated** - moved to field.popuplov
                        "codeval": "j_id", //**Deprecated**
                        "popupstyle": "height:200px;", //**Deprecated**
@@ -272,7 +274,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "always_editable_on_insert": 1, //Make field editable on insert, even if value is set in querystring, or field is readonly
       //for subform, popuplov
       "target": "E_Name",
-      "insert_link": "add:CA", //In case of subform with "form" layout, link is used for "insert" button when record not found
       "bindings": { "c_id": "c_id" },
       "cellclass": "", //For Grid / Multisel table
       "cellstyle": "width:300px;"  //For Grid / Multisel table

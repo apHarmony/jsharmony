@@ -160,7 +160,7 @@ exports.parseFieldExpression = function(field, exp, params, options){
 //Field link
 //  jsh.getURL(req, model, srcfield.link, undefined, model.fields);
 //Field insert_link
-//  jsh.getURL(req, model, srcfield.insert_link, undefined, undefined, srcfield.bindings);
+//  jsh.getURL(req, model, srcfield.controlparams.insert_link, undefined, undefined, srcfield.bindings);
 //
 //ex: edit:EW&E_ID
 //Parameters:
