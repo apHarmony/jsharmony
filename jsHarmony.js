@@ -83,7 +83,7 @@ jsHarmony.prototype.AddModule = function(module){
   if(moduleName in this.Modules) throw new Error('Module '+moduleName+' already exists in jsh.Modules');
   this.Modules[moduleName] = module;
   //Initialize / Merge Module Config
-  if(this.Config.modules[moduleName]) module.Config.Merge(this.Config.modules[moduleName]);
+  if(this.Config.modules[moduleName]) module.Config.Merge(this.Config.modules[moduleName], this, module.name);
   this.Config.modules[moduleName] = module.Config;
   //Run onModuleAdded event
   module.onModuleAdded(this);
@@ -151,11 +151,11 @@ jsHarmony.prototype.Init = function(init_cb){
           if(driverName in _this.Config.forDB){
             var driverConfigs = _this.Config.forDB[driverName];
             _.each(driverConfigs, function(driverConfig){
-              if(!driverConfig.sourceModuleName) _this.Config.Merge(driverConfig);
+              if(!driverConfig.sourceModuleName) _this.Config.Merge(driverConfig, _this);
             });
             for (var i = 0; i < modeldirs.length; i++) {
               _.each(driverConfigs, function(driverConfig){
-                if(driverConfig.sourceModuleName == modeldirs[i].module) _this.Config.Merge(driverConfig);
+                if(driverConfig.sourceModuleName == modeldirs[i].module) _this.Config.Merge(driverConfig, _this);
               });
             }
           }
@@ -213,6 +213,7 @@ jsHarmony.prototype.Init = function(init_cb){
       //Validate Configuration
       _this.Config.Validate(_this,'jsHarmony');
       for(var moduleName in _this.Modules){
+        if(moduleName=='jsharmony') continue;
         _this.Modules[moduleName].Config.Validate(_this,'module '+moduleName);
       }
 

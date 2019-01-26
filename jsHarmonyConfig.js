@@ -44,7 +44,8 @@ jsHarmonyConfigBase.prototype.Init = function(cb){
   if(cb) return cb();
 };
 //Merge target configuration with existing
-jsHarmonyConfigBase.prototype.Merge = function(config){
+jsHarmonyConfigBase.prototype.Merge = function(config, jsh, sourceModuleName){
+
   _.merge(this, config);
 };
 
@@ -202,10 +203,6 @@ function jsHarmonyConfig(config){
   this.macros = {};
   //Dynamic Model Bindings
   this.dynamic_bindings = {};
-  //Models for Help Listing
-  this.help_view = {};
-  //ID field for Help Listing
-  this.help_panelid = "";
   //Default Button Definitions
   this.default_buttons = {
     "insert": { "icon": "insert", "text": "Add %%%CAPTION%%%", "class": "xbuttoninsert" },
@@ -294,15 +291,16 @@ jsHarmonyConfig.prototype.Init = function(cb){
   if(!this.localmodeldir) this.localmodeldir = this.appbasepath + '/models/';
   if(cb) return cb();
 };
-jsHarmonyConfig.prototype.Merge = function(config){
+jsHarmonyConfig.prototype.Merge = function(config, jsh, sourceModuleName){
   if(config){
+    if(!sourceModuleName && config.sourceModuleName) sourceModuleName = config.sourceModuleName; 
     for(var prop in config){
       //Handle modules
       if(prop=='sourceModuleName') continue;
       else if(prop=='modules'){
         for(var moduleName in config.modules){
-          if((moduleName in this.modules) && (this.modules[moduleName].prototype) && (this.modules[moduleName].prototype.Merge)){
-            this.modules[moduleName].Merge(config.modules[moduleName]);
+          if((moduleName in this.modules) && (this.modules[moduleName].Merge)){
+            this.modules[moduleName].Merge(config.modules[moduleName], jsh, sourceModuleName);
           }
           else {
             _.merge(this.modules[moduleName], config.modules[moduleName]);
@@ -360,13 +358,6 @@ jsHarmonyConfig.prototype.LoadJSConfigFolder = function(jsh, fpath){
 };
 
 jsHarmonyConfig.prototype.LoadJSONConfigFile = function(jsh, fpath, sourceModule, dbDriver){
-  //Add namespace where applicable
-  function addNamespace(modelid){
-    if(!modelid) return modelid;
-    if(modelid[0]=='/') return modelid;
-    return sourceModule.namespace + modelid;
-  }
-
   if(!fpath) throw new Error('Config file path is required');
   if (!fs.existsSync(fpath)) return;
   var config = jsh.ParseJSON(fpath, "Config");
@@ -376,15 +367,7 @@ jsHarmonyConfig.prototype.LoadJSONConfigFile = function(jsh, fpath, sourceModule
       for (var model_group in config.model_groups){
         var model_group_members = config.model_groups[model_group];
         for(var i=0;i<model_group_members.length;i++){
-          model_group_members[i] = addNamespace(model_group_members[i]);
-        }
-      }
-    }
-    if(config.help_view){
-      if(_.isString(config.help_view)) config.help_view = addNamespace(config.help_view);
-      else{
-        for(var siteid in config.help_view){
-          config.help_view[siteid] = addNamespace(config.help_view[siteid]);
+          model_group_members[i] = jsHarmonyConfig.addNamespace(model_group_members[i], sourceModule);
         }
       }
     }
@@ -398,7 +381,7 @@ jsHarmonyConfig.prototype.LoadJSONConfigFile = function(jsh, fpath, sourceModule
   }
   else {
     //Merge config
-    this.Merge(config);
+    this.Merge(config, jsh, sourceModule.name);
   }
 };
 
@@ -437,5 +420,13 @@ jsHarmonyConfig.prototype.LoadJSONConfigFolder = function(jsh, fpath, sourceModu
 };
 
 jsHarmonyConfig.Base = jsHarmonyConfigBase;
+
+//Add namespace where applicable
+jsHarmonyConfig.addNamespace = function(modelid, sourceModule){
+  if(!sourceModule) return modelid;
+  if(!modelid) return modelid;
+  if(modelid[0]=='/') return modelid;
+  return sourceModule.namespace + modelid;
+}
 
 exports = module.exports = jsHarmonyConfig;

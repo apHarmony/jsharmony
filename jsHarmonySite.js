@@ -85,6 +85,12 @@ function jsHarmonySite(jsh, id, config){
     params.menudata = { MainMenu:[], SubMenus:{}  }; 
     onComplete(); 
   };
+  //Help System
+  this.help = function(req, res, jsh, helpid, onComplete){
+    var helpurl = '';
+    var helpurl_onclick = req.jshsite.instance+'.XExt.Alert(\'Help System not initialized.\'); return false;';
+    return onComplete(helpurl, helpurl_onclick);
+  };
   //Global parameters sent to the client front-end
   this.globalparams = {
     /* user_id: function (req) { return req.user_id; }, */
@@ -140,6 +146,7 @@ jsHarmonySite.prototype.Validate = function(){
   if(Helper.notset(_this.baseurl)) _this.baseurl = '/';
   if(Helper.notset(_this.show_system_errors)) _this.show_system_errors = true;
   if(!_this.menu) _this.menu = function(req,res,jsh,params,onComplete){ params.showlisting = true; params.startmodel = null; params.menudata = { }; onComplete(); };
+  if(!_this.help) _this.help = function(req, res, jsh, helpid, onComplete){ var helpurl = ''; var helpurl_onclick = req.jshsite.instance+'.XExt.Alert(\'Help System not initialized.\'); return false;'; return onComplete(helpurl, helpurl_onclick); };
   if(!_this.globalparams) _this.globalparams = {};
   if(!_this.public_apps) _this.public_apps = [];
   if(!_this.private_apps) _this.private_apps = [];

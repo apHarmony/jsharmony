@@ -186,8 +186,6 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
     //General Data
     function () {
       return {
-        'helpurl': ejsext.getHelpURL(req, jsh, model), 
-        'helpurl_onclick': ejsext.getHelpOnClick(req, jsh, model),
         'actions': ejsext.getActions(req, model, 'BIUD'),
         'breadcrumbs': ejsext.BreadCrumbs(req, jsh, fullmodelid)
       }
@@ -273,6 +271,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
   else if(model.tabcode) rslt.modeltype = 'dynamic'; //Model has tabs calculated server-side
 
   var tabcode = null;
+  var helpid = model.helpid;
 
   async.waterfall([
     //Get tabcode, if applicable
@@ -344,9 +343,11 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
         }
         
         //Override Help URL to that of first tab
-        var firsttabmodel = jsh.getModel(req, req.curtabs[model.id], model);
-        if (firsttabmodel){
-          rslt.helpurl = ejsext.getHelpURL(req, jsh, firsttabmodel);
+        if(model.tabpos == 'top'){
+          var firsttabmodel = jsh.getModel(req, req.curtabs[model.id], model);
+          if (firsttabmodel){
+            helpid = firsttabmodel.helpid;
+          }
         }
 
         var rslttabs = [];
@@ -429,6 +430,15 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
     function(cb){
       _this.AppSrv.getTitle(req, res, fullmodelid, (targetperm=='U'?'BU':targetperm), function(err, title){
         if(typeof title !== 'undefined') rslt.title = (title||'');
+        return cb();
+      });
+    },
+
+    //Help System
+    function(cb){
+      req.jshsite.help(req, res, jsh, helpid, function(helpurl, helpurl_onclick){
+        rslt.helpurl = helpurl;
+        rslt.helpurl_onclick = helpurl_onclick;
         return cb();
       });
     },
