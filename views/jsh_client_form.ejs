@@ -17,7 +17,7 @@
     <a href="#" class="save" onclick="<%-instance%>.XPage.Save();return false;" style="display:none;"><img src="/images/icon_save.png" alt="Save" title="Save" />Save</a>
     <% if(model.layout != 'form-m') { %><a href="#" class="delete" onclick="<%-instance%>.XPage.Delete();return false;" style="display:none;"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a><% } %>
     <a href="#" onclick="<%-instance%>.XPage.Print(); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'print'))%>"><img src="/images/icon_print.png" alt="Print" title="Print" />Print</a>
-    <a href="<%-model.helpurl%>" onclick="<%-model.helpurl_onclick%>" style="<%-xejs.visible(xejs.showSystemButton(model,'help'))%>"><img src="/images/icon_help.png" alt="Help" title="Help" />Help</a>
+    <a href="<%-model.helpurl%>" onclick="<%-js(model.helpurl_onclick)%>" style="<%-xejs.visible(xejs.showSystemButton(model,'help'))%>"><img src="/images/icon_help.png" alt="Help" title="Help" />Help</a>
   <% } %>
 </div><% if(model.topmost){ %><div class="xactions_spacer"></div><% } %>
 <% } %>

@@ -213,7 +213,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh.prev_bcrumbs_src = jsh.orig_bcrumbs;
 
       jsh.$root('.toplink_help').not('.static').attr('href',model.helpurl);
-      jsh.$root('.toplink_help').not('.static').attr('onclick',model.helpurl_onclick);
+      jsh.$root('.toplink_help').not('.static').attr('onclick','return (function(){'+XExt.getJSLocals(model.id)+model.helpurl_onclick+'}).call(this);');
       if(model.menu){ jsh.XMenu.Select(model.menu); }
       jsh.ResetLinks();
       jsh.trigger('jsh_ready');

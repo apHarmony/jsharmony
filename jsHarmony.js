@@ -213,7 +213,7 @@ jsHarmony.prototype.Init = function(init_cb){
       //Validate Configuration
       _this.Config.Validate(_this,'jsHarmony');
       for(var moduleName in _this.Modules){
-        if(moduleName=='jsharmony') continue;
+        if(_this.Modules[moduleName].Config===_this.Config) continue;
         _this.Modules[moduleName].Config.Validate(_this,'module '+moduleName);
       }
 

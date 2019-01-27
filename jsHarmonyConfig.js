@@ -376,12 +376,12 @@ jsHarmonyConfig.prototype.LoadJSONConfigFile = function(jsh, fpath, sourceModule
   if(dbDriver){
     //Add to database-specific config
     if(!(dbDriver in this.forDB)) this.forDB[dbDriver] = [];
-    config.sourceModuleName = sourceModule.name;
+    if(sourceModule) config.sourceModuleName = sourceModule.name;
     this.forDB[dbDriver].push(config);
   }
   else {
     //Merge config
-    this.Merge(config, jsh, sourceModule.name);
+    this.Merge(config, jsh, (sourceModule?sourceModule.name:undefined));
   }
 };
 

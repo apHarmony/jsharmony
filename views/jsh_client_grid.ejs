@@ -18,7 +18,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
   <a href="#" class="xsearchbutton xsearchbutton<%=model.class%>" onclick="<%-js('xmodel.controller.SearchButtonClick();')%>" style="<%-xejs.visible(xejs.showSystemButton(model,'search'))%>"><img src="/images/icon_search.png" alt="Search" title="Search" /><span>Search</span></a>
   <a href="/" onclick="<%-js('jsh.XPage.Print();')%>" style="<%-xejs.visible(model.topmost && xejs.showSystemButton(model,'print'))%>"><img src="/images/icon_print.png" alt="Print" title="Print" />Print</a>
   <a href="#" onclick="<%-js('xmodel.controller.Export();')%>" style="<%-xejs.visible(xejs.showSystemButton(model,'export'))%>"><img src="/images/icon_export.png" alt="Export" title="Export" />Export</a>
-  <a href="<%-model.helpurl%>" onclick="<%-model.helpurl_onclick%>" style="<%-xejs.visible(model.topmost && xejs.showSystemButton(model,'help'))%>"><img src="/images/icon_help.png" alt="Help" title="Help" />Help</a>
+  <a href="<%-model.helpurl%>" onclick="<%-js(model.helpurl_onclick)%>" style="<%-xejs.visible(model.topmost && xejs.showSystemButton(model,'help'))%>"><img src="/images/icon_help.png" alt="Help" title="Help" />Help</a>
 </div>
 <div data-id="<%=model.id%>" class="xsearch xsearch_<%=model.class%>"></div>
 <script class="xsearch_template_<%=model.class%>" type="text/x-ejs-template">
