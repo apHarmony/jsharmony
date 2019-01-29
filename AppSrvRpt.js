@@ -29,7 +29,7 @@ var ejs = require('ejs');
 var ejsext = require('./lib/ejsext.js');
 var moment = require('moment');
 var querystring = require('querystring');
-var hummus = require('hummus');
+var pdfMerge = require('pdf-merge');
 var _HEADER_ZOOM = 0.75;
 var _BROWSER_RECYCLE_COUNT = 50;
 
@@ -175,7 +175,7 @@ AppSrvRpt.prototype.batchReport = function (req, res, db, dbcontext, model, sql_
           tmp.file({ dir: report_folder }, function (batchtmperr, batchtmppath, batchtmpfd) {
             if (batchtmperr) return errorHandler(-99999, batchtmperr);
             var batchtmppdfpath = batchtmppath + '.pdf';
-            var pdfWriter = hummus.createWriter(batchtmppdfpath);
+            var pdfFiles = [];
             var batchdbdata = [];
 
             async.eachSeries(rslt.batchqueue, function(batchparams, cb){
@@ -186,10 +186,12 @@ AppSrvRpt.prototype.batchReport = function (req, res, db, dbcontext, model, sql_
                 /* Report Done */ 
                 HelperFS.getFileStats(req, res, tmppath, function (err, stat) {
                   if (err){ dispose(); return cb('Report file not found'); }
-                  //Merge PDFs using PDFKit
-                  pdfWriter.appendPDFPagesFromPDF(tmppath);
-                  dispose();
-                  return cb(null);
+                  pdfFiles.push(tmppath);
+                  pdfMerge(pdfFiles,{ output: batchtmppdfpath }).then(function(){
+                    pdfFiles = [batchtmppdfpath];
+                    dispose();
+                    return cb(null);
+                  });
                 });
               });
             }, function(err){
@@ -200,7 +202,6 @@ AppSrvRpt.prototype.batchReport = function (req, res, db, dbcontext, model, sql_
                   });
                 });
               }
-              pdfWriter.end();
               if(err) return errorHandler(-99999, err);
               return onComplete(null, batchtmppdfpath, dispose, batchdbdata);
             });

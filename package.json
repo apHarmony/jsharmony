@@ -1,6 +1,6 @@
 {
   "name": "jsharmony",
-  "version": "1.1.73",
+  "version": "1.1.74",
   "description": "Rapid Application Development (RAD) Platform for Node.js Database Application Development",
   "main": "index.js",
   "scripts": {
@@ -42,7 +42,6 @@
     "express": "^4.14.1",
     "form-data": "^2.1.2",
     "gm": "^1.23.0",
-    "hummus": "^1.0.90",
     "jsharmony-db": "^1.1.0",
     "jsharmony-validate": "^1.1.0",
     "lodash": "^4.14.0",
@@ -53,6 +52,7 @@
     "nodemailer-html-to-text": "^3.0.0",
     "nodemailer-ses-transport": "^1.5.1",
     "nodemailer-smtp-pool": "^2.8.3",
+    "pdf-merge": "^1.2.0",
     "puppeteer": "^1.9.0",
     "stylus": "~0.54.5",
     "tmp": "^0.0.31",
