@@ -101,7 +101,7 @@ exports.getJSLocals = function(req){
 
 exports.wrapJS = function(req, code){
   return 'return (function(){'+this.getJSLocals(req)+' '+code+'; return false; }).call(this);';
-}
+};
 
 exports.RenderView = function(view,ejsparams){
   var _this = this;

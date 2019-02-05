@@ -272,7 +272,8 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid) {
       var header = {};
       var frow = rslt[fullmodelid][0];
       for (var fcol in frow) {
-        if(!_.includes(exportColumns, fcol)) continue;
+        //Ignore columns that should not be exported
+        if(!_.includes(exportColumns, fcol)){ delete frow[fcol]; continue; }
         var field = _this.getFieldByName(model.fields, fcol);
         if (field && ('caption' in field)) { header[fcol] = field.caption_ext || field.caption; }
         else if (fcol.indexOf('__' + jsh.map.codetxt + '__') == 0) {
@@ -307,6 +308,9 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid) {
           if (_.isDate(crow[ccol])) {
             crow[ccol] = crow[ccol].toISOString();//.replace('T', ' ').replace('Z', '');
           }
+        }
+        for (ccol in crow) {
+          if(!_.includes(exportColumns, ccol)){ delete crow[ccol]; continue; }
         }
       }
     }

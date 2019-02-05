@@ -427,6 +427,6 @@ jsHarmonyConfig.addNamespace = function(modelid, sourceModule){
   if(!modelid) return modelid;
   if(modelid[0]=='/') return modelid;
   return sourceModule.namespace + modelid;
-}
+};
 
 exports = module.exports = jsHarmonyConfig;

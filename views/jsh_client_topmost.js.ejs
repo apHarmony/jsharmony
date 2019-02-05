@@ -492,9 +492,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         //Parse URL EJS
         if (href.indexOf('<#') >= 0) {
           /* Resolve EJS */
-          var datamodelid = xmodel.id;
-          if(xmodel.parent) datamodelid = xmodel.parent;
-          $(this).attr('href', jsh.XPage.ParseEJS(href, datamodelid));
+          $(this).attr('href', jsh.XPage.ParseEJS(href, xmodel.id, xmodel.parent));
         }
       });
     }, onComplete, { disabledModels: true });
@@ -572,20 +570,32 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     return rslt;
   }
 
-  jsh.XPage.ParseEJS = function(_ejssrc, modelid) {
+  jsh.XPage.ParseEJS = function(_ejssrc, modelid, parentmodelid) {
     var ejssrc = _ejssrc;
     var data = {};
     if (!(modelid in jsh.XModels)) { XExt.Alert('Error: Model ' + modelid + ' not found.'); return; }
     var xmodel = jsh.XModels[modelid];
+    var xparentmodel = null;
     _.merge(data, jsh.forcequery);
+    if(parentmodelid){
+      xparentmodel = jsh.XModels[parentmodelid];
+      if(xparentmodel.controller && xparentmodel.controller.grid) _.merge(data, xparentmodel.controller.grid.Data);
+      else if(xparentmodel.controller && xparentmodel.controller.form) _.merge(data, xparentmodel.controller.form.Data);
+    }
     if(xmodel.controller && xmodel.controller.grid) _.merge(data, xmodel.controller.grid.Data);
     else if(xmodel.controller && xmodel.controller.form) _.merge(data, xmodel.controller.form.Data);
     
+    if(parentmodelid){
+      for(var fieldname in xparentmodel.bindings){
+        data[fieldname] = xparentmodel.bindings[fieldname]();
+      }
+    }
     for(var fieldname in xmodel.bindings){
       data[fieldname] = xmodel.bindings[fieldname]();
     }
     ejssrc=jsh.XExt.ReplaceAll(ejssrc,'data[j]','data');
     ejssrc = ejssrc.replace(/<#/g, '<' + '%').replace(/#>/g, '%' + '>');
+    console.log(ejssrc);
 
     var ejsrslt = jsh.ejs.render(ejssrc, {
       data: data,

@@ -44,9 +44,9 @@ exports.getModelDirs = function(){
     }
   }
   return rslt;
-}
+};
 
-exports.SetModels = function (models) { this.Models = models; }
+exports.SetModels = function (models) { this.Models = models; };
 
 exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, module, options) {
   options = _.extend(options, { isBaseDir: true });
@@ -56,7 +56,7 @@ exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, module, o
   if (typeof dbtype == 'undefined') dbtype = '';
   if(!fs.existsSync(modelbasedir)){ _this.LogInit_ERROR('Model folder ' + modelbasedir + ' not found'); return; }
   var fmodels = fs.readdirSync(modelbasedir);
-  for (var i in fmodels) {
+  for (let i in fmodels) {
     var fname = fmodels[i];
     var fpath = modelbasedir + fname;
     var fstat = fs.lstatSync(fpath);
@@ -71,19 +71,18 @@ exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, module, o
     if (fname.indexOf('.json', fname.length - 5) == -1) continue;
     if (fname == '_canonical.json') continue;
     var modelname = prefix + fname.replace('.json', '');
-    var isDBSpecific = false;
     if (dbtype && (fname.indexOf('.' + dbtype + '.') < 0)) {
       var found_other_dbtype = false;
       _.each(dbDrivers, function (odbtype) { if (fname.indexOf('.' + odbtype + '.') >= 0) found_other_dbtype = true; });
       if (found_other_dbtype) continue;
     }
     else{
+      //Model is specific to this database
       modelname = prefix + fname.replace('.' + dbtype + '.', '.').replace('.json', '');
-      isDBSpecific = true;
     }
     _this.LogInit_INFO('Loading ' + modelname);
     var modelbasename = _this.getBaseModelName(modelname);
-    var model = _this.ParseJSON(fpath, "Model " + modelname);
+    var model = _this.ParseJSON(fpath, 'Model ' + modelname);
     if (modelbasename == '_controls') {
       for (var c in model) this.CustomControls[c] = model[c];
     }
@@ -103,7 +102,7 @@ exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, module, o
       else this.AddModel(modelname, model, prefix, fpath, modeldir);
     }
   }
-}
+};
 
 exports.ParseJSON = function(fname, desc){
   var _this = this;
@@ -113,15 +112,15 @@ exports.ParseJSON = function(fname, desc){
     rslt = jsParser.Parse(ftext, fname).Tree;
   }
   catch (ex2) {
-    _this.Log.console_error("-------------------------------------------");
-    _this.Log.console_error("FATAL ERROR Parsing " + desc + " in " + fname);
+    _this.Log.console_error('-------------------------------------------');
+    _this.Log.console_error('FATAL ERROR Parsing ' + desc + ' in ' + fname);
 
     if('startpos' in ex2){
       var errmsg = 'Error: Parse error on line ' + ex2.startpos.line + ', char ' + ex2.startpos.char + '\n';
       var eline = Helper.getLine(ftext, ex2.startpos.line);
       if(typeof eline != 'undefined'){
         errmsg += eline + '\n';
-        for(var i=0;i<ex2.startpos.char;i++) errmsg += '-';
+        for(let i=0;i<ex2.startpos.char;i++) errmsg += '-';
         errmsg += '^\n';
       }
       errmsg += ex2.message + '\n';
@@ -130,12 +129,12 @@ exports.ParseJSON = function(fname, desc){
     }
     else _this.Log.console(ex2);
 
-    _this.Log.console_error("-------------------------------------------");
+    _this.Log.console_error('-------------------------------------------');
     process.exit(8);
     throw (ex2);
   }
   return rslt;
-}
+};
 
 exports.MergeFolder = function (dir) {
   var _this = this;
@@ -153,21 +152,21 @@ exports.MergeFolder = function (dir) {
     if (abase == bbase) return a > b;
     return abase > bbase;
   });
-  for (var i in f) {
+  for (let i in f) {
     var fname = dir + f[i];
     _this.LogInit_INFO('Loading ' + fname);
     var ftext = fs.readFileSync(fname, 'utf8');
     rslt += ftext + '\r\n';
   }
   return rslt;
-}
+};
 
 exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
 
   function prependPropFile(prop, path){
     if (fs.existsSync(path)) {
       var fcontent = fs.readFileSync(path, 'utf8');
-      if (prop in model) fcontent += "\r\n" + model[prop];
+      if (prop in model) fcontent += '\r\n' + model[prop];
       model[prop] = fcontent;
     }
   }
@@ -193,7 +192,7 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
 
   model.using = model.using || [];
   if(!_.isArray(model.using)) model.using = [model.using];
-  for(var i=0;i<model.using.length;i++){
+  for(let i=0;i<model.using.length;i++){
     //Resolve "using" paths
     var upath = model.using[i];
     upath = _this.getCanonicalNamespace(upath, modeldir.namespace);
@@ -226,12 +225,11 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
     }
     //Load "onroute" handler
     prependPropFile('onroute',modelpathbase + '.onroute.js');
-    var jsonroutefname = (modelpathbase + '.onroute.js');
   }
   if (!('helpid' in model) && !('inherits' in model)) model.helpid = modelname;
   if ('onroute' in model) model.onroute = (new Function('routetype', 'req', 'res', 'callback', 'require', 'jsh', 'modelid', 'params', model.onroute));
   this.Models[modelname] = model;
-}
+};
 
 exports.ParseInheritance = function () {
   var _this = this;
@@ -239,7 +237,7 @@ exports.ParseInheritance = function () {
   //Add model groups
   _.forOwn(this.Models, function (model) {
     if(!model.groups) model.groups = [];
-    if(!_.isArray(model.groups)) throw new Error(modelname + ': model.groups must be an array');
+    if(!_.isArray(model.groups)) throw new Error(model.id + ': model.groups must be an array');
     for(var modelgroup in _this.Config.model_groups){
       if(_.includes(_this.Config.model_groups[modelgroup],model.id)) model.groups.push(modelgroup);
     }
@@ -251,7 +249,7 @@ exports.ParseInheritance = function () {
         foundinheritance = true;
         var parentmodel = _this.getModel(null,model.inherits,model);
         if (!parentmodel) throw new Error('Model ' + model.id + ': Parent model ' + model.inherits + ' does not exist.');
-        if (parentmodel.id == model.id) throw new Error('Model ' + model.id + ' cyclic inheritance.')
+        if (parentmodel.id == model.id) throw new Error('Model ' + model.id + ' cyclic inheritance.');
         var origparentmodel = parentmodel;
         var parentinheritance = parentmodel.inherits;
         if (typeof parentinheritance !== 'undefined') return;
@@ -270,20 +268,20 @@ exports.ParseInheritance = function () {
         
         var mergedprops = {};
         EntityPropMerge(mergedprops, 'fields', model, parentmodel, function (newval, oldval) {
-          return MergeModelArray(newval, oldval, function(newItem, oldItem, rsltItem){
+          return _this.MergeModelArray(newval, oldval, function(newItem, oldItem, rsltItem){
             if ('validate' in newItem) rsltItem.validate = newItem.validate;
-            EntityPropMerge(rsltItem, 'roles', newItem, oldItem, function (newval, oldval) { return _.merge({}, oldval, newval) });
+            EntityPropMerge(rsltItem, 'roles', newItem, oldItem, function (newval, oldval) { return _.merge({}, oldval, newval); });
           });
         });
         //Create a clone of parent model instead of object reference
         if (('fields' in parentmodel) && !('fields' in model)) model.fields = parentmodel.fields.slice(0);
         EntityPropMerge(mergedprops, 'roles', model, parentmodel, function (newval, oldval) { return newval||oldval; });
-        EntityPropMerge(mergedprops, 'pagesettings', model, parentmodel, function (newval, oldval) { return _.merge({}, oldval, newval) });
+        EntityPropMerge(mergedprops, 'pagesettings', model, parentmodel, function (newval, oldval) { return _.merge({}, oldval, newval); });
         EntityPropMerge(mergedprops, 'tabs', model, parentmodel, function (newval, oldval) {
-          return MergeModelArray(newval, oldval);
+          return _this.MergeModelArray(newval, oldval);
         });
         EntityPropMerge(mergedprops, 'reportdata', model, parentmodel, function (newval, oldval) { return _.extend({}, oldval, newval); });
-        EntityPropMerge(mergedprops, 'js', model, parentmodel, function (newval, oldval) { return oldval + "\r\n" + newval; });
+        EntityPropMerge(mergedprops, 'js', model, parentmodel, function (newval, oldval) { return oldval + '\r\n' + newval; });
         EntityPropMerge(mergedprops, 'fonts', model, parentmodel, function (newval, oldval) { return (oldval||[]).concat(newval||[]); });
         
         //Merge Everything Else
@@ -295,20 +293,20 @@ exports.ParseInheritance = function () {
       }
     });
   }
-}
+};
 
 function EntityPropMerge(mergedprops, prop, model, parent, mergefunc) {
   if ((prop in model) && (prop in parent)) mergedprops[prop] = mergefunc(model[prop], parent[prop]);
 }
 
-function MergeModelArray(newval, oldval, eachItem){
-  var modelfields = _.map(newval, 'name');
+exports.MergeModelArray = function(newval, oldval, eachItem){
+  var _this = this;
   try{
     var rslt = newval.slice(0);
   }
   catch(ex){
-    console.log(ex);
-    console.log(newval);
+    _this.Log.console(ex);
+    _this.Log.console(newval);
     throw(ex);
   }
   _.each(oldval, function (field) {
@@ -331,19 +329,20 @@ function MergeModelArray(newval, oldval, eachItem){
     }
   });
   SortModelArray(rslt);
-  for (var i = 0; i < rslt.length; i++) {
+  for (let i = 0; i < rslt.length; i++) {
     if ('__REMOVE__' in rslt[i]) {
       rslt.splice(i, 1);
       i--;
     }
   }
   return rslt;
-}
+};
+
 function SortModelArray(fields){
   var cnt = 0;
   do {
     cnt = 0;
-    for( var i = 0; i < fields.length; i++) {
+    for(let i = 0; i < fields.length; i++) {
       var field = fields[i];
       var newidx = -1;
       if('__AFTER__' in field){
@@ -376,8 +375,8 @@ function SortModelArray(fields){
 
 exports.LogDeprecated = function(msg) {
   if (this.Config.debug_params.hide_deprecated) return;
-  console.log('**DEPRECATED** ' + msg);
-}
+  this.Log.console('**DEPRECATED** ' + msg);
+};
 
 exports.TestImageMagick  = function(strField){
   var _this = this;
@@ -388,7 +387,7 @@ exports.TestImageMagick  = function(strField){
   imagick(100,100,'white').setFormat('PNG').toBuffer(function(err,b){
     if(err) _this.LogInit_ERROR('Please install ImageMagick.  Used by: ' + _.uniq(_this._IMAGEMAGICK_FIELDS).join(', '));
   });
-}
+};
 
 exports.ParseDeprecated = function () {
   var _this = this;
@@ -407,7 +406,7 @@ exports.ParseDeprecated = function () {
       }
     }
   });
-}
+};
 
 exports.ParseCustomControls = function () {
   var _this = this;
@@ -416,9 +415,9 @@ exports.ParseCustomControls = function () {
     var control = _this.CustomControls[controlname];
     if(control.for){
       if(!_.isArray(control.for)) control.for = [control.for];
-      for(var i=0;i<control.for.length;i++){
+      for(let i=0;i<control.for.length;i++){
         var expr = control.for[i];
-        if(_.isString(expr)) expr = { "field": { "name": expr } };
+        if(_.isString(expr)) expr = { 'field': { 'name': expr } };
         control.for[i] = expr;
         expr = JSON.parse(JSON.stringify(expr));
         var fname = '*';
@@ -431,7 +430,7 @@ exports.ParseCustomControls = function () {
         if(_.isEmpty(expr)) expr = exprstr = '*';
 
         if(!(fname in queries)) queries[fname] = {};
-        if(!(exprstr in queries[fname])) queries[fname][exprstr] = { expr: expr, controls: [] }
+        if(!(exprstr in queries[fname])) queries[fname][exprstr] = { expr: expr, controls: [] };
         queries[fname][exprstr].controls.push(controlname);
       }
     }
@@ -451,7 +450,7 @@ exports.ApplyCustomControlQueries = function(model, field){
       if(_.isArray(expr[elem])){
         if(!_.isArray(obj[elem])) return false;
         if(expr[elem].length != obj[elem].length) return false;
-        for(var i=0;i<expr[elem].length;i++) if(!QueryJSON(expr[elem][i],obj[elem][i])) return false;
+        for(let i=0;i<expr[elem].length;i++) if(!QueryJSON(expr[elem][i],obj[elem][i])) return false;
       }
       else if(expr[elem] && obj[elem]){
         if(!QueryJSON(expr[elem],obj[elem])) return false;
@@ -487,16 +486,16 @@ exports.ApplyCustomControlQueries = function(model, field){
 
   var queries = _this.CustomControlQueries;
   if(queries['*']){
-    for(var exprstr in queries['*']){
+    for(let exprstr in queries['*']){
       ApplyQuery(queries['*'][exprstr]);
     }
   }
   if(field.name && (field.name in queries)){
-    for(var exprstr in queries[field.name]){
+    for(let exprstr in queries[field.name]){
       ApplyQuery(queries[field.name][exprstr]);
     }
   }
-}
+};
 
 exports.ApplyCustomControl = function(field, controlname){
   var _this = this;
@@ -505,7 +504,7 @@ exports.ApplyCustomControl = function(field, controlname){
     if(prop=='for') continue;
     if(prop=='control') continue;
     if (!(prop in field)){ field[prop] = customcontrol[prop]; }
-    else if (prop == "controlclass") field[prop] = field[prop] + " " + customcontrol[prop];
+    else if (prop == 'controlclass') field[prop] = field[prop] + ' ' + customcontrol[prop];
     else { /* Do not apply */ }
   }
   if('control' in customcontrol){
@@ -513,21 +512,21 @@ exports.ApplyCustomControl = function(field, controlname){
     field._orig_control.push(field.control);
     field.control = customcontrol.control;
   }
-}
+};
 
 exports.ParseEntities = function () {
   var _this = this;
   _this.ParseCustomControls();
   var codegen = new jsHarmonyCodeGen(_this);
-  var base_controls = ["label", "html", "textbox", "textzoom", "dropdown", "date", "textarea", "hidden", "subform", "html", "password", "file_upload", "file_download", "button", "linkbutton", "tree", "checkbox"];
+  var base_controls = ['label', 'html', 'textbox', 'textzoom', 'dropdown', 'date', 'textarea', 'hidden', 'subform', 'html', 'password', 'file_upload', 'file_download', 'button', 'linkbutton', 'tree', 'checkbox'];
   var base_datatypes = ['DATETIME','VARCHAR','CHAR','BOOLEAN','BIGINT','INT','SMALLINT','TINYINT','DECIMAL','FLOAT','DATE','DATETIME','TIME','ENCASCII','HASH','FILE','BINARY'];
-  var auto_datatypes = _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.datatypes
+  var auto_datatypes = _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.datatypes;
   var auto_attributes = _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.attributes;
   var auto_controls =  _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.controls;
   var auto_keys =  _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.keys;
-  var validation_level = { }
+  var validation_level = { };
   switch(_this.Config.system_settings.validation_level){
-    case 'strict': validation_level.strict = 1;
+    case 'strict': validation_level.strict = 1; //falls through
     default: validation_level.standard = 1;
   }
 
@@ -543,16 +542,15 @@ exports.ParseEntities = function () {
       tabledef: undefined,
       automodel: undefined,
       isReadOnlyGrid: undefined,
-    }
+    };
     var modelDB = 'default';
     if('db' in model){
       if(!(model.db in _this.DBConfig)) _this.LogInit_ERROR('Model ' + model.id + ' uses an undefined db: '+model.db);
       else modelDB = model.db;
     }
     var db = modelExt.db = _this.DB[modelDB];
-    var sqlext = modelExt.sqlext = db.SQLExt;
+    modelExt.sqlext = db.SQLExt;
     var tabledef = modelExt.tabledef = db.getTableDefinition(model.table);
-    var automodel = undefined;
 
     if((model.layout=='grid') && !('commitlevel' in model)){
       if(model.actions && !Helper.hasAction(model.actions, 'IUD')) model.commitlevel = 'none';
@@ -586,26 +584,26 @@ exports.ParseEntities = function () {
 
       if(autolayout=='form'){
         if(!tabledef.modelForm) codegen.generateModelFromTableDefition(tabledef,'form',{ db: model.db },function(err,messages,model){ tabledef.modelForm = model; });
-        automodel = modelExt.automodel = tabledef.modelForm;
+        modelExt.automodel = tabledef.modelForm;
       }
       else if((autolayout=='grid') && isReadOnlyGrid){
         if(!tabledef.modelGridReadOnly) codegen.generateModelFromTableDefition(tabledef,'grid',{ db: model.db, readonly: true },function(err,messages,model){ tabledef.modelGridReadOnly = model; });
-        automodel = modelExt.automodel = tabledef.modelGridReadOnly;
+        modelExt.automodel = tabledef.modelGridReadOnly;
       }
       else if((autolayout=='grid') && !isReadOnlyGrid){
         if(!tabledef.modelGridEditable) codegen.generateModelFromTableDefition(tabledef,'grid',{ db: model.db },function(err,messages,model){ tabledef.modelGridEditable = model; });
-        automodel = modelExt.automodel = tabledef.modelGridEditable;
+        modelExt.automodel = tabledef.modelGridEditable;
       }
       else if(autolayout=='multisel'){
         if(!tabledef.modelMultisel) codegen.generateModelFromTableDefition(tabledef,'multisel',{ db: model.db },function(err,messages,model){ tabledef.modelMultisel = model; });
-        automodel = modelExt.automodel = tabledef.modelMultisel;
+        modelExt.automodel = tabledef.modelMultisel;
       }
     }
     model.xvalidate = new XValidate();
     if ('sites' in model) _this.LogInit_WARNING('Model ' + model.id + ' had previous "sites" attribute - overwritten by system value');
     if(model.roles){
       var roleids = _.keys(model.roles);
-      for(var i=0;i<roleids.length;i++){
+      for(let i=0;i<roleids.length;i++){
         var role = roleids[i];
         if(_.isString(model.roles[role])){
           if(!('main' in model.roles)) model.roles['main'] = {};
@@ -641,7 +639,7 @@ exports.ParseEntities = function () {
     if(model.tabs && !('tabpos' in model)) model.tabpos = 'bottom';
 
     if (!('title' in model)){
-      if(model.tabs && model.tabs.length && model.tabpos && (model.tabpos=='top')){ }
+      if(model.tabs && model.tabs.length && model.tabpos && (model.tabpos=='top')){ /* No action */ }
       else {
         if(!originalCaption && 
           tabledef && tabledef.description && 
@@ -654,10 +652,10 @@ exports.ParseEntities = function () {
     if (!('templates' in model)) model.templates = {};
     if ('sort' in model) {
       if (model.sort && model.sort.length) {
-        for (var i = 0; i < model.sort.length; i++) {
+        for (let i = 0; i < model.sort.length; i++) {
           if (!_.isString(model.sort[i])) {
             var j = 0;
-            for (var f in model.sort[i]) {
+            for (let f in model.sort[i]) {
               var sortval = '';
               var dir = model.sort[i][f].toLowerCase();
               if (dir == 'asc') sortval = '^' + f;
@@ -694,7 +692,7 @@ exports.ParseEntities = function () {
             model.fields.push({ 
               name: fielddef.name, 
               key: 1,
-              control: "hidden"
+              control: 'hidden'
             });
             foundkey = true;
             model._auto.primary_key = 1;
@@ -709,9 +707,9 @@ exports.ParseEntities = function () {
   //Automatically add bindings
   _.forOwn(this.Models, function (model) {
     if(_this.Config.system_settings.automatic_bindings || auto_keys){
-      if(('nokey' in model) && (model.nokey)){ }
+      if(('nokey' in model) && (model.nokey)){ /* No action */ }
       else{
-        if ('tabs' in model) for (var i=0;i<model.tabs.length;i++) {
+        if ('tabs' in model) for (let i=0;i<model.tabs.length;i++) {
           var tab = model.tabs[i]; //tab.target, tab.bindings
           if(_this.Config.system_settings.automatic_bindings){
             _this.AddAutomaticBindings(model, tab, 'Tab '+(tab.name||''), { modelsExt: modelsExt, noErrorOnMissingParentKey: true, log: function(msg){ _this.LogInit_ERROR(msg); } });
@@ -719,13 +717,13 @@ exports.ParseEntities = function () {
           _this.AddBindingFields(model, tab, 'Tab '+(tab.name||''), modelsExt);
         }
         if ('duplicate' in model) {
-          var duplicate = model.duplicate; //duplicate.target, duplicate,bindings
+          //duplicate.target, duplicate,bindings
           if(_this.Config.system_settings.automatic_bindings){
-            _this.AddAutomaticBindings(model, model.duplicate, "Duplicate action", { modelsExt: modelsExt, noErrorOnMissingParentKey: true, log: function(msg){ _this.LogInit_ERROR(msg); } });
+            _this.AddAutomaticBindings(model, model.duplicate, 'Duplicate action', { modelsExt: modelsExt, noErrorOnMissingParentKey: true, log: function(msg){ _this.LogInit_ERROR(msg); } });
           }
-          _this.AddBindingFields(model, model.duplicate, "Duplicate action", modelsExt);
+          _this.AddBindingFields(model, model.duplicate, 'Duplicate action', modelsExt);
         }
-        if ('buttons' in model) for (var i=0;i<model.buttons.length;i++) {
+        if ('buttons' in model) for (let i=0;i<model.buttons.length;i++) {
           var button = model.buttons[i]; //button.target, button.bindings
           if(button.link){
             var linkTarget = _this.parseLink(button.link);
@@ -779,14 +777,13 @@ exports.ParseEntities = function () {
   //Generate a list of parent / child bindings
   var all_keys = {};
   _.forOwn(this.Models, function (model) {
-    var parentBindings = {};
     _.each(model.tabs, function(tab){ LogBindings(model, tab); });
     _.each(model.buttons, function(button){
       LogBindings(model, button);
       //Delete automatically generated button bindings, so they can be bound at run-time
       if(button._auto && button._auto.bindings) delete button.bindings;
     });
-    if(model.duplicate) for(var key in model.duplicate.bindings){ LogBindings(model, model.duplicate); };
+    if(model.duplicate) LogBindings(model, model.duplicate);
     _.each(model.fields, function(field){ if((field.control=='subform')||field.popuplov) LogBindings(model, field); });
     _.each(model.fields, function (field) {
       if(field.name){
@@ -816,7 +813,7 @@ exports.ParseEntities = function () {
       if(fielddef && _this.Config.system_settings.automatic_schema){
         var autofield = undefined;
         if(automodel){
-          for(var i=0;i<automodel.fields.length;i++){
+          for(let i=0;i<automodel.fields.length;i++){
             if(automodel.fields[i].name.toLowerCase()==field.name.toLowerCase()){ autofield = automodel.fields[i]; break; }
           }
           if(autofield){
@@ -855,13 +852,13 @@ exports.ParseEntities = function () {
               if(autofield.validate){
                 if(!('validate' in field)){
                   field.validate = [];
-                  for(var i=0;i<autofield.validate.length;i++) field.validate.push(autofield.validate[i]);
+                  for(let i=0;i<autofield.validate.length;i++) field.validate.push(autofield.validate[i]);
                 }
               }
               //Add Foreign Key to Multisel
               if(model.layout=='multisel'){
-                if(field.key) {}
-                else if(field.lov) {}
+                if(field.key) { /* No action */ }
+                else if(field.lov) { /* No action */ }
                 else if(autofield.foreignkeys && autofield.foreignkeys.direct && autofield.foreignkeys.direct.length) field.foreignkey = 1;
               }
             }
@@ -883,7 +880,7 @@ exports.ParseEntities = function () {
       if ('control' in field) {
         //Parse and apply Custom Controls
         while (base_controls.indexOf(field.control) < 0) {
-          if (!(field.control in _this.CustomControls)) throw new Error("Control not defined: " + field.control + " in " + model.id + ": " + JSON.stringify(field));
+          if (!(field.control in _this.CustomControls)) throw new Error('Control not defined: ' + field.control + ' in ' + model.id + ': ' + JSON.stringify(field));
           _this.ApplyCustomControl(field, field.control);
         }
         //Apply Custom Controls with Query Expressions
@@ -938,8 +935,8 @@ exports.ParseEntities = function () {
             else field.actions = 'BIU';
           }
           else if(model.layout=='multisel'){
-            if(field.key) {}
-            else if(field.foreignkey) {}
+            if(field.key) { /* No action */ }
+            else if(field.foreignkey) { /* No action */ }
             else field.actions = 'B';
           }
           else if((model.layout=='exec')||(model.layout=='report')){
@@ -989,7 +986,7 @@ exports.ParseEntities = function () {
         var tmodel = _this.getModel(null, field.target, model);
         if(tmodel && Helper.hasAction(tmodel.actions, 'I')){
           if(!field.controlparams) field.controlparams = {};
-          field.controlparams.insert_link = "insert:"+field.target;
+          field.controlparams.insert_link = 'insert:'+field.target;
         }
       }
       if(model.onecolumn){
@@ -1000,7 +997,7 @@ exports.ParseEntities = function () {
       if(!('datatype_config' in field)) field.datatype_config = {};
       if ('name' in field) {
         //if (_.includes(fieldnames, field.name)) { throw new Error("Duplicate field " + field.name + " in model " + model.id + "."); }
-        if (_.includes(fieldnames, field.name)) { _this.LogInit_ERROR("Duplicate field " + field.name + " in model " + model.id + "."); }
+        if (_.includes(fieldnames, field.name)) { _this.LogInit_ERROR('Duplicate field ' + field.name + ' in model ' + model.id + '.'); }
         fieldnames.push(field.name);
       }
       if (field.key) { 
@@ -1024,10 +1021,8 @@ exports.ParseEntities = function () {
         if (('thumbnails' in field.controlparams) && Helper.hasAction(field.actions, 'IU')) _.each(field.controlparams.thumbnails,function(thumbnail){ if(thumbnail.resize || thumbnail.crop) _this.TestImageMagick(model.id + ' > ' + field.name); });
       }
       if ('popuplov' in field) {
-        var has_own = false;
         if (field.popuplov.CODEVal) { field.popuplov.codeval = field.popuplov.CODEVal; delete field.popuplov.CODEVal; }
         _.forOwn(field.popuplov, function (val, key) {
-          has_own = true;
           if (!('controlparams' in field)) field.controlparams = {};
           if (key == 'target') field.target = field.popuplov.target;
           else if (key == 'codeval') field.controlparams.codeval = field.popuplov.codeval;
@@ -1104,11 +1099,11 @@ exports.ParseEntities = function () {
       if ('type' in field) {
         switch (field.type.toUpperCase()) {
           case 'NVARCHAR':
-          _this.LogDeprecated(model.id + ' > ' + field.name + ': The NVARCHAR type has been deprecated - use VARCHAR');
+            _this.LogDeprecated(model.id + ' > ' + field.name + ': The NVARCHAR type has been deprecated - use VARCHAR');
             field.type = 'varchar';
             break;
           case 'DATETIME2':
-          _this.LogDeprecated(model.id + ' > ' + field.name + ': The DATETIME2 type has been deprecated - use DATETIME');
+            _this.LogDeprecated(model.id + ' > ' + field.name + ': The DATETIME2 type has been deprecated - use DATETIME');
             field.type = 'datetime';
             break;
         }
@@ -1129,7 +1124,7 @@ exports.ParseEntities = function () {
           }
           if(field.datatype_config.validate){
             has_datatype_validator = true;
-            for(var i=0;i<field.datatype_config.validate.length;i++){
+            for(let i=0;i<field.datatype_config.validate.length;i++){
               var validator = _this.parseFieldExpression(field, field.datatype_config.validate[i], {}, { ejs: true });
               if(validator) AddValidation(field, validator);
             }
@@ -1172,7 +1167,7 @@ exports.ParseEntities = function () {
             case 'BINARY':
               var flen = -1;
               if (('length' in field) && (field.length >= 0)) flen = field.length;
-              AddValidation(field, 'IsBinary:'+field.length);
+              AddValidation(field, 'IsBinary:'+flen);
               break;
           }
         }
@@ -1292,10 +1287,20 @@ exports.ParseEntities = function () {
     //Automatically add C based on default fields
     if(model.fields){
       var default_params = [];
-      _.each(model.fields,function(field){ if(field.default && field.default.sql_params) default_params = _.union(default_params,field.default.sql_params); });
+      var default_params_desc = {};
+      _.each(model.fields,function(field){
+        if(field.default && field.default.sql_params){
+          _.each(field.default.sql_params, function(default_param){
+            if(!(default_param in default_params)){
+              default_params.push(default_param);
+              default_params_desc[default_param] = field.name;
+            }
+          });
+        }
+      });
       _.each(default_params,function(sql_param){
         var sql_param_field = _this.AppSrvClass.prototype.getFieldByName(model.fields, sql_param);
-        if (!sql_param_field) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Default sql param "' + sql_param + '" is not defined as a field');
+        if (!sql_param_field) _this.LogInit_ERROR(model.id + ' > ' + default_params_desc[sql_param] + ': Default sql param "' + sql_param + '" is not defined as a field');
         else if (!Helper.hasAction(sql_param_field.actions, 'C')) { if (!sql_param_field.actions) sql_param_field.actions = ''; sql_param_field.actions += 'C'; }
       });
     }
@@ -1330,24 +1335,24 @@ exports.ParseEntities = function () {
     var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db'];
     //lov
     var existing_targets = [];
-    for (var f in model) { if (f.substr(0, 7) == 'comment') continue; if (!_.includes(_v_model, f)) _this.LogInit_ERROR(model.id + ': Invalid model property: ' + f); }
+    for (let f in model) { if (f.substr(0, 7) == 'comment') continue; if (!_.includes(_v_model, f)) _this.LogInit_ERROR(model.id + ': Invalid model property: ' + f); }
     var no_B = true;
     var no_key = true;
     if (model.fields) _.each(model.fields, function (field) {
       if (Helper.hasAction(field.actions, 'B') && (field.control != 'html') && (field.control != 'subform') && (field.control != 'button')) no_B = false;
       if (field.key) no_key = false;
       if (field.hidden) { field.control = 'hidden'; }
-      for (var f in field) {
+      for (let f in field) {
         if (f.substr(0, 7).toLowerCase() == 'comment') continue; if (!_.includes(_v_field, f)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Invalid field property: ' + f);
       }
       if (field.controlparams) {
-        for (var f in field.controlparams) { if (!_.includes(_v_controlparams, f)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Invalid controlparams: ' + f); }
+        for (let f in field.controlparams) { if (!_.includes(_v_controlparams, f)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Invalid controlparams: ' + f); }
       }
       if (field.popuplov) {
-        for (var f in field.popuplov) { if (!_.includes(_v_popuplov, f)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Invalid popuplov parameter: ' + f); }
+        for (let f in field.popuplov) { if (!_.includes(_v_popuplov, f)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Invalid popuplov parameter: ' + f); }
       }
       if (field.lov) {
-        for (var f in field.lov) { if (!_.includes(_v_lov, f)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Invalid lov parameter: ' + f); }
+        for (let f in field.lov) { if (!_.includes(_v_lov, f)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Invalid lov parameter: ' + f); }
       }
       if (_.includes(['label','button','linkbutton'],field.control) && Helper.hasAction(field.actions, 'IUD')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': A '+field.control+' can only have action B');
       //Check unique target
@@ -1416,7 +1421,7 @@ exports.ParseEntities = function () {
 
     //Check Parent / Child Relationships for Potentially Missing Foreign keys  
     if (model.tabs) {
-      for (var i=0; i<model.tabs.length; i++) {
+      for (let i=0; i<model.tabs.length; i++) {
         var tab = model.tabs[i];
         var tabname = tab.name;
         var tabmodel = _this.getModel(null,tab.target,model);
@@ -1453,15 +1458,15 @@ exports.ParseEntities = function () {
       if((siteid=='main') || (model.roles && model.roles[siteid] && !_.isString(model.roles[siteid]))){
         for(var datalockid in _this.Config.datalocks[siteid]){
 
-          function skip_datalock(element, datalockid, datalockSearchOptions){ return (element && element.nodatalock && (Helper.arrayIndexOf(element.nodatalock,datalockid,datalockSearchOptions) >= 0)); }
+          var skip_datalock = function(element, datalockid, datalockSearchOptions){ return (element && element.nodatalock && (Helper.arrayIndexOf(element.nodatalock,datalockid,datalockSearchOptions) >= 0)); };
 
           //----------------------
 
           var skip_datalock_model = skip_datalock(model, datalockid, datalockSearchOptions);
-          var skip_datalock_breadcrumbs = skip_datalock(model.breadcrumbs, datalockid, datalockSearchOptions);
-          var skip_datalock_breadcrumbs_insert = model.breadcrumbs && skip_datalock(model.breadcrumbs.insert, datalockid, datalockSearchOptions);
-          var skip_datalock_breadcrumbs_update = model.breadcrumbs && skip_datalock(model.breadcrumbs.update, datalockid, datalockSearchOptions);
-          var skip_datalock_breadcrumbs_browse = model.breadcrumbs && skip_datalock(model.breadcrumbs.browse, datalockid, datalockSearchOptions);
+          //var skip_datalock_breadcrumbs = skip_datalock(model.breadcrumbs, datalockid, datalockSearchOptions);
+          //var skip_datalock_breadcrumbs_insert = model.breadcrumbs && skip_datalock(model.breadcrumbs.insert, datalockid, datalockSearchOptions);
+          //var skip_datalock_breadcrumbs_update = model.breadcrumbs && skip_datalock(model.breadcrumbs.update, datalockid, datalockSearchOptions);
+          //var skip_datalock_breadcrumbs_browse = model.breadcrumbs && skip_datalock(model.breadcrumbs.browse, datalockid, datalockSearchOptions);
           var skip_datalock_title = skip_datalock(model.title, datalockid, datalockSearchOptions);
           var skip_datalock_title_insert = model.title && skip_datalock(model.title.insert, datalockid, datalockSearchOptions);
           var skip_datalock_title_update = model.title && skip_datalock(model.title.update, datalockid, datalockSearchOptions);
@@ -1571,12 +1576,12 @@ exports.forEachSqlParam = function(model, sql, f){ /* f(pfield_name) */
   if(sql){
     var params = _this.AppSrvClass.prototype.getSQLParameters(sql, model.fields, _this);
     if(params.length){
-      for(var i=0;i<params.length;i++){
+      for(let i=0;i<params.length;i++){
         if(f) f(params[i]);
       }
     }
   }
-}
+};
 
 exports.AddSqlParams = function(model, element, props){
   var _this = this;
@@ -1590,14 +1595,14 @@ exports.AddSqlParams = function(model, element, props){
   if (sql && !('sql_params' in element)) {
     var params = _this.AppSrvClass.prototype.getSQLParameters(sql, model.fields, _this);
     if(params.length){
-      for(var i=0;i<params.length;i++){
+      for(let i=0;i<params.length;i++){
         var pfield = _this.AppSrvClass.prototype.getFieldByName(model.fields, params[i]);
         if (!Helper.hasAction(pfield.actions, 'F') && !pfield.key){ pfield.actions += 'F'; }
       }
       element.sql_params = params;
     }
   }
-}
+};
 
 exports.AddSqlParamsFieldFlags = function(model, element, desc){
   var _this = this;
@@ -1607,12 +1612,12 @@ exports.AddSqlParamsFieldFlags = function(model, element, desc){
     if (!sql_param_field) _this.LogInit_ERROR(model.id + ' > ' + sql_param + ': '+desc+' sql param "' + sql_param + '" is not defined as a field');
     else if (!Helper.hasAction(sql_param_field.actions, 'C')) { if (!sql_param_field.actions) sql_param_field.actions = ''; sql_param_field.actions += 'C'; }
   });
-}
+};
 
 exports.CheckDatalockSQL = function(model, sql, desc){
   if(!sql) return;
   if (!(sql.indexOf('%%%DATALOCKS%%%') >= 0)) this.LogInit_ERROR(model.id + ' > ' + desc + ': SQL missing %%%DATALOCKS%%% in query');
-}
+};
 
 exports.AddFieldDatalock = function(model, field, siteid, datalockid, datalockSearchOptions){
   var datalocks = this.Config.datalocks[siteid][datalockid];
@@ -1622,7 +1627,7 @@ exports.AddFieldDatalock = function(model, field, siteid, datalockid, datalockSe
     field.datalock[datalockid] = datalockquery;
   }
   else this.LogInit_ERROR(model.id + ' > ' + field.name + ': Could not auto-add datalock - please define in _config.datalocks.'+siteid+'.'+datalockid+'.'+field.name);
-}
+};
 
 //_this.AddAutomaticBindings(model, tab, 'Tab '+(tab.name||''), { noErrorOnMissingParentKey: true, log: function(msg){ _this.LogInit_ERROR(msg); } });
 //_this.AddAutomaticBindings(model, model.duplicate, "Duplicate action", { noErrorOnMissingParentKey: true, log: function(msg){ _this.LogInit_ERROR(msg); } });
@@ -1665,9 +1670,9 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
   if('bindings' in element) return;
 
   //Get binding target
-  if (!('target' in element)) { options.log(model.id + ' > ' + elementname + ' Bindings: Missing target'); return }
+  if (!('target' in element)) { options.log(model.id + ' > ' + elementname + ' Bindings: Missing target'); return; }
   var tmodel = _this.getModel(options.req, element.target, model);
-  if (!tmodel) { options.log(model.id + ' > ' + elementname + ': Target model "' + element.target + '" not found'); return }
+  if (!tmodel) { options.log(model.id + ' > ' + elementname + ': Target model "' + element.target + '" not found'); return; }
   element.target = tmodel.id;
 
   //Get keys in parent model
@@ -1708,7 +1713,7 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
       //"CHILD_FIELD": "'CONSTANT'"
       if(_.isString(parentField)){
         if(parentField=='key'){
-          if(parentKeys.length != 1) { options.log(model.id + ' > ' + elementname + ' Bindings: Must have one key in the parent model when dynamically binding '+childKey+' to "key"'); return } 
+          if(parentKeys.length != 1) { options.log(model.id + ' > ' + elementname + ' Bindings: Must have one key in the parent model when dynamically binding '+childKey+' to "key"'); return; } 
           parentField = parentKeys[0];
         }
         bindings[childKey] = parentField;
@@ -1727,7 +1732,7 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
       _.each(parentKeys, function(parentKey){
         var found_field = !!_this.AppSrvClass.prototype.getFieldByName(tmodel.fields, parentKey);
         if(!found_field && auto_keys && ttabledef){
-          //Check tabldef, to see if field can be automatically added
+          //Check tabledef, to see if field can be automatically added
           if(parentKey in ttabledef.fields) found_field = true;
         }
         if(!found_field && !options.noErrorOnMissingParentKey) { options.log(model.id + ' > ' + elementname + ' Bindings: Key '+parentKey+' not found in target form.  Explicitly define bindings if necessary.'); return; }
@@ -1773,7 +1778,7 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
     return bindings;
   }
   else return null;
-}
+};
 
 exports.AddBindingFields = function(model, element, elementname, modelsExt){
   var _this = this;
@@ -1784,18 +1789,18 @@ exports.AddBindingFields = function(model, element, elementname, modelsExt){
     var tabledef = modelsExt[model.id].tabledef;
     //Check if all bindings exist
     _.each(element.bindings, function(binding, childKey){
-      if(childKey && (childKey[0]=="'")){}
+      if(childKey && (childKey[0]=="'")){ /* No action */ }
       else {
         var tfield = _this.AppSrvClass.prototype.getFieldByName(tmodel.fields, childKey);
         if(!tfield) { 
-          var created_field = false;
+          let created_field = false;
           if(auto_keys && ttabledef){
             //Add foreign key based on binding
             if(childKey in ttabledef.fields){
               tmodel.fields.push({ 
                 name: childKey, 
                 foreignkey: 1,
-                control: "hidden"
+                control: 'hidden'
               });
               created_field = true;
             }
@@ -1803,17 +1808,17 @@ exports.AddBindingFields = function(model, element, elementname, modelsExt){
           if(!created_field) _this.LogInit_ERROR(model.id + ' > ' + elementname + ' Bindings: Field '+childKey+' not found in target form.  Explicitly define bindings if necessary.');
         }
       }
-      if(binding && (binding[0]=="'")){}
+      if(binding && (binding[0]=="'")){ /* No action */ }
       else {
         var sfield = _this.AppSrvClass.prototype.getFieldByName(model.fields, binding);
         if(!sfield) { 
-          var created_field = false;
+          let created_field = false;
           if(auto_keys && tabledef){
             //Add foreign key based on binding
             if(binding in tabledef.fields){
               model.fields.push({ 
                 name: binding,
-                control: "hidden"
+                control: 'hidden'
               });
               created_field = true;
             }
@@ -1823,14 +1828,14 @@ exports.AddBindingFields = function(model, element, elementname, modelsExt){
       }
     });
   }
-}
+};
 
 exports.isInModelGroup = function(model, modelgroupid){
   if(model.id==modelgroupid) return true;
   if(_.includes(model.groups, modelgroupid)) return true;
   if(_.includes(model._inherits, modelgroupid)) return true;
   return false;
-}
+};
 
 function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
   var _this = jsh;
@@ -1844,7 +1849,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
       parentSites = _.intersection(parentSites, roleSites);
     }
     if(childSites.length != parentSites.length){
-      _this.LogInit_ERROR((prefix||'') + 'Target model "' + tmodel.id + '" not defined for site: '+_.difference(model.sites, _.intersection(model.sites, tmodel.sites)).join(', ') +(suffix?' in link expression "'+suffix+'"':'')); return
+      _this.LogInit_ERROR((prefix||'') + 'Target model "' + tmodel.id + '" not defined for site: '+_.difference(model.sites, _.intersection(model.sites, tmodel.sites)).join(', ') +(suffix?' in link expression "'+suffix+'"':'')); return;
     }
   }
 
@@ -1854,7 +1859,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     if(!linkTarget.modelid) return;
     if(linkTarget.modelid.substr(0,3)=='js:') return;
     var linkModel = jsh.getModel(null,linkTarget.modelid,model);
-    if (!linkModel) { _this.LogInit_ERROR((prefix||'') + 'Link Target model "' + linkTarget.modelid + '" not found'+(suffix?' in link expression "'+suffix+'"':'')); return }
+    if (!linkModel) { _this.LogInit_ERROR((prefix||'') + 'Link Target model "' + linkTarget.modelid + '" not found'+(suffix?' in link expression "'+suffix+'"':'')); return; }
     if((linkTarget.action=='insert')&&!Helper.hasAction(linkModel.actions, 'I')) { 
       _this.LogInit_ERROR((prefix||'') + 'Link Target model "' + linkTarget.modelid + '" does not have "I" action'+(suffix?' for link expression "'+suffix+'"':'')); 
     }
@@ -1867,12 +1872,12 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
       var parentFieldName = bindings[childFieldName];
       var childField = _this.AppSrvClass.prototype.getFieldByName(tmodel.fields, childFieldName);
       var parentField = _this.AppSrvClass.prototype.getFieldByName(model.fields, parentFieldName);
-      if(childFieldName && (childFieldName[0]=="'")){}
+      if(childFieldName && (childFieldName[0]=="'")){ /* No action */ }
       else if(!childField) { _this.LogInit_ERROR((prefix||'') + 'Missing binding target field: '+tmodel.id+' > '+childFieldName); }
       else if((!_.includes(['exec','report'],tmodel.layout)) && Helper.hasAction(childField.actions, 'U') && childField._auto.actions) {
         _this.LogInit_WARNING((prefix||'') + 'Binding target field '+tmodel.id+' > '+childFieldName+' should not have "U" action.  Please explicitly define "actions" if necessary.');
       }
-      if(parentFieldName && (parentFieldName[0]=="'")){}
+      if(parentFieldName && (parentFieldName[0]=="'")){ /* No action */ }
       else if(!parentField) { _this.LogInit_ERROR((prefix||'') + 'Missing binding source field: '+model.id+' > '+parentFieldName); }
       else if((!_.includes(['exec','report'],tmodel.layout)) && Helper.hasAction(parentField.actions, 'U') && !(targetField.controlparams && targetField.controlparams.grid_save_before_update)) {
         _this.LogInit_WARNING((prefix||'') + 'Binding source field '+model.id+' > '+parentFieldName+' should not have "U" action'+((targetField.control=='subform')?', unless "controlparams.grid_save_before_update" is specified on the subform control':'')+'.');
@@ -1882,25 +1887,25 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
 
   //-----------------------
 
-  if ('tabs' in model) for (var i=0;i<model.tabs.length;i++) {
+  if ('tabs' in model) for (let i=0;i<model.tabs.length;i++) {
     var tab = model.tabs[i];
     var tabname = tab.name;
-    if (!_.isObject(tab)) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Invalid tab definition'); return }
-    if (!('name' in tab)) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Invalid tab definition - missing name'); return }
-    if (!('target' in tab)) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Invalid tab definition - missing target'); return }
-    if (!('bindings' in tab)) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Invalid tab definition - missing bindings'); return }
+    if (!_.isObject(tab)) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Invalid tab definition'); return; }
+    if (!('name' in tab)) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Invalid tab definition - missing name'); return; }
+    if (!('target' in tab)) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Invalid tab definition - missing target'); return; }
+    if (!('bindings' in tab)) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Invalid tab definition - missing bindings'); return; }
     if (tab.roles) {
-      if(_.isArray(tab.roles)) tab.roles = { "main": tab.roles };
+      if(_.isArray(tab.roles)) tab.roles = { 'main': tab.roles };
       for(var siteid in tab.roles){
-        if(!_.isArray(tab.roles[siteid])) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Invalid tab roles definition - please use { "siteid": ["role1", "role2"] }'); return }
+        if(!_.isArray(tab.roles[siteid])) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Invalid tab roles definition - please use { "siteid": ["role1", "role2"] }'); return; }
         //Convert tab roles into standard roles format "role":"perm"
         var rolesObj = {};
         for(var j=0;j<tab.roles[siteid].length;j++) rolesObj[tab.roles[siteid][j]] = 'B';
         tab.roles[siteid] = rolesObj;
       }
     }
-    var tmodel = jsh.getModel(null,tab.target,model);
-    if (!tmodel) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Target model "' + tab.target + '" not found'); return }
+    let tmodel = jsh.getModel(null,tab.target,model);
+    if (!tmodel) { _this.LogInit_ERROR(model.id + ' > Tab ' + tabname + ': Target model "' + tab.target + '" not found'); return; }
     tmodel._parentmodels.tab[model.id] = 1;
     tab.target = tmodel.id;
     validateSiteRoles(model, tmodel, model.id + ' > Tab ' + tabname + ': ', '', tab.roles);
@@ -1908,8 +1913,8 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     ParseModelRoles(jsh, tmodel, srcmodelid, srcactions);
   }
   if ('duplicate' in model) {
-    var tmodel = jsh.getModel(null,model.duplicate.target,model);
-    if (!tmodel) { _this.LogInit_WARNING('Invalid duplicate model ' + model.duplicate + ' in ' + model.id); return }
+    let tmodel = jsh.getModel(null,model.duplicate.target,model);
+    if (!tmodel) { _this.LogInit_WARNING('Invalid duplicate model ' + model.duplicate + ' in ' + model.id); return; }
     if(tmodel.layout != 'exec') { _this.LogInit_ERROR(model.id + ' > Duplicate: Target model should have "exec" layout'); }
     tmodel._parentmodels.duplicate[model.id] = 1;
     model.duplicate.target = tmodel.id;
@@ -1921,16 +1926,16 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
   _.each(model.buttons, function (button) {
     validateSiteLinks(model, button.link, model.id + ' > Button link: ', button.link, button.roles);
     if(button.target){
-      var tmodel = jsh.getModel(null,button.target,model);
-      if (!tmodel) { _this.LogInit_ERROR(model.id + ' > Button ' + button.link + ': Target model "' + button.target + '" not found'); return }
+      let tmodel = jsh.getModel(null,button.target,model);
+      if (!tmodel) { _this.LogInit_ERROR(model.id + ' > Button ' + button.link + ': Target model "' + button.target + '" not found'); return; }
       tmodel._parentmodels.button[model.id] = 1;
       validateBindings(button.bindings, model, tmodel, model.id + ' > Button ' + button.link + ': ', button);
     }
   });
   _.each(model.fields, function (field) {
     if (('target' in field) && ((field.control == 'subform') || (field.popuplov))) {
-      var tmodel = jsh.getModel(null,field.target,model);
-      if (!tmodel) { _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Invalid target model "' + field.target + '"'); return }
+      let tmodel = jsh.getModel(null,field.target,model);
+      if (!tmodel) { _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Invalid target model "' + field.target + '"'); return; }
       if(field.control=='subform') tmodel._parentmodels.subform[model.id] = 1;
       else if(field.popuplov) tmodel._parentmodels.popuplov[model.id] = 1;
       field.target = tmodel.id;
@@ -1942,7 +1947,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
         if((tmodel.layout=='form') && field._auto.actions){
           _this.LogInit_WARNING(model.id + ' > Subform ' + field.name + ': When using a subform that has a "form" layout, "actions" should be explicitly set on the subform control.  If both a subform and parent form target the same table, either the parent model should be read-only (model.actions="B"), or the subform control should not have the "I" action, so that it will not be displayed on insert (field.actions="BU").');
         }
-        if((tmodel.layout=='grid') && Helper.hasAction(field.actions, 'I') && _.includes(['row','cell'],tmodel.commitlevel) && !_.isEmpty(field.bindings) && !(field.controlparams && field.controlparams.grid_save_before_update) && Helper.hasAction(model.actions, "I")){
+        if((tmodel.layout=='grid') && Helper.hasAction(field.actions, 'I') && _.includes(['row','cell'],tmodel.commitlevel) && !_.isEmpty(field.bindings) && !(field.controlparams && field.controlparams.grid_save_before_update) && Helper.hasAction(model.actions, 'I')){
           _this.LogInit_WARNING(model.id + ' > Subform ' + field.name + ': When using a subform that has "I" actions and a target with a "grid" layout and, the target model\'s "commitlevel" should be set to "auto" so that the "commitlevel" will be set to "page" on insert and have both parent and child data saved in one transaction.  Alternatively, set "grid_save_before_update" to true on the subform control so that no grid data can be entered until the parent is saved.');
         }
       }
@@ -1956,7 +1961,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     }
     if ((field.control == 'subform') && !('bindings' in field)) _this.LogInit_WARNING('Model ' + model.id + ' subform ' + field.name + ' missing binding.');
   });
-};
+}
 
 exports.ParsePopups = function () {
   var _this = this;
@@ -1967,7 +1972,7 @@ exports.ParsePopups = function () {
       }
     }
   });
-}
+};
 
 function AddValidation(field, validator) {
   if (!('validate' in field)) field.validate = [];
@@ -1982,7 +1987,7 @@ exports.ParseMacros = function() {
     var args = Array.from(arguments);
     args.unshift({});
     return _.extend.apply(_,args);
-  }
+  };
   var macroids = {};
   if(!macros) return;
   //Parse js functions
@@ -1996,8 +2001,8 @@ exports.ParseMacros = function() {
   }
   //Execute macro (get replacement value)
   function evalMacro(macro, params){
-    if(params) for(var i=0;i<params.length;i++){
-      var xval = parseObject(params[i]);
+    if(params) for(let i=0;i<params.length;i++){
+      let xval = parseObject(params[i]);
       if(xval) params[i] = xval();
     }
     if(_.isFunction(macro)) return macro.apply(_this, params);
@@ -2009,15 +2014,15 @@ exports.ParseMacros = function() {
     else if(_.isNumber(obj)) return;
     else if(_.isBoolean(obj)) return;
     else if(_.isString(obj)){
-      if(obj in macroids) return function(){ return evalMacro(macros[obj.substr(1)]); }
+      if(obj in macroids) return function(){ return evalMacro(macros[obj.substr(1)]); };
     }
     else if(_.isArray(obj) && (obj.length > 0)){
       if(obj[0] in macroids){
-        return function(){ return evalMacro(macros[obj[0].substr(1)], obj.splice(1)); }
+        return function(){ return evalMacro(macros[obj[0].substr(1)], obj.splice(1)); };
       }
       else{
-        for(var i=0;i<obj.length;i++){
-          var xval = parseObject(obj[i]);
+        for(let i=0;i<obj.length;i++){
+          let xval = parseObject(obj[i]);
           if(xval) obj[i] = xval();
         }
       }
@@ -2028,15 +2033,15 @@ exports.ParseMacros = function() {
       for(var key in obj){
         numkeys++;
         lastkey = key;
-        var xval = parseObject(obj[key]);
+        let xval = parseObject(obj[key]);
         if(xval) obj[key] = xval();
       }
       if((numkeys==1) && (lastkey in macroids)){
-        return function(){ return _.extend({},evalMacro(macros[lastkey.substr(1)]),obj[lastkey]); }
+        return function(){ return _.extend({},evalMacro(macros[lastkey.substr(1)]),obj[lastkey]); };
       }
     }
   }
   parseObject(_this.Config);
   parseObject(_this.CustomControls);
   parseObject(_this.Models);
-}
+};
