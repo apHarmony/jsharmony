@@ -842,9 +842,13 @@ exports.ParseEntities = function () {
               if(!('control' in field) && autofield.control && (!('actions' in field) || Helper.hasAction(field.actions, 'B'))){
                 //Field Control
                 if(('lov' in field) && !isReadOnlyGrid) field.control = 'dropdown';
-                else field.control = autofield.control;
+                else if('type' in field){ codegen.applyControlDefaults(model.layout, isReadOnlyGrid || (('actions' in field) && !Helper.hasAction(field.actions, 'IU')) || (!('actions' in field) && coldef.readonly), sqlext, field); }
+                else{
+                  field.control = autofield.control;
+                  if(autofield.captionclass) field.captionclass = autofield.captionclass + ' ' + (field.captionclass||'');
+                }
                 field._auto.control = true;
-                if(autofield.captionclass) field.captionclass = autofield.captionclass + ' ' + (field.captionclass||'');
+                
               }
             }
             if(auto_attributes){
@@ -898,8 +902,14 @@ exports.ParseEntities = function () {
       if (!('actions' in field)) {
         field._auto.actions = 1;
         field.actions = '';
-        if((model.layout=='grid') && ((field.type=='encascii')||(field.type=='hash'))) field.actions = '';
-        else if(field.type=='hash') field.actions = '';        
+        if((model.layout=='grid') && ((field.type=='encascii')||(field.type=='hash'))){
+          if(field.control) field.actions = 'B';
+          else field.actions = '';
+        }
+        else if(field.type=='hash'){
+          if(field.control) field.actions = 'B';
+          else field.actions = '';
+        }
         else if ((field.control == 'html') || (field.control == 'button') || (field.control == 'linkbutton')) field.actions = 'B';
         else {
           if (model.layout=='grid'){
@@ -963,12 +973,20 @@ exports.ParseEntities = function () {
           else if(('lov' in field) && !isReadOnlyGrid) field.control = 'dropdown';
           else if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
             if(Helper.hasAction(field.actions, 'B') && !field.value && !field.html){
-              if(Helper.hasAction(field.actions, 'IU')) field.control = 'textbox';
+              if(Helper.hasAction(field.actions, 'IU')){
+                codegen.applyControlDefaults(model.layout, false, sqlext, field);
+              }
               else field.control = 'label';
             }
           }
           if('control' in field) field._auto.control = true;
         }
+      }
+      if((field.type=='date') && !('format' in field) && (((model.layout=='grid') && !field.control) || (field.control=='label'))){
+        field.format = ["date","YYYY-MM-DD"]; 
+      }
+      if((field.type=='time') && !('format' in field) && (((model.layout=='grid') && !field.control) || (field.control=='label'))){
+        field.format = ["time","HH:mm:ss"]; 
       }
       if(!('caption' in field)){
         if(_.includes(['subform'],field.control)) field.caption = '';
@@ -1079,22 +1097,9 @@ exports.ParseEntities = function () {
       }
       else if(field.enable_search) field.actions += 'S';
 
-      //Apply additional properties inherited from DataType definition
-      if (('type' in field) && (field.type in sqlext.CustomDataTypes)) {
-        while(field.type in sqlext.CustomDataTypes){
-          var fieldtype = field.type;
-          var datatype = sqlext.CustomDataTypes[fieldtype];
-          for (var prop in datatype) {
-            if(!(prop in field) || (prop=='type')) field[prop] = datatype[prop];
-            else if(prop=='datatype_config'){
-              for(var subprop in datatype.datatype_config){
-                if(!(subprop in field.datatype_config)) field.datatype_config[subprop] = datatype.datatype_config[subprop];
-              }
-            }
-          }
-          if(field.type==fieldtype) break;
-        }
-      }
+      //Resolve Custom Types / Apply additional properties inherited from DataType definition
+      codegen.resolveType(sqlext, field);
+
       //Add Default Datatype Validation
       if ('type' in field) {
         switch (field.type.toUpperCase()) {
@@ -1161,7 +1166,7 @@ exports.ParseEntities = function () {
             case 'HASH':
               break;
             case 'FILE':
-              if (!field.controlparams || !field.controlparams.data_folder) { _this.LogInit_ERROR('Model ' + model.id + ' Field ' + (field.name || '') + ' missing data_folder'); }
+              if (!field.controlparams || !field.controlparams.data_folder) { _this.LogInit_ERROR('Model ' + model.id + ' Field ' + (field.name || '') + ' missing field.controlparams.data_folder'); }
               HelperFS.createFolderIfNotExists(_this.Config.datadir + field.controlparams.data_folder, function () { });
               break;
             case 'BINARY':
@@ -1363,6 +1368,26 @@ exports.ParseEntities = function () {
       //Check if the field has a type
       if(field.actions && field.name && !('type' in field) && !('value' in field) && (field.control != 'subform') && !field.unbound) _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Missing type.  Set a field.value or field.unbound if intentional.');
       if(field.control && (model.layout=='grid') && !_.includes(['hidden','label','html','textbox','textzoom','date','textarea','dropdown','checkbox','button','linkbutton'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support ' + field.control + ' control');
+      //field.type=encascii, check if password is defined
+      if(field.type=='encascii'){
+        if(model.layout=='grid') _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support field.type="encascii" (Use field.type="hash" for searching encrypted values)');
+        if(!field.password) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field.password property is required for field.type="encascii" fields');
+        else if(!(field.password in _this.Config.passwords)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The value for field.password is not defined in jsh.Config.passwords');
+      }
+      //field.type=hash, check if salt is defined
+      if(field.type=='hash'){
+        if(!field.salt) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field.salt property is required for field.type="hash" fields');
+        else if(!(field.salt in _this.Config.salts)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The value for field.salt is not defined in jsh.Config.salts');
+      }
+      //field.hash, check if the target field is defined
+      if('hash' in field){
+        if(!field.hash) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field.hash property should not be an empty string');
+        else {
+          var hashfield = _this.AppSrvClass.prototype.getFieldByName(model.fields, field.hash);
+          if(!hashfield) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The target field for field.hash was not found');
+          else if(hashfield.type != 'hash') _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The target field for field.hash must have field.type="hash"');
+        }
+      }
     });
     if (no_B && model.breadcrumbs && model.breadcrumbs.sql) {
       _this.LogInit_ERROR(model.id + ': No fields set to B (Browse) action.  Form databinding will be disabled client-side, and breadcrumbs sql will not execute.');
@@ -1564,6 +1589,16 @@ exports.ParseEntities = function () {
       }
     });
   });
+
+  //Validate salt lengths
+  for(var salt_name in this.Config.salts){
+    if(!this.Config.salts[salt_name] || (this.Config.salts[salt_name].length < 60)) _this.LogInit_WARNING('jsh.Config.salts > '+salt_name+': Salts should be at least 60 characters');
+  }
+
+  //Validate password lengths
+  for(var password_name in this.Config.passwords){
+    if(!this.Config.passwords[password_name] || (this.Config.passwords[password_name].length < 60)) _this.LogInit_WARNING('jsh.Config.passwords > '+password_name+': Encryption passwords should be at least 60 characters');
+  }
 };
 
 function ParseMultiLineProperties(obj, arr) {

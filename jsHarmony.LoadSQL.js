@@ -181,7 +181,8 @@ exports.LoadSQLFromFolder = function (dir, type, module, rslt) {
       _this.LogInit_INFO('Loading ' + fpath);
       //Parse text
       var sql = _this.ParseJSON(fpath, 'SQL');
-      if(path.basename(fpath).toLowerCase() == ('datatypes.'+type+'.json')){
+      if((path.basename(fpath).toLowerCase() == ('datatypes.'+type+'.json')) ||
+         (path.basename(fpath).toLowerCase() == ('datatypes.json'))){
         for (var datatypeid in sql) {
           rslt.CustomDataTypes[datatypeid] = sql[datatypeid];
         }

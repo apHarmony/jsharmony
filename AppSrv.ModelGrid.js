@@ -36,10 +36,10 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   var availablesortfieldslist = this.getFieldNames(req, model.fields, 'BFK');
   var searchlist = this.getFieldNames(req, model.fields, 'BFK');
   searchlist = _.union(keylist, searchlist);
-  var encryptedfields = this.getEncryptedFields(req, model.fields, 'B');
-  if (encryptedfields.length > 0) throw new Error('Encrypted fields not supported on GRID');
+  var encryptedfields = this.getFields(req, model.fields, '*', function(field){ return field.type=='encascii'; });
+  if (encryptedfields.length > 0) throw new Error('Encrypted fields not supported on GRID (field.type=encascii)');
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'S');
-  if ((encryptedfields.length > 0) && !(req.secure) && (!_this.jsh.Config.system_settings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
+  if ((encryptedfields.length > 0) && !(req.secure) && (!_this.jsh.Config.system_settings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted / hash fields require HTTPS connection'); return; }
   var db = _this.jsh.getModelDB(req, fullmodelid);
   if ('d' in Q) P = JSON.parse(Q.d);
   

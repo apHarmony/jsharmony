@@ -562,6 +562,8 @@ exports.ExecTasks = function (req, res, dbtasks, trans, callback) {
         rslt['_eof_' + rs] = eof._eof;
       }
     }
+    //Convert buffers to hex strings
+    Helper.convertBufferToHexString(rslt);
     //Run POSTPROCESS tasks
     async.eachSeries(posttasks, function (posttask, postcallback) {
       posttask(postcallback);

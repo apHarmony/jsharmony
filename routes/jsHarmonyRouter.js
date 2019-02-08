@@ -355,6 +355,9 @@ var jsHarmonyRouter = function (jsh, siteid) {
 
     db.MultiRecordset(context, sql, [], {}, undefined, function (err, dbrslt, stats) {
       if(err){ err.sql = sql; return jsh.AppSrv.AppDBError(req, res, err, stats); }
+      //Convert buffers to hex strings
+      Helper.convertBufferToHexString(dbrslt);
+      //Return result
       rslt = {
         '_success': 1,
         '_stats': Helper.FormatStats(req, stats, { notices: show_notices, show_all_messages: true }),

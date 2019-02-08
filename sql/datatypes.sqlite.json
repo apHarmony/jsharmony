@@ -27,9 +27,9 @@
     "sqlsearch_to_db": "strftime('%Y-%m-%dT%H:%M:%f',%%%SQL%%%)"
   },
   "text":{ "type": "varchar" },
-  "blob":{ 
+  "binary":{ 
     "sql_from_db": "case when %%%SQL%%% is null then null else '0x'||hex(%%%SQL%%%) end",
-    "sqlsearch": "%%%SQL%%%",
-    "type": "binary"
-  }
+    "sqlsearch": "%%%SQL%%%"
+  },
+  "blob":{ "type": "binary" }
 }

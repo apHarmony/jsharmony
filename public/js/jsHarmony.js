@@ -623,13 +623,14 @@ XValidate._v_IsNumeric = function (_nonneg) {
     return "";'));
 }
 
-XValidate._v_IsDecimal = function (_maxplaces) {
+XValidate._v_IsDecimal = function (_maxplaces, _comma) {
   if (typeof (_maxplaces) === 'undefined') _maxplaces = 0;
   var places_qty = ((_maxplaces > 0) ? '{1,' + _maxplaces + '}' : '+');
   return (new Function('_caption', '_val', '\
 	  if(!_val) return "";\
     if(_val == null) return "";\
     if(_val == "") return "";\
+    '+(_comma ? '_val = String(_val).replace(/,/g, "");' : '')+'\
 		var dec = String(_val).match(/^-?[0-9]*.?[0-9]' + places_qty + '$/);\
 		if(dec === null){ \
       if(' + _maxplaces + ' == 0) return _caption + " must be a valid decimal number.";\
@@ -9076,7 +9077,10 @@ exports.decimal_decode = function (numdigits, val) {
 }
 
 function decimalPlaces(number) {
-  return ((+number).toFixed(20)).replace(/^-?\d*\.?|0+$/g, '').length
+  if(!number) return 0;
+  var numarr = String(number).split(".");
+  if(numarr.length < 2) return 0;
+  return numarr[1].length;
 }
 
 exports.decimalext = function (numdigits, val) {
@@ -9084,7 +9088,7 @@ exports.decimalext = function (numdigits, val) {
   if (val === '') return val;
   if (val === null) return val;
   var fval = parseFloat(val);
-  if (decimalPlaces(fval) > 2) return fval.toString();
+  if (decimalPlaces(fval) > numdigits) return fval.toString();
   return fval.toFixed(numdigits);
 }
 
@@ -9095,6 +9099,14 @@ exports.decimalext_decode = function (numdigits, val) {
   return parseFloat(val);
 }
 
+exports.decimalcomma = function (numdigits, val){
+  return exports.comma(exports.decimal(numdigits, val));
+}
+
+exports.decimalcomma_decode = function (numdigits, val){
+  return exports.decimal_decode(numdigits, exports.comma_decode(val));
+}
+
 exports.comma = function(val){
 	if(val==null) return '';
   var n= val.toString().split(".");
@@ -9103,11 +9115,12 @@ exports.comma = function(val){
 }
 
 exports.comma_decode = function(val){
-  if (isNaN(val)) return val;
 	if (val === '') return val;
   if (val === null) return val;
-	val = $.trim(val.replace(/,/g,''));
-	return parseFloat(val);
+  if (typeof val === 'undefined') return val;
+  var uval = $.trim(String(val).replace(/,/g,''));
+  if (isNaN(uval)) return val;
+	return parseFloat(uval);
 }
 
 exports.ssn = function (val) {
