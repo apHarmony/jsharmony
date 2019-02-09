@@ -176,7 +176,7 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
             async.each(filelist, function (file, filecallback) {
               var filefield = _this.getFieldByName(model.fields, file);
               var fpath = _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + file + '_' + keyval;
-              if (filefield.controlparams.save_file_with_extension) fpath += '%%%EXT%%%';
+              if (filefield.controlparams._data_file_has_extension) fpath += '%%%EXT%%%';
               HelperFS.getExtFileName(fpath, function(err, filename){
                 if(err){
                   filerslt[file] = false;
@@ -608,10 +608,10 @@ exports.deleteModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
     _.each(filelist, function (file) {
       var filefield = _this.getFieldByName(model.fields, file);
       //Delete file in post-processing
-      fileops.push({ op: 'move', src: _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + file + '_' + keyval + ((filefield.controlparams.save_file_with_extension)?'%%%EXT%%%':''), dst: '' });
+      fileops.push({ op: 'move', src: _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + file + '_' + keyval + ((filefield.controlparams._data_file_has_extension)?'%%%EXT%%%':''), dst: '' });
       //Delete thumbnails in post-processing
       if (filefield.controlparams.thumbnails) for (var tname in filefield.controlparams.thumbnails) {
-        fileops.push({ op: 'move', src: _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + tname + '_' + keyval + ((filefield.controlparams.save_file_with_extension)?'%%%EXT%%%':''), dst: '' });
+        fileops.push({ op: 'move', src: _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + tname + '_' + keyval + ((filefield.controlparams._data_file_has_extension)?'%%%EXT%%%':''), dst: '' });
       }
     });
     dbtasks['_POSTPROCESS'] = function (callback) {

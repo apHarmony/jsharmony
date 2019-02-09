@@ -968,7 +968,8 @@ exports.ParseEntities = function () {
       if(!('control' in field)){
         if(auto_controls){
           if(field.type=='file'){
-            field.control = 'file_upload';
+            if(model.layout=='grid') field.control = 'file_download';
+            else field.control = 'file_upload';
           }
           else if(('lov' in field) && !isReadOnlyGrid) field.control = 'dropdown';
           else if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
@@ -1087,7 +1088,13 @@ exports.ParseEntities = function () {
         }
         if(!('upload_button' in field.controlparams)) field.controlparams.upload_button = 'Upload';
         if(!('delete_button' in field.controlparams)) field.controlparams.delete_button = 'Delete';
-        if(!field.controlparams.sqlparams.FILE_EXT) field.controlparams.save_file_with_extension = true;
+        if(!field.controlparams.sqlparams.FILE_EXT) field.controlparams._data_file_has_extension = true;
+      }
+      else if(field.control=='file_download'){
+        if (!('controlparams' in field)) field.controlparams = {};
+        if (!('sqlparams' in field.controlparams)) field.controlparams.sqlparams = {};
+        if (!('download_button' in field.controlparams)) field.controlparams.download_button = 'Download';
+        if(!field.controlparams.sqlparams.FILE_EXT) field.controlparams._data_file_has_extension = true;
       }
 
       //Apply "enable_search" property
@@ -1333,7 +1340,7 @@ exports.ParseEntities = function () {
     ];
     var _v_controlparams = [
       'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'dateformat', 'base_readonly',
-      'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'sqlparams', 'save_file_with_extension',
+      'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'sqlparams', '_data_file_has_extension',
       'image', 'thumbnails', 'expand_all', 'item_context_menu', 'insert_link', 'grid_save_before_update'
     ];
     var _v_popuplov = ['target', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
@@ -1367,7 +1374,9 @@ exports.ParseEntities = function () {
       }
       //Check if the field has a type
       if(field.actions && field.name && !('type' in field) && !('value' in field) && (field.control != 'subform') && !field.unbound) _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Missing type.  Set a field.value or field.unbound if intentional.');
-      if(field.control && (model.layout=='grid') && !_.includes(['hidden','label','html','textbox','textzoom','date','textarea','dropdown','checkbox','button','linkbutton'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support ' + field.control + ' control');
+      if(field.control && (model.layout=='grid') && !_.includes(['hidden','label','html','textbox','textzoom','date','textarea','dropdown','checkbox','button','linkbutton','file_download'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support ' + field.control + ' control');
+      if(((field.control == 'file_upload') || (field.control == 'file_download')) && (field.type != 'file')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The ' + field.control + ' control requires field.type="file"');
+      if((field.control == 'file_download') && Helper.hasAction(field.actions, 'IU')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The file_download control field.actions must be "B" (browse-only).');
       //field.type=encascii, check if password is defined
       if(field.type=='encascii'){
         if(model.layout=='grid') _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support field.type="encascii" (Use field.type="hash" for searching encrypted values)');

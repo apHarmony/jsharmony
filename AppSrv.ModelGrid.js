@@ -18,6 +18,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var Helper = require('./lib/Helper.js');
+var HelperFS = require('./lib/HelperFS.js');
 var _ = require('lodash');
 var async = require('async');
 var csv = require('csv');
@@ -30,6 +31,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   var _this = this;
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
+  var filelist = this.getFileFieldNames(req, model.fields, 'B');
   var searchlist = this.getFieldNames(req, model.fields, 'BS', function(field){ if(field.disable_search){ return false; } return true; });
   var keylist = this.getKeyNames(model.fields);
   var allfieldslist = _.union(keylist, fieldlist);
@@ -212,6 +214,45 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
             rslt.push({ '_eof': false });
           }
           else rslt.push({ '_eof': true });
+
+          //Verify files exist on disk
+          if (filelist.length > 0) {
+            if (keylist.length != 1) throw new Error('File download requires one key in the model');
+            //For each row
+            async.eachOfLimit(rslt, 4, function(row, rownum, rowcallback){
+              if('_eof' in row) return rowcallback();
+              var filerslt = {};
+              var keyval = row[keylist[0]];
+              if(!keyval) throw new Error('Cannot process file fields in row #'+rownum+'.  Key field not found in database select results.');
+              //For each file field
+              async.each(filelist, function (file, filecallback) {
+                var filefield = _this.getFieldByName(model.fields, file);
+                var fpath = _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + file + '_' + keyval;
+                if (filefield.controlparams._data_file_has_extension) fpath += '%%%EXT%%%';
+                HelperFS.getExtFileName(fpath, function(err, filename){
+                  if(err){
+                    filerslt[file] = false;
+                    return filecallback(null);
+                  }
+                  HelperFS.exists(filename, function (exists) {
+                    filerslt[file] = exists;
+                    return filecallback(null);
+                  });
+                });
+              }, function(err){
+                if(err) return rowcallback(err);
+                _.merge(row, filerslt);
+                return rowcallback();
+              });
+            }, function (err) {
+              if (err != null){
+                _this.jsh.Log.error(err);
+                return callback(Helper.NewError('Error performing file operation', -99999));
+              }
+              callback(null, rslt, stats);
+            });
+            return;
+          }
         }
         callback(err, rslt, stats);
       });

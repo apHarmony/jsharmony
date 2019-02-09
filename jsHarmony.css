@@ -193,21 +193,25 @@ BODY
 <%-rootcss%> .xtbl td .xform_label {
   display:block;
 }
-<%-rootcss%> .xform_file_upload {
-  display:inline-block;
-}
+<%-rootcss%> .xform_file_upload { display:inline-block; }
+<%-rootcss%> .xform_file_upload .linkbutton { white-space:nowrap; }
 <%-rootcss%> .xform_file_upload .linkbutton img { padding-left:0px; }
-<%-rootcss%> .xform_file_upload .xform_file_download { padding-right:25px; }
-<%-rootcss%> .xform_file_upload .xform_file_preview { padding-right:25px; }
-<%-rootcss%> .xform_file_upload .xform_file_upload { padding-right:25px; }
+<%-rootcss%> .xform_file_upload .xform_file_download_button { padding-right:25px; }
+<%-rootcss%> .xform_file_upload .xform_file_preview_button { padding-right:25px; }
+<%-rootcss%> .xform_file_upload .xform_file_upload_button { padding-right:25px; }
 <%-rootcss%> .xform_file_upload .xform_file_thumbnail { display:block; padding-top:15px; padding-bottom:5px; }
-<%-rootcss%> .xform_file_upload .xform_file_delete {  }
-<%-rootcss%> .xform_file_upload.nodocument .xform_file_download { display:none; }
-<%-rootcss%> .xform_file_upload.nodocument .xform_file_preview { display:none; }
-<%-rootcss%> .xform_file_upload.nodocument .xform_file_delete { display:none; }
+<%-rootcss%> .xform_file_upload .xform_file_delete_button {  }
+<%-rootcss%> .xform_file_upload.nodocument .xform_file_download_button { display:none; }
+<%-rootcss%> .xform_file_upload.nodocument .xform_file_preview_button { display:none; }
+<%-rootcss%> .xform_file_upload.nodocument .xform_file_delete_button { display:none; }
 <%-rootcss%> .xform_file_upload.nodocument .xform_file_thumbnail { display:none; }
-<%-rootcss%> .xform_file_upload.uneditable .xform_file_upload { display:none; }
-<%-rootcss%> .xform_file_upload.uneditable .xform_file_delete { display:none; }
+<%-rootcss%> .xform_file_upload.uneditable .xform_file_upload_button { display:none; }
+<%-rootcss%> .xform_file_upload.uneditable .xform_file_delete_button { display:none; }
+<%-rootcss%> .xform_file_download { display:inline-block; }
+<%-rootcss%> .xform_file_download .linkbutton { white-space:nowrap; }
+<%-rootcss%> .xform_file_download .linkbutton img { padding-left:0px; }
+<%-rootcss%> .xform_file_download .xform_file_download_button { padding-right:25px; }
+<%-rootcss%> .xform_file_download.nodocument .xform_file_download_button { display:none; }
 <%-rootcss%> .xform input,
 <%-rootcss%> .xform select,
 <%-rootcss%> .xform textarea {

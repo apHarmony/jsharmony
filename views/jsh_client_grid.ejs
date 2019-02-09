@@ -106,7 +106,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           var fieldclass = '';
           if(field.control && (field.control=='hidden')) fieldclass += 'tdhidden';
           %>
-        <th nowrap class="<%=field.sortclass%> thead<%=field.name%> <%=field.captionclass%> <%=fieldclass%>" style="<%=field.captionstyle%>"><% if(field.disable_sort){ %><%=field.caption%><% } else { %><a href="#" onClick="<%-js('xmodel.controller.Sort(this, \''+XExt.escapeHTML((field.lov && !field.lov.showcode)?('__'+jsh.uimap.codetxt+'__'+field.name):field.name)+'\');')%>"><%=field.caption%></a><% } %></th>
+        <th nowrap class="<%=field.sortclass%> thead<%=field.name%> <%=field.captionclass%> <%=fieldclass%>" style="<%=field.captionstyle%>"><% if(field.disable_sort||(field.type=='file')){ %><%=field.caption%><% } else { %><a href="#" onClick="<%-js('xmodel.controller.Sort(this, \''+XExt.escapeHTML((field.lov && !field.lov.showcode)?('__'+jsh.uimap.codetxt+'__'+field.name):field.name)+'\');')%>"><%=field.caption%></a><% } %></th>
         <% } %>
         <%-xejs.iif(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'I'),'<th></th>')%>
         <%-xejs.iif(model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'D'),'<th></th>')%>
@@ -163,6 +163,12 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           if('link' in field){ %><a data-id="<%=field.name%>" href="#" class="xform_ctrl xelem<%=model.class%> <%=field.name%> <%=field.controlclass%> <%=xejs.iif(!field.value,'xform_label')%>" style="<%=field.controlstyle%>" data-url="<%-field.link%>" onclick="<%-js(field.onclick)%>"><%=xejs.ifnull(field.value,'')%></a><% }
           else { %><a data-id="<%=field.name%>" data-model="<%=model.id%>" href="#" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.class%> <%=field.name%> <%=field.controlclass%> <%=xejs.iif(!field.value,'xform_label')%>" onclick="<%-js(field.onclick)%>"><%=xejs.ifnull(field.value,'')%></a><% }
         }
+        else if(field.control=='file_download'){ %>
+            <div data-id="<%=field.name%>" class="<%=field.name%> xform_file_download xelem<%=model.class%> <%=field.controlclass%>" style="<%=field.controlstyle%>">
+              <% if(field.controlparams.download_button){ %><a class="<%=field.name%>_download linkbutton xform_file_download_button" href="#" onclick="<%-js('xmodel.controller.DownloadFile(\''+XExt.escapeHTML(field.name)+'\',\''+XExt.escapeHTML(field.caption_ext||field.caption)+'\',<#=rowid#>);')%>"><img src="/images/icon_download.png" /><%=field.controlparams.download_button%></a><% } %>
+              <input type="hidden" data-id="<%=field.name%>_dbexists" class="<%=field.name%>_dbexists xform_file_dbexists xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" />
+            </div>
+        <% }
         if(field.popuplov){ %><a href="#" data-id="<%=field.name%>_xlookup" class="xform_ctrl xlookup icon <%=field.name%>_xlookup" data-codeval="<%=field.controlparams.codeval%>" data-model="<%=model.id%>" onclick="<%-instance%>.XExt.popupShow('<%=field.model.id%>','<%=field.name%>','<%=field.caption_ext||field.caption%> Selection',<%-instance%>.$(this).prev('.<%=field.name%>'),this,{OnControlUpdate:function(obj,e){ <%-instance%>.XModels['<%=model.id%>'].controller.editablegrid.ControlUpdate(obj,e); }})"><img src="/images/icon_search.png" height="14" style="position:relative;top:-1px;" /></a><% }
           %></td>
         <% } %>

@@ -639,6 +639,10 @@ XValidate._v_IsDecimal = function (_maxplaces, _comma) {
     return "";'));
 }
 
+XValidate._v_IsDecimalComma = function (_maxplaces) {
+  return XValidate._v_IsDecimal(_maxplaces, true);
+}
+
 XValidate._v_IsFloat = function () {
   return (new Function('_caption', '_val', '\
 	  if(!_val) return "";\
@@ -6257,7 +6261,7 @@ exports = module.exports = function(jsh){
     var fieldselector = '.' + field.name + '.xelem' + xmodel.class;
     if (isGrid) fieldselector = '.' + field.name + '.xelem' + xmodel.class;
     var jctrl = parentobj.find(fieldselector);
-    if (('control' in field) && (field.control == 'file_upload')) {
+    if (('control' in field) && ((field.control == 'file_upload')||(field.control == 'file_download'))) {
       //Show "Upload File" always
       var filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
       if (isGrid) filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;

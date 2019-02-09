@@ -134,7 +134,7 @@ exports = module.exports = function(jsh){
     var fieldselector = '.' + field.name + '.xelem' + xmodel.class;
     if (isGrid) fieldselector = '.' + field.name + '.xelem' + xmodel.class;
     var jctrl = parentobj.find(fieldselector);
-    if (('control' in field) && (field.control == 'file_upload')) {
+    if (('control' in field) && ((field.control == 'file_upload')||(field.control == 'file_download'))) {
       //Show "Upload File" always
       var filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
       if (isGrid) filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
