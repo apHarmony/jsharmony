@@ -290,6 +290,7 @@ exports.LoadDBSchemas = function(cb){
   async.eachOf(_this.DBConfig, function(dbConfig, dbid, db_cb){
     codegen.getSchema({ db: dbid }, function(err, rslt){
       if(err) return db_cb(err);
+      if(!rslt) return db_cb();
 
       let db = _this.DB[dbid];
       if(!db) return db_cb();

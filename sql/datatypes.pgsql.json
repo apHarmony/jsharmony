@@ -1,5 +1,16 @@
 {
-  "decimal":{ 
+  "character varying": { "type": "varchar" },
+  "character": { "type": "char" },
+  "time without time zone": { "type": "time" },
+  "time with time zone": { "type": "timetz" },
+  "timestamp without time zone": { "type": "timestamp" },
+  "timestamp with time zone": { "type": "timestamptz" },
+  "numeric": { "type": "decimal" },
+  "text":{
+    "type": "varchar",
+    "length": -1
+  },
+  "decimal":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sqlsearch": "%%%SQL%%%",
     "sqlsearch_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
@@ -12,7 +23,7 @@
     "sql_to_db": "cast(%%%SQL%%% as money)",
     "type": "varchar"
   },
-  "double precision":{ 
+  "double precision":{
     "sql_from_db": "cast(%%%SQL%%% as varchar(50))",
     "sqlsearch": "%%%SQL%%%",
     "sqlsearch_to_db": "cast(%%%SQL%%% as float(%%%PREC%%%))",
@@ -21,127 +32,127 @@
     },
     "type": "float"
   },
-  "real":{ 
+  "real":{
     "datatype_config":{
       "defaults":{ "PREC": 24 }
     },
     "type": "double precision"
   },
-  "timetz":{ 
+  "timetz":{
     "type": "time",
     "datatype_config": { "preserve_timezone": true }
   },
   "timestamp":{ "type": "datetime" },
-  "timestamptz":{ 
+  "timestamptz":{
     "type": "datetime",
     "datatype_config": { "preserve_timezone": true }
   },
-  "interval":{ 
+  "interval":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as interval)",
     "type": "varchar"
   },
-  "bytea":{ 
+  "bytea":{
     "sql_from_db": "encode(%%%SQL%%%,'hex')",
     "sql_to_db": "cast(decode(%%%SQL%%%,'hex') as bytea)",
     "type": "varchar"
   },
-  "bit":{ 
+  "bit":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as bit(%%%LENGTH%%%))",
     "type": "varchar"
   },
-  "bit varying":{ 
+  "bit varying":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as bit varying(%%%LENGTH%%%))",
     "type": "varchar"
   },
-  "point":{ 
+  "point":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as point)",
     "type": "varchar"
   },
-  "line":{ 
+  "line":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as line)",
     "type": "varchar"
   },
-  "lseg":{ 
+  "lseg":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as lseg)",
     "type": "varchar"
   },
-  "box":{ 
+  "box":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as box)",
     "type": "varchar"
   },
-  "path":{ 
+  "path":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as path)",
     "type": "varchar"
   },
-  "polygon":{ 
+  "polygon":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as polygon)",
     "type": "varchar"
   },
-  "circle":{ 
+  "circle":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as circle)",
     "type": "varchar"
   },
-  "inet":{ 
+  "inet":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as inet)",
     "type": "varchar"
   },
-  "cidr":{ 
+  "cidr":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as cidr)",
     "type": "varchar"
   },
-  "macaddr":{ 
+  "macaddr":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as macaddr)",
     "type": "varchar"
   },
-  "tsvector":{ 
+  "tsvector":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as tsvector)",
     "type": "varchar"
   },
-  "tsquery":{ 
+  "tsquery":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as tsquery)",
     "type": "varchar"
   },
-  "uuid":{ 
+  "uuid":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as uuid)",
     "type": "varchar"
   },
-  "xml":{ 
+  "xml":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as xml)",
     "type": "varchar"
   },
-  "json":{ 
+  "json":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as json)",
     "type": "varchar"
   },
-  "jsonb":{ 
+  "jsonb":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as jsonb)",
     "type": "varchar"
   },
-  "pg_lsn":{ 
+  "pg_lsn":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as pg_lsn)",
     "type": "varchar"
   },
-  "txid_snapshot":{ 
+  "txid_snapshot":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
     "sql_to_db": "cast(%%%SQL%%% as txid_snapshot)",
     "type": "varchar"

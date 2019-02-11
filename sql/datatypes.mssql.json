@@ -1,4 +1,15 @@
 {
+  "text":{
+    "type": "varchar",
+    "length": -1
+  },
+  "nchar":{ "type": "char" },
+  "nvarchar":{ "type": "varchar" },
+  "ntext":{ "type": "text" },
+  "smalldatetime":{ "type": "datetime" },
+  "datetime2":{ "type": "datetime" },
+  "numeric":{ "type": "decimal" },
+  "bit":{ "type": "boolean" },
   "decimal":{ 
     "sql_from_db": "cast(%%%SQL%%% as nvarchar)",
     "sqlsearch": "%%%SQL%%%",
@@ -22,9 +33,6 @@
   "real":{
     "type":"float",
     "precision": 24
-  },
-  "bit":{
-    "type": "boolean"
   },
   "money":{ 
     "sql_from_db": "cast(%%%SQL%%% as nvarchar)",

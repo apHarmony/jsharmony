@@ -27,7 +27,12 @@
 		"control":"label",
 		"format":["time","hh:mm:ss A"],
 		"controlclass":"xlabel_hhmmss"
-	},
+  },
+  "label_hhmmssz":{
+		"control":"label",
+		"format":["time","HH:mm:ssZ"],
+		"controlclass":"xlabel_hhmmssz"
+  },
 	"dropdown_VS":{
 		"control":"dropdown",
 		"controlclass":"xdropdown_VS"
@@ -156,6 +161,7 @@
   },
   "textarea_M":{
 		"control":"textarea",
-		"controlclass":"xtextarea_M"
+    "controlclass":"xtextarea_M",
+    "captionclass": "xtextarea_caption"
 	}
 }

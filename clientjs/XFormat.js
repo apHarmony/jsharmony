@@ -197,6 +197,7 @@ exports.time = function (format, val) {
 exports.time_decode = function (format, val) {
   if (val === '') return null;
   if (val === null) return null;
+  if (typeof val === undefined) return null;
   
   if (val.trim() == parseInt(val.trim()).toString()) {
     var vint = parseInt(val.trim());

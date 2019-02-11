@@ -846,6 +846,7 @@ exports.ParseEntities = function () {
                 else{
                   field.control = autofield.control;
                   if(autofield.captionclass) field.captionclass = autofield.captionclass + ' ' + (field.captionclass||'');
+                  if(autofield.controlclass) field.controlclass = autofield.controlclass + ' ' + (field.controlclass||'');
                 }
                 field._auto.control = true;
                 

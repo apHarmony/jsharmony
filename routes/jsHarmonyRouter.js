@@ -367,6 +367,29 @@ var jsHarmonyRouter = function (jsh, siteid) {
       res.send(JSON.stringify(rslt));
     }, dbconfig);
   });
+  // /_debug/:modelid
+  router.get(/\/\_debug\/(.*)/, function (req, res, next) {
+    if(!('SYSADMIN' in req._roles) && !('DEV' in req._roles)) return next();
+    var fullmodelid = req.params[0];
+    fullmodelid = Helper.trimRight(fullmodelid,'/');
+    if (typeof fullmodelid === 'undefined') { next(); return; }
+    if (!jsh.hasModel(req, fullmodelid)) { next(); return; }
+    var model = jsh.getModel(req, fullmodelid);
+    res.header("Content-Type",'application/json');
+    //Sort alpha
+    res.send(JSON.stringify(model,function(key,val){
+      if(_.isString(val)) return val;
+      if(_.isNumber(val)) return val;
+      if(_.isBoolean(val)) return val;
+      if(!val) return val;
+      if(_.isArray(val)){ var arr = _.clone(val); arr.sort(); return arr; }
+      var obj = {};
+      var keys = _.keys(val);
+      keys.sort();
+      _.each(keys, function(key){ obj[key] = val[key]; });
+      return obj;
+    },4));
+  });
   router.get(/\/(.*)/, function (req, res, next) {
     //Verify model exists
     var fullmodelid = req.params[0];
