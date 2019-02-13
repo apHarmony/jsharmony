@@ -49,7 +49,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
     <%-instance%>.XExt.pushLOV(comparison_object,'notnull','Is Not Blank');
     var comparison_sound = function(comparison,search_sound){
       var rslt = comparison.slice(0);
-      if(search_sound){ <%-instance%>.XExt.pushLOV(comparison_object,'soundslike','Sounds Like'); }
+      if(search_sound){ <%-instance%>.XExt.pushLOV(rslt,'soundslike','Sounds Like'); }
       return rslt;
     }
     #>
@@ -63,15 +63,15 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           </select>
         <# } else if(selected_column && (selected_column.comparison_type=='numeric')){ #>
           <select class="xsearch_comparison" onchange="<%-js('xmodel.controller.SearchComparisonChange();')%>">
-            <#-xejs.renderLOV(comparison_numeric,data.Items[i].Comparison)#>
+            <#-xejs.renderLOV(comparison_sound(comparison_numeric,selected_column.search_sound),data.Items[i].Comparison)#>
           </select>
         <# } else if(selected_column && (selected_column.comparison_type=='date')){ #>
           <select class="xsearch_comparison" onchange="<%-js('xmodel.controller.SearchComparisonChange();')%>">
-            <#-xejs.renderLOV(comparison_date,data.Items[i].Comparison)#>
+            <#-xejs.renderLOV(comparison_sound(comparison_date,selected_column.search_sound),data.Items[i].Comparison)#>
           </select>
         <# } else if(selected_column && (selected_column.comparison_type=='object')){ #>
           <select class="xsearch_comparison" onchange="<%-js('xmodel.controller.SearchComparisonChange();')%>">
-            <#-xejs.renderLOV(comparison_object,data.Items[i].Comparison)#>
+            <#-xejs.renderLOV(comparison_sound(comparison_object,selected_column.search_sound),data.Items[i].Comparison)#>
           </select>
         <# } else { #>
           containing the value

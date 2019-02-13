@@ -401,6 +401,10 @@ exports.addSearchTerm = function (req, model, field, search_i, in_search_value, 
     }
     sql_ptypes.push(searchterm.dbtype);
     sql_params[pname] = searchterm.search_value;
+    if(comparison=='soundslike'){
+      sql_ptypes.push(_this.DB.types.VarChar(4));
+      sql_params[pname+'_soundex'] = _this.DB.util.Soundex((searchterm.search_value||'').toString());
+    }
     return searchterm.sql;
   }
   return '';

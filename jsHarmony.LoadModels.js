@@ -33,6 +33,9 @@ module.exports = exports = {};
 |    LOAD MODELS   |
 *******************/
 
+var BASE_CONTROLS = ['label', 'html', 'textbox', 'textzoom', 'dropdown', 'date', 'textarea', 'hidden', 'subform', 'html', 'password', 'file_upload', 'file_download', 'button', 'linkbutton', 'tree', 'checkbox'];
+var BASE_DATATYPES = ['DATETIME','VARCHAR','CHAR','BOOLEAN','BIGINT','INT','SMALLINT','TINYINT','DECIMAL','FLOAT','DATE','DATETIME','TIME','ENCASCII','HASH','FILE','BINARY'];
+
 //Get array of all model folders
 exports.getModelDirs = function(){
   var rslt = [];
@@ -473,13 +476,13 @@ exports.ApplyCustomControlQueries = function(model, field){
     return rslt;
   }
 
-  function ApplyQuery(query){
+  function ApplyQuery(key, query){
     var expr = query.expr;
     if((expr=='*')||QueryControl(expr)){
       //Apply controls
       var controlnames = query.controls;
       _.each(controlnames, function(controlname){
-        _this.ApplyCustomControl(field, controlname);
+        _this.ApplyCustomControl(model, field, controlname);
       });
     }
   }
@@ -487,18 +490,24 @@ exports.ApplyCustomControlQueries = function(model, field){
   var queries = _this.CustomControlQueries;
   if(queries['*']){
     for(let exprstr in queries['*']){
-      ApplyQuery(queries['*'][exprstr]);
+      ApplyQuery('*',queries['*'][exprstr]);
     }
   }
   if(field.name && (field.name in queries)){
     for(let exprstr in queries[field.name]){
-      ApplyQuery(queries[field.name][exprstr]);
+      ApplyQuery(field.name, queries[field.name][exprstr]);
     }
   }
 };
 
-exports.ApplyCustomControl = function(field, controlname){
+exports.ApplyCustomControl = function(model, field, controlname){
   var _this = this;
+  if(!controlname){
+    if(BASE_CONTROLS.indexOf(field.control) >= 0) return;
+    if(!field.control) return;
+    controlname = field.control;
+  }
+  if(!(controlname in _this.CustomControls)) throw new Error('Custom Control not defined: ' + field.control + ' in ' + model.id + ': ' + JSON.stringify(field));
   var customcontrol = _this.CustomControls[controlname];
   for (var prop in customcontrol) {
     if(prop=='for') continue;
@@ -512,14 +521,13 @@ exports.ApplyCustomControl = function(field, controlname){
     field._orig_control.push(field.control);
     field.control = customcontrol.control;
   }
+  exports.ApplyCustomControl(model, field);
 };
 
 exports.ParseEntities = function () {
   var _this = this;
   _this.ParseCustomControls();
   var codegen = new jsHarmonyCodeGen(_this);
-  var base_controls = ['label', 'html', 'textbox', 'textzoom', 'dropdown', 'date', 'textarea', 'hidden', 'subform', 'html', 'password', 'file_upload', 'file_download', 'button', 'linkbutton', 'tree', 'checkbox'];
-  var base_datatypes = ['DATETIME','VARCHAR','CHAR','BOOLEAN','BIGINT','INT','SMALLINT','TINYINT','DECIMAL','FLOAT','DATE','DATETIME','TIME','ENCASCII','HASH','FILE','BINARY'];
   var auto_datatypes = _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.datatypes;
   var auto_attributes = _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.attributes;
   var auto_controls =  _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.controls;
@@ -857,7 +865,10 @@ exports.ParseEntities = function () {
               if(autofield.validate){
                 if(!('validate' in field)){
                   field.validate = [];
-                  for(let i=0;i<autofield.validate.length;i++) field.validate.push(autofield.validate[i]);
+                  for(let i=0;i<autofield.validate.length;i++){
+                    if(field.readonly && (autofield.validate[i]=='Required')) continue;
+                    field.validate.push(autofield.validate[i]);
+                  }
                 }
               }
               //Add Foreign Key to Multisel
@@ -884,10 +895,7 @@ exports.ParseEntities = function () {
       _this.ApplyCustomControlQueries(model, field);
       if ('control' in field) {
         //Parse and apply Custom Controls
-        while (base_controls.indexOf(field.control) < 0) {
-          if (!(field.control in _this.CustomControls)) throw new Error('Control not defined: ' + field.control + ' in ' + model.id + ': ' + JSON.stringify(field));
-          _this.ApplyCustomControl(field, field.control);
-        }
+        _this.ApplyCustomControl(model, field);
         //Apply Custom Controls with Query Expressions
       }
       if (field.name === '') delete field.name;
@@ -977,6 +985,7 @@ exports.ParseEntities = function () {
             if(Helper.hasAction(field.actions, 'B') && !field.value && !field.html){
               if(Helper.hasAction(field.actions, 'IU')){
                 codegen.applyControlDefaults(model.layout, false, sqlext, field);
+                _this.ApplyCustomControl(model, field);
               }
               else field.control = 'label';
             }
@@ -1120,7 +1129,7 @@ exports.ParseEntities = function () {
             field.type = 'datetime';
             break;
         }
-        if(!_.includes(base_datatypes,field.type.toUpperCase())){
+        if(!_.includes(BASE_DATATYPES,field.type.toUpperCase())){
           _this.LogInit_ERROR('Model ' + model.id + ' Field ' + field.name + ' Invalid data type ' + field.type);
           //throw new Error('Data type ' + field.type + ' not recognized');
         }
