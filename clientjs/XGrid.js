@@ -33,7 +33,7 @@ exports = module.exports = function(jsh){
       if(lteIE7()){
         this.CustomScroll = '';
         _ScrollControl = _CustomScroll;
-        jsh.$root(_CustomScroll).css('overflow','auto');
+        jsh.$(_CustomScroll).css('overflow','auto');
       }
       else this.CustomScroll = _CustomScroll
     }
@@ -234,7 +234,7 @@ exports = module.exports = function(jsh){
           });
         }
         if (_this.CustomScroll != '') {
-          jsh.$root(_this.CustomScroll).mCustomScrollbar("update");
+          jsh.$(_this.CustomScroll).mCustomScrollbar("update");
         }
       }
     }
@@ -307,7 +307,7 @@ exports = module.exports = function(jsh){
       }
       _this.scrollPrevious = $(window).scrollTop();
     };
-    jsh.$root(_this.ScrollControl).scroll(_this.scrollFunc);
+    jsh.$(_this.ScrollControl).scroll(_this.scrollFunc);
   }
   XGrid.prototype._getDocumentHeight = function() {
     return Math.max(
@@ -319,17 +319,17 @@ exports = module.exports = function(jsh){
   XGrid.prototype._ControlOnScrollBottom = function(callback){
     var _this = this;
     _this.scrollFunc = function () {
-      var pastBottom = ((jsh.$root(_this.ScrollControl).outerHeight() + jsh.$root(_this.ScrollControl).scrollTop()) >= jsh.$root(_this.ScrollControl).get(0).scrollHeight);
-      //console.log((jsh.$root(_this.ScrollControl).outerHeight()+jsh.$root(_this.ScrollControl).scrollTop()) + ">=" + jsh.$root(_this.ScrollControl).get(0).scrollHeight);
+      var pastBottom = ((jsh.$(_this.ScrollControl).outerHeight() + jsh.$(_this.ScrollControl).scrollTop()) >= jsh.$(_this.ScrollControl).get(0).scrollHeight);
+      //console.log((jsh.$(_this.ScrollControl).outerHeight()+jsh.$(_this.ScrollControl).scrollTop()) + ">=" + jsh.$(_this.ScrollControl).get(0).scrollHeight);
       if (!_this.scrolledPastBottom && pastBottom) {
-        callback(jsh.$root(_this.ScrollControl).height() + jsh.$root(_this.ScrollControl).scrollTop());
+        callback(jsh.$(_this.ScrollControl).height() + jsh.$(_this.ScrollControl).scrollTop());
         _this.scrolledPastBottom = true;
       } else {
         if (!pastBottom) _this.scrolledPastBottom = false;
       }
-      _this.scrollPrevious = jsh.$root(_this.ScrollControl).scrollTop();
+      _this.scrollPrevious = jsh.$(_this.ScrollControl).scrollTop();
     };
-    jsh.$root(_this.ScrollControl).scroll(_this.scrollFunc);
+    jsh.$(_this.ScrollControl).scroll(_this.scrollFunc);
   }
   XGrid.prototype.EnableScrollUpdate = function() {
     var _this = this;
@@ -341,7 +341,7 @@ exports = module.exports = function(jsh){
       }
     };
     if(_this.CustomScroll != ''){
-      jsh.$root(_this.CustomScroll).mCustomScrollbar({
+      jsh.$(_this.CustomScroll).mCustomScrollbar({
         theme:"dark",
         autoScrollOnFocus: false,
         scrollButtons:{ enable:true },
@@ -356,8 +356,8 @@ exports = module.exports = function(jsh){
   }
   XGrid.prototype.Destroy = function (){
     var _this = this;
-    if (_this.CustomScroll != '') { jsh.$root(_this.CustomScroll).mCustomScrollbar("destroy"); }
-    else { jsh.$root(_this.ScrollControl).unbind('scroll', _this.scrollFunc); }
+    if (_this.CustomScroll != '') { jsh.$(_this.CustomScroll).mCustomScrollbar("destroy"); }
+    else { jsh.$(_this.ScrollControl).unbind('scroll', _this.scrollFunc); }
   }
 
   return XGrid;

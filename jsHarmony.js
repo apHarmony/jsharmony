@@ -59,7 +59,7 @@ function jsHarmony(config) {
     */
   };
   this.Models = {}; //Do not access this directly - use getModel, hasModel
-  this.CustomControls = [];
+  this.CustomControls = {};
   this.CustomControlQueries = {};
   this.Popups = {};
   this.Cache = {};

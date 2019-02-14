@@ -521,7 +521,7 @@ exports.ApplyCustomControl = function(model, field, controlname){
     field._orig_control.push(field.control);
     field.control = customcontrol.control;
   }
-  exports.ApplyCustomControl(model, field);
+  _this.ApplyCustomControl(model, field);
 };
 
 exports.ParseEntities = function () {
@@ -989,6 +989,7 @@ exports.ParseEntities = function () {
               }
               else field.control = 'label';
             }
+            if(field.value) field.control = 'html';
           }
           if('control' in field) field._auto.control = true;
         }
@@ -1000,14 +1001,13 @@ exports.ParseEntities = function () {
         field.format = ["time","HH:mm:ss"]; 
       }
       if(!('caption' in field)){
-        if(_.includes(['subform'],field.control)) field.caption = '';
+        if(_.includes(['subform','html','hidden'],field.control)) field.caption = '';
         else if(_.includes(['linkbutton','button'],field.control) && ('value' in field)){
           if(model.layout=='grid') field.caption = field.value;
           else field.caption = '';
         }
         else if ('name' in field) {
-          if (('control' in field) && (field.control == 'hidden')) field.caption = '';
-          else field.caption = field.name;
+          field.caption = field.name;
         }
       }
       if(_.includes(['linkbutton','button'],field.control) && ('caption' in field) && !('value' in field)) field.value = field.caption;
