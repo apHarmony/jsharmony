@@ -44,6 +44,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       <%-xejs.iif('static' in field,'"static":'+JSON.stringify(field.static)+',') %>
       <%-xejs.iif('key' in field,'"key":'+JSON.stringify(field.key)+',') %>
       <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>
+      <%-xejs.iif('value' in field,'"value":'+JSON.stringify(field.value)+',') %>
       <% if('controlparams' in field){ %>controlparams:{
         <%-xejs.iif('thumbnail_width' in field.controlparams,'"thumbnail_width":'+JSON.stringify(field.controlparams.thumbnail_width)+',') %>
         <%-xejs.iif('expand_all' in field.controlparams,'"expand_all":'+JSON.stringify(field.controlparams.expand_all)+',') %>
@@ -57,6 +58,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       <% if(field.lov && field.lov.parent){ %>"lovparent":<%-JSON.stringify(field.lov.parent)%>, <% } %>
       <% if(field.lov && field.lov.parents){ %>"lovparents":<%-JSON.stringify(field.lov.parents)%>, <% } %>
       <% if(field.lov && ('blank' in field.lov)){ %>"lovblank":1, <% } %>
+      <% if(field.lov && !(field.lov.showcode)){ %>"showlovtxt":1, <% } %>
       }, <%});%>
   };
 

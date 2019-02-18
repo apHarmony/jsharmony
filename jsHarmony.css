@@ -23,9 +23,8 @@ MAIN ELEMENTS
 =============
 */
 <%-rootcss%> .hand { cursor:pointer; cursor:hand; }
-<%-rootcss%> div.clear {
-	clear:both;
-}
+<%-rootcss%> div.clear { clear:both; }
+<%-rootcss%> .hidden { display:none !important; }
 <%-rootcss%> a img {	border: none; }
 <%-rootcss%> img a {	border:0; }
 <%-rootcss%> div.nobr { white-space:nowrap; display:inline-block; }
@@ -187,10 +186,10 @@ BODY
   vertical-align:top;
   padding-top:4px;
 }
-<%-rootcss%> .xform_label {
+<%-rootcss%> .xform_label,<%-rootcss%> .xform_html {
   display:inline-block;
 }
-<%-rootcss%> .xtbl td .xform_label {
+<%-rootcss%> .xtbl td .xform_label,<%-rootcss%> .xtbl td .xform_html {
   display:block;
 }
 <%-rootcss%> .xform_file_upload { display:inline-block; }

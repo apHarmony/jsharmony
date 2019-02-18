@@ -59,9 +59,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
       %>
       <td style="<%=field.cellstyle%>" class="<%=field.cellclass%>"><div style="<%=field.controlstyle%>" class="<%=field.controlclass%>">
         <% if('link' in field){ %><a href="<%-field.link%>" <%-xejs.showProp('onclick',field.link_onclick,undefined,'return (function(){'+jslocals,'}).call(this);')%> ><% } %>
-        <% if('html' in field){ %>
-          <%-field.html%>
-        <% } else if('value' in field){ %>
+        <% if('value' in field){ %>
           <%-field.value%>
         <% } else { %>
           <span onclick="<%-js('$(this).closest("tr").find(".checkbox").click();')%>"><#=<%-instance%>.XFormat.Apply(<%-format%>,data[j][<%-xejs.iif(field.name==lovfield,'jsh.uimap.codetxt',"'"+xejs.escapeJS(field.name)+"'")%>])#></span>

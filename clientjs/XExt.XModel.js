@@ -213,7 +213,7 @@ exports = module.exports = function(jsh){
     else if ((jctrl.size() > 0) && jctrl.hasClass('xform_label')) {
       if(lovTxt) val = lovTxt;
       if(jctrl.hasClass('xform_label_static')){
-        if(field.value.indexOf('<#')>=0){
+        if(field.value && field.value.indexOf('<#')>=0){
           val = field.value;
           val = val.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
           val = jsh.ejs.render(val, { 
@@ -225,11 +225,26 @@ exports = module.exports = function(jsh){
             js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
           });
           jctrl.html(val);
+          jctrl.toggleClass('hidden',!val);
         }
-        if(val) jctrl.show();
-        else jctrl.hide();
       }
       else{ jctrl.html(jsh.XExt.escapeHTMLBR(val)); }
+    }
+    else if ((jctrl.size() > 0) && jctrl.hasClass('xform_html')) {
+      if(lovTxt) val = lovTxt;
+      if(val.indexOf('<#') >= 0){
+        val = val.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
+        val = jsh.ejs.render(val, { 
+          data: _this, 
+          xejs: jsh.XExt.xejs, 
+          jsh: jsh, 
+          instance: jsh.getInstance(),
+          modelid: modelid,
+          js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
+        });
+      }
+      jctrl.html(val);
+      jctrl.toggleClass('hidden',!val);
     }
     else if ((jctrl.size() > 0) && (String(jctrl.prop('nodeName')).toUpperCase() == 'SELECT')) {
       //Check if SELECT has value.  If not, add it as an additional option at the end
@@ -415,8 +430,10 @@ exports = module.exports = function(jsh){
       var newval = this.GetValue(field);
       if (typeof newval === 'undefined') newval = '';
       if (newval === null) newval = '';
-      if (newval != oldval) { 
-        if(newval.toString() == oldval.toString()) return false;
+      if (newval != oldval) {
+        oldval = jsh.XExt.ReplaceAll(oldval.toString(), '\r\n', '\n');
+        newval = jsh.XExt.ReplaceAll(newval.toString(), '\r\n', '\n');
+        if(newval == oldval) return false;
         console.log(id + " Old: " + oldval); console.log(id + " New: " + newval); return true; 
       }
       return false;

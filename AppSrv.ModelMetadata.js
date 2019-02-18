@@ -437,12 +437,17 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
       //Add parameters from querystring
       _this.ApplyQueryParameters(Q, sql, lov_ptypes, lov_params, model);
 
+      var lov_db_function = lovdb.Recordset;
+      if(lov.values) lov_db_function = function(context,sql,ptypes,params,dbtrans,callback){
+        callback(null, lovdb.util.ParseLOVValues(jsh, lov.values), { notices: [], warnings: [] });
+      }
+
       dbtasks['_LOV_' + field.name] = function (dbtrans, callback, transtbl) {
         _this.ApplyTransTblChainedParameters(transtbl, sql, lov_ptypes, lov_params, model.fields);
-        lovdb.Recordset(req._DBContext, sql, lov_ptypes, lov_params, dbtrans, function (err, rslt, stats) {
+        lov_db_function.call(lovdb, req._DBContext, sql, lov_ptypes, lov_params, dbtrans, function (err, rslt, stats) {
           if (err == null) {
             //Generate warning if the LOV options are too long, and sqlselect, sqltruncate is not defined for the field
-            if(can_optimize && (rslt.length > 1000)){
+            if(can_optimize && (rslt.length > 1000) && !lov.values){
               jsh.Log.warning(model.id + ' > ' + field.name + ': More than 1000 results returned for LOV query.  Please consider implementing lov.sqlselect, lov.sqltruncate, and adding %%%TRUNCATE%%% to the LOV sql to improve performance.');
             }
             if (lov.showcode) {

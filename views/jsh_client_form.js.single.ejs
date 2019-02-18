@@ -19,7 +19,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 <%
 var no_B = true;
-_.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && (field.control != 'html') && (field.name) && (field.control != 'subform') && (field.control != 'button')) no_B = false; });
+_.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && !('value' in field) && (field.name) && (field.control != 'subform') && (field.control != 'button')) no_B = false; });
 %>
 
 (function(jsh){

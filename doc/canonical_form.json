@@ -267,6 +267,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "lov": { "UCOD2": "dscope_dctgr", "schema": "jsharmony","blank": 1,"parent": "ca_country" }, //Alternatively, blank can be set to text: "blank":"(None)" otherwise defaults to "Please Select..."
       "lov": { "GCOD": "e_ctgr", "showcode": 1 }, //showcode ignores the codetxt and shows the codeval on the front-end.  Useful for States
       "lov": { "GCOD2": "dscope_dctgr", "schema": "jsharmony","blank": 1,"parent": "ca_country" },
+      "lov": { "values": [{ "codeval": "ACTIVE", "codetxt": "Active" },{ "codeval": "CLOSED", "codetxt": "Closed" }] },
+      "lov": { "values": { "ACTIVE": "Active", "CLOSED": "Closed" } },
+      "lov": { "values": "#LOV_STATUS_AC" },
+          config.macros = {
+            "LOV_STATUS_AC": [{ "codeval": "ACTIVE", "codetxt": "Active" },{ "codeval": "CLOSED", "codetxt": "Closed" }] 
+          }
       "eol": 1,
       "popuplov": {  //Enable POPUPLOV, requires target grid
                        "target":  "J",

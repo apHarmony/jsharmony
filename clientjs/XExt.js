@@ -531,6 +531,7 @@ exports = module.exports = function(jsh){
     return rslt;
   }
   XExt.renderClientEJS = function(ejssrc,ejsparams){
+    if(!ejssrc) return '';
     if(ejssrc.indexOf('<#')<0) return ejssrc;
     ejssrc = ejssrc.replace(/<#/g, '<%').replace(/#>/g, '%>');
     return jsh.ejs.render(ejssrc,ejsparams);

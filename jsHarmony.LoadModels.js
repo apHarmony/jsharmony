@@ -812,7 +812,7 @@ exports.ParseEntities = function () {
     var isReadOnlyGrid = modelExt.isReadOnlyGrid;
     //Parse fields
     var firstfield = true;
-    var fieldnames = [];
+    var fieldnames = {};
     _.each(model.fields, function (field) {
       field._auto = field._auto || {};
       var fielddef = db.getFieldDefinition(model.table, field.name,tabledef);
@@ -969,7 +969,7 @@ exports.ParseEntities = function () {
         }
       }
       if(field.name && !('type' in field) && Helper.hasAction(field.actions, 'BIUD')){
-        if(!field.value && !field.html && !_.includes(['subform','html'],field.control)){
+        if(!field.value && !_.includes(['subform','html'],field.control)){
           field.type = 'varchar';
           if(!('length' in field)) field.length = -1;
         }
@@ -982,7 +982,7 @@ exports.ParseEntities = function () {
           }
           else if(('lov' in field) && !isReadOnlyGrid) field.control = 'dropdown';
           else if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
-            if(Helper.hasAction(field.actions, 'B') && !field.value && !field.html){
+            if(Helper.hasAction(field.actions, 'B') && !field.value){
               if(Helper.hasAction(field.actions, 'IU')){
                 codegen.applyControlDefaults(model.layout, false, sqlext, field);
                 _this.ApplyCustomControl(model, field);
@@ -990,6 +990,10 @@ exports.ParseEntities = function () {
               else field.control = 'label';
             }
             if(field.value) field.control = 'html';
+          }
+          else if(model.layout=='grid'){
+            if(Helper.hasAction(field.actions, 'B') && !field.value) field.control = 'label';
+            else if(field.value) field.control = 'html';
           }
           if('control' in field) field._auto.control = true;
         }
@@ -1020,14 +1024,17 @@ exports.ParseEntities = function () {
       }
       if(model.onecolumn){
         if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
-          if(!firstfield && ('control' in field)) field.nl = 1;
+          if(!firstfield && ('control' in field)){
+            if((field.control=='html') && ('value' in field) && !field.caption){ /* No action */ }
+            else field.nl = 1;
+          }
         }
       }
       if(!('datatype_config' in field)) field.datatype_config = {};
       if ('name' in field) {
         //if (_.includes(fieldnames, field.name)) { throw new Error("Duplicate field " + field.name + " in model " + model.id + "."); }
-        if (_.includes(fieldnames, field.name)) { _this.LogInit_ERROR('Duplicate field ' + field.name + ' in model ' + model.id + '.'); }
-        fieldnames.push(field.name);
+        if (fieldnames[field.name]) { _this.LogInit_ERROR('Duplicate field ' + field.name + ' in model ' + model.id + '.'); }
+        fieldnames[field.name] = 1;
       }
       if (field.key) { 
         field.actions += 'K'; 
@@ -1194,15 +1201,33 @@ exports.ParseEntities = function () {
           }
         }
       }
-      if(field.control && field.actions &&  !field.virtual && Helper.hasAction(field.actions, 'BIUD') && (field.control!='hidden')) firstfield = false;
+      if(firstfield && field.control && field.actions){
+        if(field.virtual) { /* No action */ }
+        else if(!Helper.hasAction(field.actions, 'BIUD')) { /* No action */ }
+        else if(field.control=='hidden') { /* No action */ }
+        else if((field.control=='html') && ('value' in field) && !field.caption) { /* No action */ }
+        else firstfield = false;
+      }
     });
     
-    //**DEPRECATED MESSAGES**
     if (model.fields) _.each(model.fields, function (field) {
+      //**DEPRECATED MESSAGES**
       if (field.actions && Helper.hasAction(field.actions, 'C')) _this.LogDeprecated(model.id + ' > ' + field.name + ': Action \'C\' has been deprecated - use breadcrumbs.sql_params');
       if ('hidden' in field) _this.LogDeprecated(model.id + ' > ' + field.name + ': The hidden attribute has been deprecated - use "control":"hidden"');
       if ('html' in field) _this.LogDeprecated(model.id + ' > ' + field.name + ': The html attribute has been deprecated - use "control":"html"');
       if ('lovkey' in field) _this.LogDeprecated(model.id + ' > ' + field.name + ': The lovkey attribute has been deprecated');
+
+      //Add automatic name
+      if(!field.name){
+        var fieldname = '';
+        if(field.control) fieldname += field.control + '_';
+        fieldname += 'control_';
+        var idx = 1;
+        while(fieldnames[fieldname+idx]) idx++;
+        fieldname = fieldname + idx;
+        field.name = fieldname;
+        fieldnames[fieldname] = 1;
+      }
     });
 
     //Check multisel
@@ -1345,7 +1370,7 @@ exports.ParseEntities = function () {
       'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'foreignkey', 'serverejs', 'roles', 'static', 'cellclass',
       'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'enable_search', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
       'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'always_editable_on_insert', 'precision', 'password', 'hash', 'salt', 'unbound',
-      'sqlselect', 'sqlupdate', 'sqlinsert','sqlsort', 'sqlwhere', 'sqlsearchsound', 'sqlsearch', 'onchange', 'lovkey', 'readonly', 'html', '__REMOVE__', '__AFTER__','_auto',
+      'sqlselect', 'sqlupdate', 'sqlinsert','sqlsort', 'sqlwhere', 'sqlsearchsound', 'sqlsearch', 'onchange', 'lovkey', 'readonly', '__REMOVE__', '__AFTER__','_auto',
       'sql_from_db','sql_to_db','sqlsearch_to_db','datatype_config'
     ];
     var _v_controlparams = [
@@ -1354,7 +1379,7 @@ exports.ParseEntities = function () {
       'image', 'thumbnails', 'expand_all', 'item_context_menu', 'insert_link', 'grid_save_before_update'
     ];
     var _v_popuplov = ['target', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
-    var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db'];
+    var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db', 'values'];
     //lov
     var existing_targets = [];
     for (let f in model) { if (f.substr(0, 7) == 'comment') continue; if (!_.includes(_v_model, f)) _this.LogInit_ERROR(model.id + ': Invalid model property: ' + f); }
@@ -1384,7 +1409,7 @@ exports.ParseEntities = function () {
       }
       //Check if the field has a type
       if(field.actions && field.name && !('type' in field) && !('value' in field) && (field.control != 'subform') && !field.unbound) _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Missing type.  Set a field.value or field.unbound if intentional.');
-      if(field.control && (model.layout=='grid') && !_.includes(['hidden','label','html','textbox','textzoom','date','textarea','dropdown','checkbox','button','linkbutton','file_download'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support ' + field.control + ' control');
+      if(field.control && (model.layout=='grid') && !_.includes(['hidden','label','html','textbox','textzoom','password','date','textarea','dropdown','checkbox','button','linkbutton','file_download'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support ' + field.control + ' control');
       if(((field.control == 'file_upload') || (field.control == 'file_download')) && (field.type != 'file')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The ' + field.control + ' control requires field.type="file"');
       if((field.control == 'file_download') && Helper.hasAction(field.actions, 'IU')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The file_download control field.actions must be "B" (browse-only).');
       //field.type=encascii, check if password is defined
@@ -1407,6 +1432,7 @@ exports.ParseEntities = function () {
           else if(hashfield.type != 'hash') _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The target field for field.hash must have field.type="hash"');
         }
       }
+      if(!('control' in field) && Helper.hasAction(field.actions, 'B')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field does not have a control defined');
     });
     if (no_B && model.breadcrumbs && model.breadcrumbs.sql) {
       _this.LogInit_ERROR(model.id + ': No fields set to B (Browse) action.  Form databinding will be disabled client-side, and breadcrumbs sql will not execute.');

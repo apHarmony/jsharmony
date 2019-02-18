@@ -33,7 +33,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   xdatamodel.prototype.Fields = {
-    <% _.each(model.fields,function(field){ if(!('actions' in field)) return; if(('unbound' in field) && field.unbound) return; if(field.control=='subform') return; if(field.control=='html') return; if(field.control=='button') return;  if(!field.name) return; if(!field.control) return; %>
+    <% _.each(model.fields,function(field){ if(!('actions' in field)) return; if(('unbound' in field) && field.unbound) return; if(field.control=='subform') return; if((field.control=='html') && ('value' in field)) return; if(!field.name) return; if(!field.control) return; %>
       "<%=field.name%>":{"name":"<%=field.name%>",
       <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
       <%-xejs.iif('actions' in field,'"actions":'+JSON.stringify(field.actions)+',') %>
@@ -59,6 +59,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       <% if(field.lov && field.lov.parent){ %>"lovparent":<%-JSON.stringify(field.lov.parent)%>, <% } %>
       <% if(field.lov && field.lov.parents){ %>"lovparents":<%-JSON.stringify(field.lov.parents)%>, <% } %>
       <% if(field.lov && ('blank' in field.lov)){ %>"lovblank":1, <% } %>
+      <% if(field.lov && !(field.lov.showcode)){ %>"showlovtxt":1, <% } %>
       }, <%});%>
   };
 

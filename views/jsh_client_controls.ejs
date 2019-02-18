@@ -47,11 +47,14 @@ for(var i=0;i<model.fields.length;i++){
   if((field.control=='html') || (field.control=='label')){
     //Render link
     if('link' in field){ 
-      %><a href="#" data-url="<%-field.link%>" class="xform_link" onclick="return (function(){<%-jslocals%><%-field.onclick%>;}).call(this)||false;"><%
+      %><a href="#" data-url="<%-field.link%>" class="xform_link" onclick="return (function(){<%-jslocals%><%-field.link_onclick%>;}).call(this)||false;"><%
     }
     //Render Control
-    if(field.control=='html'){
+    if(field.control=='html' && ('value' in field)){
       %><%-XExt.renderClientEJS(field.value,ejsparams)%><%
+    }
+    else if(field.control=='html'){
+      %><div ="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_html xelem<%=model.class%> <%=field.controlclass%>" onclick="return (function(){<%-jslocals%><%-field.onclick%>}).call(this);"></div><%
     }
     else if(field.control=='label'){
       %><div ="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_label xelem<%=model.class%> <%=field.controlclass%> <%=xejs.iif(field.value,'xform_label_static')%>" onclick="return (function(){<%-jslocals%><%-field.onclick%>}).call(this);"><%

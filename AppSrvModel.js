@@ -514,8 +514,9 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
       }
       else {
         dstfield.link = jsh.getURL(req, model, srcfield.link, undefined, model.fields);
-        if (!('onclick' in srcfield)) {
-          dstfield.onclick = jsh.getURL_onclick(req, model, srcfield.link);
+        dstfield.link_onclick = jsh.getURL_onclick(req, model, srcfield.link);
+        if (((srcfield.control=='button') || (srcfield.control=='linkbutton')) && !('onclick' in srcfield)) {
+          dstfield.onclick = dstfield.link_onclick;
         }
       }
     }

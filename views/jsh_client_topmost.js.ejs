@@ -595,7 +595,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     ejssrc=jsh.XExt.ReplaceAll(ejssrc,'data[j]','data');
     ejssrc = ejssrc.replace(/<#/g, '<' + '%').replace(/#>/g, '%' + '>');
-    console.log(ejssrc);
 
     var ejsrslt = jsh.ejs.render(ejssrc, {
       data: data,
