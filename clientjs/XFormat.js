@@ -23,6 +23,8 @@ var moment = require('moment');
 
 exports = module.exports = {};
 
+//Decode must be idempotent
+
 exports.phone = function(val){
 	if(!_.isString(val)) return val;
   if (val.length < 10) return val;
@@ -33,7 +35,7 @@ exports.phone = function(val){
 exports.phone_decode = function(val){
 	var rslt = val.replace(/[^0-9]+/g,'');
 	if(rslt=='') return rslt;
-	if(rslt[0]=='1') return rslt.substr(1);
+	while(rslt && (rslt[0]=='1')) rslt = rslt.substr(1);
 	return rslt;
 }
 
@@ -75,6 +77,7 @@ exports.date_decode = function (format, val){
   if (val === '') return null;
   if (val === null) return null;
   var m = moment(val, format, true);
+  if (!m.isValid()) m = this.parseDate(val);
   if (!m.isValid()) m = moment(new Date(val));
   return m.format("YYYY-MM-DDTHH:mm:ss.SSS");
   
@@ -150,11 +153,15 @@ exports.comma = function(val){
   return n.join(".");
 }
 
+function trimString(val){
+  return (val||'').replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g,'');
+}
+
 exports.comma_decode = function(val){
 	if (val === '') return val;
   if (val === null) return val;
   if (typeof val === 'undefined') return val;
-  var uval = $.trim(String(val).replace(/,/g,''));
+  var uval = trimString(String(val).replace(/,/g,''));
   if (isNaN(uval)) return val;
 	return parseFloat(uval);
 }
@@ -220,6 +227,12 @@ exports.time_decode = function (format, val) {
   //return m.format("HH:mm:ss.SSS");
 }
 
+exports.bool = function(val){
+  if (!_.isBoolean(val)) return val;
+  if(val) return 'true';
+  else return 'false';
+}
+
 exports.bool_decode = function (val) {
   if(typeof val == 'undefined') return false;
   if(val===null) return false;
@@ -245,4 +258,16 @@ exports.Apply = function(format,val){
 	}
   if(val == null) val = '';
 	return val;
+}
+
+exports.Decode = function(format, val){
+  if(typeof val == 'undefined') return val;
+  if(typeof format == 'undefined') return val;
+  if (_.isString(format)) return this[format + '_decode'](val);
+  else {
+    var fargs = [];
+    for (var i = 1; i < format.length; i++) fargs.push(format[i]);
+    fargs.push(val);
+    return this[format[0] + '_decode'].apply(this, fargs);
+  }
 }

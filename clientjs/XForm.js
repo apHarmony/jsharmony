@@ -506,6 +506,7 @@ exports = module.exports = function(jsh){
     var rslt = {};
     _.each(_this.Data.Fields,function(field){
       if (!jsh.XExt.hasAction(field.actions, action)) return;
+      if (field.unbound) return;
       if((typeof _this.Data[field.name] == 'undefined') && (field.name in jsh.XModels[_this.q].bindings)){
         rslt[field.name] = '%%%'+field.name+'%%%';
       }

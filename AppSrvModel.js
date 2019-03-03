@@ -124,6 +124,8 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
   var fullmodelid = model.id;
   
   var targetperm = 'B';
+  if(model.unbound) targetperm = 'U';
+  
   if ('action' in req.query) {
     if (req.query.action == 'insert') targetperm = 'I';
     else if (req.query.action == 'update') targetperm = 'U';

@@ -558,7 +558,7 @@ exports.LogInit = function(severity, msg) {
   if ((this.Config.debug_params.jsh_error_level & severity) > 0) {
     switch (severity) {
       case _ERROR:{ console.log("ERROR: " + msg); this.SystemErrors.push(msg); break; }
-      case _WARNING: console.log("WARNING: " + msg); break;
+      case _WARNING: console.log("WARNING: " + msg); this.SystemErrors.push(msg); break;
       default: _this.Log.info(msg); break;
     }
   }

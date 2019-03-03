@@ -68,9 +68,14 @@ MAIN ELEMENTS
   padding:0 0 22px 0;
 	line-height:1.4em;
 }
-<%-rootcss%> input {
+<%-rootcss%> input,
+<%-rootcss%> textarea {
   font-family: 'PT Sans', arial, helvetica, sans-serif;
 	padding-left:3px;
+}
+<%-rootcss%> select {
+  padding-top:2px;
+  padding-bottom:2px;
 }
 
 /*

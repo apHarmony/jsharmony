@@ -190,7 +190,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
       //Pass parameters from querystring
       if(!xmodel.inlinepopup){
-        for(var fieldname in xmodel.datamodel.prototype.Fields){
+        for(var fieldname in xmodel.fields){
+          if(xmodel.fields[fieldname].unbound) continue;
           if((fieldname in jsh._GET) && !(fieldname in xgrid.Data) && (xmodel.constant_bindings.indexOf(fieldname)<0)){
             var fieldval = jsh._GET[fieldname];
             if((typeof fieldval !== 'undefined') && (fieldval !== null)){
@@ -444,8 +445,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var rowdata = xform.DataSet[rowid];
     if(!rowdata) throw new Error('Row not found');
     var rslt = {};
-    for(var fieldname in xmodel.datamodel.prototype.Fields){
-      var field = xmodel.datamodel.prototype.Fields[fieldname];
+    for(var fieldname in xmodel.fields){
+      var field = xmodel.fields[fieldname];
       if(field.key) rslt[fieldname] = rowdata[fieldname];
     }
     return rslt;

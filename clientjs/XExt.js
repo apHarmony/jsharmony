@@ -428,8 +428,11 @@ exports = module.exports = function(jsh){
       return true;
     },
     'GetValue': function (field) {
-      if ('sample' in field) return field.sample;
-      return '';
+      var val = '';
+      if ('sample' in field) val = field.sample;
+      if ('value' in field) val = field.value;
+      if (val && ('format' in field)) val = jsh.XFormat.Apply(field.format, val);
+      return val;
     },
     'getInputType': function (field) {
       if (field && field.validate) {
@@ -1214,7 +1217,7 @@ exports = module.exports = function(jsh){
     var parentfield = null;
     if (parentmodelid){
       var parentmodel = jsh.XModels[parentmodelid];
-      parentfield = parentmodel.datamodel.prototype.Fields[fieldid];
+      parentfield = parentmodel.fields[fieldid];
       parentmodelclass = parentmodel.class;
     }
     if (!parentobj) parentobj = jsh.$root('.' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelclass);

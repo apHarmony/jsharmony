@@ -2,13 +2,11 @@
   "comment":"*** Default Controls ***",
   "date_mmddyy":{
 		"control":"date",
-		"controlparams":{"dateformat":"mm/dd/y"},
 		"format":["date","MM/DD/YY"],
 		"controlclass":"xdate_mmddyy"
 	},
 	"date_mmddyyyy":{
 		"control":"date",
-		"controlparams":{"dateformat":"mm/dd/yy"},
 		"format":["date","MM/DD/YYYY"],
 		"controlclass":"xdate_mmddyy"
   },
@@ -19,7 +17,6 @@
   },
   "label_mmddyyyy":{
 		"control":"label",
-		"controlparams":{"dateformat":"mm/dd/yy"},
 		"format":["date","MM/DD/YYYY"],
 		"controlclass":"xlabel_mmddyy"
   },

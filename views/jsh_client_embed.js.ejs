@@ -99,9 +99,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if(xmodel.bindings && (bindingname in xmodel.bindings)) return true;
     if(xmodel.id==jsh.XModels_root){
       if(xmodel.datamodel){
-        for(var fieldname in xmodel.datamodel.prototype.Fields){
+        for(var fieldname in xmodel.fields){
           if(fieldname != bindingname) continue;
-          var field = xmodel.datamodel.prototype.Fields[fieldname];
+          var field = xmodel.fields[fieldname];
+          if(field.unbound) continue;
           if((field.key || field.lovkey) && (field.name in jsh._GET)) return true;
         }
       }

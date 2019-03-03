@@ -116,7 +116,10 @@ exports = module.exports = function(jsh){
   XExtXModel.RenderField = function (_this, parentobj, modelid, field, val){
     var xmodel = jsh.XModels[modelid];
     var isGrid = (xmodel.layout == 'grid');
-    if(typeof val === 'undefined') val = _this[field.name];
+    if(typeof val === 'undefined'){
+      if(field.unbound) val = xmodel.get(field.name);
+      else val = _this[field.name];
+    }
     //Apply formatting
     if ((field.name in _this) && (typeof val == 'undefined')) val = '';
     else val = jsh.XFormat.Apply(field.format, val);
@@ -292,23 +295,25 @@ exports = module.exports = function(jsh){
     return function (obj, e) {
       var jobj = $(obj);
       var id = $(obj).data('id');
-      var field = this.Fields[id];
       var _this = this;
-      if (!this._is_insert) {
-        if (this.HasUpdate(id)) {
-          if (!jobj.hasClass('updated')) {
-            jobj.addClass('updated');
-            if(jobj.parent().hasClass('checkbox_container')) jobj.parent().addClass('updated');
+      var field = this.Fields[id];
+      if(field){
+        if (!this._is_insert && !field.unbound) {
+          if (this.HasUpdate(id)) {
+            if (!jobj.hasClass('updated')) {
+              jobj.addClass('updated');
+              if(jobj.parent().hasClass('checkbox_container')) jobj.parent().addClass('updated');
+            }
+          }
+          else {
+            if (jobj.hasClass('updated')) {
+              jobj.removeClass('updated');
+              if (jobj.parent().hasClass('checkbox_container')) jobj.parent().removeClass('updated');
+            }
           }
         }
-        else {
-          if (jobj.hasClass('updated')) {
-            jobj.removeClass('updated');
-            if (jobj.parent().hasClass('checkbox_container')) jobj.parent().removeClass('updated');
-          }
-        }
+        if ('onchange' in field) { var rslt = (new Function('obj', 'newval', 'e', field.onchange)); rslt.call(_this, obj, _this.GetValue(field), e); }
       }
-      if ('onchange' in field) { var rslt = (new Function('obj', 'newval', 'e', field.onchange)); rslt.call(_this, obj, _this.GetValue(field), e); }
     };
   };
 
@@ -317,6 +322,7 @@ exports = module.exports = function(jsh){
       var _this = this;
       _.each(this.Fields, function (field) {
         if (!(('virtual' in field) && field.virtual) && !jsh.XExt.hasAction(field.actions, perm)) return;
+        if (field.unbound) return;
         var newval = _this.GetValue(field);
         //if (!('control' in field) && (newval == undefined)) return;
         _this[field.name] = newval;
@@ -388,14 +394,7 @@ exports = module.exports = function(jsh){
         else val = field.static;
       }
       if ('format' in field) {
-        var format = field.format;
-        if (_.isString(format)) val = jsh.XFormat[format + '_decode'](val);
-        else {
-          var fargs = [];
-          for (var i = 1; i < format.length; i++) fargs.push(format[i]);
-          fargs.push(val);
-          val = jsh.XFormat[format[0] + '_decode'].apply(this, fargs);
-        }
+        val = jsh.XFormat.Decode(field.format, val);
       }
       return val;
     };
@@ -411,6 +410,7 @@ exports = module.exports = function(jsh){
       var hasUpdates = false;
       _.each(this.Fields, function (field) {
         if (!jsh.XExt.hasAction(field.actions, action)) return;
+        if (field.unbound) return;
         if (_this.HasUpdate(field.name)) { hasUpdates = true; }
       });
       return hasUpdates;
@@ -422,9 +422,11 @@ exports = module.exports = function(jsh){
       if (jsh.XModels[this._modelid].layout=='exec') return false;
       if (jsh.XModels[this._modelid].layout=='report') return false;
       var field = this.Fields[id];
+      if (!field) return false;
       if (('virtual' in field) && field.virtual) return false;
       if (('static' in field) && field.static) return false;
       var oldval = this[id];
+      oldval = jsh.XFormat.Decode(field.format, oldval);
       if (typeof oldval === 'undefined') oldval = '';
       if (oldval === null) oldval = '';
       var newval = this.GetValue(field);

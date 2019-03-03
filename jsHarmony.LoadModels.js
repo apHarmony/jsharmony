@@ -578,7 +578,7 @@ exports.ParseEntities = function () {
         else model.actions = 'BIUD';
       }
       else{
-        if(model.unbound) model.actions = 'B';
+        if(model.unbound) model.actions = 'BU';
         else model.actions = 'BIUD';
       }
     }
@@ -965,6 +965,10 @@ exports.ParseEntities = function () {
             else if(field.control=='label') field.actions = 'B';
             else field.actions = 'BIU';
           }
+          if(!field.name && field.type && field.actions){
+            //Calculated database field
+            field.actions = 'B';
+          }
           //_this.LogInit_WARNING('Model ' + model.id + ' Field ' + (field.name || field.caption || JSON.stringify(field)) + ' missing actions - defaulting to "'+field.actions+'"');
         }
       }
@@ -1216,10 +1220,11 @@ exports.ParseEntities = function () {
       if ('hidden' in field) _this.LogDeprecated(model.id + ' > ' + field.name + ': The hidden attribute has been deprecated - use "control":"hidden"');
       if ('html' in field) _this.LogDeprecated(model.id + ' > ' + field.name + ': The html attribute has been deprecated - use "control":"html"');
       if ('lovkey' in field) _this.LogDeprecated(model.id + ' > ' + field.name + ': The lovkey attribute has been deprecated');
+      if (field.controlparams && ('dateformat' in field.controlparams)) _this.LogDeprecated(model.id + ' > ' + field.name + ': The field.controlparams.dateformat attribute has been deprecated - please remove and use "format":["date","MM/DD/YY"]');
 
       //Add automatic name
       if(!field.name){
-        var fieldname = '';
+        var fieldname = 'unnamed_';
         if(field.control) fieldname += field.control + '_';
         fieldname += 'control_';
         var idx = 1;
@@ -1227,6 +1232,17 @@ exports.ParseEntities = function () {
         fieldname = fieldname + idx;
         field.name = fieldname;
         fieldnames[fieldname] = 1;
+      }
+
+      //Add dateformat
+      if(field.control=='date'){
+        if(!('format' in field)) field.format = ["date","YYYY-MM-DD"];
+        if((field.control=='date') && (!field.controlparams || !('dateformat' in field.controlparams))){
+          if(('format' in field) && _.isArray(field.format) && (field.format.length>=2) && (field.format[0]=='date')){
+            if(!field.controlparams) field.controlparams = {};
+            field.controlparams.dateformat = _this.getDatepickerFormat(field.format[1], model.id + ' > ' + field.name);
+          }
+        }
       }
     });
 
@@ -1374,7 +1390,7 @@ exports.ParseEntities = function () {
       'sql_from_db','sql_to_db','sqlsearch_to_db','datatype_config'
     ];
     var _v_controlparams = [
-      'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'dateformat', 'base_readonly',
+      'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'base_readonly', 'dateformat',
       'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'sqlparams', '_data_file_has_extension',
       'image', 'thumbnails', 'expand_all', 'item_context_menu', 'insert_link', 'grid_save_before_update'
     ];
@@ -1408,7 +1424,7 @@ exports.ParseEntities = function () {
         else _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Duplicate target - each field target must be unique within a model');
       }
       //Check if the field has a type
-      if(field.actions && field.name && !('type' in field) && !('value' in field) && (field.control != 'subform') && !field.unbound) _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Missing type.  Set a field.value or field.unbound if intentional.');
+      if(field.actions && field.name && !('type' in field) && !('value' in field) && (field.control != 'subform') && !field.unbound) _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Missing field.type property.  Set field.value or field.unbound if it should not be bound to the data layer.');
       if(field.control && (model.layout=='grid') && !_.includes(['hidden','label','html','textbox','textzoom','password','date','textarea','dropdown','checkbox','button','linkbutton','file_download'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support ' + field.control + ' control');
       if(((field.control == 'file_upload') || (field.control == 'file_download')) && (field.type != 'file')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The ' + field.control + ' control requires field.type="file"');
       if((field.control == 'file_download') && Helper.hasAction(field.actions, 'IU')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The file_download control field.actions must be "B" (browse-only).');
@@ -1433,6 +1449,7 @@ exports.ParseEntities = function () {
         }
       }
       if(!('control' in field) && Helper.hasAction(field.actions, 'B')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field does not have a control defined');
+      if(field.control && model.unbound) field.unbound = true;
     });
     if (no_B && model.breadcrumbs && model.breadcrumbs.sql) {
       _this.LogInit_ERROR(model.id + ': No fields set to B (Browse) action.  Form databinding will be disabled client-side, and breadcrumbs sql will not execute.');
@@ -2041,6 +2058,162 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     }
     if ((field.control == 'subform') && !('bindings' in field)) _this.LogInit_WARNING('Model ' + model.id + ' subform ' + field.name + ' missing binding.');
   });
+}
+
+exports.getDatepickerFormat = function(fstr, fdesc){
+  /*
+  Moment Format String
+  --------------------
+  >>> Month	
+  M	1 2 ... 11 12
+  Mo	1st 2nd ... 11th 12th
+  MM	01 02 ... 11 12
+  MMM	Jan Feb ... Nov Dec
+  MMMM	January February ... November December
+  >>> Quarter
+  Q	1 2 3 4
+  Qo	1st 2nd 3rd 4th
+  >>> Day of Month
+  D	1 2 ... 30 31
+  Do	1st 2nd ... 30th 31st
+  DD	01 02 ... 30 31
+  >>> Day of Year
+  DDD	1 2 ... 364 365
+  DDDo	1st 2nd ... 364th 365th
+  DDDD	001 002 ... 364 365
+  >>> Day of Week
+  d	0 1 ... 5 6
+  do	0th 1st ... 5th 6th
+  dd	Su Mo ... Fr Sa
+  ddd	Sun Mon ... Fri Sat
+  dddd	Sunday Monday ... Friday Saturday
+  >>> Day of Week (Locale)
+  e	0 1 ... 5 6
+  >>> Day of Week (ISO)
+  E	1 2 ... 6 7
+  >>> Week of Year
+  w	1 2 ... 52 53
+  wo	1st 2nd ... 52nd 53rd
+  ww	01 02 ... 52 53
+  >>> Week of Year (ISO)
+  W	1 2 ... 52 53
+  Wo	1st 2nd ... 52nd 53rd
+  WW	01 02 ... 52 53
+  >>> Year
+  YY	70 71 ... 29 30
+  YYYY	1970 1971 ... 2029 2030
+  Y	1970 1971 ... 9999 +10000 +10001 
+  Note: This complies with the ISO 8601 standard for dates past the year 9999
+  >>> Week Year
+  gg	70 71 ... 29 30
+  gggg	1970 1971 ... 2029 2030
+  >>> Week Year (ISO)
+  GG	70 71 ... 29 30
+  GGGG	1970 1971 ... 2029 2030
+  >>> AM/PM
+  A	AM PM
+  a	am pm
+  >>> Hour
+  H	0 1 ... 22 23
+  HH	00 01 ... 22 23
+  h	1 2 ... 11 12
+  hh	01 02 ... 11 12
+  k	1 2 ... 23 24
+  kk	01 02 ... 23 24
+  >>> Minute
+  m	0 1 ... 58 59
+  mm	00 01 ... 58 59
+  >>> Second
+  s	0 1 ... 58 59
+  ss	00 01 ... 58 59
+  >>> Fractional Second
+  S	0 1 ... 8 9
+  SS	00 01 ... 98 99
+  SSS	000 001 ... 998 999
+  SSSS ... SSSSSSSSS	000[0..] 001[0..] ... 998[0..] 999[0..]
+  >>> Time Zone
+  z or zz	EST CST ... MST PST 
+  Note: as of 1.6.0, the z/zz format tokens have been deprecated from plain moment objects. Read more about it here. However, they *do* work if you are using a specific time zone with the moment-timezone addon.
+  Z	-07:00 -06:00 ... +06:00 +07:00
+  ZZ	-0700 -0600 ... +0600 +0700
+  >>> Unix Timestamp
+  X	1360013296
+  >>> Unix Millisecond Timestamp
+  x	1360013296123
+
+  jQuery Format String
+  --------------------
+  d - day of month (no leading zero)
+  dd - day of month (two digit)
+  o - day of the year (no leading zeros)
+  oo - day of the year (three digit)
+  D - day name short
+  DD - day name long
+  m - month of year (no leading zero)
+  mm - month of year (two digit)
+  M - month name short
+  MM - month name long
+  y - year (two digit)
+  yy - year (four digit)
+  @ - Unix timestamp (ms since 01/01/1970)
+  ! - Windows ticks (100ns since 01/01/0001)
+  '...' - literal text
+  '' - single quote
+
+  d   > D
+  dd  > DD
+  o   > DDD
+  oo  > DDDD
+  D   > ddd
+  DD  > dddd
+  m   > M
+  mm  > MM
+  M   > MMM
+  MM  > MMMM
+  y   > YY
+  yy  > YYYY
+  @   > X
+
+  1. Front to back, convert all non-tokens to literals
+  2. Merge literals
+  */
+  var tokens = {
+    'DDDD': 'oo',
+    'dddd': 'DD',
+    'MMMM': 'MM',
+    'YYYY': 'yy',
+    'DDD': 'o',
+    'ddd': 'D',
+    'MMM': 'M',
+    'DD': 'dd',
+    'MM': 'mm',
+    'YY': 'y',
+    'D': 'd',
+    'M': 'm',
+    'X': '@',
+  };
+  var rslt = (fstr||'').toString();
+  var unsupported = false;
+  for(var i=0;i<rslt.length;i++){
+    var found_token = false;
+    for(var token in tokens){
+      if(rslt.substr(i,token.length)==token){
+        found_token = true;
+        rslt = rslt.substr(0,i) + tokens[token] + rslt.substr(i+token.length);
+        i += tokens[token].length - 1;
+        break;
+      }
+    }
+    if(!found_token){
+      if(((rslt[i] >= 'A') && (rslt[i] <= 'Z')) || ((rslt[i] >= 'a') && (rslt[i] <= 'z'))){
+        unsupported = true;
+      }
+    }
+  }
+  if(unsupported){
+    this.LogInit_ERROR(fdesc + ': Unsupported date format for date control: "' + fstr + '", please use only D/DD/DDD/DDDD/ddd/dddd/M/MM/MMM/MMMM/YY/YYYY/X');
+  }
+  return rslt;
 }
 
 exports.ParsePopups = function () {
