@@ -430,7 +430,7 @@ exports = module.exports = function(jsh){
     'GetValue': function (field) {
       var val = '';
       if ('sample' in field) val = field.sample;
-      if ('value' in field) val = field.value;
+      if ('default' in field) val = field.default;
       if (val && ('format' in field)) val = jsh.XFormat.Apply(field.format, val);
       return val;
     },

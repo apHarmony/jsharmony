@@ -34,6 +34,7 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && !('
 
   xcontroller.Init = function(callback){
     xform = xcontroller.form = new jsh.XForm(modelid,'','');
+    xform.DataType = xmodel.datamodel;
     xform.Data = new xmodel.datamodel();
 
     <% xejs.eachKey(model.fields,function(field){  if(!field.name) return; %>xform.Data['<%=field['name']%>'] = xmodel.getBindingOrRootKey('<%=field['name']%>');<%}); %>
@@ -86,7 +87,11 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && !('
     jsh.$root(".<%=field.name%>.xelem"+xmodel.class).datepicker({ changeMonth: true, changeYear: true, dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||jsh.DEFAULT_DATEFORMAT), onSelect: function(){ if(jsh.is_insert) return; xform.Data.OnControlUpdate(this); } });
     <% } }); %>
 
-    if(xmodel.unbound) xmodel.controller.form.Render();
+    if(xmodel.unbound){
+      _.each(xmodel.fields, function(field){
+        if('default' in field) xmodel.set(field.name, field.default);
+      });
+    }
 
     callback();
   }

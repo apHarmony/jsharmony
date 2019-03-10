@@ -184,7 +184,7 @@ exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
     if (!field.name) continue;
     if ('default' in field) {
       var dflt = field['default'];
-      if (_.isString(dflt)) _defaults[field.name] = field.default;
+      if (_.isString(dflt) || _.isNumber(dflt) || _.isBoolean(dflt)) _defaults[field.name] = field.default;
       else {
         var sql = '';
         if ('sql' in dflt) { sql = dflt.sql; }

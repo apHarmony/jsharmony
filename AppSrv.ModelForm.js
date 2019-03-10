@@ -213,9 +213,12 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
     };
   }
   //Default Values
-  if (is_insert || (selecttype == 'multiple')) {
+  var has_unbound_field_with_default = false;
+  _.each(model.fields, function(field){ if(field.unbound && field.default) has_unbound_field_with_default = true; });
+  if (is_insert || (selecttype == 'multiple') || has_unbound_field_with_default) {
     if(_this.addDefaultTasks(req, res, model, Q, dbtasks[1])===false) return;
   }
+
   //Titles
   var targetperm = 'U';
   if(is_browse) targetperm = 'B';
@@ -458,6 +461,9 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
       _.each(fields, function (field) {
         var fname = field.name;
         if(field.sqlupdate==='') return;
+        if((field.control=='password')&&
+           ((typeof P[fname]=='undefined')||(P[fname]===null)||(P[fname]===''))&&
+           (!field.controlparams || !field.controlparams.update_when_blank)) return;
         if (fname in P) {
           var dbtype = _this.getDBType(field);
           sql_ptypes.push(dbtype);

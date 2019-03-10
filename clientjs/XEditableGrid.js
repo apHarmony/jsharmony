@@ -296,7 +296,7 @@ exports = module.exports = function(jsh){
         changeMonth: true, changeYear: true, dateFormat: dateformat, duration: '', showAnim: '', onSelect: function () {
           jsh.ignorefocusHandler = true;
           window.setTimeout(function () {
-            window.setTimeout(function () { jsh.ignorefocusHandler = false; _this.ControlUpdate(ctrl); }, 1);
+            window.setTimeout(function () { $(ctrl).next('.datepicker_handle').focus(); jsh.ignorefocusHandler = false; _this.ControlUpdate(ctrl); }, 1);
           }, 1);
         }
       });

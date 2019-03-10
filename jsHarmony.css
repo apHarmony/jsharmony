@@ -27,6 +27,7 @@ MAIN ELEMENTS
 <%-rootcss%> .hidden { display:none !important; }
 <%-rootcss%> a img {	border: none; }
 <%-rootcss%> img a {	border:0; }
+<%-rootcss%> .nofocus:focus { outline: none; }
 <%-rootcss%> div.nobr { white-space:nowrap; display:inline-block; }
 <%-rootcss%> .notextselect {
   user-select: none;
@@ -211,6 +212,7 @@ BODY
 <%-rootcss%> .xform_file_download .linkbutton img { padding-left:0px; }
 <%-rootcss%> .xform_file_download .xform_file_download_button { padding-right:25px; }
 <%-rootcss%> .xform_file_download.nodocument .xform_file_download_button { display:none; }
+<%-rootcss%> .xform .xform_label,
 <%-rootcss%> .xform input,
 <%-rootcss%> .xform select,
 <%-rootcss%> .xform textarea {
@@ -219,6 +221,9 @@ BODY
 <%-rootcss%> .xform_ctrl_textarea {
   width:400px;
   height:50px;
+}
+<%-rootcss%> .xform_ctrl_button {
+  padding:1px 6px;
 }
 <%-rootcss%> .xtbl td input,
 <%-rootcss%> .xtbl td textarea {
@@ -247,6 +252,11 @@ BODY
   display:inline-block;
   vertical-align:top;
   resize: none;
+}
+<%-rootcss%> .xform_ctrl_textzoom_container {
+  white-space:nowrap;
+  display:inline-block;
+  vertical-align:top;
 }
 <%-rootcss%> .xpopuplov_column {
   white-space:nowrap;

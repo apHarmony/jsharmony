@@ -292,6 +292,7 @@ exports.ParseInheritance = function () {
         //Restore Merged Properties
         _.each(mergedprops, function (val, key) { _this.Models[model.id][key] = val; });
         for (var prop in _this.Models[model.id]) { if (_this.Models[model.id][prop] == '__REMOVEPROPERTY__') { delete _this.Models[model.id][prop]; } }
+        _.each(_this.Models[model.id].fields, function(field){ if(!field) return; for (var prop in field) { if (field[prop] == '__REMOVEPROPERTY__') { delete field[prop]; } } });
         delete _this.Models[model.id].inherits;
       }
     });
@@ -697,11 +698,7 @@ exports.ParseEntities = function () {
       if(!foundkey && auto_keys && tabledef){
         _.each(tabledef.fields, function(fielddef){
           if(fielddef.coldef && fielddef.coldef.primary_key){
-            model.fields.push({ 
-              name: fielddef.name, 
-              key: 1,
-              control: 'hidden'
-            });
+            addHiddenField(model, fielddef.name, { key: 1 });
             foundkey = true;
             model._auto.primary_key = 1;
           }
@@ -856,6 +853,7 @@ exports.ParseEntities = function () {
                   if(autofield.captionclass) field.captionclass = autofield.captionclass + ' ' + (field.captionclass||'');
                   if(autofield.controlclass) field.controlclass = autofield.controlclass + ' ' + (field.controlclass||'');
                 }
+                if(field.control && (model.layout=='multisel') && (field.control != 'hidden')) field.control = 'label';
                 field._auto.control = true;
                 
               }
@@ -1244,6 +1242,9 @@ exports.ParseEntities = function () {
           }
         }
       }
+
+      //Set field.unbound if model.unbound
+      if(field.control && model.unbound) field.unbound = true;
     });
 
     //Check multisel
@@ -1418,6 +1419,7 @@ exports.ParseEntities = function () {
         for (let f in field.lov) { if (!_.includes(_v_lov, f)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Invalid lov parameter: ' + f); }
       }
       if (_.includes(['label','button','linkbutton'],field.control) && Helper.hasAction(field.actions, 'IUD')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': A '+field.control+' can only have action B');
+      if (field.value && !_.includes(['label','html','button','linkbutton'],field.control)){ _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field.value property is only supported for label, html, button, and linkbuttons controls.  Use field.default instead.'); }
       //Check unique target
       if (field.target) {
         if (!_.includes(existing_targets, field.target)) existing_targets.push(field.target);
@@ -1426,6 +1428,8 @@ exports.ParseEntities = function () {
       //Check if the field has a type
       if(field.actions && field.name && !('type' in field) && !('value' in field) && (field.control != 'subform') && !field.unbound) _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Missing field.type property.  Set field.value or field.unbound if it should not be bound to the data layer.');
       if(field.control && (model.layout=='grid') && !_.includes(['hidden','label','html','textbox','textzoom','password','date','textarea','dropdown','checkbox','button','linkbutton','file_download'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support ' + field.control + ' control');
+      if(field.control && (model.layout=='multisel') && !_.includes(['hidden','label'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Multisel does not support ' + field.control + ' control');
+      if(field.unbound && (model.layout=='multisel')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Multisel does not support unbound controls');
       if(((field.control == 'file_upload') || (field.control == 'file_download')) && (field.type != 'file')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The ' + field.control + ' control requires field.type="file"');
       if((field.control == 'file_download') && Helper.hasAction(field.actions, 'IU')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The file_download control field.actions must be "B" (browse-only).');
       //field.type=encascii, check if password is defined
@@ -1449,7 +1453,10 @@ exports.ParseEntities = function () {
         }
       }
       if(!('control' in field) && Helper.hasAction(field.actions, 'B')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field does not have a control defined');
-      if(field.control && model.unbound) field.unbound = true;
+      if(model.unbound){
+        if(field.default && field.default.sql) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Cannot use field.default.sql when model.unbound is set');
+        if(field.lov) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Cannot use field.lov when model.unbound is set');
+      }
     });
     if (no_B && model.breadcrumbs && model.breadcrumbs.sql) {
       _this.LogInit_ERROR(model.id + ': No fields set to B (Browse) action.  Form databinding will be disabled client-side, and breadcrumbs sql will not execute.');
@@ -1460,13 +1467,25 @@ exports.ParseEntities = function () {
     if(model.unbound){
       _.each(['table','sqlselect','sqlinsert','sqlupdate','sqldelete','sqlexec','sqlrowcount','sqldownloadselect','sqlinsertencrypt'],function(prop){
         if(model[prop]){
-          _this.LogInit_WARNING(model.id + ': Model has both "unbound" and "'+prop+'" properties.  The "'+prop+'" property cannot be used with unbound forms.');
+          _this.LogInit_ERROR(model.id + ': Model has both "unbound" and "'+prop+'" properties.  The "'+prop+'" property cannot be used with unbound forms.');
         }
       });
+      if(model.breadcrumbs){
+        if(model.breadcrumbs.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.breadcrumbs.sql when model.unbound is set');
+        if(model.breadcrumbs.insert && model.breadcrumbs.insert.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.breadcrumbs.insert.sql when model.unbound is set');
+        if(model.breadcrumbs.update && model.breadcrumbs.update.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.breadcrumbs.update.sql when model.unbound is set');
+        if(model.breadcrumbs.browse && model.breadcrumbs.browse.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.breadcrumbs.browse.sql when model.unbound is set');
+      }
+      if(model.title){
+        if(model.title.sql) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Cannot use model.title.sql when model.unbound is set');
+        if(model.title.insert && model.title.insert.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.title.insert.sql when model.unbound is set');
+        if(model.title.update && model.title.update.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.title.update.sql when model.unbound is set');
+        if(model.title.browse && model.title.browse.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.title.browse.sql when model.unbound is set');
+      }
     }
-    if((model.layout=='exec')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_WARNING(model.id + ': Exec layout only supports BU actions');
-    else if((model.layout=='multisel')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_WARNING(model.id + ': Multisel layout only supports BU actions');
-    else if((model.layout=='report')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_WARNING(model.id + ': Report layout only supports BU actions');
+    if((model.layout=='exec')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_ERROR(model.id + ': Exec layout only supports BU actions');
+    else if((model.layout=='multisel')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_ERROR(model.id + ': Multisel layout only supports BU actions');
+    else if((model.layout=='report')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_ERROR(model.id + ': Report layout only supports BU actions');
 
     //Generate Validators
     _.each(model.fields, function (field) {
@@ -1665,6 +1684,15 @@ exports.ParseEntities = function () {
 
 function ParseMultiLineProperties(obj, arr) {
   _.each(arr, function (p) { if (p in obj) obj[p] = Helper.ParseMultiLine(obj[p]); });
+}
+
+function addHiddenField(model, fieldname, props){
+  var newfield = _.extend({ 
+    name: fieldname,
+    control: 'hidden'
+  }, props);
+  if(model.layout=='grid') newfield.disable_search = true;
+  model.fields.push(newfield);
 }
 
 exports.forEachSqlParam = function(model, sql, f){ /* f(pfield_name) */
@@ -1894,11 +1922,7 @@ exports.AddBindingFields = function(model, element, elementname, modelsExt){
           if(auto_keys && ttabledef){
             //Add foreign key based on binding
             if(childKey in ttabledef.fields){
-              tmodel.fields.push({ 
-                name: childKey, 
-                foreignkey: 1,
-                control: 'hidden'
-              });
+              addHiddenField(tmodel, childKey, { foreignkey: 1 });
               created_field = true;
             }
           }
@@ -1913,10 +1937,7 @@ exports.AddBindingFields = function(model, element, elementname, modelsExt){
           if(auto_keys && tabledef){
             //Add foreign key based on binding
             if(binding in tabledef.fields){
-              model.fields.push({ 
-                name: binding,
-                control: 'hidden'
-              });
+              addHiddenField(model, binding);
               created_field = true;
             }
           }
@@ -2011,7 +2032,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
   }
   if ('duplicate' in model) {
     let tmodel = jsh.getModel(null,model.duplicate.target,model);
-    if (!tmodel) { _this.LogInit_WARNING('Invalid duplicate model ' + model.duplicate + ' in ' + model.id); return; }
+    if (!tmodel) { _this.LogInit_ERROR(model.id + ' > Duplicate: Invalid target'); return; }
     if(tmodel.layout != 'exec') { _this.LogInit_ERROR(model.id + ' > Duplicate: Target model should have "exec" layout'); }
     tmodel._parentmodels.duplicate[model.id] = 1;
     model.duplicate.target = tmodel.id;
@@ -2032,7 +2053,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
   _.each(model.fields, function (field) {
     if (('target' in field) && ((field.control == 'subform') || (field.popuplov))) {
       let tmodel = jsh.getModel(null,field.target,model);
-      if (!tmodel) { _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Invalid target model "' + field.target + '"'); return; }
+      if (!tmodel) { _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Invalid target model "' + field.target + '"'); return; }
       if(field.control=='subform') tmodel._parentmodels.subform[model.id] = 1;
       else if(field.popuplov) tmodel._parentmodels.popuplov[model.id] = 1;
       field.target = tmodel.id;

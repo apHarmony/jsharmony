@@ -19,19 +19,24 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 //DataModel
 (function(jsh){
   var $ = jsh.$;
+  var _ = jsh._;
   var XExt = jsh.XExt;
   var XValidate = jsh.XValidate;
   var modelid = '<%=model.id%>';
   var xmodel = jsh.XModels[modelid];
 
   var xdatamodel = xmodel.datamodel = function(){
+    var _this = this;
     this._jrow = undefined;
     this._is_insert = (xmodel.unbound?false:true);
     this._is_dirty = true;
     this._is_deleted = false;
     this._orig = null;
     this._modelid = modelid;
-    <% _.each(model.fields,function(field){ if(!field.name) return; %>this.<%=field.name%> = '';<%});%>
+    _.each(xmodel.fields, function(field){
+      if(!field.name) return;
+      _this[field.name] = (('default' in field)?jsh.XFormat.Decode(field.format, field.default):'');
+    });
     XExt.XModel.ApplyDefaults(this);
   }
 
@@ -52,6 +57,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       <%-xejs.iif('key' in field,'"key":'+JSON.stringify(field.key)+',') %>
       <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>
       <%-xejs.iif('value' in field,'"value":'+JSON.stringify(field.value)+',') %>
+      <%-xejs.iif('default' in field,'"default":'+JSON.stringify(field.default)+',') %>
       <%-xejs.iif('disable_search' in field,'"disable_search":'+JSON.stringify(field.disable_search)+',') %>
       <%-xejs.iif('search_sound' in field,'"search_sound":'+JSON.stringify(field.search_sound)+',') %>
       <% if('controlparams' in field){ %>controlparams:{

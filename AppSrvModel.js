@@ -517,9 +517,10 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
       else {
         dstfield.link = jsh.getURL(req, model, srcfield.link, undefined, model.fields);
         dstfield.link_onclick = jsh.getURL_onclick(req, model, srcfield.link);
-        if (((srcfield.control=='button') || (srcfield.control=='linkbutton')) && !('onclick' in srcfield)) {
-          dstfield.onclick = dstfield.link_onclick;
-        }
+      }
+      
+      if (((srcfield.control=='button') || (srcfield.control=='linkbutton')) && !('onclick' in srcfield)) {
+        dstfield.onclick = dstfield.link_onclick;
       }
     }
     if (auxfields) {
@@ -532,6 +533,9 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
       copyValues(dstfield.lov, srcfield.lov, ['parent','parents','blank','showcode']);
       if (('UCOD2' in srcfield.lov) || ('sql2' in srcfield.lov)) dstfield.lov.duallov = 1;
       else if ('sqlmp' in srcfield.lov) dstfield.lov.multilov = 1;
+    }
+    if (model.unbound && ('default' in srcfield)){
+      if (_.isString(srcfield.default) || _.isNumber(srcfield.default) || _.isBoolean(srcfield.default)) dstfield.default = srcfield.default;
     }
     if ('actions' in srcfield) {
       dstfield.actions = ejsext.getActions(req, model, srcfield.actions);

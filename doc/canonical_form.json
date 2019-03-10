@@ -230,6 +230,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                       {"grid_save_before_update": 1, //subform params
                        "insert_link": "add:CA", //In case of subform with "form" layout, link is used for "insert" button when record not found
                       },
+                      {"update_when_blank": false, //password params
+                      },
                       { //**Deprecated** - moved to field.popuplov
                        "codeval": "j_id", //**Deprecated**
                        "popupstyle": "height:200px;", //**Deprecated**

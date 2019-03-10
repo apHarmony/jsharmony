@@ -113,6 +113,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         xform.DataSet[rowid]['_is_dirty'] = false;
         xform.DataSet[rowid]['_is_deleted'] = false;
         xform.DataSet[rowid]['_orig'] = null;
+        xform.ApplyUnboundDefaults(xform.DataSet[rowid]);
       }
       if(xeditablegrid){
         for (var i = 0; i < data[this.q].length; i++) {
@@ -284,6 +285,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
             if(dbtaskid in xform.DBTaskRows){
               var dbrowid = xform.DBTaskRows[dbtaskid];
               xform.DataSet[dbrowid] = _.extend(xform.DataSet[xform.Index], rslt[dbrslt]);
+              xmodel.saveUnboundFields(xform.DataSet[dbrowid]);
               if(xform.Index == dbrowid) xform.Data = _.extend(xform.Data, rslt[dbrslt]);
             }
           }
@@ -326,6 +328,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           _this.DataSet[rowid]['_is_insert'] = false;
           _this.DataSet[rowid]['_is_dirty'] = false;
           _this.DataSet[rowid]['_orig'] = null;
+          _this.ApplyUnboundDefaults(_this.DataSet[rowid]);
 
           var ejssource = jsh.$root(xgrid.TemplateID).html();
           ejssource = ejssource.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
@@ -357,8 +360,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     });
   }
 
-
-
   xcontroller.ResetRow = function(rowid){
     if(!xeditablegrid) return;
 
@@ -370,7 +371,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if(xform.DataSet[rowid]._is_insert) return xcontroller.DeleteRow(rowid);
     //If HasChanges
     if(oldrowid == rowid){ 
-      if(xform.Data._orig != null)      xform.Data = _.extend(xform.Data, xform.Data._orig);
+      if(xform.Data._orig != null) xform.Data = _.extend(xform.Data, xform.Data._orig);
       xform.Data._orig = null;
       xform.Data._is_dirty = false;
       xform.DataSet[rowid] = _.extend(xform.DataSet[rowid], xform.Data);

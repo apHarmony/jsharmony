@@ -52,6 +52,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     class:'<%=model.class%>',
     controller: null,
     datamodel: null,
+    fields: null,
     actions:'<%=model.actions%>',
     layout:'<%=model.layout%>',
     enabled: true,
@@ -68,6 +69,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     keys:[<% xejs.eachKey(model.fields,function(field){%>'<%=field.name%>',<%});%>],
     commitlevel:'<%=(model.commitlevel?model.commitlevel:'')%>',
     curtab:<%-(curtab?JSON.stringify(curtab):'null')%>,
+    unbound_data: {},
     <% 
     if('oninit' in model){ %> oninit:function(xmodel){<%-jslocals%><%-model.oninit%>}, <% }
     if('onload' in model){ %> onload:function(xmodel, callback){<%-jslocals%><%-model.onload%>}, <% }
@@ -120,6 +122,33 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
   xmodel.isEnabled = function(){
     if(xmodel.flags.no_form_record) return false;
+    return true;
+  }
+  xmodel.saveUnboundFields = function(row){
+    if(!this.fields) return;
+    var keys = {};
+    var values = {};
+    _.each(this.fields, function(field){
+      if(field.key) keys[field.name] = row[field.name];
+      if(field.unbound && field.name && (field.name in row)) values[field.name] = row[field.name];
+    });
+    this.unbound_data[JSON.stringify(keys)] = values;
+  }
+  //loadUnboundFields - Returns true if data is found
+  xmodel.loadUnboundFields = function(row){
+    if(!this.fields) return;
+    //Find keys
+    var keys = {};
+    var values = {};
+    _.each(this.fields, function(field){
+      if(field.key) keys[field.name] = row[field.name];
+    });
+    var keystr = JSON.stringify(keys);
+    var unbound_fields = this.unbound_data[keystr];
+    if(!unbound_fields) return false;
+    _.each(this.fields, function(field){
+      if(field.unbound && field.name && (field.name in unbound_fields)) row[field.name] = unbound_fields[field.name];
+    });
     return true;
   }
   if(!(basemodelid in jsh.XBase)) jsh.XBase[basemodelid] = [];

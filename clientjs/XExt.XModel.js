@@ -117,8 +117,7 @@ exports = module.exports = function(jsh){
     var xmodel = jsh.XModels[modelid];
     var isGrid = (xmodel.layout == 'grid');
     if(typeof val === 'undefined'){
-      if(field.unbound) val = xmodel.get(field.name);
-      else val = _this[field.name];
+      val = _this[field.name];
     }
     //Apply formatting
     if ((field.name in _this) && (typeof val == 'undefined')) val = '';
@@ -322,7 +321,6 @@ exports = module.exports = function(jsh){
       var _this = this;
       _.each(this.Fields, function (field) {
         if (!(('virtual' in field) && field.virtual) && !jsh.XExt.hasAction(field.actions, perm)) return;
-        if (field.unbound) return;
         var newval = _this.GetValue(field);
         //if (!('control' in field) && (newval == undefined)) return;
         _this[field.name] = newval;
@@ -469,6 +467,7 @@ exports = module.exports = function(jsh){
         delete this.xvalidate;
         if (!valid) return false;
       }
+      xmodel.saveUnboundFields(this);
       return true;
     };
   };

@@ -111,6 +111,20 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     rootxmodel.controller.form.ExecuteTrans(dbtasks, function (rslt) {
       if (options.onComplete && (options.onComplete(rslt) === false)) return;
       jsh.XPage.RefreshParent();
+      for(var modelid in jsh.XModels){
+        var xmodel = jsh.XModels[modelid];
+        if(xmodel.unbound) return;
+        var dbrsltsuffix = '_'+modelid;
+        var modelrslt = {};
+        for(var dbrslt in rslt){
+          if(XExt.endsWith(dbrslt,dbrsltsuffix)){
+            modelrslt[dbrslt] = rslt[dbrslt];
+          }
+        }
+        if(xmodel.controller.SaveComplete){
+          xmodel.controller.SaveComplete(modelrslt);
+        }
+      }
       if (jsh.is_insert) {
         var url = XExt.currentURL() + '?action=update';
         var urlkeys = {};
