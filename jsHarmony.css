@@ -27,6 +27,7 @@ MAIN ELEMENTS
 <%-rootcss%> .hidden { display:none !important; }
 <%-rootcss%> a img {	border: none; }
 <%-rootcss%> img a {	border:0; }
+<%-rootcss%> .nofocus:focus { outline: none; }
 <%-rootcss%> div.nobr { white-space:nowrap; display:inline-block; }
 <%-rootcss%> .notextselect {
   user-select: none;
@@ -184,7 +185,7 @@ BODY
 }
 <%-rootcss%> .xform_caption_textarea {
   vertical-align:top;
-  padding-top:4px;
+  padding-top:6px;
 }
 <%-rootcss%> .xform_label,<%-rootcss%> .xform_html {
   display:inline-block;
@@ -211,6 +212,7 @@ BODY
 <%-rootcss%> .xform_file_download .linkbutton img { padding-left:0px; }
 <%-rootcss%> .xform_file_download .xform_file_download_button { padding-right:25px; }
 <%-rootcss%> .xform_file_download.nodocument .xform_file_download_button { display:none; }
+<%-rootcss%> .xform .xform_label,
 <%-rootcss%> .xform input,
 <%-rootcss%> .xform select,
 <%-rootcss%> .xform textarea {
@@ -220,12 +222,19 @@ BODY
   width:400px;
   height:50px;
 }
+<%-rootcss%> .xform_ctrl_button {
+  padding:1px 6px;
+}
 <%-rootcss%> .xtbl td input,
 <%-rootcss%> .xtbl td textarea {
   margin:0;
 }
 <%-rootcss%> .xtbl tbody td textarea {
-  vertical-align:middle;
+  vertical-align:top;
+}
+<%-rootcss%> .xgrid_action {
+  position:relative;
+  top:2px;
 }
 <%-rootcss%> .xtbl td.xcheckbox_column {
   text-align:center;
@@ -243,8 +252,11 @@ BODY
   display:inline-block;
   vertical-align:top;
   resize: none;
-  padding-top:0px;
-  padding-bottom:0px;
+}
+<%-rootcss%> .xform_ctrl_textzoom_container {
+  white-space:nowrap;
+  display:inline-block;
+  vertical-align:top;
 }
 <%-rootcss%> .xpopuplov_column {
   white-space:nowrap;
@@ -420,14 +432,24 @@ BODY
   top:2px;
 }
 <%-rootcss%> .xtbl .xform_ctrl.checkbox {
-  top:0px;
+  top:2px;
+}
+<%-rootcss%> .xform .xform_ctrl.checkbox {
+  margin-right: 0px;
+}
+<%-rootcss%> .xform .checkbox_container {
+  margin-right: 10px;
 }
 <%-rootcss%> .xlookup.icon, 
 <%-rootcss%> .xtextzoom.icon {
   position:relative;
-  top:1px;
+  top:4px;
   left:-3px;
   margin-right:7px;
+}
+<%-rootcss%> .xform .xlookup.icon, 
+<%-rootcss%> .xform .xtextzoom.icon {
+  top:6px;
 }
 <%-rootcss%> .xrow .xlookup.icon,
 <%-rootcss%> .xrow .xtextzoom.icon {

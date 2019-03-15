@@ -30,7 +30,7 @@ for(var i=0;i<model.fields.length;i++){
   if(('nl' in field) && (field.control!='hidden')){ leadingfield = true; %><br/><% }
   if((field.control!='subform') && (field.control!='hidden')){
     var captionclass = 'xform_caption '+(field.captionclass||'');
-    if(field.control=='textarea') captionclass += ' xform_caption_textarea';
+    if((field.control=='textarea')||(field.control=='textzoom')) captionclass += ' xform_caption_textarea';
     if(('caption' in field) && (field.caption.length > 0)) { 
       if(('nl' in field) && !('captionstyle' in field) && (dflt_captionstyle != "")){ 
         %><div class="<%=captionclass%> <%=xejs.iif(leadingfield,'leading')%>" style="<%=dflt_captionstyle%>"><%-xejs.escapeHTMLN(field.caption+((field.caption != '')?': ':''))%></div><%
@@ -99,13 +99,13 @@ for(var i=0;i<model.fields.length;i++){
       </div>
     </div>
   <% }
-  if(field.control=='button'){ 
-    if('link' in field){ %><input <%-xejs.showProp('data-id',field.name)%> type="button" class="xform_ctrl xelem<%=model.class%> <%=field.name%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%-xejs.escapeHTMLN(field.value)%>" data-url="<%-field.link%>" onclick="return (function(){<%-jslocals%><%-field.onclick%>}).call(this);" /><% }
-    else{ %><input <%-xejs.showProp('data-id',field.name)%> type="button" data-model="<%=model.id%>" class="xform_ctrl xelem<%=model.class%> <%=field.name%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%-xejs.escapeHTMLN(field.value)%>" onclick="return (function(){<%-jslocals%><%-field.onclick%>}).call(this);" /><% }
+  if(field.control=='button'){
+    if('link' in field){ %><input <%-xejs.showProp('data-id',field.name)%> type="button" class="xform_ctrl xform_ctrl_button xelem<%=model.class%> <%=field.name%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%-xejs.escapeHTMLN(field.value)%>" data-url="<%-field.link%>" onclick="return (function(){<%-jslocals%><%-field.onclick%>}).call(this);" /><% }
+    else{ %><input <%-xejs.showProp('data-id',field.name)%> type="button" data-model="<%=model.id%>" class="xform_ctrl xform_ctrl_button xelem<%=model.class%> <%=field.name%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%-xejs.escapeHTMLN(field.value)%>" onclick="return (function(){<%-jslocals%><%-field.onclick%>}).call(this);" /><% }
   }
-  if(field.control=='linkbutton'){ 
-    if('link' in field){ %><a <%-xejs.showProp('data-id',field.name)%> href="#" data-url="<%-field.link%>" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.class%> <%=field.name%> <%=field.controlclass%> <%=xejs.iif(!field.value,'xform_label')%>" onclick="return (function(){<%-jslocals%><%-field.onclick%>;}).call(this)||false;"><%=xejs.ifnull(field.value,'')%></a><% }
-    else { %><a <%-xejs.showProp('data-id',field.name)%> data-model="<%=model.id%>" href="#" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.class%> <%=field.name%> <%=field.controlclass%> <%=xejs.iif(!field.value,'xform_label')%>" onclick="return (function(){<%-jslocals%><%-field.onclick%>;}).call(this)||false;"><%=xejs.ifnull(field.value,'')%></a><% }
+  if(field.control=='linkbutton'){
+    if('link' in field){ %><a <%-xejs.showProp('data-id',field.name)%> href="#" data-url="<%-field.link%>" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.class%> <%=field.name%> <%=field.controlclass%> xform_label <%=xejs.iif(field.value,'xform_label_static')%>" onclick="return (function(){<%-jslocals%><%-field.onclick%>;}).call(this)||false;"><%=xejs.ifnull(field.value,'')%></a><% }
+    else { %><a <%-xejs.showProp('data-id',field.name)%> data-model="<%=model.id%>" href="#" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.class%> <%=field.name%> <%=field.controlclass%> xform_label <%=xejs.iif(field.value,'xform_label_static')%>" onclick="return (function(){<%-jslocals%><%-field.onclick%>;}).call(this)||false;"><%=xejs.ifnull(field.value,'')%></a><% }
   }
   if(field.control=='tree'){
     %><div data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> tree <%=field.controlclass%>"></div><%
@@ -117,7 +117,7 @@ for(var i=0;i<model.fields.length;i++){
       %></div><%
     }
   }
-  if(field.control=='checkbox'){ %><input data-id="<%=field.name%>" type="checkbox" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl checkbox xelem<%=model.class%> <%=field.controlclass%>" /><% }
+  if(field.control=='checkbox'){ %><div class="xform_ctrl checkbox_container xelem<%=model.class%>"><input data-id="<%=field.name%>" type="checkbox" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl checkbox xelem<%=model.class%> <%=field.controlclass%>" /></div><% }
   if(field.popuplov){ %><a href="#" data-id="<%=field.name%>_xlookup" class="<%=field.name%>_xlookup xform_ctrl xlookup icon" style="<%=field.controlparams.popupiconstyle%>" data-codeval="<%=field.controlparams.codeval%>" data-model="<%=model.id%>" onclick="(function(){<%-jslocals%> jsh.XExt.popupShow('<%=field.model.id%>','<%=field.name%>','<%=field.caption_ext||field.caption%> Selection',undefined,this,{OnControlUpdate:function(obj,e){ xmodel.controller.form.Data.OnControlUpdate(obj,e); }}) }).call(this); return false;"><img src="/images/icon_search.png" /></a>
     <% 
     var popup_model = null;

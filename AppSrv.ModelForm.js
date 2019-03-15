@@ -213,9 +213,12 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
     };
   }
   //Default Values
-  if (is_insert || (selecttype == 'multiple')) {
+  var has_unbound_field_with_default = false;
+  _.each(model.fields, function(field){ if(field.unbound && field.default) has_unbound_field_with_default = true; });
+  if (is_insert || (selecttype == 'multiple') || has_unbound_field_with_default) {
     if(_this.addDefaultTasks(req, res, model, Q, dbtasks[1])===false) return;
   }
+
   //Titles
   var targetperm = 'U';
   if(is_browse) targetperm = 'B';
@@ -450,10 +453,18 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
       else throw new Error('Missing parameter ' + fname);
     });
     
-    //Add fields from post	
-    var fields = _this.getFieldsByName(model.fields, fieldlist);
+    //Remove blank password fields from fields array
+    var fields = _this.getFieldsByName(model.fields, fieldlist, function(field){
+      if((field.name in P)&&
+         (field.control=='password')&&
+         ((typeof P[field.name]=='undefined')||(P[field.name]===null)||(P[field.name]===''))&&
+         !(field.controlparams && field.controlparams.update_when_blank))
+        return false;
+      return true;
+    });
     var dbtasks = {};
 
+    //Add fields from post
     if (fields.length > 0){
       _.each(fields, function (field) {
         var fname = field.name;

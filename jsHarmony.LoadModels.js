@@ -292,6 +292,7 @@ exports.ParseInheritance = function () {
         //Restore Merged Properties
         _.each(mergedprops, function (val, key) { _this.Models[model.id][key] = val; });
         for (var prop in _this.Models[model.id]) { if (_this.Models[model.id][prop] == '__REMOVEPROPERTY__') { delete _this.Models[model.id][prop]; } }
+        _.each(_this.Models[model.id].fields, function(field){ if(!field) return; for (var prop in field) { if (field[prop] == '__REMOVEPROPERTY__') { delete field[prop]; } } });
         delete _this.Models[model.id].inherits;
       }
     });
@@ -578,7 +579,7 @@ exports.ParseEntities = function () {
         else model.actions = 'BIUD';
       }
       else{
-        if(model.unbound) model.actions = 'B';
+        if(model.unbound) model.actions = 'BU';
         else model.actions = 'BIUD';
       }
     }
@@ -697,11 +698,7 @@ exports.ParseEntities = function () {
       if(!foundkey && auto_keys && tabledef){
         _.each(tabledef.fields, function(fielddef){
           if(fielddef.coldef && fielddef.coldef.primary_key){
-            model.fields.push({ 
-              name: fielddef.name, 
-              key: 1,
-              control: 'hidden'
-            });
+            addHiddenField(model, fielddef.name, { key: 1 });
             foundkey = true;
             model._auto.primary_key = 1;
           }
@@ -856,6 +853,7 @@ exports.ParseEntities = function () {
                   if(autofield.captionclass) field.captionclass = autofield.captionclass + ' ' + (field.captionclass||'');
                   if(autofield.controlclass) field.controlclass = autofield.controlclass + ' ' + (field.controlclass||'');
                 }
+                if(field.control && (model.layout=='multisel') && (field.control != 'hidden')) field.control = 'label';
                 field._auto.control = true;
                 
               }
@@ -965,11 +963,16 @@ exports.ParseEntities = function () {
             else if(field.control=='label') field.actions = 'B';
             else field.actions = 'BIU';
           }
+          if(!field.name && field.type && field.actions){
+            //Calculated database field
+            field.actions = 'B';
+          }
           //_this.LogInit_WARNING('Model ' + model.id + ' Field ' + (field.name || field.caption || JSON.stringify(field)) + ' missing actions - defaulting to "'+field.actions+'"');
         }
+        if((field.control=='password') && !field.unbound) field.actions = (field.actions||'').replace(/B/g,'');
       }
       if(field.name && !('type' in field) && Helper.hasAction(field.actions, 'BIUD')){
-        if(!field.value && !_.includes(['subform','html'],field.control)){
+        if(!field.value && !_.includes(['subform','html'],field.control)&&!field.unbound){
           field.type = 'varchar';
           if(!('length' in field)) field.length = -1;
         }
@@ -1114,6 +1117,11 @@ exports.ParseEntities = function () {
         if(!field.controlparams.sqlparams.FILE_EXT) field.controlparams._data_file_has_extension = true;
       }
 
+      //Add validation to password control
+      if((field.control=='password')&&!field.unbound&&!('validate' in field)){
+        field.validate = [{"function":"Required","actions":((field.controlparams && field.controlparams.update_when_blank)?"BIU":"I")}, "MinLength:8"];
+      }
+
       //Apply "enable_search" property
       if(Helper.hasAction(field.actions, 'S')){
         _this.LogDeprecated(model.id + ' > ' + field.name + ': "S" action has been deprecated.  Please use the enable_search property instead.');
@@ -1216,10 +1224,11 @@ exports.ParseEntities = function () {
       if ('hidden' in field) _this.LogDeprecated(model.id + ' > ' + field.name + ': The hidden attribute has been deprecated - use "control":"hidden"');
       if ('html' in field) _this.LogDeprecated(model.id + ' > ' + field.name + ': The html attribute has been deprecated - use "control":"html"');
       if ('lovkey' in field) _this.LogDeprecated(model.id + ' > ' + field.name + ': The lovkey attribute has been deprecated');
+      if (field.controlparams && ('dateformat' in field.controlparams)) _this.LogDeprecated(model.id + ' > ' + field.name + ': The field.controlparams.dateformat attribute has been deprecated - please remove and use "format":["date","MM/DD/YY"]');
 
       //Add automatic name
       if(!field.name){
-        var fieldname = '';
+        var fieldname = 'unnamed_';
         if(field.control) fieldname += field.control + '_';
         fieldname += 'control_';
         var idx = 1;
@@ -1227,6 +1236,49 @@ exports.ParseEntities = function () {
         fieldname = fieldname + idx;
         field.name = fieldname;
         fieldnames[fieldname] = 1;
+      }
+
+      //Add dateformat
+      if(field.control=='date'){
+        if(!('format' in field)) field.format = ["date","YYYY-MM-DD"];
+        if((field.control=='date') && (!field.controlparams || !('dateformat' in field.controlparams))){
+          if(('format' in field) && _.isArray(field.format) && (field.format.length>=2) && (field.format[0]=='date')){
+            if(!field.controlparams) field.controlparams = {};
+            field.controlparams.dateformat = _this.getDatepickerFormat(field.format[1], model.id + ' > ' + field.name);
+          }
+        }
+      }
+
+      //Set field.unbound if model.unbound
+      if(field.control && model.unbound) field.unbound = true;
+
+      //Process validators
+      if(field.validate){
+        for(var i=0;i<field.validate.length;i++){
+          let validator = field.validate[i];
+          let validator_updated = false;
+          let vfunc = _.isString(validator)?validator:validator.function;
+          let vparams = '';
+          let vsplit = vfunc.indexOf(':');
+          if (vsplit > 0) { vparams = vfunc.substr(vsplit + 1); vfunc = vfunc.substr(0, vsplit); }
+          if(vfunc=='Equals'){
+            let vparamsarr = vparams.split(',');
+            if(vparams.length > 0){
+              let cmpfield = _this.AppSrvClass.prototype.getFieldByName(model.fields, vparamsarr[0]);
+              if(cmpfield){
+                vparamsarr[0] = JSON.stringify('_obj.' + cmpfield.name);
+                if(vparamsarr.length == 1) vparamsarr.push(JSON.stringify(cmpfield.caption));
+                vparams = vparamsarr.join(',');
+                validator_updated = true;
+              }
+            }
+          }
+          if(validator_updated){
+            if(vparams) vfunc = vfunc + ':' + vparams;
+            if(_.isString(validator)) field.validate[i] = vfunc;
+            else validator.function = vfunc;
+          }
+        }
       }
     });
 
@@ -1374,9 +1426,9 @@ exports.ParseEntities = function () {
       'sql_from_db','sql_to_db','sqlsearch_to_db','datatype_config'
     ];
     var _v_controlparams = [
-      'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'dateformat', 'base_readonly',
+      'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'base_readonly', 'dateformat',
       'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'sqlparams', '_data_file_has_extension',
-      'image', 'thumbnails', 'expand_all', 'item_context_menu', 'insert_link', 'grid_save_before_update'
+      'image', 'thumbnails', 'expand_all', 'item_context_menu', 'insert_link', 'grid_save_before_update', "update_when_blank"
     ];
     var _v_popuplov = ['target', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
     var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db', 'values'];
@@ -1402,14 +1454,18 @@ exports.ParseEntities = function () {
         for (let f in field.lov) { if (!_.includes(_v_lov, f)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Invalid lov parameter: ' + f); }
       }
       if (_.includes(['label','button','linkbutton'],field.control) && Helper.hasAction(field.actions, 'IUD')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': A '+field.control+' can only have action B');
+      if (field.value && !_.includes(['label','html','button','linkbutton'],field.control)){ _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field.value property is only supported for label, html, button, and linkbuttons controls.  Use field.default instead.'); }
       //Check unique target
       if (field.target) {
         if (!_.includes(existing_targets, field.target)) existing_targets.push(field.target);
         else _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Duplicate target - each field target must be unique within a model');
       }
       //Check if the field has a type
-      if(field.actions && field.name && !('type' in field) && !('value' in field) && (field.control != 'subform') && !field.unbound) _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Missing type.  Set a field.value or field.unbound if intentional.');
+      if(field.actions && field.name && !('type' in field) && !('value' in field) && (field.control != 'subform') && !field.unbound) _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Missing field.type property.  Set field.value or field.unbound if it should not be bound to the data layer.');
       if(field.control && (model.layout=='grid') && !_.includes(['hidden','label','html','textbox','textzoom','password','date','textarea','dropdown','checkbox','button','linkbutton','file_download'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support ' + field.control + ' control');
+      if(field.control && (model.layout=='multisel') && !_.includes(['hidden','label'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Multisel does not support ' + field.control + ' control');
+      if(field.unbound && (model.layout=='multisel')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Multisel does not support unbound controls');
+      if(field.unbound && field.type) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Unbound fields should not have a field.type property');
       if(((field.control == 'file_upload') || (field.control == 'file_download')) && (field.type != 'file')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The ' + field.control + ' control requires field.type="file"');
       if((field.control == 'file_download') && Helper.hasAction(field.actions, 'IU')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The file_download control field.actions must be "B" (browse-only).');
       //field.type=encascii, check if password is defined
@@ -1433,6 +1489,10 @@ exports.ParseEntities = function () {
         }
       }
       if(!('control' in field) && Helper.hasAction(field.actions, 'B')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field does not have a control defined');
+      if(model.unbound){
+        if(field.default && field.default.sql) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Cannot use field.default.sql when model.unbound is set');
+        if(field.lov) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Cannot use field.lov when model.unbound is set');
+      }
     });
     if (no_B && model.breadcrumbs && model.breadcrumbs.sql) {
       _this.LogInit_ERROR(model.id + ': No fields set to B (Browse) action.  Form databinding will be disabled client-side, and breadcrumbs sql will not execute.');
@@ -1443,17 +1503,29 @@ exports.ParseEntities = function () {
     if(model.unbound){
       _.each(['table','sqlselect','sqlinsert','sqlupdate','sqldelete','sqlexec','sqlrowcount','sqldownloadselect','sqlinsertencrypt'],function(prop){
         if(model[prop]){
-          _this.LogInit_WARNING(model.id + ': Model has both "unbound" and "'+prop+'" properties.  The "'+prop+'" property cannot be used with unbound forms.');
+          _this.LogInit_ERROR(model.id + ': Model has both "unbound" and "'+prop+'" properties.  The "'+prop+'" property cannot be used with unbound forms.');
         }
       });
+      if(model.breadcrumbs){
+        if(model.breadcrumbs.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.breadcrumbs.sql when model.unbound is set');
+        if(model.breadcrumbs.insert && model.breadcrumbs.insert.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.breadcrumbs.insert.sql when model.unbound is set');
+        if(model.breadcrumbs.update && model.breadcrumbs.update.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.breadcrumbs.update.sql when model.unbound is set');
+        if(model.breadcrumbs.browse && model.breadcrumbs.browse.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.breadcrumbs.browse.sql when model.unbound is set');
+      }
+      if(model.title){
+        if(model.title.sql) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Cannot use model.title.sql when model.unbound is set');
+        if(model.title.insert && model.title.insert.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.title.insert.sql when model.unbound is set');
+        if(model.title.update && model.title.update.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.title.update.sql when model.unbound is set');
+        if(model.title.browse && model.title.browse.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.title.browse.sql when model.unbound is set');
+      }
     }
-    if((model.layout=='exec')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_WARNING(model.id + ': Exec layout only supports BU actions');
-    else if((model.layout=='multisel')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_WARNING(model.id + ': Multisel layout only supports BU actions');
-    else if((model.layout=='report')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_WARNING(model.id + ': Report layout only supports BU actions');
+    if((model.layout=='exec')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_ERROR(model.id + ': Exec layout only supports BU actions');
+    else if((model.layout=='multisel')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_ERROR(model.id + ': Multisel layout only supports BU actions');
+    else if((model.layout=='report')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_ERROR(model.id + ': Report layout only supports BU actions');
 
     //Generate Validators
     _.each(model.fields, function (field) {
-      model.xvalidate.AddValidator('_obj.' + field.name, field.caption || field.name, field.actions, _this.GetValidatorFuncs(field.validate), field.roles);
+      if(field.validate) _this.AddValidatorFuncs(model, field);
     });
   });
 
@@ -1648,6 +1720,15 @@ exports.ParseEntities = function () {
 
 function ParseMultiLineProperties(obj, arr) {
   _.each(arr, function (p) { if (p in obj) obj[p] = Helper.ParseMultiLine(obj[p]); });
+}
+
+function addHiddenField(model, fieldname, props){
+  var newfield = _.extend({ 
+    name: fieldname,
+    control: 'hidden'
+  }, props);
+  if(model.layout=='grid') newfield.disable_search = true;
+  model.fields.push(newfield);
 }
 
 exports.forEachSqlParam = function(model, sql, f){ /* f(pfield_name) */
@@ -1877,11 +1958,7 @@ exports.AddBindingFields = function(model, element, elementname, modelsExt){
           if(auto_keys && ttabledef){
             //Add foreign key based on binding
             if(childKey in ttabledef.fields){
-              tmodel.fields.push({ 
-                name: childKey, 
-                foreignkey: 1,
-                control: 'hidden'
-              });
+              addHiddenField(tmodel, childKey, { foreignkey: 1 });
               created_field = true;
             }
           }
@@ -1896,10 +1973,7 @@ exports.AddBindingFields = function(model, element, elementname, modelsExt){
           if(auto_keys && tabledef){
             //Add foreign key based on binding
             if(binding in tabledef.fields){
-              model.fields.push({ 
-                name: binding,
-                control: 'hidden'
-              });
+              addHiddenField(model, binding);
               created_field = true;
             }
           }
@@ -1994,7 +2068,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
   }
   if ('duplicate' in model) {
     let tmodel = jsh.getModel(null,model.duplicate.target,model);
-    if (!tmodel) { _this.LogInit_WARNING('Invalid duplicate model ' + model.duplicate + ' in ' + model.id); return; }
+    if (!tmodel) { _this.LogInit_ERROR(model.id + ' > Duplicate: Invalid target'); return; }
     if(tmodel.layout != 'exec') { _this.LogInit_ERROR(model.id + ' > Duplicate: Target model should have "exec" layout'); }
     tmodel._parentmodels.duplicate[model.id] = 1;
     model.duplicate.target = tmodel.id;
@@ -2015,7 +2089,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
   _.each(model.fields, function (field) {
     if (('target' in field) && ((field.control == 'subform') || (field.popuplov))) {
       let tmodel = jsh.getModel(null,field.target,model);
-      if (!tmodel) { _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Invalid target model "' + field.target + '"'); return; }
+      if (!tmodel) { _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Invalid target model "' + field.target + '"'); return; }
       if(field.control=='subform') tmodel._parentmodels.subform[model.id] = 1;
       else if(field.popuplov) tmodel._parentmodels.popuplov[model.id] = 1;
       field.target = tmodel.id;
@@ -2041,6 +2115,162 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     }
     if ((field.control == 'subform') && !('bindings' in field)) _this.LogInit_WARNING('Model ' + model.id + ' subform ' + field.name + ' missing binding.');
   });
+}
+
+exports.getDatepickerFormat = function(fstr, fdesc){
+  /*
+  Moment Format String
+  --------------------
+  >>> Month	
+  M	1 2 ... 11 12
+  Mo	1st 2nd ... 11th 12th
+  MM	01 02 ... 11 12
+  MMM	Jan Feb ... Nov Dec
+  MMMM	January February ... November December
+  >>> Quarter
+  Q	1 2 3 4
+  Qo	1st 2nd 3rd 4th
+  >>> Day of Month
+  D	1 2 ... 30 31
+  Do	1st 2nd ... 30th 31st
+  DD	01 02 ... 30 31
+  >>> Day of Year
+  DDD	1 2 ... 364 365
+  DDDo	1st 2nd ... 364th 365th
+  DDDD	001 002 ... 364 365
+  >>> Day of Week
+  d	0 1 ... 5 6
+  do	0th 1st ... 5th 6th
+  dd	Su Mo ... Fr Sa
+  ddd	Sun Mon ... Fri Sat
+  dddd	Sunday Monday ... Friday Saturday
+  >>> Day of Week (Locale)
+  e	0 1 ... 5 6
+  >>> Day of Week (ISO)
+  E	1 2 ... 6 7
+  >>> Week of Year
+  w	1 2 ... 52 53
+  wo	1st 2nd ... 52nd 53rd
+  ww	01 02 ... 52 53
+  >>> Week of Year (ISO)
+  W	1 2 ... 52 53
+  Wo	1st 2nd ... 52nd 53rd
+  WW	01 02 ... 52 53
+  >>> Year
+  YY	70 71 ... 29 30
+  YYYY	1970 1971 ... 2029 2030
+  Y	1970 1971 ... 9999 +10000 +10001 
+  Note: This complies with the ISO 8601 standard for dates past the year 9999
+  >>> Week Year
+  gg	70 71 ... 29 30
+  gggg	1970 1971 ... 2029 2030
+  >>> Week Year (ISO)
+  GG	70 71 ... 29 30
+  GGGG	1970 1971 ... 2029 2030
+  >>> AM/PM
+  A	AM PM
+  a	am pm
+  >>> Hour
+  H	0 1 ... 22 23
+  HH	00 01 ... 22 23
+  h	1 2 ... 11 12
+  hh	01 02 ... 11 12
+  k	1 2 ... 23 24
+  kk	01 02 ... 23 24
+  >>> Minute
+  m	0 1 ... 58 59
+  mm	00 01 ... 58 59
+  >>> Second
+  s	0 1 ... 58 59
+  ss	00 01 ... 58 59
+  >>> Fractional Second
+  S	0 1 ... 8 9
+  SS	00 01 ... 98 99
+  SSS	000 001 ... 998 999
+  SSSS ... SSSSSSSSS	000[0..] 001[0..] ... 998[0..] 999[0..]
+  >>> Time Zone
+  z or zz	EST CST ... MST PST 
+  Note: as of 1.6.0, the z/zz format tokens have been deprecated from plain moment objects. Read more about it here. However, they *do* work if you are using a specific time zone with the moment-timezone addon.
+  Z	-07:00 -06:00 ... +06:00 +07:00
+  ZZ	-0700 -0600 ... +0600 +0700
+  >>> Unix Timestamp
+  X	1360013296
+  >>> Unix Millisecond Timestamp
+  x	1360013296123
+
+  jQuery Format String
+  --------------------
+  d - day of month (no leading zero)
+  dd - day of month (two digit)
+  o - day of the year (no leading zeros)
+  oo - day of the year (three digit)
+  D - day name short
+  DD - day name long
+  m - month of year (no leading zero)
+  mm - month of year (two digit)
+  M - month name short
+  MM - month name long
+  y - year (two digit)
+  yy - year (four digit)
+  @ - Unix timestamp (ms since 01/01/1970)
+  ! - Windows ticks (100ns since 01/01/0001)
+  '...' - literal text
+  '' - single quote
+
+  d   > D
+  dd  > DD
+  o   > DDD
+  oo  > DDDD
+  D   > ddd
+  DD  > dddd
+  m   > M
+  mm  > MM
+  M   > MMM
+  MM  > MMMM
+  y   > YY
+  yy  > YYYY
+  @   > X
+
+  1. Front to back, convert all non-tokens to literals
+  2. Merge literals
+  */
+  var tokens = {
+    'DDDD': 'oo',
+    'dddd': 'DD',
+    'MMMM': 'MM',
+    'YYYY': 'yy',
+    'DDD': 'o',
+    'ddd': 'D',
+    'MMM': 'M',
+    'DD': 'dd',
+    'MM': 'mm',
+    'YY': 'y',
+    'D': 'd',
+    'M': 'm',
+    'X': '@',
+  };
+  var rslt = (fstr||'').toString();
+  var unsupported = false;
+  for(var i=0;i<rslt.length;i++){
+    var found_token = false;
+    for(var token in tokens){
+      if(rslt.substr(i,token.length)==token){
+        found_token = true;
+        rslt = rslt.substr(0,i) + tokens[token] + rslt.substr(i+token.length);
+        i += tokens[token].length - 1;
+        break;
+      }
+    }
+    if(!found_token){
+      if(((rslt[i] >= 'A') && (rslt[i] <= 'Z')) || ((rslt[i] >= 'a') && (rslt[i] <= 'z'))){
+        unsupported = true;
+      }
+    }
+  }
+  if(unsupported){
+    this.LogInit_ERROR(fdesc + ': Unsupported date format for date control: "' + fstr + '", please use only D/DD/DDD/DDDD/ddd/dddd/M/MM/MMM/MMMM/YY/YYYY/X');
+  }
+  return rslt;
 }
 
 exports.ParsePopups = function () {

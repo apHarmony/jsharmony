@@ -230,6 +230,7 @@ exports = module.exports = function(jsh){
             _this.DataSet[i]['_is_dirty'] = false;
             _this.DataSet[i]['_is_deleted'] = false;
             _this.DataSet[i]['_orig'] = null;
+            _this.ApplyUnboundDefaults(_this.DataSet[i]);
           }
           _this.DeleteSet = [];
           _this.ResetDirty();
@@ -248,6 +249,7 @@ exports = module.exports = function(jsh){
           _this.Data._is_dirty = false;
           _this.Data._is_deleted = false;
           _this.Data._orig = null;
+          _this.ApplyUnboundDefaults(_this.Data);
         }
       }
       else if(_this.Data._is_insert){
@@ -277,6 +279,18 @@ exports = module.exports = function(jsh){
       });
     }
     return rslt;
+  }
+  XForm.prototype.ApplyUnboundDefaults = function(data){
+    var _this = this;
+    if(!jsh.XModels[_this.q]) return;
+    if(jsh.XModels[_this.q].loadUnboundFields(data)) return;
+    if(!_this.defaults || !_this.DataType || !_this.DataType.prototype || !_this.DataType.prototype.Fields) return;
+    _.each(_this.DataType.prototype.Fields, function(field){
+      if(!field.name || !field.unbound) return;
+      if(field.name in _this.defaults){
+        data[field.name] = _this.defaults[field.name];
+      }
+    });
   }
   XForm.prototype.PrepExecute = function(_method,_model,_query,_post,onComplete,onFail){
     var rslt = { 
@@ -506,6 +520,7 @@ exports = module.exports = function(jsh){
     var rslt = {};
     _.each(_this.Data.Fields,function(field){
       if (!jsh.XExt.hasAction(field.actions, action)) return;
+      if (field.unbound) return;
       if((typeof _this.Data[field.name] == 'undefined') && (field.name in jsh.XModels[_this.q].bindings)){
         rslt[field.name] = '%%%'+field.name+'%%%';
       }

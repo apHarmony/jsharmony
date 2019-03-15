@@ -281,7 +281,7 @@ exports = module.exports = function(jsh){
     var _this = this;
     var modelid = _this.modelid;
     var xmodel = (modelid? jsh.XModels[modelid] : null);
-    var xfields = (xmodel ? xmodel.datamodel.prototype.Fields : []);
+    var xfields = (xmodel ? xmodel.fields : []);
     jobj.find('.xelem' + xmodel.class).not('.xelem' + xmodel.class + '.checkbox').keyup(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
     jobj.find('.xelem' + xmodel.class).change(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
     jobj.find('.xelem' + xmodel.class + '.checkbox').click(function (e) { if (!$(this).hasClass('editable')) return; return _this.CheckboxUpdate(this, e); });
@@ -291,12 +291,12 @@ exports = module.exports = function(jsh){
       var dateformat = jsh.DEFAULT_DATEFORMAT;
       var fname = $(this).data('id');
       var xfield = xfields[fname];
-      if (xfield && xfield.controlparams) dateformat = xfield.controlparams.dateformat;
+      if (xfield && xfield.controlparams && xfield.controlparams.dateformat) dateformat = xfield.controlparams.dateformat;
       $(this).datepicker({
         changeMonth: true, changeYear: true, dateFormat: dateformat, duration: '', showAnim: '', onSelect: function () {
           jsh.ignorefocusHandler = true;
           window.setTimeout(function () {
-            window.setTimeout(function () { jsh.ignorefocusHandler = false; _this.ControlUpdate(ctrl); }, 1);
+            window.setTimeout(function () { $(ctrl).next('.datepicker_handle').focus(); jsh.ignorefocusHandler = false; _this.ControlUpdate(ctrl); }, 1);
           }, 1);
         }
       });

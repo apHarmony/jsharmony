@@ -68,7 +68,14 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && (fi
 
     <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if(field.control=='date') {%>
     jsh.$root(".<%=field.name%>.xelem"+xmodel.class).datepicker({ changeMonth: true, changeYear: true, dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||jsh.DEFAULT_DATEFORMAT), onSelect: function(){ if(jsh.is_insert) return; xform.Data.OnControlUpdate(this); } });
-    <% } }); %>  
+    <% } }); %>
+
+    if(xmodel.unbound){
+      _.each(xmodel.fields, function(field){
+        if('default' in field) xmodel.set(field.name, field.default);
+      });
+    }
+
     callback();
   }
 

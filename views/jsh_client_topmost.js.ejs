@@ -80,7 +80,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var valid = true;
     jsh.XPage.traverseModels(null, function (xmodel) {
       if (!valid) return;
-      if (XExt.hasAction(xmodel.actions, 'IU')) {
+      if (XExt.hasAction(xmodel.actions, 'IU') && !xmodel.unbound) {
         var action = 'U';
         if (xmodel.layout == 'multisel') action = 'U';
         else if (xmodel.layout == 'grid') action = 'IU';
@@ -111,6 +111,20 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     rootxmodel.controller.form.ExecuteTrans(dbtasks, function (rslt) {
       if (options.onComplete && (options.onComplete(rslt) === false)) return;
       jsh.XPage.RefreshParent();
+      for(var modelid in jsh.XModels){
+        var xmodel = jsh.XModels[modelid];
+        if(xmodel.unbound) return;
+        var dbrsltsuffix = '_'+modelid;
+        var modelrslt = {};
+        for(var dbrslt in rslt){
+          if(XExt.endsWith(dbrslt,dbrsltsuffix)){
+            modelrslt[dbrslt] = rslt[dbrslt];
+          }
+        }
+        if(xmodel.controller.SaveComplete){
+          xmodel.controller.SaveComplete(modelrslt);
+        }
+      }
       if (jsh.is_insert) {
         var url = XExt.currentURL() + '?action=update';
         var urlkeys = {};
@@ -211,12 +225,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var enable_delete = false;
     jsh.XPage.traverseModels(null, function (xmodel) {
       if ((xmodel.layout == 'form') || (xmodel.layout == 'multisel') || (xmodel.layout == 'form-m')) {
-        if (jsh.XExt.hasAction(xmodel.actions, 'IU')) enable_save = true;
+        if (jsh.XExt.hasAction(xmodel.actions, 'IU') && !xmodel.unbound) enable_save = true;
         if ((xmodel.id == jsh.XModels_root) || (xmodel.parent == jsh.XModels_root))
           if (!enable_delete && jsh.XExt.hasAction(xmodel.actions, 'D')) { enable_delete = true; jsh.delete_target = xmodel.id; }
       }
       else if ((xmodel.layout == 'grid') && (xmodel.commitlevel) && (xmodel.commitlevel != 'none')) {
-        if (jsh.XExt.hasAction(xmodel.actions, 'IUD')) enable_save = true;
+        if (jsh.XExt.hasAction(xmodel.actions, 'IUD') && !xmodel.unbound) enable_save = true;
       }
     });
 
@@ -396,7 +410,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
             }
           }
         }
-        if(jsh.XModels[xmodel.id].unbound) return onDone();
+        if(xmodel.unbound) return onDone();
         xmodel.controller.Select(function(){
           if((xmodel.layout=='form') && !jsh.is_insert && xmodel.controller.form && xmodel.controller.form.Data && xmodel.controller.form.Data._is_insert) xmodel.flags.no_form_record = true;
           return onDone();
@@ -885,7 +899,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.XPage.DisableModelControls = function(xmodel){
     var isGrid = (xmodel.layout == 'grid');
     if(!xmodel.datamodel) return;
-    _.each(xmodel.datamodel.prototype.Fields, function(field){
+    _.each(xmodel.fields, function(field){
       var fieldselector = '.' + field.name + '.xelem' + xmodel.class;
       if (isGrid) fieldselector = '.' + field.name + '.xelem' + xmodel.class;
       var jctrl = jsh.root.find(fieldselector);

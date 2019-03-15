@@ -428,13 +428,22 @@ exports = module.exports = function(jsh){
       return true;
     },
     'GetValue': function (field) {
-      if ('sample' in field) return field.sample;
-      return '';
+      var val = '';
+      if ('sample' in field) val = field.sample;
+      if ('default' in field) val = field.default;
+      if (val && ('format' in field)) val = jsh.XFormat.Apply(field.format, val);
+      return val;
     },
     'getInputType': function (field) {
       if (field && field.validate) {
-        if (field.validate.indexOf('XValidate._v_IsEmail()') >= 0) return 'email';
-        if (field.validate.indexOf('XValidate._v_IsPhone()') >= 0) return 'tel';
+        for(var i=0;i<field.validate.length;i++){
+          var validator = field.validate[i];
+          for(var j=0;j<validator.funcs.length;j++){
+            var vfunc = validator.funcs[j];
+            if (vfunc.indexOf('XValidate._v_IsEmail()') == 0) return 'email';
+            if (vfunc.indexOf('XValidate._v_IsPhone()') == 0) return 'tel';
+          }
+        }
       }
       if (field && field.type) {
         if ((field.type == 'varchar') || (field.type == 'char')) return 'text';
@@ -1214,7 +1223,7 @@ exports = module.exports = function(jsh){
     var parentfield = null;
     if (parentmodelid){
       var parentmodel = jsh.XModels[parentmodelid];
-      parentfield = parentmodel.datamodel.prototype.Fields[fieldid];
+      parentfield = parentmodel.fields[fieldid];
       parentmodelclass = parentmodel.class;
     }
     if (!parentobj) parentobj = jsh.$root('.' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelclass);

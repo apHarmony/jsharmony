@@ -179,7 +179,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "actions": "B", //BIUD, or F for foreign key, S for Grid Search in addition to any B.  html and button controls auto-add "B" rights. **C - crumbparameter deprecated**
       "datalock": { "c_id": "client_c_id" }, //Link DataLock ID to query in _config.datalocks.
       "control": "label", //label,html(value),textbox,textzoom,dropdown,date,textarea,subform,hidden,password,file_upload,file_download,button,linkbutton,tree,checkbox
-      "controlparams": { "dateformat": "mm/dd/y" }, //DatePicker Params - dateformat is parameter to jQuery datepicker control for date display
+      "controlparams": {
                        {  //file_upload params
                           "sqlparams": {"FILE_SIZE": "d_size",  //File Size
                              "FILE_EXT": "d_ext", //File Extension
@@ -230,6 +230,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                       {"grid_save_before_update": 1, //subform params
                        "insert_link": "add:CA", //In case of subform with "form" layout, link is used for "insert" button when record not found
                       },
+                      {"update_when_blank": false, //password params
+                      },
                       { //**Deprecated** - moved to field.popuplov
                        "codeval": "j_id", //**Deprecated**
                        "popupstyle": "height:200px;", //**Deprecated**
@@ -237,6 +239,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                        "base_readonly":  1, //**Deprecated**
                        "onpopup" //**Deprecated**
                       },
+                      { "dateformat": "mm/dd/y" }, //**Deprecated** auto-generated from format - DatePicker Params - dateformat is parameter to jQuery datepicker control for date display
       "controlstyle": "font-size:12px;",
       "controlclass": "classname",
       "onchange": "console.log(JSON.stringify(obj));console.log(newval);XExt.Alert('test');",//Javascript Event Handler for onchange event
@@ -245,7 +248,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "salt": "E_SSNHASH", // For type=hash
       "roles": {"CX_X": ""}, //"" to remove actions, * for all actions, else BIUD
       "format": "phone", //"phone", or ["date","MM/DD/YY HH:mm"], or ["decimal","2"], or ["decimalext","2"] (Decimal that doesn't round up, only adds zeros, up to 20 decimal places), or "ssn", or ["time":"h:mm A"], or ["time":"HH:mm"] or ["decimalcomma", "2"]  //Date uses Moment.js
-      "validate": [ "Required", "MaxLength:5", "MinLength:5", "IsNumeric", "IsNumeric:true" (Only positive), "IsDecimal", "IsDecimal:3" (3 decimal places), "IsDecimalComma:2" (Decimal 2 places with commas), "MaxValue:999", "MinValue:100", "RegEx:'/regex/','be a correct value.'", "IsEmail", "IsDate", "IsSSN" ],
+      "validate": [ "Required", "MaxLength:5", "MinLength:5", "IsNumeric", "IsNumeric:true" (Only positive), "IsDecimal", "IsDecimal:3" (3 decimal places), "IsDecimalComma:2" (Decimal 2 places with commas), "MaxValue:999", "MinValue:100", "RegEx:'/regex/','be a correct value.'", "IsEmail", "IsDate", "IsSSN", "Equals:field.name", "Equals:'_obj.fieldname','Caption'", "Equals:5,'Five'" ],
+      "validate": [ //Alternative extended syntax, array can be mixed with string syntax
+        { "actions":"BIUD", "function": "MaxLength:20", "caption": "Customer Name", "selector": ".c_name.xelemC" }, //Each parameter except "function" is optional
+        { "actions":"BIUD", "function": "Required", "caption": "Customer Name", "selector": ".c_name.xelemC" }
+      ],
       // File can be , ["Required", "MaxSize:5000000" (bytes), "Extension:['.PDF','.JPEG']"]
       "sample": "John Smith",
       "value": "John Smith",
