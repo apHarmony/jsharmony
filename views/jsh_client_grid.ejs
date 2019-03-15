@@ -99,8 +99,8 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
         <% if(model.inlinepopup){ %><th style="text-align:center;" nowrap>Select</th><% } %>
         <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
           if(!('caption' in field)) continue;
-          if(('actions' in field) && (field.actions != '')){
-            if(!XExt.hasAction(field.actions,'B')) continue;
+          if(('actions' in field)){
+            if(!XExt.hasAction(field.actions,'BIU')) continue;
           }
           else if (!('html' in field)) continue; 
           var fieldclass = '';
@@ -119,8 +119,8 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
         <% if(model.inlinepopup){ %><td align="center"><a href="#" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this); return false;">Select</a></td><% } %>
         <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
           if(!('caption' in field)) continue;
-          if(('actions' in field) && (field.actions != '')){
-            if(!XExt.hasAction(field.actions,'B')) continue;
+          if(('actions' in field)){
+            if(!XExt.hasAction(field.actions,'BIU')) continue;
           }
           else if (!('html' in field)) continue;
           var format = 'undefined';

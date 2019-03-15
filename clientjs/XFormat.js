@@ -33,7 +33,9 @@ exports.phone = function(val){
 }
 
 exports.phone_decode = function(val){
-	var rslt = val.replace(/[^0-9]+/g,'');
+  if(val===null) return val;
+  if(typeof val == 'undefined') return val;
+	var rslt = val.toString().replace(/[^0-9]+/g,'');
 	if(rslt=='') return rslt;
 	while(rslt && (rslt[0]=='1')) rslt = rslt.substr(1);
 	return rslt;
@@ -126,6 +128,7 @@ exports.decimalext = function (numdigits, val) {
   if (isNaN(val)) return val;
   if (val === '') return val;
   if (val === null) return val;
+  if (typeof val == 'undefined') return val;
   var fval = parseFloat(val);
   if (decimalPlaces(fval) > numdigits) return fval.toString();
   return fval.toFixed(numdigits);
@@ -135,6 +138,7 @@ exports.decimalext_decode = function (numdigits, val) {
   if (isNaN(val)) return val;
   if (val === '') return val;
   if (val === null) return val;
+  if (typeof val == 'undefined') return val;
   return parseFloat(val);
 }
 
@@ -173,7 +177,10 @@ exports.ssn = function (val) {
 }
 
 exports.ssn_decode = function (val) {
-  var rslt = val.replace(/[^0-9]+/g, '');
+  if (val === '') return val;
+  if (val === null) return val;
+  if (typeof val === 'undefined') return val;
+  var rslt = (val||'').replace(/[^0-9]+/g, '');
   return rslt;
 }
 
@@ -184,7 +191,10 @@ exports.ein = function (val) {
 }
 
 exports.ein_decode = function (val) {
-  var rslt = val.replace(/[^0-9]+/g, '');
+  if (val === '') return val;
+  if (val === null) return val;
+  if (typeof val === 'undefined') return val;
+  var rslt = (val||'').replace(/[^0-9]+/g, '');
   return rslt;
 }
 

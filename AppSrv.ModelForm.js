@@ -453,17 +453,22 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
       else throw new Error('Missing parameter ' + fname);
     });
     
-    //Add fields from post	
-    var fields = _this.getFieldsByName(model.fields, fieldlist);
+    //Remove blank password fields from fields array
+    var fields = _this.getFieldsByName(model.fields, fieldlist, function(field){
+      if((field.name in P)&&
+         (field.control=='password')&&
+         ((typeof P[field.name]=='undefined')||(P[field.name]===null)||(P[field.name]===''))&&
+         !(field.controlparams && field.controlparams.update_when_blank))
+        return false;
+      return true;
+    });
     var dbtasks = {};
 
+    //Add fields from post
     if (fields.length > 0){
       _.each(fields, function (field) {
         var fname = field.name;
         if(field.sqlupdate==='') return;
-        if((field.control=='password')&&
-           ((typeof P[fname]=='undefined')||(P[fname]===null)||(P[fname]===''))&&
-           (!field.controlparams || !field.controlparams.update_when_blank)) return;
         if (fname in P) {
           var dbtype = _this.getDBType(field);
           sql_ptypes.push(dbtype);

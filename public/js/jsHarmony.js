@@ -470,8 +470,8 @@ XValidate.jsh = undefined;
 XValidate.prototype.AddValidator = function (_field, _caption, _actions, _funcs, _roles) {
   this.Validators.push(new XValidator(_field, _caption, _actions, _funcs, undefined, _roles));
 };
-XValidate.prototype.AddControlValidator = function (_control, _field, _caption, _actions, _funcs) {
-  this.Validators.push(new XValidator(_field, _caption, _actions, _funcs, _control));
+XValidate.prototype.AddControlValidator = function (_selector, _field, _caption, _actions, _funcs) {
+  this.Validators.push(new XValidator(_field, _caption, _actions, _funcs, _selector));
 };
 XValidate.prototype.ResetValidation = function (field, parentobj) {
   if (!parentobj) parentobj = this.jsh.root;
@@ -481,8 +481,8 @@ XValidate.prototype.ResetValidation = function (field, parentobj) {
     var v = this.Validators[i];
     if (field && (field != v.Field)) continue;
     
-    if ((this.ErrorClass != '') && (v.Control != '')) {
-      parentobj.find(v.Control).removeClass(this.ErrorClass);
+    if ((this.ErrorClass != '') && (v.Selector != '')) {
+      parentobj.find(v.Selector).removeClass(this.ErrorClass);
     }
   }
 }
@@ -549,11 +549,11 @@ XValidate.prototype.Validate = function (perms, _obj, field, ignore, roles, opti
       if (!has_role_access) { continue; }
     }
     for (var j = 0; j < v.Funcs.length; j++) {
-      var vrslt = v.Funcs[j](v.Caption || v.Field, val);
+      var vrslt = v.Funcs[j](v.Caption || v.Field, val, _obj);
       if (vrslt) {
         this.Errors.push(vrslt);
-        if (!(v.Control in rslt)) rslt[v.Control] = [];
-        rslt[v.Control].push(vrslt);
+        if (!(v.Selector in rslt)) rslt[v.Selector] = [];
+        rslt[v.Selector].push(vrslt);
       }
     }
   }
@@ -573,12 +573,12 @@ function isEmpty(val){
   return true;
 }
 
-function XValidator(_field, _caption, _actions, _funcs, _control, _roles) {
+function XValidator(_field, _caption, _actions, _funcs, _selector, _roles) {
   this.Field = _field;
   this.Caption = _caption;
   this.Actions = _actions;
   this.Funcs = _funcs;
-  this.Control = _control || '';
+  this.Selector = _selector || '';
   this.Roles = _roles;
 }
 
@@ -787,6 +787,17 @@ XValidate._v_InArray = function (_arr) {
     var _arr = ' + JSON.stringify(_arr) + ';\
     for(var i=0;i<_arr.length;i++){ if(_arr[i]==_val) return ""; }\
 		return _caption+" must be one of the following values: "+_arr.join(",");'));
+}
+
+XValidate._v_Equals = function (_cmp_expr, _cmp_caption) {
+  if(typeof(_required)=='undefined') _required = true;
+  if(!_cmp_caption) _cmp_caption = '';
+  if ((typeof _cmp_expr == 'undefined')||(_cmp_expr===null)||(_cmp_expr==='')) _cmp_expr = "''";
+  return (new Function('_caption', '_val', '_obj', '\
+    var _cmp_expr = "'+_cmp_expr.toString().replace(/[\\'"]/g, "\\$&")+'";\
+    eval("var _cmp_val = "+_cmp_expr);\
+    if(_cmp_val==_val) return "";\
+		return _caption+" must equal '+_cmp_caption.toString().replace(/[\\'"]/g, "\\$&")+'";'));
 }
 
 module.exports = XValidate;// JavaScript Document
@@ -7146,8 +7157,14 @@ exports = module.exports = function(jsh){
     },
     'getInputType': function (field) {
       if (field && field.validate) {
-        if (field.validate.indexOf('XValidate._v_IsEmail()') >= 0) return 'email';
-        if (field.validate.indexOf('XValidate._v_IsPhone()') >= 0) return 'tel';
+        for(var i=0;i<field.validate.length;i++){
+          var validator = field.validate[i];
+          for(var j=0;j<validator.funcs.length;j++){
+            var vfunc = validator.funcs[j];
+            if (vfunc.indexOf('XValidate._v_IsEmail()') == 0) return 'email';
+            if (vfunc.indexOf('XValidate._v_IsPhone()') == 0) return 'tel';
+          }
+        }
       }
       if (field && field.type) {
         if ((field.type == 'varchar') || (field.type == 'char')) return 'text';
@@ -9047,7 +9064,9 @@ exports.phone = function(val){
 }
 
 exports.phone_decode = function(val){
-	var rslt = val.replace(/[^0-9]+/g,'');
+  if(val===null) return val;
+  if(typeof val == 'undefined') return val;
+	var rslt = val.toString().replace(/[^0-9]+/g,'');
 	if(rslt=='') return rslt;
 	while(rslt && (rslt[0]=='1')) rslt = rslt.substr(1);
 	return rslt;
@@ -9140,6 +9159,7 @@ exports.decimalext = function (numdigits, val) {
   if (isNaN(val)) return val;
   if (val === '') return val;
   if (val === null) return val;
+  if (typeof val == 'undefined') return val;
   var fval = parseFloat(val);
   if (decimalPlaces(fval) > numdigits) return fval.toString();
   return fval.toFixed(numdigits);
@@ -9149,6 +9169,7 @@ exports.decimalext_decode = function (numdigits, val) {
   if (isNaN(val)) return val;
   if (val === '') return val;
   if (val === null) return val;
+  if (typeof val == 'undefined') return val;
   return parseFloat(val);
 }
 
@@ -9187,7 +9208,10 @@ exports.ssn = function (val) {
 }
 
 exports.ssn_decode = function (val) {
-  var rslt = val.replace(/[^0-9]+/g, '');
+  if (val === '') return val;
+  if (val === null) return val;
+  if (typeof val === 'undefined') return val;
+  var rslt = (val||'').replace(/[^0-9]+/g, '');
   return rslt;
 }
 
@@ -9198,7 +9222,10 @@ exports.ein = function (val) {
 }
 
 exports.ein_decode = function (val) {
-  var rslt = val.replace(/[^0-9]+/g, '');
+  if (val === '') return val;
+  if (val === null) return val;
+  if (typeof val === 'undefined') return val;
+  var rslt = (val||'').replace(/[^0-9]+/g, '');
   return rslt;
 }
 

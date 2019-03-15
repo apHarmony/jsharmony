@@ -59,6 +59,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     title: <%-xejs.iif(model.title,JSON.stringify(model.title),"''")%>,
     caption:<%-JSON.stringify(model.caption)%>,
     parent:<%-((typeof parent == 'undefined')?'null':"'"+parent.id+"'")%>,
+    topmost:<%=model.topmost?'true':'false'%>,
     bindings:<% if(!bindings){ %>null<% } else { 
       %>{<%
       if(model.topmost) _.each(model.fields,function(field){ if(field.name in bindings) {%><%=field['name']%>: function(){return jsh.XExt.LiteralOrLookup(<%-JSON.stringify(bindings[field['name']])%>,jsh._GET);},<%	}});

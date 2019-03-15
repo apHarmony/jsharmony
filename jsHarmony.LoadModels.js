@@ -969,9 +969,10 @@ exports.ParseEntities = function () {
           }
           //_this.LogInit_WARNING('Model ' + model.id + ' Field ' + (field.name || field.caption || JSON.stringify(field)) + ' missing actions - defaulting to "'+field.actions+'"');
         }
+        if((field.control=='password') && !field.unbound) field.actions = (field.actions||'').replace(/B/g,'');
       }
       if(field.name && !('type' in field) && Helper.hasAction(field.actions, 'BIUD')){
-        if(!field.value && !_.includes(['subform','html'],field.control)){
+        if(!field.value && !_.includes(['subform','html'],field.control)&&!field.unbound){
           field.type = 'varchar';
           if(!('length' in field)) field.length = -1;
         }
@@ -1116,6 +1117,11 @@ exports.ParseEntities = function () {
         if(!field.controlparams.sqlparams.FILE_EXT) field.controlparams._data_file_has_extension = true;
       }
 
+      //Add validation to password control
+      if((field.control=='password')&&!field.unbound&&!('validate' in field)){
+        field.validate = [{"function":"Required","actions":((field.controlparams && field.controlparams.update_when_blank)?"BIU":"I")}, "MinLength:8"];
+      }
+
       //Apply "enable_search" property
       if(Helper.hasAction(field.actions, 'S')){
         _this.LogDeprecated(model.id + ' > ' + field.name + ': "S" action has been deprecated.  Please use the enable_search property instead.');
@@ -1245,6 +1251,35 @@ exports.ParseEntities = function () {
 
       //Set field.unbound if model.unbound
       if(field.control && model.unbound) field.unbound = true;
+
+      //Process validators
+      if(field.validate){
+        for(var i=0;i<field.validate.length;i++){
+          let validator = field.validate[i];
+          let validator_updated = false;
+          let vfunc = _.isString(validator)?validator:validator.function;
+          let vparams = '';
+          let vsplit = vfunc.indexOf(':');
+          if (vsplit > 0) { vparams = vfunc.substr(vsplit + 1); vfunc = vfunc.substr(0, vsplit); }
+          if(vfunc=='Equals'){
+            let vparamsarr = vparams.split(',');
+            if(vparams.length > 0){
+              let cmpfield = _this.AppSrvClass.prototype.getFieldByName(model.fields, vparamsarr[0]);
+              if(cmpfield){
+                vparamsarr[0] = JSON.stringify('_obj.' + cmpfield.name);
+                if(vparamsarr.length == 1) vparamsarr.push(JSON.stringify(cmpfield.caption));
+                vparams = vparamsarr.join(',');
+                validator_updated = true;
+              }
+            }
+          }
+          if(validator_updated){
+            if(vparams) vfunc = vfunc + ':' + vparams;
+            if(_.isString(validator)) field.validate[i] = vfunc;
+            else validator.function = vfunc;
+          }
+        }
+      }
     });
 
     //Check multisel
@@ -1393,7 +1428,7 @@ exports.ParseEntities = function () {
     var _v_controlparams = [
       'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'base_readonly', 'dateformat',
       'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'sqlparams', '_data_file_has_extension',
-      'image', 'thumbnails', 'expand_all', 'item_context_menu', 'insert_link', 'grid_save_before_update'
+      'image', 'thumbnails', 'expand_all', 'item_context_menu', 'insert_link', 'grid_save_before_update', "update_when_blank"
     ];
     var _v_popuplov = ['target', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
     var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db', 'values'];
@@ -1430,6 +1465,7 @@ exports.ParseEntities = function () {
       if(field.control && (model.layout=='grid') && !_.includes(['hidden','label','html','textbox','textzoom','password','date','textarea','dropdown','checkbox','button','linkbutton','file_download'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support ' + field.control + ' control');
       if(field.control && (model.layout=='multisel') && !_.includes(['hidden','label'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Multisel does not support ' + field.control + ' control');
       if(field.unbound && (model.layout=='multisel')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Multisel does not support unbound controls');
+      if(field.unbound && field.type) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Unbound fields should not have a field.type property');
       if(((field.control == 'file_upload') || (field.control == 'file_download')) && (field.type != 'file')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The ' + field.control + ' control requires field.type="file"');
       if((field.control == 'file_download') && Helper.hasAction(field.actions, 'IU')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The file_download control field.actions must be "B" (browse-only).');
       //field.type=encascii, check if password is defined
@@ -1489,7 +1525,7 @@ exports.ParseEntities = function () {
 
     //Generate Validators
     _.each(model.fields, function (field) {
-      model.xvalidate.AddValidator('_obj.' + field.name, field.caption || field.name, field.actions, _this.GetValidatorFuncs(field.validate), field.roles);
+      if(field.validate) _this.AddValidatorFuncs(model, field);
     });
   });
 

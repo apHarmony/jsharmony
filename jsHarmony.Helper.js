@@ -27,6 +27,7 @@ for (var key in XValidate) { XValidateBase[key] = XValidate[key]; }
 //Add Extended Validators
 require('./lib/ext-validation.js')(XValidate);
 var Helper = require('./lib/Helper.js');
+var ejsext = require('./lib/ejsext.js');
 var moment = require('moment');
 
 var _ERROR = 1;
@@ -461,31 +462,51 @@ exports.getStaticBinding = function(str){
   return undefined;
 }
 
-exports.GetValidatorClientStr = function (field) {
+exports.GetClientValidator = function (field) {
   var rslt = [];
   _.each(field.validate, function (validator) {
-    var vname = validator;
-    if (vname.indexOf('DB') == 0) return;
+    if(_.isString(validator)) validator = { function: validator };
+    //Parse validator function
+    var vfunc = validator.function;
+    if (vfunc.indexOf('DB') == 0) return;
     var vparams = '';
-    var vsplit = vname.indexOf(':');
-    if (vsplit > 0) { vparams = vname.substr(vsplit + 1); vname = vname.substr(0, vsplit); }
-    if (!(('_v_' + vname) in XValidateBase)) return; //Ignore ext_validation functions
-    rslt.push('XValidate._v_' + vname + '(' + vparams + ')');
-  });
-  return rslt.join(',');
-};
-
-exports.GetValidatorFuncs = function (validators) {
-  var jsh = this;
-  var rslt = [];
-  _.each(validators, function (validator) {
-    var vname = validator;
-    var vparams = '';
-    var vsplit = vname.indexOf(':');
-    if (vsplit > 0) { vparams = vname.substr(vsplit + 1); vname = vname.substr(0, vsplit); }
-    rslt.push(eval('XValidate._v_' + vname + '(' + vparams + ')'));
+    var vsplit = vfunc.indexOf(':');
+    if (vsplit > 0) { vparams = vfunc.substr(vsplit + 1); vfunc = vfunc.substr(0, vsplit); }
+    if (!(('_v_' + vfunc) in XValidateBase)) return; //Ignore ext_validation functions
+    //Parse validator actions
+    var vactions = ('actions' in validator)?validator.actions:((('virtual' in field) && field.virtual)?ejsext.getActions(req, model.actions, "BIU"):field.actions);
+    var vcaption = ('caption' in validator)?validator.caption:(field.caption_ext||field.caption);
+    var client_validator = {
+      actions: vactions,
+      caption: vcaption,
+      funcs: ['XValidate._v_' + vfunc + '(' + vparams + ')']
+    };
+    if('selector' in validator) client_validator.selector = validator.selector;
+    rslt.push(client_validator);
   });
   return rslt;
+};
+
+exports.AddValidatorFuncs = function (model, field) {
+  var jsh = this;
+  if(!field.validate) return;
+  if(field.unbound) return;
+  _.each(field.validate, function (validator) {
+    if(_.isString(validator)) validator = { function: validator };
+    var vfunc = validator.function;
+    var vparams = '';
+    var vsplit = vfunc.indexOf(':');
+    if (vsplit > 0) { vparams = vfunc.substr(vsplit + 1); vfunc = vfunc.substr(0, vsplit); }
+    var vactions = ('actions' in validator)?validator.actions:field.actions;
+    var vcaption = ('caption' in validator)?validator.caption:(field.caption_ext||field.caption||field.name);
+    model.xvalidate.AddValidator(
+      '_obj.' + field.name,
+      vcaption,
+      vactions,
+      [eval('XValidate._v_' + vfunc + '(' + vparams + ')')],
+      field.roles
+    );
+  });
 };
 
 exports.SendTXTEmail = function (dbcontext, txt_attrib, email_to, email_cc, email_bcc, email_attachments, params, callback) {

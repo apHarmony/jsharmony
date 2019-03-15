@@ -436,8 +436,14 @@ exports = module.exports = function(jsh){
     },
     'getInputType': function (field) {
       if (field && field.validate) {
-        if (field.validate.indexOf('XValidate._v_IsEmail()') >= 0) return 'email';
-        if (field.validate.indexOf('XValidate._v_IsPhone()') >= 0) return 'tel';
+        for(var i=0;i<field.validate.length;i++){
+          var validator = field.validate[i];
+          for(var j=0;j<validator.funcs.length;j++){
+            var vfunc = validator.funcs[j];
+            if (vfunc.indexOf('XValidate._v_IsEmail()') == 0) return 'email';
+            if (vfunc.indexOf('XValidate._v_IsPhone()') == 0) return 'tel';
+          }
+        }
       }
       if (field && field.type) {
         if ((field.type == 'varchar') || (field.type == 'char')) return 'text';

@@ -54,20 +54,21 @@ exports.getFieldsWithProp = function (fields, prop) {
   return rslt;
 }
 
-exports.getFieldsByName = function (fields, fieldnames) {
+exports.getFieldsByName = function (fields, fieldnames, fcond) {
   var rslt = [];
   if(!fieldnames) return rslt;
   var fieldnames_missing = fieldnames.slice();
   for(var i=0;i<fields.length;i++){
     var field = fields[i];
     if (_.includes(fieldnames, field.name)){
-      rslt.push(field);
       for(var j=0;j<fieldnames_missing.length;j++){
         if(fieldnames_missing[j]==field.name){ 
           fieldnames_missing.splice(j,1);
           j--;
         }
       }
+      if(fcond && !fcond(field)) continue;
+      rslt.push(field);
     }
   }
   if(fieldnames_missing.length > 0){ this.jsh.Log.warning('Fields not found: ' + fieldnames_missing.join(', ')); }

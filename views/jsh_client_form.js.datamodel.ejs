@@ -64,11 +64,13 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         <%-xejs.iif('base_readonly' in field.controlparams,'"base_readonly":'+JSON.stringify(field.controlparams.base_readonly)+',') %>
         <%-xejs.iif('onpopup' in field.controlparams,'"onpopup":function(popupmodelid, parentmodelid, fieldid, onComplete){'+jslocals+field.controlparams.onpopup+'},') %>
         <%-xejs.iif('dateformat' in field.controlparams,'"dateformat":'+JSON.stringify(field.controlparams.dateformat)+',') %>
+        <%-xejs.iif('update_when_blank' in field.controlparams,'"update_when_blank":'+JSON.stringify(field.controlparams.update_when_blank)+',') %>
       },<% }%>
       <% if(field.lov && field.lov.parent){ %>"lovparent":<%-JSON.stringify(field.lov.parent)%>, <% } %>
       <% if(field.lov && field.lov.parents){ %>"lovparents":<%-JSON.stringify(field.lov.parents)%>, <% } %>
       <% if(field.lov && ('blank' in field.lov)){ %>"lovblank":1, <% } %>
       <% if(field.lov && !(field.lov.showcode)){ %>"showlovtxt":1, <% } %>
+      <% if(field.validate){ %>"validate":<%-JSON.stringify(field.validate)%>, <% } %>
       }, <%});%>
   };
 
@@ -99,7 +101,19 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.on('jsh_ready', function(){ xdatamodel.prototype.BindLOV(xmodel.controller.form); });
 
   xdatamodel.prototype.xvalidate = new XValidate(jsh);
-  <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if(jsh.is_insert && !model.topmost && model.bindings && (field.name in model.bindings)) return;  %>
-  xdatamodel.prototype.xvalidate.AddControlValidator('.<%=field.name%>.xelem'+xmodel.class,'_obj.<%=field.name%>',"<%=field.caption_ext||field.caption%>",'<%=((("virtual" in field) && field.virtual)?xejs.getActions(model.actions,"BIU"):field.actions)%>',[<%-field.validate%>]);<%});%>
+  _.each(xmodel.fields, function(field){
+    if(jsh.is_insert && !xmodel.topmost && xmodel.bindings && (field.name in xmodel.bindings)) return;
+    _.each(field.validate, function(validator){
+      var vfuncs = [];
+      _.each(validator.funcs, function(vfunc){ vfuncs.push(eval(vfunc)); });
+      xdatamodel.prototype.xvalidate.AddControlValidator(
+        ('selector' in validator)?validator.selector:'.'+field.name+'.xelem'+xmodel.class,
+        '_obj.'+field.name,
+        validator.caption,
+        validator.actions,
+        vfuncs
+      );
+    });
+  });
 
 })(<%-instance%>);

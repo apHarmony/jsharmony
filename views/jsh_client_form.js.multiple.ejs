@@ -83,6 +83,18 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   xcontroller.SaveComplete = function(rslt){
+    //Reset password to blank
+    _.each(xmodel.fields, function(field){
+      if((field.control=='password') && !(field.controlparams && field.controlparams.update_when_blank) && (!XExt.hasAction(field.actions,'B')||field.unbound)){
+        xmodel.set(field.name, '');
+        if(field.unbound && field.name && xmodel.unbound_data){
+          for(var key in xmodel.unbound_data){
+            if(field.name in xmodel.unbound_data[key]) xmodel.unbound_data[key][field.name] = '';
+          }
+        }
+      }
+    });
+    //Keep unbound field values
     var dbrsltsuffix = '_'+modelid;
     for(var dbrslt in rslt){
       if(XExt.endsWith(dbrslt,dbrsltsuffix)){
