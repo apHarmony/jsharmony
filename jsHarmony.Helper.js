@@ -462,7 +462,7 @@ exports.getStaticBinding = function(str){
   return undefined;
 }
 
-exports.GetClientValidator = function (field) {
+exports.GetClientValidator = function (req, model, field) {
   var rslt = [];
   _.each(field.validate, function (validator) {
     if(_.isString(validator)) validator = { function: validator };
@@ -474,7 +474,7 @@ exports.GetClientValidator = function (field) {
     if (vsplit > 0) { vparams = vfunc.substr(vsplit + 1); vfunc = vfunc.substr(0, vsplit); }
     if (!(('_v_' + vfunc) in XValidateBase)) return; //Ignore ext_validation functions
     //Parse validator actions
-    var vactions = ('actions' in validator)?validator.actions:((('virtual' in field) && field.virtual)?ejsext.getActions(req, model.actions, "BIU"):field.actions);
+    var vactions = ('actions' in validator)?validator.actions:((('virtual' in field) && field.virtual)?ejsext.getActions(req, model, "BIU"):field.actions);
     var vcaption = ('caption' in validator)?validator.caption:(field.caption_ext||field.caption);
     var client_validator = {
       actions: vactions,

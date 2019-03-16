@@ -541,7 +541,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
       dstfield.actions = ejsext.getActions(req, model, srcfield.actions);
       if ('roles' in srcfield) dstfield.actions = ejsext.getActions(req, srcfield, dstfield.actions);
     }
-    dstfield.validate = jsh.GetClientValidator(srcfield);
+    dstfield.validate = jsh.GetClientValidator(req, model, srcfield);
     if (('control' in dstfield) && ((dstfield.control == 'subform') || (dstfield.popuplov))) {
       _this.genClientModel(req, res, srcfield.target, false, srcfield.bindings, model, function(subform){
         if(srcfield.control=='subform'){
