@@ -43,7 +43,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   xdatamodel.prototype.Fields = xmodel.fields = {
     <% _.each(model.fields,function(field){ if(!('actions' in field)) return; if(field.control=='subform') return; if((field.control=='html') && ('value' in field)) return; if(!field.name) return; if(!field.control) return; %>
       "<%=field.name%>":{"name":"<%=field.name%>",
-      "caption":<%-JSON.stringify(field.caption_ext||field.caption)%>,
+      "caption":<%-JSON.stringify(field.caption_ext||field.caption||"")%>,
       <%-xejs.iif('type' in field,'"type":'+JSON.stringify(field.type)+',') %>
       <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
       <%-xejs.iif('actions' in field,'"actions":'+JSON.stringify(field.actions)+',') %>
