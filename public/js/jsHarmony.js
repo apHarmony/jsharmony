@@ -9521,7 +9521,7 @@ exports = module.exports = function(jsh){
           else {
             var ejsrslt = jsh.ejs.render(ejssource, {
               rowid: undefined,
-              data: data[this.q],
+              datatable: data[this.q],
               xejs: jsh.XExt.xejs,
               jsh: jsh,
               instance: jsh.getInstance()
