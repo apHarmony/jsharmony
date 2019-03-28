@@ -523,6 +523,7 @@ exports = module.exports = function(jsh){
       if(capabilities) _.each(capabilities, function(capability){
         if(!pjsh.XPage[capability]) hasCapabilities = false;
       });
+      if(pjsh == jsh) return;
       if(hasCapabilities) return pjsh;
     }
   }

@@ -177,14 +177,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }, options.onFail);
   }
 
-  jsh.XPage.SaveNew = function(add_url) {
+  jsh.XPage.SaveNew = function(onComplete, options) {
+    options = _.extend({ abortRefresh: false },options);
     jsh.XPage.Save({
       onComplete: function () {
         jsh.XPage.RefreshParent();
-        window.onbeforeunload = null;
-        jsh.cancelExit = true;
-        window.location.href = add_url;
-        return false;
+        if(options.abortRefresh){
+          window.onbeforeunload = null;
+          jsh.cancelExit = true;
+        }
+        if(onComplete) onComplete();
+        if(options.abortRefresh) return false;
       }
     });
   }

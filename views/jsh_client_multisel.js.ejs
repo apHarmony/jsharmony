@@ -78,6 +78,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
       if(!_.isEmpty(execparams)) _query = '?'+$.param(execparams);
       $.ajax({
         type:"GET",
+        cache: false,
         url:jsh._BASEURL+'_d/'+xgrid.q+'/'+_query,
         dataType: 'json',
         success:function(data){

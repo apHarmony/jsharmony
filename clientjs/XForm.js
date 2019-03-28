@@ -400,6 +400,7 @@ exports = module.exports = function(jsh){
     if(loader) loader.StartLoading(_this);
     $.ajax({
       type:ExecParams.method.toUpperCase(),
+      cache: false,
       url: url,
       data: ExecParams.post,
       async: _this.async,

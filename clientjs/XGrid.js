@@ -119,6 +119,7 @@ exports = module.exports = function(jsh){
     if(loader) loader.StartLoading(_this);
     $.ajax({
       type:"GET",
+      cache: false,
       url:jsh._BASEURL+'_d/'+this.q+'/',
       data: reqdata,
       dataType: 'json',

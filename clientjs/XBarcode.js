@@ -52,7 +52,8 @@ exports = module.exports = function(jsh){
     
     jsh.xLoader.StartLoading(jsh.xfileuploadLoader);
     $.ajax({
-      url: url,
+      cache: false,
+      url: url,      
       jsonp: 'callback',
       dataType: 'jsonp',
       complete: function (data) {

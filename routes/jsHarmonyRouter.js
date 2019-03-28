@@ -49,6 +49,8 @@ var jsHarmonyRouter = function (jsh, siteid) {
       Models: { },
     };
     req.forcequery = {};
+    //Delete jQuery Anti-Cache timestamp
+    if('_' in req.query) delete req.query['_'];
     req.getJSClientParams = function () { return jsh.getJSClientParams(req); }
     req.getJSLocals = function(){ return jsh.getJSLocals(req); }
     req.getJSH = function() { return jsh; };

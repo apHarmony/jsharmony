@@ -62,6 +62,7 @@ exports = module.exports = function(jsh){
       params._func = _this.Func;
       var url = _this.Server + '/scan/?' + $.param(params);
       $.ajax({
+        cache: false,
         url: url,
         jsonp: 'callback',
         dataType: 'jsonp',

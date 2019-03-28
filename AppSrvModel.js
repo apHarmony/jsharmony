@@ -242,7 +242,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
           }
           //Generate link
           link_url = jsh.getURL(req, model, link_target, undefined, undefined, link_bindings);
-          link_onclick = jsh.getModelLinkOnClick(req, model, link_targetmodelid, link_target, link_parsed.actionParams);
+          link_onclick = jsh.getURL_onclick(req, model, link_target);
         }
         link_text = link_text.replace(new RegExp('%%%CAPTION%%%', 'g'), model.caption[1]);
         link_text = link_text.replace(new RegExp('%%%CAPTIONS%%%', 'g'), model.caption[2]);
@@ -510,7 +510,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
       }
       if (('insert_link' in srcfield.controlparams) && (srcfield.controlparams.insert_link)) {
         dstfield.controlparams.insert_link = jsh.getURL(req, model, srcfield.controlparams.insert_link, undefined, undefined, srcfield.bindings);
-        dstfield.controlparams.insert_link_onclick = jsh.getModelLinkOnClick(req, model, srcfield.target, srcfield.controlparams.insert_link);
+        dstfield.controlparams.insert_link_onclick = jsh.getURL_onclick(req, model, srcfield.controlparams.insert_link);
       }
     }
     if (('serverejs' in srcfield) && (srcfield.serverejs)) {

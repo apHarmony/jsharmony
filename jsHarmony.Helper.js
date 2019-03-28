@@ -210,7 +210,10 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
       _.extend(q, req.query); //Copy all parameters
     }
   }
-  if (action != '') q['action'] = action;
+  if (action != ''){
+    if(action=='savenew') q['action'] = 'insert';
+    else q['action'] = action;
+  }
   if (Helper.Size(tabs) > 0) {
     if (req.TopModel == fullmodelid) {
       q['tabs'] = JSON.stringify(tabs);
@@ -254,7 +257,7 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
   }
 
   //Add keys
-  if ((action == 'update') || (action == 'insert') || (action == 'browse') || (action == 'select')) {
+  if ((action == 'update') || (action == 'insert') || (action == 'browse') || (action == 'select') || (action == 'savenew')) {
     if (action == 'select') { rsltoverride = '#select'; }
     if (_.size(ptarget.keys) > 0) {
       var ptargetkeys = _.keys(ptarget.keys);
@@ -292,8 +295,19 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
       if(!foundfield){
         _.each(fields, function (field) {
           if (field.key) {
-            delete q[field['name']];
-            rsltparams += '&amp;' + field['name'] + '=<#='+ENCODE_URI+'(data[\'' + field['name'] + '\'])#>';
+            var tmodelKeyConflict = false;
+            if((action=='insert')||(action=='savenew')){
+              _.each(tmodel.fields, function (tfield) {
+                if(field.name && (tfield.name == field.name) && field.key && !Helper.hasAction(field.actions, 'IU')){
+                  tmodelKeyConflict = true;
+                }
+              });
+            }
+            if(!tmodelKeyConflict){
+              //If insert and no "IU" on field, do not add to params
+              delete q[field['name']];
+              rsltparams += '&amp;' + field['name'] + '=<#='+ENCODE_URI+'(data[\'' + field['name'] + '\'])#>';
+            }
           }
         });
       }
@@ -319,17 +333,18 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
 exports.getURL_onclick = function (req, model, link) {
   var seturl = "var url = "+req.jshsite.instance+".$(this).attr('data-url'); if(!url) url = "+req.jshsite.instance+".$(this).attr('href'); if(url=='#') url = ''; if(!url) return false;";
   var rslt = req.jshsite.instance+".XExt.navTo(url); return false;";
+  var windowtarget = '_self';
   if (typeof link != 'undefined') {
     var link = link;
     var ptarget = this.parseLink(link);
     var tmodel = null;
     if(ptarget.url){ /* Do nothing */ }
     else {
-      tmodel = this.getModel(req, ptarget.modelid, model);
+      tmodel = this.getModel(req, ptarget.modelid||req.TopModel, model);
       if (!tmodel) throw new Error("Link Model " + ptarget.modelid + " not found.");
       if (!Helper.hasModelAction(req, tmodel, 'BIU')) return req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;";
     }
-    if ((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec') || (model.layout == 'report')) {
+    if (model && ((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec') || (model.layout == 'report'))) {
       seturl += "var jsh="+req.jshsite.instance+"; var modelid='" + Helper.escapeHTML(model.id) + "'; var xmodel=jsh.XModels[modelid]; var xform = xmodel.controller.form; if(xform && xform.Data && !xform.Data.Commit()) return false; url = jsh.XPage.ParseEJS(url,modelid); ";
     }
     if(ptarget.action=='download'){
@@ -345,12 +360,15 @@ exports.getURL_onclick = function (req, model, link) {
         params.height = tmodel['popup'][1];
       }
       params = _.extend(params, ptarget.actionParams);
-      var windowtarget = ('target' in params)?params.target:'_blank';
+      windowtarget = ('target' in params)?params.target:'_blank';
       delete params.target;
       var paramsarr = [];
       for(var key in params) paramsarr.push(key+'='+params[key]);
       rslt = "window.open(url,'"+Helper.escapeJS(windowtarget)+"','"+Helper.escapeJS(paramsarr.join(','))+"');return false;";
     }
+  }
+  if(ptarget.action=='savenew'){
+    rslt = req.jshsite.instance+".XPage.SaveNew(function(){" + rslt + "}, { abortRefresh: " + (windowtarget=='_self'?'true':'false') + " });return false;";
   }
   return seturl + rslt;
 }
@@ -469,34 +487,6 @@ exports.getTabs = function (req, model) {
     }
   }
   return curtabs;
-};
-
-exports.getModelLinkOnClick = function (req, srcmodel, tgtmodelid, link_target, actionParams) {
-  if (!tgtmodelid) tgtmodelid = req.TopModel;
-  actionParams = actionParams || {};
-  var model = this.getModel(req, tgtmodelid, srcmodel);
-  if (!model) return '';
-  //XPage.ParseEJS if necessary
-  if (link_target && (link_target.substr(0, 8) == 'savenew:')) {
-    return req.jshsite.instance+".XPage.SaveNew(href);return false;";
-  }
-  else if (('popup' in model)||!_.isEmpty(actionParams)) {
-    var params = {
-      resizable: 1,
-      scrollbars: 1
-    }
-    if('popup' in model){
-      params.width = model['popup'][0];
-      params.height = model['popup'][1];
-    }
-    params = _.extend(params, actionParams);
-    var windowtarget = ('target' in params)?params.target:'_blank';
-    delete params.target;
-    var paramsarr = [];
-    for(var key in params) paramsarr.push(key+'='+params[key]);
-    return ("window.open(this.href,'"+Helper.escapeJS(windowtarget)+"','"+Helper.escapeJS(paramsarr.join(','))+"');return false;");
-  }
-  return "";
 };
 
 exports.getStaticBinding = function(str){
