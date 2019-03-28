@@ -972,7 +972,7 @@ exports.ParseEntities = function () {
         if((field.control=='password') && !field.unbound) field.actions = (field.actions||'').replace(/B/g,'');
       }
       if(field.name && !('type' in field) && Helper.hasAction(field.actions, 'BIUD')){
-        if(!field.value && !_.includes(['subform','html'],field.control)&&!field.unbound){
+        if(!field.value && !_.includes(['subform','html'],field.control)&&!field.unbound&&!model.unbound){
           field.type = 'varchar';
           if(!('length' in field)) field.length = -1;
         }
@@ -2007,8 +2007,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
       parentSites = _.intersection(parentSites, roleSites);
     }
     if(childSites.length != parentSites.length){
-      _this.LogInit_ERROR((prefix||'') + 'Target model "' + tmodel.id + '" not defined for site: '+_.difference(model.sites, _.intersection(model.sites, tmodel.sites)).join(', ') +(suffix?' in link expression "'+suffix+'"':'')); return;
-    }
+      _this.LogInit_ERROR((prefix||'') + 'Target model "' + tmodel.id + '" does not have a role assigned to site: '+_.difference(model.sites, _.intersection(model.sites, tmodel.sites)).join(', ') +(suffix?' in link expression "'+suffix+'"':'')); return;    }
   }
 
   function validateSiteLinks(model, link, prefix, suffix, roles){
