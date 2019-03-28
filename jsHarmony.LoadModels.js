@@ -1458,7 +1458,7 @@ exports.ParseEntities = function () {
       }
       if (_.includes(['label','button','linkbutton'],field.control) && Helper.hasAction(field.actions, 'IUD')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': A '+field.control+' can only have action B');
       if (field.value && !_.includes(['label','html','button','linkbutton'],field.control)){ _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field.value property is only supported for label, html, button, and linkbuttons controls.  Use field.default instead.'); }
-      if (field.link && !_.includes(['label','html','button','linkbutton'],field.control)){ _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field.link property is only supported for label, html, button, and linkbuttons controls.'); }
+      if (field.link && !_.includes(['label','html','button','linkbutton','hidden'],field.control)){ _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field.link property is only supported for label, html, button, and linkbuttons controls.'); }
       //Check unique target
       if (field.target) {
         if (!_.includes(existing_targets, field.target)) existing_targets.push(field.target);

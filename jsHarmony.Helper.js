@@ -317,7 +317,7 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
 
 //Generates the "onclick" event for a link, based on the field.link property
 exports.getURL_onclick = function (req, model, link) {
-  var seturl = "var url = "+req.jshsite.instance+".$(this).attr('data-url'); if(!url) url = "+req.jshsite.instance+".$(this).attr('href');";
+  var seturl = "var url = "+req.jshsite.instance+".$(this).attr('data-url'); if(!url) url = "+req.jshsite.instance+".$(this).attr('href'); if(url=='#') url = ''; if(!url) return false;";
   var rslt = req.jshsite.instance+".XExt.navTo(url); return false;";
   if (typeof link != 'undefined') {
     var link = link;
