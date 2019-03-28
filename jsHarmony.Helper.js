@@ -57,69 +57,81 @@ exports.parseButtons = function (buttons) {
   return rslt;
 }
 
-exports.getAuxFields = function (req, res, model) {
-  var firstsort = (('sort' in model)?model['sort'][0].substring(1):'');
-  var rslt = [];
-  if (typeof model.fields == 'undefined') return rslt;
-  for (var i = 0; i < model.fields.length; i++) {
-    rslt.push({});
-    if (('link' in model.fields[i]) && (model.fields[i].link) && 
-        (model.fields[i].link != 'select') && 
-        (model.fields[i].link.substr(0, 3) != 'js:')) {
-      var link = model.fields[i]['link'];
-      var ptarget = this.parseLink(link);
-      var link_model = this.getModel(req, ptarget.modelid, model);
-      if (!link_model) throw new Error("Link Model " + ptarget.modelid + " not found.");
-      if (!Helper.hasModelAction(req, link_model, 'BIU')) { rslt[i]['link_onclick'] = req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;"; }
-      else {
-        if(ptarget.action=='download'){
-          rslt[i]['link_onclick'] = "var url = "+req.jshsite.instance+".$(this).attr('href') + '?format=js'; "+req.jshsite.instance+".getFileProxy().prop('src', url); return false;";
-        }
-        else if ('popup' in link_model) {
-          rslt[i]['link_onclick'] = "window.open("+req.jshsite.instance+".$(this).attr('href'),'_blank','width=" + link_model['popup'][0] + ",height=" + link_model['popup'][1] + ",resizable=1,scrollbars=1');return false;";
-        }
-      }
-    }
-    rslt[i].sortclass = ((model.fields[i].name == firstsort)?((model['sort'][0].substring(0, 1) == '^')?'sortAsc':'sortDesc'):'');
-  }
-  return rslt;
-}
-
 exports.parseLink = function (target) {
   var action = '';
+  var actionParams = {};
   var modelid = '';
   var keys = {};
   var tabs = null;
-  if (typeof target != 'undefined') {
-    if (target.indexOf('update:') == 0) { action = 'update'; modelid = target.substring(7); }
-    else if (target.indexOf('insert:') == 0) { action = 'insert'; modelid = target.substring(7); }
-    else if (target.indexOf('browse:') == 0) { action = 'browse'; modelid = target.substring(7); }
-    else if (target.indexOf('download:') == 0) { action = 'download'; modelid = target.substring(9); }
-    else if (target.indexOf('savenew:') == 0) { action = 'insert'; modelid = target.substring(8); }
-    else if (target.indexOf('select:') == 0) { action = 'select'; modelid = target.substring(7); }
-    else modelid = target;
-    
-    if (modelid.indexOf('&') >= 0) {
-      var opt = modelid.split('&');
-      modelid = opt[0];
-      for (var i = 1; i < opt.length; i++) {
-        if (Helper.beginsWith(opt[i], 'tabs=')) tabs = opt[i].substr(5);
-        else {
-          var keystr = opt[i];
-          prekeys = keystr.split(',');
-          _.each(prekeys, function (val) {
-            var keydata = val.split('=');
-            if (keydata.length > 1) keys[keydata[0]] = keydata[1];
-            else{ 
-              if(action == 'download') keys[keydata[0]] = '';
-              else keys[keydata[0]] = keydata[0];
-            }
-          });
+  var url = '';
+  target = target || '';
+
+  function parseAction(_action){
+    if (target.indexOf(_action + ':') == 0) {
+      action = _action;
+      modelid = target.substring(_action.length+1);
+      return true;
+    }
+    else if (target.indexOf(_action + '(') == 0) {
+      var parsestr = target;
+      var actionParamsArr = parsestr.substr(_action.length + 1, parsestr.indexOf(')') - _action.length - 1).trim().split(',');
+      for(var i=0;i<actionParamsArr.length;i++){
+        var param = actionParamsArr[i].trim();
+        var pname = param;
+        var pvalue = 1;
+        if(param.indexOf('=') >= 0){
+          pname = param.substr(0,param.indexOf('=')).trim();
+          pvalue = param.substr(param.indexOf('=')+1).trim();
         }
+        if(!pname) continue;
+        actionParams[pname.toLowerCase()] = pvalue;
+      }
+      parsestr = parsestr.substring(parsestr.indexOf(')')+1).trim();
+      if(parsestr.length && parsestr[0]==':'){
+        action = _action;
+        modelid = parsestr.substring(parsestr.indexOf(':')+1);
+      }
+      return true;
+    }
+    return false;
+  }
+
+  //Parse action
+  if(parseAction('update')){ /* Do nothing */ }
+  else if(parseAction('insert')){ /* Do nothing */ }
+  else if(parseAction('browse')){ /* Do nothing */ }
+  else if(parseAction('download')){ /* Do nothing */ }
+  else if(parseAction('savenew')){ /* Do nothing */ }
+  else if(parseAction('select')){ /* Do nothing */ }
+  else if(parseAction('url')){ /* Do nothing */ }
+  else modelid = target;
+
+  //Parse parameters
+  if (action == 'url') {
+    url = modelid;
+    modelid = '';
+  }
+  else if (modelid.indexOf('&') >= 0) {
+    var opt = modelid.split('&');
+    modelid = opt[0];
+    for (var i = 1; i < opt.length; i++) {
+      if (Helper.beginsWith(opt[i], 'tabs=')) tabs = opt[i].substr(5);
+      else {
+        var keystr = opt[i];
+        prekeys = keystr.split(',');
+        _.each(prekeys, function (val) {
+          var keydata = val.split('=');
+          if (keydata.length > 1) keys[keydata[0]] = keydata[1];
+          else{ 
+            if(action == 'download') keys[keydata[0]] = '';
+            else keys[keydata[0]] = keydata[0];
+          }
+        });
       }
     }
   }
-  return { 'action': action, 'modelid': modelid, 'keys': keys, 'tabs': tabs };
+
+  return { action: action, actionParams: actionParams, modelid: modelid, keys: keys, tabs: tabs, url: url };
 }
 
 exports.parseFieldExpression = function(field, exp, params, options){
@@ -175,6 +187,7 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
   var _this = this;
   var ENCODE_URI = req.jshsite.instance+'.XExt.encodeEJSURI';
   var ptarget = this.parseLink(target);
+  if(ptarget.url) return ptarget.url;
   var modelid = ptarget.modelid;
   var action = ptarget.action;
   if (modelid == '') modelid = req.TopModel;
@@ -236,7 +249,7 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
     }
     if(!keyfield) throw new Error('Error parsing link target "' + target + '".  Download key id not defined.');
     if(!fieldname) throw new Error('Error parsing link target "' + target + '".  Download field name not defined.');
-    rslt = req.baseurl + '_dl/' + fullmodelid + '/<#='+ENCODE_URI+'(data[j][\'' + keyfield + '\'])#>/' + fieldname;
+    rslt = req.baseurl + '_dl/' + fullmodelid + '/<#='+ENCODE_URI+'(data[\'' + keyfield + '\'])#>/' + fieldname;
     return rslt;
   }
 
@@ -253,14 +266,14 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
           keyval = keyval.trim();
           keyval = Helper.escapeHTML(keyval.substr(1,keyval.length-2));
         }
-        else keyval = '<#='+ENCODE_URI+'(data[j][\'' + keyval + '\'])#>';
+        else keyval = '<#='+ENCODE_URI+'(data[\'' + keyval + '\'])#>';
         rsltparams += '&amp;' + ptargetkeys[i] + '=' + keyval;
         /* Commented out for Amber COMH_CDUP form, so that c_id=X1 would work
         for (var j = 0; j < fields.length; j++) {
           var field = fields[j];
           if (!('name' in field)) continue;
           if (field.name == ptargetkeys[i]) {
-            rslt += '&amp;' + field['name'] + '=<#=data[j][\'' + ptarget.keys[ptargetkeys[i]] + '\']#>';
+            rslt += '&amp;' + field['name'] + '=<#=data[\'' + ptarget.keys[ptargetkeys[i]] + '\']#>';
           }
         }*/
       }
@@ -272,7 +285,7 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
           if (field.key && _this.AppSrvClass.prototype.getFieldByName(fields, field.name)) {
             foundfield = true;
             delete q[field['name']];
-            rsltparams += '&amp;' + field['name'] + '=<#='+ENCODE_URI+'(jsh.XExt.LiteralOrLookup(\'' + field['name'] + '\',[data[j], jsh._GET]))#>';
+            rsltparams += '&amp;' + field['name'] + '=<#='+ENCODE_URI+'(jsh.XExt.LiteralOrLookup(\'' + field['name'] + '\',[data, jsh._GET]))#>';
           }
         });
       }
@@ -280,7 +293,7 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
         _.each(fields, function (field) {
           if (field.key) {
             delete q[field['name']];
-            rsltparams += '&amp;' + field['name'] + '=<#='+ENCODE_URI+'(data[j][\'' + field['name'] + '\'])#>';
+            rsltparams += '&amp;' + field['name'] + '=<#='+ENCODE_URI+'(data[\'' + field['name'] + '\'])#>';
           }
         });
       }
@@ -304,22 +317,39 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
 
 //Generates the "onclick" event for a link, based on the field.link property
 exports.getURL_onclick = function (req, model, link) {
-  var seturl = "var url = "+req.jshsite.instance+".$(this).attr('data-url'); ";
+  var seturl = "var url = "+req.jshsite.instance+".$(this).attr('data-url'); if(!url) url = "+req.jshsite.instance+".$(this).attr('href');";
   var rslt = req.jshsite.instance+".XExt.navTo(url); return false;";
   if (typeof link != 'undefined') {
     var link = link;
     var ptarget = this.parseLink(link);
-    var tmodel = this.getModel(req, ptarget.modelid, model);
-    if (!tmodel) throw new Error("Link Model " + ptarget.modelid + " not found.");
-    if (!Helper.hasModelAction(req, tmodel, 'BIU')) return req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;";
+    var tmodel = null;
+    if(ptarget.url){ /* Do nothing */ }
+    else {
+      tmodel = this.getModel(req, ptarget.modelid, model);
+      if (!tmodel) throw new Error("Link Model " + ptarget.modelid + " not found.");
+      if (!Helper.hasModelAction(req, tmodel, 'BIU')) return req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;";
+    }
     if ((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec') || (model.layout == 'report')) {
-      seturl += "var jsh="+req.jshsite.instance+"; url=jsh.XExt.ReplaceAll(url,'data[j]','data'); var modelid='" + Helper.escapeHTML(model.id) + "'; var xmodel=jsh.XModels[modelid]; var xform = xmodel.controller.form; if(xform && xform.Data && !xform.Data.Commit()) return false; url = jsh.XPage.ParseEJS(url,modelid); ";
+      seturl += "var jsh="+req.jshsite.instance+"; var modelid='" + Helper.escapeHTML(model.id) + "'; var xmodel=jsh.XModels[modelid]; var xform = xmodel.controller.form; if(xform && xform.Data && !xform.Data.Commit()) return false; url = jsh.XPage.ParseEJS(url,modelid); ";
     }
     if(ptarget.action=='download'){
       rslt = "url += '?format=js'; "+req.jshsite.instance+".getFileProxy().prop('src', url); return false;";
     }
-    else if ('popup' in tmodel) {
-      rslt = "window.open(url,'_blank','width=" + tmodel.popup[0] + ",height=" + tmodel.popup[1] + ",resizable=1,scrollbars=1');return false;";
+    else if ((tmodel && ('popup' in tmodel))||!_.isEmpty(ptarget.actionParams)) {
+      var params = {
+        resizable: 1,
+        scrollbars: 1
+      }
+      if(tmodel && ('popup' in tmodel)){
+        params.width = tmodel['popup'][0];
+        params.height = tmodel['popup'][1];
+      }
+      params = _.extend(params, ptarget.actionParams);
+      var windowtarget = ('target' in params)?params.target:'_blank';
+      delete params.target;
+      var paramsarr = [];
+      for(var key in params) paramsarr.push(key+'='+params[key]);
+      rslt = "window.open(url,'"+Helper.escapeJS(windowtarget)+"','"+Helper.escapeJS(paramsarr.join(','))+"');return false;";
     }
   }
   return seturl + rslt;
@@ -441,16 +471,30 @@ exports.getTabs = function (req, model) {
   return curtabs;
 };
 
-exports.getModelLinkOnClick = function (req, srcmodel, tgtmodelid, link_target) {
+exports.getModelLinkOnClick = function (req, srcmodel, tgtmodelid, link_target, actionParams) {
   if (!tgtmodelid) tgtmodelid = req.TopModel;
+  actionParams = actionParams || {};
   var model = this.getModel(req, tgtmodelid, srcmodel);
   if (!model) return '';
   //XPage.ParseEJS if necessary
   if (link_target && (link_target.substr(0, 8) == 'savenew:')) {
     return req.jshsite.instance+".XPage.SaveNew(href);return false;";
   }
-  else if ('popup' in model) {
-    return ("window.open(this.href,'_blank','width=" + model['popup'][0] + ",height=" + model['popup'][1] + ",resizable=1,scrollbars=1');return false;");
+  else if (('popup' in model)||!_.isEmpty(actionParams)) {
+    var params = {
+      resizable: 1,
+      scrollbars: 1
+    }
+    if('popup' in model){
+      params.width = model['popup'][0];
+      params.height = model['popup'][1];
+    }
+    params = _.extend(params, actionParams);
+    var windowtarget = ('target' in params)?params.target:'_blank';
+    delete params.target;
+    var paramsarr = [];
+    for(var key in params) paramsarr.push(key+'='+params[key]);
+    return ("window.open(this.href,'"+Helper.escapeJS(windowtarget)+"','"+Helper.escapeJS(paramsarr.join(','))+"');return false;");
   }
   return "";
 };

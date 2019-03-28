@@ -120,7 +120,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           var rowid = this.RowCount + i;
           var ejsrslt = jsh.ejs.render(ejssource, { 
             rowid: rowid, 
-            data: [data[this.q][i]], 
+            datatable: [data[this.q][i]], 
             xejs: XExt.xejs, 
             jsh: jsh, 
             _: _,
@@ -138,7 +138,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       else {
         var ejsrslt = jsh.ejs.render(ejssource, { 
           rowid: this.RowCount, 
-          data: data[this.q], 
+          datatable: data[this.q], 
           xejs: XExt.xejs,
           xmodel: xmodel,
           jsh: jsh,
@@ -346,7 +346,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           ejssource = ejssource.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
           var ejsrslt = jsh.ejs.render(ejssource, { 
             rowid: rowid, 
-            data: [_this.DataSet[rowid]], 
+            datatable: [_this.DataSet[rowid]], 
             xejs: XExt.xejs, 
             jsh: jsh,
             _: _,
@@ -420,7 +420,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     ejssource = ejssource.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
     var ejsrslt = jsh.ejs.render(ejssource, {
       rowid: rowid,
-      data: [newrow],
+      datatable: [newrow],
       xejs: XExt.xejs,
       jsh: jsh,
       _: _,

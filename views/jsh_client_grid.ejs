@@ -114,7 +114,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
     </thead>
     <tbody class="xgrid_<%=model.class%>_placeholder"></tbody>
     <script class="xgrid_<%=model.class%>_template" type="text/x-ejs-template" data-target=".xgrid_<%=model.class%>_placeholder">
-      <# for(var j=0;j<data.length;j++){ var datarow=data[j]; if(!rowid) rowid = j; #>
+      <# for(var j=0;j<datatable.length;j++){ var datarow=datatable[j]; var data = datarow; if(!rowid) rowid = j; #>
       <tr class="<#=(rowid%2==1?'even':'odd')#> <%-model.rowclass%> xrow_<%=model.class%> xrow" style="<%-model.rowstyle%>" data-id="<#=rowid#>">
         <% if(model.inlinepopup){ %><td align="center"><a href="#" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this); return false;">Select</a></td><% } %>
         <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
@@ -132,7 +132,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           <td style="<%=field.cellstyle%>" class="<%=field.cellclass%> <%=xejs.iif(field.control=='checkbox','xcheckbox_column')%> <%=xejs.iif(field.popuplov,'xpopuplov_column')%> <%=fieldclass%>"><% 
         if((field.control=='label') || (field.control=='html')){
           if(('link' in field) && (XExt.beginsWith(field.link,'#select'))){ %><a href="<%-field.link%>" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this);return false;" ><% }
-          else if('link' in field){ %><a href="<%-field.link%>" class="xform_link" <%-xejs.showProp('onclick',field.link_onclick,field.link=='#','return (function(){'+jslocals,'}).call(this);')%> ><% if(field.name && (field.control != 'html')){  %><# if(data[j]['<%=field.name%>']){ #><% } }
+          else if('link' in field){ %><a href="<%-field.link%>" class="xform_link" <%-xejs.showProp('onclick',field.link_onclick,field.link=='#','return (function(){'+jslocals,'}).call(this);')%> ><% if(field.name && (field.control != 'html')){  %><# if(data['<%=field.name%>']){ #><% } }
           if((field.control=='html') && ('value' in field)){
             %><%-field.value%><%
           } else if(field.control=='html'){

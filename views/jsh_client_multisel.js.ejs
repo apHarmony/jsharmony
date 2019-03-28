@@ -91,7 +91,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
             ejssource = ejssource.replace(/<#/g,'<'+'%').replace(/#>/g,'%'+'>')
             if('_title' in data) xgrid.title = data._title;
             var ejsrslt = jsh.ejs.render(ejssource,{
-              data:data[xgrid.q],
+              datatable:data[xgrid.q],
               jsh: jsh,
               instance: jsh.getInstance()
             });

@@ -607,7 +607,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     for(var fieldname in xmodel.bindings){
       data[fieldname] = xmodel.bindings[fieldname]();
     }
-    ejssrc=jsh.XExt.ReplaceAll(ejssrc,'data[j]','data');
     ejssrc = ejssrc.replace(/<#/g, '<' + '%').replace(/#>/g, '%' + '>');
 
     var ejsrslt = jsh.ejs.render(ejssrc, {
@@ -971,9 +970,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.XPage.openDataURL = function(win, modelid, url, options) {
     var xmodel = jsh.XModels[modelid];
     if (!win) win = window.open('', '_blank', options);
-    if ((xmodel.layout == 'form') || (xmodel.layout == 'form-m') || (xmodel.layout == 'exec') || (xmodel.layout == 'report')) {
-      url = XExt.ReplaceAll(url, 'data[j]', 'data');
-    }
     url = jsh.XPage.ParseEJS(url, modelid);
     win.location = url;
     win.focus();

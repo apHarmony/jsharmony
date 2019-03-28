@@ -153,7 +153,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     jsh.AppSrv.Download(req, res, '_temp', keyid, undefined, params);
   });
   //router.get('/_dl/:modelid/:keyid/:fieldid', function (req, res, next) {
-  router.get(/\/\_dl\/(.*)\/([^/]*)\/([^/]*)/, function (req, res, next) {
+  router.get(/^\/\_dl\/(.*)\/([^/]*)\/([^/]*)/, function (req, res, next) {
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
     if (typeof fullmodelid === 'undefined') { next(); return; }
@@ -214,7 +214,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   // /_d/_report/:modelid
-  router.get(/\/\_d\/\_report\/(.*)/, function (req, res, next) {
+  router.get(/^\/\_d\/\_report\/(.*)/, function (req, res, next) {
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
     if (typeof fullmodelid === 'undefined') { next(); return; }
@@ -224,7 +224,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   // /_d/_report_html/:modelid
-  router.get(/\/\_d\/\_report_html\/(.*)/, function (req, res, next) {
+  router.get(/^\/\_d\/\_report_html\/(.*)/, function (req, res, next) {
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
     if (typeof fullmodelid === 'undefined') { next(); return; }
@@ -234,7 +234,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   // /_d/_reportjob/:modelid
-  router.get(/\/\_d\/\_reportjob\/(.*)/, function (req, res, next) {
+  router.get(/^\/\_d\/\_reportjob\/(.*)/, function (req, res, next) {
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
     if (typeof fullmodelid === 'undefined') { next(); return; }
@@ -244,7 +244,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   // /_csv/:modelid
-  router.get(/\/\_csv\/(.*)/, function (req, res, next) {
+  router.get(/^\/\_csv\/(.*)/, function (req, res, next) {
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
     if (typeof fullmodelid === 'undefined') { next(); return; }
@@ -266,7 +266,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     if (typeof queueid === 'undefined') { next(); return; }
     jsh.AppSrv.PopQueue(req, res, queueid);
   });
-  router.route(/\/\_d\/(.*)/)
+  router.route(/^\/\_d\/(.*)/)
 		.all(function (req, res, next) {
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
@@ -301,7 +301,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   // /_report/:modelid
-  router.get(/\/\_report\/(.*)/, function (req, res, next) {
+  router.get(/^\/\_report\/(.*)/, function (req, res, next) {
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
     if (!jsh.hasModel(req, fullmodelid)) return next();
@@ -311,7 +311,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   // /_model/:modelid
-  router.get(/\/\_model\/(.*)/, function (req, res, next) {
+  router.get(/^\/\_model\/(.*)/, function (req, res, next) {
     //Return model meta-data for SinglePage rendering
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
@@ -368,7 +368,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     }, dbconfig);
   });
   // /_debug/:modelid
-  router.get(/\/\_debug\/(.*)/, function (req, res, next) {
+  router.get(/^\/\_debug\/(.*)/, function (req, res, next) {
     if(!('SYSADMIN' in req._roles) && !('DEV' in req._roles)) return next();
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
@@ -390,7 +390,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
       return obj;
     },4));
   });
-  router.get(/\/(.*)/, function (req, res, next) {
+  router.get(/^\/(.*)/, function (req, res, next) {
     //Verify model exists
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');

@@ -217,8 +217,8 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
         }
         else {
           var link_parsed = jsh.parseLink(link_target);
-          var link_targetmodel = jsh.getModel(req, link_parsed.modelid, model);
           var link_targetmodelid = link_parsed.modelid;
+          var link_targetmodel = link_targetmodelid ? jsh.getModel(req, link_targetmodelid, model) : null;
           if(link_targetmodel){
             link_targetmodelid = link_targetmodel.id;
             //Hide the button if the user does not have target access to the model
@@ -242,7 +242,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
           }
           //Generate link
           link_url = jsh.getURL(req, model, link_target, undefined, undefined, link_bindings);
-          link_onclick = jsh.getModelLinkOnClick(req, model, link_targetmodelid, link_target);
+          link_onclick = jsh.getModelLinkOnClick(req, model, link_targetmodelid, link_target, link_parsed.actionParams);
         }
         link_text = link_text.replace(new RegExp('%%%CAPTION%%%', 'g'), model.caption[1]);
         link_text = link_text.replace(new RegExp('%%%CAPTIONS%%%', 'g'), model.caption[2]);
@@ -413,13 +413,25 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
             });
             if ('link' in model.duplicate) {
               rslt.duplicate.link = jsh.getURL(req, model, model.duplicate.link, undefined, dmodel.fields);
-              rslt.duplicate.link_options = "resizable=1,scrollbars=1";
               var ptarget = jsh.parseLink(model.duplicate.link);
-              var link_model = jsh.getModel(req, ptarget.modelid, model);
-              if (!link_model) throw new Error("Link Model " + ptarget.modelid + " not found.");
-              if ('popup' in link_model) {
-                rslt.duplicate.link_options += ',width=' + link_model.popup[0] + ',height=' + link_model.popup[1];
+              var duplicateparams = {
+                resizable: 1,
+                scrollbars: 1
               }
+              if(ptarget.url){ /* Do nothing */ }
+              else {
+                var link_model = jsh.getModel(req, ptarget.modelid, model);
+                if (!link_model) throw new Error("Link Model " + ptarget.modelid + " not found.");
+                
+                if('popup' in link_model){
+                  duplicateparams.width = link_model['popup'][0];
+                  duplicateparams.height = link_model['popup'][1];
+                }
+              }
+              duplicateparams = _.extend(duplicateparams, ptarget.actionParams);
+              var duplicateparamsarr = [];
+              for(var key in duplicateparams) duplicateparamsarr.push(key+'='+duplicateparams[key]);
+              rslt.duplicate.link_options = duplicateparamsarr.join(',');
             }
           }
           return cb();
@@ -473,9 +485,8 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
   var jsh = this.AppSrv.jsh;
   var model = srcobj;
   var rslt = [];
-  var auxfields = null;
+  var firstsort = (('sort' in model)?model['sort'][0].substring(1):'');
   var _this = this;
-  if ((model.layout == 'grid') || (model.layout == 'multisel')) { auxfields = jsh.getAuxFields(req,res,model); }
   async.eachOfSeries(srcobj.fields, function(srcfield,i,cb){
     var dstfield = {};
     copyValues(dstfield, srcfield, [
@@ -523,10 +534,8 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
         dstfield.onclick = dstfield.link_onclick;
       }
     }
-    if (auxfields) {
-      copyValues(dstfield, auxfields[i], [
-        'sortclass', 'link_onclick'
-      ]);
+    if ((model.layout == 'grid') || (model.layout == 'multisel')) {
+      dstfield.sortclass = ((srcfield.name == firstsort)?((model['sort'][0].substring(0, 1) == '^')?'sortAsc':'sortDesc'):'');
     }
     if (srcfield.lov) {
       dstfield.lov = {};

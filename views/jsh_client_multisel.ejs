@@ -36,19 +36,19 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
 		</tr>
 	</thead>
 	<tbody class="xmultisel_<%=model.class%>_placeholder">
-    <% for(var j=0;j<data.length;j++){ %>
+    <% for(var j=0;j<datatable.length;j++){ let datarow=datatable[j]; let data = datarow; %>
     <tr class="<%=(j%2==1?'even':'odd')%>">
       <td align="center"><input type="checkbox" /></td>
       <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; if(!('caption' in field)) continue; if(field.control=='hidden') continue; %>
-      <td><%=data[j][field.name]%></td>
+      <td><%=data[field.name]%></td>
       <% } %>
     </tr>
     <% } %>
 	</tbody>
   <script class="xmultisel_<%=model.class%>_template" type="text/x-ejs-template">
-    <# for(var j=0;j<data.length;j++){ var datarow=data[j]; #>
+    <# for(var j=0;j<datatable.length;j++){ let datarow=datatable[j]; let data = datarow; #>
     <tr class="<#=(j%2==1?'even':'odd')#>">
-      <td align="center" style="vertical-align:middle;"><div class="xform_ctrl checkbox_container xelem<%=model.class%>"><input type="checkbox" class="xselitem xform_ctrl checkbox xelem<%=model.class%> <%-xejs.iif(!XExt.hasAction(model.actions,'IU'),'uneditable','editable')%>" value="<#=data[j][jsh.uimap.codeval]#>" <%-xejs.iif(!XExt.hasAction(model.actions,'IU'),'disabled="disabled"')%> <# if(data[j]['<%=lovfield%>']!==null){ #>checked="checked"<# } #> data-orig-checked="<# if(data[j]['<%=lovfield%>']!==null){ #>checked<# } #>" /></div></td>
+      <td align="center" style="vertical-align:middle;"><div class="xform_ctrl checkbox_container xelem<%=model.class%>"><input type="checkbox" class="xselitem xform_ctrl checkbox xelem<%=model.class%> <%-xejs.iif(!XExt.hasAction(model.actions,'IU'),'uneditable','editable')%>" value="<#=data[jsh.uimap.codeval]#>" <%-xejs.iif(!XExt.hasAction(model.actions,'IU'),'disabled="disabled"')%> <# if(data['<%=lovfield%>']!==null){ #>checked="checked"<# } #> data-orig-checked="<# if(data['<%=lovfield%>']!==null){ #>checked<# } #>" /></div></td>
     <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
       if(!('caption' in field)) continue; 
       if(!('actions' in field)) continue; 
@@ -62,7 +62,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
         <% if('value' in field){ %>
           <%-field.value%>
         <% } else { %>
-          <span onclick="<%-js('$(this).closest("tr").find(".checkbox").click();')%>"><#=<%-instance%>.XFormat.Apply(<%-format%>,data[j][<%-xejs.iif(field.name==lovfield,'jsh.uimap.codetxt',"'"+xejs.escapeJS(field.name)+"'")%>])#></span>
+          <span onclick="<%-js('$(this).closest("tr").find(".checkbox").click();')%>"><#=<%-instance%>.XFormat.Apply(<%-format%>,data[<%-xejs.iif(field.name==lovfield,'jsh.uimap.codetxt',"'"+xejs.escapeJS(field.name)+"'")%>])#></span>
         <% } %>
         <% if('link' in field){ %></a><% } %>
       </div></td>

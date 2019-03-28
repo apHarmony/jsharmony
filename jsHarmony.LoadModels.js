@@ -995,8 +995,11 @@ exports.ParseEntities = function () {
             if(field.value) field.control = 'html';
           }
           else if(model.layout=='grid'){
-            if(Helper.hasAction(field.actions, 'B') && !field.value) field.control = 'label';
+            if(!field.value) field.control = 'label';
             else if(field.value) field.control = 'html';
+          }
+          else if(model.layout=='multisel'){
+            field.control = 'label';
           }
           if('control' in field) field._auto.control = true;
         }
@@ -1455,6 +1458,7 @@ exports.ParseEntities = function () {
       }
       if (_.includes(['label','button','linkbutton'],field.control) && Helper.hasAction(field.actions, 'IUD')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': A '+field.control+' can only have action B');
       if (field.value && !_.includes(['label','html','button','linkbutton'],field.control)){ _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field.value property is only supported for label, html, button, and linkbuttons controls.  Use field.default instead.'); }
+      if (field.link && !_.includes(['label','html','button','linkbutton'],field.control)){ _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field.link property is only supported for label, html, button, and linkbuttons controls.'); }
       //Check unique target
       if (field.target) {
         if (!_.includes(existing_targets, field.target)) existing_targets.push(field.target);

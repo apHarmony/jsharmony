@@ -300,7 +300,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "bindings": { "c_id": "c_id" },
       "cellclass": "", //For Grid / Multisel table
       "cellstyle": "width:300px;"  //For Grid / Multisel table
-      "html": "<a href='/<#=data[j]['c_id']#>'><#=data[j]['c_name']#></a>" //**Deprecated**, used "control":"html"
+      "html": "<a href='/<#=data['c_id']#>'><#=data['c_name']#></a>" //**Deprecated**, used "control":"html"
       "serverejs": 1, //Evaluate EJS server-side (for HTML)
       "disable_sort": 1, //Only applies to grid
       "enable_search": 1, //Only applies to grid, enable search if it is a hidden column
