@@ -191,7 +191,7 @@ BODY
   display:inline-block;
 }
 <%-rootcss%> .xtbl td .xform_label,<%-rootcss%> .xtbl td .xform_html {
-  display:block;
+  display:inline-block;
 }
 <%-rootcss%> .xform_file_upload { display:inline-block; }
 <%-rootcss%> .xform_file_upload .linkbutton { white-space:nowrap; }
@@ -282,7 +282,9 @@ BODY
 <%-rootcss%> textarea.updated,
 <%-rootcss%> input.uneditable.updated, 
 <%-rootcss%> select.uneditable.updated, 
-<%-rootcss%> textarea.uneditable.updated 
+<%-rootcss%> textarea.uneditable.updated,
+<%-rootcss%> .xform_label.updated,
+<%-rootcss%> .xform_html.updated
 {
 	background-color:#faf8c2;
 }
@@ -459,6 +461,7 @@ BODY
 }
 <%-rootcss%> .xpopup .xpanel {
   overflow:auto;
+  height:400px;
 }
 <%-rootcss%> .xcontext_menu {
   display:none;

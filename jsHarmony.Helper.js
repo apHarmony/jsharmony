@@ -111,13 +111,16 @@ exports.parseLink = function (target) {
     url = modelid;
     modelid = '';
   }
-  else if (modelid.indexOf('&') >= 0) {
-    var opt = modelid.split('&');
-    modelid = opt[0];
-    for (var i = 1; i < opt.length; i++) {
-      if (Helper.beginsWith(opt[i], 'tabs=')) tabs = opt[i].substr(5);
+  else if ((modelid.indexOf('&') >= 0)||(modelid.indexOf('?') >= 0)) {
+    var modelmarker = '&';
+    if((modelid.indexOf('?') >= 0) && (modelid.indexOf('?') < modelid.indexOf('&'))) modelmarker = '?';
+    var opts = modelid.substr(modelid.indexOf(modelmarker)+1);
+    modelid = modelid.substr(0,modelid.length-opts.length-1);
+    opts = opts.split('&');
+    for (var i = 0; i < opts.length; i++) {
+      if (Helper.beginsWith(opts[i], 'tabs=')) tabs = opts[i].substr(5);
       else {
-        var keystr = opt[i];
+        var keystr = opts[i];
         prekeys = keystr.split(',');
         _.each(prekeys, function (val) {
           var keydata = val.split('=');
@@ -331,7 +334,7 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
 
 //Generates the "onclick" event for a link, based on the field.link property
 exports.getURL_onclick = function (req, model, link) {
-  var seturl = "var url = "+req.jshsite.instance+".$(this).attr('data-url'); if(!url) url = "+req.jshsite.instance+".$(this).attr('href'); if(url=='#') url = ''; if(!url) return false;";
+  var seturl = "var url = "+req.jshsite.instance+".$(this).attr('data-url'); if(!url) url = "+req.jshsite.instance+".$(this).attr('href'); if(url=='#') url = ''; if(!url || (url=='mailto:')) return false;";
   var rslt = req.jshsite.instance+".XExt.navTo(url); return false;";
   var windowtarget = '_self';
   if (typeof link != 'undefined') {
@@ -344,8 +347,17 @@ exports.getURL_onclick = function (req, model, link) {
       if (!tmodel) throw new Error("Link Model " + ptarget.modelid + " not found.");
       if (!Helper.hasModelAction(req, tmodel, 'BIU')) return req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;";
     }
-    if (model && ((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec') || (model.layout == 'report'))) {
-      seturl += "var jsh="+req.jshsite.instance+"; var modelid='" + Helper.escapeHTML(model.id) + "'; var xmodel=jsh.XModels[modelid]; var xform = xmodel.controller.form; if(xform && xform.Data && !xform.Data.Commit()) return false; url = jsh.XPage.ParseEJS(url,modelid); ";
+    if(model && model.layout){
+      if ((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec') || (model.layout == 'report')) {
+        seturl += "var jsh="+req.jshsite.instance+"; var modelid='" + Helper.escapeJS(model.id) + "'; var xmodel=jsh.XModels[modelid]; var xform = xmodel.controller.form; if(xform && xform.Data && !xform.Data.Commit()) return false; url = jsh.XPage.ParseEJS(url,modelid); if(!url || (url=='mailto:')) return false;";
+      }
+      else if (model.layout == 'grid'){
+        seturl += "var jsh="+req.jshsite.instance+"; var modelid='" + Helper.escapeJS(model.id) + "'; var xmodel=jsh.XModels[modelid]; var xgrid = xmodel.controller.grid; var xform = xmodel.controller.form; var xeditablegrid = xmodel.controller.editablegrid; ";
+        seturl += "if(xeditablegrid && xeditablegrid.CurrentCell && !xform.CommitRow()) return false; ";
+        seturl += "if(xform && xform.Data && !xform.Data.Commit()) return false; ";
+        seturl += "var rowid = jsh.XExt.XModel.GetRowID(modelid, this); ";
+        seturl += "url = jsh.XPage.ParseEJS(url, modelid, undefined, xform.DataSet[rowid]); if(!url || (url=='mailto:')) return false;";
+      }
     }
     if(ptarget.action=='download'){
       rslt = "url += '?format=js'; "+req.jshsite.instance+".getFileProxy().prop('src', url); return false;";

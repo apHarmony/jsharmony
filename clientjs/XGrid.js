@@ -211,15 +211,11 @@ exports = module.exports = function(jsh){
           if (_this.OnResetDataSet) _this.OnResetDataSet(data);
         }
         if (ejssource) {
-          ejssource = ejssource.replace(/<#/g, '<%').replace(/#>/g, '%>')
           if (data[this.q] && _this.OnRender) _this.OnRender(ejssource, data);
           else {
-            var ejsrslt = jsh.ejs.render(ejssource, {
+            var ejsrslt = jsh.XExt.renderEJS(ejssource, undefined, {
               rowid: undefined,
               datatable: data[this.q],
-              xejs: jsh.XExt.xejs,
-              jsh: jsh,
-              instance: jsh.getInstance()
             });
             jsh.$root(_this.PlaceholderID).append(ejsrslt);
             _this.RowCount = jsh.$root(_this.PlaceholderID).find('tr').length;

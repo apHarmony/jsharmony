@@ -223,10 +223,10 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
       var fname = keyid;
       if ('FILE_NAME' in field.controlparams.sqlparams) { fname = rslt[0][field.controlparams.sqlparams.FILE_NAME]; }
       else if ('FILE_EXT' in field.controlparams.sqlparams) { fname += rslt[0][field.controlparams.sqlparams.FILE_EXT]; }
-      var fpath = jsh.Config.datadir + field.controlparams.data_folder + '/' + fieldid + '_' + keyid;
+      var fpath = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||fieldid) + '_' + keyid;
       if (options.thumb) {
         if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
-          fpath = jsh.Config.datadir + field.controlparams.data_folder + '/' + tname + '_' + keyid;
+          fpath = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||tname) + '_' + keyid;
           break;
         }
       }
@@ -265,7 +265,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
       sql_extvalues.push(sql_CUSER);
     }
     if (!('_DBContext' in req) || (req._DBContext == '') || (req._DBContext == null)) { return filecallback(Helper.GenError(req, res, -10, 'Invalid Login / Not Authenticated')); }
-    var filedest = jsh.Config.datadir + field.controlparams.data_folder + '/' + file + '_%%%KEY%%%';
+    var filedest = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||file) + '_%%%KEY%%%';
     if (field.controlparams._data_file_has_extension) filedest += '%%%EXT%%%';
     if (P[file] == '') {
       if ('FILE_SIZE' in field.controlparams.sqlparams) {
@@ -280,7 +280,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
       fileops.push({ op: 'move', src: '', dest: filedest });
       //Delete Thumbnails in main operation
       if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
-        var tdest = jsh.Config.datadir + field.controlparams.data_folder + '/' + tname + '_%%%KEY%%%';
+        var tdest = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||tname) + '_%%%KEY%%%';
         if (field.controlparams._data_file_has_extension) filedest += '%%%EXT%%%';
         fileops.push({ op: 'move', src: '', dest: tdest });
       }
@@ -318,7 +318,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
         if (field.controlparams.image && _.includes(jsh.Config.supported_images, file_ext)) {
           //Create Thumbnails, if applicable
           if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
-            var tdest = jsh.Config.datadir + field.controlparams.data_folder + '/' + tname + '_%%%KEY%%%';
+            var tdest = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||tname) + '_%%%KEY%%%';
             if (field.controlparams._data_file_has_extension) tdest += '.' + field.controlparams.thumbnails[tname].format;
             if (_.includes(jsh.Config.supported_images, file_ext)) {
               if (field.controlparams.thumbnails[tname].resize) fileops.push({ op: 'img_resize', src: fpath, dest: tdest, size: field.controlparams.thumbnails[tname].resize, format: field.controlparams.thumbnails[tname].format });

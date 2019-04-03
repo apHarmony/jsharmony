@@ -519,7 +519,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
     if (('link' in srcfield) && (srcfield.link)) {
       if (srcfield.link == 'select') {
         dstfield.link = jsh.getURL(req, model, srcfield.link + ':' + model.id, undefined, model.fields);
-        dstfield.link_onclick = "XExt.selectLOV(this);return false;";
+        dstfield.link_onclick = req.jshsite.instance+".XExt.popupSelect('"+ Helper.escapeJS(model.id) + "',this);return false;";
       }
       else if (srcfield.link.substr(0,3)=='js:') {
         dstfield.link = '#';

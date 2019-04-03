@@ -84,7 +84,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
   });
 
+  $(window).focus(function(){ jsh.FocusHandler(); });
+
   $(document).focusin(function(){
+    //If a dialog is open, make sure focus is on an element in the top dialog
     if(jsh.xDialog.length){
       var newobj = document.activeElement;
       if(newobj && !($(newobj).closest(jsh.xDialog[0]).length)){
@@ -94,13 +97,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
   });
 
-  $(document).focusout(function(){
+  $(document).focusout(function(){ jsh.FocusHandler(); });
+
+  jsh.FocusHandler = function(){
     if(jsh.ignorefocusHandler || jsh.xDialog.length) return;
     window.setTimeout(function(){
       if(jsh.ignorefocusHandler || jsh.xDialog.length) return;
       for(var i=0;i<jsh.focusHandler.length;i++) jsh.focusHandler[i](document.activeElement);
     },1);
-  });
+  }
 
   jsh.Load = function(options){
     if(!options) options = {
@@ -364,10 +369,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       _GET: jsh._GET,
       instance: <%-JSON.stringify(req.jshsite.instance)%>,
       jslocals: XExt.getJSLocals(model.id),
-      js: function(code){ return XExt.wrapJS(code,model.id); }
+      js: function(code,options){ return XExt.wrapJS(code,model.id,options); }
     }, params);
     ejsparams.ejsparams = ejsparams;
-    return jsh.ejs.render(jsh.GetEJS(view), ejsparams);
+    var rslt = jsh.ejs.render(jsh.GetEJS(view), ejsparams);
+    return rslt;
   }
 
   jsh.RenderView = function(view,ejsparams){

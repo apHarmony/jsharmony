@@ -113,7 +113,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh.XPage.RefreshParent();
       for(var modelid in jsh.XModels){
         var xmodel = jsh.XModels[modelid];
-        if(xmodel.unbound) return;
+        if(xmodel.unbound) continue;
         var dbrsltsuffix = '_'+modelid;
         var modelrslt = {};
         for(var dbrslt in rslt){
@@ -587,9 +587,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     return rslt;
   }
 
-  jsh.XPage.ParseEJS = function(_ejssrc, modelid, parentmodelid) {
+  jsh.XPage.ParseEJS = function(_ejssrc, modelid, parentmodelid, data) {
     var ejssrc = _ejssrc;
-    var data = {};
+    data = _.extend({}, data);
     if (!(modelid in jsh.XModels)) { XExt.Alert('Error: Model ' + modelid + ' not found.'); return; }
     var xmodel = jsh.XModels[modelid];
     var xparentmodel = null;
@@ -620,7 +620,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       instance: jsh.getInstance(),
       _GET: jsh._GET,
       modelid: modelid,
-      js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
+      xmodel: xmodel,
+      js: function(code,options){ return jsh.XExt.wrapJS(code,modelid,options); }
     });
     return ejsrslt;
   }

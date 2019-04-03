@@ -99,10 +99,6 @@ exports.getJSLocals = function(req){
   return 'var jsh = '+req.jshsite.instance+';var $ = jsh.$;var _ = jsh._;var async = jsh.async;var moment=jsh.moment;var ejs = jsh.ejs;var XExt = jsh.XExt;var XForm = jsh.XForm;var XValidate = jsh.XValidate;var XFormat = jsh.XFormat;var _GET = jsh._GET;var XBase = jsh.XBase; var XModels = jsh.XModels;';
 };
 
-exports.wrapJS = function(req, code){
-  return 'return (function(){'+this.getJSLocals(req)+' '+code+'; return false; }).call(this);';
-};
-
 exports.RenderView = function(view,ejsparams){
   var _this = this;
   return this.RenderEJS(_this.getEJS(view),ejsparams);

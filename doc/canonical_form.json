@@ -206,6 +206,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                            "upload_button": "Upload", //Text for upload button
                            "delete_button": "Delete", //Text for delete button
                            "data_folder": "D",//Folder for files, must be unique per model
+                           "data_file_prefix": "c_doc", //File prefix in PREFIX_KEY.EXT (defaults to field name if blank or not set)
                            "_data_file_has_extension": false, //System parameter.  Automatically set to true if sqlparams.FILE_EXT not set.  Slower because a directory search is required on each request.  
                       }, 
                       { //file_download params
@@ -215,6 +216,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                         },
                         "download_button": "Download", //Text for download button
                         "data_folder": "D",//Folder for files, must be unique per model
+                        "data_file_prefix": "c_doc", //File prefix in PREFIX_KEY.EXT (defaults to field name if blank or not set)
                         "_data_file_has_extension": false, //System parameter.  Automatically set to true if sqlparams.FILE_EXT not set.  Slower because a directory search is required on each request.  
                       },
                       {"item_context_menu": [ //tree params - Context Menu for an Item

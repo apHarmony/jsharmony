@@ -56,8 +56,9 @@ exports = module.exports = function(jsh){
       this.Data.OnRender.apply(this.Data,arguments);
     else if(this.TemplateID){
       var ejssource = jsh.$root(this.TemplateID).html();
-      ejssource = ejssource.replace(/<#/g,'<%').replace(/#>/g,'%>');
-      jsh.$root(this.PlaceholderID).html(jsh.ejs.render(ejssource,{data:this.Data,xejs:jsh.XExt.xejs,jsh:jsh,instance:jsh.getInstance()}));
+      jsh.$root(this.PlaceholderID).html(jsh.XExt.renderEJS(ejssource, undefined, {
+        data:this.Data
+      }));
     }
     if (this.OnAfterRender) this.OnAfterRender();
   };
@@ -172,9 +173,10 @@ exports = module.exports = function(jsh){
     }
     return true;
   }
-  XForm.prototype.NavTo = function (_index, saveold){
+  XForm.prototype.NavTo = function (_index, saveold, onComplete){
     if (!this.SetIndex(_index, saveold)) return;
     this.Render();
+    if(onComplete) onComplete();
   }
   XForm.prototype.NavAdd = function(){
     if(!this.Data.Commit()) return;

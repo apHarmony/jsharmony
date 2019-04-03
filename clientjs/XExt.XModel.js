@@ -119,6 +119,7 @@ exports = module.exports = function(jsh){
     if(typeof val === 'undefined'){
       val = _this[field.name];
     }
+    var dataval = val;
     //Apply formatting
     if ((field.name in _this) && (typeof val == 'undefined')) val = '';
     else val = jsh.XFormat.Apply(field.format, val);
@@ -134,8 +135,12 @@ exports = module.exports = function(jsh){
     }
     
     var fieldselector = '.' + field.name + '.xelem' + xmodel.class;
-    if (isGrid) fieldselector = '.' + field.name + '.xelem' + xmodel.class;
     var jctrl = parentobj.find(fieldselector);
+    //Apply value to hidden field if updateable non-control element
+    if(jsh.XExt.hasAction(field.actions,'IU') && _.includes(['html','label','linkbutton','button'],field.control)){
+      var jctrl_hidden = parentobj.find('.'+field.name+'_field_value.xelem'+xmodel.class);
+      jctrl_hidden.val(val);
+    }
     if (('control' in field) && ((field.control == 'file_upload')||(field.control == 'file_download'))) {
       //Show "Upload File" always
       var filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
@@ -213,36 +218,31 @@ exports = module.exports = function(jsh){
       else if (checkhidden) jctrl.css('visibility', 'visible');
     }
     else if ((jctrl.size() > 0) && jctrl.hasClass('xform_label')) {
+      var showLabel = true;
       if(lovTxt) val = lovTxt;
       if(jctrl.hasClass('xform_label_static')){
         if(field.value && field.value.indexOf('<#')>=0){
           val = field.value;
           val = val.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
-          val = jsh.ejs.render(val, { 
-            data: _this, 
-            xejs: jsh.XExt.xejs, 
-            jsh: jsh, 
-            instance: jsh.getInstance(),
-            modelid: modelid,
-            js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
+          val = jsh.XExt.renderEJS(val, modelid, {
+            data: _this
           });
           jctrl.html(val);
-          jctrl.toggleClass('hidden',!val);
+          showLabel = !!val;
         }
       }
       else{ jctrl.html(jsh.XExt.escapeHTMLBR(val)); }
+      if(field.type && jctrl.parent().hasClass('xform_link')){
+        showLabel = showLabel && !!dataval;
+      }
+      jctrl.toggleClass('hidden',!showLabel);
     }
     else if ((jctrl.size() > 0) && jctrl.hasClass('xform_html')) {
       if(lovTxt) val = lovTxt;
       if(val.indexOf('<#') >= 0){
         val = val.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
-        val = jsh.ejs.render(val, { 
-          data: _this, 
-          xejs: jsh.XExt.xejs, 
-          jsh: jsh, 
-          instance: jsh.getInstance(),
-          modelid: modelid,
-          js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
+        val = jsh.XExt.renderEJS(val, modelid, {
+          data: _this
         });
       }
       jctrl.html(val);
@@ -373,6 +373,10 @@ exports = module.exports = function(jsh){
         return checkval;
       }
       var val = jctrl.val();
+      if(_.includes(['html','label','linkbutton','button'],field.control)){
+        var jctrl_hidden = parentobj.find('.'+field.name+'_field_value.xelem'+xmodel.class);
+        val = jctrl_hidden.val();
+      }
       if(typeof val === 'undefined') val = '';
       if ((typeof CKEDITOR != 'undefined') && (field.name in CKEDITOR.instances)) {
         val = CKEDITOR.instances[field.name].getData();

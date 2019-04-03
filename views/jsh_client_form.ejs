@@ -30,7 +30,7 @@
   <% } %>
 <% } else { %>
   <% if(parentfield && XExt.hasAction(model.actions, 'I') && parentfield.controlparams && parentfield.controlparams.insert_link){ %>
-    <div class="xnorecords xelem<%=model.class%>" style="display:none;"><a href="<%-parentfield.controlparams.insert_link%>" onclick="return (function(){<%-jslocals%><%-parentfield.controlparams.insert_link_onclick%>}).call(this);"><img src="/images/icon_insert.png" alt="Add" title="Add" />Add <%=model.caption[1]%></a></div>
+    <div class="xnorecords xelem<%=model.class%>" style="display:none;"><a href="<%-parentfield.controlparams.insert_link%>" onclick="<%-js(parentfield.controlparams.insert_link_onclick,{ noReturn:1 })%>"><img src="/images/icon_insert.png" alt="Add" title="Add" />Add <%=model.caption[1]%></a></div>
   <% } else { %>
     <div class="xnorecords xelem<%=model.class%>" style="display:none;">No <%=model.caption[1]%></div>
   <% } %>

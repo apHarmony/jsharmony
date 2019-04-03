@@ -544,6 +544,7 @@ exports.ParseEntities = function () {
     //Remove null values
     for(var prop in model) if(model[prop]===null) delete model[prop];
     if(model.fields) _.each(model.fields, function(field){ for(var prop in field) if(field[prop]===null) delete field[prop]; });
+    if(model.unbound && !('layout' in model)) model.layout = 'exec';
 
     var modelExt = modelsExt[model.id] = {
       db: undefined,
@@ -928,7 +929,7 @@ exports.ParseEntities = function () {
               //Editable grid
               if(field.key) field.actions = 'B';
               else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
-              else if(field.control=='label') field.actions = 'B';
+              else if((field.control=='label') && !field.popuplov) field.actions = 'B';
               else if(model._parentbindings[field.name] || model._childbindings[field.name]) field.actions = 'BI';
               else field.actions = 'BIU';
             }
@@ -937,7 +938,7 @@ exports.ParseEntities = function () {
             if(field.key) field.actions = 'B';
             else if(field.type=='file') field.actions = 'BIU';
             else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
-            else if(field.control=='label') field.actions = 'B';
+            else if((field.control=='label') && !field.popuplov) field.actions = 'B';
             else if(model._parentbindings[field.name] || model._childbindings[field.name]) field.actions = 'BI';
             else if(!('name' in field) && !('control' in field)) field.actions = 'B';
             //else if(!('control' in field)) field.actions = 'B';
@@ -947,7 +948,7 @@ exports.ParseEntities = function () {
             if(field.key) field.actions = 'B';
             else if(field.foreignkey && !('control' in field)) field.actions = 'I';
             else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
-            else if(field.control=='label') field.actions = 'B';
+            else if((field.control=='label') && !field.popuplov) field.actions = 'B';
             else if(model._parentbindings[field.name] || model._childbindings[field.name]) field.actions = 'BI';
             else field.actions = 'BIU';
           }
@@ -960,7 +961,7 @@ exports.ParseEntities = function () {
             if(field.key) field.actions = 'B';
             else if(!('control' in field)) field.actions = 'B';
             else if(auto_attributes && coldef && coldef.readonly) field.actions ='B';
-            else if(field.control=='label') field.actions = 'B';
+            else if((field.control=='label') && !field.popuplov) field.actions = 'B';
             else field.actions = 'BIU';
           }
           if(!field.name && field.type && field.actions){
@@ -1012,7 +1013,7 @@ exports.ParseEntities = function () {
       }
       if(!('caption' in field)){
         if(_.includes(['subform','html','hidden'],field.control)) field.caption = '';
-        else if(_.includes(['linkbutton','button'],field.control) && ('value' in field)){
+        else if(_.includes(['linkbutton','button','label'],field.control) && ('value' in field)){
           if(model.layout=='grid') field.caption = field.value;
           else field.caption = '';
         }
@@ -1102,7 +1103,6 @@ exports.ParseEntities = function () {
       //Initialize file control
       if(field.control=='file_upload'){
         if (!('controlparams' in field)) field.controlparams = {};
-        if (!('sqlparams' in field.controlparams)) field.controlparams.sqlparams = {};
         if(('image' in field.controlparams)||('thumbnails' in field.controlparams)){
           if (!('preview_button' in field.controlparams)) field.controlparams.preview_button = 'View';
         }
@@ -1111,12 +1111,16 @@ exports.ParseEntities = function () {
         }
         if(!('upload_button' in field.controlparams)) field.controlparams.upload_button = 'Upload';
         if(!('delete_button' in field.controlparams)) field.controlparams.delete_button = 'Delete';
-        if(!field.controlparams.sqlparams.FILE_EXT) field.controlparams._data_file_has_extension = true;
+        if(field.type != 'file') _this.LogInit_ERROR('Model ' + model.id + ' Field ' + (field.name || '') + ' should have field.type="file" for field.control="file_upload"');
       }
       else if(field.control=='file_download'){
         if (!('controlparams' in field)) field.controlparams = {};
-        if (!('sqlparams' in field.controlparams)) field.controlparams.sqlparams = {};
         if (!('download_button' in field.controlparams)) field.controlparams.download_button = 'Download';
+        if(field.type != 'file') _this.LogInit_ERROR('Model ' + model.id + ' Field ' + (field.name || '') + ' should have field.type="file" for field.control="file_download"');
+      }
+      if(field.type=='file'){
+        if (!('controlparams' in field)) field.controlparams = {};
+        if (!('sqlparams' in field.controlparams)) field.controlparams.sqlparams = {};
         if(!field.controlparams.sqlparams.FILE_EXT) field.controlparams._data_file_has_extension = true;
       }
 
@@ -1430,7 +1434,7 @@ exports.ParseEntities = function () {
     ];
     var _v_controlparams = [
       'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'base_readonly', 'dateformat',
-      'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'sqlparams', '_data_file_has_extension',
+      'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'data_file_prefix', 'sqlparams', '_data_file_has_extension',
       'image', 'thumbnails', 'expand_all', 'item_context_menu', 'insert_link', 'grid_save_before_update', "update_when_blank"
     ];
     var _v_popuplov = ['target', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
@@ -1456,7 +1460,7 @@ exports.ParseEntities = function () {
       if (field.lov) {
         for (let f in field.lov) { if (!_.includes(_v_lov, f)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Invalid lov parameter: ' + f); }
       }
-      if (_.includes(['label','button','linkbutton'],field.control) && Helper.hasAction(field.actions, 'IUD')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': A '+field.control+' can only have action B');
+      //if (_.includes(['label','button','linkbutton'],field.control) && Helper.hasAction(field.actions, 'IUD')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': A '+field.control+' can only have action B'); //Disabled because popuplov / JS can change values
       if (field.value && !_.includes(['label','html','button','linkbutton'],field.control)){ _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field.value property is only supported for label, html, button, and linkbuttons controls.  Use field.default instead.'); }
       if (field.link && !_.includes(['label','html','button','linkbutton','hidden'],field.control)){ _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field.link property is only supported for label, html, button, and linkbuttons controls.'); }
       //Check unique target
@@ -1497,6 +1501,7 @@ exports.ParseEntities = function () {
         if(field.default && field.default.sql) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Cannot use field.default.sql when model.unbound is set');
         if(field.lov) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Cannot use field.lov when model.unbound is set');
       }
+      if(!('caption' in field) && (model.layout=='grid')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': If a grid field does not have a caption, the field.control should be set to "hidden"');
     });
     if (no_B && model.breadcrumbs && model.breadcrumbs.sql) {
       _this.LogInit_ERROR(model.id + ': No fields set to B (Browse) action.  Form databinding will be disabled client-side, and breadcrumbs sql will not execute.');
@@ -1942,6 +1947,7 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
     element.bindings = bindings;
     return bindings;
   }
+  else if(tmodel.unbound) element.bindings = {};
   else return null;
 };
 

@@ -101,6 +101,7 @@ exports = module.exports = function(jsh){
     //Global Focus Change
     var _this = this;
     jsh.focusHandler.push(function (newobj) {
+      if(newobj && newobj.tagName && (newobj.tagName.toUpperCase()=='BODY')) newobj = null;
       if (jsh.xLoader.IsLoading) { return; }
       var newrowid = -1;
       var oldrowid = -1;
@@ -113,7 +114,7 @@ exports = module.exports = function(jsh){
       if (newobj) newrowid = jsh.XExt.XModel.GetRowID(_this.modelid, newobj);
       if (newrowid >= 0) return; //Return if current control is in grid
       _this.DebugLog('FocusHandler Triggered');
-      _this.CellLeaving(oldobj, undefined, undefined, function () {
+      _this.CellLeaving(oldobj, newobj, undefined, function () {
         //Success
         _this.CellChange(_this.CurrentCell);
       });
@@ -124,15 +125,16 @@ exports = module.exports = function(jsh){
     if (this.Debug) console.log(obj); // eslint-disable-line no-console
   }
 
-  XEditableGrid.prototype.ControlEnter = function (obj, e) {
+  XEditableGrid.prototype.ControlEnter = function (obj, e, onComplete) {
     var _this = this;
-    if (this.CurrentCell == obj) return;
-    if (this.ErrorClass) if ($(obj).hasClass(this.ErrorClass)) { this.CurrentCell = obj; return; }
+    if (this.CurrentCell == obj){ if(onComplete) onComplete(); return; }
+    if (this.ErrorClass) if ($(obj).hasClass(this.ErrorClass)) { this.CurrentCell = obj; if(onComplete) onComplete();  return; }
     
     //Reset old value
     var immediate_result = this.ControlLeaving(obj, e, function (_immediate_result) {
       //On success
       _this.CellChange(_this.CurrentCell, obj, e);
+      if(onComplete) onComplete();
       if (!_immediate_result) {
       }
     }, function (_immediate_result) {
@@ -188,9 +190,9 @@ exports = module.exports = function(jsh){
   //----------------
   //Return true if immediate result
   //Return false if needs to wait
-  XEditableGrid.prototype.ControlLeaving = function (obj, e, onsuccess, oncancel) {
+  XEditableGrid.prototype.ControlLeaving = function (newobj, e, onsuccess, oncancel) {
     var _this = this;
-    var rslt = this.CellLeaving(this.CurrentCell, obj, e, onsuccess, oncancel);
+    var rslt = this.CellLeaving(this.CurrentCell, newobj, e, onsuccess, oncancel);
     if (rslt === true) return true;
     else if (rslt === false) return true;
     return false;
@@ -247,10 +249,9 @@ exports = module.exports = function(jsh){
     //Commit Cell/Row
     if (this.IsDirty && this.IsDirty() && this.OnCommit && (
       (this.CommitLevel == 'cell') || 
-      ((this.CommitLevel == 'cell') && (newobj && $(newobj).is(':checkbox'))) || 
+      ((this.CommitLevel == 'cell') && ((newrowid>=0) && newobj && $(newobj).is(':checkbox'))) || 
       (rowchange && (this.CommitLevel == 'row'))
   )) {
-      
       if (newobj) jsh.qInputAction = new jsh.XExt.XInputAction(newobj);
       else if (jsh.qInputAction && !(jsh.qInputAction.IsExpired())) { }
       else jsh.qInputAction = null;
@@ -267,7 +268,8 @@ exports = module.exports = function(jsh){
       
       var onsuccess_override = function () {
         if (onsuccess) onsuccess(false);
-        if (jsh.qInputAction) jsh.qInputAction.Exec();
+        if (!newobj) $(document.activeElement).blur();
+        else if (jsh.qInputAction) jsh.qInputAction.Exec();
       }
       
       if (!this.OnCommit(oldrowid, oldobj, onsuccess_override, oncancel)) return false;
@@ -275,6 +277,18 @@ exports = module.exports = function(jsh){
     
     if (onsuccess) onsuccess();
     return true;
+  }
+
+  //obj must be a DOM element - not a jQuery object
+  //Leave e to null if not calling from a focus event handler
+  XEditableGrid.prototype.SetFocus = function (obj, e, onComplete) {
+    if (jsh.xDialog.length) return;
+    if (!$(obj).hasClass('editable')) return;
+    if (obj instanceof jshInstance.$) throw new Error('SetFocus obj must not be a jquery object');
+    return this.ControlEnter(obj, e, function(){
+      if (!e && document.hasFocus && document.hasFocus()) $(obj).focus();
+      if(onComplete) onComplete();
+    });
   }
 
   XEditableGrid.prototype.BindRow = function (jobj) {
@@ -301,9 +315,9 @@ exports = module.exports = function(jsh){
         }
       });
     });
-    jobj.find('.xelem' + xmodel.class).not('.xelem' + xmodel.class + '.checkbox').focus(function (e) { if (jsh.xDialog.length) return; if (!$(this).hasClass('editable')) return; return _this.ControlEnter(this, e); });
+    jobj.find('.xelem' + xmodel.class).not('.xelem' + xmodel.class + '.checkbox').focus(function (e) { return _this.SetFocus(this, e); });
     jobj.find('.xelem' + xmodel.class + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e) })
-    jobj.find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; if (jsh.xDialog.length) return; if (!$(ctrl).hasClass('editable')) return; return _this.ControlEnter(ctrl, e); });
+    jobj.find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; return _this.SetFocus(ctrl, e); });
   }
 
   return XEditableGrid;

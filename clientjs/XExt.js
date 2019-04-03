@@ -27,6 +27,7 @@ exports = module.exports = function(jsh){
 
   XExt.XModel = require('./XExt.XModel.js')(jsh);
   XExt.COOKIE_MAX_EXPIRATION = 2147483647;
+  XExt.ejsDelimiter = { open: '<%', close: '%>' };
 
   XExt.parseGET = function (qs) {
     if (typeof qs == 'undefined') qs = window.location.search;
@@ -540,6 +541,24 @@ exports = module.exports = function(jsh){
     rslt = XExt.ReplaceAll(rslt, '#&gt;', '#>');
     return rslt;
   }
+  XExt.renderEJS = function(ejssource, modelid, params){
+    var ejsparams = {
+      xejs: XExt.xejs,
+      jsh: jsh,
+      _: jsh._,
+      moment: jsh.moment,
+      XExt: XExt,
+      instance: jsh.getInstance(),
+      _GET: jsh._GET,
+      js: function(code,options){ return jsh.XExt.wrapJS(code,modelid,options); }
+    };
+    if(modelid){
+      ejsparams.modelid = modelid;
+      ejsparams.xmodel = jsh.XModels[modelid];
+    }
+    ejsparams = _.extend(ejsparams, params);
+    return jsh.ejs.render(ejssource, ejsparams);
+  }
   XExt.renderClientEJS = function(ejssrc,ejsparams){
     if(!ejssrc) return '';
     if(ejssrc.indexOf('<#')<0) return ejssrc;
@@ -829,8 +848,9 @@ exports = module.exports = function(jsh){
     return eval(jscmd);
   }
 
-  XExt.wrapJS = function(code,modelid){
-    return 'return (function(){'+XExt.escapeHTML(XExt.getJSLocals(modelid))+' '+XExt.unescapeEJS(XExt.escapeHTML(code))+'; return false; }).call(this);';
+  XExt.wrapJS = function(code,modelid,options){
+    options = _.extend({ noReturn: true }, options);
+    return 'return (function(){'+XExt.escapeHTML(XExt.getJSLocals(modelid))+' '+XExt.unescapeEJS(XExt.escapeHTML(code))+'; '+(!options.noReturn?'return false;':'')+' }).call(this);';
   }
 
   XExt.TreeItemContextMenu = function (ctrl, n) {
@@ -999,7 +1019,7 @@ exports = module.exports = function(jsh){
     if (_this.obj) $(_this.obj).focus();
     if (this.overrideFunc) this.overrideFunc();
     else if (_this.obj && _this.mouseDown) {
-      XExt.Click(_this.obj);
+      XExt.Click(_this.obj, _this.mouseX, _this.mouseY);
     }
   }
 
@@ -1013,13 +1033,24 @@ exports = module.exports = function(jsh){
     return undefined;
   }
 
-  XExt.Click = function (obj) {
-    var gevent = new MouseEvent("mousedown", {
-      bubbles: true,
-      cancelable: true,
-      view: window,
-    });
-    window.setTimeout(function () { obj.dispatchEvent(gevent); }, 1);
+  XExt.Click = function (obj, x, y) {
+    window.setTimeout(function () {
+      obj.dispatchEvent(new MouseEvent("mousedown", {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      }));
+      obj.dispatchEvent(new MouseEvent("mouseup", {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      }));
+      obj.dispatchEvent(new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      }));
+    }, 1);
   }
 
   XExt.isIOS = function () {
@@ -1121,6 +1152,28 @@ exports = module.exports = function(jsh){
     if (!XExt.isIOS()) jsh.$root('.xconfirmbox input.button_ok').focus();
   }
 
+  XExt.stringify = function (origvalue, replacer, space) {
+    var cache = [];
+    return JSON.stringify(origvalue, function(key, value){
+      if (typeof value === 'object' && value !== null) {
+        if (cache.indexOf(value) !== -1) {
+            // Duplicate reference found
+            try {
+                // If this value does not reference a parent it can be deduped
+                return JSON.parse(JSON.stringify(value));
+            } catch (error) {
+                // discard key if value cannot be deduped
+                return;
+            }
+        }
+        // Store value in our collection
+        cache.push(value);
+    }
+    if(replacer) return replacer(key, value);
+    return value;
+    }, space);
+  }
+
   XExt.Prompt = function (obj, dflt, onComplete) {
     var msg = '';
     if (obj && _.isString(obj)) msg = obj;
@@ -1218,14 +1271,25 @@ exports = module.exports = function(jsh){
   var popupData = {};
 
   XExt.popupShow = function (modelid, fieldid, title, parentobj, obj, options) {
-    if (typeof options == 'undefined') options = {};
+    options = _.extend({
+      OnControlUpdate: null,
+      rowid: undefined
+    }, options);
     var parentmodelid = $(obj).data('model');
     var parentmodelclass = parentmodelid;
     var parentfield = null;
+    var parentmodel = null;
     if (parentmodelid){
-      var parentmodel = jsh.XModels[parentmodelid];
+      parentmodel = jsh.XModels[parentmodelid];
       parentfield = parentmodel.fields[fieldid];
       parentmodelclass = parentmodel.class;
+    }
+    if(parentmodel && (typeof options.rowid != 'undefined')){
+      parentmodel.controller.NavTo(options.rowid, function(){
+        delete options.rowid;
+        XExt.popupShow(modelid, fieldid, title, parentobj, obj, options);
+      });
+      return;
     }
     if (!parentobj) parentobj = jsh.$root('.' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelclass);
     var numOpens = 0;
@@ -1270,10 +1334,11 @@ exports = module.exports = function(jsh){
           if(jsh.xPopupStack.length) $.colorbox(jsh.xPopupStack[jsh.xPopupStack.length-1]);
 
           if (typeof popupData[modelid].result !== 'undefined') {
-            parentobj.val(popupData[modelid].result);
+            if(parentmodel && parentfield && parentfield.name) parentmodel.set(parentfield.name, popupData[modelid].result, null);
+            else parentobj.val(popupData[modelid].result);
             if (popupData[modelid].resultrow && parentfield && parentfield.controlparams && parentfield.controlparams.popup_copy_results) {
               for (var fname in parentfield.controlparams.popup_copy_results) {
-                XExt.setFormField(XExt.getForm(parentmodelid), fname, popupData[modelid].resultrow[parentfield.controlparams.popup_copy_results[fname]])
+                parentmodel.set(fname, popupData[modelid].resultrow[parentfield.controlparams.popup_copy_results[fname]], null);
               }
             }
             if (options.OnControlUpdate) options.OnControlUpdate(parentobj[0], popupData[modelid]);
@@ -1677,6 +1742,13 @@ exports = module.exports = function(jsh){
   }
   XExt.Tick = function(f){
     window.setTimeout(f,1);
+  }
+  XExt.waitUntil = function(cond, f, cancel, timeout){
+    if(!timeout) timeout = 100;
+    if(!cancel) cancel = function(){ return false; };
+    if(cancel()) return;
+    if(cond()) return f();
+    setTimeout(function(){ XExt.waitUntil(cond, f, cancel, timeout); }, timeout);
   }
   XExt.scrollIntoView = function(jcontainer, pos, h){
     if(!jcontainer.length) return;

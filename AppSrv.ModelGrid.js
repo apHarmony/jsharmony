@@ -227,7 +227,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
               //For each file field
               async.each(filelist, function (file, filecallback) {
                 var filefield = _this.getFieldByName(model.fields, file);
-                var fpath = _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + file + '_' + keyval;
+                var fpath = _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + (filefield.controlparams.data_file_prefix||file) + '_' + keyval;
                 if (filefield.controlparams._data_file_has_extension) fpath += '%%%EXT%%%';
                 HelperFS.getExtFileName(fpath, function(err, filename){
                   if(err){

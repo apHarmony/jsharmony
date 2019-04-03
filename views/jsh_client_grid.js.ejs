@@ -118,17 +118,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if(xeditablegrid){
         for (var i = 0; i < data[this.q].length; i++) {
           var rowid = this.RowCount + i;
-          var ejsrslt = jsh.ejs.render(ejssource, { 
-            rowid: rowid, 
-            datatable: [data[this.q][i]], 
-            xejs: XExt.xejs, 
-            jsh: jsh, 
-            _: _,
-            moment: moment,
-            XExt: XExt,
-            instance: jsh.getInstance(),
-            modelid: modelid,
-            js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
+          var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
+            rowid: rowid,
+            datatable: [data[this.q][i]],
           });
           var jobj = $(ejsrslt).appendTo(jsh.$root(this.PlaceholderID));
           xform.NavTo(rowid, false);
@@ -136,18 +128,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         }
       }
       else {
-        var ejsrslt = jsh.ejs.render(ejssource, { 
-          rowid: this.RowCount, 
-          datatable: data[this.q], 
-          xejs: XExt.xejs,
-          xmodel: xmodel,
-          jsh: jsh,
-          _: _,
-          moment: moment,
-          XExt: XExt,
-          instance: jsh.getInstance(),
-          modelid: modelid,
-          js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
+        var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
+          rowid: rowid,
+          datatable: data[this.q],
         });
         var jobj = $(ejsrslt).appendTo(jsh.$root(this.PlaceholderID));
       }
@@ -343,18 +326,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           _this.ApplyUnboundDefaults(_this.DataSet[rowid]);
 
           var ejssource = jsh.$root(xgrid.TemplateID).html();
-          ejssource = ejssource.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
-          var ejsrslt = jsh.ejs.render(ejssource, { 
-            rowid: rowid, 
+          var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
+            rowid: rowid,
             datatable: [_this.DataSet[rowid]], 
-            xejs: XExt.xejs, 
-            jsh: jsh,
-            _: _,
-            moment: moment,
-            XExt: XExt,
-            instance: jsh.getInstance(),
-            modelid: modelid,
-            js: function(code){ return jsh.XExt.wrapJS(code,modelid); } 
           });
           var jobj = jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']");
           jobj.replaceWith($(ejsrslt));
@@ -372,12 +346,16 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     });
   }
 
+  xcontroller.GetRowID = function(){
+    var rowid = -1;
+    if(xeditablegrid.CurrentCell) rowid = XExt.XModel.GetRowID(modelid,xeditablegrid.CurrentCell);
+    return rowid;
+  }
+
   xcontroller.ResetRow = function(rowid){
     if(!xeditablegrid) return;
 
-    var oldrowid = -1;
-    var oldobj = xeditablegrid.CurrentCell;
-    if(oldobj) oldrowid = XExt.XModel.GetRowID(modelid,oldobj);
+    var oldrowid = xcontroller.GetRowID();
 
     //Get Data, if data is new, delete row from both grid and ...
     if(xform.DataSet[rowid]._is_insert) return xcontroller.DeleteRow(rowid);
@@ -400,6 +378,32 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //
   }
 
+  xcontroller.NavTo = function(rowid, onSelected){
+    if(!xeditablegrid) return;
+
+    var oldrowid = xcontroller.GetRowID();
+    if(oldrowid == rowid){
+      if(onSelected) onSelected();
+      return;
+    }
+
+    if(xeditablegrid.CurrentCell) if(!xform.CommitRow()) return;
+    //Save parent and other items before adding, if commitlevel is row or cell
+    if(xeditablegrid.SaveBeforeUpdate && ((xmodel.commitlevel == 'row') || (xmodel.commitlevel == 'cell'))){
+      if (jsh.XPage.GetChanges().length > 0) { return XExt.Alert('Please save all changes before navigating to another row.'); }
+    }
+    
+    xform.NavTo(rowid,false);
+    var jobj = jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']");
+    var newobj = $(jobj).find('.xform_ctrl.editable:visible').not('input[type=hidden]').first();
+    if(newobj.length){
+      xeditablegrid.SetFocus(newobj[0], null, function(){
+        if(onSelected) onSelected();
+      });
+    }
+    else return XExt.Alert('No selectable element found in grid row');
+  }
+
   xcontroller.AddRow = function(){
     if(!xeditablegrid) return;
     if(xeditablegrid.CurrentCell) if(!xform.CommitRow()) return;
@@ -417,18 +421,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var ejssource = "";
     if (xgrid.TemplateHTMLFunc != null) ejssource = xgrid.TemplateHTMLFunc(data, xgrid.RowCount);
     else ejssource = jsh.$root(xgrid.TemplateID).html();
-    ejssource = ejssource.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
-    var ejsrslt = jsh.ejs.render(ejssource, {
+    var ejsrslt = XExt.renderEJS(ejssource, modelid, {
       rowid: rowid,
       datatable: [newrow],
-      xejs: XExt.xejs,
-      jsh: jsh,
-      _: _,
-      moment: moment,
-      XExt: XExt,
-      instance: jsh.getInstance(),
-      modelid: modelid,
-      js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
     });
 
     var jobj;
@@ -496,9 +491,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   xcontroller.DeleteRow = function(rowid){
     if(!xeditablegrid) return;
     XExt.Confirm("Are you sure you want to delete this <%=model.caption[1]%>?",function(){
-      var oldrowid = -1;
-      var oldobj = xeditablegrid.CurrentCell;
-      if(oldobj) oldrowid = XExt.XModel.GetRowID(modelid,oldobj);
+      var oldrowid = xcontroller.GetRowID();
 
       if(oldrowid != rowid) if(!xform.CommitRow()) return;
     

@@ -112,13 +112,58 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     return false;
   }
-  xmodel.get = function(fieldname){
+  xmodel.get = function(fieldname, rowref){
+    var xform = null;
+    if(xmodel.controller && xmodel.controller.form) xform = xmodel.controller.form;
     if(xmodel.hasBindingOrRootKey(fieldname)) return xmodel.getBindingOrRootKey(fieldname);
-    else if(xmodel.controller && xmodel.controller.form) return XExt.getFormField(xmodel.controller.form, fieldname);
-    else XExt.Alert('Could not set value - model.controller.form not initialized');
+    if(xmodel.layout=='grid'){
+      //Get rowid from rowref
+      var rowid = -1;
+      if(typeof rowref == 'undefined'){ XExt.Alert('Rowref parameter is required for model.get(fieldname, rowref) in grid layout'); return; }
+      if(_.isNumber(rowref)) rowid = rowref;
+      else if(rowref) rowid = jsh.XExt.XModel.GetRowID(modelid, rowref);
+      else if(rowref===null) rowid = xmodel.controller.GetRowID();
+      
+      if((rowid >= 0) && (rowid < xform.DataSet.length)){
+        if(xform){
+          //If the rowid is being edited
+          if(xform.Index == rowid){
+            if(xform.Data.Fields[fieldname]) return XExt.getFormField(xform, fieldname);
+          }
+          return xform.DataSet[rowid][fieldname];
+        }
+      }
+      else{ XExt.Alert('Invalid row'); return; }
+    }
+    if(xform) return XExt.getFormField(xform, fieldname);
+    XExt.Alert('Could not get value - model.controller.form not initialized');
   }
-  xmodel.set = function(fieldname,value){
-    if(xmodel.controller && xmodel.controller.form) XExt.setFormControl(xmodel.controller.form, fieldname, value);
+  xmodel.set = function(fieldname, value, rowref, onComplete){
+    var xform = null;
+    if(xmodel.controller && xmodel.controller.form) xform = xmodel.controller.form;
+    if(xmodel.layout=='grid'){
+      //Get rowid from rowref
+      var rowid = -1;
+      if(typeof rowref == 'undefined'){ XExt.Alert('Rowref parameter is required for model.set(fieldname, value, rowref) in grid layout'); return; }
+      if(_.isNumber(rowref)) rowid = rowref;
+      else if(rowref) rowid = jsh.XExt.XModel.GetRowID(modelid, rowref);
+      else if(rowref===null) rowid = xmodel.controller.GetRowID();
+
+      if((rowid >= 0) && (rowid < xform.DataSet.length)){
+        var xeditablegrid = xmodel.controller.editablegrid;
+        if(xform){
+          //Navigate to the new row
+          xmodel.controller.NavTo(rowid, function(){
+            //Update data
+            XExt.setFormControl(xform, fieldname, value);
+            if(onComplete) onComplete();
+          });
+          return;
+        }
+      }
+      else{ XExt.Alert('Invalid row'); return; }
+    }
+    if(xform) XExt.setFormControl(xform, fieldname, value);
     else XExt.Alert('Could not set value - model.controller.form not initialized');
   }
   xmodel.isEnabled = function(){

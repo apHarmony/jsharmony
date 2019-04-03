@@ -1942,22 +1942,36 @@ module.exports = XValidate;// JavaScript Document
     function createDate (y, m, d, h, M, s, ms) {
         // can't just apply() to create a date:
         // https://stackoverflow.com/q/181348
-        var date = new Date(y, m, d, h, M, s, ms);
-
+        var date;
         // the date constructor remaps years 0-99 to 1900-1999
-        if (y < 100 && y >= 0 && isFinite(date.getFullYear())) {
-            date.setFullYear(y);
+        if (y < 100 && y >= 0) {
+            // preserve leap years using a full 400 year cycle, then reset
+            date = new Date(y + 400, m, d, h, M, s, ms);
+            if (isFinite(date.getFullYear())) {
+                date.setFullYear(y);
+            }
+        } else {
+            date = new Date(y, m, d, h, M, s, ms);
         }
+
         return date;
     }
 
     function createUTCDate (y) {
-        var date = new Date(Date.UTC.apply(null, arguments));
-
+        var date;
         // the Date.UTC function remaps years 0-99 to 1900-1999
-        if (y < 100 && y >= 0 && isFinite(date.getUTCFullYear())) {
-            date.setUTCFullYear(y);
+        if (y < 100 && y >= 0) {
+            var args = Array.prototype.slice.call(arguments);
+            // preserve leap years using a full 400 year cycle, then reset
+            args[0] = y + 400;
+            date = new Date(Date.UTC.apply(null, args));
+            if (isFinite(date.getUTCFullYear())) {
+                date.setUTCFullYear(y);
+            }
+        } else {
+            date = new Date(Date.UTC.apply(null, arguments));
         }
+
         return date;
     }
 
@@ -2059,7 +2073,7 @@ module.exports = XValidate;// JavaScript Document
 
     var defaultLocaleWeek = {
         dow : 0, // Sunday is the first day of the week.
-        doy : 6  // The week that contains Jan 1st is the first week of the year.
+        doy : 6  // The week that contains Jan 6th is the first week of the year.
     };
 
     function localeFirstDayOfWeek () {
@@ -2168,25 +2182,28 @@ module.exports = XValidate;// JavaScript Document
     }
 
     // LOCALES
+    function shiftWeekdays (ws, n) {
+        return ws.slice(n, 7).concat(ws.slice(0, n));
+    }
 
     var defaultLocaleWeekdays = 'Sunday_Monday_Tuesday_Wednesday_Thursday_Friday_Saturday'.split('_');
     function localeWeekdays (m, format) {
-        if (!m) {
-            return isArray(this._weekdays) ? this._weekdays :
-                this._weekdays['standalone'];
-        }
-        return isArray(this._weekdays) ? this._weekdays[m.day()] :
-            this._weekdays[this._weekdays.isFormat.test(format) ? 'format' : 'standalone'][m.day()];
+        var weekdays = isArray(this._weekdays) ? this._weekdays :
+            this._weekdays[(m && m !== true && this._weekdays.isFormat.test(format)) ? 'format' : 'standalone'];
+        return (m === true) ? shiftWeekdays(weekdays, this._week.dow)
+            : (m) ? weekdays[m.day()] : weekdays;
     }
 
     var defaultLocaleWeekdaysShort = 'Sun_Mon_Tue_Wed_Thu_Fri_Sat'.split('_');
     function localeWeekdaysShort (m) {
-        return (m) ? this._weekdaysShort[m.day()] : this._weekdaysShort;
+        return (m === true) ? shiftWeekdays(this._weekdaysShort, this._week.dow)
+            : (m) ? this._weekdaysShort[m.day()] : this._weekdaysShort;
     }
 
     var defaultLocaleWeekdaysMin = 'Su_Mo_Tu_We_Th_Fr_Sa'.split('_');
     function localeWeekdaysMin (m) {
-        return (m) ? this._weekdaysMin[m.day()] : this._weekdaysMin;
+        return (m === true) ? shiftWeekdays(this._weekdaysMin, this._week.dow)
+            : (m) ? this._weekdaysMin[m.day()] : this._weekdaysMin;
     }
 
     function handleStrictParse$1(weekdayName, format, strict) {
@@ -2935,13 +2952,13 @@ module.exports = XValidate;// JavaScript Document
                     weekdayOverflow = true;
                 }
             } else if (w.e != null) {
-                // local weekday -- counting starts from begining of week
+                // local weekday -- counting starts from beginning of week
                 weekday = w.e + dow;
                 if (w.e < 0 || w.e > 6) {
                     weekdayOverflow = true;
                 }
             } else {
-                // default to begining of week
+                // default to beginning of week
                 weekday = dow;
             }
         }
@@ -3535,7 +3552,7 @@ module.exports = XValidate;// JavaScript Document
             years = normalizedInput.year || 0,
             quarters = normalizedInput.quarter || 0,
             months = normalizedInput.month || 0,
-            weeks = normalizedInput.week || 0,
+            weeks = normalizedInput.week || normalizedInput.isoWeek || 0,
             days = normalizedInput.day || 0,
             hours = normalizedInput.hour || 0,
             minutes = normalizedInput.minute || 0,
@@ -3839,7 +3856,7 @@ module.exports = XValidate;// JavaScript Document
                 ms : toInt(absRound(match[MILLISECOND] * 1000)) * sign // the millisecond decimal point is included in the match
             };
         } else if (!!(match = isoRegex.exec(input))) {
-            sign = (match[1] === '-') ? -1 : (match[1] === '+') ? 1 : 1;
+            sign = (match[1] === '-') ? -1 : 1;
             duration = {
                 y : parseIso(match[2], sign),
                 M : parseIso(match[3], sign),
@@ -3881,7 +3898,7 @@ module.exports = XValidate;// JavaScript Document
     }
 
     function positiveMomentsDifference(base, other) {
-        var res = {milliseconds: 0, months: 0};
+        var res = {};
 
         res.months = other.month() - base.month() +
             (other.year() - base.year()) * 12;
@@ -3990,7 +4007,7 @@ module.exports = XValidate;// JavaScript Document
         if (!(this.isValid() && localInput.isValid())) {
             return false;
         }
-        units = normalizeUnits(!isUndefined(units) ? units : 'millisecond');
+        units = normalizeUnits(units) || 'millisecond';
         if (units === 'millisecond') {
             return this.valueOf() > localInput.valueOf();
         } else {
@@ -4003,7 +4020,7 @@ module.exports = XValidate;// JavaScript Document
         if (!(this.isValid() && localInput.isValid())) {
             return false;
         }
-        units = normalizeUnits(!isUndefined(units) ? units : 'millisecond');
+        units = normalizeUnits(units) || 'millisecond';
         if (units === 'millisecond') {
             return this.valueOf() < localInput.valueOf();
         } else {
@@ -4012,9 +4029,14 @@ module.exports = XValidate;// JavaScript Document
     }
 
     function isBetween (from, to, units, inclusivity) {
+        var localFrom = isMoment(from) ? from : createLocal(from),
+            localTo = isMoment(to) ? to : createLocal(to);
+        if (!(this.isValid() && localFrom.isValid() && localTo.isValid())) {
+            return false;
+        }
         inclusivity = inclusivity || '()';
-        return (inclusivity[0] === '(' ? this.isAfter(from, units) : !this.isBefore(from, units)) &&
-            (inclusivity[1] === ')' ? this.isBefore(to, units) : !this.isAfter(to, units));
+        return (inclusivity[0] === '(' ? this.isAfter(localFrom, units) : !this.isBefore(localFrom, units)) &&
+            (inclusivity[1] === ')' ? this.isBefore(localTo, units) : !this.isAfter(localTo, units));
     }
 
     function isSame (input, units) {
@@ -4023,7 +4045,7 @@ module.exports = XValidate;// JavaScript Document
         if (!(this.isValid() && localInput.isValid())) {
             return false;
         }
-        units = normalizeUnits(units || 'millisecond');
+        units = normalizeUnits(units) || 'millisecond';
         if (units === 'millisecond') {
             return this.valueOf() === localInput.valueOf();
         } else {
@@ -4033,11 +4055,11 @@ module.exports = XValidate;// JavaScript Document
     }
 
     function isSameOrAfter (input, units) {
-        return this.isSame(input, units) || this.isAfter(input,units);
+        return this.isSame(input, units) || this.isAfter(input, units);
     }
 
     function isSameOrBefore (input, units) {
-        return this.isSame(input, units) || this.isBefore(input,units);
+        return this.isSame(input, units) || this.isBefore(input, units);
     }
 
     function diff (input, units, asFloat) {
@@ -4214,62 +4236,130 @@ module.exports = XValidate;// JavaScript Document
         return this._locale;
     }
 
+    var MS_PER_SECOND = 1000;
+    var MS_PER_MINUTE = 60 * MS_PER_SECOND;
+    var MS_PER_HOUR = 60 * MS_PER_MINUTE;
+    var MS_PER_400_YEARS = (365 * 400 + 97) * 24 * MS_PER_HOUR;
+
+    // actual modulo - handles negative numbers (for dates before 1970):
+    function mod$1(dividend, divisor) {
+        return (dividend % divisor + divisor) % divisor;
+    }
+
+    function localStartOfDate(y, m, d) {
+        // the date constructor remaps years 0-99 to 1900-1999
+        if (y < 100 && y >= 0) {
+            // preserve leap years using a full 400 year cycle, then reset
+            return new Date(y + 400, m, d) - MS_PER_400_YEARS;
+        } else {
+            return new Date(y, m, d).valueOf();
+        }
+    }
+
+    function utcStartOfDate(y, m, d) {
+        // Date.UTC remaps years 0-99 to 1900-1999
+        if (y < 100 && y >= 0) {
+            // preserve leap years using a full 400 year cycle, then reset
+            return Date.UTC(y + 400, m, d) - MS_PER_400_YEARS;
+        } else {
+            return Date.UTC(y, m, d);
+        }
+    }
+
     function startOf (units) {
+        var time;
         units = normalizeUnits(units);
-        // the following switch intentionally omits break keywords
-        // to utilize falling through the cases.
+        if (units === undefined || units === 'millisecond' || !this.isValid()) {
+            return this;
+        }
+
+        var startOfDate = this._isUTC ? utcStartOfDate : localStartOfDate;
+
         switch (units) {
             case 'year':
-                this.month(0);
-                /* falls through */
+                time = startOfDate(this.year(), 0, 1);
+                break;
             case 'quarter':
+                time = startOfDate(this.year(), this.month() - this.month() % 3, 1);
+                break;
             case 'month':
-                this.date(1);
-                /* falls through */
+                time = startOfDate(this.year(), this.month(), 1);
+                break;
             case 'week':
+                time = startOfDate(this.year(), this.month(), this.date() - this.weekday());
+                break;
             case 'isoWeek':
+                time = startOfDate(this.year(), this.month(), this.date() - (this.isoWeekday() - 1));
+                break;
             case 'day':
             case 'date':
-                this.hours(0);
-                /* falls through */
+                time = startOfDate(this.year(), this.month(), this.date());
+                break;
             case 'hour':
-                this.minutes(0);
-                /* falls through */
+                time = this._d.valueOf();
+                time -= mod$1(time + (this._isUTC ? 0 : this.utcOffset() * MS_PER_MINUTE), MS_PER_HOUR);
+                break;
             case 'minute':
-                this.seconds(0);
-                /* falls through */
+                time = this._d.valueOf();
+                time -= mod$1(time, MS_PER_MINUTE);
+                break;
             case 'second':
-                this.milliseconds(0);
+                time = this._d.valueOf();
+                time -= mod$1(time, MS_PER_SECOND);
+                break;
         }
 
-        // weeks are a special case
-        if (units === 'week') {
-            this.weekday(0);
-        }
-        if (units === 'isoWeek') {
-            this.isoWeekday(1);
-        }
-
-        // quarters are also special
-        if (units === 'quarter') {
-            this.month(Math.floor(this.month() / 3) * 3);
-        }
-
+        this._d.setTime(time);
+        hooks.updateOffset(this, true);
         return this;
     }
 
     function endOf (units) {
+        var time;
         units = normalizeUnits(units);
-        if (units === undefined || units === 'millisecond') {
+        if (units === undefined || units === 'millisecond' || !this.isValid()) {
             return this;
         }
 
-        // 'date' is an alias for 'day', so it should be considered as such.
-        if (units === 'date') {
-            units = 'day';
+        var startOfDate = this._isUTC ? utcStartOfDate : localStartOfDate;
+
+        switch (units) {
+            case 'year':
+                time = startOfDate(this.year() + 1, 0, 1) - 1;
+                break;
+            case 'quarter':
+                time = startOfDate(this.year(), this.month() - this.month() % 3 + 3, 1) - 1;
+                break;
+            case 'month':
+                time = startOfDate(this.year(), this.month() + 1, 1) - 1;
+                break;
+            case 'week':
+                time = startOfDate(this.year(), this.month(), this.date() - this.weekday() + 7) - 1;
+                break;
+            case 'isoWeek':
+                time = startOfDate(this.year(), this.month(), this.date() - (this.isoWeekday() - 1) + 7) - 1;
+                break;
+            case 'day':
+            case 'date':
+                time = startOfDate(this.year(), this.month(), this.date() + 1) - 1;
+                break;
+            case 'hour':
+                time = this._d.valueOf();
+                time += MS_PER_HOUR - mod$1(time + (this._isUTC ? 0 : this.utcOffset() * MS_PER_MINUTE), MS_PER_HOUR) - 1;
+                break;
+            case 'minute':
+                time = this._d.valueOf();
+                time += MS_PER_MINUTE - mod$1(time, MS_PER_MINUTE) - 1;
+                break;
+            case 'second':
+                time = this._d.valueOf();
+                time += MS_PER_SECOND - mod$1(time, MS_PER_SECOND) - 1;
+                break;
         }
 
-        return this.startOf(units).add(1, (units === 'isoWeek' ? 'week' : units)).subtract(1, 'ms');
+        this._d.setTime(time);
+        hooks.updateOffset(this, true);
+        return this;
     }
 
     function valueOf () {
@@ -4975,10 +5065,14 @@ module.exports = XValidate;// JavaScript Document
 
         units = normalizeUnits(units);
 
-        if (units === 'month' || units === 'year') {
-            days   = this._days   + milliseconds / 864e5;
+        if (units === 'month' || units === 'quarter' || units === 'year') {
+            days = this._days + milliseconds / 864e5;
             months = this._months + daysToMonths(days);
-            return units === 'month' ? months : months / 12;
+            switch (units) {
+                case 'month':   return months;
+                case 'quarter': return months / 3;
+                case 'year':    return months / 12;
+            }
         } else {
             // handle milliseconds separately because of floating point math errors (issue #1867)
             days = this._days + Math.round(monthsToDays(this._months));
@@ -5021,6 +5115,7 @@ module.exports = XValidate;// JavaScript Document
     var asDays         = makeAs('d');
     var asWeeks        = makeAs('w');
     var asMonths       = makeAs('M');
+    var asQuarters     = makeAs('Q');
     var asYears        = makeAs('y');
 
     function clone$1 () {
@@ -5212,6 +5307,7 @@ module.exports = XValidate;// JavaScript Document
     proto$2.asDays         = asDays;
     proto$2.asWeeks        = asWeeks;
     proto$2.asMonths       = asMonths;
+    proto$2.asQuarters     = asQuarters;
     proto$2.asYears        = asYears;
     proto$2.valueOf        = valueOf$1;
     proto$2._bubble        = bubble;
@@ -5256,7 +5352,7 @@ module.exports = XValidate;// JavaScript Document
     // Side effect imports
 
 
-    hooks.version = '2.22.2';
+    hooks.version = '2.24.0';
 
     setHookCallback(createLocal);
 
@@ -5297,7 +5393,7 @@ module.exports = XValidate;// JavaScript Document
         TIME: 'HH:mm',                                  // <input type="time" />
         TIME_SECONDS: 'HH:mm:ss',                       // <input type="time" step="1" />
         TIME_MS: 'HH:mm:ss.SSS',                        // <input type="time" step="0.001" />
-        WEEK: 'YYYY-[W]WW',                             // <input type="week" />
+        WEEK: 'GGGG-[W]WW',                             // <input type="week" />
         MONTH: 'YYYY-MM'                                // <input type="month" />
     };
 
@@ -5488,7 +5584,8 @@ exports = module.exports = function(jsh){
     
     jsh.xLoader.StartLoading(jsh.xfileuploadLoader);
     $.ajax({
-      url: url,
+      cache: false,
+      url: url,      
       jsonp: 'callback',
       dataType: 'jsonp',
       complete: function (data) {
@@ -5928,6 +6025,7 @@ exports = module.exports = function(jsh){
     //Global Focus Change
     var _this = this;
     jsh.focusHandler.push(function (newobj) {
+      if(newobj && newobj.tagName && (newobj.tagName.toUpperCase()=='BODY')) newobj = null;
       if (jsh.xLoader.IsLoading) { return; }
       var newrowid = -1;
       var oldrowid = -1;
@@ -5940,7 +6038,7 @@ exports = module.exports = function(jsh){
       if (newobj) newrowid = jsh.XExt.XModel.GetRowID(_this.modelid, newobj);
       if (newrowid >= 0) return; //Return if current control is in grid
       _this.DebugLog('FocusHandler Triggered');
-      _this.CellLeaving(oldobj, undefined, undefined, function () {
+      _this.CellLeaving(oldobj, newobj, undefined, function () {
         //Success
         _this.CellChange(_this.CurrentCell);
       });
@@ -5951,15 +6049,16 @@ exports = module.exports = function(jsh){
     if (this.Debug) console.log(obj); // eslint-disable-line no-console
   }
 
-  XEditableGrid.prototype.ControlEnter = function (obj, e) {
+  XEditableGrid.prototype.ControlEnter = function (obj, e, onComplete) {
     var _this = this;
-    if (this.CurrentCell == obj) return;
-    if (this.ErrorClass) if ($(obj).hasClass(this.ErrorClass)) { this.CurrentCell = obj; return; }
+    if (this.CurrentCell == obj){ if(onComplete) onComplete(); return; }
+    if (this.ErrorClass) if ($(obj).hasClass(this.ErrorClass)) { this.CurrentCell = obj; if(onComplete) onComplete();  return; }
     
     //Reset old value
     var immediate_result = this.ControlLeaving(obj, e, function (_immediate_result) {
       //On success
       _this.CellChange(_this.CurrentCell, obj, e);
+      if(onComplete) onComplete();
       if (!_immediate_result) {
       }
     }, function (_immediate_result) {
@@ -6015,9 +6114,9 @@ exports = module.exports = function(jsh){
   //----------------
   //Return true if immediate result
   //Return false if needs to wait
-  XEditableGrid.prototype.ControlLeaving = function (obj, e, onsuccess, oncancel) {
+  XEditableGrid.prototype.ControlLeaving = function (newobj, e, onsuccess, oncancel) {
     var _this = this;
-    var rslt = this.CellLeaving(this.CurrentCell, obj, e, onsuccess, oncancel);
+    var rslt = this.CellLeaving(this.CurrentCell, newobj, e, onsuccess, oncancel);
     if (rslt === true) return true;
     else if (rslt === false) return true;
     return false;
@@ -6074,10 +6173,9 @@ exports = module.exports = function(jsh){
     //Commit Cell/Row
     if (this.IsDirty && this.IsDirty() && this.OnCommit && (
       (this.CommitLevel == 'cell') || 
-      ((this.CommitLevel == 'cell') && (newobj && $(newobj).is(':checkbox'))) || 
+      ((this.CommitLevel == 'cell') && ((newrowid>=0) && newobj && $(newobj).is(':checkbox'))) || 
       (rowchange && (this.CommitLevel == 'row'))
   )) {
-      
       if (newobj) jsh.qInputAction = new jsh.XExt.XInputAction(newobj);
       else if (jsh.qInputAction && !(jsh.qInputAction.IsExpired())) { }
       else jsh.qInputAction = null;
@@ -6094,7 +6192,8 @@ exports = module.exports = function(jsh){
       
       var onsuccess_override = function () {
         if (onsuccess) onsuccess(false);
-        if (jsh.qInputAction) jsh.qInputAction.Exec();
+        if (!newobj) $(document.activeElement).blur();
+        else if (jsh.qInputAction) jsh.qInputAction.Exec();
       }
       
       if (!this.OnCommit(oldrowid, oldobj, onsuccess_override, oncancel)) return false;
@@ -6102,6 +6201,18 @@ exports = module.exports = function(jsh){
     
     if (onsuccess) onsuccess();
     return true;
+  }
+
+  //obj must be a DOM element - not a jQuery object
+  //Leave e to null if not calling from a focus event handler
+  XEditableGrid.prototype.SetFocus = function (obj, e, onComplete) {
+    if (jsh.xDialog.length) return;
+    if (!$(obj).hasClass('editable')) return;
+    if (obj instanceof jshInstance.$) throw new Error('SetFocus obj must not be a jquery object');
+    return this.ControlEnter(obj, e, function(){
+      if (!e && document.hasFocus && document.hasFocus()) $(obj).focus();
+      if(onComplete) onComplete();
+    });
   }
 
   XEditableGrid.prototype.BindRow = function (jobj) {
@@ -6128,9 +6239,9 @@ exports = module.exports = function(jsh){
         }
       });
     });
-    jobj.find('.xelem' + xmodel.class).not('.xelem' + xmodel.class + '.checkbox').focus(function (e) { if (jsh.xDialog.length) return; if (!$(this).hasClass('editable')) return; return _this.ControlEnter(this, e); });
+    jobj.find('.xelem' + xmodel.class).not('.xelem' + xmodel.class + '.checkbox').focus(function (e) { return _this.SetFocus(this, e); });
     jobj.find('.xelem' + xmodel.class + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e) })
-    jobj.find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; if (jsh.xDialog.length) return; if (!$(ctrl).hasClass('editable')) return; return _this.ControlEnter(ctrl, e); });
+    jobj.find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; return _this.SetFocus(ctrl, e); });
   }
 
   return XEditableGrid;
@@ -6257,6 +6368,7 @@ exports = module.exports = function(jsh){
     if(typeof val === 'undefined'){
       val = _this[field.name];
     }
+    var dataval = val;
     //Apply formatting
     if ((field.name in _this) && (typeof val == 'undefined')) val = '';
     else val = jsh.XFormat.Apply(field.format, val);
@@ -6272,8 +6384,12 @@ exports = module.exports = function(jsh){
     }
     
     var fieldselector = '.' + field.name + '.xelem' + xmodel.class;
-    if (isGrid) fieldselector = '.' + field.name + '.xelem' + xmodel.class;
     var jctrl = parentobj.find(fieldselector);
+    //Apply value to hidden field if updateable non-control element
+    if(jsh.XExt.hasAction(field.actions,'IU') && _.includes(['html','label','linkbutton','button'],field.control)){
+      var jctrl_hidden = parentobj.find('.'+field.name+'_field_value.xelem'+xmodel.class);
+      jctrl_hidden.val(val);
+    }
     if (('control' in field) && ((field.control == 'file_upload')||(field.control == 'file_download'))) {
       //Show "Upload File" always
       var filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
@@ -6351,36 +6467,31 @@ exports = module.exports = function(jsh){
       else if (checkhidden) jctrl.css('visibility', 'visible');
     }
     else if ((jctrl.size() > 0) && jctrl.hasClass('xform_label')) {
+      var showLabel = true;
       if(lovTxt) val = lovTxt;
       if(jctrl.hasClass('xform_label_static')){
         if(field.value && field.value.indexOf('<#')>=0){
           val = field.value;
           val = val.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
-          val = jsh.ejs.render(val, { 
-            data: _this, 
-            xejs: jsh.XExt.xejs, 
-            jsh: jsh, 
-            instance: jsh.getInstance(),
-            modelid: modelid,
-            js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
+          val = jsh.XExt.renderEJS(val, modelid, {
+            data: _this
           });
           jctrl.html(val);
-          jctrl.toggleClass('hidden',!val);
+          showLabel = !!val;
         }
       }
       else{ jctrl.html(jsh.XExt.escapeHTMLBR(val)); }
+      if(field.type && jctrl.parent().hasClass('xform_link')){
+        showLabel = showLabel && !!dataval;
+      }
+      jctrl.toggleClass('hidden',!showLabel);
     }
     else if ((jctrl.size() > 0) && jctrl.hasClass('xform_html')) {
       if(lovTxt) val = lovTxt;
       if(val.indexOf('<#') >= 0){
         val = val.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
-        val = jsh.ejs.render(val, { 
-          data: _this, 
-          xejs: jsh.XExt.xejs, 
-          jsh: jsh, 
-          instance: jsh.getInstance(),
-          modelid: modelid,
-          js: function(code){ return jsh.XExt.wrapJS(code,modelid); }
+        val = jsh.XExt.renderEJS(val, modelid, {
+          data: _this
         });
       }
       jctrl.html(val);
@@ -6511,6 +6622,10 @@ exports = module.exports = function(jsh){
         return checkval;
       }
       var val = jctrl.val();
+      if(_.includes(['html','label','linkbutton','button'],field.control)){
+        var jctrl_hidden = parentobj.find('.'+field.name+'_field_value.xelem'+xmodel.class);
+        val = jctrl_hidden.val();
+      }
       if(typeof val === 'undefined') val = '';
       if ((typeof CKEDITOR != 'undefined') && (field.name in CKEDITOR.instances)) {
         val = CKEDITOR.instances[field.name].getData();
@@ -6739,6 +6854,7 @@ exports = module.exports = function(jsh){
 
   XExt.XModel = require('./XExt.XModel.js')(jsh);
   XExt.COOKIE_MAX_EXPIRATION = 2147483647;
+  XExt.ejsDelimiter = { open: '<%', close: '%>' };
 
   XExt.parseGET = function (qs) {
     if (typeof qs == 'undefined') qs = window.location.search;
@@ -7235,6 +7351,7 @@ exports = module.exports = function(jsh){
       if(capabilities) _.each(capabilities, function(capability){
         if(!pjsh.XPage[capability]) hasCapabilities = false;
       });
+      if(pjsh == jsh) return;
       if(hasCapabilities) return pjsh;
     }
   }
@@ -7250,6 +7367,24 @@ exports = module.exports = function(jsh){
     rslt = XExt.ReplaceAll(rslt, '&lt;#', '<#');
     rslt = XExt.ReplaceAll(rslt, '#&gt;', '#>');
     return rslt;
+  }
+  XExt.renderEJS = function(ejssource, modelid, params){
+    var ejsparams = {
+      xejs: XExt.xejs,
+      jsh: jsh,
+      _: jsh._,
+      moment: jsh.moment,
+      XExt: XExt,
+      instance: jsh.getInstance(),
+      _GET: jsh._GET,
+      js: function(code,options){ return jsh.XExt.wrapJS(code,modelid,options); }
+    };
+    if(modelid){
+      ejsparams.modelid = modelid;
+      ejsparams.xmodel = jsh.XModels[modelid];
+    }
+    ejsparams = _.extend(ejsparams, params);
+    return jsh.ejs.render(ejssource, ejsparams);
   }
   XExt.renderClientEJS = function(ejssrc,ejsparams){
     if(!ejssrc) return '';
@@ -7540,8 +7675,9 @@ exports = module.exports = function(jsh){
     return eval(jscmd);
   }
 
-  XExt.wrapJS = function(code,modelid){
-    return 'return (function(){'+XExt.escapeHTML(XExt.getJSLocals(modelid))+' '+XExt.unescapeEJS(XExt.escapeHTML(code))+'; return false; }).call(this);';
+  XExt.wrapJS = function(code,modelid,options){
+    options = _.extend({ noReturn: true }, options);
+    return 'return (function(){'+XExt.escapeHTML(XExt.getJSLocals(modelid))+' '+XExt.unescapeEJS(XExt.escapeHTML(code))+'; '+(!options.noReturn?'return false;':'')+' }).call(this);';
   }
 
   XExt.TreeItemContextMenu = function (ctrl, n) {
@@ -7710,7 +7846,7 @@ exports = module.exports = function(jsh){
     if (_this.obj) $(_this.obj).focus();
     if (this.overrideFunc) this.overrideFunc();
     else if (_this.obj && _this.mouseDown) {
-      XExt.Click(_this.obj);
+      XExt.Click(_this.obj, _this.mouseX, _this.mouseY);
     }
   }
 
@@ -7724,13 +7860,24 @@ exports = module.exports = function(jsh){
     return undefined;
   }
 
-  XExt.Click = function (obj) {
-    var gevent = new MouseEvent("mousedown", {
-      bubbles: true,
-      cancelable: true,
-      view: window,
-    });
-    window.setTimeout(function () { obj.dispatchEvent(gevent); }, 1);
+  XExt.Click = function (obj, x, y) {
+    window.setTimeout(function () {
+      obj.dispatchEvent(new MouseEvent("mousedown", {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      }));
+      obj.dispatchEvent(new MouseEvent("mouseup", {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      }));
+      obj.dispatchEvent(new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      }));
+    }, 1);
   }
 
   XExt.isIOS = function () {
@@ -7832,6 +7979,28 @@ exports = module.exports = function(jsh){
     if (!XExt.isIOS()) jsh.$root('.xconfirmbox input.button_ok').focus();
   }
 
+  XExt.stringify = function (origvalue, replacer, space) {
+    var cache = [];
+    return JSON.stringify(origvalue, function(key, value){
+      if (typeof value === 'object' && value !== null) {
+        if (cache.indexOf(value) !== -1) {
+            // Duplicate reference found
+            try {
+                // If this value does not reference a parent it can be deduped
+                return JSON.parse(JSON.stringify(value));
+            } catch (error) {
+                // discard key if value cannot be deduped
+                return;
+            }
+        }
+        // Store value in our collection
+        cache.push(value);
+    }
+    if(replacer) return replacer(key, value);
+    return value;
+    }, space);
+  }
+
   XExt.Prompt = function (obj, dflt, onComplete) {
     var msg = '';
     if (obj && _.isString(obj)) msg = obj;
@@ -7929,14 +8098,25 @@ exports = module.exports = function(jsh){
   var popupData = {};
 
   XExt.popupShow = function (modelid, fieldid, title, parentobj, obj, options) {
-    if (typeof options == 'undefined') options = {};
+    options = _.extend({
+      OnControlUpdate: null,
+      rowid: undefined
+    }, options);
     var parentmodelid = $(obj).data('model');
     var parentmodelclass = parentmodelid;
     var parentfield = null;
+    var parentmodel = null;
     if (parentmodelid){
-      var parentmodel = jsh.XModels[parentmodelid];
+      parentmodel = jsh.XModels[parentmodelid];
       parentfield = parentmodel.fields[fieldid];
       parentmodelclass = parentmodel.class;
+    }
+    if(parentmodel && (typeof options.rowid != 'undefined')){
+      parentmodel.controller.NavTo(options.rowid, function(){
+        delete options.rowid;
+        XExt.popupShow(modelid, fieldid, title, parentobj, obj, options);
+      });
+      return;
     }
     if (!parentobj) parentobj = jsh.$root('.' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelclass);
     var numOpens = 0;
@@ -7981,10 +8161,11 @@ exports = module.exports = function(jsh){
           if(jsh.xPopupStack.length) $.colorbox(jsh.xPopupStack[jsh.xPopupStack.length-1]);
 
           if (typeof popupData[modelid].result !== 'undefined') {
-            parentobj.val(popupData[modelid].result);
+            if(parentmodel && parentfield && parentfield.name) parentmodel.set(parentfield.name, popupData[modelid].result, null);
+            else parentobj.val(popupData[modelid].result);
             if (popupData[modelid].resultrow && parentfield && parentfield.controlparams && parentfield.controlparams.popup_copy_results) {
               for (var fname in parentfield.controlparams.popup_copy_results) {
-                XExt.setFormField(XExt.getForm(parentmodelid), fname, popupData[modelid].resultrow[parentfield.controlparams.popup_copy_results[fname]])
+                parentmodel.set(fname, popupData[modelid].resultrow[parentfield.controlparams.popup_copy_results[fname]], null);
               }
             }
             if (options.OnControlUpdate) options.OnControlUpdate(parentobj[0], popupData[modelid]);
@@ -8389,6 +8570,13 @@ exports = module.exports = function(jsh){
   XExt.Tick = function(f){
     window.setTimeout(f,1);
   }
+  XExt.waitUntil = function(cond, f, cancel, timeout){
+    if(!timeout) timeout = 100;
+    if(!cancel) cancel = function(){ return false; };
+    if(cancel()) return;
+    if(cond()) return f();
+    setTimeout(function(){ XExt.waitUntil(cond, f, cancel, timeout); }, timeout);
+  }
   XExt.scrollIntoView = function(jcontainer, pos, h){
     if(!jcontainer.length) return;
     var sTop = jcontainer.scrollTop();
@@ -8515,8 +8703,9 @@ exports = module.exports = function(jsh){
       this.Data.OnRender.apply(this.Data,arguments);
     else if(this.TemplateID){
       var ejssource = jsh.$root(this.TemplateID).html();
-      ejssource = ejssource.replace(/<#/g,'<%').replace(/#>/g,'%>');
-      jsh.$root(this.PlaceholderID).html(jsh.ejs.render(ejssource,{data:this.Data,xejs:jsh.XExt.xejs,jsh:jsh,instance:jsh.getInstance()}));
+      jsh.$root(this.PlaceholderID).html(jsh.XExt.renderEJS(ejssource, undefined, {
+        data:this.Data
+      }));
     }
     if (this.OnAfterRender) this.OnAfterRender();
   };
@@ -8631,9 +8820,10 @@ exports = module.exports = function(jsh){
     }
     return true;
   }
-  XForm.prototype.NavTo = function (_index, saveold){
+  XForm.prototype.NavTo = function (_index, saveold, onComplete){
     if (!this.SetIndex(_index, saveold)) return;
     this.Render();
+    if(onComplete) onComplete();
   }
   XForm.prototype.NavAdd = function(){
     if(!this.Data.Commit()) return;
@@ -8859,6 +9049,7 @@ exports = module.exports = function(jsh){
     if(loader) loader.StartLoading(_this);
     $.ajax({
       type:ExecParams.method.toUpperCase(),
+      cache: false,
       url: url,
       data: ExecParams.post,
       async: _this.async,
@@ -9425,6 +9616,7 @@ exports = module.exports = function(jsh){
     if(loader) loader.StartLoading(_this);
     $.ajax({
       type:"GET",
+      cache: false,
       url:jsh._BASEURL+'_d/'+this.q+'/',
       data: reqdata,
       dataType: 'json',
@@ -9516,15 +9708,11 @@ exports = module.exports = function(jsh){
           if (_this.OnResetDataSet) _this.OnResetDataSet(data);
         }
         if (ejssource) {
-          ejssource = ejssource.replace(/<#/g, '<%').replace(/#>/g, '%>')
           if (data[this.q] && _this.OnRender) _this.OnRender(ejssource, data);
           else {
-            var ejsrslt = jsh.ejs.render(ejssource, {
+            var ejsrslt = jsh.XExt.renderEJS(ejssource, undefined, {
               rowid: undefined,
               datatable: data[this.q],
-              xejs: jsh.XExt.xejs,
-              jsh: jsh,
-              instance: jsh.getInstance()
             });
             jsh.$root(_this.PlaceholderID).append(ejsrslt);
             _this.RowCount = jsh.$root(_this.PlaceholderID).find('tr').length;
@@ -10367,6 +10555,7 @@ exports = module.exports = function(jsh){
       params._func = _this.Func;
       var url = _this.Server + '/scan/?' + $.param(params);
       $.ajax({
+        cache: false,
         url: url,
         jsonp: 'callback',
         dataType: 'jsonp',
@@ -28025,50 +28214,31 @@ exports.cache = {
 module.exports={
   "_args": [
     [
-      {
-        "raw": "ejs@2.6.1",
-        "scope": null,
-        "escapedName": "ejs",
-        "name": "ejs",
-        "rawSpec": "2.6.1",
-        "spec": "2.6.1",
-        "type": "version"
-      },
+      "ejs@2.6.1",
       "C:\\wk\\jsharmony"
     ]
   ],
   "_from": "ejs@2.6.1",
   "_id": "ejs@2.6.1",
-  "_inCache": true,
+  "_inBundle": false,
+  "_integrity": "sha1-SY7A1JVlWrxvI81hho2SZGQHGqA=",
   "_location": "/ejs",
-  "_nodeVersion": "8.9.4",
-  "_npmOperationalInternal": {
-    "host": "s3://npm-registry-packages",
-    "tmp": "tmp/ejs_2.6.1_1525546345882_0.354144762200554"
-  },
-  "_npmUser": {
-    "name": "mde",
-    "email": "mde@fleegix.org"
-  },
-  "_npmVersion": "5.6.0",
   "_phantomChildren": {},
   "_requested": {
+    "type": "version",
+    "registry": true,
     "raw": "ejs@2.6.1",
-    "scope": null,
-    "escapedName": "ejs",
     "name": "ejs",
+    "escapedName": "ejs",
     "rawSpec": "2.6.1",
-    "spec": "2.6.1",
-    "type": "version"
+    "saveSpec": null,
+    "fetchSpec": "2.6.1"
   },
   "_requiredBy": [
-    "#USER",
     "/"
   ],
   "_resolved": "https://registry.npmjs.org/ejs/-/ejs-2.6.1.tgz",
-  "_shasum": "498ec0d495655abc6f23cd61868d926464071aa0",
-  "_shrinkwrap": null,
-  "_spec": "ejs@2.6.1",
+  "_spec": "2.6.1",
   "_where": "C:\\wk\\jsharmony",
   "author": {
     "name": "Matthew Eernisse",
@@ -28098,15 +28268,6 @@ module.exports={
     "mocha": "^5.0.5",
     "uglify-js": "^3.3.16"
   },
-  "directories": {},
-  "dist": {
-    "integrity": "sha512-0xy4A/twfrRCnkhfk8ErDi5DqdAsAqeGxht4xkCUrsvhhbQNs7E+4jV0CN7+NKIY0aHE72+XvqtBIXzD31ZbXQ==",
-    "shasum": "498ec0d495655abc6f23cd61868d926464071aa0",
-    "tarball": "https://registry.npmjs.org/ejs/-/ejs-2.6.1.tgz",
-    "fileCount": 10,
-    "unpackedSize": 120006,
-    "npm-signature": "-----BEGIN PGP SIGNATURE-----\r\nVersion: OpenPGP.js v3.0.4\r\nComment: https://openpgpjs.org\r\n\r\nwsFcBAEBCAAQBQJa7f1qCRA9TVsSAnZWagAAhNAQAJzOG4316d2XzOX25knk\nTRhCBHHyFNO4XGZwaomJ3PDugWunW/95FBU96qd9GHpntJO4BU8HSmhUzaRA\nHLQW5Y08NMbsY8vh3cyCKpPSfYuABdpj2OxL5g7z31dsAjg8M94J0AACyggH\np0WGMtB0knMw9fBUfNvDkKgoYXXmlQ3vSNDWzWS1Mkh2z6GzfwEulyq3OJLP\nb2KhHvcZK3/xxrJF6XODrIA9XPf3G0hZw5PMQ8Mjwi3KGrJuG73U7muzy/xm\nOF7KojEOgryZpaG/lQWdedY8YTj8nKFa3KHrKEazywbReV8mpGk0N5D2sIbT\nKgu0txWGxMaGzGcVRMPHHu2eofftpSjqrTU4dbFUBjG8KfV5fb8S5hwTNOzJ\nNHJZvdoBTn+vGXvEDTkmXz9gm/Z8iEtB2wj+lP6mvgezVLQm8HJvkoJ2tkrC\ndQMH/aX5f9/ySKLwWtz7Y8u3eXeUIJEqCh2zoAHwJ05lAbVoZF6mhyx93fac\naoq6BkboQhONOPPI9CQSvy3MFS97+cMjRkOTXS0IzXhwP89DWpv0Pcb5mXcP\nkL45APf4XNUnYclNmSSYm9Y+AvufISSZYyTH0+UTwDY9bckAcRO2ZWv86Jo5\noOkyXF3PxZVUnRyMjuTl9+gHwOAraWooaAzKGY8+RBTQzdYthoy1om+Dxyke\n/uID\r\n=nnYW\r\n-----END PGP SIGNATURE-----\r\n"
-  },
   "engines": {
     "node": ">=0.10.0"
   },
@@ -28118,15 +28279,7 @@ module.exports={
   ],
   "license": "Apache-2.0",
   "main": "./lib/ejs.js",
-  "maintainers": [
-    {
-      "name": "mde",
-      "email": "mde@fleegix.org"
-    }
-  ],
   "name": "ejs",
-  "optionalDependencies": {},
-  "readme": "ERROR: No README data found!",
   "repository": {
     "type": "git",
     "url": "git://github.com/mde/ejs.git"
