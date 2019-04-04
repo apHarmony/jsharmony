@@ -86,7 +86,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
   }
   router.get('/application.css', function (req, res) {
     //Concatenate jsh css with system css
-    var f = function(){ HelperFS.outputContent(req, res, ejs.render(jsh.Cache['jsHarmony.css'] + '\r\n' + jsh.Cache['application.css'], { req: req, rootcss: req.jshsite.rootcss }),'text/css'); };
+    var f = function(){ HelperFS.outputContent(req, res, ejs.render(jsh.Cache['jsHarmony.css'] + '\r\n' + jsh.Cache['application.css'], { req: req, rootcss: req.jshsite.rootcss, _: _ }),'text/css'); };
     if(jsh.Cache['jsHarmony.css']) f();
     else{
       var jshDir = path.dirname(module.filename);
@@ -426,7 +426,8 @@ function genSinglePage(jsh, req, res, fullmodelid){
   var ejsbody = require('ejs').render(jsh.getEJS('jsh_singlepage'), {
     req: req, _: _, ejsext: ejsext, jsh: jsh,
     srcfiles: jsh.AppSrv.modelsrv.srcfiles,
-    popups: jsh.Popups
+    popups: jsh.Popups,
+    _: _
   });
   //Set template (popup vs full)
   var tmpl_name = req.jshsite.basetemplate;

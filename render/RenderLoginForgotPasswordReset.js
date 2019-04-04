@@ -117,7 +117,8 @@ function RenderPage(req, jsh, fdata, verrors, rslt) {
     'verrors': verrors,
     'rslt': rslt,
     'ejsext': ejsext,
-    'req': req
+    'req': req,
+    _: _
   });
 }
 
