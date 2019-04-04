@@ -266,6 +266,12 @@ exports = module.exports = function(jsh){
     else{
       jctrl.val(val);
     }
+
+    //Update CKEditor, if applicable
+    var ckeditorid = xmodel.class+'_'+field.name;
+    if ((typeof window.CKEDITOR != 'undefined') && (ckeditorid in window.CKEDITOR.instances)) {
+      window.CKEDITOR.instances[ckeditorid].setData(val);
+    }
     
     //Make fields editable or locked / read-only
     var show_lookup_when_readonly = false;
@@ -378,8 +384,9 @@ exports = module.exports = function(jsh){
         val = jctrl_hidden.val();
       }
       if(typeof val === 'undefined') val = '';
-      if ((typeof CKEDITOR != 'undefined') && (field.name in CKEDITOR.instances)) {
-        val = CKEDITOR.instances[field.name].getData();
+      var ckeditorid = xmodel.class+'_'+field.name;
+      if ((typeof window.CKEDITOR != 'undefined') && (ckeditorid in window.CKEDITOR.instances)) {
+        val = window.CKEDITOR.instances[ckeditorid].getData();
         val = jsh.XExt.ReplaceAll(val, '&lt;%', '<' + '%');
         val = jsh.XExt.ReplaceAll(val, '%&gt;', '%' + '>');
         val = jsh.XExt.ReplaceAll(val, '&#39;', '\'');

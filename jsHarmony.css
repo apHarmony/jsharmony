@@ -183,7 +183,8 @@ BODY
 	padding-left:0px;
 	padding-right:5px;
 }
-<%-rootcss%> .xform_caption_textarea {
+<%-rootcss%> .xform_caption_textarea,
+<%-rootcss%> .xform_caption_htmlarea {
   vertical-align:top;
   padding-top:6px;
 }
@@ -221,6 +222,10 @@ BODY
 <%-rootcss%> .xform_ctrl_textarea {
   width:400px;
   height:50px;
+}
+<%-rootcss%> .xform_ctrl_htmlarea {
+  width:770px;
+  height:300px;
 }
 <%-rootcss%> .xform_ctrl_button {
   padding:1px 6px;

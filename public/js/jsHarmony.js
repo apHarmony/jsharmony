@@ -6515,6 +6515,12 @@ exports = module.exports = function(jsh){
     else{
       jctrl.val(val);
     }
+
+    //Update CKEditor, if applicable
+    var ckeditorid = xmodel.class+'_'+field.name;
+    if ((typeof window.CKEDITOR != 'undefined') && (ckeditorid in window.CKEDITOR.instances)) {
+      window.CKEDITOR.instances[ckeditorid].setData(val);
+    }
     
     //Make fields editable or locked / read-only
     var show_lookup_when_readonly = false;
@@ -6627,8 +6633,9 @@ exports = module.exports = function(jsh){
         val = jctrl_hidden.val();
       }
       if(typeof val === 'undefined') val = '';
-      if ((typeof CKEDITOR != 'undefined') && (field.name in CKEDITOR.instances)) {
-        val = CKEDITOR.instances[field.name].getData();
+      var ckeditorid = xmodel.class+'_'+field.name;
+      if ((typeof window.CKEDITOR != 'undefined') && (ckeditorid in window.CKEDITOR.instances)) {
+        val = window.CKEDITOR.instances[ckeditorid].getData();
         val = jsh.XExt.ReplaceAll(val, '&lt;%', '<' + '%');
         val = jsh.XExt.ReplaceAll(val, '%&gt;', '%' + '>');
         val = jsh.XExt.ReplaceAll(val, '&#39;', '\'');
@@ -7334,14 +7341,24 @@ exports = module.exports = function(jsh){
     }
   };
 
-  XExt.CKEditor = function (id) {
-    if (CKEDITOR.instances[id]) return;
-    var elem = jsh.$root('.' + id+'.xform_ctrl');
-    if(!elem.length){ return XExt.Alert('Cound not initialize editor on '+id+': form control not found'); }
+  XExt.CKEditor = function (id, config, cb) {
+    if (!window.CKEDITOR){
+      //Dynamically load CKEditor script, and rerun function when finished
+      window.CKEDITOR_BASEPATH = '/js/ckeditor/';
+      jsh.loadScript('/js/ckeditor/ckeditor.js', function(){ XExt.CKEditor(id, config, cb); });
+      return;
+    }
+    if (window.CKEDITOR.instances[id]){ if(cb) cb(); return; }
+    
+    var elem = jsh.$root('#'+id);
+    if(!elem.length) elem = jsh.$root('.'+id);
+    if(!elem.length){ return XExt.Alert('Cound not initialize editor on '+id+': form control with that id not found'); }
     var orig_width = elem.outerWidth();
     var orig_height = elem.outerHeight();
     elem.wrap('<div class="' + id + '_container" style="width:' + orig_width + 'px;border:1px solid #999;display:inline-block;"></div>');
-    CKEDITOR.replace(id);
+    window.CKEDITOR.replace(id, _.extend({ height: orig_height },config));
+    if(cb) cb();
+    return;
   }
   XExt.getOpenerJSH = function(capabilities){
     if (window.opener) {
@@ -21224,6 +21241,7 @@ var jsHarmony = function(options){
   this.app_errors = [];
   this.popups = {};
   this.srcfiles = {};
+  this.scriptLoader = {};
 
   this._GET = this.XExt.parseGET();
   _.extend(this._GET, this.forcequery);
@@ -21254,6 +21272,25 @@ jsHarmony.prototype.getInstance = function(){
 jsHarmony.prototype.getFileProxy = function(){
   var _this = this;
   return _this.$root('#'+_this.getInstance()+'_xfileproxy');
+}
+
+jsHarmony.prototype.loadScript = function(url, cb){
+  var _this = this;
+  if(url in _this.scriptLoader){
+    if(_this.scriptLoader[url] === null) return cb();
+    else return _this.scriptLoader[url].push(cb);
+  }
+  _this.scriptLoader[url] = [cb];
+  $.ajax({
+    url: url,
+    dataType: "script",
+    complete: function(){
+      var funcs = _this.scriptLoader[url];
+      _this.scriptLoader[url] = null;
+      _.each(funcs, function(func){ func(); });
+    },
+    error: function (err) { XExt.Alert('Error loading HTML Editor: '+err.toString()); }
+  });
 }
 
 jsHarmony.prototype.BindEvents = function(){

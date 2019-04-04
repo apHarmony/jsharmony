@@ -345,9 +345,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if (typeof xmodel.ondestroy != 'undefined') xmodel.ondestroy(xmodel);
     });
     //Clear CKEDITORs
-    if ((typeof CKEDITOR != 'undefined') && (CKEDITOR.instances)) {
-      for (var name in CKEDITOR.instances) {
-        CKEDITOR.instances[name].destroy();
+    if ((typeof window.CKEDITOR != 'undefined') && (window.CKEDITOR.instances)) {
+      for (var name in window.CKEDITOR.instances) {
+        window.CKEDITOR.instances[name].destroy();
       }
     }
   }
@@ -422,14 +422,23 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       function () {
         //Update title and other dynamic elements with in-place EJS
         jsh.XPage.RenderEJS(function () {
-          //Trigger the onload event for each model
-          var bubble = true;
-          jsh.XPage.traverseModels(null, function (xmodel) {
-            if (!bubble) return;
-            if (typeof xmodel.onload != 'undefined') if (xmodel.onload(xmodel, callback) === false) bubble = false;
+          //Initialize htmlareas, if applicable
+          jsh.XPage.traverseModelsAsync(jsh.XModels_root, function (xmodel, done) {
+            async.eachSeries(xmodel.fields, function(field, field_cb){
+              if(field.control=='htmlarea') return XExt.CKEditor(xmodel.class+'_'+field.name, (field.controlparams?field.controlparams.htmlarea_config:undefined), field_cb);
+              else return field_cb();
+            }, done);
+          }, function(){
+            //Trigger the onload event for each model
+            var bubble = true;
+            jsh.XPage.traverseModels(null, function (xmodel) {
+              if (!bubble) return;
+              //Run onload
+              if (typeof xmodel.onload != 'undefined') if (xmodel.onload(xmodel, callback) === false) bubble = false;
+            });
+            if (bubble && callback) callback();
+            if (jsh.XExt.isSinglePage()) jsh.ResetLinks();
           });
-          if (bubble && callback) callback();
-          if (jsh.XExt.isSinglePage()) jsh.ResetLinks();
         });
       });
   }

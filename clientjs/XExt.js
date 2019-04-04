@@ -507,14 +507,24 @@ exports = module.exports = function(jsh){
     }
   };
 
-  XExt.CKEditor = function (id) {
-    if (CKEDITOR.instances[id]) return;
-    var elem = jsh.$root('.' + id+'.xform_ctrl');
-    if(!elem.length){ return XExt.Alert('Cound not initialize editor on '+id+': form control not found'); }
+  XExt.CKEditor = function (id, config, cb) {
+    if (!window.CKEDITOR){
+      //Dynamically load CKEditor script, and rerun function when finished
+      window.CKEDITOR_BASEPATH = '/js/ckeditor/';
+      jsh.loadScript('/js/ckeditor/ckeditor.js', function(){ XExt.CKEditor(id, config, cb); });
+      return;
+    }
+    if (window.CKEDITOR.instances[id]){ if(cb) cb(); return; }
+    
+    var elem = jsh.$root('#'+id);
+    if(!elem.length) elem = jsh.$root('.'+id);
+    if(!elem.length){ return XExt.Alert('Cound not initialize editor on '+id+': form control with that id not found'); }
     var orig_width = elem.outerWidth();
     var orig_height = elem.outerHeight();
     elem.wrap('<div class="' + id + '_container" style="width:' + orig_width + 'px;border:1px solid #999;display:inline-block;"></div>');
-    CKEDITOR.replace(id);
+    window.CKEDITOR.replace(id, _.extend({ height: orig_height },config));
+    if(cb) cb();
+    return;
   }
   XExt.getOpenerJSH = function(capabilities){
     if (window.opener) {

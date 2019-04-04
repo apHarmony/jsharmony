@@ -33,7 +33,7 @@ module.exports = exports = {};
 |    LOAD MODELS   |
 *******************/
 
-var BASE_CONTROLS = ['label', 'html', 'textbox', 'textzoom', 'dropdown', 'date', 'textarea', 'hidden', 'subform', 'html', 'password', 'file_upload', 'file_download', 'button', 'linkbutton', 'tree', 'checkbox'];
+var BASE_CONTROLS = ['label', 'html', 'textbox', 'textzoom', 'dropdown', 'date', 'textarea', 'htmlarea', 'hidden', 'subform', 'html', 'password', 'file_upload', 'file_download', 'button', 'linkbutton', 'tree', 'checkbox'];
 var BASE_DATATYPES = ['DATETIME','VARCHAR','CHAR','BOOLEAN','BIGINT','INT','SMALLINT','TINYINT','DECIMAL','FLOAT','DATE','DATETIME','TIME','ENCASCII','HASH','FILE','BINARY'];
 
 //Get array of all model folders
@@ -1435,7 +1435,7 @@ exports.ParseEntities = function () {
     var _v_controlparams = [
       'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'base_readonly', 'dateformat',
       'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'data_file_prefix', 'sqlparams', '_data_file_has_extension',
-      'image', 'thumbnails', 'expand_all', 'item_context_menu', 'insert_link', 'grid_save_before_update', "update_when_blank"
+      'image', 'thumbnails', 'expand_all', 'item_context_menu', 'insert_link', 'grid_save_before_update', "update_when_blank", "htmlarea_config"
     ];
     var _v_popuplov = ['target', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
     var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db', 'values'];

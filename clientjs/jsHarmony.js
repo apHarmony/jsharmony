@@ -173,6 +173,7 @@ var jsHarmony = function(options){
   this.app_errors = [];
   this.popups = {};
   this.srcfiles = {};
+  this.scriptLoader = {};
 
   this._GET = this.XExt.parseGET();
   _.extend(this._GET, this.forcequery);
@@ -203,6 +204,25 @@ jsHarmony.prototype.getInstance = function(){
 jsHarmony.prototype.getFileProxy = function(){
   var _this = this;
   return _this.$root('#'+_this.getInstance()+'_xfileproxy');
+}
+
+jsHarmony.prototype.loadScript = function(url, cb){
+  var _this = this;
+  if(url in _this.scriptLoader){
+    if(_this.scriptLoader[url] === null) return cb();
+    else return _this.scriptLoader[url].push(cb);
+  }
+  _this.scriptLoader[url] = [cb];
+  $.ajax({
+    url: url,
+    dataType: "script",
+    complete: function(){
+      var funcs = _this.scriptLoader[url];
+      _this.scriptLoader[url] = null;
+      _.each(funcs, function(func){ func(); });
+    },
+    error: function (err) { XExt.Alert('Error loading HTML Editor: '+err.toString()); }
+  });
 }
 
 jsHarmony.prototype.BindEvents = function(){
