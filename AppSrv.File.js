@@ -226,7 +226,7 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
       var fpath = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||fieldid) + '_' + keyid;
       if (options.thumb) {
         if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
-          fpath = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||tname) + '_' + keyid;
+          fpath = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||fieldid) + '_' + tname + '_' + keyid;
           break;
         }
       }
@@ -280,7 +280,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
       fileops.push({ op: 'move', src: '', dest: filedest });
       //Delete Thumbnails in main operation
       if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
-        var tdest = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||tname) + '_%%%KEY%%%';
+        var tdest = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||field.name) + '_' + tname + '_%%%KEY%%%';
         if (field.controlparams._data_file_has_extension) filedest += '%%%EXT%%%';
         fileops.push({ op: 'move', src: '', dest: tdest });
       }
@@ -318,7 +318,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
         if (field.controlparams.image && _.includes(jsh.Config.supported_images, file_ext)) {
           //Create Thumbnails, if applicable
           if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
-            var tdest = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||tname) + '_%%%KEY%%%';
+            var tdest = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||field.name) + '_' + tname + '_%%%KEY%%%';
             if (field.controlparams._data_file_has_extension) tdest += '.' + field.controlparams.thumbnails[tname].format;
             if (_.includes(jsh.Config.supported_images, file_ext)) {
               if (field.controlparams.thumbnails[tname].resize) fileops.push({ op: 'img_resize', src: fpath, dest: tdest, size: field.controlparams.thumbnails[tname].resize, format: field.controlparams.thumbnails[tname].format });
@@ -330,7 +330,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
           filedest = Helper.ReplaceAll(filedest, '%%%EXT%%%', '.' + field.controlparams.image.format);
           if (field.controlparams.image.resize) fileops.push({ op: 'img_resize', src: fpath, dest: filedest, size: field.controlparams.image.resize, format: field.controlparams.image.format });
           else if (field.controlparams.image.crop) fileops.push({ op: 'img_crop', src: fpath, dest: filedest, size: field.controlparams.image.crop, format: field.controlparams.image.format });
-          else throw new Error('No image resize or crop operation in ' + field.name);
+          else fileops.push({ op: 'img_resample', src: fpath, dest: filedest, format: field.controlparams.image.format });
           fileops.push({ op: 'delete_on_complete', src: fpath });
         }
         else {
@@ -381,6 +381,25 @@ exports.ProcessFileOperations = function (keyval, fileops, rslt, stats, callback
           if (fileerr != null) return opcallback(fileerr);
           return opcallback(null);
         });
+      }
+      else if (fileop.op == 'img_resample'){
+        (function(){
+          var img = imagick(filesrc);
+          img.size(function (err, size) {
+            if (err) return opcallback(err);
+            if (fileop.format) {
+              img.setFormat(fileop.format);
+              if (_.includes(['jpeg', 'jpg'], fileop.format)) img.flatten();
+            }
+            img.quality(90);
+            img.autoOrient();
+            img.repage(0, 0, 0, 0);
+            img.noProfile().write(filedest, function (err) {
+              if (err) return opcallback(err);
+              return opcallback(null);
+            });
+          });
+        })();
       }
       else if (fileop.op == 'img_crop') {
         (function(){

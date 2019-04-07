@@ -33,7 +33,7 @@ module.exports = exports = {};
 |    LOAD MODELS   |
 *******************/
 
-var BASE_CONTROLS = ['label', 'html', 'textbox', 'textzoom', 'dropdown', 'date', 'textarea', 'htmlarea', 'hidden', 'subform', 'html', 'password', 'file_upload', 'file_download', 'button', 'linkbutton', 'tree', 'checkbox'];
+var BASE_CONTROLS = ['label', 'html', 'textbox', 'textzoom', 'dropdown', 'date', 'textarea', 'htmlarea', 'hidden', 'subform', 'html', 'password', 'file_upload', 'file_download', 'button', 'linkbutton', 'tree', 'checkbox','image'];
 var BASE_DATATYPES = ['DATETIME','VARCHAR','CHAR','BOOLEAN','BIGINT','INT','SMALLINT','TINYINT','DECIMAL','FLOAT','DATE','DATETIME','TIME','ENCASCII','HASH','FILE','BINARY'];
 
 //Get array of all model folders
@@ -765,6 +765,12 @@ exports.ParseEntities = function () {
             }
             _this.AddBindingFields(model, field, 'Subform '+field.name, modelsExt);
           }
+          //Automatically add file parameters
+          if ((field.type == 'file') && field.controlparams && field.controlparams.sqlparams) {
+            _.each(_.pick(field.controlparams.sqlparams,['FILE_EXT','FILE_NAME','FILE_SIZE','FILE_UTSTMP','FILE_UU']), function(fieldname,param){
+              if(!_this.AddFieldIfNotExists(model, fieldname, modelsExt)) _this.LogInit_ERROR(model.id + ' > File field ' + fieldname + ': ' + param + ' target field does not exist in model.fields');
+            });
+          }
         });
       }
     }
@@ -898,6 +904,7 @@ exports.ParseEntities = function () {
         //Apply Custom Controls with Query Expressions
       }
       if (field.name === '') delete field.name;
+
       //Apply default actions
       if (!('actions' in field)){
         if(field.key && !model._auto.primary_key && (model.layout != 'multisel') && !isReadOnlyGrid && tabledef && (tabledef.table_type=='table') && Helper.hasAction(model.actions, 'I')){
@@ -918,7 +925,8 @@ exports.ParseEntities = function () {
           if(field.control) field.actions = 'B';
           else field.actions = '';
         }
-        else if ((field.control == 'html') || (field.control == 'button') || (field.control == 'linkbutton')) field.actions = 'B';
+        else if ((field.control == 'html') || (field.control == 'button') || (field.control == 'linkbutton') || (field.control == 'file_download') || (field.control == 'image')) field.actions = 'B';
+        else if (('sqlselect' in field) && !('sqlupdate' in field) && !('sqlinsert' in field)) field.actions = 'B';
         else {
           if (model.layout=='grid'){
             if(isReadOnlyGrid){
@@ -981,7 +989,15 @@ exports.ParseEntities = function () {
       if(!('control' in field)){
         if(auto_controls){
           if(field.type=='file'){
-            if(model.layout=='grid') field.control = 'file_download';
+            if(model.layout=='grid'){
+              if(field.controlparams && (field.controlparams.image||field.controlparams.thumbnails)){
+                field.control = 'image';
+                if(field.controlparams.thumbnails){
+                  if(!('show_thumbnail' in field.controlparams)) field.controlparams.show_thumbnail = Helper.firstKey(field.controlparams.thumbnails);
+                }
+              }
+              else field.control = 'file_download';
+            }
             else field.control = 'file_upload';
           }
           else if(('lov' in field) && !isReadOnlyGrid) field.control = 'dropdown';
@@ -1060,8 +1076,8 @@ exports.ParseEntities = function () {
         if ('popup_copy_results' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams popup_copy_results attribute has been deprecated - use "popuplov":{...}');
         if ('base_readonly' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams base_readonly attribute has been deprecated - use "popuplov":{...}');
         if ('onpopup' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams onpopup attribute has been deprecated - use "popuplov":{...}');
-        if (('image' in field.controlparams) && Helper.hasAction(field.actions, 'IU') && (field.controlparams.image.resize || field.controlparams.image.crop)) _this.TestImageMagick(model.id + ' > ' + field.name);
-        if (('thumbnails' in field.controlparams) && Helper.hasAction(field.actions, 'IU')) _.each(field.controlparams.thumbnails,function(thumbnail){ if(thumbnail.resize || thumbnail.crop) _this.TestImageMagick(model.id + ' > ' + field.name); });
+        if (('image' in field.controlparams) && Helper.hasAction(field.actions, 'IU') && (field.controlparams.image)) _this.TestImageMagick(model.id + ' > ' + field.name);
+        if (('thumbnails' in field.controlparams) && Helper.hasAction(field.actions, 'IU')) _.each(field.controlparams.thumbnails,function(thumbnail){ _this.TestImageMagick(model.id + ' > ' + field.name); });
       }
       if ('popuplov' in field) {
         if (field.popuplov.CODEVal) { field.popuplov.codeval = field.popuplov.CODEVal; delete field.popuplov.CODEVal; }
@@ -1117,6 +1133,11 @@ exports.ParseEntities = function () {
         if (!('controlparams' in field)) field.controlparams = {};
         if (!('download_button' in field.controlparams)) field.controlparams.download_button = 'Download';
         if(field.type != 'file') _this.LogInit_ERROR('Model ' + model.id + ' Field ' + (field.name || '') + ' should have field.type="file" for field.control="file_download"');
+      }
+      else if(field.control=='image'){
+        if (!('controlparams' in field)) field.controlparams = {};
+        if (!('preview' in field.controlparams)) field.controlparams.preview = true;
+        if(field.type != 'file') _this.LogInit_ERROR('Model ' + model.id + ' Field ' + (field.name || '') + ' should have field.type="file" for field.control="image"');
       }
       if(field.type=='file'){
         if (!('controlparams' in field)) field.controlparams = {};
@@ -1470,12 +1491,12 @@ exports.ParseEntities = function () {
       }
       //Check if the field has a type
       if(field.actions && field.name && !('type' in field) && !('value' in field) && (field.control != 'subform') && !field.unbound) _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Missing field.type property.  Set field.value or field.unbound if it should not be bound to the data layer.');
-      if(field.control && (model.layout=='grid') && !_.includes(['hidden','label','html','textbox','textzoom','password','date','textarea','dropdown','checkbox','button','linkbutton','file_download'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support ' + field.control + ' control');
+      if(field.control && (model.layout=='grid') && !_.includes(['hidden','label','html','textbox','textzoom','password','date','textarea','dropdown','checkbox','button','linkbutton','file_download','image'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support ' + field.control + ' control');
       if(field.control && (model.layout=='multisel') && !_.includes(['hidden','label'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Multisel does not support ' + field.control + ' control');
       if(field.unbound && (model.layout=='multisel')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Multisel does not support unbound controls');
       if(field.unbound && field.type) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Unbound fields should not have a field.type property');
-      if(((field.control == 'file_upload') || (field.control == 'file_download')) && (field.type != 'file')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The ' + field.control + ' control requires field.type="file"');
-      if((field.control == 'file_download') && Helper.hasAction(field.actions, 'IU')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The file_download control field.actions must be "B" (browse-only).');
+      if(((field.control == 'file_upload') || (field.control == 'file_download') || (field.control == 'image')) && (field.type != 'file')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The ' + field.control + ' control requires field.type="file"');
+      if(((field.control == 'file_download') || (field.control == 'image')) && Helper.hasAction(field.actions, 'IU')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The ' + field.control + ' control field.actions must be "B" (browse-only).');
       //field.type=encascii, check if password is defined
       if(field.type=='encascii'){
         if(model.layout=='grid') _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support field.type="encascii" (Use field.type="hash" for searching encrypted values)');
@@ -1950,6 +1971,18 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
   else if(tmodel.unbound) element.bindings = {};
   else return null;
 };
+
+exports.AddFieldIfNotExists = function(model, fieldname, modelsExt){
+  var _this = this;
+  var field = _this.AppSrvClass.prototype.getFieldByName(model.fields, fieldname);
+  if(field) return true;
+  var tabledef = modelsExt[model.id].tabledef;
+  if(fieldname in tabledef.fields){
+    addHiddenField(model, fieldname, { actions: 'B' });
+    return true;
+  }
+  return false;
+}
 
 exports.AddBindingFields = function(model, element, elementname, modelsExt){
   var _this = this;

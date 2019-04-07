@@ -359,7 +359,7 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid) {
     res.writeHead(200, {
       'Content-Type': 'text/csv',
       //'Content-Length': stat.size,
-      'Content-Disposition': 'attachment; filename = ' + encodeURIComponent(fullmodelid + '.csv')
+      'Content-Disposition': 'attachment; filename=' + encodeURIComponent(fullmodelid + '.csv')
     });
     csv.stringify(rslt[fullmodelid], { quotedString: true }).pipe(res);
   });

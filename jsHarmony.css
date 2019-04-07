@@ -216,8 +216,16 @@ BODY
 <%-rootcss%> .xform .xform_label,
 <%-rootcss%> .xform input,
 <%-rootcss%> .xform select,
-<%-rootcss%> .xform textarea {
+<%-rootcss%> .xform textarea,
+<%-rootcss%> .xform .htmlarea_container {
   margin:2px 10px 2px 0;
+}
+<%-rootcss%> .xform .htmlarea_container {
+  border:1px solid #999;
+  display:inline-block;
+}
+<%-rootcss%> .xform .htmlarea_container textarea {
+  margin:0;
 }
 <%-rootcss%> .xform_ctrl_textarea {
   width:400px;

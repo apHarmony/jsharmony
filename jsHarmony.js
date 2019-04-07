@@ -241,7 +241,8 @@ jsHarmony.prototype.Init = function(init_cb){
         }
       }
       _this.isInitialized = true;
-      if(!_this.Config.silentStart) _this.Log.console('::jsHarmony Server ready::');
+      var loadTime = (Date.now()-_this.StartTime);
+      if(!_this.Config.silentStart) _this.Log.console('::jsHarmony Server ready:: '+(loadTime/1000).toFixed(2)+'s');
       return cb();
     }
   ], init_cb);

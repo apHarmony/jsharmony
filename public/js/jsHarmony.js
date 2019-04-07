@@ -7355,7 +7355,9 @@ exports = module.exports = function(jsh){
     if(!elem.length){ return XExt.Alert('Cound not initialize editor on '+id+': form control with that id not found'); }
     var orig_width = elem.outerWidth();
     var orig_height = elem.outerHeight();
-    elem.wrap('<div class="' + id + '_container" style="width:' + orig_width + 'px;border:1px solid #999;display:inline-block;"></div>');
+    if(!elem.parent().hasClass(id + '_container')){
+      elem.wrap('<div class="' + id + '_container htmlarea_container" style="width:' + orig_width + 'px;"></div>');
+    }
     window.CKEDITOR.replace(id, _.extend({ height: orig_height },config));
     if(cb) cb();
     return;
@@ -7383,6 +7385,8 @@ exports = module.exports = function(jsh){
     var rslt = ejssrc;
     rslt = XExt.ReplaceAll(rslt, '&lt;#', '<#');
     rslt = XExt.ReplaceAll(rslt, '#&gt;', '#>');
+    rslt = XExt.ReplaceAll(rslt, '&lt;%', '<%');
+    rslt = XExt.ReplaceAll(rslt, '%&gt;', '%>');
     return rslt;
   }
   XExt.renderEJS = function(ejssource, modelid, params){
