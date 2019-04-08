@@ -1136,7 +1136,7 @@ exports.ParseEntities = function () {
       }
       else if(field.control=='image'){
         if (!('controlparams' in field)) field.controlparams = {};
-        if (!('preview' in field.controlparams)) field.controlparams.preview = true;
+        if (!('preview' in field.controlparams)) field.controlparams.preview_on_click = true;
         if(field.type != 'file') _this.LogInit_ERROR('Model ' + model.id + ' Field ' + (field.name || '') + ' should have field.type="file" for field.control="image"');
       }
       if(field.type=='file'){
@@ -1455,7 +1455,7 @@ exports.ParseEntities = function () {
     ];
     var _v_controlparams = [
       'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'base_readonly', 'dateformat',
-      'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'data_file_prefix', 'sqlparams', '_data_file_has_extension',
+      'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'data_file_prefix', 'sqlparams', '_data_file_has_extension', 'show_thumbnail', 'preview_on_click',
       'image', 'thumbnails', 'expand_all', 'item_context_menu', 'insert_link', 'grid_save_before_update', "update_when_blank", "htmlarea_config"
     ];
     var _v_popuplov = ['target', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];

@@ -93,6 +93,14 @@ for(var i=0;i<model.fields.length;i++){
         <input type="hidden" data-id="<%=field.name%>_dbexists" class="<%=field.name%>_dbexists xform_file_dbexists xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" />
       </div>
   <% }
+  if(field.control=='image'){ %>
+      <div data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_image xelem<%=model.class%> <%=field.controlclass%>">
+        <% if(field.controlparams.preview_on_click){ %><a class="<%=field.name%>_preview" href="#" onclick="<%-instance%>.XPage.FilePreview(<%=JSON.stringify(model.id)%>,<%=JSON.stringify(field.name)%>,<%=JSON.stringify(field.caption_ext||field.caption)%>);return false;"><% } %>
+        <img class="<%=field.name%>_thumbnail xform_file_thumbnail" />
+        <% if(field.controlparams.preview_on_click){ %></a><% } %>
+        <input type="hidden" data-id="<%=field.name%>_dbexists" class="<%=field.name%>_dbexists xform_file_dbexists xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" />
+      </div>
+  <% }
   if(field.control=='subform'){ if(('actions' in field) && !xejs.getActions(model.actions,field.actions)) continue; %>
     <div class="<%=field.name%> xsubform <%=field.controlclass%>" data-id="<%=field.name%>" style="<%=field.controlstyle%>">
       <% if(field.caption){ %><a class="xtab selected last"><%=field.caption%></a><% } %>

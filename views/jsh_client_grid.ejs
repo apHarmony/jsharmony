@@ -168,6 +168,14 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
               <input type="hidden" data-id="<%=field.name%>_dbexists" class="<%=field.name%>_dbexists xform_file_dbexists xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" />
             </div>
         <% }
+        else if(field.control=='image'){ %>
+            <div data-id="<%=field.name%>" class="<%=field.name%> xform_image xelem<%=model.class%> <%=field.controlclass%>" style="<%=field.controlstyle%>">
+              <% if(field.controlparams.preview_on_click){ %><a class="<%=field.name%>_preview" href="#" onclick="<%-js('xmodel.controller.FilePreview(model.id,\''+XExt.escapeHTML(field.name)+'\',\''+XExt.escapeHTML(field.caption_ext||field.caption)+'\','+XExt.ejsDelimiter.open+'=rowid'+XExt.ejsDelimiter.close+');')%>"><% } %>
+              <img class="<%=field.name%>_thumbnail xform_file_thumbnail" />
+              <% if(field.controlparams.preview_on_click){ %></a><% } %>
+              <input type="hidden" data-id="<%=field.name%>_dbexists" class="<%=field.name%>_dbexists xform_file_dbexists xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" />
+            </div>
+        <% }
         //Add a hidden field for field value if it is both static and updatable
         if(XExt.hasAction(field.actions,'IU') && _.includes(['html','label','linkbutton','button'],field.control)){
           %><input data-id="<%=field.name%>_field_value" type="hidden" class="<%=field.name%>_field_value xform_ctrl xelem<%=model.class%>" value="<%=xejs.GetValue(field)%>" /><%
