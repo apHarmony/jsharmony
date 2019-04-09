@@ -165,7 +165,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     if (typeof fieldid === 'undefined') { next(); return; }
     var params = {};
     if (req.query && req.query.view) params.view = true;
-    if (req.query && req.query.thumb) params.thumb = true;
+    if (req.query && ('thumb' in req.query)) params.thumb = req.query.thumb;
     jsh.AppSrv.Download(req, res, fullmodelid, keyid, fieldid, params);
   });
   router.get('/_token', function (req, res) { 

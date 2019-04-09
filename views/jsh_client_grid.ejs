@@ -153,7 +153,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
         else if(field.control=='textarea'){ %><textarea data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> <%=field.controlclass%>"><%=xejs.GetValue(field)%></textarea><% }
         else if(field.control=='dropdown'){ %><select data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> dropdown <%=field.controlclass%>"><option><%=xejs.GetValue(field)%></option></select><% }
         else if(field.control=='hidden'){ %><input type="hidden" data-id="<%=field.name%>" value="<%=xejs.GetValue(field)%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" /><% }
-        else if(field.control=='checkbox'){ %><div class="xform_ctrl checkbox_container xelem<%=model.class%>"><input data-id="<%=field.name%>" type="checkbox" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl checkbox xelem<%=model.class%> <%=field.controlclass%>" /></div><% }
+        else if(field.control=='checkbox'){ %><div class="xform_ctrl xform_checkbox_container xelem<%=model.class%>"><input data-id="<%=field.name%>" type="checkbox" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl checkbox xelem<%=model.class%> <%=field.controlclass%>" /></div><% }
         else if(field.control=='button'){ 
           if('link' in field){ %><input data-id="<%=field.name%>" type="button" class="xform_ctrl xform_ctrl_button xelem<%=model.class%> <%=field.name%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%-xejs.escapeHTMLN(field.value)%>" data-url="<%-field.link%>" onclick="<%-js(field.onclick)%>" /><% }
           else{ %><input data-id="<%=field.name%>" type="button" data-model="<%=model.id%>" class="xform_ctrl xform_ctrl_button xelem<%=model.class%> <%=field.name%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%-xejs.escapeHTMLN(field.value)%>" onclick="<%-js(field.onclick)%>" /><% }
@@ -169,12 +169,10 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
             </div>
         <% }
         else if(field.control=='image'){ %>
-            <div data-id="<%=field.name%>" class="<%=field.name%> xform_image xelem<%=model.class%> <%=field.controlclass%>" style="<%=field.controlstyle%>">
-              <% if(field.controlparams.preview_on_click){ %><a class="<%=field.name%>_preview" href="#" onclick="<%-js('xmodel.controller.FilePreview(model.id,\''+XExt.escapeHTML(field.name)+'\',\''+XExt.escapeHTML(field.caption_ext||field.caption)+'\','+XExt.ejsDelimiter.open+'=rowid'+XExt.ejsDelimiter.close+');')%>"><% } %>
-              <img class="<%=field.name%>_thumbnail xform_file_thumbnail" />
-              <% if(field.controlparams.preview_on_click){ %></a><% } %>
-              <input type="hidden" data-id="<%=field.name%>_dbexists" class="<%=field.name%>_dbexists xform_file_dbexists xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" />
-            </div>
+            <% if(field.controlparams.preview_on_click){ %><a class="<%=field.name%>_preview xform_image_preview xelem<%=model.class%>" href="#" onclick="<%-js('xmodel.controller.FilePreview(\''+XExt.escapeHTML(field.name)+'\',\''+XExt.escapeHTML(field.caption_ext||field.caption)+'\','+XExt.ejsDelimiter.open+'=rowid'+XExt.ejsDelimiter.close+');')%>"><% } %>
+            <img data-id="<%=field.name%>" class="<%=field.name%> xform_image xelem<%=model.class%> <%=field.name%>_thumbnail xform_file_thumbnail <%=field.controlclass%>" style="<%=field.controlstyle%>" />
+            <% if(field.controlparams.preview_on_click){ %></a><% } %>
+            <input type="hidden" data-id="<%=field.name%>_dbexists" class="<%=field.name%>_dbexists xform_file_dbexists xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" />
         <% }
         //Add a hidden field for field value if it is both static and updatable
         if(XExt.hasAction(field.actions,'IU') && _.includes(['html','label','linkbutton','button'],field.control)){

@@ -205,6 +205,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                            "preview_button": "View", //Text for preview button - opens within new browser window
                            "upload_button": "Upload", //Text for upload button
                            "delete_button": "Delete", //Text for delete button
+                           "show_thumbnail":"small", //Target thumbnail for display
+                           "preview_on_click":true,  //Whether to link to preview the full image on click
                            "data_folder": "D",//Folder for files, must be unique per data_file_prefix
                            "data_file_prefix": "c_doc", //File prefix in PREFIX_KEY.EXT (defaults to field name if blank or not set)
                            "_data_file_has_extension": false, //System parameter.  Automatically set to true if sqlparams.FILE_EXT not set.  Slower because a directory search is required on each request.  
@@ -220,7 +222,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                         "_data_file_has_extension": false, //System parameter.  Automatically set to true if sqlparams.FILE_EXT not set.  Slower because a directory search is required on each request.  
                       },
                       { //image params
-                        "show_thumbnail":"small", //Target thumbnail for display
+                        "sqlparams": {
+                          "FILE_EXT": "d_ext", //File Extension
+                          "FILE_NAME": "d_filename" //Target file name for download
+                        },
+                        "show_thumbnail":"small", //Target thumbnail for display, or "true" first first thumbnail or image
                         "preview_on_click":true,  //Whether to link to preview the full image on click
                         "data_folder": "D",       //Folder for files, must be unique per data_file_prefix
                         "data_file_prefix": "c_doc", //File prefix in PREFIX_KEY.EXT (defaults to field name if blank or not set)

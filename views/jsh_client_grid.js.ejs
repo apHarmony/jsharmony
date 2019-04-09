@@ -476,6 +476,22 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     jsh.getFileProxy().prop('src', url);
   }
 
+  xcontroller.FilePreview = function(field, title, rowid){
+    var jrow = jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']");
+    var jctrl_token = jrow.find('.xelem' + xmodel.class + ' .' + field + '_token');
+    var file_token = jctrl_token.val();
+    var url = '';
+    if (file_token) url = jsh._BASEURL + '_dl/_temp/' + file_token + '?view=1';
+    else {
+      //Get Keys
+      var keys = this.GetKeys(rowid);
+      var key_names = _.keys(keys);
+      if (key_names.length != 1) { throw new Error('Models with file downloads must have one key.'); }
+      url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[key_names[0]] + '/' + field + '?view=1';
+    }
+    window.open(url,'_blank',"height=600, width=800"); 
+  }
+
   xcontroller.DuplicateRow = function(dmodelid, rowid, obj, bindings){
     if(jsh.XPage.HasUpdates()){ XExt.Alert('Please save changes before duplicating.'); return false; }
     var rowdata = xform.DataSet[rowid];

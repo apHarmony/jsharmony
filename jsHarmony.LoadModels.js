@@ -990,12 +990,7 @@ exports.ParseEntities = function () {
         if(auto_controls){
           if(field.type=='file'){
             if(model.layout=='grid'){
-              if(field.controlparams && (field.controlparams.image||field.controlparams.thumbnails)){
-                field.control = 'image';
-                if(field.controlparams.thumbnails){
-                  if(!('show_thumbnail' in field.controlparams)) field.controlparams.show_thumbnail = Helper.firstKey(field.controlparams.thumbnails);
-                }
-              }
+              if(field.controlparams && (field.controlparams.image||field.controlparams.thumbnails)) field.control = 'image';
               else field.control = 'file_download';
             }
             else field.control = 'file_upload';
@@ -1121,6 +1116,8 @@ exports.ParseEntities = function () {
         if (!('controlparams' in field)) field.controlparams = {};
         if(('image' in field.controlparams)||('thumbnails' in field.controlparams)){
           if (!('preview_button' in field.controlparams)) field.controlparams.preview_button = 'View';
+          if (!('preview_on_click' in field.controlparams)) field.controlparams.preview_on_click = true;
+          if (!('show_thumbnail' in field.controlparams)) field.controlparams.preview_on_click = true;
         }
         else{
           if (!('download_button' in field.controlparams)) field.controlparams.download_button = 'Download';
@@ -1136,12 +1133,18 @@ exports.ParseEntities = function () {
       }
       else if(field.control=='image'){
         if (!('controlparams' in field)) field.controlparams = {};
-        if (!('preview' in field.controlparams)) field.controlparams.preview_on_click = true;
+        if (!('preview_on_click' in field.controlparams)) field.controlparams.preview_on_click = true;
         if(field.type != 'file') _this.LogInit_ERROR('Model ' + model.id + ' Field ' + (field.name || '') + ' should have field.type="file" for field.control="image"');
       }
       if(field.type=='file'){
         if (!('controlparams' in field)) field.controlparams = {};
         if (!('sqlparams' in field.controlparams)) field.controlparams.sqlparams = {};
+        if(field.controlparams.image||field.controlparams.thumbnails){
+          if(!('show_thumbnail' in field.controlparams)){
+            if(field.controlparams.thumbnails) field.controlparams.show_thumbnail = Helper.firstKey(field.controlparams.thumbnails);
+            else field.controlparams.show_thumbnail = true;
+          }
+        }
         if(!field.controlparams.sqlparams.FILE_EXT) field.controlparams._data_file_has_extension = true;
       }
 

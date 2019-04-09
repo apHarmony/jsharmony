@@ -543,6 +543,9 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
       };
     }
     else if(fileops.length > 0){
+      verrors = _.merge(verrors, model.xvalidate.Validate('UK', _.merge(vfiles, sql_params), '', vignorefiles, req._roles));
+      if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
+      
       dbtasks[fullmodelid] = function(dbtrans, callback, transtbl){
         sql_params = _this.ApplyTransTblEscapedParameters(sql_params, transtbl);
         var keyval = '';

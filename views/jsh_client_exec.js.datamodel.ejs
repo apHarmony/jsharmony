@@ -50,6 +50,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       <%-xejs.iif('default' in field,'"default":'+JSON.stringify(field.default)+',') %>
       <% if('controlparams' in field){ %>controlparams:{
         <%-xejs.iif('thumbnail_width' in field.controlparams,'"thumbnail_width":'+JSON.stringify(field.controlparams.thumbnail_width)+',') %>
+        <%-xejs.iif('show_thumbnail' in field.controlparams,'"show_thumbnail":'+JSON.stringify(field.controlparams.show_thumbnail)+',') %>
+        <%-xejs.iif('preview_on_click' in field.controlparams,'"preview_on_click":'+JSON.stringify(field.controlparams.preview_on_click)+',') %>
         <%-xejs.iif('expand_all' in field.controlparams,'"expand_all":'+JSON.stringify(field.controlparams.expand_all)+',') %>
         <%-xejs.iif('expand_to_selected' in field.controlparams,'"expand_to_selected":'+JSON.stringify(field.controlparams.expand_to_selected)+',') %>
         <%-xejs.iif('value_true' in field.controlparams,'"value_true":'+JSON.stringify(field.controlparams.value_true)+',') %>

@@ -144,7 +144,7 @@ exports = module.exports = function(jsh){
     if (('control' in field) && ((field.control == 'file_upload')||(field.control == 'file_download')||(field.control == 'image'))) {
       //Show "Upload File" always
       var filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
-      if (isGrid) filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
+      if(field.control=='image') filefieldselector = '.xelem' + xmodel.class + '.' + field.name;
       var jctrl_download = parentobj.find(filefieldselector + '_download');
       var jctrl_upload = parentobj.find(filefieldselector + '_upload');
       var jctrl_delete = parentobj.find(filefieldselector + '_delete');
@@ -161,12 +161,13 @@ exports = module.exports = function(jsh){
         jctrl_dbdelete.val('0');
         jctrl_dbexists.val('1');
         //Set thumbnail
-        if (jctrl_thumbnail.length && field.controlparams.thumbnail_width) {
+        if (jctrl_thumbnail.length && ((field.control=='image') || (field.controlparams.show_thumbnail))) {
           var keys = xmodel.controller.form.GetKeys();
           if (xmodel.keys.length != 1) { throw new Error('File models require one key.'); }
-          var thumb_url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field.name + '?view=1&thumb=1&_=' + (new Date().getTime());
+          var thumb_url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field.name + '?view=1&_=' + (new Date().getTime());
+          if(field.controlparams.show_thumbnail) thumb_url += '&thumb='+field.controlparams.show_thumbnail;
           jctrl_thumbnail.attr('src', thumb_url).show();
-          jctrl_thumbnail.attr('width', field.controlparams.thumbnail_width + 'px');
+          if(typeof field.controlparams.thumbnail_width != 'undefined') jctrl_thumbnail.attr('width', field.controlparams.thumbnail_width + 'px');
         }
         else jctrl_thumbnail.hide();
       }
@@ -190,10 +191,10 @@ exports = module.exports = function(jsh){
         jctrl_token.val(val);
         jctrl_dbdelete.val('0');
         //Set thumbnail
-        if (jctrl_thumbnail.length && field.controlparams.thumbnail_width) {
+        if (jctrl_thumbnail.length && field.controlparams.show_thumbnail) {
           var thumb_url = jsh._BASEURL + '_dl/_temp/' + file_token + '?view=1';
           jctrl_thumbnail.attr('src', thumb_url).show();
-          jctrl_thumbnail.attr('width', field.controlparams.thumbnail_width + 'px');
+          if(typeof field.controlparams.thumbnail_width != 'undefined') jctrl_thumbnail.attr('width', field.controlparams.thumbnail_width + 'px');
         }
         else jctrl_thumbnail.hide();
       }
@@ -307,13 +308,13 @@ exports = module.exports = function(jsh){
           if (this.HasUpdate(id)) {
             if (!jobj.hasClass('updated')) {
               jobj.addClass('updated');
-              if(jobj.parent().hasClass('checkbox_container')) jobj.parent().addClass('updated');
+              if(jobj.parent().hasClass('xform_checkbox_container')) jobj.parent().addClass('updated');
             }
           }
           else {
             if (jobj.hasClass('updated')) {
               jobj.removeClass('updated');
-              if (jobj.parent().hasClass('checkbox_container')) jobj.parent().removeClass('updated');
+              if (jobj.parent().hasClass('xform_checkbox_container')) jobj.parent().removeClass('updated');
             }
           }
         }

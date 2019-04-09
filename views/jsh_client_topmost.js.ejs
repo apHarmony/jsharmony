@@ -766,7 +766,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field;
     }
     jsh.getFileProxy().prop('src', url);
-    //window.open(url,'_blank'); 
   }
 
   jsh.XPage.FilePreview = function(modelid, field, title) {
@@ -782,7 +781,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field + '?view=1';
       url += '&_=' + (new Date().getTime());
     }
-    //jsh.getFileProxy().prop('src', url);
     window.open(url,'_blank',"height=600, width=800"); 
   }
 

@@ -31,7 +31,8 @@ for(var i=0;i<model.fields.length;i++){
   if((field.control!='subform') && (field.control!='hidden')){
     var captionclass = 'xform_caption '+(field.captionclass||'');
     if((field.control=='textarea')||(field.control=='textzoom')) captionclass += ' xform_caption_textarea';
-    if(field.control=='htmlarea') captionclass += ' xform_caption_htmlarea';
+    else if(field.control=='htmlarea') captionclass += ' xform_caption_htmlarea';
+    else if(field.control=='image') captionclass += ' xform_caption_image';
     if(('caption' in field) && (field.caption.length > 0)) { 
       if(('nl' in field) && !('captionstyle' in field) && (dflt_captionstyle != "")){ 
         %><div class="<%=captionclass%> <%=xejs.iif(leadingfield,'leading')%>" style="<%=dflt_captionstyle%>"><%-xejs.escapeHTMLN(field.caption+((field.caption != '')?': ':''))%></div><%
@@ -94,12 +95,10 @@ for(var i=0;i<model.fields.length;i++){
       </div>
   <% }
   if(field.control=='image'){ %>
-      <div data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_image xelem<%=model.class%> <%=field.controlclass%>">
-        <% if(field.controlparams.preview_on_click){ %><a class="<%=field.name%>_preview" href="#" onclick="<%-instance%>.XPage.FilePreview(<%=JSON.stringify(model.id)%>,<%=JSON.stringify(field.name)%>,<%=JSON.stringify(field.caption_ext||field.caption)%>);return false;"><% } %>
-        <img class="<%=field.name%>_thumbnail xform_file_thumbnail" />
-        <% if(field.controlparams.preview_on_click){ %></a><% } %>
-        <input type="hidden" data-id="<%=field.name%>_dbexists" class="<%=field.name%>_dbexists xform_file_dbexists xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" />
-      </div>
+      <% if(field.controlparams.preview_on_click){ %><a class="<%=field.name%>_preview xform_image_preview xelem<%=model.class%>" href="#" onclick="<%-instance%>.XPage.FilePreview(<%=JSON.stringify(model.id)%>,<%=JSON.stringify(field.name)%>,<%=JSON.stringify(field.caption_ext||field.caption)%>);return false;"><% } %>
+      <img data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_image <%=field.name%>_thumbnail xform_file_thumbnail xelem<%=model.class%> <%=field.controlclass%>" />
+      <% if(field.controlparams.preview_on_click){ %></a><% } %>
+      <input type="hidden" data-id="<%=field.name%>_dbexists" class="<%=field.name%>_dbexists xform_file_dbexists xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" />
   <% }
   if(field.control=='subform'){ if(('actions' in field) && !xejs.getActions(model.actions,field.actions)) continue; %>
     <div class="<%=field.name%> xsubform <%=field.controlclass%>" data-id="<%=field.name%>" style="<%=field.controlstyle%>">
@@ -127,7 +126,7 @@ for(var i=0;i<model.fields.length;i++){
       %></div><%
     }
   }
-  if(field.control=='checkbox'){ %><div class="xform_ctrl checkbox_container xelem<%=model.class%>"><input data-id="<%=field.name%>" type="checkbox" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl checkbox xelem<%=model.class%> <%=field.controlclass%>" /></div><% }
+  if(field.control=='checkbox'){ %><div class="xform_ctrl xform_checkbox_container xelem<%=model.class%>"><input data-id="<%=field.name%>" type="checkbox" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl checkbox xelem<%=model.class%> <%=field.controlclass%>" /></div><% }
   //Add a hidden field for field value if it is both static and updatable
   if(XExt.hasAction(field.actions,'IU') && _.includes(['html','label','linkbutton','button'],field.control)){
     %><input data-id="<%=field.name%>_field_value" type="hidden" class="<%=field.name%>_field_value xform_ctrl xelem<%=model.class%>" value="<%=xejs.GetValue(field)%>" /><%

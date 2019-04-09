@@ -174,7 +174,7 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
     var file_ext = path.extname(fname).toLowerCase(); //Get extension
     if ((file_ext == '') || (!_.includes(jsh.Config.valid_extensions, file_ext))) { return Helper.GenError(req, res, -32, 'File extension is not supported.'); }
     var fpath = jsh.Config.datadir + 'temp/' + req._DBContext + '/' + fname;
-    serveFile(req, res, fpath, fname, fname);
+    serveFile(req, res, fpath, fname, file_ext);
   }
   else {
     if (!this.jsh.hasModel(req, fullmodelid)) throw new Error('Error: Model ' + fullmodelid + ' not found in collection.');
@@ -224,8 +224,11 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
       if ('FILE_NAME' in field.controlparams.sqlparams) { fname = rslt[0][field.controlparams.sqlparams.FILE_NAME]; }
       else if ('FILE_EXT' in field.controlparams.sqlparams) { fname += rslt[0][field.controlparams.sqlparams.FILE_EXT]; }
       var fpath = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||fieldid) + '_' + keyid;
-      if (options.thumb) {
-        if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
+      if ('thumb' in options) {
+        if(('show_thumbnail' in field.controlparams) && (field.controlparams.show_thumbnail===options.thumb)){
+          fpath = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||fieldid) + '_' + field.controlparams.show_thumbnail + '_' + keyid;
+        }
+        else if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
           fpath = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||fieldid) + '_' + tname + '_' + keyid;
           break;
         }
@@ -233,8 +236,9 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
       if (field.controlparams._data_file_has_extension) fpath += '%%%EXT%%%';
       HelperFS.getExtFileName(fpath, function(err, filename){
         if(err) return Helper.GenError(req, res, -33, 'Download file not found.');
-        if(field.controlparams._data_file_has_extension && !('FILE_EXT' in field.controlparams.sqlparams)) fname += path.extname(filename);
-        serveFile(req, res, filename, fname, fname);
+        var fext = path.extname(filename);
+        if(field.controlparams._data_file_has_extension && !('FILE_EXT' in field.controlparams.sqlparams)) fname += fext;
+        serveFile(req, res, filename, fname, fext);
       });
     }, undefined, db);
   }
