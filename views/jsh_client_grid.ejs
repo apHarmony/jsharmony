@@ -106,7 +106,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           var fieldclass = '';
           if(field.control && (field.control=='hidden')) fieldclass += 'tdhidden';
           %>
-        <th nowrap class="<%=field.sortclass%> thead<%=field.name%> <%=field.captionclass%> <%=fieldclass%>" style="<%=field.captionstyle%>"><% if(field.disable_sort||(field.type=='file')||field.unbound){ %><%=field.caption%><% } else { %><a href="#" onClick="<%-js('xmodel.controller.Sort(this, \''+XExt.escapeHTML((field.lov && !field.lov.showcode)?('__'+jsh.uimap.codetxt+'__'+field.name):field.name)+'\');')%>"><%=field.caption%></a><% } %></th>
+        <th nowrap class="<%=field.sortclass%> thead<%=field.name%> <%=field.captionclass%> <%=fieldclass%>" style="<%=field.captionstyle%>"><% if(field.disable_sort||(field.type=='file')||field.unbound){ %><%=field.caption%><% } else { %><a href="#" onClick="<%-js('return xmodel.controller.Sort(this, \''+XExt.escapeHTML((field.lov && !field.lov.showcode)?('__'+jsh.uimap.codetxt+'__'+field.name):field.name)+'\');')%>"><%=field.caption%></a><% } %></th>
         <% } %>
         <%-xejs.iif(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'I'),'<th></th>')%>
         <%-xejs.iif(model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'D'),'<th></th>')%>
@@ -132,9 +132,9 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           <td style="<%=field.cellstyle%>" class="<%=field.cellclass%> <%=xejs.iif(field.control=='checkbox','xcheckbox_column')%> <%=xejs.iif(field.popuplov,'xpopuplov_column')%> <%=fieldclass%>"><% 
         if((field.control=='label') || (field.control=='html')){
           if(('link' in field) && (XExt.beginsWith(field.link,'#select'))){ %><a href="<%-field.link%>" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this);return false;" ><% }
-          else if('link' in field){ %><a href="<%-field.link%>" class="xform_link" onclick="<%-js(field.link_onclick)%>"><% }
+          else if('link' in field){ %><a data-url="<%-field.link%>" href="<%-XExt.replaceTempEJSTags(field.link)%>" class="xform_link" onclick="<%-js(field.link_onclick)%>"><% }
           if((field.control=='html') && ('value' in field)){
-            %><%-field.value%><%
+            %><%-XExt.replaceTempEJSTags(field.value)%><%
           } else if(field.control=='html'){
             %><div data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.controlclass%> <%=field.name%> xform_ctrl xelem<%=model.class%> xform_html" onclick="return (function(){<%-jslocals%><%-field.onclick%>}).call(this);"></div><%
           } else if(field.control=='label'){

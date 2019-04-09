@@ -194,6 +194,7 @@ BODY
 }
 <%-rootcss%> .xtbl td .xform_label,<%-rootcss%> .xtbl td .xform_html {
   display:inline-block;
+  vertical-align:text-top;
 }
 <%-rootcss%> .xform_file_upload { display:inline-block; }
 <%-rootcss%> .xform_file_upload .linkbutton { white-space:nowrap; }
@@ -221,6 +222,13 @@ BODY
 <%-rootcss%> .xform textarea,
 <%-rootcss%> .xform .htmlarea_container {
   margin:2px 10px 2px 0;
+}
+<%-rootcss%> .xform .xtbl .xform_label,
+<%-rootcss%> .xform .xtbl input,
+<%-rootcss%> .xform .xtbl select,
+<%-rootcss%> .xform .xtbl textarea,
+<%-rootcss%> .xform .xtbl .htmlarea_container {
+  margin:auto;
 }
 <%-rootcss%> .xform .htmlarea_container {
   border:1px solid #999;

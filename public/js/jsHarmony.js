@@ -7569,11 +7569,15 @@ exports = module.exports = function(jsh){
     ejsparams = _.extend(ejsparams, params);
     return jsh.ejs.render(ejssource, ejsparams);
   }
-  XExt.renderClientEJS = function(ejssrc,ejsparams){
+  XExt.replaceTempEJSTags = function(ejssrc){
     if(!ejssrc) return '';
     if(ejssrc.indexOf('<#')<0) return ejssrc;
     ejssrc = ejssrc.replace(/<#/g, '<%').replace(/#>/g, '%>');
-    return jsh.ejs.render(ejssrc,ejsparams);
+    return ejssrc;
+  }
+  XExt.renderClientEJS = function(ejssrc,ejsparams){
+    if(!ejssrc) return '';
+    return jsh.ejs.render(XExt.replaceTempEJSTags(ejssrc),ejsparams);
   }
   XExt.isSinglePage = function () {
     if (jsh.singlepage) return true;
