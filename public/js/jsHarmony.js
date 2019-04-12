@@ -692,7 +692,7 @@ XValidate.prototype.Validate = function (perms, _obj, field, ignore, roles, opti
     var ignorefield = false;
     for (var j = 0; j < ignore.length; j++) { if (ignore[j] == v.Field) { ignorefield = true; break; } }
     if (ignorefield) continue;
-		if (!HasAccess(v.Actions, perms)) continue;
+    if (!HasAccess(v.Actions, perms)) continue;
     eval('var val = ' + v.Field);
     if(options.ignoreUndefined && (typeof val === 'undefined')) continue;
     if ((typeof val === 'undefined') && v.Roles && roles && !('SYSADMIN' in roles) && !('DEV' in roles) && HasAccess("BIUD", perms)) {
@@ -775,11 +775,11 @@ XValidate._v_Required = function (_null) {
 XValidate._v_IsNumeric = function (_nonneg) {
   if (typeof (_nonneg) === 'undefined') _nonneg = false;
   return (new Function('_caption', '_val', '\
-	  if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
+    if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
     if((typeof _val === "string") || (_val instanceof String)) _val = _val.replace(/^0*/, "");\
     if(!_val) return "";\
-		if(String(parseInt(_val)) != _val) return _caption+" must be a whole number.";\
-		' + (_nonneg ? 'if(parseInt(_val) < 0) return _caption+" must be a positive number.";' : '') + '\
+    if(String(parseInt(_val)) != _val) return _caption+" must be a whole number.";\
+    ' + (_nonneg ? 'if(parseInt(_val) < 0) return _caption+" must be a positive number.";' : '') + '\
     return "";'));
 }
 
@@ -787,12 +787,12 @@ XValidate._v_IsDecimal = function (_maxplaces, _comma) {
   if (typeof (_maxplaces) === 'undefined') _maxplaces = 0;
   var places_qty = ((_maxplaces > 0) ? '{1,' + _maxplaces + '}' : '+');
   return (new Function('_caption', '_val', '\
-	  if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
+    if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
     if(_val == null) return "";\
     if(_val == "") return "";\
     '+(_comma ? '_val = String(_val).replace(/,/g, "");' : '')+'\
-		var dec = String(_val).match(/^-?[0-9]*.?[0-9]' + places_qty + '$/);\
-		if(dec === null){ \
+    var dec = String(_val).match(/^-?[0-9]*.?[0-9]' + places_qty + '$/);\
+    if(dec === null){ \
       if(' + _maxplaces + ' == 0) return _caption + " must be a valid decimal number.";\
       else return _caption + " must be a number with max ' + _maxplaces + ' places after the decimal point.";\
     } \
@@ -805,7 +805,7 @@ XValidate._v_IsDecimalComma = function (_maxplaces) {
 
 XValidate._v_IsFloat = function () {
   return (new Function('_caption', '_val', '\
-	  if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
+    if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
     if(_val == null) return "";\
     if(_val == "") return "";\
     if(isNaN(parseFloat(_val))) return _caption + " must be a valid number.";\
@@ -814,7 +814,7 @@ XValidate._v_IsFloat = function () {
 
 XValidate._v_IsBinary = function (_maxlength) {
   return (new Function('_caption', '_val', '\
-	  if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
+    if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
     if(_val == null) return "";\
     if(_val == "") return "";\
     if(_val.toString().substr(0,2).toLowerCase() == "0x"){ \
@@ -830,8 +830,8 @@ XValidate._v_IsBinary = function (_maxlength) {
 XValidate._v_MaxValue = function (_max) {
   return (new Function('_caption', '_val', '\
     if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
-		var fval = parseFloat(_val);\
-		if(isNaN(fval)) return _caption+" must be a valid number.";\
+    var fval = parseFloat(_val);\
+    if(isNaN(fval)) return _caption+" must be a valid number.";\
     if(fval > ' + _max + ') return _caption+" must be less than or equal to ' + _max + '.";\
     return "";'));
 }
@@ -839,29 +839,29 @@ XValidate._v_MaxValue = function (_max) {
 XValidate._v_MinValue = function (_min) {
   return (new Function('_caption', '_val', '\
     if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
-		var fval = parseFloat(_val);\
-		if(isNaN(fval)) return _caption+" must be a valid number.";\
+    var fval = parseFloat(_val);\
+    if(isNaN(fval)) return _caption+" must be a valid number.";\
     if(fval < ' + _min + ') return _caption+" must be greater than or equal to ' + _min + '.";\
     return "";'));
 }
 
 XValidate._v_RegEx = function (_re, _msg) {
   return (new Function('_caption', '_val', '\
-	  if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
-		var re = ' + _re + '; \
-		if(!re.test(_val)) return _caption+" must ' + _msg + '"; \
+    if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
+    var re = ' + _re + '; \
+    if(!re.test(_val)) return _caption+" must ' + _msg + '"; \
     return "";'));
 }
 
 XValidate._v_IsEmail = function () {
   return XValidate._v_RegEx(
     '/^(([^<>()[\\]\\\\.,;:\\s@\\"]+(\\.[^<>()[\\]\\\\.,;:\\s@\\"]+)*)|(\\".+\\"))@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$/',
-		'be an email address');
+    'be an email address');
 }
 
 XValidate._v_IsSSN = function () {
   return (new Function('_caption', '_val', '\
-	  if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
+    if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
     rslt = String(_val).replace(/-/g,"");\
     if(!rslt.match(/^\\d{9}$/)) return _caption+" must be in the format 999-99-9999";\
     return "";'));
@@ -869,7 +869,7 @@ XValidate._v_IsSSN = function () {
 
 XValidate._v_IsEIN = function () {
   return (new Function('_caption', '_val', '\
-	  if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
+    if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
     rslt = String(_val).replace(/-/g,"");\
     if(!rslt.match(/^\\d{9}$/)) return _caption+" must be in the format 99-9999999";\
     return "";'));
@@ -877,15 +877,15 @@ XValidate._v_IsEIN = function () {
 
 XValidate._v_IsDate = function () {
   return (new Function('_caption', '_val', '\
-	  if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
-		var rslt = Date.parse(_val);\
-		if(isNaN(rslt)) return _caption+" must be a valid date.";\
-		return "";'));
+    if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
+    var rslt = Date.parse(_val);\
+    if(isNaN(rslt)) return _caption+" must be a valid date.";\
+    return "";'));
 
-/*	return XValidate._v_RegEx(
-//	  '/^\d\d\d\d\-\d\d\-\d\d$/',
-	  '/^\\d{4}-\\d{2}-\\d{2}$/',
-		'be a valid date in format YYYY-MM-DD.');*/
+/*  return XValidate._v_RegEx(
+//    '/^\d\d\d\d\-\d\d\-\d\d$/',
+    '/^\\d{4}-\\d{2}-\\d{2}$/',
+    'be a valid date in format YYYY-MM-DD.');*/
 }
 
 XValidate._v_IsValidDOB = function () {
@@ -911,7 +911,7 @@ XValidate._v_MinAge = function (_minage) {
 XValidate._v_IsPhone = function () {
   return XValidate._v_RegEx(
     '/^\\d{10,20}$/',
-		'be a valid phone number');
+    'be a valid phone number');
 }
 
 XValidate._v_IsTime = function () {
@@ -929,7 +929,7 @@ XValidate._v_Luhn = function () {
     if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
     var luhnChk = function (a) { return function (c) { for (var l = c.length, b = 1, s = 0, v; l;) v = parseInt(c.charAt(--l), 10), s += (b ^= 1)?a[v]:v; return s && 0 === s % 10 } }([0, 2, 4, 6, 8, 1, 3, 5, 7, 9]); \
     if(luhnChk(_val.toString())) return "";\
-		return _caption+" must be a valid credit card number.";'));
+    return _caption+" must be a valid credit card number.";'));
 }
 
 XValidate._v_InArray = function (_arr) {
@@ -938,7 +938,7 @@ XValidate._v_InArray = function (_arr) {
     if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
     var _arr = ' + JSON.stringify(_arr) + ';\
     for(var i=0;i<_arr.length;i++){ if(_arr[i]==_val) return ""; }\
-		return _caption+" must be one of the following values: "+_arr.join(",");'));
+    return _caption+" must be one of the following values: "+_arr.join(",");'));
 }
 
 XValidate._v_Equals = function (_cmp_expr, _cmp_caption) {
@@ -949,7 +949,7 @@ XValidate._v_Equals = function (_cmp_expr, _cmp_caption) {
     var _cmp_expr = "'+_cmp_expr.toString().replace(/[\\'"]/g, "\\$&")+'";\
     eval("var _cmp_val = "+_cmp_expr);\
     if(_cmp_val==_val) return "";\
-		return _caption+" must equal '+_cmp_caption.toString().replace(/[\\'"]/g, "\\$&")+'";'));
+    return _caption+" must equal '+_cmp_caption.toString().replace(/[\\'"]/g, "\\$&")+'";'));
 }
 
 XValidate.BaseValidators = {};
