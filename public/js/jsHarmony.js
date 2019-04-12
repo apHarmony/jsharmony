@@ -650,7 +650,7 @@ XValidate.prototype.ValidateControls = function (perms, _obj, field, parentobj) 
   if (!parentobj) parentobj = _this.jsh.root;
   this.ResetValidation(field, parentobj);
   var verrors = this.Validate(perms, _obj, field);
-  if (!isEmpty(verrors)) {
+  if (verrors) {
     var errstr = 'The following errors have occurred:\n\n';
     for (var ctrl in verrors) {
       errstr += verrors[ctrl].join('\n') + '\n';
@@ -714,7 +714,8 @@ XValidate.prototype.Validate = function (perms, _obj, field, ignore, roles, opti
       }
     }
   }
-  return rslt;
+  if(isEmpty(rslt)) return null;
+  else return rslt;
 }
 function HasAccess(access, perm) {
   if (access === undefined) return false;
@@ -747,14 +748,14 @@ XValidate._v_MaxLength = function (_max) {
   return (new Function('_caption', '_val', '\
     if(' + _max + ' < 0) return "";\
     if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
-    if(_val.length > ' + _max + ') return _caption+" is too long (limit ' + _max + ' characters).";\
+    if(_val.toString().length > ' + _max + ') return _caption+" is too long (limit ' + _max + ' characters).";\
     return "";'));
 }
 
 XValidate._v_MinLength = function (_min) {
   return (new Function('_caption', '_val', '\
     if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
-    if(_val.length < ' + _min + ') return _caption+" is too short (minimum ' + _min + ' characters).";\
+    if(_val.toString().length < ' + _min + ') return _caption+" is too short (minimum ' + _min + ' characters).";\
     return "";'));
 }
 
@@ -831,7 +832,7 @@ XValidate._v_MaxValue = function (_max) {
   return (new Function('_caption', '_val', '\
     if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
     var fval = parseFloat(_val);\
-    if(isNaN(fval)) return _caption+" must be a valid number.";\
+    if(isNaN(fval)) return "";\
     if(fval > ' + _max + ') return _caption+" must be less than or equal to ' + _max + '.";\
     return "";'));
 }
@@ -840,7 +841,7 @@ XValidate._v_MinValue = function (_min) {
   return (new Function('_caption', '_val', '\
     if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
     var fval = parseFloat(_val);\
-    if(isNaN(fval)) return _caption+" must be a valid number.";\
+    if(isNaN(fval)) return "";\
     if(fval < ' + _min + ') return _caption+" must be greater than or equal to ' + _min + '.";\
     return "";'));
 }
@@ -862,7 +863,7 @@ XValidate._v_IsEmail = function () {
 XValidate._v_IsSSN = function () {
   return (new Function('_caption', '_val', '\
     if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
-    rslt = String(_val).replace(/-/g,"");\
+    var rslt = String(_val).replace(/-/g,"");\
     if(!rslt.match(/^\\d{9}$/)) return _caption+" must be in the format 999-99-9999";\
     return "";'));
 }
@@ -870,7 +871,7 @@ XValidate._v_IsSSN = function () {
 XValidate._v_IsEIN = function () {
   return (new Function('_caption', '_val', '\
     if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
-    rslt = String(_val).replace(/-/g,"");\
+    var rslt = String(_val).replace(/-/g,"");\
     if(!rslt.match(/^\\d{9}$/)) return _caption+" must be in the format 99-9999999";\
     return "";'));
 }
@@ -901,7 +902,7 @@ XValidate._v_MinAge = function (_minage) {
   return (new Function('_caption', '_val', '\
     if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
     var rslt = Date.parse(_val);\
-    if(isNaN(rslt)) return _caption+" must be a valid date.";\
+    if(isNaN(rslt)) return "";\
     var curdt = new Date();\
     var minbday = new Date(curdt.getFullYear()-' + _minage + ',curdt.getMonth(),curdt.getDate());\
     if (rslt > minbday) return _caption+" must be at least ' + _minage + ' years old.";\
@@ -6806,7 +6807,7 @@ exports = module.exports = function(jsh){
         val = xmodel.bindings[field.name]();
       }
       if ('static' in field) {
-        if (field.static.indexOf('js:') == 0) {
+        if (field.static && field.static.toString().indexOf('js:') == 0) {
           val = jsh.XExt.JSEval(field.static.substr(3),this,{ xmodel: xmodel, modelid: modelid });
         }
         else val = field.static;
@@ -9101,7 +9102,7 @@ exports = module.exports = function(jsh){
       _.each(this.defaults, function (val, fieldname){
         if(rslt[fieldname]) return; //If field is set via GET, do not overwrite
         if(fieldname in rslt){
-          if(val.indexOf('js:')==0){
+          if(val && val.toString().indexOf('js:')==0){
             var js = val.substr(3);
             //Evaluate JS
             var evalparams = { data: data };
@@ -28431,51 +28432,27 @@ exports.cache = {
 
 },{}],30:[function(require,module,exports){
 module.exports={
-  "_args": [
-    [
-      "ejs@2.6.1",
-      "C:\\wk\\jsharmony"
-    ]
-  ],
-  "_from": "ejs@2.6.1",
-  "_id": "ejs@2.6.1",
-  "_inBundle": false,
-  "_integrity": "sha1-SY7A1JVlWrxvI81hho2SZGQHGqA=",
-  "_location": "/ejs",
-  "_phantomChildren": {},
-  "_requested": {
-    "type": "version",
-    "registry": true,
-    "raw": "ejs@2.6.1",
-    "name": "ejs",
-    "escapedName": "ejs",
-    "rawSpec": "2.6.1",
-    "saveSpec": null,
-    "fetchSpec": "2.6.1"
-  },
-  "_requiredBy": [
-    "/"
-  ],
-  "_resolved": "https://registry.npmjs.org/ejs/-/ejs-2.6.1.tgz",
-  "_spec": "2.6.1",
-  "_where": "C:\\wk\\jsharmony",
-  "author": {
-    "name": "Matthew Eernisse",
-    "email": "mde@fleegix.org",
-    "url": "http://fleegix.org"
-  },
-  "bugs": {
-    "url": "https://github.com/mde/ejs/issues"
-  },
-  "contributors": [
-    {
-      "name": "Timothy Gu",
-      "email": "timothygu99@gmail.com",
-      "url": "https://timothygu.github.io"
-    }
-  ],
-  "dependencies": {},
+  "name": "ejs",
   "description": "Embedded JavaScript templates",
+  "keywords": [
+    "template",
+    "engine",
+    "ejs"
+  ],
+  "version": "2.6.1",
+  "author": "Matthew Eernisse <mde@fleegix.org> (http://fleegix.org)",
+  "contributors": [
+    "Timothy Gu <timothygu99@gmail.com> (https://timothygu.github.io)"
+  ],
+  "license": "Apache-2.0",
+  "main": "./lib/ejs.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mde/ejs.git"
+  },
+  "bugs": "https://github.com/mde/ejs/issues",
+  "homepage": "https://github.com/mde/ejs",
+  "dependencies": {},
   "devDependencies": {
     "browserify": "^13.1.1",
     "eslint": "^4.14.0",
@@ -28490,29 +28467,18 @@ module.exports={
   "engines": {
     "node": ">=0.10.0"
   },
-  "homepage": "https://github.com/mde/ejs",
-  "keywords": [
-    "template",
-    "engine",
-    "ejs"
-  ],
-  "license": "Apache-2.0",
-  "main": "./lib/ejs.js",
-  "name": "ejs",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/mde/ejs.git"
-  },
   "scripts": {
-    "coverage": "istanbul cover node_modules/mocha/bin/_mocha",
-    "devdoc": "jake doc[dev]",
-    "doc": "jake doc",
+    "test": "jake test",
     "lint": "eslint \"**/*.js\" Jakefile",
-    "test": "jake test"
-  },
-  "version": "2.6.1"
-}
+    "coverage": "istanbul cover node_modules/mocha/bin/_mocha",
+    "doc": "jake doc",
+    "devdoc": "jake doc[dev]"
+  }
 
+,"_resolved": "https://registry.npmjs.org/ejs/-/ejs-2.6.1.tgz"
+,"_integrity": "sha1-SY7A1JVlWrxvI81hho2SZGQHGqA="
+,"_from": "ejs@2.6.1"
+}
 },{}],31:[function(require,module,exports){
 (function (global){
 /**

@@ -398,7 +398,7 @@ exports = module.exports = function(jsh){
         val = xmodel.bindings[field.name]();
       }
       if ('static' in field) {
-        if (field.static.indexOf('js:') == 0) {
+        if (field.static && field.static.toString().indexOf('js:') == 0) {
           val = jsh.XExt.JSEval(field.static.substr(3),this,{ xmodel: xmodel, modelid: modelid });
         }
         else val = field.static;

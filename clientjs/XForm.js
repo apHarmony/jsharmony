@@ -269,7 +269,7 @@ exports = module.exports = function(jsh){
       _.each(this.defaults, function (val, fieldname){
         if(rslt[fieldname]) return; //If field is set via GET, do not overwrite
         if(fieldname in rslt){
-          if(val.indexOf('js:')==0){
+          if(val && val.toString().indexOf('js:')==0){
             var js = val.substr(3);
             //Evaluate JS
             var evalparams = { data: data };
