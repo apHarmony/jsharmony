@@ -282,10 +282,17 @@ exports = module.exports = function(jsh){
     }
     return rslt;
   }
+  XForm.prototype.GetModel = function(){
+    var _this = this;
+    if(!jsh) return;
+    if(!_this.q) return;
+    return jsh.XModels[_this.q];
+  }
   XForm.prototype.ApplyUnboundDefaults = function(data){
     var _this = this;
-    if(!jsh.XModels[_this.q]) return;
-    if(jsh.XModels[_this.q].loadUnboundFields(data)) return;
+    var xmodel = _this.GetModel();
+    if(!xmodel) return;
+    if(xmodel.loadUnboundFields(data)) return;
     if(!_this.defaults || !_this.DataType || !_this.DataType.prototype || !_this.DataType.prototype.Fields) return;
     _.each(_this.DataType.prototype.Fields, function(field){
       if(!field.name || !field.unbound) return;
@@ -467,6 +474,8 @@ exports = module.exports = function(jsh){
   XForm.prototype.OnDBMessage = function (exception){
     if(exception && exception.Message) exception = exception.Message;
     exception = (exception||'').toString();
+    var xmodel = this.GetModel();
+    if(xmodel) exception = jsh.XExt.renderEJS(exception, xmodel.id);
     if (jsh.XExt.beginsWith(exception, "Execute Form - ")) {
       var dbaction = exception.substr(("Execute Form - ").length);
       var dbmessage = dbaction.substr(0, dbaction.indexOf('//')).trim();
@@ -521,10 +530,11 @@ exports = module.exports = function(jsh){
   XForm.prototype.GetFieldParams = function(action){
     var _this = this;
     var rslt = {};
+    var xmodel = _this.GetModel();
     _.each(_this.Data.Fields,function(field){
       if (!jsh.XExt.hasAction(field.actions, action)) return;
       if (field.unbound) return;
-      if((typeof _this.Data[field.name] == 'undefined') && (field.name in jsh.XModels[_this.q].bindings)){
+      if((typeof _this.Data[field.name] == 'undefined') && xmodel && (field.name in xmodel.bindings)){
         rslt[field.name] = '%%%'+field.name+'%%%';
       }
       else {
@@ -560,6 +570,10 @@ exports = module.exports = function(jsh){
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
     xform.qExecute(xform.PrepExecute('post', xform.q, {}, d, onComplete, onFail)); 
   }
+
+  XForm.Post = XForm.prototype.XExecutePost;
+  XForm.Get = XForm.prototype.XExecute;
+  XForm.RequestSync = XForm.prototype.XExecuteBlock;
 
   return XForm;
 }

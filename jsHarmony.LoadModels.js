@@ -20,8 +20,6 @@ var _ = require('lodash');
 var fs = require('fs');
 var path = require('path');
 var crypto = require('crypto');
-var XValidate = require('jsharmony-validate');
-require('./lib/ext-validation.js')(XValidate);
 var Helper = require('./lib/Helper.js');
 var HelperFS = require('./lib/HelperFS.js');
 var jsHarmonyCodeGen = require('./lib/CodeGen.js');
@@ -609,7 +607,7 @@ exports.ParseEntities = function () {
         modelExt.automodel = tabledef.modelMultisel;
       }
     }
-    model.xvalidate = new XValidate();
+    model.xvalidate = new _this.XValidate();
     if ('sites' in model) _this.LogInit_WARNING('Model ' + model.id + ' had previous "sites" attribute - overwritten by system value');
     if(model.roles){
       var roleids = _.keys(model.roles);
@@ -1146,6 +1144,7 @@ exports.ParseEntities = function () {
           }
         }
         if(!field.controlparams.sqlparams.FILE_EXT) field.controlparams._data_file_has_extension = true;
+        if(!field.name && !('data_file_prefix' in field.controlparams)) _this.LogInit_ERROR('Model ' + model.id + ' Field ' + (field.name || '') + ' should have either field.name or field.controlparams.data_file_prefix defined if file.type="file"');
       }
 
       //Add validation to password control

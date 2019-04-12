@@ -31,6 +31,9 @@ var jsHarmonyModule = require('./jsHarmonyModule.js');
 var jsHarmonyMailer = require('./lib/Mailer.js');
 var Logger = require('./lib/Logger.js');
 
+var XValidate = require('jsharmony-validate');
+require('./lib/ext-validation.js')(XValidate);
+
 function jsHarmony(config) {
 
   this.Config = new jsHarmonyConfig(config);
@@ -61,6 +64,7 @@ function jsHarmony(config) {
   this.Models = {}; //Do not access this directly - use getModel, hasModel
   this.CustomControls = {};
   this.CustomControlQueries = {};
+  this.XValidate = XValidate;
   this.Popups = {};
   this.Cache = {};
   this.FontCache = {};

@@ -412,7 +412,10 @@ exports.addSearchTerm = function (req, model, field, search_i, in_search_value, 
 
 exports.getDataLockSQL = function (req, model, fields, sql_ptypes, sql_params, verrors, fPerDataLock, nodatalock, descriptor, options) {
   if (!('datalock' in req.jshsite)) return;
-  if(!descriptor) descriptor = model.id;
+  if(!descriptor){
+    if(model) descriptor = model.id;
+    else descriptor = '';
+  }
   descriptor =  (descriptor ? ' (' + descriptor + ')' : '');
   options = _.extend({ skipDataLocks: [] }, options);
   var _this = this;

@@ -20,12 +20,6 @@ var _ = require('lodash');
 var ejs = require('ejs');
 var url = require('url');
 var querystring = require('querystring');
-var XValidate = require('jsharmony-validate');
-//Compile base list of validators
-var XValidateBase = {};
-for (var key in XValidate) { XValidateBase[key] = XValidate[key]; }
-//Add Extended Validators
-require('./lib/ext-validation.js')(XValidate);
 var Helper = require('./lib/Helper.js');
 var ejsext = require('./lib/ejsext.js');
 var moment = require('moment');
@@ -509,23 +503,38 @@ exports.getStaticBinding = function(str){
 }
 
 exports.GetClientValidator = function (req, model, field) {
+  var _this = this;
   var rslt = [];
   _.each(field.validate, function (validator) {
     if(_.isString(validator)) validator = { function: validator };
     //Parse validator function
-    var vfunc = validator.function;
-    if (vfunc.indexOf('DB') == 0) return;
+    var vfuncname = validator.function;
     var vparams = '';
-    var vsplit = vfunc.indexOf(':');
-    if (vsplit > 0) { vparams = vfunc.substr(vsplit + 1); vfunc = vfunc.substr(0, vsplit); }
-    if (!(('_v_' + vfunc) in XValidateBase)) return; //Ignore ext_validation functions
+    var vsplit = vfuncname.indexOf(':');
+    if (vsplit > 0) { vparams = vfuncname.substr(vsplit + 1); vfuncname = vfuncname.substr(0, vsplit); }
+    if (validator.runat && !_.includes(validator.runat,'client')) return;
+    var vfunccall = '';
+    if(vfuncname == 'js'){
+      vfunccall = '(function(_caption, _val, _obj){'+validator.function.substr(3)+'})';
+    }
+    else {
+      if (!(('_v_' + vfuncname) in _this.XValidate)) return; //Ignore undefined functions
+      var vfunc = _this.XValidate['_v_' + vfuncname];
+      if(!vfunc || (vfunc.runat && !_.includes(vfunc.runat,'client'))) return; //Ignore server-only functions
+      if(vfuncname in _this.XValidate.BaseValidators){
+        vfunccall = 'XValidate._v_' + vfuncname + '(' + vparams + ')';
+      }
+      else {
+        vfunccall = '('+vfunc.toString()+')(' + vparams + ')';
+      }
+    }
     //Parse validator actions
     var vactions = ('actions' in validator)?validator.actions:((('virtual' in field) && field.virtual)?ejsext.getActions(req, model, "BIU"):field.actions);
     var vcaption = ('caption' in validator)?validator.caption:(field.caption_ext||field.caption);
     var client_validator = {
       actions: vactions,
       caption: vcaption,
-      funcs: ['XValidate._v_' + vfunc + '(' + vparams + ')']
+      funcs: [vfunccall]
     };
     if('selector' in validator) client_validator.selector = validator.selector;
     rslt.push(client_validator);
@@ -536,20 +545,37 @@ exports.GetClientValidator = function (req, model, field) {
 exports.AddValidatorFuncs = function (model, field) {
   var jsh = this;
   if(!field.validate) return;
-  if(field.unbound) return;
   _.each(field.validate, function (validator) {
     if(_.isString(validator)) validator = { function: validator };
-    var vfunc = validator.function;
+    var vfuncname = validator.function;
     var vparams = '';
-    var vsplit = vfunc.indexOf(':');
-    if (vsplit > 0) { vparams = vfunc.substr(vsplit + 1); vfunc = vfunc.substr(0, vsplit); }
+    var vsplit = vfuncname.indexOf(':');
+    if (vsplit > 0) { vparams = vfuncname.substr(vsplit + 1); vfuncname = vfuncname.substr(0, vsplit); }
     var vactions = ('actions' in validator)?validator.actions:field.actions;
     var vcaption = ('caption' in validator)?validator.caption:(field.caption_ext||field.caption||field.name);
+
+    if (validator.runat && !_.includes(validator.runat,'server')) return;
+
+    if((vfuncname != 'js') && !(('_v_'+vfuncname) in jsh.XValidate)){ jsh.LogInit_ERROR(model.id + ' > ' + field.name + ': Undefined validator used in field.validate: '+vfuncname); return; }
+
+    var vfunc = null;
+    try{
+      if(vfuncname=='js') vfunc = eval('(function(_caption, _val, _obj){'+validator.function.substr(3)+'})');
+      else vfunc = eval('jsh.XValidate._v_' + vfuncname + '(' + vparams + ')');
+    }
+    catch(ex){
+      if(ex){ jsh.LogInit_ERROR(model.id + ' > ' + field.name + ': Error initializing validator '+vfuncname+': '+ex.toString()); return; }
+    }
+    if(!vfunc){ jsh.LogInit_ERROR(model.id + ' > ' + field.name + ': Error initializing validator '+vfuncname+': No function returned from jsh.XValidate._v_'+vfuncname); return; }
+    if(vfunc.runat && !_.includes(vfunc.runat,'server')) return; //Ignore client-only functions
+
+    //Do not add validators to unbound fields
+    if(field.unbound) return;
     model.xvalidate.AddValidator(
       '_obj.' + field.name,
       vcaption,
       vactions,
-      [eval('XValidate._v_' + vfunc + '(' + vparams + ')')],
+      [vfunc],
       field.roles
     );
   });
@@ -612,7 +638,7 @@ exports.SendBaseEmail = function (dbcontext, email_subject, email_text, email_ht
 
 exports.SendEmail = function (mparams,callback){
   var _this = this;
-  if(_this.Config.debug_params.disable_email){ _this.Log.info('DEBUG - NO EMAIL SENT'); return callback(); }
+  if(_this.Config.debug_params.disable_email){ _this.Log.console('DEBUG - NO EMAIL SENT '+(mparams.to||'')+' '+(mparams.subject||'')+' '+(mparams.text||mparams.html||'')); return callback(); }
   if (!('from' in mparams)) mparams.from = _this.Config.mailer_email;
   _this.Log.info(mparams);
   if(!_this.Mailer){ _this.Log.error('ERROR - Mailer not configured'); return callback(); }
