@@ -74,7 +74,7 @@ exports = module.exports = function(jsh){
       x_cust_id: fp_data.fp_cust_id,
       x_card_num: payment_data.cc_no,
       x_card_code: payment_data.cc_cvv,
-      x_exp_date: payment_data.cc_expd_mm.toString() + payment_data.cc_expd_yyyy.toString(),
+      x_exp_date: (payment_data.cc_expd_mm || '').toString() + (payment_data.cc_expd_yyyy || '' ).toString(),
       x_first_name: payment_data.pacc_fname,
       x_last_name: payment_data.pacc_lname,
       x_address: (payment_data.pacc_addr || ''),
@@ -101,7 +101,7 @@ exports = module.exports = function(jsh){
       if ('_success' in rslt) {
         var pacc_sts = rslt['pacc_sts'];
         var pacc_pp_result = rslt['pacc_pp_result'];
-        
+
         //Process result
         if (pacc_sts == 'PENDING') {
           jsh.XExt.Alert('Transaction Failed: ' + pacc_pp_result + '\nPlease verify your credit card information and try again.', function (){

@@ -521,7 +521,7 @@ exports.GetClientValidator = function (req, model, field) {
       if (!(('_v_' + vfuncname) in _this.XValidate)) return; //Ignore undefined functions
       var vfunc = _this.XValidate['_v_' + vfuncname];
       if(!vfunc || (vfunc.runat && !_.includes(vfunc.runat,'client'))) return; //Ignore server-only functions
-      if(vfuncname in _this.XValidate.BaseValidators){
+      if(('_v_' + vfuncname) in _this.XValidate.BaseValidators){
         vfunccall = 'XValidate._v_' + vfuncname + '(' + vparams + ')';
       }
       else {

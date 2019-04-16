@@ -1430,7 +1430,7 @@ exports = module.exports = function(jsh){
   XExt.getClasses = function(obj){
     var jobj = $(obj);
     var rslt = [];
-    var classes = jobj.attr('class').split(/\s+/);
+    var classes = (jobj.attr('class')||'').split(/\s+/);
     for(var i=0;i<classes.length;i++){
       if(classes[i].trim()) rslt.push(classes[i].trim());
     }

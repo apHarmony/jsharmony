@@ -364,7 +364,10 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
       //If form and actions="B", do not get the full LOV
       var tgtactions = ejsext.getActions(req, model, field.actions, options.action);
       if(!field.lov.always_get_full_lov){
-        if((model.layout=='form')||(model.layout=='form-m')){
+        if(field.unbound){
+          if(field.readonly) no_lov_required = true;
+        }
+        else if((model.layout=='form')||(model.layout=='form-m')){
           if(Helper.hasAction(tgtactions, 'U')){
             if(field.readonly) no_lov_required = true;
           }

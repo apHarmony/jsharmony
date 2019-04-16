@@ -129,7 +129,7 @@ jsHarmonySite.prototype.Merge = function(config){
       //Merge objects
       else if(_.includes(['auth', 'datalock','datalocktypes','globalparams'],prop)) this[prop] = _.extend(this[prop],config[prop]);
       //Merge arrays      
-      else if(_.includes(['public_apps','private_apps'],prop)) this[prop] = this[prop].concat(config[prop]);
+      else if(_.includes(['public_apps','private_apps'],prop)) this[prop] = config[prop].concat(this[prop]);
       //Replace existing objects
       else this[prop] = config[prop];
     }

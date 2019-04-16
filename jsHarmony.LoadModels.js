@@ -878,6 +878,7 @@ exports.ParseEntities = function () {
               if(model.layout=='multisel'){
                 if(field.key) { /* No action */ }
                 else if(field.lov) { /* No action */ }
+                else if('foreignkey' in field) { /* No action */ }
                 else if(autofield.foreignkeys && autofield.foreignkeys.direct && autofield.foreignkeys.direct.length) field.foreignkey = 1;
               }
             }
@@ -1088,7 +1089,7 @@ exports.ParseEntities = function () {
       //Add foreign keys
       if(!field.key){
         if(!Helper.hasAction(field.actions, 'F')){
-          if(_this.Config.system_settings.automatic_parameters){
+          if(_this.Config.system_settings.automatic_parameters && !('foreignkey' in field)){
             var add_foreignkey = false;
             //Disabled this check, because lov's with "nodatalock" should not be tagged with the foreign key
             //if (('control' in field) && ((field.lov && (field.lov.sql||field.lov.sql2||field.lov.sqlmp||field.lov.sqlselect))||(field.popuplov))){ add_foreignkey = 'lov'; }
@@ -1282,6 +1283,9 @@ exports.ParseEntities = function () {
       //Set field.unbound if model.unbound
       if(field.control && model.unbound) field.unbound = true;
 
+      //Set field.unbound if control without type
+      if(!('type' in field) && !('unbound' in field)) field.unbound = true;
+
       //Process validators
       if(field.validate){
         for(var i=0;i<field.validate.length;i++){
@@ -1374,7 +1378,7 @@ exports.ParseEntities = function () {
       if(field.lov){
         var lov = field.lov;
         if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
-          if(!field.always_editable_on_insert && Helper.hasAction(model.actions, 'I') && Helper.hasAction(field.actions, 'I')){
+          if(!field.unbound && !field.always_editable_on_insert && Helper.hasAction(model.actions, 'I') && Helper.hasAction(field.actions, 'I')){
             if(lov.sql||lov.sql2||lov.sqlmp||lov.sqlselect){
               if (!Helper.hasAction(field.actions, 'C')) { if (!field.actions) field.actions = ''; field.actions += 'C'; }
             }

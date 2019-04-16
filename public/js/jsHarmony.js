@@ -8425,7 +8425,7 @@ exports = module.exports = function(jsh){
   XExt.getClasses = function(obj){
     var jobj = $(obj);
     var rslt = [];
-    var classes = jobj.attr('class').split(/\s+/);
+    var classes = (jobj.attr('class')||'').split(/\s+/);
     for(var i=0;i<classes.length;i++){
       if(classes[i].trim()) rslt.push(classes[i].trim());
     }
@@ -10647,7 +10647,7 @@ exports = module.exports = function(jsh){
       x_cust_id: fp_data.fp_cust_id,
       x_card_num: payment_data.cc_no,
       x_card_code: payment_data.cc_cvv,
-      x_exp_date: payment_data.cc_expd_mm.toString() + payment_data.cc_expd_yyyy.toString(),
+      x_exp_date: (payment_data.cc_expd_mm || '').toString() + (payment_data.cc_expd_yyyy || '' ).toString(),
       x_first_name: payment_data.pacc_fname,
       x_last_name: payment_data.pacc_lname,
       x_address: (payment_data.pacc_addr || ''),
@@ -10674,7 +10674,7 @@ exports = module.exports = function(jsh){
       if ('_success' in rslt) {
         var pacc_sts = rslt['pacc_sts'];
         var pacc_pp_result = rslt['pacc_pp_result'];
-        
+
         //Process result
         if (pacc_sts == 'PENDING') {
           jsh.XExt.Alert('Transaction Failed: ' + pacc_pp_result + '\nPlease verify your credit card information and try again.', function (){
@@ -28432,27 +28432,51 @@ exports.cache = {
 
 },{}],30:[function(require,module,exports){
 module.exports={
-  "name": "ejs",
-  "description": "Embedded JavaScript templates",
-  "keywords": [
-    "template",
-    "engine",
-    "ejs"
+  "_args": [
+    [
+      "ejs@2.6.1",
+      "C:\\wk\\jsharmony"
+    ]
   ],
-  "version": "2.6.1",
-  "author": "Matthew Eernisse <mde@fleegix.org> (http://fleegix.org)",
-  "contributors": [
-    "Timothy Gu <timothygu99@gmail.com> (https://timothygu.github.io)"
-  ],
-  "license": "Apache-2.0",
-  "main": "./lib/ejs.js",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/mde/ejs.git"
+  "_from": "ejs@2.6.1",
+  "_id": "ejs@2.6.1",
+  "_inBundle": false,
+  "_integrity": "sha1-SY7A1JVlWrxvI81hho2SZGQHGqA=",
+  "_location": "/ejs",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "version",
+    "registry": true,
+    "raw": "ejs@2.6.1",
+    "name": "ejs",
+    "escapedName": "ejs",
+    "rawSpec": "2.6.1",
+    "saveSpec": null,
+    "fetchSpec": "2.6.1"
   },
-  "bugs": "https://github.com/mde/ejs/issues",
-  "homepage": "https://github.com/mde/ejs",
+  "_requiredBy": [
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/ejs/-/ejs-2.6.1.tgz",
+  "_spec": "2.6.1",
+  "_where": "C:\\wk\\jsharmony",
+  "author": {
+    "name": "Matthew Eernisse",
+    "email": "mde@fleegix.org",
+    "url": "http://fleegix.org"
+  },
+  "bugs": {
+    "url": "https://github.com/mde/ejs/issues"
+  },
+  "contributors": [
+    {
+      "name": "Timothy Gu",
+      "email": "timothygu99@gmail.com",
+      "url": "https://timothygu.github.io"
+    }
+  ],
   "dependencies": {},
+  "description": "Embedded JavaScript templates",
   "devDependencies": {
     "browserify": "^13.1.1",
     "eslint": "^4.14.0",
@@ -28467,18 +28491,29 @@ module.exports={
   "engines": {
     "node": ">=0.10.0"
   },
+  "homepage": "https://github.com/mde/ejs",
+  "keywords": [
+    "template",
+    "engine",
+    "ejs"
+  ],
+  "license": "Apache-2.0",
+  "main": "./lib/ejs.js",
+  "name": "ejs",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mde/ejs.git"
+  },
   "scripts": {
-    "test": "jake test",
-    "lint": "eslint \"**/*.js\" Jakefile",
     "coverage": "istanbul cover node_modules/mocha/bin/_mocha",
+    "devdoc": "jake doc[dev]",
     "doc": "jake doc",
-    "devdoc": "jake doc[dev]"
-  }
-
-,"_resolved": "https://registry.npmjs.org/ejs/-/ejs-2.6.1.tgz"
-,"_integrity": "sha1-SY7A1JVlWrxvI81hho2SZGQHGqA="
-,"_from": "ejs@2.6.1"
+    "lint": "eslint \"**/*.js\" Jakefile",
+    "test": "jake test"
+  },
+  "version": "2.6.1"
 }
+
 },{}],31:[function(require,module,exports){
 (function (global){
 /**
