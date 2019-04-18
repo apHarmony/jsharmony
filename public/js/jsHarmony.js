@@ -740,6 +740,8 @@ function XValidator(_field, _caption, _actions, _funcs, _selector, _roles) {
   this.Roles = _roles;
 }
 
+XValidate.XValidator = XValidator;
+
 XValidate.Vex = function (validator, val) {
   return (validator()('', val) != '');
 };
@@ -759,8 +761,8 @@ XValidate._v_MinLength = function (_min) {
     return "";'));
 }
 
-XValidate._v_Required = function (_null) {
-  if (_null) {
+XValidate._v_Required = function (_blank) {
+  if (_blank) {
     return (new Function('_caption', '_val', '\
       if(typeof _val === "undefined") return _caption+" is required.";\
       if(_val === null) return _caption + " is required.";\
@@ -785,14 +787,13 @@ XValidate._v_IsNumeric = function (_nonneg) {
 }
 
 XValidate._v_IsDecimal = function (_maxplaces, _comma) {
-  if (typeof (_maxplaces) === 'undefined') _maxplaces = 0;
-  var places_qty = ((_maxplaces > 0) ? '{1,' + _maxplaces + '}' : '+');
+  if (typeof (_maxplaces) === 'undefined') _maxplaces = -1;
+  var places_qty = '\\.?[0-9]' + ((_maxplaces > 0) ? '{1,' + _maxplaces + '}' : '+');
+  if(_maxplaces == 0) places_qty = '';
   return (new Function('_caption', '_val', '\
     if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
-    if(_val == null) return "";\
-    if(_val == "") return "";\
     '+(_comma ? '_val = String(_val).replace(/,/g, "");' : '')+'\
-    var dec = String(_val).match(/^-?[0-9]*.?[0-9]' + places_qty + '$/);\
+    var dec = String(_val).match(/^-?[0-9]*' + places_qty + '$/);\
     if(dec === null){ \
       if(' + _maxplaces + ' == 0) return _caption + " must be a valid decimal number.";\
       else return _caption + " must be a number with max ' + _maxplaces + ' places after the decimal point.";\
@@ -807,23 +808,22 @@ XValidate._v_IsDecimalComma = function (_maxplaces) {
 XValidate._v_IsFloat = function () {
   return (new Function('_caption', '_val', '\
     if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
-    if(_val == null) return "";\
-    if(_val == "") return "";\
     if(isNaN(parseFloat(_val))) return _caption + " must be a valid number.";\
     return "";'));
 }
 
 XValidate._v_IsBinary = function (_maxlength) {
+  if (typeof (_maxlength) === 'undefined') _maxlength = -1;
   return (new Function('_caption', '_val', '\
     if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
-    if(_val == null) return "";\
-    if(_val == "") return "";\
-    if(_val.toString().substr(0,2).toLowerCase() == "0x"){ \
+    _val = _val.toString();\
+    if(_val.substr(0,2).toLowerCase() == "0x"){ \
       var hexstr = _val.substr(2); \
       if(!(/^[0-9A-Fa-f]*$/.test(hexstr))) return _caption + " must be a valid hex string."; \
       if((' + _maxlength + ' >= 0) && (hexstr.length > ' + _maxlength * 2 + ')) return _caption+" is too long (limit ' + _maxlength + ' bytes).";\
       return "";\
     } \
+    if(!(/^[\x00-\x7F]*$/.test(_val))) return _caption + " must be an ASCII string, or hex string starting with 0x."; \
     if((' + _maxlength + ' >= 0) && (_val.length > ' + _maxlength + ')) return _caption+" is too long (limit ' + _maxlength + ' bytes).";\
     return "";'));
 }
@@ -889,12 +889,14 @@ XValidate._v_IsDate = function () {
     'be a valid date in format YYYY-MM-DD.');*/
 }
 
-XValidate._v_IsValidDOB = function () {
+XValidate._v_MaxAge = function (_maxage) {
   return (new Function('_caption', '_val', '\
     if((typeof _val == "undefined")||(_val==="")||(_val===null)) return "";\
     var rslt = Date.parse(_val);\
-    if(isNaN(rslt)) return _caption+" must be a valid date.";\
-    if (rslt < new Date("1900-01-01")) return _caption+" must be a valid date of birth.";\
+    if(isNaN(rslt)) return "";\
+    var curdt = new Date();\
+    var maxday = new Date(curdt.getFullYear()-' + _maxage + ',curdt.getMonth(),curdt.getDate());\
+    if (rslt < maxday) return _caption+" cannot be more than ' + _maxage + ' years old.";\
     return "";'));
 }
 
@@ -904,8 +906,8 @@ XValidate._v_MinAge = function (_minage) {
     var rslt = Date.parse(_val);\
     if(isNaN(rslt)) return "";\
     var curdt = new Date();\
-    var minbday = new Date(curdt.getFullYear()-' + _minage + ',curdt.getMonth(),curdt.getDate());\
-    if (rslt > minbday) return _caption+" must be at least ' + _minage + ' years old.";\
+    var minday = new Date(curdt.getFullYear()-' + _minage + ',curdt.getMonth(),curdt.getDate());\
+    if (rslt > minday) return _caption+" must be at least ' + _minage + ' years old.";\
     return "";'));
 }
 
