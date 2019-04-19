@@ -867,8 +867,8 @@ exports = module.exports = function(jsh){
   }
 
   XExt.wrapJS = function(code,modelid,options){
-    options = _.extend({ noReturn: true }, options);
-    return 'return (function(){'+XExt.escapeHTML(XExt.getJSLocals(modelid))+' '+XExt.unescapeEJS(XExt.escapeHTML(code))+'; '+(!options.noReturn?'return false;':'')+' }).call(this);';
+    options = _.extend({ returnFalse: true }, options);
+    return 'return (function(){'+XExt.escapeHTML(XExt.getJSLocals(modelid))+' '+XExt.unescapeEJS(XExt.escapeHTML(code))+'; '+(options.returnFalse?'return false;':'')+' }).call(this);';
   }
 
   XExt.TreeItemContextMenu = function (ctrl, n) {
@@ -1499,6 +1499,8 @@ exports = module.exports = function(jsh){
     else if(str && str.trim().toLowerCase()=='null') rslt = null;
     //If a binding, return the evaluated binding
     else if (str && xmodel && xmodel.hasBindingOrRootKey(str)) rslt = xmodel.getBindingOrRootKey(str);
+    //If str is the name of a model field, return the field data
+    else if (str && xmodel && xmodel.has(str)) rslt = xmodel.get(str,null);
     //If a lookup in the dictionary, return the value
     else if(dictionary) {
       if (_.isArray(dictionary)) {

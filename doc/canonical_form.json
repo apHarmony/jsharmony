@@ -165,8 +165,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "key": 1, //If key exists, then this is a key field
       "foreignkey": 1, //Field is a foreign key (used to ensure datalocks are correctly applied)
       "lovkey": 1, //Used by Multisel to enable additional foreign key in LOV expression, without being a required parameter
-      "virtual": 1, //Field is not bound on I/U, can be B, but will not pull updates or respond to HasUpdates
-      "static": "js:XExt.UndefinedBlank(jsh._GET['j_id'])", //Static binding, overwrite existing data from form
+      "always_editable": 1, //Field is always editable, regardless of field.actions / field.readonly.  Can only be used with unbound fields.
       "unbound": 1, //Field is completely unbound, not added to Fields array
       "sqlselect": "@BXBUY_ID", //Override select sql for this field on Grid select
       "sqlupdate": "@BXBUY_ID+5",
@@ -267,8 +266,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                       { "dateformat": "mm/dd/y" }, //**Deprecated** auto-generated from format - DatePicker Params - dateformat is parameter to jQuery datepicker control for date display
       "controlstyle": "font-size:12px;",
       "controlclass": "classname",
-      "onchange": "console.log(JSON.stringify(obj));console.log(newval);XExt.Alert('test');",//Javascript Event Handler for onchange event
+      "onchange": "console.log(JSON.stringify(obj));console.log(newval);XExt.Alert('test');",//JavaScript Event Handler for onchange event
       //onchange(obj,newval,e)
+      "ongetvalue": "return jsh._GET['E_ID'];", //JavaScript Event Handler that fire when "GetValue" is called - before field is sent to the database
+      //ongetvalue(val,field,xmodel)
       "password": "E_SSN", // For type=encascii
       "salt": "E_SSNHASH", // For type=hash
       "roles": {"CX_X": ""}, //"" to remove actions, * for all actions, else BIUD
@@ -319,7 +320,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "default": "js:moment().format()",
       "default": { "sql": "select c_name from c where c_id=@c_id", "sql_params": ["c_id"] }, //"nodatalock":["c_id"] (If applicable)
       "readonly": 1,
-      "always_editable_on_insert": 1, //Make field editable on insert, even if value is set in querystring, or field is readonly
+      "locked_by_querystring": true, //Make field uneditable when querystring defaults are applied.  Default is true
       //for subform, popuplov
       "target": "E_Name",
       "bindings": { "c_id": "c_id" },

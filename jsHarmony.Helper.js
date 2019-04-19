@@ -502,6 +502,7 @@ exports.getStaticBinding = function(str){
   return undefined;
 }
 
+//Generate client-side validators
 exports.GetClientValidator = function (req, model, field) {
   var _this = this;
   var rslt = [];
@@ -529,7 +530,7 @@ exports.GetClientValidator = function (req, model, field) {
       }
     }
     //Parse validator actions
-    var vactions = ('actions' in validator)?validator.actions:((('virtual' in field) && field.virtual)?ejsext.getActions(req, model, "BIU"):field.actions);
+    var vactions = ('actions' in validator)?validator.actions:(field.always_editable?ejsext.getActions(req, model, "BIU"):field.actions);
     var vcaption = ('caption' in validator)?validator.caption:(field.caption_ext||field.caption);
     var client_validator = {
       actions: vactions,
@@ -542,6 +543,7 @@ exports.GetClientValidator = function (req, model, field) {
   return rslt;
 };
 
+//Add server-side validators for the model
 exports.AddValidatorFuncs = function (model, field) {
   var jsh = this;
   if(!field.validate) return;

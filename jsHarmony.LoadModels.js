@@ -1241,8 +1241,7 @@ exports.ParseEntities = function () {
         }
       }
       if(firstfield && field.control && field.actions){
-        if(field.virtual) { /* No action */ }
-        else if(!Helper.hasAction(field.actions, 'BIUD')) { /* No action */ }
+        if(!Helper.hasAction(field.actions, 'BIUD')) { /* No action */ }
         else if(field.control=='hidden') { /* No action */ }
         else if((field.control=='html') && ('value' in field) && !field.caption) { /* No action */ }
         else firstfield = false;
@@ -1285,6 +1284,9 @@ exports.ParseEntities = function () {
 
       //Set field.unbound if control without type
       if(!('type' in field) && !('unbound' in field)) field.unbound = true;
+
+      //Default locked_by_querystring to true
+      if(!('locked_by_querystring' in field)) field.locked_by_querystring = true;
 
       //Process validators
       if(field.validate){
@@ -1378,7 +1380,7 @@ exports.ParseEntities = function () {
       if(field.lov){
         var lov = field.lov;
         if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
-          if(!field.unbound && !field.always_editable_on_insert && Helper.hasAction(model.actions, 'I') && Helper.hasAction(field.actions, 'I')){
+          if(!field.unbound && field.locked_by_querystring && Helper.hasAction(model.actions, 'I') && Helper.hasAction(field.actions, 'I')){
             if(lov.sql||lov.sql2||lov.sqlmp||lov.sqlselect){
               if (!Helper.hasAction(field.actions, 'C')) { if (!field.actions) field.actions = ''; field.actions += 'C'; }
             }
@@ -1453,9 +1455,9 @@ exports.ParseEntities = function () {
       'subheader', 'footerheight', 'headeradd',
     ];
     var _v_field = [
-      'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'foreignkey', 'serverejs', 'roles', 'static', 'cellclass',
+      'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'foreignkey', 'serverejs', 'roles', 'ongetvalue', 'cellclass',
       'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'enable_search', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
-      'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'virtual', 'always_editable_on_insert', 'precision', 'password', 'hash', 'salt', 'unbound',
+      'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'always_editable', 'locked_by_querystring', 'precision', 'password', 'hash', 'salt', 'unbound',
       'sqlselect', 'sqlupdate', 'sqlinsert','sqlsort', 'sqlwhere', 'sqlsearchsound', 'sqlsearch', 'onchange', 'lovkey', 'readonly', '__REMOVE__', '__AFTER__','_auto',
       'sql_from_db','sql_to_db','sqlsearch_to_db','datatype_config'
     ];
@@ -1495,6 +1497,8 @@ exports.ParseEntities = function () {
         if (!_.includes(existing_targets, field.target)) existing_targets.push(field.target);
         else _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Duplicate target - each field target must be unique within a model');
       }
+      //Only allow always_editable with unbound fields
+      if(field.always_editable && !field.unbound) _this.LogInit_WARNING(model.id + ' > ' + field.name + ': The field.always_editable property can only be used when field.unbound is set');
       //Check if the field has a type
       if(field.actions && field.name && !('type' in field) && !('value' in field) && (field.control != 'subform') && !field.unbound) _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Missing field.type property.  Set field.value or field.unbound if it should not be bound to the data layer.');
       if(field.control && (model.layout=='grid') && !_.includes(['hidden','label','html','textbox','textzoom','password','date','textarea','dropdown','checkbox','button','linkbutton','file_download','image'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support ' + field.control + ' control');

@@ -373,7 +373,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
           }
           else if(Helper.hasAction(tgtactions, 'I')){
             if(field.name in req.query){
-              if(!field.always_editable_on_insert){
+              if(field.locked_by_querystring){
                 codeval = req.query[field.name];
                 if(codeval) truncate_lov = true;
               }
@@ -386,7 +386,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
         }
         else if((model.layout=='exec')||(model.layout=='report')){
           if(field.name in req.query){
-            if(!field.always_editable_on_insert){
+            if(field.locked_by_querystring){
               codeval = req.query[field.name];
               if(codeval) truncate_lov = true;
             }

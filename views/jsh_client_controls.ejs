@@ -22,7 +22,7 @@ var leadingfield = true;
 for(var i=0;i<model.fields.length;i++){ 
   var field = model.fields[i];
   //hasAction previously validated against "B" - expanded to BIU to render "I"-only fields
-  if(!('control' in field)) continue; if(!('virtual' in field && field.virtual) && !(XExt.hasAction(field.actions,'BIU'))) continue;
+  if(!('control' in field)) continue; if(!(XExt.hasAction(field.actions,'BIU'))) continue;
   if(('caption' in field) && (field.control!='subform') && 
      ('captionstyle' in field) && (field.captionstyle != "") && (dflt_captionstyle == "")){
     dflt_captionstyle = field.captionstyle;
@@ -56,10 +56,10 @@ for(var i=0;i<model.fields.length;i++){
       %><%-XExt.renderClientEJS(field.value,ejsparams)%><%
     }
     else if(field.control=='html'){
-      %><div data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xform_html xelem<%=model.class%> <%=field.controlclass%>" onclick="<%-js(field.onclick,{ noReturn:1 })%>"></div><%
+      %><div data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xform_html xelem<%=model.class%> <%=field.controlclass%>" onclick="<%-js(field.onclick,{ returnFalse:0 })%>"></div><%
     }
     else if(field.control=='label'){
-      %><div data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xform_label xelem<%=model.class%> <%=field.controlclass%> <%=xejs.iif(field.value,'xform_label_static')%>" onclick="<%-js(field.onclick,{ noReturn:1 })%>"><%
+      %><div data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xform_label xelem<%=model.class%> <%=field.controlclass%> <%=xejs.iif(field.value,'xform_label_static')%>" onclick="<%-js(field.onclick,{ returnFalse:0 })%>"><%
       if(field.value && (field.value.indexOf('<#')>=0)){  }
       else if(field.value){ %><%-field.value%><% }
       else { %><%=xejs.GetValue(field)%><% }
@@ -109,8 +109,8 @@ for(var i=0;i<model.fields.length;i++){
     </div>
   <% }
   if(field.control=='button'){
-    if('link' in field){ %><input <%-xejs.showProp('data-id',field.name)%> type="button" class="xform_ctrl xform_ctrl_button xelem<%=model.class%> <%=field.name%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%-xejs.escapeHTMLN(field.value)%>" data-url="<%-field.link%>" onclick="<%-js(field.onclick,{ noReturn:1 })%>" /><% }
-    else{ %><input <%-xejs.showProp('data-id',field.name)%> type="button" data-model="<%=model.id%>" class="xform_ctrl xform_ctrl_button xelem<%=model.class%> <%=field.name%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%-xejs.escapeHTMLN(field.value)%>" onclick="<%-js(field.onclick,{ noReturn:1 })%>" /><% }
+    if('link' in field){ %><input <%-xejs.showProp('data-id',field.name)%> type="button" class="xform_ctrl xform_ctrl_button xelem<%=model.class%> <%=field.name%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%-xejs.escapeHTMLN(field.value)%>" data-url="<%-field.link%>" onclick="<%-js(field.onclick,{ returnFalse:0 })%>" /><% }
+    else{ %><input <%-xejs.showProp('data-id',field.name)%> type="button" data-model="<%=model.id%>" class="xform_ctrl xform_ctrl_button xelem<%=model.class%> <%=field.name%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%-xejs.escapeHTMLN(field.value)%>" onclick="<%-js(field.onclick,{ returnFalse:0 })%>" /><% }
   }
   if(field.control=='linkbutton'){
     if('link' in field){ %><a <%-xejs.showProp('data-id',field.name)%> href="#" data-url="<%-field.link%>" style="<%=field.controlstyle%>" class="xform_ctrl xelem<%=model.class%> <%=field.name%> <%=field.controlclass%> xform_label <%=xejs.iif(field.value,'xform_label_static')%>" onclick="<%-js(field.onclick)%>"><%=xejs.ifnull(field.value,'')%></a><% }

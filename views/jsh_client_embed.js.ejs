@@ -112,6 +112,13 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     return false;
   }
+  xmodel.has = function(fieldname){
+    var xform = null;
+    if(xmodel.controller && xmodel.controller.form) xform = xmodel.controller.form;
+    if(xmodel.hasBindingOrRootKey(fieldname)) return true;
+    if(xmodel.fields && xmodel.fields[fieldname]) return true;
+    return false;
+  }
   xmodel.get = function(fieldname, rowref){
     var xform = null;
     if(xmodel.controller && xmodel.controller.form) xform = xmodel.controller.form;

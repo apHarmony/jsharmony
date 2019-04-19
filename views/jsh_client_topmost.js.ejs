@@ -311,13 +311,13 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var foundchanges = jsh.XPage.GetChanges();
     if (foundchanges.length > 0) return;
 
-    jsh.XPage.Select(function () { jsh.XPage.RefreshParent(modelid); console.log('Reselect complete'); }, modelid);
+    jsh.XPage.Select(function () { jsh.XPage.RefreshParent(); console.log('Reselect complete'); }, modelid);
   }
 
-  jsh.XPage.RefreshParent = function(modelid) {
+  jsh.XPage.RefreshParent = function() {
     var jshOpener = XExt.getOpenerJSH(['Refresh']);
     if (jshOpener) {
-      jshOpener.XPage.Refresh(modelid);
+      jshOpener.XPage.Refresh();
     }
   }
 

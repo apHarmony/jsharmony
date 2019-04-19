@@ -280,12 +280,12 @@ exports = module.exports = function(jsh){
     var action = (_this._is_insert?'I':'U');
     if ((xmodel.layout=='exec')||(xmodel.layout=='report')) action = 'B';
     var is_editable = jsh.XExt.hasAction(field.actions, action);
-    if (is_editable && field.always_editable_on_insert && ((action == 'I') || ((xmodel.layout=='exec')||(xmodel.layout=='report')))){ }
+    if (is_editable && !field.locked_by_querystring && ((action == 'I') || ((xmodel.layout=='exec')||(xmodel.layout=='report')))){ }
     else {
-      if (is_editable && ('readonly' in field) && (field.readonly == 1)) is_editable = false;
-      if (_this._readonly && _.includes(_this._readonly, field.name)) is_editable = false;
+      if (is_editable && ('readonly' in field) && field.readonly) is_editable = false;
+      if (_this._querystring_applied && _.includes(_this._querystring_applied, field.name)) is_editable = false;
     }
-    if (('virtual' in field) && field.virtual) is_editable = true;
+    if (('always_editable' in field) && field.always_editable) is_editable = true;
     if (is_editable && ('controlparams' in field) && (field.controlparams.base_readonly)) {
       is_editable = false;
       show_lookup_when_readonly = true;
@@ -327,7 +327,7 @@ exports = module.exports = function(jsh){
     return function (perm) {
       var _this = this;
       _.each(this.Fields, function (field) {
-        if (!(('virtual' in field) && field.virtual) && !jsh.XExt.hasAction(field.actions, perm)) return;
+        if (!jsh.XExt.hasAction(field.actions, perm)) return;
         var newval = _this.GetValue(field);
         //if (!('control' in field) && (newval == undefined)) return;
         _this[field.name] = newval;
@@ -397,12 +397,7 @@ exports = module.exports = function(jsh){
       if (xmodel.bindings && (field.name in xmodel.bindings)) {
         val = xmodel.bindings[field.name]();
       }
-      if ('static' in field) {
-        if (field.static && field.static.toString().indexOf('js:') == 0) {
-          val = jsh.XExt.JSEval(field.static.substr(3),this,{ xmodel: xmodel, modelid: modelid });
-        }
-        else val = field.static;
-      }
+      if (field.ongetvalue) val = field.ongetvalue(val, field, xmodel);
       if ('format' in field) {
         val = jsh.XFormat.Decode(field.format, val);
       }
@@ -433,8 +428,6 @@ exports = module.exports = function(jsh){
       if (jsh.XModels[this._modelid].layout=='report') return false;
       var field = this.Fields[id];
       if (!field) return false;
-      if (('virtual' in field) && field.virtual) return false;
-      if (('static' in field) && field.static) return false;
       var oldval = this[id];
       oldval = jsh.XFormat.Decode(field.format, oldval);
       if (typeof oldval === 'undefined') oldval = '';
@@ -536,11 +529,11 @@ exports = module.exports = function(jsh){
   }
 
   XExtXModel.ApplyDefaults = function (xformdata) {
-    if(!('_readonly' in xformdata)) xformdata._readonly = [];
+    if(!('_querystring_applied' in xformdata)) xformdata._querystring_applied = [];
     for(var fname in xformdata.Fields){
       if((fname in jsh._GET) && jsh._GET[fname]){
         xformdata[fname] = jsh._GET[fname];
-        xformdata._readonly.push(fname);
+        xformdata._querystring_applied.push(fname);
       }
     }  
   }

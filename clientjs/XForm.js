@@ -534,7 +534,7 @@ exports = module.exports = function(jsh){
     _.each(_this.Data.Fields,function(field){
       if (!jsh.XExt.hasAction(field.actions, action)) return;
       if (field.unbound) return;
-      if((typeof _this.Data[field.name] == 'undefined') && xmodel && (field.name in xmodel.bindings)){
+      if((typeof _this.Data[field.name] == 'undefined') && xmodel && xmodel.bindings && (field.name in xmodel.bindings)){
         rslt[field.name] = '%%%'+field.name+'%%%';
       }
       else {
