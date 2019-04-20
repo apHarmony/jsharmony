@@ -6939,6 +6939,13 @@ exports = module.exports = function(jsh){
     };
   }
 
+  XExtXModel.ParseDefault = function (dflt, jslocals) {
+    if(_.isString(dflt) && (dflt.substr(0,3)=='js:')){
+      return 'function(){'+jslocals+'return '+dflt.substr(3)+';}';
+    }
+    return JSON.stringify(dflt);
+  }
+
   XExtXModel.ApplyDefaults = function (xformdata) {
     if(!('_querystring_applied' in xformdata)) xformdata._querystring_applied = [];
     for(var fname in xformdata.Fields){
@@ -6948,6 +6955,8 @@ exports = module.exports = function(jsh){
       }
     }  
   }
+
+  /*** XController ***/
 
   XExtXModel.XController = function(xmodel){
     this.xmodel = xmodel;
@@ -6983,6 +6992,25 @@ exports = module.exports = function(jsh){
   XExtXModel.XController.prototype.GetTitle = function(){
     if(this.grid) return this.grid.title;
     else if(this.form) return this.form.title;
+  }
+
+  /*** XField ***/
+
+  XExtXModel.XField = function(props){
+    for(var prop in props) this[prop] = props[prop];
+  }
+
+  XExtXModel.XField.prototype.hasDefault = function(){
+    if('default' in this) return true;
+    return false;
+  }
+
+  XExtXModel.XField.prototype.getDefault = function(){
+    if('default' in this){
+      if(_.isFunction(this.default)) return this.default();
+      return this.default;
+    }
+    return undefined;
   }
 
   return XExtXModel;
@@ -7421,7 +7449,10 @@ exports = module.exports = function(jsh){
     'GetValue': function (field) {
       var val = '';
       if ('sample' in field) val = field.sample;
-      if ('default' in field) val = field.default;
+      if ('default' in field){
+        if(_.isString(field.default) && (field.default.substr(0,3)=='js:')){ }
+        else val = field.default;
+      }
       if (val && ('format' in field)) val = jsh.XFormat.Apply(field.format, val);
       return val;
     },
@@ -9128,6 +9159,9 @@ exports = module.exports = function(jsh){
       if(!field.name || !field.unbound) return;
       if(field.name in _this.defaults){
         data[field.name] = _this.defaults[field.name];
+      }
+      else if(field.hasDefault()){
+        data[field.name] = field.getDefault();
       }
     });
   }

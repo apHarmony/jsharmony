@@ -26,14 +26,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   xdatamodel.prototype.Fields = xmodel.fields = {
     <% _.each(model.fields,function(field){ if(!('actions' in field)) return; if(field.control=='subform') return; if(field.control=='html') return; if(!field.name) return; %>
-      "<%=field.name%>":{"name":"<%=field.name%>",
+      "<%=field.name%>":new XExt.XModel.XField({"name":"<%=field.name%>",
         "caption":<%-JSON.stringify(field.caption_ext||field.caption||"")%>,
       <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
       <%-xejs.iif('actions' in field,'"actions":'+JSON.stringify(field.actions)+',') %>
       <%-xejs.iif('ongetvalue' in field,'"ongetvalue":function(val,field,xmodel){'+jslocals+field.ongetvalue+'},') %>
       <%-xejs.iif('key' in field,'"key":'+JSON.stringify(field.key)+',') %>
       <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>
-      }, <%});%>
+      }), <%});%>
   };
 
 })(<%-instance%>);

@@ -547,8 +547,11 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
       if (('UCOD2' in srcfield.lov) || ('sql2' in srcfield.lov)) dstfield.lov.duallov = 1;
       else if ('sqlmp' in srcfield.lov) dstfield.lov.multilov = 1;
     }
-    if (model.unbound && ('default' in srcfield)){
-      if (_.isString(srcfield.default) || _.isNumber(srcfield.default) || _.isBoolean(srcfield.default)) dstfield.default = srcfield.default;
+    if('default' in srcfield){
+      if(_.isString(srcfield.default) && (srcfield.default.substr(0,3)=='js:')) dstfield.default = srcfield.default;
+      else if (model.unbound){
+        if (_.isString(srcfield.default) || _.isNumber(srcfield.default) || _.isBoolean(srcfield.default)) dstfield.default = srcfield.default;
+      }
     }
     if ('actions' in srcfield) {
       dstfield.actions = ejsext.getActions(req, model, srcfield.actions);

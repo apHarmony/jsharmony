@@ -299,6 +299,9 @@ exports = module.exports = function(jsh){
       if(field.name in _this.defaults){
         data[field.name] = _this.defaults[field.name];
       }
+      else if(field.hasDefault()){
+        data[field.name] = field.getDefault();
+      }
     });
   }
   XForm.prototype.PrepExecute = function(_method,_model,_query,_post,onComplete,onFail){

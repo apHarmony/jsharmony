@@ -528,6 +528,13 @@ exports = module.exports = function(jsh){
     };
   }
 
+  XExtXModel.ParseDefault = function (dflt, jslocals) {
+    if(_.isString(dflt) && (dflt.substr(0,3)=='js:')){
+      return 'function(){'+jslocals+'return '+dflt.substr(3)+';}';
+    }
+    return JSON.stringify(dflt);
+  }
+
   XExtXModel.ApplyDefaults = function (xformdata) {
     if(!('_querystring_applied' in xformdata)) xformdata._querystring_applied = [];
     for(var fname in xformdata.Fields){
@@ -537,6 +544,8 @@ exports = module.exports = function(jsh){
       }
     }  
   }
+
+  /*** XController ***/
 
   XExtXModel.XController = function(xmodel){
     this.xmodel = xmodel;
@@ -572,6 +581,25 @@ exports = module.exports = function(jsh){
   XExtXModel.XController.prototype.GetTitle = function(){
     if(this.grid) return this.grid.title;
     else if(this.form) return this.form.title;
+  }
+
+  /*** XField ***/
+
+  XExtXModel.XField = function(props){
+    for(var prop in props) this[prop] = props[prop];
+  }
+
+  XExtXModel.XField.prototype.hasDefault = function(){
+    if('default' in this) return true;
+    return false;
+  }
+
+  XExtXModel.XField.prototype.getDefault = function(){
+    if('default' in this){
+      if(_.isFunction(this.default)) return this.default();
+      return this.default;
+    }
+    return undefined;
   }
 
   return XExtXModel;

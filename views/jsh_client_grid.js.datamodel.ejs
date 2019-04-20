@@ -35,14 +35,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     this._modelid = modelid;
     _.each(xmodel.fields, function(field){
       if(!field.name) return;
-      _this[field.name] = (('default' in field)?jsh.XFormat.Decode(field.format, field.default):'');
+      _this[field.name] = (field.hasDefault()?jsh.XFormat.Decode(field.format, field.getDefault()):'');
     });
     XExt.XModel.ApplyDefaults(this);
   }
 
   xdatamodel.prototype.Fields = xmodel.fields = {
     <% _.each(model.fields,function(field){ if(!('actions' in field)) return; if(field.control=='subform') return; if((field.control=='html') && ('value' in field)) return; if(!field.name) return; if(!field.control) return; %>
-      "<%=field.name%>":{"name":"<%=field.name%>",
+      "<%=field.name%>":new XExt.XModel.XField({"name":"<%=field.name%>",
       "caption":<%-JSON.stringify(field.caption_ext||field.caption||"")%>,
       <%-xejs.iif('type' in field,'"type":'+JSON.stringify(field.type)+',') %>
       <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
@@ -57,7 +57,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       <%-xejs.iif('key' in field,'"key":'+JSON.stringify(field.key)+',') %>
       <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>
       <%-xejs.iif('value' in field,'"value":'+JSON.stringify(field.value)+',') %>
-      <%-xejs.iif('default' in field,'"default":'+JSON.stringify(field.default)+',') %>
+      <% if('default' in field){ %>"default":<%-XExt.XModel.ParseDefault(field.default, jslocals)%>,<% } %>
       <%-xejs.iif('disable_search' in field,'"disable_search":'+JSON.stringify(field.disable_search)+',') %>
       <%-xejs.iif('search_sound' in field,'"search_sound":'+JSON.stringify(field.search_sound)+',') %>
       <% if('controlparams' in field){ %>controlparams:{
@@ -80,7 +80,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       <% if(field.lov && ('blank' in field.lov)){ %>"lovblank":1, <% } %>
       <% if(field.lov && !(field.lov.showcode)){ %>"showlovtxt":1, <% } %>
       <% if(field.validate){ %>"validate":<%-JSON.stringify(field.validate)%>, <% } %>
-      }, <%});%>
+      }), <%});%>
   };
 
   xdatamodel.prototype.OnRender = XExt.XModel.OnRender(modelid);

@@ -34,7 +34,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   xdatamodel.prototype.Fields = xmodel.fields = {
     <% _.each(model.fields,function(field){ if(!('actions' in field)) return; if(field.control=='subform') return; if((field.control=='html') && ('value' in field)) return; if(!field.name) return; if(!field.control) return; %>
-      "<%=field.name%>":{"name":"<%=field.name%>",
+      "<%=field.name%>":new XExt.XModel.XField({"name":"<%=field.name%>",
       <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
       <%-xejs.iif('actions' in field,'"actions":'+JSON.stringify(field.actions)+',') %>
       <%-xejs.iif('readonly' in field,'"readonly":'+JSON.stringify(field.readonly)+',') %>
@@ -47,7 +47,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       <%-xejs.iif('key' in field,'"key":'+JSON.stringify(field.key)+',') %>
       <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>
       <%-xejs.iif('value' in field,'"value":'+JSON.stringify(field.value)+',') %>
-      <%-xejs.iif('default' in field,'"default":'+JSON.stringify(field.default)+',') %>
+      <% if('default' in field){ %>"default":<%-XExt.XModel.ParseDefault(field.default, jslocals)%>,<% } %>
       <% if('controlparams' in field){ %>controlparams:{
         <%-xejs.iif('thumbnail_width' in field.controlparams,'"thumbnail_width":'+JSON.stringify(field.controlparams.thumbnail_width)+',') %>
         <%-xejs.iif('show_thumbnail' in field.controlparams,'"show_thumbnail":'+JSON.stringify(field.controlparams.show_thumbnail)+',') %>
@@ -69,7 +69,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       <% if(field.lov && ('blank' in field.lov)){ %>"lovblank":1, <% } %>
       <% if(field.lov && !(field.lov.showcode)){ %>"showlovtxt":1, <% } %>
       <% if(field.validate){ %>"validate":<%-JSON.stringify(field.validate)%>, <% } %>
-      }, <%});%>
+      }), <%});%>
   };
 
   xdatamodel.prototype.OnRender = XExt.XModel.OnRender(modelid);
