@@ -250,7 +250,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     });
   }
 
-  jsh.Navigate = function(a,addHistory,orig_url,onCancel){
+  jsh.Navigate = function(a,addHistory,orig_url,onCancel,options){
+    options = _.extend({ force: false }, options);
     var apath = a.pathname;
     var aqs = a.search;
     var ahash = a.hash;
@@ -307,7 +308,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
 
     //Try to exit, show message if changes on the page
-    if(!jsh.cancelExit){
+    if(!jsh.cancelExit && !options.force){
       var exit_rslt = jsh.XPage.OnExit();
       if(exit_rslt){
         XExt.Confirm(exit_rslt + "\n\nAre you sure you want to leave this page?",exec_navigate,function(){

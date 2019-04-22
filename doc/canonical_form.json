@@ -169,6 +169,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "unbound": 1, //Field is completely unbound, not added to Fields array
       "sqlselect": "@BXBUY_ID", //Override select sql for this field on Grid select
       "sqlupdate": "@BXBUY_ID+5",
+      //sqlinsert
       "sqlwhere": "x like @E_Name", //Custom where express for "F" fields in Grid
       "caption": "Employee",
       "caption_ext":  "Employee Name", //Optional longer caption for Search & Validation

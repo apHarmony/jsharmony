@@ -23,10 +23,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   window.onpopstate = function(event) {
     var state = event.state;
-    jsh._GET = XExt.parseGET();
 
-    var f = function () {
-      if (!jsh.XPage.LoadState(state, {addBackHistoryOnCancel: true})) return;
+    var loadPrevious = function () {
+      if (!jsh.XPage.LoadState(state, {addBackHistoryOnCancel: true, _GET: XExt.parseGET()})) return;
       jsh.XPage.Select(function () { });
     };
 
@@ -35,14 +34,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if (drslt) {
         XExt.Confirm(drslt + '\r\n\r\nAre you sure you want to leave this page?', function(){
           jsh.cancelExit = true;
-          f();
+          loadPrevious();
         }, function () {
           jsh.XPage.AddHistory(jsh.state, true);
         });
         return;
       }
     }
-    f();
+    loadPrevious();
   };
 
   jsh.XPage.OnExit = function() {
@@ -305,8 +304,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.Refresh = function(modelid) {
+    console.log('Refresh');
     //Handle modelid
-    if (jsh.XPage.onGridExit(null, function () { jsh.XPage.Refresh(modelid); })) return;
+    if (jsh.XPage.onGridExit(null, function () { jsh.XPage.Refresh(modelid); })){
+      if(!document.hasFocus()) $(document.activeElement).blur();
+    }
     //Modify grid refresh to load multiple pages
     var foundchanges = jsh.XPage.GetChanges();
     if (foundchanges.length > 0) return;
@@ -718,8 +720,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.LoadState = function(state, options) {
-    if(!options) options = { addBackHistoryOnCancel: false };
+    if(!options) options = { addBackHistoryOnCancel: false, _GET: undefined };
     if (!_.isObject(state)) return;
+
+    if(typeof options._GET != 'undefined') jsh._GET = options._GET;
 
     if ('_url' in state) {
       //Get Base URL (PATH+GET)
@@ -735,7 +739,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           if (options.addBackHistoryOnCancel) {
             jsh.XPage.AddHistory(jsh.state, true);
           }
-        });
+        }, { force: true });
         return false;
       }
     }

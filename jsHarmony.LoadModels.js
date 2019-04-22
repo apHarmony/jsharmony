@@ -886,7 +886,7 @@ exports.ParseEntities = function () {
         }
 
         //Field Datatypes
-        if(auto_datatypes){
+        if(auto_datatypes && !(field.unbound)){
           if(fielddef.type && !('type' in field)) field.type = fielddef.type;
           if(fielddef.length && !('length' in field)) field.length = fielddef.length;
           if(fielddef.precision && !('precision' in field)) field.precision = fielddef.precision;
@@ -1039,7 +1039,7 @@ exports.ParseEntities = function () {
           field.controlparams.insert_link = 'insert:'+field.target;
         }
       }
-      if(model.onecolumn){
+      if(model.onecolumn && !('nl' in field)){
         if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
           if(!firstfield && ('control' in field)){
             if((field.control=='html') && ('value' in field) && !field.caption){ /* No action */ }
@@ -1505,6 +1505,8 @@ exports.ParseEntities = function () {
       if(field.control && (model.layout=='multisel') && !_.includes(['hidden','label'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Multisel does not support ' + field.control + ' control');
       if(field.unbound && (model.layout=='multisel') && !_.includes(['hidden','label'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Multisel does not support unbound controls');
       if(field.unbound && field.type) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Unbound fields should not have a field.type property');
+      if(field.unbound && (field.sqlselect || field.sqlupdate || field.sqlinsert)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Unbound fields should not have a field.sqlselect, field.sqlinsert, or field.sqlupdate properties');
+      if(field.unbound && !Helper.hasAction(field.actions, 'IU') && Helper.hasAction(model.actions, 'IU') && field.always_editable) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Unbound fields that do not have "IU" actions should not have field.always_editable set');
       if(((field.control == 'file_upload') || (field.control == 'file_download') || (field.control == 'image')) && (field.type != 'file')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The ' + field.control + ' control requires field.type="file"');
       if(((field.control == 'file_download') || (field.control == 'image')) && Helper.hasAction(field.actions, 'IU')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The ' + field.control + ' control field.actions must be "B" (browse-only).');
       //field.type=encascii, check if password is defined
