@@ -2087,7 +2087,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
       }
       if(parentFieldName && (parentFieldName[0]=="'")){ /* No action */ }
       else if(!parentField) { _this.LogInit_ERROR((prefix||'') + 'Missing binding source field: '+model.id+' > '+parentFieldName); }
-      else if((!_.includes(['exec','report'],tmodel.layout)) && Helper.hasAction(parentField.actions, 'U') && !(targetField.controlparams && targetField.controlparams.grid_save_before_update)) {
+      else if((!_.includes(['exec','report'],tmodel.layout)) && (model.layout=='grid') && Helper.hasAction(parentField.actions, 'U') && !(targetField.controlparams && targetField.controlparams.grid_save_before_update)) {
         _this.LogInit_WARNING((prefix||'') + 'Binding source field '+model.id+' > '+parentFieldName+' should not have "U" action'+((targetField.control=='subform')?', unless "controlparams.grid_save_before_update" is specified on the subform control':'')+'.');
       }
     }

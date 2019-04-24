@@ -94,6 +94,8 @@ AppSrvModel.prototype.GetModel = function (req, res, fullmodelid) {
   req.curtabs = jsh.getTabs(req, model);
   req.TopModel = fullmodelid;
 
+  if(!('action' in req.query) && model.nokey) req.query.action = 'update';
+
   _this.genClientModel(req, res, fullmodelid, true, null, null, function(rslt){
     if(_.isString(rslt)){
       _this.genClientModel(req, res, 'jsHarmony/_BASE_HTML_MESSAGE', true, null, null, function(model){
