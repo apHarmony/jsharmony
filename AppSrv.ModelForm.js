@@ -28,7 +28,7 @@ module.exports = exports = {};
 exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
   var model = this.jsh.getModel(req, fullmodelid);
   if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
-  if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
+  if (model.unbound && !model._sysconfig.unbound_meta) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   var _this = this;
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
   var filelist = this.getFileFieldNames(req, model.fields, 'B');
@@ -75,6 +75,7 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
   
   var nokey = (('nokey' in model) && (model.nokey));
   if (nokey) is_insert = false;
+  if (model.unbound) is_insert = false;
   
   var sql_ptypes = [];
   var sql_params = {};
@@ -122,7 +123,7 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
   
   var keys = [];
   if (is_insert && !Helper.hasModelAction(req, model, 'I')) { Helper.GenError(req, res, -11, 'Invalid Model Access - ' + model.id + ' Insert'); return; }
-  if (!is_insert && !nokey) {
+  if (!is_insert && !nokey && !model.unbound) {
     //Add dynamic parameters from query string	
     if (selecttype == 'single') keys = this.getKeys(model.fields);
     else if (selecttype == 'multiple') keys = this.getFields(req, model.fields, 'F');
@@ -145,7 +146,7 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
   
   //Return applicable drop-down lists
   var dbtasks = [{},{}];
-  if (!is_insert) dbtasks[0][fullmodelid] = function (dbtrans, callback) {
+  if (!is_insert && !model.unbound) dbtasks[0][fullmodelid] = function (dbtrans, callback) {
     var dbfunc = db.Row;
     if (selecttype == 'multiple') dbfunc = db.Recordset;
     dbfunc.call(db, req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {

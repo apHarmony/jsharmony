@@ -49,7 +49,7 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && (fi
         for(var fieldname in xmodel.bindings){
           xform.Data[fieldname] = xmodel.bindings[fieldname]();
         }
-        <% xejs.eachKey(model.fields,function(field){ if(!field.name) return; %>rslt['<%=field['name']%>'] = this.Data['<%=field['name']%>'];<%}); %>
+        <% xejs.eachKey(model.fields,function(field){ if(!field.name) return; %>rslt['<%=field['name']%>'] = xmodel.get('<%=field['name']%>');<%}); %>
       }
       else {
         //Add Record
@@ -79,7 +79,7 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && (fi
     callback();
   }
 
-  xcontroller.RunReport = function(callback, params){
+  xcontroller.RunReport = function(params, callback){
     if(!params) params = {};
     if(!xform.Data.Commit()) return;
     if(xmodel.layout !== 'report'){ XExt.Alert('Model is not a report'); return; }

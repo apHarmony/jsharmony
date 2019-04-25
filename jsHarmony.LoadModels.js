@@ -187,6 +187,7 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
   model._parentbindings = {};
   model._childbindings = {};
   model._auto = {};
+  model._sysconfig = { unbound_meta: false };
   if(!model.path && modelpath) model.path = modelpath;
   if(!model.module && modeldir && modeldir.module) model.module = modeldir.module;
   model.namespace = _this.getNamespace(modelname);
@@ -1450,7 +1451,7 @@ exports.ParseEntities = function () {
     //Validate Model and Field Parameters
     var _v_model = [
       'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites', 'class', 'using',
-      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings', '_childbindings', '_parentmodels', '_auto', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
+      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings', '_childbindings', '_parentmodels', '_auto', '_sysconfig', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
       'pagesettings', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_search', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
@@ -1538,8 +1539,8 @@ exports.ParseEntities = function () {
       }
       if(!('control' in field) && Helper.hasAction(field.actions, 'B')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field does not have a control defined');
       if(model.unbound){
-        if(field.default && field.default.sql) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Cannot use field.default.sql when model.unbound is set');
-        if(field.lov) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Cannot use field.lov when model.unbound is set');
+        if(field.default && field.default.sql) model._sysconfig.unbound_meta = true;
+        if(field.lov) model._sysconfig.unbound_meta = true;
       }
       if(!('caption' in field) && (model.layout=='grid')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': If a grid field does not have a caption, the field.control should be set to "hidden"');
     });
@@ -1556,16 +1557,16 @@ exports.ParseEntities = function () {
         }
       });
       if(model.breadcrumbs){
-        if(model.breadcrumbs.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.breadcrumbs.sql when model.unbound is set');
-        if(model.breadcrumbs.insert && model.breadcrumbs.insert.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.breadcrumbs.insert.sql when model.unbound is set');
-        if(model.breadcrumbs.update && model.breadcrumbs.update.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.breadcrumbs.update.sql when model.unbound is set');
-        if(model.breadcrumbs.browse && model.breadcrumbs.browse.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.breadcrumbs.browse.sql when model.unbound is set');
+        if(model.breadcrumbs.sql) model._sysconfig.unbound_meta = true;
+        if(model.breadcrumbs.insert && model.breadcrumbs.insert.sql) model._sysconfig.unbound_meta = true;
+        if(model.breadcrumbs.update && model.breadcrumbs.update.sql) model._sysconfig.unbound_meta = true;
+        if(model.breadcrumbs.browse && model.breadcrumbs.browse.sql) model._sysconfig.unbound_meta = true;
       }
       if(model.title){
-        if(model.title.sql) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Cannot use model.title.sql when model.unbound is set');
-        if(model.title.insert && model.title.insert.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.title.insert.sql when model.unbound is set');
-        if(model.title.update && model.title.update.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.title.update.sql when model.unbound is set');
-        if(model.title.browse && model.title.browse.sql) _this.LogInit_ERROR(model.id + ': Cannot use model.title.browse.sql when model.unbound is set');
+        if(model.title.sql) model._sysconfig.unbound_meta = true;
+        if(model.title.insert && model.title.insert.sql) model._sysconfig.unbound_meta = true;
+        if(model.title.update && model.title.update.sql) model._sysconfig.unbound_meta = true;
+        if(model.title.browse && model.title.browse.sql) model._sysconfig.unbound_meta = true;
       }
     }
     if((model.layout=='exec')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_ERROR(model.id + ': Exec layout only supports BU actions');

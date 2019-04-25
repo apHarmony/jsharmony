@@ -72,6 +72,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     commitlevel:'<%=(model.commitlevel?model.commitlevel:'')%>',
     curtab:<%-(curtab?JSON.stringify(curtab):'null')%>,
     unbound_data: {},
+    using: <%-JSON.stringify(model.using)%>,
     <% 
     if('oninit' in model){ %> oninit:function(xmodel){<%-jslocals%><%-model.oninit%>}, <% }
     if('onload' in model){ %> onload:function(xmodel, callback){<%-jslocals%><%-model.onload%>}, <% }
@@ -90,7 +91,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
     flags: {
       no_form_record: false
-    }
+    },
+    _sysconfig: <%-JSON.stringify(model._sysconfig)%>
   };
   xmodel.getBindingOrRootKey = function(bindingname){
     if(xmodel.bindings && (bindingname in xmodel.bindings)) return xmodel.bindings[bindingname]();

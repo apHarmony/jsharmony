@@ -339,6 +339,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "__REMOVE__":1, //Remove Model field in inherited child
       "__AFTER__": "FIELDNAME", "__START__", "__END__", //Position in inherited child
       //SYSTEM: datatype_config, sql_from_db, sql_to_db
+      "_sysconfig": {}
     }
   ],
   "dberrors": [

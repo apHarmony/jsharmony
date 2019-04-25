@@ -40,7 +40,7 @@ GET OPERATION / SELECT
 AppSrv.prototype.getModel = function (req, res, fullmodelid, noexecute, Q, P) {
   if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
   var model = this.jsh.getModel(req, fullmodelid);
-  if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
+  if (model.unbound && !model._sysconfig.unbound_meta) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   if (typeof Q == 'undefined') Q = req.query;
   if (typeof P == 'undefined') P = req.body;
   var dbtasks = {};

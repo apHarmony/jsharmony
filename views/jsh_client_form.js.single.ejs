@@ -57,7 +57,7 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && !('
         }
         var missingKeys = [];
         <% xejs.eachKey(model.fields,function(field){ if(!field.name) return; %>
-          rslt['<%=field['name']%>'] = this.Data['<%=field['name']%>'];
+          rslt['<%=field['name']%>'] = xmodel.get('<%=field['name']%>');
           if(typeof rslt['<%=field['name']%>'] == 'undefined') missingKeys.push('<%=field['name']%>');
         <%}); %>
         var msg = 'Binding / Querystring Error: ' + modelid + ' missing key'+(missingKeys.length > 1 ? 's' : '')+': '+ missingKeys.join(', ');

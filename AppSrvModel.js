@@ -94,7 +94,7 @@ AppSrvModel.prototype.GetModel = function (req, res, fullmodelid) {
   req.curtabs = jsh.getTabs(req, model);
   req.TopModel = fullmodelid;
 
-  if(!('action' in req.query) && model.nokey) req.query.action = 'update';
+  if(!('action' in req.query) && (model.unbound || model.nokey)) req.query.action = 'update';
 
   _this.genClientModel(req, res, fullmodelid, true, null, null, function(rslt){
     if(_.isString(rslt)){
@@ -457,6 +457,24 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
         rslt.helpurl_onclick = helpurl_onclick;
         return cb();
       });
+    },
+
+    //SysConfig, using
+    function(cb){
+      rslt._sysconfig = {};
+      copyValues(rslt._sysconfig, model._sysconfig, ['unbound_meta']);
+
+      //Model Using
+      rslt.using = [];
+      if(model.using) rslt.using = rslt.using.concat(model.using);
+      
+      //Module Using
+      if(model.module){
+        var module = jsh.Modules[model.module];
+        if(module.using) rslt.using = rslt.using.concat(module.using);
+      }
+
+      return cb();
     },
 
     //Set up fields

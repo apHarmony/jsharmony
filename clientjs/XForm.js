@@ -256,6 +256,10 @@ exports = module.exports = function(jsh){
       }
       else if(_this.Data._is_insert){
         _this.Data = _this.ApplyDefaults(_this.Data);
+        _this.ApplyUnboundDefaults(_this.Data);
+      }
+      else {
+        _this.ApplyUnboundDefaults(_this.Data);
       }
       //NavTo already calls render
       if (_this.DataSet == null) _this.Render();
@@ -297,7 +301,8 @@ exports = module.exports = function(jsh){
     _.each(_this.DataType.prototype.Fields, function(field){
       if(!field.name || !field.unbound) return;
       if(_.includes(ignore_fields,field.name)) return;
-      if(field.name in _this.defaults){
+      if(jsh._GET && (field.name in jsh._GET)) data[field.name] = jsh._GET[field.name];
+      else if(field.name in _this.defaults){
         data[field.name] = _this.defaults[field.name];
       }
       else if(field.hasDefault()){

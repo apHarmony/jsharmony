@@ -1837,6 +1837,29 @@ exports = module.exports = function(jsh){
     jtabpanels.filter('.'+jtabbuttons.filter('.selected').attr('for')).addClass('selected');
     jobj.addClass('initialized');
   }
+  //Resolve Model ID
+  XExt.resolveModelID = function(modelid, sourceModel){
+    if(!jsh) return undefined;
+    if(!modelid) return jsh.XModels_root;
+    //Absolute
+    if(modelid.substr(0,1)=='/') return modelid.substr(1);
+    if(!sourceModel) sourceModel = jsh.XModels[jsh.XModels_root];
+    //Relative to namespace
+    if(sourceModel.namespace){
+      var testmodel = sourceModel.namespace+modelid;
+      if(testmodel in jsh.XModels) return testmodel;
+    }
+    //Model Using
+    if(sourceModel.using){
+      for(var i=0;i<sourceModel.using.length;i++){
+        var namespace = sourceModel.using[i];
+        var testmodel = namespace+modelid;
+        if(testmodel.substr(0,1)=='/') testmodel = testmodel.substr(1);
+        if(testmodel in jsh.XModels) return testmodel;
+      }
+    }
+    return modelid;
+  }
 
   return XExt;
 }

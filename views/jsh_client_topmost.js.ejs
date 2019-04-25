@@ -26,7 +26,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
     var loadPrevious = function () {
       if (!jsh.XPage.LoadState(state, {addBackHistoryOnCancel: true, _GET: XExt.parseGET()})) return;
-      jsh.XPage.Select(function () { });
+      jsh.XPage.Select();
     };
 
     if (_.isObject(state)) {
@@ -183,7 +183,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
       console.log('Save complete');
       //Refresh the database data
-      jsh.XPage.Select(function () {
+      jsh.XPage.Select(undefined, function () {
         console.log('Reselect complete');
       });
     }, options.onFail);
@@ -224,7 +224,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
               if(parent_field in xparent.unbound_data[key]) delete xparent.unbound_data[key][parent_field];
             }
           });
-          jsh.XPage.Select(function () { });
+          jsh.XPage.Select();
           return;
         }
       }
@@ -309,7 +309,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         jsh.XPage.traverseModels(null, function (xmodel) {
           if (typeof xmodel.oninit != 'undefined') xmodel.oninit(xmodel);
         });
-        jsh.XPage.Select(function () {
+        jsh.XPage.Select(jsh.XModels_root, function () {
           jsh.InitControls();
           jsh.XPage.LayoutOneColumn();
           jsh.XPage.Show();
@@ -334,7 +334,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           jsh.$root('.xsearch_value:visible').first().select().focus();
 
           console.log('Initialization Complete');
-        }, jsh.XModels_root);
+        });
       });
   }
 
@@ -348,7 +348,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var foundchanges = jsh.XPage.GetChanges();
     if (foundchanges.length > 0) return;
 
-    jsh.XPage.Select(function () { jsh.XPage.RefreshParent(); console.log('Reselect complete'); }, modelid);
+    jsh.XPage.Select(modelid, function () { jsh.XPage.RefreshParent(); console.log('Reselect complete'); });
   }
 
   jsh.XPage.RefreshParent = function() {
@@ -416,22 +416,23 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   //Calling XPage.Select with a null root model will check the model definition for updates
-  jsh.XPage.Select = function(callback, root) {
+  jsh.XPage.Select = function(rootid, callback) {
+    if(!callback) callback = function(){};
     //Clear data from models that are disabled due to missing record
-    jsh.XPage.traverseModels(root, function (xmodel) {
+    jsh.XPage.traverseModels(rootid, function (xmodel) {
       if(xmodel.flags.no_form_record) xmodel.flags.no_form_record = false;
     }, undefined, { disabledModels: true });
     //If the Model itself is dynamic, reload the model definition before reloading the data
-    if (typeof root == 'undefined'){
+    if (typeof rootid == 'undefined'){
       var isDynamic = false;
       jsh.XPage.traverseModelDefinitions(jsh.cur_model, null, function (model, modelParent) {
         if(model.modeltype=='dynamic') isDynamic = true;
       });
-      if(isDynamic) return jsh.Load({ addHistory: false, onRefreshNoChange: function(){ jsh.XPage.Select(callback, jsh.XModels_root); } });
-      else root = jsh.XModels_root;
+      if(isDynamic) return jsh.Load({ addHistory: false, onRefreshNoChange: function(){ jsh.XPage.Select(jsh.XModels_root, callback); } });
+      else rootid = jsh.XModels_root;
     }
     //Call Select on each model
-    jsh.XPage.traverseModelsAsync(root,
+    jsh.XPage.traverseModelsAsync(rootid,
       function (xmodel, done) {
         var onDone = function () {
           if (typeof xmodel.onloadimmediate != 'undefined') xmodel.onloadimmediate(xmodel);
@@ -450,7 +451,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
             }
           }
         }
-        if(xmodel.unbound) return onDone();
+        if(xmodel.unbound && !xmodel._sysconfig.unbound_meta) return onDone();
         xmodel.controller.Select(function(){
           if((xmodel.layout=='form') && !jsh.is_insert && xmodel.controller.form && xmodel.controller.form.Data && xmodel.controller.form.Data._is_insert) xmodel.flags.no_form_record = true;
           return onDone();
@@ -579,11 +580,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     return rslt;
   }
 
-  jsh.XPage.traverseModels = function(parentid, callback, oncomplete, options) {
+  jsh.XPage.traverseModels = function(parentmodelid, callback, oncomplete, options) {
     if(!options) options = { disabledModels: false, childrenOnly: false };
     _.each(jsh.XModels, function (xmodel, xmodelid) {
       if (!options.disabledModels && !xmodel.isEnabled()){ return; }
-      if (xmodel.parent == parentid) {
+      if (xmodel.parent == parentmodelid) {
         callback(xmodel);
         if(!options.childrenOnly) jsh.XPage.traverseModels(xmodel.id, callback, undefined, options);
       }
@@ -598,13 +599,13 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     });
   }
 
-  jsh.XPage.traverseModelsAsyncWorker = function(parentid, xmodelfunc, done, options) {
+  jsh.XPage.traverseModelsAsyncWorker = function(parentmodelid, xmodelfunc, done, options) {
     if(!options) options = { disabledModels: false, series: false };
 
     var childf = [];
     _.each(jsh.XModels, function (xmodel, xmodelid) {
       if (!options.disabledModels && !xmodel.isEnabled()){ return; }
-      if (xmodel.parent == parentid) {
+      if (xmodel.parent == parentmodelid) {
         childf.push(function (cb) {
           xmodelfunc(xmodel, function () { jsh.XPage.traverseModelsAsyncWorker(xmodel.id, xmodelfunc, cb, options); });
         });
@@ -901,7 +902,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.XPage.RunReportHTML = function() {
     var xmodel = jsh.XModels[jsh.XModels_root];
     if (!(xmodel.layout == 'report')) { XExt.Alert('Root model does not have a "report" layout'); return; }
-    xmodel.controller.RunReport(undefined,{output:'html'});
+    xmodel.controller.RunReport({output:'html'});
   }
 
   jsh.XPage.TestQueue = function() {
