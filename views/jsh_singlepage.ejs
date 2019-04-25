@@ -386,6 +386,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.GetModel = function(modelid,d,onComplete,onFail){
+    modelid = XExt.resolveModelID(modelid);
     XForm.prototype.XExecute('../_model/'+jsh.state.modelid,d, function (rslt) {
       onComplete(rslt);
     },onFail);

@@ -282,6 +282,7 @@ exports = module.exports = function(jsh){
   };
 
   XExt.hideTab = function (modelid, tabname) {
+    modelid = XExt.resolveModelID(modelid);
     var modelclass = modelid;
     if(modelid in jsh.XModels) modelclass = jsh.XModels[modelid].class;
     jsh.$root('.xtab' + modelclass).each(function (i, obj) {
@@ -559,6 +560,7 @@ exports = module.exports = function(jsh){
     return rslt;
   }
   XExt.renderEJS = function(ejssource, modelid, params){
+    modelid = XExt.resolveModelID(modelid);
     var ejsparams = {
       xejs: XExt.xejs,
       jsh: jsh,
@@ -846,12 +848,14 @@ exports = module.exports = function(jsh){
   }
 
   XExt.getJSLocals = function(modelid){
+    modelid = XExt.resolveModelID(modelid);
     var rslt = jsh.jslocals;
     if(modelid) rslt += "var modelid = '"+modelid+"'; var _this = jsh.App[modelid]; var xmodel = jsh.XModels[modelid]; ";
     return rslt;
   }
 
   XExt.getJSApp = function(modelid,quotechar){
+    modelid = XExt.resolveModelID(modelid);
     if(typeof quotechar=='undefined') quotechar = '\'';
     return jsh._instance + '.App[' + quotechar + modelid + quotechar + ']';
   }
@@ -859,6 +863,7 @@ exports = module.exports = function(jsh){
   XExt.JSEval = function(str,_thisobj,params){
     if(!_thisobj) thisobj = jsh;
     if(!params) params = {};
+    if('modelid' in params) params.modelid = XExt.resolveModelID(params.modelid);
     var paramstr = '';
     if(params){
       for(var param in params){
@@ -870,6 +875,7 @@ exports = module.exports = function(jsh){
   }
 
   XExt.wrapJS = function(code,modelid,options){
+    modelid = XExt.resolveModelID(modelid);
     options = _.extend({ returnFalse: true }, options);
     return 'return (function(){'+XExt.escapeHTML(XExt.getJSLocals(modelid))+' '+XExt.unescapeEJS(XExt.escapeHTML(code))+'; '+(options.returnFalse?'return false;':'')+' }).call(this);';
   }
@@ -1115,7 +1121,7 @@ exports = module.exports = function(jsh){
   XExt.Alert = function (obj, onAccept, params) {
     if (!params) params = {};
     var msg = '';
-    if (obj && _.isString(obj)) msg = obj;
+    if (_.isString(obj)) msg = obj;
     else msg = JSON.stringify(obj);
     msg = XExt.escapeHTML(msg);
     msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
@@ -1292,6 +1298,7 @@ exports = module.exports = function(jsh){
   var popupData = {};
 
   XExt.popupShow = function (modelid, fieldid, title, parentobj, obj, options) {
+    modelid = XExt.resolveModelID(modelid);
     options = _.extend({
       OnControlUpdate: null,
       rowid: undefined
@@ -1374,6 +1381,7 @@ exports = module.exports = function(jsh){
   }
 
   XExt.popupSelect = function (modelid, obj) {
+    modelid = XExt.resolveModelID(modelid);
     var rslt = null;
     var rowid = XExt.XModel.GetRowID(modelid, obj);
     var xmodel = jsh.XModels[modelid];
@@ -1388,6 +1396,7 @@ exports = module.exports = function(jsh){
   }
 
   XExt.popupClear = function (modelid, obj) {
+    modelid = XExt.resolveModelID(modelid);
     var rslt = null;
     var xmodel = jsh.XModels[modelid];
     
@@ -1410,6 +1419,7 @@ exports = module.exports = function(jsh){
   }
 
   XExt.getModelMD5 = function (modelid) {
+    modelid = XExt.resolveModelID(modelid);
     return Crypto.MD5(jsh.frontsalt + modelid).toString();
   }
 
@@ -1624,6 +1634,7 @@ exports = module.exports = function(jsh){
   //   (Window) Either the newly created popup window, or the existing window passed as an input parameter
   //
   XExt.popupForm = function (modelid, action, querystringParams, windowParams, existingWindow) {
+    modelid = XExt.resolveModelID(modelid);
     if (!querystringParams) querystringParams = {};
     if (action) querystringParams.action = action;
     var url = jsh._BASEURL + modelid;
@@ -1644,6 +1655,7 @@ exports = module.exports = function(jsh){
     else return window.open(url, '_blank', windowstr);
   }
   XExt.popupReport = function (modelid, querystringParams, windowParams, existingWindow) {
+    modelid = XExt.resolveModelID(modelid);
     var url = jsh._BASEURL + '_d/_report/' + modelid + '/';
     var dfltwindowParams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
     var modelmd5 = XExt.getModelMD5(modelid);
@@ -1839,11 +1851,12 @@ exports = module.exports = function(jsh){
   }
   //Resolve Model ID
   XExt.resolveModelID = function(modelid, sourceModel){
-    if(!jsh) return undefined;
-    if(!modelid) return jsh.XModels_root;
+    if(!jsh) return modelid;
+    if(!modelid) return modelid;
     //Absolute
     if(modelid.substr(0,1)=='/') return modelid.substr(1);
     if(!sourceModel) sourceModel = jsh.XModels[jsh.XModels_root];
+    if(!sourceModel) return modelid;
     //Relative to namespace
     if(sourceModel.namespace){
       var testmodel = sourceModel.namespace+modelid;

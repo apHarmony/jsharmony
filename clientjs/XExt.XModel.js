@@ -25,6 +25,7 @@ exports = module.exports = function(jsh){
   var XExtXModel = function(){ }
 
   XExtXModel.GetRowID = function (modelid,obj){
+    modelid = jsh.XExt.resolveModelID(modelid);
     var jobj = $(obj);
     var xmodel = jsh.XModels[modelid];
     if(jobj.hasClass('row_independent')) return -1;
@@ -36,6 +37,7 @@ exports = module.exports = function(jsh){
   }
 
   XExtXModel.OnRender = function (modelid) {
+    modelid = jsh.XExt.resolveModelID(modelid);
     return function(){
       var _this = this; //datamodel
       var parentobj = jsh.root;
@@ -114,6 +116,7 @@ exports = module.exports = function(jsh){
   }
 
   XExtXModel.RenderField = function (_this, parentobj, modelid, field, val){
+    modelid = jsh.XExt.resolveModelID(modelid);
     var xmodel = jsh.XModels[modelid];
     var isGrid = (xmodel.layout == 'grid');
     if(typeof val === 'undefined'){
@@ -336,6 +339,7 @@ exports = module.exports = function(jsh){
   };
 
   XExtXModel.GetValue = function (modelid) {
+    modelid = jsh.XExt.resolveModelID(modelid);
     return function (field) {
       var _this = this;
       var parentobj = jsh.root;
@@ -497,6 +501,7 @@ exports = module.exports = function(jsh){
   }
 
   XExtXModel.BindLOV = function (modelid) {
+    modelid = jsh.XExt.resolveModelID(modelid);
     return function (xform, parentobj) {
       if (!parentobj) parentobj = jsh.root;
       var xmodel = jsh.XModels[modelid];

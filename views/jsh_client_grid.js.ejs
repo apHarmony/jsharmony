@@ -496,6 +496,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   xcontroller.DuplicateRow = function(dmodelid, rowid, obj, bindings){
+    dmodelid = XExt.resolveModelID(dmodelid, xmodel);
     if(jsh.XPage.HasUpdates()){ XExt.Alert('Please save changes before duplicating.'); return false; }
     var rowdata = xform.DataSet[rowid];
     for(var binding in bindings){

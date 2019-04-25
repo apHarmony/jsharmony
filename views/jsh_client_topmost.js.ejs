@@ -19,6 +19,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 (function(){
 
+  var XExt = jsh.XExt;
+
   jsh.on('jsh_ready', function(){ jsh.XPage.onReady(); });
 
   window.onpopstate = function(event) {
@@ -65,7 +67,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var foundchanges = [];
     _.each(jsh.XModels, function (xmodel) {
       if (!xmodel.isEnabled()){ return; }
-      if (!jsh.XExt.hasAction(xmodel.actions, 'IUD')) return;
+      if (!XExt.hasAction(xmodel.actions, 'IUD')) return;
       if (xmodel.controller.HasUpdates()) { foundchanges.push(xmodel.caption[1]); }
       else if (xmodel.controller.form && xmodel.controller.form.Data && xmodel.controller.form.Data._is_dirty) { foundchanges.push(xmodel.caption[1]); }
     });
@@ -215,7 +217,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         var editable_parent_bindings = false;
         _.each(xmodel.binding_fields, function(parent_field, child_field){
           var field = xparent.fields[parent_field];
-          if(field && field.unbound && jsh.XExt.hasAction(field.actions, 'U')) editable_parent_bindings = true;
+          if(field && field.unbound && XExt.hasAction(field.actions, 'U')) editable_parent_bindings = true;
         });
         //Reload parent model, resetting defaults on bound fields
         if(editable_parent_bindings){
@@ -254,7 +256,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.XPage.onReady = function() {
     jsh.XPage.Hide(null,function(xmodel){ return xmodel.layout=='grid'; });
-    if (!jsh.XModels[jsh.XModels_root].actions) { jsh.XExt.Alert('ERROR - No effective access to root form'); return; }
+    if (!jsh.XModels[jsh.XModels_root].actions) { XExt.Alert('ERROR - No effective access to root form'); return; }
 
     //  jsh.XPage.traverseModels(null,function(xmodel){ console.log(xmodel.id); },function(){ jsh.$root('.xelemX').show(); });
     //  jsh.XPage.traverseModelsAsync(jsh.XModels_root,function(xmodel,done){ done(); },function(){ jsh.$root('.xelemX').show(); console.log('all done'); });
@@ -262,12 +264,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var enable_delete = false;
     jsh.XPage.traverseModels(null, function (xmodel) {
       if ((xmodel.layout == 'form') || (xmodel.layout == 'multisel') || (xmodel.layout == 'form-m')) {
-        if (jsh.XExt.hasAction(xmodel.actions, 'IU') && !xmodel.unbound) enable_save = true;
+        if (XExt.hasAction(xmodel.actions, 'IU') && !xmodel.unbound) enable_save = true;
         if ((xmodel.id == jsh.XModels_root) || (xmodel.parent == jsh.XModels_root))
-          if (!enable_delete && jsh.XExt.hasAction(xmodel.actions, 'D')) { enable_delete = true; jsh.delete_target = xmodel.id; }
+          if (!enable_delete && XExt.hasAction(xmodel.actions, 'D')) { enable_delete = true; jsh.delete_target = xmodel.id; }
       }
       else if ((xmodel.layout == 'grid') && (xmodel.commitlevel) && (xmodel.commitlevel != 'none')) {
-        if (jsh.XExt.hasAction(xmodel.actions, 'IUD') && !xmodel.unbound) enable_save = true;
+        if (XExt.hasAction(xmodel.actions, 'IUD') && !xmodel.unbound) enable_save = true;
       }
     });
 
@@ -281,7 +283,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         jsh.$root('.xform_button').each(function () {
           var jbtn = $(this);
           var btnactions = jbtn.data('actions');
-          if (jsh.is_insert && !jsh.XExt.hasAction(btnactions, 'I')) jbtn.hide();
+          if (jsh.is_insert && !XExt.hasAction(btnactions, 'I')) jbtn.hide();
           else {
             if(jbtn.hasClass('grouped')){
               var modelid = jbtn.data('model');
@@ -317,18 +319,18 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           if (enable_save) jsh.$root('.xactions.top .save').show();
           if (enable_delete) jsh.$root('.xactions.top .delete').show();
           jsh.XPage.traverseModels(null, function (xmodel) {
-            if (!jsh.is_insert && jsh.XExt.hasAction(xmodel.actions, 'I')) jsh.$root('.xactions.xelem' + xmodel.class + ' .duplicate').show();
+            if (!jsh.is_insert && XExt.hasAction(xmodel.actions, 'I')) jsh.$root('.xactions.xelem' + xmodel.class + ' .duplicate').show();
           });
           jsh.init_complete = true;
           //Update Browser History with URL/state
-          if (jsh.XExt.isSinglePage()) {
+          if (XExt.isSinglePage()) {
             var new_url = jsh.state.fullpath + jsh.state.QS + jsh.state.hash;
-            jsh.XExt.ReplaceHistory(new_url, jsh.XPage.GetState(new_url));
+            XExt.ReplaceHistory(new_url, jsh.XPage.GetState(new_url));
             if (jsh.state.hash) {
-              jsh.XExt.jumpAnchor(jsh.state.hash);
+              XExt.jumpAnchor(jsh.state.hash);
             }
           }
-          else jsh.XExt.ReplaceHistory(window.location.href.toString(), jsh.XPage.GetState());
+          else XExt.ReplaceHistory(window.location.href.toString(), jsh.XPage.GetState());
 
           //Select first search value by default, if form is open
           jsh.$root('.xsearch_value:visible').first().select().focus();
@@ -339,6 +341,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.Refresh = function(modelid) {
+    modelid = XExt.resolveModelID(modelid);
     console.log('Refresh');
     //Handle modelid
     if (jsh.XPage.onGridExit(null, function () { jsh.XPage.Refresh(modelid); })){
@@ -417,6 +420,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   //Calling XPage.Select with a null root model will check the model definition for updates
   jsh.XPage.Select = function(rootid, callback) {
+    rootid = XExt.resolveModelID(rootid);
     if(!callback) callback = function(){};
     //Clear data from models that are disabled due to missing record
     jsh.XPage.traverseModels(rootid, function (xmodel) {
@@ -439,9 +443,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           done();
         };
         if (jsh.is_insert){
-          if(!jsh.XExt.hasAction(xmodel.actions, 'I')) { 
+          if(!XExt.hasAction(xmodel.actions, 'I')) { 
             if((xmodel.layout == 'form') || (xmodel.layout == 'form-m') || (xmodel.layout == 'grid')){
-              if(!jsh.XExt.hasAction(xmodel.actions, 'B')) return done();
+              if(!XExt.hasAction(xmodel.actions, 'B')) return done();
               //If model bindings are dependent on key
               if(xmodel.bindings && (_.keys(xmodel.bindings).length != xmodel.constant_bindings.length)){ jsh.XPage.DisableModelControls(xmodel); return done(); }
               //If this is a form with a missing key
@@ -475,7 +479,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
               if (typeof xmodel.onload != 'undefined') if (xmodel.onload(xmodel, callback) === false) bubble = false;
             });
             if (bubble && callback) callback();
-            if (jsh.XExt.isSinglePage()) jsh.ResetLinks();
+            if (XExt.isSinglePage()) jsh.ResetLinks();
           });
         });
       });
@@ -581,6 +585,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.traverseModels = function(parentmodelid, callback, oncomplete, options) {
+    parentmodelid = XExt.resolveModelID(parentmodelid);
     if(!options) options = { disabledModels: false, childrenOnly: false };
     _.each(jsh.XModels, function (xmodel, xmodelid) {
       if (!options.disabledModels && !xmodel.isEnabled()){ return; }
@@ -593,6 +598,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.traverseModelsAsync = function(rootid, xmodelfunc, done, options) {
+    rootid = XExt.resolveModelID(rootid);
     if (!options) options = { };
     xmodelfunc(jsh.XModels[rootid], function () {
       jsh.XPage.traverseModelsAsyncWorker(rootid, xmodelfunc, done, options);
@@ -600,6 +606,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.traverseModelsAsyncWorker = function(parentmodelid, xmodelfunc, done, options) {
+    parentmodelid = XExt.resolveModelID(parentmodelid);
     if(!options) options = { disabledModels: false, series: false };
 
     var childf = [];
@@ -635,6 +642,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.ParseEJS = function(_ejssrc, modelid, parentmodelid, data) {
+    modelid = XExt.resolveModelID(modelid);
+    parentmodelid = XExt.resolveModelID(parentmodelid);
     var ejssrc = _ejssrc;
     data = _.extend({}, data);
     if (!(modelid in jsh.XModels)) { XExt.Alert('Error: Model ' + modelid + ' not found.'); return; }
@@ -661,14 +670,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
     var ejsrslt = jsh.ejs.render(ejssrc, {
       data: data,
-      LiteralOrLookup: jsh.XExt.LiteralOrLookup,
+      LiteralOrLookup: XExt.LiteralOrLookup,
       bcrumbs: jsh.XPage.getBreadcrumbs(),
       jsh: jsh,
       instance: jsh.getInstance(),
       _GET: jsh._GET,
       modelid: modelid,
       xmodel: xmodel,
-      js: function(code,options){ return jsh.XExt.wrapJS(code,modelid,options); }
+      js: function(code,options){ return XExt.wrapJS(code,modelid,options); }
     });
     return ejsrslt;
   }
@@ -693,6 +702,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
   
   jsh.XPage.Hide = function(modelid,cond) {
+    modelid = XExt.resolveModelID(modelid);
     _.each(jsh.XModels, function (xmodel, xmodelid) {
       if(modelid && (modelid!=xmodelid)) return;
       if(cond && !cond(xmodel)) return;
@@ -705,6 +715,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.Show = function(modelid, cond) {
+    modelid = XExt.resolveModelID(modelid);
     _.each(jsh.XModels, function (xmodel, xmodelid) {
       if(modelid && (modelid!=xmodelid)) return;
       if(cond && !cond(xmodel)) return;
@@ -767,8 +778,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
       if (state._url != jsh.cur_history_url) {
         jsh._GET.state = JSON.stringify(state);
-        var a = jsh.XExt.getURLObj(state._url);
-        var orig_a = jsh.XExt.getURLObj(jsh.cur_history_url);
+        var a = XExt.getURLObj(state._url);
+        var orig_a = XExt.getURLObj(jsh.cur_history_url);
         var orig_url = orig_a.pathname + orig_a.search;
         jsh.cur_history_url = state._url;
         jsh.Navigate(a, false, orig_url, function () {
@@ -782,7 +793,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     _.each(jsh.XModels, function (xmodel) {
       var modelid = xmodel.id;
       if (!xmodel.isEnabled()) return;
-      if (!jsh.XExt.hasAction(xmodel.actions, 'B')) return;
+      if (!XExt.hasAction(xmodel.actions, 'B')) return;
       if (xmodel.onloadstate) return xmodel.onloadstate(xmodel, state[modelid]);
       if (xmodel.layout != 'grid') return;
       if (modelid in state) {
@@ -794,6 +805,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.DownloadFile = function(modelid, field, title) {
+    modelid = XExt.resolveModelID(modelid);
     var xmodel = jsh.XModels[modelid];
     var jctrl_token = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_token');
     var file_token = jctrl_token.val();
@@ -809,6 +821,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.FilePreview = function(modelid, field, title) {
+    modelid = XExt.resolveModelID(modelid);
     var xmodel = jsh.XModels[modelid];
     var jctrl_token = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_token');
     var file_token = jctrl_token.val();
@@ -825,6 +838,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.FileDelete = function(modelid, field, title) {
+    modelid = XExt.resolveModelID(modelid);
     var xmodel = jsh.XModels[modelid];
     var jctrl_token = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_token');
     var jctrl_dbexists = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_dbexists');
@@ -836,6 +850,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.FileUploadDialog = function(modelid, field, title) {
+    modelid = XExt.resolveModelID(modelid);
     var xmodel = jsh.XModels[modelid];
     //Get PrevToken, if Applicable
     jsh.xfileupload_ctrl = jsh.$root('.' + field + '.xelem' + xmodel.class);
@@ -1019,6 +1034,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.openDataURL = function(win, modelid, url, options) {
+    modelid = XExt.resolveModelID(modelid);
     var xmodel = jsh.XModels[modelid];
     if (!win) win = window.open('', '_blank', options);
     url = jsh.XPage.ParseEJS(url, modelid);
@@ -1027,6 +1043,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.XPage.Duplicate = function(modelid, link, link_options) {
+    modelid = XExt.resolveModelID(modelid);
     var win = null;
     var xmodel = jsh.XModels[modelid];
     xmodel.controller.RunDBFunc(function (rslt) {
