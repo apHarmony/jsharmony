@@ -579,6 +579,12 @@ exports.ParseEntities = function () {
       }
       else{
         if(model.unbound) model.actions = 'BU';
+        else if(!model.table){
+          model.actions = 'B';
+          if(model.sqlinsert) model.actions += 'I';
+          if(model.sqlupdate) model.actions += 'U';
+          if(model.sqldelete) model.actions += 'D';
+        }
         else model.actions = 'BIUD';
       }
     }
@@ -905,6 +911,7 @@ exports.ParseEntities = function () {
       if (field.name === '') delete field.name;
 
       //Apply default actions
+      if (!('actions' in field) && field.unbound) field.actions = 'BIU';
       if (!('actions' in field)){
         if(field.key && !model._auto.primary_key && (model.layout != 'multisel') && !isReadOnlyGrid && tabledef && (tabledef.table_type=='table') && Helper.hasAction(model.actions, 'I')){
           if(fielddef && fielddef.coldef && !fielddef.coldef.primary_key && !fielddef.coldef.readonly){

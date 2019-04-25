@@ -249,7 +249,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
         link_text = link_text.replace(new RegExp('%%%CAPTION%%%', 'g'), model.caption[1]);
         link_text = link_text.replace(new RegExp('%%%CAPTIONS%%%', 'g'), model.caption[2]);
         var rsltbutton = {
-          'url': link_url,
+          'link': link_url,
           'onclick': link_onclick,
           'actions': link_actions,
           'icon': link_icon,
@@ -405,7 +405,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
             rslt.duplicate.popupstyle = '';
             if ('popup' in dmodel) rslt.duplicate.popupstyle = 'width: ' + dmodel.popup[0] + 'px; height: ' + dmodel.popup[1] + 'px;';
             if(model.layout != 'grid') rslt.buttons.push({
-              'url': '#',
+              'link': '#',
               'onclick': "if(jsh.XPage.HasUpdates()){ XExt.Alert('Please save changes before duplicating.'); return false; } XExt.popupShow('" + dmodelid + "','" + model.class + "_duplicate','Duplicate " + model.caption[1] + "',undefined,this); return false;",
               'actions': 'I',
               'icon': 'copy',
@@ -558,6 +558,9 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
     if ('actions' in srcfield) {
       dstfield.actions = ejsext.getActions(req, model, srcfield.actions);
       if ('roles' in srcfield) dstfield.actions = ejsext.getActions(req, srcfield, dstfield.actions);
+      if(srcfield.always_editable){
+        dstfield.actions = ejsext.unionperm('BIU', dstfield.actions);
+      }
     }
     dstfield.validate = jsh.GetClientValidator(req, model, srcfield);
     if (('control' in dstfield) && ((dstfield.control == 'subform') || (dstfield.popuplov))) {

@@ -77,6 +77,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if (!options.onFail) options.onFail = function () { };
     var dbtasks = [];
     var valid = true;
+    //For each model: Commit, validate, and get save operation tasks
     jsh.XPage.traverseModels(null, function (xmodel) {
       if (!valid) return;
       if (XExt.hasAction(xmodel.actions, 'IU') && !xmodel.unbound) {
@@ -90,14 +91,19 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           dbtasks = _.union(dbtasks, ftasks);
         }
       }
+      else if(XExt.hasAction(xmodel.actions, 'B')) {
+        if(xmodel.controller.form && !xmodel.controller.form.Data.Commit()){ valid = false; return; }
+      }
     });
     if (!valid) return options.onFail('validation');
+    //Run custom form validation /  async validation
     jsh.XPage.traverseModelsAsync(jsh.XModels_root, function (xmodel, done) {
       if (!valid) return;
       if (typeof xmodel.onvalidate != 'undefined') xmodel.onvalidate(xmodel, function (rslt) { valid = (rslt === true); done(); });
       else done();
     }, function () {
       if (!valid) return options.onFail('form_validation');
+      //Run save API operation
       jsh.XPage.Save_Operation(dbtasks,options);
     }, { series: true });
   }
@@ -105,11 +111,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.XPage.Save_Operation = function(dbtasks, options) {
     if (!options) options = {};
     if (!options.onFail) options.onFail = function () { };
-    //Handle async validation, if applicable
     var rootxmodel = jsh.XModels[jsh.XModels_root];
+    //Execute API transaction of all database tasks
     rootxmodel.controller.form.ExecuteTrans(dbtasks, function (rslt) {
+      //On successful API call
       if (options.onComplete && (options.onComplete(rslt) === false)) return;
+      //Refresh any parent form
       jsh.XPage.RefreshParent();
+      //Run the "SaveComplete" handler on each model (restore unbound fields)
       for(var modelid in jsh.XModels){
         var xmodel = jsh.XModels[modelid];
         if(xmodel.unbound) continue;
@@ -124,6 +133,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           xmodel.controller.SaveComplete(modelrslt);
         }
       }
+      //On successful insert operation
+      //Navigate to a new URL with the new keys in the querystring
       if (jsh.is_insert) {
         var url = XExt.currentURL() + '?action=update';
         var urlkeys = {};
@@ -161,6 +172,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         return;
       }
 
+      //On successful update operation
       //Execute onupdate Handler
       var bubble = true;
       jsh.XPage.traverseModels(null, function (xmodel) {
@@ -170,6 +182,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if (!bubble) return;
 
       console.log('Save complete');
+      //Refresh the database data
       jsh.XPage.Select(function () {
         console.log('Reselect complete');
       });
@@ -195,6 +208,28 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var xmodel = jsh.XModels[jsh.delete_target];
     xmodel.controller.Delete(function () {
       jsh.XPage.RefreshParent();
+      var xparent = jsh.XModels[xmodel.parent];
+
+      //If the form is not the root form, and the parent binding field is unbound and editable, then just refresh the parent
+      if((xmodel.id != jsh.XModels_root) && xmodel.bindings && xparent){
+        var editable_parent_bindings = false;
+        _.each(xmodel.binding_fields, function(parent_field, child_field){
+          var field = xparent.fields[parent_field];
+          if(field && field.unbound && jsh.XExt.hasAction(field.actions, 'U')) editable_parent_bindings = true;
+        });
+        //Reload parent model, resetting defaults on bound fields
+        if(editable_parent_bindings){
+          _.each(xmodel.binding_fields, function(parent_field, child_field){
+            for(var key in xparent.unbound_data){
+              if(parent_field in xparent.unbound_data[key]) delete xparent.unbound_data[key][parent_field];
+            }
+          });
+          jsh.XPage.Select(function () { });
+          return;
+        }
+      }
+
+      //Otherwise, close the form, navigate up the breadcrumbs, or go to the root URL
       window.onbeforeunload = null;
       jsh.cancelExit = true;
       if (jsh.is_popup) {

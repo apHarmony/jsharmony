@@ -292,10 +292,11 @@ exports = module.exports = function(jsh){
     var _this = this;
     var xmodel = _this.GetModel();
     if(!xmodel) return;
-    if(xmodel.loadUnboundFields(data)) return;
+    var ignore_fields = xmodel.loadUnboundFields(data)||[];
     if(!_this.defaults || !_this.DataType || !_this.DataType.prototype || !_this.DataType.prototype.Fields) return;
     _.each(_this.DataType.prototype.Fields, function(field){
       if(!field.name || !field.unbound) return;
+      if(_.includes(ignore_fields,field.name)) return;
       if(field.name in _this.defaults){
         data[field.name] = _this.defaults[field.name];
       }
