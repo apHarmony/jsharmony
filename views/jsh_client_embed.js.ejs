@@ -173,7 +173,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       }
       else{ XExt.Alert('Invalid row'); return; }
     }
-    if(xform) XExt.setFormControl(xform, fieldname, value);
+    if(xform){
+      XExt.setFormControl(xform, fieldname, value);
+      if(onComplete) onComplete();
+    }
     else XExt.Alert('Could not set value - model.controller.form not initialized');
   }
   xmodel.isEnabled = function(){

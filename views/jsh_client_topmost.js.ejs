@@ -50,7 +50,23 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   XPage.OnExit = function() {
     if (!jsh.init_complete) return;
 
-    var foundchanges = XPage.GetChanges();
+    var msg = XPage.GetChangesMessage();
+    if (msg) return msg;
+  }
+
+  //Checks if the page has changes, and if so, display a confirmation if they should be ignored.
+  XPage.CheckChanges = function(rootid, onContinue, onCancel) {
+    if(!onContinue) onContinue = function(){};
+    var msg = XPage.GetChangesMessage(rootid);
+    if(msg){
+      XExt.Confirm(msg + '  Are you sure you want to continue?', onContinue, onCancel);
+    }
+    else onContinue();
+  }
+
+  //Generates a string message of unsaved changes
+  XPage.GetChangesMessage = function(rootid){
+    var foundchanges = XPage.GetChanges(rootid);
 
     if (foundchanges.length > 0) {
       var msg = 'You have unsaved changes to ';
@@ -64,14 +80,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
   }
 
-  XPage.GetChanges = function() {  //Returns array of form names that have changed
+  //Check for unsaved changes, and returns array of form names that have changed
+  XPage.GetChanges = function(rootid) {
     var foundchanges = [];
-    _.each(jsh.XModels, function (xmodel) {
+    rootid = XExt.resolveModelID(rootid);
+    if(!rootid) rootid = jsh.XModels_root;
+    XPage.traverseModels(rootid, function (xmodel) {
       if (!xmodel.isEnabled()){ return; }
       if (!XExt.hasAction(xmodel.actions, 'IUD')) return;
       if (xmodel.controller.HasUpdates()) { foundchanges.push(xmodel.caption[1]); }
       else if (xmodel.controller.form && xmodel.controller.form.Data && xmodel.controller.form.Data._is_dirty) { foundchanges.push(xmodel.caption[1]); }
-    });
+    }, { includeParent: !!rootid });
     return foundchanges;
   }
 
@@ -259,8 +278,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     XPage.Hide(null,function(xmodel){ return xmodel.layout=='grid'; });
     if (!jsh.XModels[jsh.XModels_root].actions) { XExt.Alert('ERROR - No effective access to root form'); return; }
 
-    //  XPage.traverseModels(null,function(xmodel){ console.log(xmodel.id); },function(){ jsh.$root('.xelemX').show(); });
-    //  XPage.traverseModelsAsync(jsh.XModels_root,function(xmodel,done){ done(); },function(){ jsh.$root('.xelemX').show(); console.log('all done'); });
     var enable_save = false;
     var enable_delete = false;
     XPage.traverseModels(null, function (xmodel) {
@@ -425,10 +442,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   XPage.Select = function(rootid, callback) {
     rootid = XExt.resolveModelID(rootid);
     if(!callback) callback = function(){};
-    //Clear data from models that are disabled due to missing record
+    //Reset models that are disabled due to missing record
     XPage.traverseModels(rootid, function (xmodel) {
       if(xmodel.flags.no_form_record) xmodel.flags.no_form_record = false;
-    }, undefined, { disabledModels: true });
+    }, { disabledModels: true });
     //If the Model itself is dynamic, reload the model definition before reloading the data
     if (typeof rootid == 'undefined'){
       var isDynamic = false;
@@ -566,7 +583,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           $(this).attr('href', XPage.ParseEJS(href, xmodel.id, xmodel.parent));
         }
       });
-    }, onComplete, { disabledModels: true });
+    }, { disabledModels: true }, onComplete);
   }
 
   XPage.RemoveEJSTags = function(jobj) {
@@ -587,17 +604,23 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     return rslt;
   }
 
-  XPage.traverseModels = function(parentmodelid, callback, oncomplete, options) {
-    parentmodelid = XExt.resolveModelID(parentmodelid);
-    if(!options) options = { disabledModels: false, childrenOnly: false };
+  XPage.traverseModels = function(rootid, f, options, oncomplete) {
+    rootid = XExt.resolveModelID(rootid);
+    options = _.extend({ disabledModels: false }, options);
+    
+    if(rootid in jsh.XModels){
+      //Ignore disabled models
+      if (!options.disabledModels && !jsh.XModels[rootid].isEnabled()) return;
+      //Run function
+      f(jsh.XModels[rootid]);
+    }
+    //Execute for each child
     _.each(jsh.XModels, function (xmodel, xmodelid) {
-      if (!options.disabledModels && !xmodel.isEnabled()){ return; }
-      if (xmodel.parent == parentmodelid) {
-        callback(xmodel);
-        if(!options.childrenOnly) XPage.traverseModels(xmodel.id, callback, undefined, options);
+      if (xmodel.parent == rootid) {
+        XPage.traverseModels(xmodel.id, f, options);
       }
     });
-    if (typeof oncomplete != 'undefined') oncomplete();
+    if (oncomplete) oncomplete();
   }
 
   XPage.traverseModelsAsync = function(rootid, xmodelfunc, done, options) {
