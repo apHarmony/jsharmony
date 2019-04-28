@@ -59,6 +59,11 @@ var jsHarmonyRouter = function (jsh, siteid) {
     res.setHeader('X-UA-Compatible','IE=edge');
     return next();
   });
+  //Add Artificial Delay (Optional for testing)
+  router.all('*', function(req, res, next){
+    if(jsh && jsh.Config && jsh.Config.debug_params && jsh.Config.debug_params.delay_requests) setTimeout(next, jsh.Config.debug_params.delay_requests);
+    else next();
+  });
   router.route('/login').all(function (req, res, next) {
     if(!siteConfig.auth){ jsh.Log.error('Auth not configured in config'); return next(); }
     (siteConfig.auth.onRenderLogin || jsh.RenderLogin).call(jsh, req, res, function (rslt) {

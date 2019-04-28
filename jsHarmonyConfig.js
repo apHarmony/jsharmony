@@ -77,6 +77,7 @@ function jsHarmonyConfig(config){
     disable_email: false,      //Disable sending outgoing emails
     report_debug: false,       //Display report warnings (Null value, etc.)
     auth_debug: false,         //Debug Login / Authentication - Log Hashes
+    delay_requests: 0,         //Add a delay of this many milliseconds to all router requests (for testing latency)
     
     db_requests: false,        //Log every database request through DB.js
     db_log_level: 6,           //Bitmask: 2 = WARNING, 4 = NOTICES :: Database messages logged to the console / log 

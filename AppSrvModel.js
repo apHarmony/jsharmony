@@ -512,7 +512,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
     copyValues(dstfield, srcfield, [
       'name', 'key', 'control', 'caption', 'caption_ext', 'captionstyle', 'captionclass', 'nl', 'eol', 'type', 'length',
       'value', 'controlclass', 'target', 'bindings', 'format', 'readonly', 'always_editable', 'locked_by_querystring', 'ongetvalue', 'unbound', 'onchange', 'onclick', 'hidden',
-      'html', 'cellstyle', 'cellclass', 'lovkey', 'controlstyle', 'disable_sort', 'disable_search'
+      'html', 'cellstyle', 'cellclass', 'lovkey', 'controlstyle', 'block', 'blockstyle', 'blockclass', 'disable_sort', 'disable_search'
     ]);
     if (srcfield.popuplov) dstfield.popuplov = 1;
     if (srcfield.sqlsearchsound) dstfield.search_sound = 1;

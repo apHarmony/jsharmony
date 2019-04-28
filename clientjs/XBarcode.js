@@ -84,7 +84,7 @@ exports = module.exports = function(jsh){
         e.preventDefault();
         return;
       }
-      else if (e.keyCode == 13) { if (onSuccess) if (onSuccess() === false) { e.preventDefault(); e.stopImmediatePropagation(); return; } }
+      else if (e.keyCode == 13) { if (onSuccess) if (onSuccess.call(this) === false) { e.preventDefault(); e.stopImmediatePropagation(); return; } }
       jobj.data('keydown_focus','1');
     });
     jobj.blur(function (e) { jobj.data('keydown_focus',''); });

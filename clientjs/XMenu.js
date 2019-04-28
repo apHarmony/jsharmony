@@ -228,6 +228,9 @@ exports = module.exports = function(jsh){
     var jSubMenu = _this.getSubmenu();
     if(!jSubMenu.length) return;
     var maxw = $(window).width()-1;
+
+    //Refresh dimensions, if necessary
+    _this.CalcSubmenuDimensions();
     
     var showmore = false;
     //Find out if we need to show "more" menu
@@ -285,14 +288,9 @@ exports = module.exports = function(jsh){
       jSubMenu.show();
       jSubMenu.find('a, div').each(function (i, obj) {
         if ($(obj).hasClass('xsubmenu_more')) return;
-        var jobj = $(obj);
-        var jwidth = jobj.outerWidth(true);
-        jobj.data('width', jwidth);
-        _this.SubMenuItems.push(jobj);
+        _this.SubMenuItems.push($(obj));
       });
-      _this.SubMenuOverhang = jSubMenu.offset().left + parseInt(jSubMenu.css('padding-left').replace(/\D/g, ''));
-      //Add .head width to SubMenuOverhang
-      if (isNaN(_this.SubMenuOverhang)) _this.SubMenuOverhang = 0;
+      _this.CalcSubmenuDimensions();
       
       jSubMenu.find('.xsubmenu_more').off('click');
       jSubMenu.find('.xsubmenu_more').on('click', function () {
@@ -333,6 +331,22 @@ exports = module.exports = function(jsh){
     }
     _this.MenuOverhang = jsh.$root('.xmenu').offset().left + parseInt(jsh.$root('.xmenu').css('padding-left').replace(/\D/g, ''));
     if (isNaN(_this.MenuOverhang)) _this.MenuOverhang = 0;
+  }
+
+  XMenuHorizontal.prototype.CalcSubmenuDimensions = function(force){
+    var _this = this;
+    var jSubMenu = _this.getSubmenu();
+    if(!force && (_this.SubMenuItems.length > 0)){
+      var jobj = _this.SubMenuItems[0];
+      if(jobj.outerWidth(true).toString() == jobj.data('width')) return;
+    }
+    for(var i=0;i<_this.SubMenuItems.length;i++){
+      var jobj = _this.SubMenuItems[i];
+      var jwidth = jobj.outerWidth(true);
+      jobj.data('width', jwidth);
+    }
+    _this.SubMenuOverhang = jSubMenu.offset().left + parseInt(jSubMenu.css('padding-left').replace(/\D/g, ''));
+    if (isNaN(_this.SubMenuOverhang)) _this.SubMenuOverhang = 0;
   }
 
   XMenuHorizontal.prototype.Navigated = function(obj){

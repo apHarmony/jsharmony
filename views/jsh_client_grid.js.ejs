@@ -93,7 +93,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
     xgrid.OnRowBind = function(jobj,datarow){
       if(!xeditablegrid) return;
-      xeditablegrid.BindRow(jobj);
+      xeditablegrid.BindRow(jobj,datarow);
       xmodel.datamodel.prototype.BindLOV(xform,jobj);
       if(xmodel.onrowbind) xmodel.onrowbind(xmodel,jobj,datarow);
     };
@@ -124,7 +124,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           });
           var jobj = $(ejsrslt).appendTo(jsh.$root(this.PlaceholderID));
           xform.NavTo(rowid, false);
-          this.OnRowBind(jobj);
+          this.OnRowBind(jobj, data[this.q][i]);
         }
       }
       else {
@@ -338,7 +338,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           jobj = jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']");
           _this.SetIndex(rowid,false);
           _this.Render();
-          xgrid.OnRowBind(jobj);
+          xgrid.OnRowBind(jobj, _this.DataSet[rowid]);
         }
         if(oncomplete) oncomplete();
       }
@@ -446,7 +446,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xform.NavTo(rowid,false);
     var newobj = $(jobj).find('.xform_ctrl.editable:visible').not('input[type=hidden]').first();
     newobj.focus();
-    if(xgrid.OnRowBind) xgrid.OnRowBind(jobj);
+    if(xgrid.OnRowBind) xgrid.OnRowBind(jobj, newrow);
     xeditablegrid.CurrentCell = document.activeElement;
     newobj.focus();
     return rowid;

@@ -231,7 +231,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                         "data_folder": "D",       //Folder for files, must be unique per data_file_prefix
                         "data_file_prefix": "c_doc", //File prefix in PREFIX_KEY.EXT (defaults to field name if blank or not set)
                         "_data_file_has_extension": false, //System parameter.  Automatically set to true if sqlparams.FILE_EXT not set.  Slower because a directory search is required on each request.  
-                      }
+                      },
                       {"item_context_menu": [ //tree params - Context Menu for an Item
                           { "icon": "insert", "text": "Add", "command": "XExt.Alert('insert' + context_item);", "actions": "IUD" }
                         ],
@@ -265,6 +265,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                        "onpopup" //**Deprecated**
                       },
                       { "dateformat": "mm/dd/y" }, //**Deprecated** auto-generated from format - DatePicker Params - dateformat is parameter to jQuery datepicker control for date display
+      }
       "controlstyle": "font-size:12px;",
       "controlclass": "classname",
       "onchange": "console.log(JSON.stringify(obj));console.log(newval);XExt.Alert('test');",//JavaScript Event Handler for onchange event
@@ -328,6 +329,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "cellclass": "", //For Grid / Multisel table
       "cellstyle": "width:300px;"  //For Grid / Multisel table
       "html": "<a href='/<#=data['c_id']#>'><#=data['c_name']#></a>" //**Deprecated**, used "control":"html"
+      "block": true, //Whether this should be rendered as a block element
+                     //If true, wrap a div around the field + caption, and do not add a line-break after (ignore next field's field.nl)
+      "blockclass": "", //Class of block wrapper
+      "blockstyle": "", //Style for block wrapper
       "serverejs": 1, //Evaluate EJS server-side (for HTML)
       "disable_sort": 1, //Only applies to grid
       "enable_search": 1, //Only applies to grid, enable search if it is a hidden column
@@ -339,7 +344,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "__REMOVE__":1, //Remove Model field in inherited child
       "__AFTER__": "FIELDNAME", "__START__", "__END__", //Position in inherited child
       //SYSTEM: datatype_config, sql_from_db, sql_to_db
-      "_sysconfig": {}
     }
   ],
   "dberrors": [
@@ -353,5 +357,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "_inherits": ["CL_X","CL"] //Array of parent models
   "_basemodel": "CL" //Base parent model
   "_referencedby": ["C","C_CC"], //Forms that link to this form
+  "_sysconfig": {},
   "namespace": "jsHarmonyFactory",
 }

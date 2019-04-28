@@ -61,7 +61,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.prev_bcrumbs_src = '';
   jsh.focusHandler = [];
   jsh.ignorefocusHandler = false;
-  jsh.qInputAction = null;
+  jsh.queuedInputAction = null;
   jsh.static_paths = ['logout'];
 
   jsh.InitFileUpload();
@@ -174,7 +174,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh.cancelExit = false;
       jsh.focusHandler = [];
       jsh.ignorefocusHandler = false;
-      jsh.qInputAction = null;
+      jsh.queuedInputAction = null;
       jsh.is_insert =  (jsh._GET['action']=='insert');
       jsh.is_browse =  (jsh._GET['action']=='browse');
       jsh.init_complete = false;

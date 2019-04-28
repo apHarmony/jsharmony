@@ -5778,7 +5778,7 @@ exports = module.exports = function(jsh){
         e.preventDefault();
         return;
       }
-      else if (e.keyCode == 13) { if (onSuccess) if (onSuccess() === false) { e.preventDefault(); e.stopImmediatePropagation(); return; } }
+      else if (e.keyCode == 13) { if (onSuccess) if (onSuccess.call(this) === false) { e.preventDefault(); e.stopImmediatePropagation(); return; } }
       jobj.data('keydown_focus','1');
     });
     jobj.blur(function (e) { jobj.data('keydown_focus',''); });
@@ -6338,9 +6338,9 @@ exports = module.exports = function(jsh){
       ((this.CommitLevel == 'cell') && ((newrowid>=0) && newobj && $(newobj).is(':checkbox'))) || 
       (rowchange && (this.CommitLevel == 'row'))
   )) {
-      if (newobj) jsh.qInputAction = new jsh.XExt.XInputAction(newobj);
-      else if (jsh.qInputAction && !(jsh.qInputAction.IsExpired())) { }
-      else jsh.qInputAction = null;
+      if (newobj){ jsh.queuedInputAction = new jsh.XExt.XInputAction(newobj); }
+      else if (jsh.queuedInputAction && !jsh.queuedInputAction.IsExpired()) { }
+      else jsh.queuedInputAction = null;
       
       jsh.ignorefocusHandler = true;
       window.setTimeout(function () {
@@ -6355,7 +6355,15 @@ exports = module.exports = function(jsh){
       var onsuccess_override = function () {
         if (onsuccess) onsuccess(false);
         if (!newobj) $(document.activeElement).blur();
-        else if (jsh.qInputAction) jsh.qInputAction.Exec();
+        else if (jsh.queuedInputAction){
+          if(!jsh.queuedInputAction.IsExpired()){
+            //If the previous click was squashed
+            if(jsh.lastSquashedActionTime && (jsh.lastSquashedActionTime > jsh.queuedInputAction.tstamp)){
+              jsh.queuedInputAction.Exec();
+            }
+          }
+          jsh.queuedInputAction = null;
+        }
       }
       
       if (!this.OnCommit(oldrowid, oldobj, onsuccess_override, oncancel)) return false;
@@ -6377,7 +6385,7 @@ exports = module.exports = function(jsh){
     });
   }
 
-  XEditableGrid.prototype.BindRow = function (jobj) {
+  XEditableGrid.prototype.BindRow = function (jobj, datarow) {
     var _this = this;
     var modelid = _this.modelid;
     var xmodel = (modelid? jsh.XModels[modelid] : null);
@@ -6404,6 +6412,14 @@ exports = module.exports = function(jsh){
     jobj.find('.xelem' + xmodel.class).not('.xelem' + xmodel.class + '.checkbox').focus(function (e) { return _this.SetFocus(this, e); });
     jobj.find('.xelem' + xmodel.class + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e) })
     jobj.find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; return _this.SetFocus(ctrl, e); });
+    if(datarow && datarow._is_insert){
+      jobj.find('.xelem' + xmodel.class).each(function(){ 
+        var jobj = $(this);
+        if (!jobj.hasClass('editable')) return;
+        jobj.addClass('updated');
+        if(jobj.parent().hasClass('xform_checkbox_container')) jobj.parent().addClass('updated');
+      });
+    }
   }
 
   return XEditableGrid;
@@ -6578,7 +6594,7 @@ exports = module.exports = function(jsh){
         if (jctrl_thumbnail.length && ((field.control=='image') || (field.controlparams.show_thumbnail))) {
           var keys = xmodel.controller.form.GetKeys();
           if (xmodel.keys.length != 1) { throw new Error('File models require one key.'); }
-          var thumb_url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field.name + '?view=1&_=' + (new Date().getTime());
+          var thumb_url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field.name + '?view=1&_=' + (Date.now());
           if(field.controlparams.show_thumbnail) thumb_url += '&thumb='+field.controlparams.show_thumbnail;
           jctrl_thumbnail.attr('src', thumb_url).show();
           if(typeof field.controlparams.thumbnail_width != 'undefined') jctrl_thumbnail.attr('width', field.controlparams.thumbnail_width + 'px');
@@ -6761,6 +6777,7 @@ exports = module.exports = function(jsh){
       var fieldselector = '.' + field.name + '.xelem' + xmodel.class;
       if (isGrid) fieldselector = '.' + field.name + '.xelem' + xmodel.class;
       var jctrl = parentobj.find(fieldselector);
+      var val = '';
 
       if (('control' in field) && (field.control == 'file_upload')) {
         var filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
@@ -6770,19 +6787,20 @@ exports = module.exports = function(jsh){
         var jctrl_dbdelete = parentobj.find(filefieldselector + '_dbdelete');
         var jctrl_dbexists = parentobj.find(filefieldselector + '_dbexists');
         var file_token = jctrl_token.val();
-        if (file_token) return file_token;
-        if (jctrl_dbdelete.val() == '1') return '';
-        if (jctrl_dbexists.val() == '1') return true;
-        return false;
+        if (file_token) val = file_token;
+        else if (jctrl_dbdelete.val() == '1') val = '';
+        else if (jctrl_dbexists.val() == '1') val = true;
+        else val = false;
       }
-      if (('control' in field) && (field.control == 'tree')) {
+      else if (('control' in field) && (field.control == 'tree')) {
         if (jctrl.length) {
           var selected_nodes = jsh.XExt.TreeGetSelectedNodes(jctrl[0]);
-          if (selected_nodes.length > 0) return selected_nodes[0];
+          if (selected_nodes.length > 0) val = selected_nodes[0];
+          else val = null;
         }
-        return null;
+        else val = null;
       }
-      if (('control' in field) && (field.control == 'checkbox')) {
+      else if (('control' in field) && (field.control == 'checkbox')) {
         var checked = jctrl.prop('checked');
         var ishidden = jctrl.css('visibility').toLowerCase() == 'hidden';
         var checkval = checked ? '1':'0';
@@ -6792,26 +6810,30 @@ exports = module.exports = function(jsh){
           else if (checked && ('value_true' in field.controlparams)) checkval = field.controlparams.value_true;
           else if (!checked && ('value_false' in field.controlparams)) checkval = field.controlparams.value_false;
         }
-        return checkval;
+        val = checkval;
       }
-      var val = jctrl.val();
-      if(_.includes(['html','label','linkbutton','button'],field.control)){
-        var jctrl_hidden = parentobj.find('.'+field.name+'_field_value.xelem'+xmodel.class);
-        val = jctrl_hidden.val();
+      else {
+        val = jctrl.val();
+        if(_.includes(['html','label','linkbutton','button'],field.control)){
+          var jctrl_hidden = parentobj.find('.'+field.name+'_field_value.xelem'+xmodel.class);
+          val = jctrl_hidden.val();
+        }
+        if(typeof val === 'undefined') val = '';
+        var ckeditorid = xmodel.class+'_'+field.name;
+        if ((typeof window.CKEDITOR != 'undefined') && (ckeditorid in window.CKEDITOR.instances)) {
+          val = window.CKEDITOR.instances[ckeditorid].getData();
+          val = jsh.XExt.ReplaceAll(val, '&lt;%', '<' + '%');
+          val = jsh.XExt.ReplaceAll(val, '%&gt;', '%' + '>');
+          val = jsh.XExt.ReplaceAll(val, '&#39;', '\'');
+          val = jsh.XExt.ReplaceAll(val, '&quot;', '"');
+        }
       }
-      if(typeof val === 'undefined') val = '';
-      var ckeditorid = xmodel.class+'_'+field.name;
-      if ((typeof window.CKEDITOR != 'undefined') && (ckeditorid in window.CKEDITOR.instances)) {
-        val = window.CKEDITOR.instances[ckeditorid].getData();
-        val = jsh.XExt.ReplaceAll(val, '&lt;%', '<' + '%');
-        val = jsh.XExt.ReplaceAll(val, '%&gt;', '%' + '>');
-        val = jsh.XExt.ReplaceAll(val, '&#39;', '\'');
-        val = jsh.XExt.ReplaceAll(val, '&quot;', '"');
-      }
+
       //If field is in bindings
-      if (xmodel.bindings && (field.name in xmodel.bindings)) {
+      if (!val && xmodel.bindings && (field.name in xmodel.bindings)) {
         val = xmodel.bindings[field.name]();
       }
+
       if (field.ongetvalue) val = field.ongetvalue(val, field, xmodel);
       if ('format' in field) {
         val = jsh.XFormat.Decode(field.format, val);
@@ -8074,11 +8096,11 @@ exports = module.exports = function(jsh){
   }
 
   XExt.XInputAction.prototype.IsExpired = function () {
-    return (new Date().getTime() - this.tstamp) > 100;
+    return ((Date.now() - this.tstamp) > 100);
   }
 
   XExt.getLastClicked = function () {
-    var is_recent_click = (new Date().getTime() - jsh.last_clicked_time) < 100;
+    var is_recent_click = (Date.now() - jsh.last_clicked_time) < 100;
     if (jsh.last_clicked && is_recent_click) return jsh.last_clicked;
     return undefined;
   }
@@ -8396,8 +8418,12 @@ exports = module.exports = function(jsh){
           }
           parentobj.focus();
           jsh.ignorefocusHandler = orig_jsh_ignorefocusHandler;
-        }
+        },
       };
+      var xpanel = $(popup_options.href).children('.xpanel');
+      if(xpanel.length){
+        xpanel.css('max-height',($(window).height()-100)+'px');
+      }
       jsh.xPopupStack.push(popup_options);
       $.colorbox(popup_options);
     });
@@ -10246,8 +10272,23 @@ var _ = require('lodash');
 exports = module.exports = function(jsh){
 
   function XLoader(){
+    var _this = this;
     this.IsLoading = false;
     this.LoadQueue = new Array();
+    this.MouseStack = 0;
+    this.onSquashedClick = null;
+
+    //Check if required elements have been rendered to the page
+    if(!jsh.$root('.xloadingblock').length) console.error('xloadingblock not found on page during XLoader initialization');
+
+    //Keep counter to match mousedown / mouseup events, to detect squashed clicks (clicks blocked by the transparent loading background)
+    jsh.$root('.xloadingblock').on('mousedown', function(){
+      _this.MouseStack++;
+    });
+    jsh.$root('.xloadingblock').on('click mouseup', function(e){
+      if(_this.MouseStack<=0){ if(_this.onSquashedClick) _this.onSquashedClick(e); }
+      _this.MouseStack--;
+    });
   }
 
   XLoader.prototype.StartLoading = function(obj){
@@ -10255,6 +10296,7 @@ exports = module.exports = function(jsh){
     if(this.IsLoading) return;
     jsh.root.css('cursor','wait');
     this.IsLoading = true;
+    this.MouseStack = 0;
     if(!jsh.xDialog.length) jsh.$root('input').blur();
     jsh.$root('.xloadingbox').stop().fadeTo(0,0);
     jsh.$root('.xloadingblock').show();
@@ -10526,6 +10568,9 @@ exports = module.exports = function(jsh){
     var jSubMenu = _this.getSubmenu();
     if(!jSubMenu.length) return;
     var maxw = $(window).width()-1;
+
+    //Refresh dimensions, if necessary
+    _this.CalcSubmenuDimensions();
     
     var showmore = false;
     //Find out if we need to show "more" menu
@@ -10583,14 +10628,9 @@ exports = module.exports = function(jsh){
       jSubMenu.show();
       jSubMenu.find('a, div').each(function (i, obj) {
         if ($(obj).hasClass('xsubmenu_more')) return;
-        var jobj = $(obj);
-        var jwidth = jobj.outerWidth(true);
-        jobj.data('width', jwidth);
-        _this.SubMenuItems.push(jobj);
+        _this.SubMenuItems.push($(obj));
       });
-      _this.SubMenuOverhang = jSubMenu.offset().left + parseInt(jSubMenu.css('padding-left').replace(/\D/g, ''));
-      //Add .head width to SubMenuOverhang
-      if (isNaN(_this.SubMenuOverhang)) _this.SubMenuOverhang = 0;
+      _this.CalcSubmenuDimensions();
       
       jSubMenu.find('.xsubmenu_more').off('click');
       jSubMenu.find('.xsubmenu_more').on('click', function () {
@@ -10631,6 +10671,22 @@ exports = module.exports = function(jsh){
     }
     _this.MenuOverhang = jsh.$root('.xmenu').offset().left + parseInt(jsh.$root('.xmenu').css('padding-left').replace(/\D/g, ''));
     if (isNaN(_this.MenuOverhang)) _this.MenuOverhang = 0;
+  }
+
+  XMenuHorizontal.prototype.CalcSubmenuDimensions = function(force){
+    var _this = this;
+    var jSubMenu = _this.getSubmenu();
+    if(!force && (_this.SubMenuItems.length > 0)){
+      var jobj = _this.SubMenuItems[0];
+      if(jobj.outerWidth(true).toString() == jobj.data('width')) return;
+    }
+    for(var i=0;i<_this.SubMenuItems.length;i++){
+      var jobj = _this.SubMenuItems[i];
+      var jwidth = jobj.outerWidth(true);
+      jobj.data('width', jwidth);
+    }
+    _this.SubMenuOverhang = jSubMenu.offset().left + parseInt(jSubMenu.css('padding-left').replace(/\D/g, ''));
+    if (isNaN(_this.SubMenuOverhang)) _this.SubMenuOverhang = 0;
   }
 
   XMenuHorizontal.prototype.Navigated = function(obj){
@@ -21494,7 +21550,8 @@ var jsHarmony = function(options){
   this.prev_bcrumbs_src = '';
   this.focusHandler = [];
   this.ignorefocusHandler = false;
-  this.qInputAction = null;
+  this.queuedInputAction = null;
+  this.lastSquashedActionTime = undefined;
   this.static_paths = [];
   this.title_html = '';
   this.title = '';
@@ -21575,7 +21632,6 @@ jsHarmony.prototype.Init = function(){
 		'/images/arrow_up_over.png'
   );
   this.imageLoader.StartLoad();
-	this.xLoader = new this.XLoader();
   $('html').click(function () {
     if (_this.xContextMenuVisible) {
       _this.xContextMenuVisible = false;
@@ -21587,7 +21643,9 @@ jsHarmony.prototype.Init = function(){
   _this.InitDialogs();
   _this.InitControls();
   _this.XMenu.Init();
-  _this.xDebugConsole = new _this.XDebugConsole();
+  this.xLoader = new this.XLoader();
+  this.xLoader.onSquashedClick = function(e){ _this.lastSquashedActionTime = Date.now(); }
+  this.xDebugConsole = new this.XDebugConsole();
   $(document).mousemove(function (e) {
     _this.mouseX = e.pageX;
     _this.mouseY = e.pageY;
@@ -21599,7 +21657,7 @@ jsHarmony.prototype.Init = function(){
     _this.mouseDown = false;
   });
   this.$root('a').on('click', function () {
-    _this.last_clicked_time = new Date().getTime();
+    _this.last_clicked_time = Date.now();
     _this.last_clicked = $(this);
   });
   if(this.isAuthenticated && this.Config.require_html5_after_login){

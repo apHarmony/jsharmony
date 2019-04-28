@@ -512,9 +512,22 @@ exports.ApplyCustomControl = function(model, field, controlname){
   for (var prop in customcontrol) {
     if(prop=='for') continue;
     if(prop=='control') continue;
-    if (!(prop in field)){ field[prop] = customcontrol[prop]; }
-    else if (prop == 'controlclass') field[prop] = field[prop] + ' ' + customcontrol[prop];
-    else { /* Do not apply */ }
+    //Apply Macro JS
+    var val = customcontrol[prop];
+    if(_.isString(val) && (val.substr(0,8)=='jsmacro:')){
+      val = val.substr(8);
+      try{
+        field[prop] = Helper.JSEval(val, field, {});
+      }
+      catch(ex){
+        throw new Error('Error evaluating Custom Control jsmacro: ' + controlname + '.' + prop + ': ' + ex.toString() + '(' + model.id + ': ' + JSON.stringify(field) + ')');
+      }
+    }
+    else{
+      if (!(prop in field)){ field[prop] = val; }
+      else if (prop == 'controlclass') field[prop] = field[prop] + ' ' + val;
+      else { /* Do not apply */ }
+    }
   }
   if('control' in customcontrol){
     if (!('_orig_control' in field)) field['_orig_control'] = [];
@@ -987,7 +1000,7 @@ exports.ParseEntities = function () {
         }
         if((field.control=='password') && !field.unbound) field.actions = (field.actions||'').replace(/B/g,'');
       }
-      if(field.name && !('type' in field) && Helper.hasAction(field.actions, 'BIUD')){
+      if((field.name||field.sqlselect) && !('type' in field) && Helper.hasAction(field.actions, 'BIUD')){
         if(!field.value && !_.includes(['subform','html'],field.control)&&!field.unbound&&!model.unbound){
           field.type = 'varchar';
           if(!('length' in field)) field.length = -1;
@@ -1464,7 +1477,7 @@ exports.ParseEntities = function () {
     ];
     var _v_field = [
       'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'foreignkey', 'serverejs', 'roles', 'ongetvalue', 'cellclass',
-      'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'lov', 'captionstyle', 'disable_sort', 'enable_search', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
+      'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'block', 'blockstyle', 'blockclass', 'lov', 'captionstyle', 'disable_sort', 'enable_search', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
       'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'always_editable', 'locked_by_querystring', 'precision', 'password', 'hash', 'salt', 'unbound',
       'sqlselect', 'sqlupdate', 'sqlinsert','sqlsort', 'sqlwhere', 'sqlsearchsound', 'sqlsearch', 'onchange', 'lovkey', 'readonly', '__REMOVE__', '__AFTER__','_auto',
       'sql_from_db','sql_to_db','sqlsearch_to_db','datatype_config'

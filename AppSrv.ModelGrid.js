@@ -35,7 +35,8 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   var keylist = this.getKeyNames(model.fields);
   var allfieldslist = _.union(keylist, fieldlist);
   var availablesortfieldslist = this.getFieldNames(req, model.fields, 'BFK');
-  var searchlist = this.getFieldNames(req, model.fields, 'BFKS', function(field){ if(field.disable_search){ return false; } return true; });
+  var searchlist = this.getFieldNames(req, model.fields, 'FKS');
+  searchlist = _.union(this.getFieldNames(req, model.fields, 'B', function(field){ if(field.disable_search){ return false; } return true; }), searchlist);
   searchlist = _.union(keylist, searchlist);
   var encryptedfields = this.getFields(req, model.fields, '*', function(field){ return field.type=='encascii'; });
   if (encryptedfields.length > 0) throw new Error('Encrypted fields not supported on GRID (field.type=encascii)');

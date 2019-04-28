@@ -165,7 +165,8 @@ var jsHarmony = function(options){
   this.prev_bcrumbs_src = '';
   this.focusHandler = [];
   this.ignorefocusHandler = false;
-  this.qInputAction = null;
+  this.queuedInputAction = null;
+  this.lastSquashedActionTime = undefined;
   this.static_paths = [];
   this.title_html = '';
   this.title = '';
@@ -246,7 +247,6 @@ jsHarmony.prototype.Init = function(){
 		'/images/arrow_up_over.png'
   );
   this.imageLoader.StartLoad();
-	this.xLoader = new this.XLoader();
   $('html').click(function () {
     if (_this.xContextMenuVisible) {
       _this.xContextMenuVisible = false;
@@ -258,7 +258,9 @@ jsHarmony.prototype.Init = function(){
   _this.InitDialogs();
   _this.InitControls();
   _this.XMenu.Init();
-  _this.xDebugConsole = new _this.XDebugConsole();
+  this.xLoader = new this.XLoader();
+  this.xLoader.onSquashedClick = function(e){ _this.lastSquashedActionTime = Date.now(); }
+  this.xDebugConsole = new this.XDebugConsole();
   $(document).mousemove(function (e) {
     _this.mouseX = e.pageX;
     _this.mouseY = e.pageY;
@@ -270,7 +272,7 @@ jsHarmony.prototype.Init = function(){
     _this.mouseDown = false;
   });
   this.$root('a').on('click', function () {
-    _this.last_clicked_time = new Date().getTime();
+    _this.last_clicked_time = Date.now();
     _this.last_clicked = $(this);
   });
   if(this.isAuthenticated && this.Config.require_html5_after_login){

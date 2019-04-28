@@ -312,6 +312,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         XPage.traverseModels(null, function (xmodel) {
           if (typeof xmodel.oninit != 'undefined') xmodel.oninit(xmodel);
         });
+        //Focus on the first element on the page
+        jsh.$root('input,select,textarea').first().focus();
         XPage.Select(jsh.XModels_root, function () {
           jsh.InitControls();
           XPage.LayoutOneColumn();
@@ -833,7 +835,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       var keys = xmodel.controller.form.GetKeys();
       if (xmodel.keys.length != 1) { throw new Error('File models require one key.'); }
       url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field + '?view=1';
-      url += '&_=' + (new Date().getTime());
+      url += '&_=' + (Date.now());
     }
     window.open(url,'_blank',"height=600, width=800"); 
   }
@@ -1025,7 +1027,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           }
         }
         if (xmodel.controller.editablegrid && xmodel.controller.editablegrid.CurrentCell) {
-          jsh.qInputAction = new XExt.XInputAction(obj, f);
+          jsh.queuedInputAction = new XExt.XInputAction(obj, f);
           has_changes = true;
           return;
         }

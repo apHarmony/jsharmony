@@ -19,6 +19,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 var dflt_captionstyle = "";
 var leadingfield = true;
+var prev_block = false;
 for(var i=0;i<model.fields.length;i++){ 
   var field = model.fields[i];
   //hasAction previously validated against "B" - expanded to BIU to render "I"-only fields
@@ -27,7 +28,9 @@ for(var i=0;i<model.fields.length;i++){
      ('captionstyle' in field) && (field.captionstyle != "") && (dflt_captionstyle == "")){
     dflt_captionstyle = field.captionstyle;
   }
-  if((field.nl) && (field.control!='hidden')){ leadingfield = true; %><br/><% }
+  var ignore_eol = false;
+  if((field.nl) && (field.control!='hidden')){ leadingfield = true; if(!prev_block){ %><br class="nl"/><% } }
+  if(field.block){ %><div class="xform_block <%=field.blockclass%>" style="<%=field.blockstyle%>"><% }
   if((field.control!='subform') && (field.control!='hidden')){
     var captionclass = 'xform_caption '+(field.captionclass||'');
     if((field.control=='textarea')||(field.control=='textzoom')) captionclass += ' xform_caption_textarea';
@@ -150,7 +153,9 @@ for(var i=0;i<model.fields.length;i++){
     </div>
     <%
   }
+  if(field.block){ %></div><% }
+  prev_block = !!field.block;
   if(field.eol){ %><br/><% }
-  if(field.control!='hidden'){ leadingfield = false; }
+  if((field.control!='hidden')&&!((field.control=='html') && ('value' in field) && !field.caption)){ leadingfield = false; }
 } 
 %>

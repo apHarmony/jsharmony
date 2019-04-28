@@ -252,9 +252,9 @@ exports = module.exports = function(jsh){
       ((this.CommitLevel == 'cell') && ((newrowid>=0) && newobj && $(newobj).is(':checkbox'))) || 
       (rowchange && (this.CommitLevel == 'row'))
   )) {
-      if (newobj) jsh.qInputAction = new jsh.XExt.XInputAction(newobj);
-      else if (jsh.qInputAction && !(jsh.qInputAction.IsExpired())) { }
-      else jsh.qInputAction = null;
+      if (newobj){ jsh.queuedInputAction = new jsh.XExt.XInputAction(newobj); }
+      else if (jsh.queuedInputAction && !jsh.queuedInputAction.IsExpired()) { }
+      else jsh.queuedInputAction = null;
       
       jsh.ignorefocusHandler = true;
       window.setTimeout(function () {
@@ -269,7 +269,15 @@ exports = module.exports = function(jsh){
       var onsuccess_override = function () {
         if (onsuccess) onsuccess(false);
         if (!newobj) $(document.activeElement).blur();
-        else if (jsh.qInputAction) jsh.qInputAction.Exec();
+        else if (jsh.queuedInputAction){
+          if(!jsh.queuedInputAction.IsExpired()){
+            //If the previous click was squashed
+            if(jsh.lastSquashedActionTime && (jsh.lastSquashedActionTime > jsh.queuedInputAction.tstamp)){
+              jsh.queuedInputAction.Exec();
+            }
+          }
+          jsh.queuedInputAction = null;
+        }
       }
       
       if (!this.OnCommit(oldrowid, oldobj, onsuccess_override, oncancel)) return false;
@@ -291,7 +299,7 @@ exports = module.exports = function(jsh){
     });
   }
 
-  XEditableGrid.prototype.BindRow = function (jobj) {
+  XEditableGrid.prototype.BindRow = function (jobj, datarow) {
     var _this = this;
     var modelid = _this.modelid;
     var xmodel = (modelid? jsh.XModels[modelid] : null);
@@ -318,6 +326,14 @@ exports = module.exports = function(jsh){
     jobj.find('.xelem' + xmodel.class).not('.xelem' + xmodel.class + '.checkbox').focus(function (e) { return _this.SetFocus(this, e); });
     jobj.find('.xelem' + xmodel.class + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e) })
     jobj.find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; return _this.SetFocus(ctrl, e); });
+    if(datarow && datarow._is_insert){
+      jobj.find('.xelem' + xmodel.class).each(function(){ 
+        var jobj = $(this);
+        if (!jobj.hasClass('editable')) return;
+        jobj.addClass('updated');
+        if(jobj.parent().hasClass('xform_checkbox_container')) jobj.parent().addClass('updated');
+      });
+    }
   }
 
   return XEditableGrid;

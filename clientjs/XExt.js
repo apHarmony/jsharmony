@@ -1051,11 +1051,11 @@ exports = module.exports = function(jsh){
   }
 
   XExt.XInputAction.prototype.IsExpired = function () {
-    return (new Date().getTime() - this.tstamp) > 100;
+    return ((Date.now() - this.tstamp) > 100);
   }
 
   XExt.getLastClicked = function () {
-    var is_recent_click = (new Date().getTime() - jsh.last_clicked_time) < 100;
+    var is_recent_click = (Date.now() - jsh.last_clicked_time) < 100;
     if (jsh.last_clicked && is_recent_click) return jsh.last_clicked;
     return undefined;
   }
@@ -1373,8 +1373,12 @@ exports = module.exports = function(jsh){
           }
           parentobj.focus();
           jsh.ignorefocusHandler = orig_jsh_ignorefocusHandler;
-        }
+        },
       };
+      var xpanel = $(popup_options.href).children('.xpanel');
+      if(xpanel.length){
+        xpanel.css('max-height',($(window).height()-100)+'px');
+      }
       jsh.xPopupStack.push(popup_options);
       $.colorbox(popup_options);
     });

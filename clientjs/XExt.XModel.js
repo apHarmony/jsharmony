@@ -167,7 +167,7 @@ exports = module.exports = function(jsh){
         if (jctrl_thumbnail.length && ((field.control=='image') || (field.controlparams.show_thumbnail))) {
           var keys = xmodel.controller.form.GetKeys();
           if (xmodel.keys.length != 1) { throw new Error('File models require one key.'); }
-          var thumb_url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field.name + '?view=1&_=' + (new Date().getTime());
+          var thumb_url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field.name + '?view=1&_=' + (Date.now());
           if(field.controlparams.show_thumbnail) thumb_url += '&thumb='+field.controlparams.show_thumbnail;
           jctrl_thumbnail.attr('src', thumb_url).show();
           if(typeof field.controlparams.thumbnail_width != 'undefined') jctrl_thumbnail.attr('width', field.controlparams.thumbnail_width + 'px');
@@ -350,6 +350,7 @@ exports = module.exports = function(jsh){
       var fieldselector = '.' + field.name + '.xelem' + xmodel.class;
       if (isGrid) fieldselector = '.' + field.name + '.xelem' + xmodel.class;
       var jctrl = parentobj.find(fieldselector);
+      var val = '';
 
       if (('control' in field) && (field.control == 'file_upload')) {
         var filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
@@ -359,19 +360,20 @@ exports = module.exports = function(jsh){
         var jctrl_dbdelete = parentobj.find(filefieldselector + '_dbdelete');
         var jctrl_dbexists = parentobj.find(filefieldselector + '_dbexists');
         var file_token = jctrl_token.val();
-        if (file_token) return file_token;
-        if (jctrl_dbdelete.val() == '1') return '';
-        if (jctrl_dbexists.val() == '1') return true;
-        return false;
+        if (file_token) val = file_token;
+        else if (jctrl_dbdelete.val() == '1') val = '';
+        else if (jctrl_dbexists.val() == '1') val = true;
+        else val = false;
       }
-      if (('control' in field) && (field.control == 'tree')) {
+      else if (('control' in field) && (field.control == 'tree')) {
         if (jctrl.length) {
           var selected_nodes = jsh.XExt.TreeGetSelectedNodes(jctrl[0]);
-          if (selected_nodes.length > 0) return selected_nodes[0];
+          if (selected_nodes.length > 0) val = selected_nodes[0];
+          else val = null;
         }
-        return null;
+        else val = null;
       }
-      if (('control' in field) && (field.control == 'checkbox')) {
+      else if (('control' in field) && (field.control == 'checkbox')) {
         var checked = jctrl.prop('checked');
         var ishidden = jctrl.css('visibility').toLowerCase() == 'hidden';
         var checkval = checked ? '1':'0';
@@ -381,26 +383,30 @@ exports = module.exports = function(jsh){
           else if (checked && ('value_true' in field.controlparams)) checkval = field.controlparams.value_true;
           else if (!checked && ('value_false' in field.controlparams)) checkval = field.controlparams.value_false;
         }
-        return checkval;
+        val = checkval;
       }
-      var val = jctrl.val();
-      if(_.includes(['html','label','linkbutton','button'],field.control)){
-        var jctrl_hidden = parentobj.find('.'+field.name+'_field_value.xelem'+xmodel.class);
-        val = jctrl_hidden.val();
+      else {
+        val = jctrl.val();
+        if(_.includes(['html','label','linkbutton','button'],field.control)){
+          var jctrl_hidden = parentobj.find('.'+field.name+'_field_value.xelem'+xmodel.class);
+          val = jctrl_hidden.val();
+        }
+        if(typeof val === 'undefined') val = '';
+        var ckeditorid = xmodel.class+'_'+field.name;
+        if ((typeof window.CKEDITOR != 'undefined') && (ckeditorid in window.CKEDITOR.instances)) {
+          val = window.CKEDITOR.instances[ckeditorid].getData();
+          val = jsh.XExt.ReplaceAll(val, '&lt;%', '<' + '%');
+          val = jsh.XExt.ReplaceAll(val, '%&gt;', '%' + '>');
+          val = jsh.XExt.ReplaceAll(val, '&#39;', '\'');
+          val = jsh.XExt.ReplaceAll(val, '&quot;', '"');
+        }
       }
-      if(typeof val === 'undefined') val = '';
-      var ckeditorid = xmodel.class+'_'+field.name;
-      if ((typeof window.CKEDITOR != 'undefined') && (ckeditorid in window.CKEDITOR.instances)) {
-        val = window.CKEDITOR.instances[ckeditorid].getData();
-        val = jsh.XExt.ReplaceAll(val, '&lt;%', '<' + '%');
-        val = jsh.XExt.ReplaceAll(val, '%&gt;', '%' + '>');
-        val = jsh.XExt.ReplaceAll(val, '&#39;', '\'');
-        val = jsh.XExt.ReplaceAll(val, '&quot;', '"');
-      }
+
       //If field is in bindings
-      if (xmodel.bindings && (field.name in xmodel.bindings)) {
+      if (!val && xmodel.bindings && (field.name in xmodel.bindings)) {
         val = xmodel.bindings[field.name]();
       }
+
       if (field.ongetvalue) val = field.ongetvalue(val, field, xmodel);
       if ('format' in field) {
         val = jsh.XFormat.Decode(field.format, val);

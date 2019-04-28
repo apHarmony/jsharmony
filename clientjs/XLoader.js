@@ -23,8 +23,23 @@ var _ = require('lodash');
 exports = module.exports = function(jsh){
 
   function XLoader(){
+    var _this = this;
     this.IsLoading = false;
     this.LoadQueue = new Array();
+    this.MouseStack = 0;
+    this.onSquashedClick = null;
+
+    //Check if required elements have been rendered to the page
+    if(!jsh.$root('.xloadingblock').length) console.error('xloadingblock not found on page during XLoader initialization');
+
+    //Keep counter to match mousedown / mouseup events, to detect squashed clicks (clicks blocked by the transparent loading background)
+    jsh.$root('.xloadingblock').on('mousedown', function(){
+      _this.MouseStack++;
+    });
+    jsh.$root('.xloadingblock').on('click mouseup', function(e){
+      if(_this.MouseStack<=0){ if(_this.onSquashedClick) _this.onSquashedClick(e); }
+      _this.MouseStack--;
+    });
   }
 
   XLoader.prototype.StartLoading = function(obj){
@@ -32,6 +47,7 @@ exports = module.exports = function(jsh){
     if(this.IsLoading) return;
     jsh.root.css('cursor','wait');
     this.IsLoading = true;
+    this.MouseStack = 0;
     if(!jsh.xDialog.length) jsh.$root('input').blur();
     jsh.$root('.xloadingbox').stop().fadeTo(0,0);
     jsh.$root('.xloadingblock').show();

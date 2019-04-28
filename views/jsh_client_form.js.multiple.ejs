@@ -48,7 +48,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xform.GetKeys = function(){
       var rslt = new Object();
       if(!jsh.is_insert){
-        <% xejs.eachKey(model.fields,function(field){  if(!field.name) return; %>rslt.<%=field['name']%> = xmodel.get('<%=field['name']%>');<%}); %>
+        <% xejs.eachKey(model.fields,function(field){  if(!field.name) return; %>rslt.<%=field['name']%> = this.Data['<%=field['name']%>']<%}); %>
       }
       else{
         for(var fieldname in xmodel.bindings){
