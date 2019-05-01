@@ -268,8 +268,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       }
       "controlstyle": "font-size:12px;",
       "controlclass": "classname",
-      "onchange": "console.log(JSON.stringify(obj));console.log(newval);XExt.Alert('test');",//JavaScript Event Handler for onchange event
-      //onchange(obj,newval,e)
+      "onchange": "console.log(JSON.stringify(obj));console.log(newval);XExt.Alert('test'); undoChange();",//JavaScript Event Handler for onchange event
+      //onchange(obj,newval,undoChange,e)
       "ongetvalue": "return jsh._GET['E_ID'];", //JavaScript Event Handler that fire when "GetValue" is called - before field is sent to the database
       //ongetvalue(val,field,xmodel)
       "password": "E_SSN", // For type=encascii

@@ -66,7 +66,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       else if(typeof bindings != 'undefined') _.each(bindings,function(val,key){%><%=key%>: function(){ var xparentmodel = jsh.XModels['<%=parent.id%>']; return jsh.XExt.LiteralOrLookup(<%-JSON.stringify(val)%>,xparentmodel.controller.form.Data,xparentmodel);},<%}); 
       %>}<%
     } %>,
-    binding_fields:<%-JSON.stringify(bindings||null)%>,
+    binding_fields:<%-JSON.stringify(bindings||{})%>,
     constant_bindings:<%-JSON.stringify(_.keys(_.pickBy(bindings, function(value, key){ if(typeof jsh.XExt.LiteralOrLookup(value) != 'undefined') return true; return false; })))%>,
     keys:[<% xejs.eachKey(model.fields,function(field){%>'<%=field.name%>',<%});%>],
     commitlevel:'<%=(model.commitlevel?model.commitlevel:'')%>',

@@ -72,7 +72,7 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && (fi
 
     if(xmodel.unbound){
       _.each(xmodel.fields, function(field){
-        if(field.hasDefault()) xmodel.set(field.name, field.getDefault());
+        if(field.hasDefault()) xmodel.set(field.name, field.getDefault(xform.Data));
       });
     }
 

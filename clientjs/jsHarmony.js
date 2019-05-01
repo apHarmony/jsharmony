@@ -106,7 +106,7 @@ var jsHarmony = function(options){
   this.is_popup = false;
 
   this.XPage = {};
-  this.XPage.CustomShortcutKeys = function(e){ return false; /*  Return true if the shortcut key is handled */ };
+  this.XPage.CustomShortcutKeys = [function(e){ return false; /*  Return true if the shortcut key is handled */ }];
 
   //global
   this.isHTML5 = (document.createElement('canvas').getContext);
@@ -232,7 +232,22 @@ jsHarmony.prototype.BindEvents = function(){
   $(document).ready(function () { _this.XWindowResize(); });
   $(window).resize(function () { _this.XWindowResize(); });
   $(window).scroll(function () { _this.XWindowResize('scroll'); });
-  $(document).keydown(function (e) { if(_this.XPage.handleShortcutKeys) _this.XPage.handleShortcutKeys(e); })
+  $(document).keydown(function (e) {
+    var handled = false;
+    if (_this.XPage.CustomShortcutKeys) {
+      for(var i=0;i<_this.XPage.CustomShortcutKeys.length;i++){
+        if(_this.XPage.CustomShortcutKeys[i](e)){
+          handled = true;
+          break;
+        }
+      }
+    }
+    if(!handled && _this.XPage.handleShortcutKeys) handled = _this.XPage.handleShortcutKeys(e);
+    if(handled){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  })
 }
 
 jsHarmony.prototype.Init = function(){
@@ -426,7 +441,7 @@ jsHarmony.prototype.runGlobalsMonitor = function(){
     for(var id in window){
       if(!(id in _this.globalsMonitorCache)){
         _this.globalsMonitorCache[id] = true;
-        if(_.includes(['google','_xdc_','data-cke-expando','CKEDITOR','data-cke-expando','OverlayView'],id)) continue;
+        if(_.includes(['google','_xdc_','data-cke-expando','CKEDITOR','CKEDITOR_BASEPATH','data-cke-expando','OverlayView'],id)) continue;
         if(_.includes(_this.Config.debug_params.ignore_globals,id)) continue;
         if(_this.XExt.beginsWith(id, 'module$contents$')) continue;
         if(parseInt(id).toString()==id.toString()) continue;

@@ -922,7 +922,10 @@ exports = module.exports = function(jsh){
     return rslt;
   }
 
-  XExt.TreeSelectNode = function (ctrl, nodevalue) {
+  XExt.TreeSelectNode = function (ctrl, nodevalue, options) {
+    if(!options) options = { triggerChange: true };
+    if(!('triggerChange' in options)) options.triggerChange = true;
+
     var jctrl = $(ctrl);
     
     var xform = XExt.getFormFromObject(ctrl);
@@ -952,7 +955,7 @@ exports = module.exports = function(jsh){
 
     //Fire events
     if (field && jsh.init_complete) {
-      if ('onchange' in field) { var rslt = (new Function('obj', 'newval', 'e', field.onchange)); rslt.call(xform.Data, ctrl, xform.Data.GetValue(field), null); }
+      if(xform && xform.Data && options.triggerChange) xform.Data.OnControlUpdate(ctrl);
     }
     if(nodeid && jtree.data('onselected')) { var rslt = (new Function('nodeid', jtree.data('onselected'))); rslt.call(ctrl, nodeid); }
   }
@@ -1645,7 +1648,7 @@ exports = module.exports = function(jsh){
     var dfltwindowParams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
     var modelmd5 = XExt.getModelMD5(modelid);
     if (modelmd5 in jsh.popups) {
-      default_popup_size = jsh.popups[modelmd5];
+      var default_popup_size = jsh.popups[modelmd5];
       dfltwindowParams.width = default_popup_size[0];
       dfltwindowParams.height = default_popup_size[1];
     }
@@ -1664,7 +1667,7 @@ exports = module.exports = function(jsh){
     var dfltwindowParams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
     var modelmd5 = XExt.getModelMD5(modelid);
     if (modelmd5 in jsh.popups) {
-      default_popup_size = jsh.popups[modelmd5];
+      var default_popup_size = jsh.popups[modelmd5];
       dfltwindowParams.width = default_popup_size[0];
       dfltwindowParams.height = default_popup_size[1];
     }

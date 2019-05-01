@@ -6538,11 +6538,12 @@ exports = module.exports = function(jsh){
   XExtXModel.SetControlValue = function (xformdata, field, val) { //Leave val to "undefined" for refresh
     var parentobj = jsh.root;
     if (xformdata._jrow) parentobj = xformdata._jrow;
-    var jctrl = XExtXModel.RenderField(xformdata, parentobj, xformdata._modelid, field, val);
+    var jctrl = XExtXModel.RenderField(xformdata, parentobj, xformdata._modelid, field, val, { updatePreviousValue: false });
     if(jctrl && jctrl.length) xformdata.OnControlUpdate(jctrl[0]);
   }
 
-  XExtXModel.RenderField = function (_this, parentobj, modelid, field, val){
+  XExtXModel.RenderField = function (_this, parentobj, modelid, field, val, options){
+    if(!options) options = { updatePreviousValue: true };
     modelid = jsh.XExt.resolveModelID(modelid);
     var xmodel = jsh.XModels[modelid];
     var isGrid = (xmodel.layout == 'grid');
@@ -6553,6 +6554,8 @@ exports = module.exports = function(jsh){
     //Apply formatting
     if ((field.name in _this) && (typeof val == 'undefined')) val = '';
     else val = jsh.XFormat.Apply(field.format, val);
+    
+    if(options.updatePreviousValue) field._previous_value = dataval;
 
     //Get LOV Txt
     var lovTxt = '';
@@ -6630,7 +6633,7 @@ exports = module.exports = function(jsh){
       }
     }
     else if (('control' in field) && (field.control == 'tree')) {
-      jsh.XExt.TreeSelectNode(jctrl, val);
+      jsh.XExt.TreeSelectNode(jctrl, val, { triggerChange: false });
     }
     else if(('control' in field) && (field.control == 'button')){ }
     else if (('control' in field) && (field.control == 'checkbox')) {
@@ -6714,6 +6717,10 @@ exports = module.exports = function(jsh){
     else {
       if (is_editable && ('readonly' in field) && field.readonly) is_editable = false;
       if (_this._querystring_applied && _.includes(_this._querystring_applied, field.name)) is_editable = false;
+      if (field.name in xmodel.binding_fields){
+        var binding_val = xmodel.getBindingOrRootKey(field.name);
+        if((typeof binding_val != 'undefined') && (binding_val !== null) && (binding_val !== '')) is_editable = false;
+      }
     }
     if (('always_editable' in field) && field.always_editable) is_editable = true;
     if (is_editable && ('controlparams' in field) && (field.controlparams.base_readonly)) {
@@ -6727,14 +6734,15 @@ exports = module.exports = function(jsh){
     return jctrl;
   }
 
-  XExtXModel.OnControlUpdate = function () {
+  XExtXModel.OnControlUpdate = function (modelid) {
+    modelid = jsh.XExt.resolveModelID(modelid);
     return function (obj, e) {
       var jobj = $(obj);
-      var id = $(obj).data('id');
+      var id = jsh.XExt.getFieldFromObject(obj);
       var _this = this;
       var field = this.Fields[id];
       if(field){
-        if (!this._is_insert && !field.unbound) {
+        if (!this._is_insert && !field.unbound && (field.control != 'tree')) {
           if (this.HasUpdate(id)) {
             if (!jobj.hasClass('updated')) {
               jobj.addClass('updated');
@@ -6748,7 +6756,16 @@ exports = module.exports = function(jsh){
             }
           }
         }
-        if ('onchange' in field) { var rslt = (new Function('obj', 'newval', 'e', field.onchange)); rslt.call(_this, obj, _this.GetValue(field), e); }
+        var oldval = field._previous_value;
+        var newval = _this.GetValue(field);
+        var firedUndo = false;
+        if ('onchange' in field) {
+          var undoChange = function(){ firedUndo = true; var xmodel = jsh.XModels[modelid]; field._previous_value = oldval; xmodel.set(field.name, oldval, null); };
+          if(!XExtXModel.StringEquals(oldval, newval)){
+            var rslt = (new Function('obj', 'newval', 'undoChange', 'e', field.onchange)); rslt.call(_this, obj, newval, undoChange, e);
+          }
+        }
+        if(!firedUndo) field._previous_value = newval;
       }
     };
   };
@@ -6830,8 +6847,9 @@ exports = module.exports = function(jsh){
       }
 
       //If field is in bindings
-      if (!val && xmodel.bindings && (field.name in xmodel.bindings)) {
-        val = xmodel.bindings[field.name]();
+      if (xmodel.bindings && (field.name in xmodel.bindings)) {
+        var binding_val = xmodel.bindings[field.name]();
+        if(!val || ((typeof binding_val != 'undefined') && (binding_val !== null) && (binding_val !== ''))) val = binding_val;
       }
 
       if (field.ongetvalue) val = field.ongetvalue(val, field, xmodel);
@@ -6859,6 +6877,20 @@ exports = module.exports = function(jsh){
     };
   };
 
+  XExtXModel.StringEquals = function(a,b){
+    if (typeof a === 'undefined') a = '';
+    if (a === null) a = '';
+    if (typeof b === 'undefined') b = '';
+    if (b === null) b = '';
+    if (a != b) {
+      a = jsh.XExt.ReplaceAll(a.toString(), '\r\n', '\n');
+      b = jsh.XExt.ReplaceAll(b.toString(), '\r\n', '\n');
+      if(a == b) return true;
+      return false;
+    }
+    return true;
+  }
+
   XExtXModel.HasUpdate = function () {
     return function (id) {
       if (jsh.XModels[this._modelid].layout=='exec') return false;
@@ -6867,16 +6899,10 @@ exports = module.exports = function(jsh){
       if (!field) return false;
       var oldval = this[id];
       oldval = jsh.XFormat.Decode(field.format, oldval);
-      if (typeof oldval === 'undefined') oldval = '';
-      if (oldval === null) oldval = '';
       var newval = this.GetValue(field);
-      if (typeof newval === 'undefined') newval = '';
-      if (newval === null) newval = '';
-      if (newval != oldval) {
-        oldval = jsh.XExt.ReplaceAll(oldval.toString(), '\r\n', '\n');
-        newval = jsh.XExt.ReplaceAll(newval.toString(), '\r\n', '\n');
-        if(newval == oldval) return false;
-        console.log(id + " Old: " + oldval); console.log(id + " New: " + newval); return true; 
+      if(!XExtXModel.StringEquals(oldval, newval)){
+        console.log(id + " Old: " + oldval); console.log(id + " New: " + newval);
+        return true;
       }
       return false;
     };
@@ -6968,7 +6994,7 @@ exports = module.exports = function(jsh){
 
   XExtXModel.ParseDefault = function (dflt, jslocals) {
     if(_.isString(dflt) && (dflt.substr(0,3)=='js:')){
-      return 'function(){'+jslocals+'return '+dflt.substr(3)+';}';
+      return 'function(data){'+jslocals+'return '+dflt.substr(3)+';}';
     }
     return JSON.stringify(dflt);
   }
@@ -7024,6 +7050,7 @@ exports = module.exports = function(jsh){
   /*** XField ***/
 
   XExtXModel.XField = function(props){
+    this._previous_value = undefined;
     for(var prop in props) this[prop] = props[prop];
   }
 
@@ -7032,9 +7059,9 @@ exports = module.exports = function(jsh){
     return false;
   }
 
-  XExtXModel.XField.prototype.getDefault = function(){
+  XExtXModel.XField.prototype.getDefault = function(data){
     if('default' in this){
-      if(_.isFunction(this.default)) return this.default();
+      if(_.isFunction(this.default)) return this.default(data);
       return this.default;
     }
     return undefined;
@@ -7967,7 +7994,10 @@ exports = module.exports = function(jsh){
     return rslt;
   }
 
-  XExt.TreeSelectNode = function (ctrl, nodevalue) {
+  XExt.TreeSelectNode = function (ctrl, nodevalue, options) {
+    if(!options) options = { triggerChange: true };
+    if(!('triggerChange' in options)) options.triggerChange = true;
+
     var jctrl = $(ctrl);
     
     var xform = XExt.getFormFromObject(ctrl);
@@ -7997,7 +8027,7 @@ exports = module.exports = function(jsh){
 
     //Fire events
     if (field && jsh.init_complete) {
-      if ('onchange' in field) { var rslt = (new Function('obj', 'newval', 'e', field.onchange)); rslt.call(xform.Data, ctrl, xform.Data.GetValue(field), null); }
+      if(xform && xform.Data && options.triggerChange) xform.Data.OnControlUpdate(ctrl);
     }
     if(nodeid && jtree.data('onselected')) { var rslt = (new Function('nodeid', jtree.data('onselected'))); rslt.call(ctrl, nodeid); }
   }
@@ -8690,7 +8720,7 @@ exports = module.exports = function(jsh){
     var dfltwindowParams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
     var modelmd5 = XExt.getModelMD5(modelid);
     if (modelmd5 in jsh.popups) {
-      default_popup_size = jsh.popups[modelmd5];
+      var default_popup_size = jsh.popups[modelmd5];
       dfltwindowParams.width = default_popup_size[0];
       dfltwindowParams.height = default_popup_size[1];
     }
@@ -8709,7 +8739,7 @@ exports = module.exports = function(jsh){
     var dfltwindowParams = { width: 1000, height: 600, resizable: 1, scrollbars: 1 };
     var modelmd5 = XExt.getModelMD5(modelid);
     if (modelmd5 in jsh.popups) {
-      default_popup_size = jsh.popups[modelmd5];
+      var default_popup_size = jsh.popups[modelmd5];
       dfltwindowParams.width = default_popup_size[0];
       dfltwindowParams.height = default_popup_size[1];
     }
@@ -9234,7 +9264,7 @@ exports = module.exports = function(jsh){
         data[field.name] = _this.defaults[field.name];
       }
       else if(field.hasDefault()){
-        data[field.name] = field.getDefault();
+        data[field.name] = field.getDefault(data);
       }
     });
   }
@@ -21491,7 +21521,7 @@ var jsHarmony = function(options){
   this.is_popup = false;
 
   this.XPage = {};
-  this.XPage.CustomShortcutKeys = function(e){ return false; /*  Return true if the shortcut key is handled */ };
+  this.XPage.CustomShortcutKeys = [function(e){ return false; /*  Return true if the shortcut key is handled */ }];
 
   //global
   this.isHTML5 = (document.createElement('canvas').getContext);
@@ -21617,7 +21647,22 @@ jsHarmony.prototype.BindEvents = function(){
   $(document).ready(function () { _this.XWindowResize(); });
   $(window).resize(function () { _this.XWindowResize(); });
   $(window).scroll(function () { _this.XWindowResize('scroll'); });
-  $(document).keydown(function (e) { if(_this.XPage.handleShortcutKeys) _this.XPage.handleShortcutKeys(e); })
+  $(document).keydown(function (e) {
+    var handled = false;
+    if (_this.XPage.CustomShortcutKeys) {
+      for(var i=0;i<_this.XPage.CustomShortcutKeys.length;i++){
+        if(_this.XPage.CustomShortcutKeys[i](e)){
+          handled = true;
+          break;
+        }
+      }
+    }
+    if(!handled && _this.XPage.handleShortcutKeys) handled = _this.XPage.handleShortcutKeys(e);
+    if(handled){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  })
 }
 
 jsHarmony.prototype.Init = function(){
@@ -21811,7 +21856,7 @@ jsHarmony.prototype.runGlobalsMonitor = function(){
     for(var id in window){
       if(!(id in _this.globalsMonitorCache)){
         _this.globalsMonitorCache[id] = true;
-        if(_.includes(['google','_xdc_','data-cke-expando','CKEDITOR','data-cke-expando','OverlayView'],id)) continue;
+        if(_.includes(['google','_xdc_','data-cke-expando','CKEDITOR','CKEDITOR_BASEPATH','data-cke-expando','OverlayView'],id)) continue;
         if(_.includes(_this.Config.debug_params.ignore_globals,id)) continue;
         if(_this.XExt.beginsWith(id, 'module$contents$')) continue;
         if(parseInt(id).toString()==id.toString()) continue;

@@ -32,7 +32,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     this._modelid = modelid;
     _.each(xmodel.fields, function(field){
       if(!field.name) return;
-      _this[field.name] = (field.hasDefault()?jsh.XFormat.Decode(field.format, field.getDefault()):'');
+      try{ _this[field.name] = (field.hasDefault()?jsh.XFormat.Decode(field.format, field.getDefault(_this)):''); }
+      catch(ex){ }
     });
     XExt.XModel.ApplyDefaults(this);
   }
@@ -47,7 +48,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       <%-xejs.iif('always_editable' in field,'"always_editable":'+JSON.stringify(field.always_editable)+',') %>
       <%-xejs.iif('unbound' in field,'"unbound":'+JSON.stringify(field.unbound)+',') %>
       <%-xejs.iif('locked_by_querystring' in field,'"locked_by_querystring":'+JSON.stringify(field.locked_by_querystring)+',') %>
-      <%-xejs.iif('onchange' in field,'"onchange":'+JSON.stringify('(function(){'+jslocals+field.onchange+'}).call(this,obj,newval,e)')+',') %>
+      <%-xejs.iif('onchange' in field,'"onchange":'+JSON.stringify('(function(){'+jslocals+field.onchange+'}).call(this,obj,newval,undoChange,e)')+',') %>
       <%-xejs.iif('ongetvalue' in field,'"ongetvalue":function(val,field,xmodel){'+jslocals+field.ongetvalue+'},') %>
       <%-xejs.iif('key' in field,'"key":'+JSON.stringify(field.key)+',') %>
       <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>
@@ -82,7 +83,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   xdatamodel.prototype.GetValue = XExt.XModel.GetValue(modelid);
   xdatamodel.prototype.HasUpdates = XExt.XModel.HasUpdates();
   xdatamodel.prototype.HasUpdate = XExt.XModel.HasUpdate();
-  xdatamodel.prototype.OnControlUpdate = XExt.XModel.OnControlUpdate();
+  xdatamodel.prototype.OnControlUpdate = XExt.XModel.OnControlUpdate(modelid);
   xdatamodel.prototype.Commit = XExt.XModel.Commit(xmodel);
   xdatamodel.prototype.BindLOV = XExt.XModel.BindLOV(modelid);
   xdatamodel.prototype.OnDBError = function(err, stats, execParams, data){

@@ -29,7 +29,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
     var loadPrevious = function () {
       if (!XPage.LoadState(state, {addBackHistoryOnCancel: true, _GET: XExt.parseGET()})) return;
-      XPage.Select();
+      XPage.Select({ force: true });
     };
 
     if (_.isObject(state)) {
@@ -64,6 +64,19 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     else onContinue();
   }
 
+  //Checks if the target model or any of its descendents are editable
+  XPage.HasEditableModel = function(rootid) {
+    var rslt = false;
+    rootid = XExt.resolveModelID(rootid);
+    if(!rootid) rootid = jsh.XModels_root;
+    XPage.traverseModels(rootid, function (xmodel) {
+      if (!xmodel.isEnabled()){ return; }
+      if (!XExt.hasAction(xmodel.actions, 'IUD')) return;
+      rslt = true;
+    });
+    return rslt;
+  }
+
   //Generates a string message of unsaved changes
   XPage.GetChangesMessage = function(rootid){
     var foundchanges = XPage.GetChanges(rootid);
@@ -90,7 +103,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if (!XExt.hasAction(xmodel.actions, 'IUD')) return;
       if (xmodel.controller.HasUpdates()) { foundchanges.push(xmodel.caption[1]); }
       else if (xmodel.controller.form && xmodel.controller.form.Data && xmodel.controller.form.Data._is_dirty) { foundchanges.push(xmodel.caption[1]); }
-    }, { includeParent: !!rootid });
+    });
     return foundchanges;
   }
 
@@ -205,7 +218,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
       console.log('Save complete');
       //Refresh the database data
-      XPage.Select(undefined, function () {
+      XPage.Select({ force: true }, function () {
         console.log('Reselect complete');
       });
     }, options.onFail);
@@ -246,7 +259,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
               if(parent_field in xparent.unbound_data[key]) delete xparent.unbound_data[key][parent_field];
             }
           });
-          XPage.Select();
+          XPage.Select({ force: true });
           return;
         }
       }
@@ -331,7 +344,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         });
         //Focus on the first element on the page
         jsh.$root('input,select,textarea').first().focus();
-        XPage.Select(jsh.XModels_root, function () {
+        XPage.Select({ modelid: jsh.XModels_root, force: true }, function () {
           jsh.InitControls();
           XPage.LayoutOneColumn();
           XPage.Show();
@@ -371,7 +384,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var foundchanges = XPage.GetChanges();
     if (foundchanges.length > 0) return;
 
-    XPage.Select(modelid, function () { XPage.RefreshParent(); console.log('Reselect complete'); });
+    XPage.Select({ modelid: modelid, force: true }, function () { XPage.RefreshParent(); console.log('Reselect complete'); });
   }
 
   XPage.RefreshParent = function() {
@@ -439,8 +452,24 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   //Calling XPage.Select with a null root model will check the model definition for updates
-  XPage.Select = function(rootid, callback) {
-    rootid = XExt.resolveModelID(rootid);
+  //Options
+  //  modelid : The root modelid that will be loaded.  Default to the root model
+  //  onCancel : Function to run when the Select has been canceled due to unsaved changes.
+  //  force : (Default false) - Do not check for changes before running .Select
+  XPage.Select = function(options, callback) {
+    if(_.isString(options)) options = { modelid: options };
+    options = _.extend({ modelid: undefined, onCancel: undefined, force: false }, options);
+    if(!options.force){
+      if(XPage.HasEditableModel(options.modelid)){
+        if(!options.onCancel){
+          return XExt.Alert('XPage.Select requires either options.force or options.onCancel when a target model or subform is editable (with "I" or "U" actions).\r\n\r\nIf XPage.Select was triggered by a bound field change, the options.onCancel property should undo the change to any bound fields.');
+        }
+        else{
+          return XPage.CheckChanges(options.modelid, function(){ XPage.Select(_.extend(options, { force: true }), callback); }, options.onCancel);
+        }
+      }
+    }
+    var rootid = XExt.resolveModelID(options.modelid);
     if(!callback) callback = function(){};
     //Reset models that are disabled due to missing record
     XPage.traverseModels(rootid, function (xmodel) {
@@ -452,7 +481,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       XPage.traverseModelDefinitions(jsh.cur_model, null, function (model, modelParent) {
         if(model.modeltype=='dynamic') isDynamic = true;
       });
-      if(isDynamic) return jsh.Load({ addHistory: false, onRefreshNoChange: function(){ XPage.Select(jsh.XModels_root, callback); } });
+      if(isDynamic) return jsh.Load({ addHistory: false, onRefreshNoChange: function(){ XPage.Select(_.extend(options, { modelid: jsh.XModels_root }), callback); } });
       else rootid = jsh.XModels_root;
     }
     //Call Select on each model
@@ -1101,10 +1130,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   XPage.handleShortcutKeys = function(e) {
     var handled = false;
-    if (XPage.CustomShortcutKeys && XPage.CustomShortcutKeys(e)) {
-      handled = true;
-    }
-    else if ((e.which == 83) && (e.altKey)) {//ALT+S = SAVE
+    if ((e.which == 83) && (e.altKey)) {//ALT+S = SAVE
       jsh.$root('.save:visible').first().trigger('click');
       handled = true;
     }
@@ -1124,10 +1150,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh.xDebugConsole.Toggle();
       handled = true;
     }
-    if (handled) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-    }
+    return handled;
   }
 
   XPage.ShowButtonGroup = function(e,obj){

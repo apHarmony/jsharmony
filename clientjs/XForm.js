@@ -306,7 +306,7 @@ exports = module.exports = function(jsh){
         data[field.name] = _this.defaults[field.name];
       }
       else if(field.hasDefault()){
-        data[field.name] = field.getDefault();
+        data[field.name] = field.getDefault(data);
       }
     });
   }
