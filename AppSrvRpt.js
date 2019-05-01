@@ -70,7 +70,7 @@ AppSrvRpt.prototype.queueReport = function (req, res, fullmodelid, Q, P, params,
   var fieldlist = thisapp.getFieldNames(req, model.fields, 'B');
   _.map(fieldlist, function (field) { if (!(field in Q)) Q[field] = ''; });
   
-  if (!thisapp.ParamCheck('Q', Q, _.map(fieldlist, function (field) { return '&' + field; }).concat(_.map(_.keys(req.jshsite.datalock), function(field) { return '|' + field; })))) { return errorHandler(-4, 'Invalid Parameters'); }
+  if (!thisapp.ParamCheck('Q', Q, _.map(fieldlist, function (field) { return '&' + field; }).concat(_.map((req?_.keys(req.jshsite.datalock):[]), function(field) { return '|' + field; })))) { return errorHandler(-4, 'Invalid Parameters'); }
   if (!thisapp.ParamCheck('P', P, [])) { return errorHandler(-4, 'Invalid Parameters'); }
   
   if(req && !params.fromBatch) jsh.Log.info("REPORT: " + req.originalUrl + " " + (req.user_id || '') + " " + (req.user_name || ''));
