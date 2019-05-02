@@ -31,6 +31,7 @@ exports = module.exports = function(){
     if ((typeof val == 'undefined') || (val === null)) return val;
     if (val.toString().length < 10) return val;
     val = val.toString();
+    val = this.phone_decode(val);
     if (val.length == 10) return '(' + val.substr(0, 3) + ') ' + val.substr(3, 3) + '-' + val.substr(6);
     return '(' + val.substr(0, 3) + ') ' + val.substr(3, 3) + '-' + val.substr(6,4) + '  ' + val.trim().substr(10);
   }
@@ -93,19 +94,6 @@ exports = module.exports = function(){
     if (!m.isValid()) m = this.parseDate(val);
     if (!m.isValid()) m = moment(new Date(val));
     return m.format("YYYY-MM-DDTHH:mm:ss.SSS");
-    
-    var dtstmp = Date.parse(val);
-    if(isNaN(dtstmp)){ return null; }
-    return moment(new Date(dtstmp)).format("YYYY-MM-DDTHH:mm:ss.SSS");
-    
-    var rslt = moment(new Date(val));
-    if(rslt.isValid()){
-  //		return rslt.toDate();
-      var dstr = rslt.toISOString();
-      dstr = dstr.substr(0,dstr.length-1);
-      return dstr;
-    }
-    return null;
   }
 
   XFormat.tstmp = function(val){ return this.date('MM/DD/YY HH:mm',val); }
@@ -162,7 +150,9 @@ exports = module.exports = function(){
   }
 
   XFormat.comma = function(val){
-    if(val==null) return '';
+    if(typeof val===undefined) return '';
+    if(val===null) return '';
+    if(isNaN(parseFloat(val))) return val;
     var n= val.toString().split(".");
     n[0] = n[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     return n.join(".");
@@ -183,13 +173,13 @@ exports = module.exports = function(){
 
   XFormat.ssn = function (val) {
     if ((typeof val == 'undefined') || (val === null)) return val;
+    val = this.ssn_decode(val.toString());
     if (val.toString().length != 9) return val;
     val = val.toString();
     return val.substr(0, 3) + '-' + val.substr(3, 2) + '-' + val.substr(5);
   }
 
   XFormat.ssn_decode = function (val) {
-    if (val === '') return val;
     if (val === null) return val;
     if (typeof val === 'undefined') return val;
     var rslt = (val||'').replace(/[^0-9]+/g, '');
@@ -198,13 +188,13 @@ exports = module.exports = function(){
 
   XFormat.ein = function (val) {
     if ((typeof val == 'undefined') || (val === null)) return val;
+    val = this.ein_decode(val.toString());
     if (val.toString().length != 9) return val;
     val = val.toString();
     return val.substr(0, 2) + '-' + val.substr(2);
   }
 
   XFormat.ein_decode = function (val) {
-    if (val === '') return val;
     if (val === null) return val;
     if (typeof val === 'undefined') return val;
     var rslt = (val||'').replace(/[^0-9]+/g, '');
@@ -212,8 +202,9 @@ exports = module.exports = function(){
   }
 
   XFormat.time = function (format, val) {
-    if (val == null) return val;
-    if (val == "") return val;
+    if (typeof val == 'undefined') return val;
+    if (val === null) return val;
+    if (val === "") return val;
     if (val instanceof Date) return val;
     
     var d = this.parseDate(val); //Strict parsing
@@ -237,7 +228,7 @@ exports = module.exports = function(){
     
     var rslt = null;
     if (val instanceof Date) rslt = moment(val);
-    else rslt = moment(new Date(val));
+    else rslt = moment(this.parseDate(val));
     if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm", true); //Strict parsing
     if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm a", true); //Strict parsing
     if (!rslt.isValid()) rslt = moment(val.trim(), "HH:mm", true); //Strict parsing
@@ -245,12 +236,15 @@ exports = module.exports = function(){
     if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm:ss a", true); //Strict parsing
     if (!rslt.isValid()) rslt = moment(val.trim(), "HH:mm:ss", true); //Strict parsing
     if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm:ss.SSSSSSSS a");
+    if (!rslt.isValid()) rslt = moment(new Date(val));
+    if (!rslt.isValid()) return null;
     
     return rslt.format("1970-01-01THH:mm:ss.SSS");
     //return m.format("HH:mm:ss.SSS");
   }
 
   XFormat.bool = function(val){
+    val = this.bool_decode(val);
     if (!_.isBoolean(val)) return val;
     if(val) return 'true';
     else return 'false';

@@ -17,7 +17,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var XFormat = require('../clientjs/XFormat.js');
+var XFormat = require('../clientjs/XFormat.js')();
 var assert = require('assert');
 var _ = require('lodash');
 var moment = require('moment');

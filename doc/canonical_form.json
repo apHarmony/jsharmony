@@ -236,7 +236,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                           { "icon": "insert", "text": "Add", "command": "XExt.Alert('insert' + context_item);", "actions": "IUD" }
                         ],
                        "expand_all": false, //Show nodes expanded by default
-                       "expand_to_selected": true
+                       "expand_to_selected": true //Defaults to true
                       },
                       {"value_true":"ON",   //checkbox params
                        "value_false":"OFF",

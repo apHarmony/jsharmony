@@ -830,7 +830,7 @@ exports = module.exports = function(jsh){
     ctrl.html(body);
     if (field && field.controlparams) {
       if (field.controlparams.expand_all) XExt.TreeExpandAll(ctrl);
-      else if ((typeof field.controlparams.expand_to_selected == 'undefined') || (field.controlparams.expand_to_selected)) XExt.TreeExpandToSelected(ctrl);
+      else if (field.controlparams.expand_to_selected) XExt.TreeExpandToSelected(ctrl);
     }
   }
 
@@ -949,7 +949,7 @@ exports = module.exports = function(jsh){
 
       jtree.find('.tree_item.tree_item_' + nodeid).addClass('selected');
       if (field && field.controlparams) {
-        if ((typeof field.controlparams.expand_to_selected == 'undefined') || (field.controlparams.expand_to_selected)) XExt.TreeExpandToSelected(ctrl);
+        if (field.controlparams.expand_to_selected) XExt.TreeExpandToSelected(ctrl);
       }
     }
 

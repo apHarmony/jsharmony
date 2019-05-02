@@ -36,7 +36,7 @@ for(var i=0;i<model.fields.length;i++){
     if((field.control=='textarea')||(field.control=='textzoom')) captionclass += ' xform_caption_textarea';
     else if(field.control=='htmlarea') captionclass += ' xform_caption_htmlarea';
     else if(field.control=='image') captionclass += ' xform_caption_image';
-    if(('caption' in field) && (field.caption.length > 0)) { 
+    if(('caption' in field) && (field.caption)) { 
       if((field.nl) && !('captionstyle' in field) && (dflt_captionstyle != "")){ 
         %><div class="<%=captionclass%> <%=xejs.iif(leadingfield,'leading')%>" style="<%=dflt_captionstyle%>"><%-xejs.escapeHTMLN(field.caption+((field.caption != '')?': ':''))%></div><%
       }
@@ -44,7 +44,7 @@ for(var i=0;i<model.fields.length;i++){
         %><div class="<%=captionclass%> <%=xejs.iif(leadingfield,'leading')%>" style="<%=field.captionstyle%>"><%-xejs.escapeHTMLN(field.caption+((field.caption != '')?': ':''))%></div><%
       }
     }
-    else if(model.onecolumn) {
+    else if(model.onecolumn && leadingfield) {
       %><div class="<%=captionclass%> <%=xejs.iif(leadingfield,'leading')%>" style="<%=field.captionstyle%>"></div><%
     }
   }

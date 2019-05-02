@@ -396,8 +396,8 @@ BODY
 <%-rootcss%> .xform_ctrl.tree {
   display:inline-block;
   border:1px solid #aaa;
-  width:200px;
-  height:150px;
+  width:300px;
+  height:250px;
   padding:4px 4px;
   overflow:auto;
   vertical-align:top;
