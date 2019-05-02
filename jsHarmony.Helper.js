@@ -502,6 +502,16 @@ exports.getStaticBinding = function(str){
   return undefined;
 }
 
+//Get custom formatters for client-side formatting
+exports.getCustomFormatters = function(){
+  var _this = this;
+  var rslt = {};
+  for(var fname in _this.CustomFormatters){
+    rslt[fname] = _this.CustomFormatters[fname].toString();
+  }
+  return rslt;
+}
+
 //Generate client-side validators
 exports.GetClientValidator = function (req, model, field) {
   var _this = this;

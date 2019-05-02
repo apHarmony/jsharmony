@@ -1522,6 +1522,8 @@ exports.ParseEntities = function () {
       if(field.always_editable && !field.unbound) _this.LogInit_WARNING(model.id + ' > ' + field.name + ': The field.always_editable property can only be used when field.unbound is set');
       //Check if the field has a type
       if(field.actions && field.name && !('type' in field) && !('value' in field) && (field.control != 'subform') && !field.unbound) _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Missing field.type property.  Set field.value or field.unbound if it should not be bound to the data layer.');
+      if(field.block && (model.layout=='grid' || model.layout=='multisel')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Model.layout='+model.layout+' does not support the field.block property');
+      if(!field.block && (field.blockstyle || field.blockclass)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Field.block must be set to true in order to use the field.blockstyle or field.blockclass properties');
       if(field.control && (model.layout=='grid') && !_.includes(['hidden','label','html','textbox','textzoom','password','date','textarea','dropdown','checkbox','button','linkbutton','file_download','image'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support ' + field.control + ' control');
       if(field.control && (model.layout=='multisel') && !_.includes(['hidden','label'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Multisel does not support ' + field.control + ' control');
       if(field.unbound && (model.layout=='multisel') && !_.includes(['hidden','label'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Multisel does not support unbound controls');
@@ -1778,6 +1780,16 @@ exports.ParseEntities = function () {
   //Validate password lengths
   for(var password_name in this.Config.passwords){
     if(!this.Config.passwords[password_name] || (this.Config.passwords[password_name].length < 60)) _this.LogInit_WARNING('jsh.Config.passwords > '+password_name+': Encryption passwords should be at least 60 characters');
+  }
+
+  //Validate CustomFormatters
+  for(var fname in _this.CustomFormatters){
+    var basename = fname;
+    if(Helper.endsWith(fname, '_decode')) basename = fname.substr(0,fname.length - 7);
+    if((fname in _this.CustomFormatters) && ((fname+'_decode') in _this.CustomFormatters)) continue;
+    if((fname != basename) && (fname in _this.CustomFormatters) && (basename in _this.CustomFormatters)) continue;
+    if(fname != basename) _this.LogInit_ERROR('jsh.CustomFormatters.'+fname+' > Base formatter jsh.CustomFormatters.'+basename+' not defined');
+    else _this.LogInit_ERROR('jsh.CustomFormatters.'+fname+' > Decode formatter jsh.CustomFormatters.'+fname+'_decode not defined');
   }
 };
 

@@ -65,6 +65,7 @@ function jsHarmony(config) {
   this.CustomControls = {};
   this.CustomControlQueries = {};
   this.XValidate = XValidate;
+  this.CustomFormatters = {};
   this.Popups = {};
   this.Cache = {};
   this.FontCache = {};

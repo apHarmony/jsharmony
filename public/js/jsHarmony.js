@@ -9568,265 +9568,304 @@ var $ = require('./jquery-1.11.2');
 var _ = require('lodash');
 var moment = require('moment');
 
-exports = module.exports = {};
+exports = module.exports = function(){
 
-//Decode must be idempotent
+  XFormat = {};
 
-exports.phone = function(val){
-	if(!_.isString(val)) return val;
-  if (val.length < 10) return val;
-  if (val.length == 10) return '(' + val.substr(0, 3) + ') ' + val.substr(3, 3) + '-' + val.substr(6);
-  return '(' + val.substr(0, 3) + ') ' + val.substr(3, 3) + '-' + val.substr(6,4) + '  ' + val.substr(10);
-}
+  //Decode must be idempotent
 
-exports.phone_decode = function(val){
-  if(val===null) return val;
-  if(typeof val == 'undefined') return val;
-	var rslt = val.toString().replace(/[^0-9]+/g,'');
-	if(rslt=='') return rslt;
-	while(rslt && (rslt[0]=='1')) rslt = rslt.substr(1);
-	return rslt;
-}
-
-exports.parseDate = function(val){
-  if(!val) return moment(null);
-  val = val.trim();
-  val = val.replace(/,/g,' ');
-  val = val.replace(/  /g,' ');
-  var rslt = moment(val, "YYYY-MM-DDTHH:mm:ss.SSS", true);
-  if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH:mm:ss", true);
-  if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH:mm", true);
-  if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH", true);
-  if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH:mm:ss.SSSZ", true);
-  if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH:mm:ssZ", true);
-  if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH:mmZ", true);
-  if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHHZ", true);
-  if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DD", true);
-  if(!rslt.isValid()) rslt = moment(val, "YY-MM-DD", true);
-  if(!rslt.isValid()) rslt = moment(val, "MM/DD/YYYY", true);
-  if(!rslt.isValid()) rslt = moment(val, "MM/DD/YY", true);
-  if(!rslt.isValid()) rslt = moment(val, "M/D/YYYY", true);
-  if(!rslt.isValid()) rslt = moment(val, "M/D/YY", true);
-  if(!rslt.isValid()) rslt = moment(val, "MMM D YYYY", true);
-  if(!rslt.isValid()) rslt = moment(val, "MMM DD YYYY", true);
-  if(!rslt.isValid()) rslt = moment(val, "MMMM D YYYY", true);
-  if(!rslt.isValid()) rslt = moment(val, "MMMM DD YYYY", true);
-  return rslt;
-}
-
-exports.date = function (format, val){
-  if (val == null) return val;
-  var rslt = this.parseDate(val);
-  if(!rslt.isValid()) rslt = moment(new Date(val));
-	if(rslt.isValid()) return rslt.format(format);
-	return '';
-}
-
-exports.date_decode = function (format, val){
-  if (val === '') return null;
-  if (val === null) return null;
-  var m = moment(val, format, true);
-  if (!m.isValid()) m = this.parseDate(val);
-  if (!m.isValid()) m = moment(new Date(val));
-  return m.format("YYYY-MM-DDTHH:mm:ss.SSS");
-  
-  var dtstmp = Date.parse(val);
-	if(isNaN(dtstmp)){ return null; }
-	return moment(new Date(dtstmp)).format("YYYY-MM-DDTHH:mm:ss.SSS");
-	
-	var rslt = moment(new Date(val));
-	if(rslt.isValid()){
-//		return rslt.toDate();
-		var dstr = rslt.toISOString();
-		dstr = dstr.substr(0,dstr.length-1);
-		return dstr;
-	}
-	return null;
-}
-
-exports.tstmp = function(val){ return this.date('MM/DD/YY HH:mm',val); }
-exports.tstmp_decode = function(val){ return this.date_decode('MM/DD/YY HH:mm',val); }
-
-exports.MMDDYY = function(val){ return this.date('MM/DD/YY',val); }
-exports.MMDDYY_decode = function (val){ return this.date_decode('MM/DD/YY', val); }
-
-exports.decimal = function (numdigits, val) {
-  if (isNaN(val)) return val;
-  if (val === '') return val;
-  if (val === null) return val;
-  return parseFloat(val).toFixed(numdigits);
-}
-
-exports.decimal_decode = function (numdigits, val) {
-  if (isNaN(val)) return val;
-  if (val === '') return val;
-  if (val === null) return val;
-  return parseFloat(val).toFixed(numdigits); //Do not remove digits
-}
-
-function decimalPlaces(number) {
-  if(!number) return 0;
-  var numarr = String(number).split(".");
-  if(numarr.length < 2) return 0;
-  return numarr[1].length;
-}
-
-exports.decimalext = function (numdigits, val) {
-  if (isNaN(val)) return val;
-  if (val === '') return val;
-  if (val === null) return val;
-  if (typeof val == 'undefined') return val;
-  var fval = parseFloat(val);
-  if (decimalPlaces(fval) > numdigits) return fval.toString();
-  return fval.toFixed(numdigits);
-}
-
-exports.decimalext_decode = function (numdigits, val) {
-  if (isNaN(val)) return val;
-  if (val === '') return val;
-  if (val === null) return val;
-  if (typeof val == 'undefined') return val;
-  return parseFloat(val);
-}
-
-exports.decimalcomma = function (numdigits, val){
-  return exports.comma(exports.decimal(numdigits, val));
-}
-
-exports.decimalcomma_decode = function (numdigits, val){
-  return exports.decimal_decode(numdigits, exports.comma_decode(val));
-}
-
-exports.comma = function(val){
-	if(val==null) return '';
-  var n= val.toString().split(".");
-  n[0] = n[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  return n.join(".");
-}
-
-function trimString(val){
-  return (val||'').replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g,'');
-}
-
-exports.comma_decode = function(val){
-	if (val === '') return val;
-  if (val === null) return val;
-  if (typeof val === 'undefined') return val;
-  var uval = trimString(String(val).replace(/,/g,''));
-  if (isNaN(uval)) return val;
-	return parseFloat(uval);
-}
-
-exports.ssn = function (val) {
-  if (!_.isString(val)) return val;
-  if (val.length != 9) return val;
-  return val.substr(0, 3) + '-' + val.substr(3, 2) + '-' + val.substr(5);
-}
-
-exports.ssn_decode = function (val) {
-  if (val === '') return val;
-  if (val === null) return val;
-  if (typeof val === 'undefined') return val;
-  var rslt = (val||'').replace(/[^0-9]+/g, '');
-  return rslt;
-}
-
-exports.ein = function (val) {
-  if (!_.isString(val)) return val;
-  if (val.length != 9) return val;
-  return val.substr(0, 2) + '-' + val.substr(2);
-}
-
-exports.ein_decode = function (val) {
-  if (val === '') return val;
-  if (val === null) return val;
-  if (typeof val === 'undefined') return val;
-  var rslt = (val||'').replace(/[^0-9]+/g, '');
-  return rslt;
-}
-
-exports.time = function (format, val) {
-  if (val == null) return val;
-  if (val == "") return val;
-  if (val instanceof Date) return val;
-  
-  var d = this.parseDate(val); //Strict parsing
-  if (!d.isValid()) d = moment(new Date(val));
-  if (!d.isValid()) d = moment(val.trim(), "hh:mm", true); //Strict parsing
-  if (!d.isValid()) d = moment(val.trim(), "hh:mm a");
-  if (d.isValid()) return d.format(format);
-  return '';
-}
-
-exports.time_decode = function (format, val) {
-  if (val === '') return null;
-  if (val === null) return null;
-  if (typeof val === undefined) return null;
-  
-  if (val.trim() == parseInt(val.trim()).toString()) {
-    var vint = parseInt(val.trim());
-    if (vint <= 0) val = "0";
-    val = vint.toString() + ":00"
+  XFormat.phone = function(val){
+    if ((typeof val == 'undefined') || (val === null)) return val;
+    if (val.toString().length < 10) return val;
+    val = val.toString();
+    if (val.length == 10) return '(' + val.substr(0, 3) + ') ' + val.substr(3, 3) + '-' + val.substr(6);
+    return '(' + val.substr(0, 3) + ') ' + val.substr(3, 3) + '-' + val.substr(6,4) + '  ' + val.trim().substr(10);
   }
-  
-  var rslt = null;
-  if (val instanceof Date) rslt = moment(val);
-  else rslt = moment(new Date(val));
-  if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm", true); //Strict parsing
-  if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm a", true); //Strict parsing
-  if (!rslt.isValid()) rslt = moment(val.trim(), "HH:mm", true); //Strict parsing
-  if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm:ss", true); //Strict parsing
-  if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm:ss a", true); //Strict parsing
-  if (!rslt.isValid()) rslt = moment(val.trim(), "HH:mm:ss", true); //Strict parsing
-  if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm:ss.SSSSSSSS a");
-  
-  return rslt.format("1970-01-01THH:mm:ss.SSS");
-  //return m.format("HH:mm:ss.SSS");
-}
 
-exports.bool = function(val){
-  if (!_.isBoolean(val)) return val;
-  if(val) return 'true';
-  else return 'false';
-}
+  XFormat.phone_decode = function(val){
+    if(val===null) return val;
+    if(typeof val == 'undefined') return val;
+    val = val.toString();
+    var rslt = '';
+    for(var i=0;i<val.length;i++){
+      if(rslt.length >= 10) break;
+      if(val[i].match(/[0-9]/)){
+        if(!rslt && val[i]=='1') continue;
+        rslt += val[i];
+      }
+    }
+    if(i < val.length) rslt += val.substr(i).trim();
+    if(rslt=='') return rslt;
+    return rslt;
+  }
 
-exports.bool_decode = function (val) {
-  if(typeof val == 'undefined') return false;
-  if(val===null) return false;
-  if(val==='') return false;
-  if(val===true) return true;
-  if(val===false) return false;
-  var valstr = val.toString().toUpperCase();
-  if((valstr==='TRUE')||(valstr==='T')||(valstr==='Y')||(valstr==='YES')||(valstr==='ON')||(valstr==='1')) return true;
-  if((valstr==='FALSE')||(valstr==='F')||(valstr==='N')||(valstr==='NO')||(valstr==='OFF')||(valstr==='0')) return false;
-  return (val?true:false);
-}
+  XFormat.parseDate = function(val){
+    if(!val) return moment(null);
+    val = val.trim();
+    val = val.replace(/,/g,' ');
+    val = val.replace(/  /g,' ');
+    var rslt = moment(val, "YYYY-MM-DDTHH:mm:ss.SSS", true);
+    if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH:mm:ss", true);
+    if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH:mm", true);
+    if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH", true);
+    if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH:mm:ss.SSSZ", true);
+    if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH:mm:ssZ", true);
+    if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHH:mmZ", true);
+    if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DDTHHZ", true);
+    if(!rslt.isValid()) rslt = moment(val, "YYYY-MM-DD", true);
+    if(!rslt.isValid()) rslt = moment(val, "YY-MM-DD", true);
+    if(!rslt.isValid()) rslt = moment(val, "MM/DD/YYYY", true);
+    if(!rslt.isValid()) rslt = moment(val, "MM/DD/YY", true);
+    if(!rslt.isValid()) rslt = moment(val, "M/D/YYYY", true);
+    if(!rslt.isValid()) rslt = moment(val, "M/D/YY", true);
+    if(!rslt.isValid()) rslt = moment(val, "MMM D YYYY", true);
+    if(!rslt.isValid()) rslt = moment(val, "MMM DD YYYY", true);
+    if(!rslt.isValid()) rslt = moment(val, "MMMM D YYYY", true);
+    if(!rslt.isValid()) rslt = moment(val, "MMMM DD YYYY", true);
+    return rslt;
+  }
 
-exports.Apply = function(format,val){
-	if(typeof val == 'undefined') return '###MISSING###';
-	if(typeof format != 'undefined'){
-		var format = format;
-		if(_.isString(format)) format = [format];
-		var fargs = [];
-		for(var i=1;i < format.length;i++) fargs.push(format[i]);
-		if(!(format[0] in this)){ return '###Invalid Format ' + format[0] + '###'; }
-		fargs.push(val);
-		val = this[format[0]].apply(this,fargs);
-	}
-  if(val == null) val = '';
-	return val;
-}
+  XFormat.date = function (format, val){
+    if (val == null) return val;
+    var rslt = this.parseDate(val);
+    if(!rslt.isValid()) rslt = moment(new Date(val));
+    if(rslt.isValid()) return rslt.format(format);
+    return '';
+  }
 
-exports.Decode = function(format, val){
-  if(typeof val == 'undefined') return val;
-  if(typeof format == 'undefined') return val;
-  if (_.isString(format)) return this[format + '_decode'](val);
-  else {
+  XFormat.date_decode = function (format, val){
+    if (val === '') return null;
+    if (val === null) return null;
+    var m = moment(val, format, true);
+    if (!m.isValid()) m = this.parseDate(val);
+    if (!m.isValid()) m = moment(new Date(val));
+    return m.format("YYYY-MM-DDTHH:mm:ss.SSS");
+    
+    var dtstmp = Date.parse(val);
+    if(isNaN(dtstmp)){ return null; }
+    return moment(new Date(dtstmp)).format("YYYY-MM-DDTHH:mm:ss.SSS");
+    
+    var rslt = moment(new Date(val));
+    if(rslt.isValid()){
+  //		return rslt.toDate();
+      var dstr = rslt.toISOString();
+      dstr = dstr.substr(0,dstr.length-1);
+      return dstr;
+    }
+    return null;
+  }
+
+  XFormat.tstmp = function(val){ return this.date('MM/DD/YY HH:mm',val); }
+  XFormat.tstmp_decode = function(val){ return this.date_decode('MM/DD/YY HH:mm',val); }
+
+  XFormat.MMDDYY = function(val){ return this.date('MM/DD/YY',val); }
+  XFormat.MMDDYY_decode = function (val){ return this.date_decode('MM/DD/YY', val); }
+
+  XFormat.decimal = function (numdigits, val) {
+    if (isNaN(val)) return val;
+    if (val === '') return val;
+    if (val === null) return val;
+    return parseFloat(val).toFixed(numdigits);
+  }
+
+  XFormat.decimal_decode = function (numdigits, val) {
+    if (isNaN(val)) return val;
+    if (val === '') return val;
+    if (val === null) return val;
+    return parseFloat(val).toFixed(numdigits); //Do not remove digits
+  }
+
+  function decimalPlaces(number) {
+    if(!number) return 0;
+    var numarr = String(number).split(".");
+    if(numarr.length < 2) return 0;
+    return numarr[1].length;
+  }
+
+  XFormat.decimalext = function (numdigits, val) {
+    if (isNaN(val)) return val;
+    if (val === '') return val;
+    if (val === null) return val;
+    if (typeof val == 'undefined') return val;
+    var fval = parseFloat(val);
+    if (decimalPlaces(fval) > numdigits) return fval.toString();
+    return fval.toFixed(numdigits);
+  }
+
+  XFormat.decimalext_decode = function (numdigits, val) {
+    if (isNaN(val)) return val;
+    if (val === '') return val;
+    if (val === null) return val;
+    if (typeof val == 'undefined') return val;
+    return parseFloat(val);
+  }
+
+  XFormat.decimalcomma = function (numdigits, val){
+    return XFormat.comma(XFormat.decimal(numdigits, val));
+  }
+
+  XFormat.decimalcomma_decode = function (numdigits, val){
+    return XFormat.decimal_decode(numdigits, XFormat.comma_decode(val));
+  }
+
+  XFormat.comma = function(val){
+    if(val==null) return '';
+    var n= val.toString().split(".");
+    n[0] = n[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return n.join(".");
+  }
+
+  function trimString(val){
+    return (val||'').replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g,'');
+  }
+
+  XFormat.comma_decode = function(val){
+    if (val === '') return val;
+    if (val === null) return val;
+    if (typeof val === 'undefined') return val;
+    var uval = trimString(String(val).replace(/,/g,''));
+    if (isNaN(uval)) return val;
+    return parseFloat(uval);
+  }
+
+  XFormat.ssn = function (val) {
+    if ((typeof val == 'undefined') || (val === null)) return val;
+    if (val.toString().length != 9) return val;
+    val = val.toString();
+    return val.substr(0, 3) + '-' + val.substr(3, 2) + '-' + val.substr(5);
+  }
+
+  XFormat.ssn_decode = function (val) {
+    if (val === '') return val;
+    if (val === null) return val;
+    if (typeof val === 'undefined') return val;
+    var rslt = (val||'').replace(/[^0-9]+/g, '');
+    return rslt;
+  }
+
+  XFormat.ein = function (val) {
+    if ((typeof val == 'undefined') || (val === null)) return val;
+    if (val.toString().length != 9) return val;
+    val = val.toString();
+    return val.substr(0, 2) + '-' + val.substr(2);
+  }
+
+  XFormat.ein_decode = function (val) {
+    if (val === '') return val;
+    if (val === null) return val;
+    if (typeof val === 'undefined') return val;
+    var rslt = (val||'').replace(/[^0-9]+/g, '');
+    return rslt;
+  }
+
+  XFormat.time = function (format, val) {
+    if (val == null) return val;
+    if (val == "") return val;
+    if (val instanceof Date) return val;
+    
+    var d = this.parseDate(val); //Strict parsing
+    if (!d.isValid()) d = moment(new Date(val));
+    if (!d.isValid()) d = moment(val.trim(), "hh:mm", true); //Strict parsing
+    if (!d.isValid()) d = moment(val.trim(), "hh:mm a");
+    if (d.isValid()) return d.format(format);
+    return '';
+  }
+
+  XFormat.time_decode = function (format, val) {
+    if (val === '') return null;
+    if (val === null) return null;
+    if (typeof val === undefined) return null;
+    
+    if (val.trim() == parseInt(val.trim()).toString()) {
+      var vint = parseInt(val.trim());
+      if (vint <= 0) val = "0";
+      val = vint.toString() + ":00"
+    }
+    
+    var rslt = null;
+    if (val instanceof Date) rslt = moment(val);
+    else rslt = moment(new Date(val));
+    if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm", true); //Strict parsing
+    if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm a", true); //Strict parsing
+    if (!rslt.isValid()) rslt = moment(val.trim(), "HH:mm", true); //Strict parsing
+    if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm:ss", true); //Strict parsing
+    if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm:ss a", true); //Strict parsing
+    if (!rslt.isValid()) rslt = moment(val.trim(), "HH:mm:ss", true); //Strict parsing
+    if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm:ss.SSSSSSSS a");
+    
+    return rslt.format("1970-01-01THH:mm:ss.SSS");
+    //return m.format("HH:mm:ss.SSS");
+  }
+
+  XFormat.bool = function(val){
+    if (!_.isBoolean(val)) return val;
+    if(val) return 'true';
+    else return 'false';
+  }
+
+  XFormat.bool_decode = function (val) {
+    if(typeof val == 'undefined') return false;
+    if(val===null) return false;
+    if(val==='') return false;
+    if(val===true) return true;
+    if(val===false) return false;
+    var valstr = val.toString().toUpperCase();
+    if((valstr==='TRUE')||(valstr==='T')||(valstr==='Y')||(valstr==='YES')||(valstr==='ON')||(valstr==='1')) return true;
+    if((valstr==='FALSE')||(valstr==='F')||(valstr==='N')||(valstr==='NO')||(valstr==='OFF')||(valstr==='0')) return false;
+    return (val?true:false);
+  }
+
+  XFormat.parseFormat = function(format){
+    if(_.isArray(format)) return format;
+    format = (format||'').toString();
+    if(format.indexOf(':') < 0) return [format];
+    var rslt = [];
+    rslt.push(format.substr(0, format.indexOf(':')));
+    var args = format.substr(format.indexOf(':')+1);
+    try{
+      args = eval('['+args+']');
+    }
+    catch(ex){
+      throw new Error('Invalid syntax in format: '+format);
+    }
+    rslt = rslt.concat(args);
+    return rslt;
+  }
+
+  XFormat.Apply = function(format,val){
+    if(typeof val == 'undefined') return '###MISSING###';
+    if(format){
+      format = XFormat.parseFormat(format);
+      if(!(format[0] in this)){ return '###Invalid Format ' + format[0] + '###'; }
+      var fargs = [];
+      for(var i=1;i < format.length;i++) fargs.push(format[i]);
+      fargs.push(val);
+      val = this[format[0]].apply(this,fargs);
+    }
+    if(typeof val == 'undefined') val = '';
+    else if(val === null) val = '';
+    return val;
+  }
+
+  XFormat.Decode = function(format, val){
+    if(typeof val == 'undefined') return val;
+    if(!format) return val;
+    format = XFormat.parseFormat(format);
     var fargs = [];
     for (var i = 1; i < format.length; i++) fargs.push(format[i]);
     fargs.push(val);
+    if(!((format[0] + '_decode') in this)) throw new Error('Missing format function: '+ format[0] + '_decode');
     return this[format[0] + '_decode'].apply(this, fargs);
   }
+
+  XFormat.Add = function(formatters){
+    if(!formatters) return;
+    for(var fname in formatters){
+      XFormat[fname] = eval('('+formatters[fname]+')');
+    }
+  }
+
+  return XFormat;
 }
 },{"./jquery-1.11.2":24,"lodash":31,"moment":32}],16:[function(require,module,exports){
 /*
@@ -21496,7 +21535,7 @@ var jsHarmony = function(options){
   this.XGrid = XGrid(this);
   this.XForm = XForm(this);
   this.XExt = XExt(this);
-  this.XFormat = XFormat;
+  this.XFormat = XFormat();
   this.XValidate = XValidate;
   this.XValidate.jsh = this;
   this.XSearch = XSearch(this);

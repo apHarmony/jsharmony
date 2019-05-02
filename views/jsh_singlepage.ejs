@@ -54,6 +54,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.Config.debug_params = { ignore_globals: <%-JSON.stringify(jsh.Config.debug_params.ignore_globals)%>, monitor_globals: <%-JSON.stringify(jsh.Config.debug_params.monitor_globals)%> };
   jsh.Config.require_html5_after_login = <%-JSON.stringify(jsh.Config.require_html5_after_login)%>;
   jsh.globalparams = <%-JSON.stringify(req.jshsite.getGlobalParams(req))%>;
+  jsh.XFormat.Add(<%-JSON.stringify(req.getJSH().getCustomFormatters())%>);
   jsh.singlepage = true;
   jsh.prev_title = '';
   jsh.prev_title_src = '';
