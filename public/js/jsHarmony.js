@@ -9158,6 +9158,7 @@ exports = module.exports = function(jsh){
   }
   XForm.prototype.NewRow = function (){
     var rslt = this.ApplyDefaults(new this.DataType());
+    this.ApplyUnboundDefaults(rslt);
     this.DataSet.push(rslt);
     this.IsDirty = true;
     return rslt;
@@ -9227,8 +9228,8 @@ exports = module.exports = function(jsh){
   XForm.prototype.ApplyDefaults = function(data){
     var _this = this;
     var rslt = data;
-    if(rslt._is_insert && ('defaults' in this)){
-      _.each(this.defaults, function (val, fieldname){
+    if(rslt._is_insert){
+      _.each(_this.defaults, function (val, fieldname){
         if(rslt[fieldname]) return; //If field is set via GET, do not overwrite
         if(fieldname in rslt){
           if(val && val.toString().indexOf('js:')==0){
@@ -9239,6 +9240,14 @@ exports = module.exports = function(jsh){
             val = jsh.XExt.JSEval(js,this,evalparams);
           }
           rslt[fieldname] = val;
+        }
+      });
+      _.each(_this.DataType.prototype.Fields, function(field){
+        if(!field.name || field.unbound) return;
+        if(jsh._GET && (field.name in jsh._GET)) data[field.name] = jsh._GET[field.name];
+        else if(field.name in _this.defaults){ }
+        else if(field.hasDefault()){
+          data[field.name] = jsh.XFormat.Decode(field.format, field.getDefault(data));
         }
       });
     }
@@ -9264,7 +9273,7 @@ exports = module.exports = function(jsh){
         data[field.name] = _this.defaults[field.name];
       }
       else if(field.hasDefault()){
-        data[field.name] = field.getDefault(data);
+        data[field.name] = jsh.XFormat.Decode(field.format, field.getDefault(data));
       }
     });
   }
