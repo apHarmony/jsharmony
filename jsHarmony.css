@@ -533,9 +533,6 @@ CUSTOM CONTROLS
 <%-rootcss%> .xdate_mmddyy {
 	width:86px;
 }
-<%-rootcss%> .xtstmp {
-	width:120px;
-}
 <%-rootcss%> .xdropdown_VS {
 	width:50px;
 }
@@ -615,6 +612,13 @@ CUSTOM CONTROLS
   border-radius:5px;
   padding:10px 15px;
   background-color:#ddeedd;
+  margin:10px 0;
+}
+<%-rootcss%> .xlabel_error {
+  display:block;
+  border-radius:5px;
+  padding:10px 15px;
+  background-color:#ffb8b8;
   margin:10px 0;
 }
 <%-rootcss%> .xtextbox_VS {

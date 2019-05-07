@@ -10,11 +10,6 @@
 		"format":["date","MM/DD/YYYY"],
 		"controlclass":"xdate_mmddyy"
   },
-	"tstmp":{
-		"control":"date",
-		"format":["date","MM/DD/YY hh:mm A"],
-		"controlclass":"xtstmp"
-  },
   "label_mmddyyyy":{
 		"control":"label",
 		"format":["date","MM/DD/YYYY"],
@@ -102,6 +97,10 @@
   "label_notification":{
 		"control":"label",
 		"controlclass":"xlabel_notification"
+  },
+  "label_error":{
+		"control":"label",
+		"controlclass":"xlabel_error"
 	},
 	"textbox_VS":{
 		"control":"textbox",
