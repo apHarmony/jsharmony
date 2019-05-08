@@ -7607,12 +7607,12 @@ exports = module.exports = function(jsh){
   XExt.getOpenerJSH = function(capabilities){
     if (window.opener) {
       var pjsh = window.opener[jsh.getInstance()];
+      if(!pjsh || !pjsh.XPage) return;
+      if(pjsh == jsh) return;
       var hasCapabilities = true;
-      if(!pjsh.XPage) return;
       if(capabilities) _.each(capabilities, function(capability){
         if(!pjsh.XPage[capability]) hasCapabilities = false;
       });
-      if(pjsh == jsh) return;
       if(hasCapabilities) return pjsh;
     }
   }

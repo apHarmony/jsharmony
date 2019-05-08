@@ -1187,6 +1187,9 @@ exports.ParseEntities = function () {
       }
       else if(field.enable_search) field.actions += 'S';
 
+      //Apply "disable_search" property
+      if(!('disable_search' in field) && !('disable_search_all' in field) && !Helper.hasAction(field.actions,'BS')) field.disable_search = true;
+
       //Resolve Custom Types / Apply additional properties inherited from DataType definition
       codegen.resolveType(sqlext, field);
 

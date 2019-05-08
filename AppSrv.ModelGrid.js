@@ -133,6 +133,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
           var searchlistfields = this.getFieldsByName(model.fields, searchlist);
           _.each(searchlistfields, function (field) {
             if(field.disable_search_all) return;
+            if(!('disable_search_all' in field) && field.disable_search) return;
             var searchtermsql = _this.addSearchTerm(req, model, field, i, search_value, search_comparison, sql_ptypes, sql_params, verrors, { search_all: true });
             if (searchtermsql) {
               if (searchall.length) searchall.push('or');

@@ -151,8 +151,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     rootxmodel.controller.form.ExecuteTrans(dbtasks, function (rslt) {
       //On successful API call
       if (options.onComplete && (options.onComplete(rslt) === false)) return;
-      //Refresh any parent form
-      XPage.RefreshParent();
       //Run the "SaveComplete" handler on each model (restore unbound fields)
       for(var modelid in jsh.XModels){
         var xmodel = jsh.XModels[modelid];
@@ -203,7 +201,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         });
         if (!bubble) return;
 
+        //Refresh any parent form
+        XPage.RefreshParent();
+
+        //Refresh the page to load the "update" form
         XExt.navTo(url);
+
         return;
       }
 
@@ -217,6 +220,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if (!bubble) return;
 
       console.log('Save complete');
+      //Refresh any parent form
+      XPage.RefreshParent();
       //Refresh the database data
       XPage.Select({ force: true }, function () {
         console.log('Reselect complete');
@@ -343,7 +348,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           if (typeof xmodel.oninit != 'undefined') xmodel.oninit(xmodel);
         });
         //Focus on the first element on the page
-        jsh.$root('input,select,textarea').first().focus();
+        jsh.$root('input,select,textarea,.xlookup').not('input[type=hidden]').has(':visible').first().focus();
         XPage.Select({ modelid: jsh.XModels_root, force: true }, function () {
           jsh.InitControls();
           XPage.LayoutOneColumn();

@@ -398,7 +398,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     
     xform.NavTo(rowid,false);
     var jobj = jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']");
-    var newobj = $(jobj).find('.xform_ctrl.editable:visible').not('input[type=hidden]').first();
+    var newobj = $(jobj).find('.xform_ctrl.editable:visible,.xlookup:visible').not('input[type=hidden]').first();
     if(newobj.length){
       xeditablegrid.SetFocus(newobj[0], null, function(){
         if(onSelected) onSelected();
@@ -444,7 +444,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
     var oldindex = xform.Index;
     xform.NavTo(rowid,false);
-    var newobj = $(jobj).find('.xform_ctrl.editable:visible').not('input[type=hidden]').first();
+    var newobj = $(jobj).find('.xform_ctrl.editable:visible,.xlookup:visible').not('input[type=hidden]').first();
     newobj.focus();
     if(xgrid.OnRowBind) xgrid.OnRowBind(jobj, newrow);
     xeditablegrid.CurrentCell = document.activeElement;
