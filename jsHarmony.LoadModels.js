@@ -1541,6 +1541,7 @@ exports.ParseEntities = function () {
       if(field.unbound && !Helper.hasAction(field.actions, 'IU') && Helper.hasAction(model.actions, 'IU') && field.always_editable) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Unbound fields that do not have "IU" actions should not have field.always_editable set');
       if(((field.control == 'file_upload') || (field.control == 'file_download') || (field.control == 'image')) && (field.type != 'file')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The ' + field.control + ' control requires field.type="file"');
       if(((field.control == 'file_download') || (field.control == 'image')) && Helper.hasAction(field.actions, 'IU')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The ' + field.control + ' control field.actions must be "B" (browse-only).');
+      if((model.layout=='grid')&&(model.sqlselect)&&((model.sqlselect.indexOf('%%%ROWSTART%%%') < 0)||(model.sqlselect.indexOf('%%%ROWCOUNT%%%') < 0)) && (model.sqlselect.indexOf('%%%SQLSUFFIX%%%') < 0)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid with model.sqlselect defined must use either %%%SQLSUFFIX%%% or (%%%ROWSTART%%% and %%%ROWCOUNT%%%) to implement paging');
       //field.type=encascii, check if password is defined
       if(field.type=='encascii'){
         if(model.layout=='grid') _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support field.type="encascii" (Use field.type="hash" for searching encrypted values)');
@@ -1861,7 +1862,7 @@ exports.AddSqlParamsFieldFlags = function(model, element, desc){
 
 exports.CheckDatalockSQL = function(model, sql, desc){
   if(!sql) return;
-  if (!(sql.indexOf('%%%DATALOCKS%%%') >= 0)) this.LogInit_ERROR(model.id + ' > ' + desc + ': SQL missing %%%DATALOCKS%%% in query');
+  if ((sql.indexOf('%%%DATALOCKS%%%') < 0) && (sql.indexOf('%%%SQLSUFFIX%%%') < 0)) this.LogInit_ERROR(model.id + ' > ' + desc + ': SQL missing %%%DATALOCKS%%% in query');
 };
 
 exports.AddFieldDatalock = function(model, field, siteid, datalockid, datalockSearchOptions){
