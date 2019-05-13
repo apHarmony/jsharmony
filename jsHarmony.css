@@ -530,7 +530,8 @@ CUSTOM CONTROLS
 ===============
 */
 
-<%-rootcss%> .xdate_mmddyy {
+<%-rootcss%> .xdate_mmddyy,
+<%-rootcss%> .xdate_mmddyyyy {
 	width:86px;
 }
 <%-rootcss%> .xdropdown_VS {
@@ -539,7 +540,8 @@ CUSTOM CONTROLS
 <%-rootcss%> .xdropdown_S {
 	width:125px;
 }
-<%-rootcss%> .xdropdown_M{
+<%-rootcss%> .xdropdown_M,
+<%-rootcss%> .xdropdown_2 {
 	width:240px;
 }
 <%-rootcss%> .xdropdown_L{
@@ -627,7 +629,8 @@ CUSTOM CONTROLS
 <%-rootcss%> .xtextbox_S {
 	width:117px;
 }
-<%-rootcss%> .xtextbox_M {
+<%-rootcss%> .xtextbox_M,
+<%-rootcss%> .xtextbox_2 {
 	width:233px;
 }
 <%-rootcss%> .xtextbox_L {

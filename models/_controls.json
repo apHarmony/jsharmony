@@ -1,5 +1,5 @@
 {
-  "comment":"*** Default Controls ***",
+  "comment":"*** Default jsHarmony Custom Controls ***",
   "date_mmddyy":{
 		"control":"date",
 		"format":["date","MM/DD/YY"],
@@ -8,12 +8,12 @@
 	"date_mmddyyyy":{
 		"control":"date",
 		"format":["date","MM/DD/YYYY"],
-		"controlclass":"xdate_mmddyy"
+		"controlclass":"xdate_mmddyyyy"
   },
   "label_mmddyyyy":{
 		"control":"label",
 		"format":["date","MM/DD/YYYY"],
-		"controlclass":"xlabel_mmddyy"
+		"controlclass":"xlabel_mmddyyyy"
   },
   "label_hhmmss":{
 		"control":"label",
@@ -39,7 +39,7 @@
 	},
 	"dropdown_2":{
 		"control":"dropdown",
-		"controlclass":"xdropdown_M",
+		"controlclass":"xdropdown_2",
 		"captionclass":"xcaption_2"
 	},
 	"dropdown_L":{
@@ -116,7 +116,7 @@
 	},
 	"textbox_2":{
 		"control":"textbox",
-		"controlclass":"xtextbox_M",
+		"controlclass":"xtextbox_2",
 		"captionclass":"xcaption_2"
 	},
 	"textbox_L":{
