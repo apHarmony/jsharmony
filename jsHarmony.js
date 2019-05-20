@@ -235,6 +235,8 @@ jsHarmony.prototype.Init = function(init_cb){
     function(cb){
       //Initialize Modules
       async.eachSeries(_this.Modules, function(module, module_cb){
+        module.transform.Validate();
+        module.transform.Apply();
         module.Init(module_cb);
       }, cb);
     },

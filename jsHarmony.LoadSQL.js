@@ -69,10 +69,13 @@ exports.AddGlobalSQLParams = function(sqlFuncs, items, prefix){
   }
 };
 
-exports.LoadSQL = function (db, dir, type, module) {
-  var rslt = this.LoadSQLFromFolder(dir, type, module);
+exports.LoadSQL = function (db, dir, type, moduleName) {
+  var rslt = this.LoadSQLFromFolder(dir, type, moduleName);
   var sqlext = db.SQLExt;
-  for(var funcName in rslt.Funcs) sqlext.Funcs[funcName] = rslt.Funcs[funcName];
+  for(var funcName in rslt.Funcs){
+    sqlext.Funcs[funcName] = rslt.Funcs[funcName];
+    sqlext.Meta.FuncSource[funcName] = moduleName;
+  }
   for(var datatypeid in rslt.CustomDataTypes) sqlext.CustomDataTypes[datatypeid] = rslt.CustomDataTypes[datatypeid];
   sqlext.Scripts = _.merge(sqlext.Scripts, rslt.Scripts);
 };
@@ -131,7 +134,7 @@ exports.LoadSQLFiles = function(dir, options){
   return rslt;
 };
 
-exports.LoadSQLFromFolder = function (dir, type, module, rslt) {
+exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
 
   //Post-process - extract script prefix if in aaa.bbb.sql format
   function processScriptPrefix(node){
@@ -207,7 +210,7 @@ exports.LoadSQLFromFolder = function (dir, type, module, rslt) {
   //Load SQL Scripts
   var scriptsdir = dir+'scripts/';
   d = _this.LoadSQLFiles(scriptsdir, { ignoreDirectories: false, filterType: type });
-  if(module && (d.length > 0)){
+  if(moduleName && (d.length > 0)){
     var scripts = {};
 
     //Process folders
@@ -236,7 +239,7 @@ exports.LoadSQLFromFolder = function (dir, type, module, rslt) {
 
     processScriptPrefix(scripts);
 
-    rslt.Scripts[module] = scripts;
+    rslt.Scripts[moduleName] = scripts;
   }
 
   return rslt;

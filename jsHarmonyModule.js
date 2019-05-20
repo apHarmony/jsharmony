@@ -18,7 +18,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var jsHarmonyConfig = require('./jsHarmonyConfig.js');
+var jsHarmonyModuleTransform = require('./jsHarmonyModuleTransform.js');
 var Helper = require('./Helper.js');
+var async = require('async');
 
 function jsHarmonyModule(name){
   this.jsh = null;  //Set to target during jsh.AddModule
@@ -29,11 +31,12 @@ function jsHarmonyModule(name){
   this.using = [
     //Array of namespaces to import
   ];
+  this.transform = new jsHarmonyModuleTransform(this);
 
   //Populated in jsh.SetModuleNamespace, if not initially set
   this.schema = null;    //Database schema
   this.namespace = null; //jsHarmony Model Namespace
-  this.dependencies = []; //List of module names, puplat
+  this.dependencies = []; //List of module names
 }
 jsHarmonyModule.prototype.getModelPath = function(){
   if(this.Config.moduledir) return this.Config.moduledir+'/models/';
