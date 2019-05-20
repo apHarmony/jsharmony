@@ -34,8 +34,17 @@ function jsHarmonyModuleTransform(module){
   };
 };
 
+jsHarmonyModuleTransform.prototype.hasTransforms = function(){
+  if(!_.isEmpty(this.tables)) return true;
+  if(!_.isEmpty(this.fields)) return true;
+  if(!_.isEmpty(this.models)) return true;
+  if(!_.isEmpty(this.sql)) return true;
+  return false;
+}
+
 jsHarmonyModuleTransform.prototype.Validate = function(){
   var _this = this;
+  if(!_this.module.jsh){ if(this.hasTransforms()) throw new Error('Cannot Validate Transforms: jsHarmony Module '+_this.module.name+' missing reference to jsh.'); return; }
 
   //Check for conflicts on keys
   var allkeys = {};
@@ -72,11 +81,16 @@ jsHarmonyModuleTransform.prototype.Validate = function(){
 
 jsHarmonyModuleTransform.prototype.Add = function(transform){
   var _this = this;
+
   if(!transform) return;
   _.each(['tables','fields','models','sql'], function(elem){
     if(transform[elem]){
       for(var prop in transform[elem]){
-        if(!(prop in _this[elem])) _this.module.jsh.Log.error('Error adding ' + _this.module.name + ' transform: Invalid ' + elem + ' property: '+prop);
+        if(!(prop in _this[elem])){
+          var errmsg = 'Error adding ' + _this.module.name + ' transform: Invalid ' + elem + ' property: '+prop;
+          if(_this.module.jsh) _this.module.jsh.Log.error(errmsg);
+          else throw new Error(errmsg);
+        }
         else _this[elem][prop] = transform[elem][prop];
       }
     }
@@ -90,6 +104,8 @@ jsHarmonyModuleTransform.prototype.Add = function(transform){
 jsHarmonyModuleTransform.prototype.Apply = function(){
   var _this = this;
   var jsh = _this.module.jsh;
+  if(!jsh){ if(this.hasTransforms()) throw new Error('Cannot Apply Transforms: jsHarmony Module '+_this.module.name+' missing reference to jsh.'); return; }
+
   //For each database
   _.each(jsh.DB, function(db, dbid){
     var sqlext = db.SQLExt;

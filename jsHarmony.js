@@ -187,6 +187,10 @@ jsHarmony.prototype.Init = function(init_cb){
       });
     },
     function(cb){
+      _.each(_this.Modules, function(module){
+        module.transform.Validate();
+        module.transform.Apply();
+      });
       Helper.triggerAsync(_this.Config.onDBDriverLoaded, cb, _this);
     },
     function(cb){
@@ -235,8 +239,6 @@ jsHarmony.prototype.Init = function(init_cb){
     function(cb){
       //Initialize Modules
       async.eachSeries(_this.Modules, function(module, module_cb){
-        module.transform.Validate();
-        module.transform.Apply();
         module.Init(module_cb);
       }, cb);
     },
