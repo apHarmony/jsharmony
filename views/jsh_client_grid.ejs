@@ -175,7 +175,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
             <input type="hidden" data-id="<%=field.name%>_dbexists" class="<%=field.name%>_dbexists xform_file_dbexists xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" />
         <% }
         //Add a hidden field for field value if it is both static and updatable
-        if(XExt.hasAction(field.actions,'IU') && _.includes(['html','label','linkbutton','button'],field.control)){
+        if(XExt.hasAction(field.actions,'BIU') && _.includes(['html','label','linkbutton','button'],field.control)){
           %><input data-id="<%=field.name%>_field_value" type="hidden" class="<%=field.name%>_field_value xform_ctrl xelem<%=model.class%>" value="<%=xejs.GetValue(field)%>" /><%
         }
         if(field.popuplov){ %><a href="#" data-id="<%=field.name%>_xlookup" class="xform_ctrl xlookup icon <%=field.name%>_xlookup" data-codeval="<%=field.controlparams.codeval%>" data-model="<%=model.id%>" onclick="<%-instance%>.XExt.popupShow('<%=field.model.id%>','<%=field.name%>','<%=field.caption_ext||field.caption%> Selection',<%-instance%>.$(this).prev('.<%=field.name%>'),this,{rowid: <%%=rowid%%>,OnControlUpdate:function(obj,e){ <%-instance%>.XModels['<%=model.id%>'].controller.editablegrid.ControlUpdate(obj,e); }})"><img src="/images/icon_search.png" height="14" style="position:relative;top:-1px;" /></a><% }

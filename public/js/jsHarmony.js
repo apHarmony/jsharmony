@@ -6574,7 +6574,7 @@ exports = module.exports = function(jsh){
     var fieldselector = '.' + field.name + '.xelem' + xmodel.class;
     var jctrl = parentobj.find(fieldselector);
     //Apply value to hidden field if updateable non-control element
-    if(jsh.XExt.hasAction(field.actions,'IU') && _.includes(['html','label','linkbutton','button'],field.control)){
+    if(jsh.XExt.hasAction(field.actions,'BIU') && _.includes(['html','label','linkbutton','button'],field.control)){
       var jctrl_hidden = parentobj.find('.'+field.name+'_field_value.xelem'+xmodel.class);
       jctrl_hidden.val(val);
     }
