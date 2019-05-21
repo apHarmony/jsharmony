@@ -72,17 +72,21 @@ exports = module.exports = function(jsh){
     }
     return sources;
   }
-
+  
   XDebugConsole.prototype.Toggle = function(){
-    if(!this.isInitialized) this.Init();
     var action='';
-
-    if (this.settings.enabled){
-      this.settings.enabled = 0;
-      action='close';
-    }else{
+    if(!this.isInitialized) {
+      this.Init();
       this.settings.enabled = 1;
       action='expand';
+    }else{
+      if (this.settings.enabled){
+        this.settings.enabled = 0;
+        action='close';
+      }else{
+        this.settings.enabled = 1;
+        action='expand';
+      }
     }
     this.setWebSocketListener();
     this.setXMLHttpRequestListener();
