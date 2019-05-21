@@ -9245,7 +9245,7 @@ exports = module.exports = function(jsh){
       _.each(_this.DataType.prototype.Fields, function(field){
         if(!field.name || field.unbound) return;
         if(jsh._GET && (field.name in jsh._GET)) data[field.name] = jsh._GET[field.name];
-        else if(field.name in _this.defaults){ }
+        else if(_this.defaults && (field.name in _this.defaults)){ }
         else if(field.hasDefault()){
           data[field.name] = jsh.XFormat.Decode(field.format, field.getDefault(data));
         }

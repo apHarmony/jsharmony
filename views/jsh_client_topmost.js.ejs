@@ -348,7 +348,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           if (typeof xmodel.oninit != 'undefined') xmodel.oninit(xmodel);
         });
         //Focus on the first element on the page
-        jsh.$root('input,select,textarea,.xlookup').not('input[type=hidden]').has(':visible').first().focus();
+        var firstControl = jsh.$root('input,select,textarea,.xlookup').not('input[type=hidden]').filter(':visible').first();
+        if(firstControl && firstControl.length && !firstControl.is('.datepicker')) firstControl.focus();
         XPage.Select({ modelid: jsh.XModels_root, force: true }, function () {
           jsh.InitControls();
           XPage.LayoutOneColumn();
