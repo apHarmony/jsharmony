@@ -582,7 +582,8 @@ exports.ParseEntities = function () {
     if (!('actions' in model)){
       if((model.layout=='exec')||(model.layout=='report')||(model.layout=='multisel')) model.actions = 'BU';
       else if(model.layout=='grid'){
-        if(!model.table && model.sqlselect){
+        if(model.grid_static) model.actions = 'B';
+        else if(!model.table && model.sqlselect){
           model.actions = 'B';
           if(model.sqlinsert) model.actions += 'I';
           if(model.sqlupdate) model.actions += 'U';
@@ -1476,7 +1477,7 @@ exports.ParseEntities = function () {
       'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings', '_childbindings', '_parentmodels', '_auto', '_sysconfig', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
       'pagesettings', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
-      'grid_require_search', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
+      'grid_require_search', 'grid_static', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
       'js', 'ejs', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
@@ -1597,6 +1598,7 @@ exports.ParseEntities = function () {
     if((model.layout=='exec')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_ERROR(model.id + ': Exec layout only supports BU actions');
     else if((model.layout=='multisel')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_ERROR(model.id + ': Multisel layout only supports BU actions');
     else if((model.layout=='report')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_ERROR(model.id + ': Report layout only supports BU actions');
+    if((model.layout=='grid')&&model.grid_static&&(Helper.hasAction(model.actions, 'IUD'))) _this.LogInit_ERROR(model.id + ': The model.grid_static property cannot be used with IUD actions');
 
     //Generate Validators
     _.each(model.fields, function (field) {

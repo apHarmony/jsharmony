@@ -127,6 +127,8 @@ var jsHarmony = function(options){
   this.xDialog = [];
   this.xPopupStack = [];
   this.xfileuploadLoader = null;
+  this.appStartTime = Date.now();
+  this.pageStartTime = Date.now();
 
   //jsh_client_topmost
   this.is_insert = false;

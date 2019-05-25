@@ -18,6 +18,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var $ = require('./jquery-1.11.2');
+var _ = require('lodash');
 
 exports = module.exports = function(jsh){
 
@@ -304,26 +305,34 @@ exports = module.exports = function(jsh){
     var modelid = _this.modelid;
     var xmodel = (modelid? jsh.XModels[modelid] : null);
     var xfields = (xmodel ? xmodel.fields : []);
-    jobj.find('.xelem' + xmodel.class).not('.xelem' + xmodel.class + '.checkbox').keyup(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
-    jobj.find('.xelem' + xmodel.class).change(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
-    jobj.find('.xelem' + xmodel.class + '.checkbox').click(function (e) { if (!$(this).hasClass('editable')) return; return _this.CheckboxUpdate(this, e); });
-    jobj.find('.xelem' + xmodel.class + '.datepicker').each(function () {
-      if (!$(this).hasClass('editable')) return;
-      var ctrl = this;
-      var dateformat = jsh.DEFAULT_DATEFORMAT;
-      var fname = $(this).data('id');
-      var xfield = xfields[fname];
-      if (xfield && xfield.controlparams && xfield.controlparams.dateformat) dateformat = xfield.controlparams.dateformat;
-      $(this).datepicker({
-        changeMonth: true, changeYear: true, dateFormat: dateformat, duration: '', showAnim: '', onSelect: function () {
-          jsh.ignorefocusHandler = true;
-          window.setTimeout(function () {
-            window.setTimeout(function () { $(ctrl).next('.datepicker_handle').focus(); jsh.ignorefocusHandler = false; _this.ControlUpdate(ctrl); }, 1);
-          }, 1);
-        }
-      });
+
+    jobj.find('.xelem' + xmodel.class).each(function(){
+      //Ignore hidden fields
+      if((this.nodeName.toLowerCase()=='input')&&(this.type.toLowerCase()=='hidden')) return;
+      var jobj = $(this);
+      var classList = this.classList||[];
+      if(!_.includes(classList,'checkbox')){
+        if(_.includes(classList, 'editable')) jobj.keyup(function (e) { return _this.ControlUpdate(this, e); });
+        jobj.focus(function (e) { return _this.SetFocus(this, e); });
+      }
+      jobj.change(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
+      if(_.includes(classList, 'editable')) if(_.includes(classList,'checkbox')) jobj.click(function (e) { return _this.CheckboxUpdate(this, e); });
+      if(_.includes(classList,'datepicker') && _.includes(classList,'editable')){
+        var ctrl = this;
+        var dateformat = jsh.DEFAULT_DATEFORMAT;
+        var fname = $(this).data('id');
+        var xfield = xfields[fname];
+        if (xfield && xfield.controlparams && xfield.controlparams.dateformat) dateformat = xfield.controlparams.dateformat;
+        $(this).datepicker({
+          changeMonth: true, changeYear: true, dateFormat: dateformat, duration: '', showAnim: '', onSelect: function () {
+            jsh.ignorefocusHandler = true;
+            window.setTimeout(function () {
+              window.setTimeout(function () { $(ctrl).next('.datepicker_handle').focus(); jsh.ignorefocusHandler = false; _this.ControlUpdate(ctrl); }, 1);
+            }, 1);
+          }
+        });
+      }
     });
-    jobj.find('.xelem' + xmodel.class).not('.xelem' + xmodel.class + '.checkbox').focus(function (e) { return _this.SetFocus(this, e); });
     jobj.find('.xelem' + xmodel.class + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e) })
     jobj.find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; return _this.SetFocus(ctrl, e); });
     if(datarow && datarow._is_insert){

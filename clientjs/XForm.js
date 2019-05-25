@@ -47,13 +47,15 @@ exports = module.exports = function(jsh){
     this.OnAfterRender = null;
   }
 
-  XForm.prototype.Render = function(){
+  XForm.prototype.Render = function(options){
+    options = _.extend({ resetValidation: true }, options);
     if(!this.Data) return;
-    this.ResetValidation();
+    if(options.resetValidation) this.ResetValidation();
 
     if (this.OnBeforeRender) this.OnBeforeRender();
-    if(this.Data.OnRender)
-      this.Data.OnRender.apply(this.Data,arguments);
+    if(this.Data.OnRender){
+      this.Data.OnRender.apply(this.Data, arguments);
+    }
     else if(this.TemplateID){
       var ejssource = jsh.$root(this.TemplateID).html();
       jsh.$root(this.PlaceholderID).html(jsh.XExt.renderEJS(ejssource, undefined, {
@@ -151,7 +153,7 @@ exports = module.exports = function(jsh){
     if(this.Index == (this.Count()-1)) return;
     this.NavTo(this.Count()-1);
   }
-  XForm.prototype.SetIndex = function (_index, saveold) {
+  XForm.prototype.SetIndex = function (_index, saveold, jrow) {
     if (typeof saveold == 'undefined') saveold = true;
     if (_index > this.Count()) { jsh.XExt.Alert('Cannot navigate - Index greater than size of collection'); return false; }
     else if (_index < 0) { jsh.XExt.Alert('Cannot navigate - Index less than zero'); return false; }
@@ -169,7 +171,8 @@ exports = module.exports = function(jsh){
     this.Data._bcrumbs = this.bcrumbs;
     this.Data._title = this.title;
     if (this.xData) {
-      this.Data._jrow = jsh.$root(this.xData.PlaceholderID).find("tr[data-id='" + this.Index + "']");
+      if(jrow) this.Data._jrow = jrow;
+      else this.Data._jrow = jsh.$root(this.xData.PlaceholderID).find("tr[data-id='" + this.Index + "']");
     }
     return true;
   }
@@ -224,6 +227,7 @@ exports = module.exports = function(jsh){
       _this.defaults = _this.Data._defaults;
       _this.bcrumbs = _this.Data._bcrumbs;
       _this.title = _this.Data._title;
+      var xmodel = _this.GetModel();
       //Load Data
       if(_this.q in rslt){
         if(_.isArray(rslt[_this.q])){
@@ -255,11 +259,8 @@ exports = module.exports = function(jsh){
           _this.ApplyUnboundDefaults(_this.Data);
         }
       }
-      else if(_this.Data._is_insert){
-        _this.Data = _this.ApplyDefaults(_this.Data);
-        _this.ApplyUnboundDefaults(_this.Data);
-      }
       else {
+        _this.ApplyDefaults(_this.Data);
         _this.ApplyUnboundDefaults(_this.Data);
       }
       //NavTo already calls render
@@ -269,8 +270,9 @@ exports = module.exports = function(jsh){
   }
   XForm.prototype.ApplyDefaults = function(data){
     var _this = this;
+    var xmodel = _this.GetModel();
     var rslt = data;
-    if(rslt._is_insert){
+    if(rslt._is_insert||(xmodel && ((xmodel.layout=='exec')||(xmodel.layout=='report')))){
       _.each(_this.defaults, function (val, fieldname){
         if(rslt[fieldname]) return; //If field is set via GET, do not overwrite
         if(fieldname in rslt){
@@ -337,7 +339,7 @@ exports = module.exports = function(jsh){
   XForm.prototype.CommitRow = function (){
     if (!this.Data.Commit()) return false;
     this.DataSet[this.Index] = _.extend(this.DataSet[this.Index], this.Data);
-    if (this.Data._is_dirty) this.IsDirty = true;
+    if (this.Data._is_dirty){ this.IsDirty = true; }
     return true;
   }
   XForm.prototype.PrepSaveDataSet = function(ignorecommit){

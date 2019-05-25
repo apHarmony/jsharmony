@@ -152,6 +152,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "grid_expand_search": 1,
   "grid_rowcount":  1,
   "grid_require_search": 1, //Do not initially load results
+  "grid_static": 1, //Static (uneditable) grid for fast rendering
   "duplicate": {"target": "E_DUPLICATE", "bindings": {"e_id":"e_id", "c_id": "c_id"},"link":"edit:EW&e_id=new_e_id","link_text": "Duplicate Item"},
   "templates": { "grid": ".xgrid_calendar_template" },
   "onecolumn": true, //Add newline (nl) after each form field except the first. (form, form-m)  Automatically align width of captions

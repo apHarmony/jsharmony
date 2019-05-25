@@ -16,6 +16,7 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 //DataModel
 (function(jsh){
   var $ = jsh.$;
@@ -26,9 +27,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var xmodel = jsh.XModels[modelid];
 
   var xdatamodel = xmodel.datamodel = function(){
+    var _this = this;
     this._is_insert = (xmodel.unbound?false:true);
     this._modelid = modelid;
-    <% _.each(model.fields,function(field){ if(!field.name) return; %>this.<%=field.name%> = '';<%});%>
+    _.each(xmodel.fields, function(field){
+      if(!field.name) return;
+      try{ _this[field.name] = (field.hasDefault()?jsh.XFormat.Decode(field.format, field.getDefault(_this)):''); }
+      catch(ex){ }
+    });
     XExt.XModel.ApplyDefaults(this);
   }
 

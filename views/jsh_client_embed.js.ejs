@@ -145,7 +145,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       }
       else{ XExt.Alert('Invalid row'); return; }
     }
-    if(xform) return XExt.getFormField(xform, fieldname);
+    if(xform){
+      var field = xmodel.fields && xmodel.fields[fieldname];
+      var formval = XExt.getFormField(xform, fieldname);
+      if(jsh.is_insert && field && field.key && XExt.isNullUndefinedEmpty(formval) && !XExt.hasAction(field.actions, 'I')) return undefined;
+      return formval;
+    }
     XExt.Alert('Could not get value - model.controller.form not initialized');
   }
   xmodel.set = function(fieldname, value, rowref, onComplete){

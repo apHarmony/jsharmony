@@ -14,7 +14,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
   <%-jsh.RenderView('jsh_buttons',ejsparams)%>
   <% if(model.inlinepopup){ %><a href="#" onclick="<%-instance%>.XExt.popupClear('<%=model.id%>',this); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'clear'))%>"><img src="/images/icon_delete.png" alt="Clear" title="Clear" />Clear</a><% } %>
   <% if(model.topmost && (model.commitlevel) && (model.commitlevel != 'none')){ %><a href="#" class="save" onclick="<%-instance%>.XPage.Save();return false;" style="display:none;"><img src="/images/icon_save.png" alt="Save" title="Save" />Save</a><% } %>
-  <% if(!model.templates.grid){ %><a href="#" onclick="<%-js('xmodel.controller.AddRow();')%>" class="xbuttoninsert" style="<%-xejs.visible(xejs.showSystemButton(model,'insert') && model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'I'))%>"><img src="/images/icon_insert.png" alt="Add" title="Add" />Add</a><% } %>
+  <% if(!model.templates.grid && !model.grid_static){ %><a href="#" onclick="<%-js('xmodel.controller.AddRow();')%>" class="xbuttoninsert" style="<%-xejs.visible(xejs.showSystemButton(model,'insert') && model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'I'))%>"><img src="/images/icon_insert.png" alt="Add" title="Add" />Add</a><% } %>
   <a href="#" class="xsearchbutton xsearchbutton<%=model.class%>" onclick="<%-js('xmodel.controller.SearchButtonClick();')%>" style="<%-xejs.visible(xejs.showSystemButton(model,'search'))%>"><img src="/images/icon_search.png" alt="Search" title="Search" /><span>Search</span></a>
   <a href="/" onclick="<%-js('jsh.XPage.Print();')%>" style="<%-xejs.visible(model.topmost && xejs.showSystemButton(model,'print'))%>"><img src="/images/icon_print.png" alt="Print" title="Print" />Print</a>
   <a href="#" onclick="<%-js('xmodel.controller.Export();')%>" style="<%-xejs.visible(xejs.showSystemButton(model,'export'))%>"><img src="/images/icon_export.png" alt="Export" title="Export" />Export</a>
@@ -114,7 +114,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
     </thead>
     <tbody class="xgrid_<%=model.class%>_placeholder"></tbody>
     <script class="xgrid_<%=model.class%>_template" type="text/x-ejs-template" data-target=".xgrid_<%=model.class%>_placeholder">
-      <%% for(var j=0;j<datatable.length;j++){ var datarow=datatable[j]; var data = datarow; if(!rowid) rowid = j; %%>
+      <%% for(var j=0;j<datatable.length;j++){ var datarow=datatable[j]; var data = datarow; if((typeof startrowid == 'undefined') || (startrowid === null)) startrowid = j; var rowid = startrowid + j %%>
       <tr class="<%%=(rowid%2==1?'even':'odd')%%> <%-model.rowclass%> xrow_<%=model.class%> xrow" style="<%-model.rowstyle%>" data-id="<%%=rowid%%>">
         <% if(model.inlinepopup){ %><td align="center"><a href="#" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this); return false;">Select</a></td><% } %>
         <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
@@ -141,18 +141,18 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
             %><div data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.controlclass%> <%=field.name%> xform_ctrl xelem<%=model.class%> xform_label <%=xejs.iif(field.value,'xform_label_static')%>" onclick="return (function(){<%-jslocals%><%-field.onclick%>}).call(this);"><%
             if(field.value && (field.value.indexOf('<#')>=0)){  }
             else if(field.value){ %><%-field.value%><% }
-            else { %><%=xejs.GetValue(field)%><% }
+            else { %><%-xejs.GetValue(field, model)%><% }
             %></div><%
           }
           if('link' in field){ %></a><% }
         }
-        else if(field.control=='textbox'){ %><input type="<%=xejs.getInputType(field)%>" data-id="<%=field.name%>" value="<%=xejs.GetValue(field)%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" <%-xejs.iif(maxlength >= 0,'maxlength="'+maxlength+'"')%> /><% }
-        else if(field.control=='textzoom'){ %><div class="xform_ctrl_textzoom_container"><textarea data-id="<%=field.name%>" name="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xform_ctrl_textzoom xelem<%=model.class%> <%=field.controlclass%>"><%=xejs.GetValue(field)%></textarea><a href="#" class="xform_ctrl xtextzoom icon" onclick="var jctrl = <%-instance%>.$(this).prev('.<%=field.name%>'); <%-instance%>.XExt.ZoomEdit(jctrl.val(),'<%=field.caption_ext||field.caption%>',{readonly:!jctrl.hasClass('editable')},function(rslt){ <%-instance%>.XExt.setFormControl(<%-instance%>.XExt.getForm('<%=model.id%>'),'<%=field.name%>',rslt); jctrl.focus(); }); return false;"><img src="/images/icon_search.png" height="14" /></a></div><% }
-        else if(field.control=='password'){ %><input type="password" data-id="<%=field.name%>" value="<%=xejs.GetValue(field)%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" <%-xejs.iif(maxlength >= 0,'maxlength="'+maxlength+'"')%> /><% }
-        else if(field.control=='date'){ %><input data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> datepicker <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" maxlength="10" /><a href="#" onclick="return false;" class="xform_ctrl xelem<%=model.class%> datepicker_handle nofocus" tabindex="-1"><img src="/images/spacer.gif" /></a><% }
-        else if(field.control=='textarea'){ %><textarea data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> <%=field.controlclass%>"><%=xejs.GetValue(field)%></textarea><% }
-        else if(field.control=='dropdown'){ %><select data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> dropdown <%=field.controlclass%>"><option><%=xejs.GetValue(field)%></option></select><% }
-        else if(field.control=='hidden'){ %><input type="hidden" data-id="<%=field.name%>" value="<%=xejs.GetValue(field)%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" /><% }
+        else if(field.control=='textbox'){ %><input type="<%=xejs.getInputType(field)%>" data-id="<%=field.name%>" value="<%-xejs.GetValue(field, model)%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" <%-xejs.iif(maxlength >= 0,'maxlength="'+maxlength+'"')%> /><% }
+        else if(field.control=='textzoom'){ %><div class="xform_ctrl_textzoom_container"><textarea data-id="<%=field.name%>" name="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xform_ctrl_textzoom xelem<%=model.class%> <%=field.controlclass%>"><%-xejs.GetValue(field, model)%></textarea><a href="#" class="xform_ctrl xtextzoom icon" onclick="var jctrl = <%-instance%>.$(this).prev('.<%=field.name%>'); <%-instance%>.XExt.ZoomEdit(jctrl.val(),'<%=field.caption_ext||field.caption%>',{readonly:!jctrl.hasClass('editable')},function(rslt){ <%-instance%>.XExt.setFormControl(<%-instance%>.XExt.getForm('<%=model.id%>'),'<%=field.name%>',rslt); jctrl.focus(); }); return false;"><img src="/images/icon_search.png" height="14" /></a></div><% }
+        else if(field.control=='password'){ %><input type="password" data-id="<%=field.name%>" value="<%-xejs.GetValue(field, model)%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" <%-xejs.iif(maxlength >= 0,'maxlength="'+maxlength+'"')%> /><% }
+        else if(field.control=='date'){ %><input data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> datepicker <%=field.controlclass%>" value="<%-xejs.GetValue(field, model)%>" maxlength="10" /><a href="#" onclick="return false;" class="xform_ctrl xelem<%=model.class%> datepicker_handle nofocus" tabindex="-1"><img src="/images/spacer.gif" /></a><% }
+        else if(field.control=='textarea'){ %><textarea data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> <%=field.controlclass%>"><%-xejs.GetValue(field, model)%></textarea><% }
+        else if(field.control=='dropdown'){ %><select data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> dropdown <%=field.controlclass%>"><option><%-xejs.GetValue(field, model)%></option></select><% }
+        else if(field.control=='hidden'){ %><input type="hidden" data-id="<%=field.name%>" value="<%-xejs.GetValue(field, model)%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" /><% }
         else if(field.control=='checkbox'){ %><div class="xform_ctrl xform_checkbox_container xelem<%=model.class%>"><input data-id="<%=field.name%>" type="checkbox" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl checkbox xelem<%=model.class%> <%=field.controlclass%>" /></div><% }
         else if(field.control=='button'){ 
           if('link' in field){ %><input data-id="<%=field.name%>" type="button" class="xform_ctrl xform_ctrl_button xelem<%=model.class%> <%=field.name%> <%=field.controlclass%>" style="<%=field.controlstyle%>" value="<%-xejs.escapeHTMLN(field.value)%>" data-url="<%-field.link%>" onclick="<%-js(field.onclick)%>" /><% }
@@ -165,18 +165,18 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
         else if(field.control=='file_download'){ %>
             <div data-id="<%=field.name%>" class="<%=field.name%> xform_file_download xelem<%=model.class%> <%=field.controlclass%>" style="<%=field.controlstyle%>">
               <% if(field.controlparams.download_button){ %><a class="<%=field.name%>_download linkbutton xform_file_download_button" href="#" onclick="<%-js('xmodel.controller.DownloadFile(\''+XExt.escapeHTML(field.name)+'\',\''+XExt.escapeHTML(field.caption_ext||field.caption)+'\','+XExt.ejsDelimiter.open+'=rowid'+XExt.ejsDelimiter.close+');')%>"><img src="/images/icon_download.png" /><%=field.controlparams.download_button%></a><% } %>
-              <input type="hidden" data-id="<%=field.name%>_dbexists" class="<%=field.name%>_dbexists xform_file_dbexists xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" />
+              <input type="hidden" data-id="<%=field.name%>_dbexists" class="<%=field.name%>_dbexists xform_file_dbexists xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" value="<%-xejs.GetValue(field, model)%>" />
             </div>
         <% }
         else if(field.control=='image'){ %>
             <% if(field.controlparams.preview_on_click){ %><a class="<%=field.name%>_preview xform_image_preview xelem<%=model.class%>" href="#" onclick="<%-js('xmodel.controller.FilePreview(\''+XExt.escapeHTML(field.name)+'\',\''+XExt.escapeHTML(field.caption_ext||field.caption)+'\','+XExt.ejsDelimiter.open+'=rowid'+XExt.ejsDelimiter.close+');')%>"><% } %>
             <img data-id="<%=field.name%>" class="<%=field.name%> xform_image xelem<%=model.class%> <%=field.name%>_thumbnail xform_file_thumbnail <%=field.controlclass%>" style="<%=field.controlstyle%>" />
             <% if(field.controlparams.preview_on_click){ %></a><% } %>
-            <input type="hidden" data-id="<%=field.name%>_dbexists" class="<%=field.name%>_dbexists xform_file_dbexists xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" value="<%=xejs.GetValue(field)%>" />
+            <input type="hidden" data-id="<%=field.name%>_dbexists" class="<%=field.name%>_dbexists xform_file_dbexists xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" value="<%-xejs.GetValue(field, model)%>" />
         <% }
         //Add a hidden field for field value if it is both static and updatable
         if(XExt.hasAction(field.actions,'BIU') && _.includes(['html','label','linkbutton','button'],field.control)){
-          %><input data-id="<%=field.name%>_field_value" type="hidden" class="<%=field.name%>_field_value xform_ctrl xelem<%=model.class%>" value="<%=xejs.GetValue(field)%>" /><%
+          %><input data-id="<%=field.name%>_field_value" type="hidden" class="<%=field.name%>_field_value xform_ctrl xelem<%=model.class%>" value="<%-xejs.GetValue(field, model)%>" /><%
         }
         if(field.popuplov){ %><a href="#" data-id="<%=field.name%>_xlookup" class="xform_ctrl xlookup icon <%=field.name%>_xlookup" data-codeval="<%=field.controlparams.codeval%>" data-model="<%=model.id%>" onclick="<%-instance%>.XExt.popupShow('<%=field.model.id%>','<%=field.name%>','<%=field.caption_ext||field.caption%> Selection',<%-instance%>.$(this).prev('.<%=field.name%>'),this,{rowid: <%%=rowid%%>,OnControlUpdate:function(obj,e){ <%-instance%>.XModels['<%=model.id%>'].controller.editablegrid.ControlUpdate(obj,e); }})"><img src="/images/icon_search.png" height="14" style="position:relative;top:-1px;" /></a><% }
           %></td>

@@ -68,7 +68,8 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
         for(var fieldname in xmodel.bindings){
           var bfield = xmodel.fields[fieldname];
           if((typeof bfield != 'undefined') && (bfield.lovkey)){
-            execparams[fieldname] = xmodel.bindings[fieldname]();
+            var val = xmodel.bindings[fieldname]();
+            if(typeof val != 'undefined') execparams[fieldname] = val;
           }
         }
       }

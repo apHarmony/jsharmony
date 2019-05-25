@@ -45,7 +45,7 @@ exports = module.exports = function(jsh){
       var xmodel = jsh.XModels[modelid];
       var isGrid = (xmodel.layout == 'grid');
       //Clear highlighted background of currently edited cells
-      parentobj.find('.xelem'+xmodel.class+'.xform_ctrl').removeClass('updated');
+      parentobj.find('.xelem'+xmodel.class+'.xform_ctrl.updated').removeClass('updated');
       
       if (xmodel.layout == 'form-m') {
         if (xmodel.controller.form.Count()==0) {

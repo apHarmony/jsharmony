@@ -109,6 +109,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.Load = function(options){
+    jsh.pageStartTime = Date.now();
     if(!options) options = {
       //addHistory: false, if we should not add history to the browser state
       //onRefreshNoChange: function(){ /* If unchanged */ }, if we should only render if the model is different from the cached model

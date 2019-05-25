@@ -429,15 +429,16 @@ exports = module.exports = function(jsh){
       }
       return true;
     },
-    'GetValue': function (field) {
+    'GetValue': function (field, model) {
       var val = '';
+      if (model && model.grid_static){ return '<'+"%=data['"+field.name+"']%"+'>'; }
       if ('sample' in field) val = field.sample;
       if ('default' in field){
         if(_.isString(field.default) && (field.default.substr(0,3)=='js:')){ }
         else val = field.default;
       }
       if (val && ('format' in field)) val = jsh.XFormat.Apply(field.format, val);
-      return val;
+      return XExt.escapeHTMLN(val);
     },
     'getInputType': function (field) {
       if (field && field.validate) {
@@ -1351,7 +1352,9 @@ exports = module.exports = function(jsh){
         onComplete: function () {
           numOpens++;
           if(xgrid && (numOpens==1)) xgrid.Select();
-          if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass + ' .xsearch_value').first().is(':visible')) jsh.$root('.popup_' + fieldid + ' .xsearch_value').first().focus();
+          if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass + ' .xsearch_value').first().is(':visible')){
+            jsh.$root('.popup_' + fieldid + ' .xsearch_value').first().focus();
+          }
           else if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('td a').length) jsh.$root('.popup_' + fieldid).find('td a').first().focus();
             //else jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('input,select,textarea').first().focus();
         },
@@ -1879,6 +1882,12 @@ exports = module.exports = function(jsh){
       }
     }
     return modelid;
+  }
+  XExt.isNullUndefinedEmpty = function(val){
+    if(typeof val === 'undefined') return true;
+    if(val === null) return true;
+    if(val === '') return true;
+    return false;
   }
 
   return XExt;

@@ -6108,6 +6108,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var $ = require('./jquery-1.11.2');
+var _ = require('lodash');
 
 exports = module.exports = function(jsh){
 
@@ -6394,26 +6395,34 @@ exports = module.exports = function(jsh){
     var modelid = _this.modelid;
     var xmodel = (modelid? jsh.XModels[modelid] : null);
     var xfields = (xmodel ? xmodel.fields : []);
-    jobj.find('.xelem' + xmodel.class).not('.xelem' + xmodel.class + '.checkbox').keyup(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
-    jobj.find('.xelem' + xmodel.class).change(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
-    jobj.find('.xelem' + xmodel.class + '.checkbox').click(function (e) { if (!$(this).hasClass('editable')) return; return _this.CheckboxUpdate(this, e); });
-    jobj.find('.xelem' + xmodel.class + '.datepicker').each(function () {
-      if (!$(this).hasClass('editable')) return;
-      var ctrl = this;
-      var dateformat = jsh.DEFAULT_DATEFORMAT;
-      var fname = $(this).data('id');
-      var xfield = xfields[fname];
-      if (xfield && xfield.controlparams && xfield.controlparams.dateformat) dateformat = xfield.controlparams.dateformat;
-      $(this).datepicker({
-        changeMonth: true, changeYear: true, dateFormat: dateformat, duration: '', showAnim: '', onSelect: function () {
-          jsh.ignorefocusHandler = true;
-          window.setTimeout(function () {
-            window.setTimeout(function () { $(ctrl).next('.datepicker_handle').focus(); jsh.ignorefocusHandler = false; _this.ControlUpdate(ctrl); }, 1);
-          }, 1);
-        }
-      });
+
+    jobj.find('.xelem' + xmodel.class).each(function(){
+      //Ignore hidden fields
+      if((this.nodeName.toLowerCase()=='input')&&(this.type.toLowerCase()=='hidden')) return;
+      var jobj = $(this);
+      var classList = this.classList||[];
+      if(!_.includes(classList,'checkbox')){
+        if(_.includes(classList, 'editable')) jobj.keyup(function (e) { return _this.ControlUpdate(this, e); });
+        jobj.focus(function (e) { return _this.SetFocus(this, e); });
+      }
+      jobj.change(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
+      if(_.includes(classList, 'editable')) if(_.includes(classList,'checkbox')) jobj.click(function (e) { return _this.CheckboxUpdate(this, e); });
+      if(_.includes(classList,'datepicker') && _.includes(classList,'editable')){
+        var ctrl = this;
+        var dateformat = jsh.DEFAULT_DATEFORMAT;
+        var fname = $(this).data('id');
+        var xfield = xfields[fname];
+        if (xfield && xfield.controlparams && xfield.controlparams.dateformat) dateformat = xfield.controlparams.dateformat;
+        $(this).datepicker({
+          changeMonth: true, changeYear: true, dateFormat: dateformat, duration: '', showAnim: '', onSelect: function () {
+            jsh.ignorefocusHandler = true;
+            window.setTimeout(function () {
+              window.setTimeout(function () { $(ctrl).next('.datepicker_handle').focus(); jsh.ignorefocusHandler = false; _this.ControlUpdate(ctrl); }, 1);
+            }, 1);
+          }
+        });
+      }
     });
-    jobj.find('.xelem' + xmodel.class).not('.xelem' + xmodel.class + '.checkbox').focus(function (e) { return _this.SetFocus(this, e); });
     jobj.find('.xelem' + xmodel.class + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e) })
     jobj.find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; return _this.SetFocus(ctrl, e); });
     if(datarow && datarow._is_insert){
@@ -6428,7 +6437,7 @@ exports = module.exports = function(jsh){
 
   return XEditableGrid;
 }
-},{"./jquery-1.11.2":24}],12:[function(require,module,exports){
+},{"./jquery-1.11.2":24,"lodash":31}],12:[function(require,module,exports){
 /*
 Copyright 2017 apHarmony
 
@@ -6476,7 +6485,7 @@ exports = module.exports = function(jsh){
       var xmodel = jsh.XModels[modelid];
       var isGrid = (xmodel.layout == 'grid');
       //Clear highlighted background of currently edited cells
-      parentobj.find('.xelem'+xmodel.class+'.xform_ctrl').removeClass('updated');
+      parentobj.find('.xelem'+xmodel.class+'.xform_ctrl.updated').removeClass('updated');
       
       if (xmodel.layout == 'form-m') {
         if (xmodel.controller.form.Count()==0) {
@@ -7505,15 +7514,16 @@ exports = module.exports = function(jsh){
       }
       return true;
     },
-    'GetValue': function (field) {
+    'GetValue': function (field, model) {
       var val = '';
+      if (model && model.grid_static){ return '<'+"%=data['"+field.name+"']%"+'>'; }
       if ('sample' in field) val = field.sample;
       if ('default' in field){
         if(_.isString(field.default) && (field.default.substr(0,3)=='js:')){ }
         else val = field.default;
       }
       if (val && ('format' in field)) val = jsh.XFormat.Apply(field.format, val);
-      return val;
+      return XExt.escapeHTMLN(val);
     },
     'getInputType': function (field) {
       if (field && field.validate) {
@@ -8427,7 +8437,9 @@ exports = module.exports = function(jsh){
         onComplete: function () {
           numOpens++;
           if(xgrid && (numOpens==1)) xgrid.Select();
-          if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass + ' .xsearch_value').first().is(':visible')) jsh.$root('.popup_' + fieldid + ' .xsearch_value').first().focus();
+          if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass + ' .xsearch_value').first().is(':visible')){
+            jsh.$root('.popup_' + fieldid + ' .xsearch_value').first().focus();
+          }
           else if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('td a').length) jsh.$root('.popup_' + fieldid).find('td a').first().focus();
             //else jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('input,select,textarea').first().focus();
         },
@@ -8956,6 +8968,12 @@ exports = module.exports = function(jsh){
     }
     return modelid;
   }
+  XExt.isNullUndefinedEmpty = function(val){
+    if(typeof val === 'undefined') return true;
+    if(val === null) return true;
+    if(val === '') return true;
+    return false;
+  }
 
   return XExt;
 }
@@ -9009,13 +9027,15 @@ exports = module.exports = function(jsh){
     this.OnAfterRender = null;
   }
 
-  XForm.prototype.Render = function(){
+  XForm.prototype.Render = function(options){
+    options = _.extend({ resetValidation: true }, options);
     if(!this.Data) return;
-    this.ResetValidation();
+    if(options.resetValidation) this.ResetValidation();
 
     if (this.OnBeforeRender) this.OnBeforeRender();
-    if(this.Data.OnRender)
-      this.Data.OnRender.apply(this.Data,arguments);
+    if(this.Data.OnRender){
+      this.Data.OnRender.apply(this.Data, arguments);
+    }
     else if(this.TemplateID){
       var ejssource = jsh.$root(this.TemplateID).html();
       jsh.$root(this.PlaceholderID).html(jsh.XExt.renderEJS(ejssource, undefined, {
@@ -9113,7 +9133,7 @@ exports = module.exports = function(jsh){
     if(this.Index == (this.Count()-1)) return;
     this.NavTo(this.Count()-1);
   }
-  XForm.prototype.SetIndex = function (_index, saveold) {
+  XForm.prototype.SetIndex = function (_index, saveold, jrow) {
     if (typeof saveold == 'undefined') saveold = true;
     if (_index > this.Count()) { jsh.XExt.Alert('Cannot navigate - Index greater than size of collection'); return false; }
     else if (_index < 0) { jsh.XExt.Alert('Cannot navigate - Index less than zero'); return false; }
@@ -9131,7 +9151,8 @@ exports = module.exports = function(jsh){
     this.Data._bcrumbs = this.bcrumbs;
     this.Data._title = this.title;
     if (this.xData) {
-      this.Data._jrow = jsh.$root(this.xData.PlaceholderID).find("tr[data-id='" + this.Index + "']");
+      if(jrow) this.Data._jrow = jrow;
+      else this.Data._jrow = jsh.$root(this.xData.PlaceholderID).find("tr[data-id='" + this.Index + "']");
     }
     return true;
   }
@@ -9186,6 +9207,7 @@ exports = module.exports = function(jsh){
       _this.defaults = _this.Data._defaults;
       _this.bcrumbs = _this.Data._bcrumbs;
       _this.title = _this.Data._title;
+      var xmodel = _this.GetModel();
       //Load Data
       if(_this.q in rslt){
         if(_.isArray(rslt[_this.q])){
@@ -9217,11 +9239,8 @@ exports = module.exports = function(jsh){
           _this.ApplyUnboundDefaults(_this.Data);
         }
       }
-      else if(_this.Data._is_insert){
-        _this.Data = _this.ApplyDefaults(_this.Data);
-        _this.ApplyUnboundDefaults(_this.Data);
-      }
       else {
+        _this.ApplyDefaults(_this.Data);
         _this.ApplyUnboundDefaults(_this.Data);
       }
       //NavTo already calls render
@@ -9231,8 +9250,9 @@ exports = module.exports = function(jsh){
   }
   XForm.prototype.ApplyDefaults = function(data){
     var _this = this;
+    var xmodel = _this.GetModel();
     var rslt = data;
-    if(rslt._is_insert){
+    if(rslt._is_insert||(xmodel && ((xmodel.layout=='exec')||(xmodel.layout=='report')))){
       _.each(_this.defaults, function (val, fieldname){
         if(rslt[fieldname]) return; //If field is set via GET, do not overwrite
         if(fieldname in rslt){
@@ -9299,7 +9319,7 @@ exports = module.exports = function(jsh){
   XForm.prototype.CommitRow = function (){
     if (!this.Data.Commit()) return false;
     this.DataSet[this.Index] = _.extend(this.DataSet[this.Index], this.Data);
-    if (this.Data._is_dirty) this.IsDirty = true;
+    if (this.Data._is_dirty){ this.IsDirty = true; }
     return true;
   }
   XForm.prototype.PrepSaveDataSet = function(ignorecommit){
@@ -10091,7 +10111,7 @@ exports = module.exports = function(jsh){
           if (data[this.q] && _this.OnRender) _this.OnRender(ejssource, data);
           else {
             var ejsrslt = jsh.XExt.renderEJS(ejssource, undefined, {
-              rowid: undefined,
+              startrowid: undefined,
               datatable: data[this.q],
             });
             jsh.$root(_this.PlaceholderID).append(ejsrslt);
@@ -21588,6 +21608,8 @@ var jsHarmony = function(options){
   this.xDialog = [];
   this.xPopupStack = [];
   this.xfileuploadLoader = null;
+  this.appStartTime = Date.now();
+  this.pageStartTime = Date.now();
 
   //jsh_client_topmost
   this.is_insert = false;

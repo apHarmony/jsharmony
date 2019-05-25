@@ -31,6 +31,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var xeditablegrid = null;
   var xgrid = null;
   var xform = null;
+  var gridCustomTemplate = <%=!!model.templates.grid%>;
 
   xcontroller.Init = function(callback){
     xsearch = xcontroller.search = new jsh.XForm('','.xsearch_template_'+xmodel.class,'.xsearch_'+xmodel.class);
@@ -46,8 +47,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     <% if(model.grid_expand_search){ %>xcontroller.SearchExpand(0);<% } %>
 
     xform = xcontroller.form = new jsh.XForm(modelid,'','');
-    xform.Data = new xmodel.datamodel();
     xform.DataType = xmodel.datamodel;
+    xform.Data = new xmodel.datamodel();
 
     var isInlinePopup = <%-xejs.iif(('inlinepopup' in model) && (model.inlinepopup),'true','false')%>;
     var grid_template = '<%=(model.templates.grid||'.xgrid_'+model.class+'_template')%>';
@@ -79,7 +80,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xgrid.RequireSearch = <%-xejs.iif(model.grid_require_search,'true','false')%>;;
     xgrid.GetDBRowCount = <%-xejs.iif(('grid_rowcount' in model) && (model.grid_rowcount),'true','false')%>;
 
-    <% if(!model.templates.grid){ %>
+    <% if(!model.templates.grid && !model.grid_static){ %>
       xeditablegrid = xcontroller.editablegrid = new jsh.XEditableGrid(modelid,xmodel.commitlevel,'<%-xejs.iif('validationlevel' in model,model.validationlevel,'row')%>');
       xeditablegrid.Debug = true;
       xeditablegrid.OnRowEnter = function(rowid){ xform.SetIndex(rowid,false); }
@@ -91,9 +92,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       xeditablegrid.SaveBeforeUpdate = <%=(parentfield && parentfield.controlparams && parentfield.controlparams.grid_save_before_update?'true':'false')%>;
     <% } %>
 
-    xgrid.OnRowBind = function(jobj,datarow){
+    xgrid.OnRowBind = function(jobj,datarow,readonly){
       if(!xeditablegrid) return;
-      xeditablegrid.BindRow(jobj,datarow);
+      if(!readonly) xeditablegrid.BindRow(jobj,datarow);
       xmodel.datamodel.prototype.BindLOV(xform,jobj);
       if(xmodel.onrowbind) xmodel.onrowbind(xmodel,jobj,datarow);
     };
@@ -116,20 +117,36 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         xform.ApplyUnboundDefaults(xform.DataSet[rowid]);
       }
       if(xeditablegrid){
+        var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
+          startrowid: this.RowCount,
+          datatable: data[this.q],
+        });
+        var jparent = jsh.$root(this.PlaceholderID);
+        var jobj = $(ejsrslt).appendTo(jparent);
+
+        //Get an array of all rows by id
+        var jrows = {};
+        var numChildren = jparent[0].childNodes.length
+        for(var i=0;i<numChildren;i++){
+          var child = jparent[0].childNodes[i];
+          if(child.nodeName.toLowerCase()=='tr'){
+            var rowid = parseInt(child.getAttribute('data-id'));
+            if(!isNaN(rowid)) jrows[rowid] = child;
+          }
+        }
+
+        var readOnlyGrid = !jsh.XExt.hasAction(xmodel.actions,'IU');
+
         for (var i = 0; i < data[this.q].length; i++) {
           var rowid = this.RowCount + i;
-          var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
-            rowid: rowid,
-            datatable: [data[this.q][i]],
-          });
-          var jobj = $(ejsrslt).appendTo(jsh.$root(this.PlaceholderID));
-          xform.NavTo(rowid, false);
-          this.OnRowBind(jobj, data[this.q][i]);
+          xform.SetIndex(rowid, false, $(jrows[rowid]));
+          xform.Render({ resetValidation: false });
+          this.OnRowBind($(jrows[rowid]), data[this.q][i], readOnlyGrid);
         }
       }
       else {
         var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
-          rowid: rowid,
+          startrowid: this.RowCount,
           datatable: data[this.q],
         });
         var jobj = $(ejsrslt).appendTo(jsh.$root(this.PlaceholderID));
@@ -330,7 +347,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
           var ejssource = jsh.$root(xgrid.TemplateID).html();
           var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
-            rowid: rowid,
+            startrowid: rowid,
             datatable: [_this.DataSet[rowid]], 
           });
           var jobj = jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']");
@@ -425,7 +442,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if (xgrid.TemplateHTMLFunc != null) ejssource = xgrid.TemplateHTMLFunc(data, xgrid.RowCount);
     else ejssource = jsh.$root(xgrid.TemplateID).html();
     var ejsrslt = XExt.renderEJS(ejssource, modelid, {
-      rowid: rowid,
+      startrowid: rowid,
       datatable: [newrow],
     });
 
@@ -643,12 +660,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   xcontroller.SearchExpand = function(timeout){
     if(jsh.$root('.xsearch_'+xmodel.class).is(':visible')) return;
+    var selectFirstSearchInput = function(){
+      jsh.$root('.xsearch_'+xmodel.class+' .xsearch_value').first().select().focus();
+    }
     if(xsearch.Data.Items.length == 0){
       xcontroller.SearchAdd();
-      jsh.$root('.xsearch_'+xmodel.class).slideDown(timeout,function(){ jsh.$root('.xsearch_'+xmodel.class+' .xsearch_value').first().select().focus(); });
+      jsh.$root('.xsearch_'+xmodel.class).slideDown(timeout,function(){ selectFirstSearchInput(); });
     }
     else {
-      jsh.$root('.xsearch_'+xmodel.class).slideDown(timeout,function(){ jsh.$root('.xsearch_'+xmodel.class+' .xsearch_value').first().select().focus(); });
+      jsh.$root('.xsearch_'+xmodel.class).slideDown(timeout,function(){ selectFirstSearchInput(); });
     }
   }
 

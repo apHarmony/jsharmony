@@ -32,6 +32,7 @@ exports.getDBDrivers = function(){ return _DBDRIVERS; };
 
 //Validate Database Drive and Load SQL Configuration
 exports.InitDB = function(dbid, cb){
+  var _this = this;
   var dbconfig = this.DBConfig[dbid];
   var dbdriver = dbconfig._driver;
   if(!dbconfig) { this.Log.console_error('*** Fatal error: Database ID '+dbid+' not found'); process.exit(8); }
@@ -50,10 +51,23 @@ exports.InitDB = function(dbid, cb){
   var modeldirs = this.getModelDirs();
   for (let i = 0; i < modeldirs.length; i++) {
     var modeldir = modeldirs[i];
+    var module = this.Modules[modeldir.module];
     var fpath = modeldir.path;
     if(modeldir.module=='jsharmony') fpath = path.normalize(modeldir.path + '../');
-    this.LoadSQL(db, fpath + 'sql/', driverName, modeldir.module);
-    this.LoadSQL(db, fpath + 'sql/'+dbid+'/', driverName, modeldir.module);
+    var hasSQL = false;
+    _.each([
+      fpath + 'sql/',
+      fpath + 'sql/'+dbid+'/'
+    ], function(dir){
+      if(fs.existsSync(dir)){
+        hasSQL = true;
+        _this.LoadSQL(db, dir, driverName, modeldir.module);
+      }
+    });
+    if(hasSQL){
+      module.transform.Validate();
+      module.transform.Apply();
+    }
   }
   this.AddGlobalSQLParams(db.SQLExt.Funcs, this.map, 'jsh.map.');
   if(cb) return cb();

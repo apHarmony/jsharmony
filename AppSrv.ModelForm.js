@@ -95,7 +95,7 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
   //Add DataLock parameters to SQL
   var skipDataLocks = [];
   if(is_insert) skipDataLocks = skipDataLocks.concat(keylist);
-  this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, fullmodelid, { skipDataLocks: skipDataLocks });
+  if (!is_insert && !model.unbound) this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, fullmodelid, { skipDataLocks: skipDataLocks });
   
   if (selecttype == 'multiple') {
     var dsort = new Array();
@@ -142,11 +142,10 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
     if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   }
   
-  var sql = db.sql.getModelForm(_this.jsh, model, selecttype, allfields, sql_allkeyfields, datalockqueries, sortfields);
-  
   //Return applicable drop-down lists
   var dbtasks = [{},{}];
   if (!is_insert && !model.unbound) dbtasks[0][fullmodelid] = function (dbtrans, callback) {
+    var sql = db.sql.getModelForm(_this.jsh, model, selecttype, allfields, sql_allkeyfields, datalockqueries, sortfields);
     var dbfunc = db.Row;
     if (selecttype == 'multiple') dbfunc = db.Recordset;
     dbfunc.call(db, req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
