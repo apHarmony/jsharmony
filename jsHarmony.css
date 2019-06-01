@@ -189,6 +189,10 @@ BODY
   vertical-align:top;
   padding-top:6px;
 }
+<%-rootcss%> .xform_caption_checkbox {
+  cursor: default;
+  user-select: none;
+}
 <%-rootcss%> .xform_label,<%-rootcss%> .xform_html {
   display:inline-block;
 }

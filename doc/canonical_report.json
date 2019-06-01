@@ -113,6 +113,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   },
   //SQL used by the Job Queue to define how the elements will be queued.
   "jobqueue": {
-    "sql": "select 'MAIN' as rqst_source, 'C' as d_scope,c_id as d_scope_id,'DOCUMENT' as d_ctgr,'Sample Report' as d_desc, c_email as email_to,null as email_cc,null as email_bcc,'SMPLRPT' as email_txt_attrib,1 as email_attach, 'C' as n_scope,c_id as n_scope_id,'S' as n_type,'Report created and sent' as n_note, c_id from c where c_id=isnull(@c_id,c_id) and c_startdt<=@mdate %%%DATALOCKS%%%"
+    "sql": "select 'MAIN' as rqst_source, 'C' as d_scope,c_id as d_scope_id,'DOCUMENT' as d_ctgr,'Sample Report' as d_desc, c_email as email_to,null as email_cc,null as email_bcc,'SMPLRPT' as email_txt_attrib,'filename:123.pdf' as email_attach, 'C' as n_scope,c_id as n_scope_id,'S' as n_type,'Report created and sent' as n_note, c_id from c where c_id=isnull(@c_id,c_id) and c_startdt<=@mdate %%%DATALOCKS%%%"
   }
 }
