@@ -646,16 +646,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   xcontroller.SearchJoinChange = function(){
     xsearch.GetValues();
-    var d = xsearch.Data;
-    if(d.Items.length > 0){
-      var curjoin = d.Items[0].Join;
-      if(curjoin == 'and') curjoin = 'or';
-      else curjoin = 'and';
-      for(var i=0;i<d.Items.length;i++){
-        d.Items[i].Join = curjoin;
-      }
-      xsearch.Render();
-    }
+    // console.log(xsearch.Data);
+    // xsearch.Render(); todo do we need this ?????
   }
 
   xcontroller.SearchExpand = function(timeout){
@@ -717,15 +709,26 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xgrid.NewSearchJSON(sjson, cb);
   }
 
-  xcontroller.SearchAdd = function(){
+  xcontroller.SearchAdd = function(obj){
     xsearch.GetValues();
-    xsearch.Data.Items.unshift(new jsh.XSearch.SearchItem('ALL','','and','contains'));
+    if(!xsearch.Data.Items.length){
+      xsearch.Data.Items.push(new jsh.XSearch.SearchItem('ALL','','and','contains'))
+    }else {
+      var idx = -1;
+      if (obj) {
+        var t = $(obj.target).closest('div.xsearch_expression');
+        idx = jsh.$root(xsearch.PlaceholderID).children().index(t);
+      }
+      xsearch.Data.Items.splice(idx + 1, 0, new jsh.XSearch.SearchItem('ALL', '', 'and', 'contains'));
+    }
     xsearch.Render();
   }
 
   xcontroller.SearchRemove = function(obj){
+          // todo if last item
+    var t = $(obj.target).closest('div.xsearch_expression');
     xsearch.GetValues();
-    var idx = jsh.$root(xsearch.PlaceholderID).children().index($(obj).parent());
+    var idx = jsh.$root(xsearch.PlaceholderID).children().index(t);
     xsearch.Data.Items.splice(idx,1);
     xsearch.Render();
   }

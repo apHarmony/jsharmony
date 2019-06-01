@@ -55,7 +55,7 @@ exports = module.exports = function(jsh){
     jsh.$root(_PlaceholderID + ' div.xsearch_expression').each(function (i, obj) {
       var v_column = $(obj).find('select.xsearch_column').val();
       var v_value = $(obj).find('input.xsearch_value').val();
-      var v_join = $(obj).find('input.xsearch_join').val();
+      var v_join = $(obj).find('select.xsearch_join').val();
       var v_comparison = $(obj).find('select.xsearch_comparison').val();
       if ((v_column==='ALL') || !v_comparison) v_comparison = 'contains';
       _this.Items.push(new SearchItem(v_column, v_value, v_join, v_comparison));
