@@ -55,12 +55,23 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
     %%>
   <%% for(var i=0;i<data.Items.length;i++){ var selected_column = null; %%>
     <div class="xsearch_expression xsearch_expression_<%%=i%%>">
+        <%% if(i!=0){ %%>
+        <select name="xsearch_join" id="xsearch_join" class="xsearch_join" onchange="<%-js('xmodel.controller.SearchJoinChange(event);')%>" style="width: 55px;">
+            <option value="and" <%% if(data.Items[i].Join == 'and' ) { %%>selected<%% } %%>>and</option>
+            <option value="or" <%% if(data.Items[i].Join == 'or') { %%>selected<%% } %%>>or</option>
+        </select>
+        <%% } else { %%>
+        <select name="xsearch_join" id="xsearch_join" class="xsearch_join" onchange="<%-js('xmodel.controller.SearchJoinChange(event);')%>" style="width: 55px; visibility: hidden;" >
+            <option value="and" <%% if(data.Items[i].Join == 'and' ) { %%>selected<%% } %%>>and</option>
+            <option value="or" <%% if(data.Items[i].Join == 'or') { %%>selected<%% } %%>>or</option>
+        </select>
+        <%% } %%>
         <div class="controls_wrapper" style="position: relative; display: inline-block; top: 4px;">
             <img src="/images/icon_list.png" onclick="<%-js("event.preventDefault(); event.stopPropagation(); XExt.ShowContextMenu('.search_context_"+model.class+"', this, event)" )%>">
         </div>
-
       Search Column: &nbsp;<select class="xsearch_column" onchange="<%-js('xmodel.controller.SearchColumnChange();')%>"><option value="ALL">Any...</option><%% for(var j=0;j<data.Fields.length;j++){ if(!data.Fields[j].caption || data.Fields[j].unbound) continue; %%><option value="<%%=data.Fields[j].name%%>" <%% if(data.Fields[j].name==data.Items[i].Column){ selected_column = data.Fields[j]; %%>selected="Selected"<%% } %%>><%%=data.Fields[j].caption%%></option><%% } %%></select>&nbsp; 
       <div class="xsearch_comparison_div" style="display:inline-block;width:140px;">
+
         <%% if(selected_column && (selected_column.comparison_type=='string')){ %%>
           <select class="xsearch_comparison" onchange="<%-js('xmodel.controller.SearchComparisonChange();')%>">
             <%%-xejs.renderLOV(comparison_sound(comparison_string,selected_column.search_sound),data.Items[i].Comparison)%%>
@@ -83,14 +94,10 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           </select>
         <%% } %%>
       </div>&nbsp; 
-      <input type="text" class="xsearch_value <%%=xejs.iif((selected_column && (selected_column.comparison_type=='date')),'datepicker')%%>" value="<%%=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'',data.Items[i].Value)%%>" onkeyup="<%-js('xmodel.controller.SearchKeyUp(event);')%>" style="<%%=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'visibility:hidden;')%%>" /> 
+      <input type="text" class="xsearch_value <%%=xejs.iif((selected_column && (selected_column.comparison_type=='date')),'datepicker')%%>" value="<%%=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'',data.Items[i].Value)%%>" onkeyup="<%-js('xmodel.controller.SearchKeyUp(event);')%>" style="<%%=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'visibility:hidden;')%%>" />
+
         <%% if(i==(data.Items.length-1)){ %%>
         <a class="xsearch_apply" href="#" style="width:80px;" onclick="<%-js('xmodel.controller.RunSearch();')%>"><img src="/images/icon_search.png" alt="Search" title="Search" />GO</a>
-        <%% } else { %%>
-        <select name="xsearch_join" id="xsearch_join" class="xsearch_join" onchange="<%-js('xmodel.controller.SearchJoinChange(event);')%>" >
-            <option value="and" <%% if(data.Items[i].Join == 'and' ) { %%>selected<%% } %%>>and</option>
-            <option value="or" <%% if(data.Items[i].Join == 'or') { %%>selected<%% } %%>>or</option>
-        </select>
         <%% } %%>
     </div>
     <%% } %%>
