@@ -65,6 +65,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "sort": [ "^E_Name asc", "^c_name" ], //^ = Ascending or v = Descending
   //Alternate Syntax
   "sort": [ {"E_Name": "asc"}, {"c_name": "desc"} ],
+  "default_search": [{"Column":"C_Name","Value":"Smith","Join":"and","Comparison":"contains"}],
   "samplerepeat": 5,
   "rowlimit": 5, //Maximum rows returned per iteration in GridView
   "querystring": { "&action": "update", "|c_id": "@c_id" }, //QueryString Defaults/Overrides = &Override, |Default

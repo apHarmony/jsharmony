@@ -36,7 +36,21 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   xcontroller.Init = function(callback){
     xsearch = xcontroller.search = new jsh.XForm('','.xsearch_template_'+xmodel.class,'.xsearch_'+xmodel.class);
     xsearch.Data = new jsh.XSearch.SearchQuery(new xmodel.datamodel());
-    xsearch.Data.Items.unshift(new jsh.XSearch.SearchItem('ALL','','and','contains'));
+    if('default_search' in xmodel){
+      if(xmodel.default_search){
+        if(!_.isArray(xmodel.default_search)) xmodel.default_search = [xmodel.default_search];
+        for(var i=xmodel.default_search.length-1;i>=0;i--){
+          var defaultSearchItem = xmodel.default_search[i];
+          xsearch.Data.Items.unshift(new jsh.XSearch.SearchItem(
+            defaultSearchItem.Column||'ALL',
+            XExt.isNullUndefinedEmpty(defaultSearchItem.Value)?'':defaultSearchItem.Value,
+            defaultSearchItem.Join||'and',
+            defaultSearchItem.Comparison||'contains'
+          ));
+        }
+      }
+    }
+    else xsearch.Data.Items.unshift(new jsh.XSearch.SearchItem('ALL','','and','contains'));
     xsearch.OnAfterRender = function(){ 
       jsh.$root('.xsearch_'+xmodel.class+' input.xsearch_value').each(function(){ jsh.XBarcode.EnableScanner($(this)); }); 
       jsh.$root('.xsearch_'+xmodel.class+' input.xsearch_value.datepicker').each(function(){ 

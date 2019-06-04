@@ -8690,7 +8690,8 @@ exports = module.exports = function(jsh){
     return undefined;
   }
   XExt.getFieldFromObject = function (ctrl) {
-    return $(ctrl).closest('.xform_ctrl').data('id');
+    var jctrl = $(ctrl).closest('.xform_ctrl,.xform_file_upload');
+    return jctrl.data('id');
   }
   XExt.getFormField = function (xform, fieldname) {
     if (!xform) { XExt.Alert('ERROR: Cannot read field ' + fieldname + ' - Parent form not found.'); return; }

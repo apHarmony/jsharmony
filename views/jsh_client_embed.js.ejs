@@ -74,6 +74,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     unbound_data: {},
     using: <%-JSON.stringify(model.using)%>,
     <% 
+    if('default_search' in model){ %> default_search:<%-JSON.stringify(model.default_search)%>, <% }
     if('oninit' in model){ %> oninit:function(xmodel){<%-jslocals%><%-model.oninit%>}, <% }
     if('onload' in model){ %> onload:function(xmodel, callback){<%-jslocals%><%-model.onload%>}, <% }
     if('onloadimmediate' in model){ %> onloadimmediate:function(xmodel, callback){<%-jslocals%><%-model.onloadimmediate%>}, <% }
