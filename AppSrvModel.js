@@ -170,7 +170,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
   copyValues(rslt, model, [
     'id', 'namespace', 'class', 'layout', 'caption', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onupdate', 'oncommit', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy', 'js', 'hide_system_buttons',
     'popup', 'rowclass', 'rowstyle', 'tabpanelstyle', 'tablestyle', 'formstyle', 'sort', 'querystring', 'disableautoload', 'tabpos', 'templates', 'unbound',
-    'reselectafteredit','newrowposition','validationlevel','grid_expand_search','grid_rowcount', 'grid_require_search','grid_static','noresultsmessage','ejs','css','onecolumn',
+    'reselectafteredit','newrowposition','validationlevel','default_search','grid_expand_search','grid_rowcount', 'grid_require_search','grid_static','noresultsmessage','ejs','css','onecolumn',
     //Commit Level
     function(){
       if(model.commitlevel){

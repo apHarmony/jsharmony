@@ -900,23 +900,25 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     window.open(url,'_blank',"height=600, width=800"); 
   }
 
-  XPage.FileDelete = function(modelid, field, title) {
+  XPage.FileDelete = function(modelid, fieldname, title) {
     modelid = XExt.resolveModelID(modelid);
     var xmodel = jsh.XModels[modelid];
-    var jctrl_token = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_token');
-    var jctrl_dbexists = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_dbexists');
-    var jctrl_dbdelete = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_dbdelete');
-    var jctrl = jsh.$root('.' + field + '.xelem' + xmodel.class);
+    var jctrl_token = jsh.$root('.xelem' + xmodel.class + ' .' + fieldname + '_token');
+    var jctrl_dbexists = jsh.$root('.xelem' + xmodel.class + ' .' + fieldname + '_dbexists');
+    var jctrl_dbdelete = jsh.$root('.xelem' + xmodel.class + ' .' + fieldname + '_dbdelete');
+    var jctrl = jsh.$root('.' + fieldname + '.xelem' + xmodel.class);
     if (jctrl_dbexists.val() == '1') jctrl_dbdelete.val('1');
     jctrl_token.val('');
     jctrl.addClass('nodocument');
+    XExt.setFormControl(xmodel.controller.form, fieldname, '');
   }
 
-  XPage.FileUploadDialog = function(modelid, field, title) {
+  XPage.FileUploadDialog = function(modelid, fieldname, title) {
     modelid = XExt.resolveModelID(modelid);
     var xmodel = jsh.XModels[modelid];
+    var field = xmodel.fields[fieldname];
     //Get PrevToken, if Applicable
-    jsh.xfileupload_ctrl = jsh.$root('.' + field + '.xelem' + xmodel.class);
+    jsh.xfileupload_ctrl = jsh.$root('.' + fieldname + '.xelem' + xmodel.class);
     if (jsh.xfileupload_ctrl.size() != 1) return;
     $.colorbox({
       href: jsh.$root(".xfileuploader"), inline: true, closeButton: false, arrowKey: false, preloading: false, overlayClose: false, title: title, fixed: true,
