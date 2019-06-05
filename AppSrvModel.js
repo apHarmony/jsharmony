@@ -493,12 +493,76 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
       });
       else return cb();
     },
-
-  ],function(err){
-    if(!rslt.fields) rslt.fields = [];
-    //Return result
-    if(onComplete) onComplete(rslt);
-  });
+    function (cb) {
+      if (model.layout ==='grid'){
+        if (model.display_layout === true){  //
+          let fields_names = {};
+          _.map(rslt.fields,function(f){
+            fields_names[f.name] = f;
+          });
+          if (typeof model.display_layouts === 'object'){  // defined layouts remove any fields that are not in the rslt.fields array, and return that
+            _.forEach(model.display_layouts,function (l, i) {
+              model.display_layouts[i].columns =  _.filter(l['columns'],function (column) {
+                if(fields_names[column.name]) return true;
+              });
+            })
+          }else{ // generating a “standard” display_layout of all fields in the rslt.fields array, that have:
+            //     field.action ”B”
+            //      field.control not “hidden”
+            //      field.caption not blank
+            let columns = [];
+            _.each(rslt.fields,function(f){
+             if(f.actions.indexOf("B")>-1 && f.control !== "hidden" && f.caption.length) columns.push({"name":f.name});
+            });
+            model.display_layouts = {
+              "standard": {
+                "title": "Standard",
+                "columns": columns
+              }
+            
+            }
+          }
+        
+      
+      
+      
+      
+      
+      
+      
+      
+        console.log(JSON.stringify(model.display_layouts));
+      
+      
+        // console.log(model.fields);
+        // console.log(rslt.fields);
+        // if(model.title == "Settings Definitions"){
+        //   console.log(JSON.stringify(model.display_layouts));
+        //   throw new Error('1111');
+        // }else {
+        //   return cb();
+        // }
+        return cb();
+      
+      
+        // if
+        //   If model is a grid
+        //   If display_layouts is defined, remove any fields that are not in the rslt.fields array, and return that
+        //   Otherwise, generate a “standard” display_layout of all fields in the rslt.fields array, that have:
+        //     field.action ”B”
+        //      field.control not “hidden”
+        //      field.caption not blank
+        //   Set display_layout to the first item in display_layouts
+        //   If display_layouts is false, return that and return an undefined display_layout
+      
+      }}}
+  
+    ],
+      function(err){
+        if(!rslt.fields) rslt.fields = [];
+        //Return result
+        if(onComplete) onComplete(rslt);
+      });
 }
 
 AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, targetperm, onComplete) {

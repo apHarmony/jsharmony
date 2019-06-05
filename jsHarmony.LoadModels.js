@@ -537,6 +537,30 @@ exports.ApplyCustomControl = function(model, field, controlname){
   _this.ApplyCustomControl(model, field);
 };
 
+var validateDisplayLayout = function(model){
+  if(typeof model.display_layouts === "undefined"){
+    model.display_layout = true;
+  }else{
+    if (!model.display_layouts){
+      model.display_layout= false;
+    }else{
+      if (typeof model.display_layouts === 'object'){
+        model.display_layout = true;
+        _.forEach(model.display_layouts,function (l, i) {
+          model.display_layouts[i].columns =  _.map(l['columns'],function (column) {
+            if(!column.name){
+              return  {name: column};
+            }
+            return column;
+          });
+          model.display_layouts[i].columns = _.uniqBy(model.display_layouts[i].columns, 'name');
+        })
+      }
+    }
+  }
+  return model;
+}
+
 exports.ParseEntities = function () {
   var _this = this;
   _this.ParseCustomControls();
@@ -1484,6 +1508,7 @@ exports.ParseEntities = function () {
       'path', 'module', 'templates', 'db', 'onecolumn', 'namespace',
       //Report Parameters
       'subheader', 'footerheight', 'headeradd',
+      'display_layouts'
     ];
     var _v_field = [
       'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'foreignkey', 'serverejs', 'roles', 'ongetvalue', 'cellclass',
@@ -1502,6 +1527,12 @@ exports.ParseEntities = function () {
     //lov
     var existing_targets = [];
     for (let f in model) { if (f.substr(0, 7) == 'comment') continue; if (!_.includes(_v_model, f)) _this.LogInit_ERROR(model.id + ': Invalid model property: ' + f); }
+    validateDisplayLayout(model);
+    
+    // if(model.title == "Settings Definitions"){
+    //   console.log(JSON.stringify(model.display_layouts));
+    //   throw new Error('1111');
+    // }
     var no_B = true;
     var no_key = true;
     if (model.fields) _.each(model.fields, function (field) {
