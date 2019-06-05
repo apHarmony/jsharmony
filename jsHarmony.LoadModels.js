@@ -538,27 +538,17 @@ exports.ApplyCustomControl = function(model, field, controlname){
 };
 
 var validateDisplayLayout = function(model){
-  if(typeof model.display_layouts === "undefined"){
-    model.display_layout = true;
-  }else{
-    if (!model.display_layouts){
-      model.display_layout= false;
-    }else{
-      if (typeof model.display_layouts === 'object'){
-        model.display_layout = true;
-        _.forEach(model.display_layouts,function (l, i) {
-          model.display_layouts[i].columns =  _.map(l['columns'],function (column) {
-            if(!column.name){
-              return  {name: column};
-            }
-            return column;
-          });
-          model.display_layouts[i].columns = _.uniqBy(model.display_layouts[i].columns, 'name');
-        })
-      }
-    }
+  if(model.display_layouts){
+    _.forEach(model.display_layouts,function (l, i) {
+      model.display_layouts[i].columns =  _.map(l['columns'],function (column) {
+        if(!column.name){
+          return  {name: column};
+        }
+        return column;
+      });
+      model.display_layouts[i].columns = _.uniqBy(model.display_layouts[i].columns, 'name');
+    })
   }
-  return model;
 }
 
 exports.ParseEntities = function () {
