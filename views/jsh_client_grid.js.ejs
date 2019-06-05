@@ -36,28 +36,13 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   xcontroller.Init = function(callback){
     xsearch = xcontroller.search = new jsh.XForm('','.xsearch_template_'+xmodel.class,'.xsearch_'+xmodel.class);
     xsearch.Data = new jsh.XSearch.SearchQuery(new xmodel.datamodel());
-    if('default_search' in xmodel){
-      if(xmodel.default_search){
-        if(!_.isArray(xmodel.default_search)) xmodel.default_search = [xmodel.default_search];
-        for(var i=xmodel.default_search.length-1;i>=0;i--){
-          var defaultSearchItem = xmodel.default_search[i];
-          xsearch.Data.Items.unshift(new jsh.XSearch.SearchItem(
-            defaultSearchItem.Column||'ALL',
-            XExt.isNullUndefinedEmpty(defaultSearchItem.Value)?'':defaultSearchItem.Value,
-            defaultSearchItem.Join||'and',
-            defaultSearchItem.Comparison||'contains'
-          ));
-        }
-      }
-    }
-    else xsearch.Data.Items.unshift(new jsh.XSearch.SearchItem('ALL','','and','contains'));
     xsearch.OnAfterRender = function(){ 
       jsh.$root('.xsearch_'+xmodel.class+' input.xsearch_value').each(function(){ jsh.XBarcode.EnableScanner($(this)); }); 
       jsh.$root('.xsearch_'+xmodel.class+' input.xsearch_value.datepicker').each(function(){ 
         $(this).datepicker({ constrainInput: false, changeMonth: true, changeYear: true, dateFormat: jsh.DEFAULT_DATEFORMAT });
       }); 
     };
-    xsearch.Render();
+    xcontroller.SearchAddDefault();
     <% if(model.grid_expand_search){ %>xcontroller.SearchExpand(0);<% } %>
 
     xform = xcontroller.form = new jsh.XForm(modelid,'','');
@@ -180,7 +165,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xgrid.OnBeforeSelect = function(){
       var has_search_items = xcontroller.HasSearchItems(this.SearchJSON);
       if(has_search_items){ 
-        jsh.$root('.xsearchbutton<%=model.class%> span').html('Remove Search');
+        jsh.$root('.xsearchbutton<%=model.class%> span').html('Reset Search');
       }
       else{
         jsh.$root('.xsearchbutton<%=model.class%> span').html('Search');
@@ -669,7 +654,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh.$root('.xsearch_'+xmodel.class+' .xsearch_value').first().select().focus();
     }
     if(xsearch.Data.Items.length == 0){
-      xcontroller.SearchAdd();
+      xcontroller.SearchAddDefault();
       jsh.$root('.xsearch_'+xmodel.class).slideDown(timeout,function(){ selectFirstSearchInput(); });
     }
     else {
@@ -678,7 +663,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   xcontroller.SearchButtonClick = function(){
-    if(jsh.$root('.xsearchbutton'+xmodel.class+' span').html()=='Remove Search'){
+    if(jsh.$root('.xsearchbutton'+xmodel.class+' span').html()=='Reset Search'){
       xsearch.Data.Items = [];
       xsearch.Render();
       jsh.$root('.xsearch_'+xmodel.class).hide();
@@ -724,26 +709,42 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   xcontroller.SearchAdd = function(obj){
     xsearch.GetValues();
-    if(!xsearch.Data.Items.length){
-      xsearch.Data.Items.push(new jsh.XSearch.SearchItem('ALL','','and','contains'))
-    }else {
-      var idx = -1;
-      if (obj) {
-        var t = $(obj.target).closest('div.xsearch_expression');
-        idx = jsh.$root(xsearch.PlaceholderID).children().index(t);
-      }
-      xsearch.Data.Items.splice(idx + 1, 0, new jsh.XSearch.SearchItem('ALL', '', 'and', 'contains'));
+    var newSearchItem = new jsh.XSearch.SearchItem('ALL','','and','contains');
+    if(!obj || !xsearch.Data.Items.length){
+      xsearch.Data.Items.push(newSearchItem);
+    }
+    else {
+      var tgt = $(obj.target).closest('div.xsearch_expression');
+      var idx = jsh.$root(xsearch.PlaceholderID).children().index(tgt);
+      xsearch.Data.Items.splice(idx + 1, 0, newSearchItem);
     }
     xsearch.Render();
   }
 
+  xcontroller.SearchAddDefault = function(){
+    if('default_search' in xmodel){
+      if(!_.isArray(xmodel.default_search)) xmodel.default_search = [xmodel.default_search];
+      for(var i=xmodel.default_search.length-1;i>=0;i--){
+        var defaultSearchItem = xmodel.default_search[i];
+        xsearch.Data.Items.unshift(new jsh.XSearch.SearchItem(
+          defaultSearchItem.Column||'ALL',
+          XExt.isNullUndefinedEmpty(defaultSearchItem.Value)?'':defaultSearchItem.Value,
+          defaultSearchItem.Join||'and',
+          defaultSearchItem.Comparison||'contains'
+        ));
+      }
+    }
+    else xsearch.Data.Items.unshift(new jsh.XSearch.SearchItem('ALL','','and','contains'));
+    xsearch.Render();
+  }
+
   xcontroller.SearchRemove = function(obj){
-          // todo if last item
-    var t = $(obj.target).closest('div.xsearch_expression');
     xsearch.GetValues();
-    var idx = jsh.$root(xsearch.PlaceholderID).children().index(t);
+    var tgt = $(obj.target).closest('div.xsearch_expression');
+    var idx = jsh.$root(xsearch.PlaceholderID).children().index(tgt);
     xsearch.Data.Items.splice(idx,1);
     xsearch.Render();
+    if(!xsearch.Data.Items.length) xcontroller.SearchAddDefault();
   }
 
   xcontroller.Export = function(){

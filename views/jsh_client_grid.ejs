@@ -52,13 +52,12 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
       if(search_sound){ <%-instance%>.XExt.pushLOV(rslt,'soundslike','Sounds Like'); }
       return rslt;
     }
-    %%>
+  %%>
   <%% for(var i=0;i<data.Items.length;i++){ var selected_column = null; %%>
     <div class="xsearch_expression xsearch_expression_<%%=i%%>">
-      <a href="#" class="controls_wrapper" style="position: relative; display: inline-block;"><img src="/images/icon_list.png" onclick="<%-js("event.preventDefault(); event.stopPropagation(); XExt.ShowContextMenu('.search_context_"+model.class+"', this, event)" )%>"></a>
+      <input type="button" class="xsearch_menu_button" value="&#x2bc8;" onclick="<%-js("event.preventDefault(); event.stopPropagation(); XExt.ShowContextMenu('.search_context_"+model.class+"', this, event, { top: $(this).offset().top, left: $(this).offset().left+$(this).outerWidth()-1 });" )%>" />
       Search Column: &nbsp;<select class="xsearch_column" onchange="<%-js('xmodel.controller.SearchColumnChange();')%>"><option value="ALL">Any...</option><%% for(var j=0;j<data.Fields.length;j++){ if(!data.Fields[j].caption || data.Fields[j].unbound) continue; %%><option value="<%%=data.Fields[j].name%%>" <%% if(data.Fields[j].name==data.Items[i].Column){ selected_column = data.Fields[j]; %%>selected="Selected"<%% } %%>><%%=data.Fields[j].caption%%></option><%% } %%></select>&nbsp; 
       <div class="xsearch_comparison_div" style="display:inline-block;width:140px;">
-
         <%% if(selected_column && (selected_column.comparison_type=='string')){ %%>
           <select class="xsearch_comparison" onchange="<%-js('xmodel.controller.SearchComparisonChange();')%>">
             <%%-xejs.renderLOV(comparison_sound(comparison_string,selected_column.search_sound),data.Items[i].Comparison)%%>
@@ -91,13 +90,13 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
         </select>
         <%% } %%>
     </div>
-    <%% } %%>
-  </script>
-    <div class="xcontext_menu search_context_<%=model.class%>">
-        <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchAdd(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_add.png" />Add</a>
-        <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchRemove(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_remove.png" />Remove</a>
-    </div>
+  <%% } %%>
+</script>
+<div class="xcontext_menu search_context_<%=model.class%>">
+  <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchAdd(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_add.png" />Add Search Item</a>
+  <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchRemove(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_remove.png" />Remove</a>
 </div>
+</div><!-- .xbodyhead -->
   <% if(!model.templates.grid){ %>
   <table class="xtbl xelem<%=model.class%> xform<%=model.class%>" data-id="<%=model.id%>" style="<%=model.tablestyle%>">
     <thead>

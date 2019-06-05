@@ -89,12 +89,13 @@ exports = module.exports = function(jsh){
     else e.cancelBubble = true;
   }
 
-  XExt.ShowContextMenu = function (selector,context_item,data){
+  XExt.ShowContextMenu = function (selector,context_item,data,options){
+    options = _.extend({ top: jsh.mouseY, left: jsh.mouseX }, options);
     if (!selector) selector = '.xcontext_menu';
     jsh.$root('.xcontext_menu').hide();
     jsh.$root(selector).css('visibility', 'hidden');
     jsh.$root(selector).show();
-    var xtop = jsh.mouseY; var xleft = jsh.mouseX;
+    var xtop = options.top; var xleft = options.left;
     var offset = jsh.$root(selector).offsetParent().offset();
     xtop -= offset.top - 1;
     xleft -= offset.left - 1;
