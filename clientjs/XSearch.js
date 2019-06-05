@@ -52,14 +52,16 @@ exports = module.exports = function(jsh){
   SearchQuery.prototype.GetValues = function (_PlaceholderID) {
     var _this = this;
     _this.Items = [];
-    jsh.$root(_PlaceholderID + ' div.xsearch_expression').each(function (i, obj) {
-      var v_column = $(obj).find('select.xsearch_column').val();
-      var v_value = $(obj).find('input.xsearch_value').val();
-      var v_join = $(obj).find('input.xsearch_join').val();
-      var v_comparison = $(obj).find('select.xsearch_comparison').val();
+    var jSearchExpressions = jsh.$root(_PlaceholderID + ' div.xsearch_expression');
+    for(var i=0;i<jSearchExpressions.length;i++){
+      var jobj = $(jSearchExpressions[i]);
+      var v_column = jobj.find('select.xsearch_column').val();
+      var v_value = jobj.find('input.xsearch_value').val();
+      var v_join = ((i==0) ? undefined : $(jSearchExpressions[i-1]).find('select.xsearch_join').val());
+      var v_comparison = jobj.find('select.xsearch_comparison').val();
       if ((v_column==='ALL') || !v_comparison) v_comparison = 'contains';
       _this.Items.push(new SearchItem(v_column, v_value, v_join, v_comparison));
-    });
+    }
   };
   SearchQuery.prototype.HasUpdates = function (_PlaceholderID) {
     var _this = this;

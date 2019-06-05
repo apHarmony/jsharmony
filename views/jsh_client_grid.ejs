@@ -52,9 +52,10 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
       if(search_sound){ <%-instance%>.XExt.pushLOV(rslt,'soundslike','Sounds Like'); }
       return rslt;
     }
-    %%>
-    <%% for(var i=0;i<data.Items.length;i++){ var selected_column = null; %%>
+  %%>
+  <%% for(var i=0;i<data.Items.length;i++){ var selected_column = null; %%>
     <div class="xsearch_expression xsearch_expression_<%%=i%%>">
+      <input type="button" class="xsearch_menu_button" value="&#x2bc8;" onclick="<%-js("event.preventDefault(); event.stopPropagation(); XExt.ShowContextMenu('.search_context_"+model.class+"', this, event, { top: $(this).offset().top, left: $(this).offset().left+$(this).outerWidth()-1 });" )%>" />
       Search Column: &nbsp;<select class="xsearch_column" onchange="<%-js('xmodel.controller.SearchColumnChange();')%>"><option value="ALL">Any...</option><%% for(var j=0;j<data.Fields.length;j++){ if(!data.Fields[j].caption || data.Fields[j].unbound) continue; %%><option value="<%%=data.Fields[j].name%%>" <%% if(data.Fields[j].name==data.Items[i].Column){ selected_column = data.Fields[j]; %%>selected="Selected"<%% } %%>><%%=data.Fields[j].caption%%></option><%% } %%></select>&nbsp; 
       <div class="xsearch_comparison_div" style="display:inline-block;width:140px;">
         <%% if(selected_column && (selected_column.comparison_type=='string')){ %%>
@@ -79,19 +80,23 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           </select>
         <%% } %%>
       </div>&nbsp; 
-      <input type="text" class="xsearch_value <%%=xejs.iif((selected_column && (selected_column.comparison_type=='date')),'datepicker')%%>" value="<%%=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'',data.Items[i].Value)%%>" onkeyup="<%-js('xmodel.controller.SearchKeyUp(event);')%>" style="<%%=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'visibility:hidden;')%%>" /> 
+      <input type="text" class="xsearch_value <%%=xejs.iif((selected_column && (selected_column.comparison_type=='date')),'datepicker')%%>" value="<%%=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'',data.Items[i].Value)%%>" onkeyup="<%-js('xmodel.controller.SearchKeyUp(event);')%>" style="<%%=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'visibility:hidden;')%%>" />
         <%% if(i==(data.Items.length-1)){ %%>
         <a class="xsearch_apply" href="#" style="width:80px;" onclick="<%-js('xmodel.controller.RunSearch();')%>"><img src="/images/icon_search.png" alt="Search" title="Search" />GO</a>
-        <a class="xsearch_add" href="#" style="width:130px;text-align:right;" onclick="<%-js('xmodel.controller.SearchAdd();')%>">Add Criteria<img src="/images/icon_insert.png" alt="Add Criteria" title="Add Criteria" /></a>
         <%% } else { %%>
-        <span style="display:inline-block;width:80px;">&nbsp; <a style="display:inline-block;cursor:hand;cursor:pointer;" class="xsearch_join_lbl" onclick="<%-js('xmodel.controller.SearchJoinChange();')%>"><%%=data.Items[i].Join%%></a> </span>
-        <a class="xsearch_remove" href="#" style="width:130px;text-align:right;" onclick="<%-js('xmodel.controller.SearchRemove();')%>">Remove Criteria<img src="/images/icon_remove.png" alt="Remove Criteria" title="Remove Criteria" /></a>
-        <input type="hidden" class="xsearch_join" value="<%%=data.Items[i].Join%%>">
+        <select name="xsearch_join" id="xsearch_join" class="xsearch_join" onchange="<%-js('xmodel.controller.SearchJoinChange(event);')%>" >
+            <option value="and" <%% if(data.Items[i+1].Join == 'and' ) { %%>selected<%% } %%>>and</option>
+            <option value="or" <%% if(data.Items[i+1].Join == 'or') { %%>selected<%% } %%>>or</option>
+        </select>
         <%% } %%>
     </div>
-    <%% } %%>
-  </script>
-  </div>
+  <%% } %%>
+</script>
+<div class="xcontext_menu search_context_<%=model.class%>">
+  <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchAdd(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_add.png" />Add Search Item</a>
+  <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchRemove(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_remove.png" />Remove</a>
+</div>
+</div><!-- .xbodyhead -->
   <% if(!model.templates.grid){ %>
   <table class="xtbl xelem<%=model.class%> xform<%=model.class%>" data-id="<%=model.id%>" style="<%=model.tablestyle%>">
     <thead>
