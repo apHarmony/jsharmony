@@ -377,6 +377,7 @@ function SortModelArray(fields){
 }
 
 exports.LogDeprecated = function(msg) {
+  this.Statistics.Counts.InitDeprecated++;
   if (this.Config.debug_params.hide_deprecated) return;
   this.Log.console('**DEPRECATED** ' + msg);
 };
@@ -2171,9 +2172,9 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     if(tmodel.layout != 'exec') { _this.LogInit_ERROR(model.id + ' > Duplicate: Target model should have "exec" layout'); }
     tmodel._parentmodels.duplicate[model.id] = 1;
     model.duplicate.target = tmodel.id;
-    validateSiteRoles(model, tmodel, model.id + ' > Duplicate model ' + model.duplicate + ': ', '');
-    validateSiteLinks(model, model.duplicate.link, model.id + ' > Duplicate model ' + model.duplicate + ' link: ', model.duplicate.link);
-    validateBindings(model.duplicate.bindings, model, tmodel, model.id + ' > Duplicate model ' + model.duplicate + ': ', model.duplicate);
+    validateSiteRoles(model, tmodel, model.id + ' > Duplicate model ' + JSON.stringify(model.duplicate) + ': ', '');
+    validateSiteLinks(model, model.duplicate.link, model.id + ' > Duplicate model ' + JSON.stringify(model.duplicate) + ' link: ', model.duplicate.link);
+    validateBindings(model.duplicate.bindings, model, tmodel, model.id + ' > Duplicate model ' + JSON.stringify(model.duplicate) + ': ', model.duplicate);
     ParseModelRoles(jsh, tmodel, srcmodelid, srcactions);
   }
   _.each(model.buttons, function (button) {
