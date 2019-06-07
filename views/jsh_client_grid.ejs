@@ -13,6 +13,9 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
 <div class="xactions <%=xactiontype%> xelem<%=model.class%>">
   <%-jsh.RenderView('jsh_buttons',ejsparams)%>
   <% if(model.inlinepopup){ %><a href="#" onclick="<%-instance%>.XExt.popupClear('<%=model.id%>',this); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'clear'))%>"><img src="/images/icon_delete.png" alt="Clear" title="Clear" />Clear</a><% } %>
+    <% if(model.layout == "grid" ){ %>
+    <a href="#" class="display_layout" onclick="<%-js("event.preventDefault(); event.stopPropagation(); XExt.ShowContextMenu('.display_context_"+model.class+"', this, event)" )%>"><img src="/images/icon_edit.png">Display</a>
+    <% } %>
   <% if(model.topmost && (model.commitlevel) && (model.commitlevel != 'none')){ %><a href="#" class="save" onclick="<%-instance%>.XPage.Save();return false;" style="display:none;"><img src="/images/icon_save.png" alt="Save" title="Save" />Save</a><% } %>
   <% if(!model.templates.grid && !model.grid_static){ %><a href="#" onclick="<%-js('xmodel.controller.AddRow();')%>" class="xbuttoninsert" style="<%-xejs.visible(xejs.showSystemButton(model,'insert') && model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'I'))%>"><img src="/images/icon_insert.png" alt="Add" title="Add" />Add</a><% } %>
   <a href="#" class="xsearchbutton xsearchbutton<%=model.class%>" onclick="<%-js('xmodel.controller.SearchButtonClick();')%>" style="<%-xejs.visible(xejs.showSystemButton(model,'search'))%>"><img src="/images/icon_search.png" alt="Search" title="Search" /><span>Search</span></a>
@@ -96,6 +99,10 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
     <div class="xcontext_menu search_context_<%=model.class%>">
         <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchAdd(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_add.png" />Add</a>
         <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchRemove(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_remove.png" />Remove</a>
+    </div>
+    <div class="xcontext_menu display_context_<%=model.class%>">
+        <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.HideColumn(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_design2.png" />Hide this column</a>
+        <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.ManageColumns(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_design.png" />Manage Columns</a>
     </div>
 </div>
   <% if(!model.templates.grid){ %>

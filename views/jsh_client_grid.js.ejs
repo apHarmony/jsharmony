@@ -775,6 +775,29 @@ xcontroller.Init = function(callback){
     }
     jsh.$root('.xtitlecaption'+xmodel.class+' a').text(txt);
   }
+  
+  xcontroller.HideColumn = function(obj){
+    xsearch.GetValues();
+    if(!xsearch.Data.Items.length){
+      xsearch.Data.Items.push(new jsh.XSearch.SearchItem('ALL','','and','contains'))
+    }else {
+      var idx = -1;
+      if (obj) {
+        var t = $(obj.target).closest('div.xsearch_expression');
+        idx = jsh.$root(xsearch.PlaceholderID).children().index(t);
+      }
+      xsearch.Data.Items.splice(idx + 1, 0, new jsh.XSearch.SearchItem('ALL', '', 'and', 'contains'));
+    }
+    xsearch.Render();
+  }
+  xcontroller.ManageColumns = function(obj){
+          console.log(xmodel.display_layout);
+          console.log(xmodel.display_layouts);
+          // todo continue
+          
+    XExt.CustomPrompt("","<div>hello</div>",function(){console.log('eeee')},)
+    console.log(obj);
+  }
 
 })(<%-instance%>);
 
