@@ -103,15 +103,22 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
     <thead>
       <tr>
         <% if(model.inlinepopup){ %><th style="text-align:center;" nowrap>Select</th><% } %>
-        <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
+        <% function isHidden(f_name) {
+            var c = model.display_layouts[model.display_layout].columns;
+            return !(c.filter(function (it) {
+                if (it.name == f_name) return true;
+            }).length >0 );
+        }%>
+        <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i];
           if(!('caption' in field)) continue;
           if(('actions' in field)){
             if(!XExt.hasAction(field.actions,'BIU')) continue;
           }
           else if (!('html' in field)) continue; 
           var fieldclass = '';
-          if(field.control && (field.control=='hidden')) fieldclass += 'tdhidden';
-          %>
+          if(field.control && (field.control=='hidden')) fieldclass += ' tdhidden ';
+          if(isHidden(field.name)) fieldclass += ' tdhidden';
+            %>
         <th nowrap class="<%=field.sortclass%> thead<%=field.name%> <%=field.captionclass%> <%=fieldclass%>" style="<%=field.captionstyle%>"><% if(field.disable_sort||(field.type=='file')||field.unbound){ %><%=field.caption%><% } else { %><a href="#" onClick="<%-js('return xmodel.controller.Sort(this, \''+XExt.escapeHTML((field.lov && !field.lov.showcode)?('__'+jsh.uimap.codetxt+'__'+field.name):field.name)+'\');')%>"><%=field.caption%></a><% } %></th>
         <% } %>
         <%-xejs.iif(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'I'),'<th></th>')%>
@@ -123,7 +130,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
       <%% for(var j=0;j<datatable.length;j++){ var datarow=datatable[j]; var data = datarow; if((typeof startrowid == 'undefined') || (startrowid === null)) startrowid = j; var rowid = startrowid + j %%>
       <tr class="<%%=(rowid%2==1?'even':'odd')%%> <%-model.rowclass%> xrow_<%=model.class%> xrow" style="<%-model.rowstyle%>" data-id="<%%=rowid%%>">
         <% if(model.inlinepopup){ %><td align="center"><a href="#" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this); return false;">Select</a></td><% } %>
-        <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
+        <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i];
           if(!('caption' in field)) continue;
           if(('actions' in field)){
             if(!XExt.hasAction(field.actions,'BIU')) continue;
@@ -133,6 +140,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           if('format' in field) format = JSON.stringify(field.format);
           var fieldclass = '';
           if(field.control && (field.control=='hidden')) fieldclass += 'tdhidden';
+          if(isHidden(field.name)) fieldclass += ' tdhidden';
           var maxlength = XExt.getMaxLength(field);
           %>
           <td style="<%=field.cellstyle%>" class="<%=field.cellclass%> <%=xejs.iif(field.control=='checkbox','xcheckbox_column')%> <%=xejs.iif(field.popuplov,'xpopuplov_column')%> <%=fieldclass%>"><% 

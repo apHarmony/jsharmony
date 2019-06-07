@@ -215,6 +215,7 @@ exports = module.exports = function(jsh){
           else {
             var ejsrslt = jsh.XExt.renderEJS(ejssource, undefined, {
               startrowid: undefined,
+              display_layout: undefined,
               datatable: data[this.q],
             });
             jsh.$root(_this.PlaceholderID).append(ejsrslt);

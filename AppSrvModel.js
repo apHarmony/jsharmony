@@ -497,7 +497,8 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
     function (cb) {
       if (model.layout ==='grid'){
         if (model.display_layouts === false) {  //
-          model.display_layout = undefined;
+          rslt.display_layout = undefined;
+          rslt.display_layouts = undefined;
         }else{
           let fields_names = {};
           _.map(rslt.fields,function(f){
@@ -508,20 +509,23 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
               model.display_layouts[i].columns =  _.filter(l['columns'],function (column) {
                 if(fields_names[column.name]) return true;
               });
+              rslt.display_layouts = model.display_layouts;
+              rslt.display_layout = Object.keys(rslt.display_layouts)[0];
             });
-          }else{ // generating a “standard” display_layout
+          }else
+            { // generating a “standard” display_layout
             let columns = [];
             _.each(rslt.fields,function(f){
               if(f.actions.indexOf("B")>-1 && f.control !== "hidden" && f.caption.length) columns.push({"name":f.name});
             });
-            model.display_layouts = {
+            rslt.display_layouts = {
               "standard": {
                 "title": "Standard",
                 "columns": columns
               }
             }
+            rslt.display_layout = Object.keys(rslt.display_layouts)[0];
           }
-          model.display_layout = model.display_layouts[Object.keys(model.display_layouts)[0]];
         }
       }
       return cb();

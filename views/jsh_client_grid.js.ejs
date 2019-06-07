@@ -24,6 +24,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var XExt = jsh.XExt;
   var moment = jsh.moment;
   var modelid = '<%=model.id%>';
+  var display_layout = '<%=model.display_layout%>';
+  var display_layouts = <%-JSON.stringify(model.display_layouts)%>;
   var xmodel = jsh.XModels[modelid];
 
   var xcontroller = xmodel.controller = new XExt.XModel.XController(xmodel);
@@ -33,7 +35,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var xform = null;
   var gridCustomTemplate = <%=!!model.templates.grid%>;
 
-  xcontroller.Init = function(callback){
+xcontroller.Init = function(callback){
     xsearch = xcontroller.search = new jsh.XForm('','.xsearch_template_'+xmodel.class,'.xsearch_'+xmodel.class);
     xsearch.Data = new jsh.XSearch.SearchQuery(new xmodel.datamodel());
     if('default_search' in xmodel){
@@ -133,6 +135,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if(xeditablegrid){
         var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
           startrowid: this.RowCount,
+          display_layout: display_layouts,
           datatable: data[this.q],
         });
         var jparent = jsh.$root(this.PlaceholderID);
@@ -161,6 +164,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       else {
         var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
           startrowid: this.RowCount,
+          display_layout: display_layout,
           datatable: data[this.q],
         });
         var jobj = $(ejsrslt).appendTo(jsh.$root(this.PlaceholderID));
@@ -362,6 +366,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           var ejssource = jsh.$root(xgrid.TemplateID).html();
           var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
             startrowid: rowid,
+            display_layout: display_layout,
             datatable: [_this.DataSet[rowid]], 
           });
           var jobj = jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']");
@@ -457,6 +462,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     else ejssource = jsh.$root(xgrid.TemplateID).html();
     var ejsrslt = XExt.renderEJS(ejssource, modelid, {
       startrowid: rowid,
+      display_layout: display_layout,
       datatable: [newrow],
     });
 
