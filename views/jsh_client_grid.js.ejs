@@ -626,6 +626,20 @@ xcontroller.Init = function(callback){
       xsearch.Render();
       xgrid.SearchJSON = JSON.stringify(state.Search);
     }
+    if('DisplayLayout' in state){
+      var col = state.DisplayLayout['columns'];
+      xcontroller.SetDisplayLayout(col);
+      var th = jshInstance.$('.xelem<%=model.class%> th');
+      th.map(function (ind, t) {
+        t = $(t);
+        var fn= t.data('field');
+        if(!(col.find( (it) => { return (it.name === fn);}))) {
+          jshInstance.$('.thead'+fn).addClass('tdhidden');
+        }else{
+          jshInstance.$('.thead'+fn).removeClass('tdhidden');
+        }
+      });
+    }
   }
 
   xcontroller.Refresh = function(){
@@ -803,6 +817,8 @@ xcontroller.Init = function(callback){
   xcontroller.SetDisplayLayout = function(columns) {
     if(!xgrid.Prop.isInlinePopup) if(jsh.XPage.onGridExit(columns,function(){ xcontroller.SetDisplayLayout(columns); })) return;
     xcontroller.GetDisplayLayout()['columns'] = columns;
+    xgrid.State.DisplayLayout = xcontroller.GetDisplayLayout();
+    jsh.XPage.AddHistory();
   }
 
   xcontroller.GetDisplayLayout = function() {
@@ -819,7 +835,6 @@ xcontroller.Init = function(callback){
   xcontroller.ManageColumns = function(obj){
     var html = $('.dynamic_columns_template_<%=model.class%>').html();
     html = jsh.ejs.render(html,{xmodel:xmodel});
-
     XExt.CustomPrompt(' dynamic', html, function () { //onInit
       jshInstance.$(".xpromptbox").show();
       jshInstance.$(".button_cancel").on('click',function () {
@@ -843,18 +858,6 @@ xcontroller.Init = function(callback){
       });
     }, function (success) { //onAccept
       // todo ???
-      // if (_this.canUpdate()) {
-      //   var d = {
-      //     TC_DT: moment.utc(_this.cur_dt).format('YYYY-MM-DD'),
-      //     TC_DAYNOTES: $('.SCHED_DayNotesPopup_TC_DAYNOTES').val()
-      //   };
-      //   XPost.prototype.XExecutePost('SCHED_SAVE_TC', d, function (rslt) {
-      //     _this.TC['TC_DAYNOTES'] = d.TC_DAYNOTES;
-      //     $('.SCHED_DAY_NOTES_TEXT').val(XExt.escapeBRSpace(d.TC_DAYNOTES));
-      //     success();
-      //   });
-      // }
-      // else success();
     }, function () { //onCancel
       jshInstance.$(".xdialogblock").hide();
     }, function () { //onClosed
