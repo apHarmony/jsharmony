@@ -629,17 +629,21 @@ xcontroller.Init = function(callback){
     if('DisplayLayout' in state){
       var col = state.DisplayLayout['columns'];
       xcontroller.SetDisplayLayout(col);
-      var th = jshInstance.$('.xelem<%=model.class%> th');
-      th.map(function (ind, t) {
-        t = $(t);
-        var fn= t.data('field');
-        if(!(col.find( (it) => { return (it.name === fn);}))) {
-          jshInstance.$('.thead'+fn).addClass('tdhidden');
-        }else{
-          jshInstance.$('.thead'+fn).removeClass('tdhidden');
-        }
-      });
+      xcontroller.RefreshTableHead();
     }
+  }
+  
+  xcontroller.RefreshTableHead = function() {
+    var th = jshInstance.$('.xelem<%=model.class%> th');
+    th.map(function (ind, t) {
+      t = $(t);
+      var fn= t.data('field');
+      if(xcontroller.isHiddenField(fn)) {
+        jshInstance.$('.thead'+fn).addClass('tdhidden');
+      }else{
+        jshInstance.$('.thead'+fn).removeClass('tdhidden');
+      }
+    });
   }
 
   xcontroller.Refresh = function(){
@@ -825,14 +829,12 @@ xcontroller.Init = function(callback){
     return xmodel['display_layouts'][xmodel.display_layout];
   }
 
-  xcontroller.isFieldHidden = function(f_name){
+  xcontroller.isHiddenField = function(f_name){
     var c = xcontroller.GetDisplayLayout().columns;
-    return !(c.find(function (it) {
-      if (it.name === f_name) return true;
-    }));
+    return (!(c.find( (it) => { return (it.name === f_name);})));
   }
 
-  xcontroller.ManageColumns = function(obj){
+  xcontroller.ManageColumns = function(){
     var html = $('.dynamic_columns_template_<%=model.class%>').html();
     html = jsh.ejs.render(html,{xmodel:xmodel});
     XExt.CustomPrompt(' dynamic', html, function () { //onInit
@@ -847,13 +849,11 @@ xcontroller.Init = function(callback){
           inp = $(inp);
           if(inp.prop('checked')) {
             columns.push( {name:inp.val()});
-            jshInstance.$('.thead'+inp.val()).removeClass('tdhidden');
-          }else{
-            jshInstance.$('.thead'+inp.val()).addClass('tdhidden');
           }
-        })
+        });
         jshInstance.$(".xdialogblock").html('').hide();
         xcontroller.SetDisplayLayout(columns);
+        xcontroller.RefreshTableHead();
         xcontroller.Refresh()
       });
     }, function (success) { //onAccept

@@ -174,7 +174,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           if(field.control && (field.control=='hidden')) fieldclass += 'tdhidden';
           var maxlength = XExt.getMaxLength(field);
           %>
-          <td style="<%=field.cellstyle%>" class="<%=field.cellclass%> <%=xejs.iif(field.control=='checkbox','xcheckbox_column')%> <%=xejs.iif(field.popuplov,'xpopuplov_column')%> <%=fieldclass%> <%% if(xmodel.controller.isFieldHidden('<%=field.name%>')) { %%> tdhidden  <%% } %%> ">
+          <td style="<%=field.cellstyle%>" class="<%=field.cellclass%> <%=xejs.iif(field.control=='checkbox','xcheckbox_column')%> <%=xejs.iif(field.popuplov,'xpopuplov_column')%> <%=fieldclass%> <%% if(xmodel.controller.isHiddenField('<%=field.name%>')) { %%> tdhidden  <%% } %%> ">
               <%
         if((field.control=='label') || (field.control=='html')){
           if(('link' in field) && (XExt.beginsWith(field.link,'#select'))){ %><a href="<%-field.link%>" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this);return false;" ><% }
