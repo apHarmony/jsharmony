@@ -74,7 +74,14 @@ function jsHarmony(config) {
   this.map = {};
   this.uimap = {};
   this.isInitialized = false;
-  this.StartTime = Date.now();
+  this.Statistics = {
+    StartTime: Date.now(),
+    Counts: {
+      InitErrors: 0,
+      InitWarnings: 0,
+      InitDeprecated: 0
+    }
+  }
 
   //Add jsHarmony Module
   this.Modules['jsharmony'] = new jsHarmonyModule.jsHarmonySystemModule(this);
@@ -250,8 +257,15 @@ jsHarmony.prototype.Init = function(init_cb){
         }
       }
       _this.isInitialized = true;
-      var loadTime = (Date.now()-_this.StartTime);
-      if(!_this.Config.silentStart) _this.Log.console('::jsHarmony Server ready:: '+(loadTime/1000).toFixed(2)+'s');
+      var loadTime = (Date.now()-_this.Statistics.StartTime);
+      if(!_this.Config.silentStart){
+        _this.Log.console('::jsHarmony Server ready:: '+(loadTime/1000).toFixed(2)+'s');
+        var statsmsg = [];
+        if(_this.Statistics.Counts.InitErrors) statsmsg.push('Errors: '+_this.Statistics.Counts.InitErrors);
+        if(_this.Statistics.Counts.InitWarnings) statsmsg.push('Warnings: '+_this.Statistics.Counts.InitWarnings);
+        if(_this.Statistics.Counts.InitDeprecated) statsmsg.push('Deprecated: '+_this.Statistics.Counts.InitDeprecated);
+        if(statsmsg.length) _this.Log.console('  '+statsmsg.join(', '));
+      }
       return cb();
     }
   ], init_cb);

@@ -376,6 +376,10 @@ BODY
   padding-left:8px;
   padding-right:8px;
 }
+<%-rootcss%> .xsearch_menu_button {
+  padding:0 2px 0 4px;
+  margin-right:3px;
+}
 <%-rootcss%> .xrowcount {
   float:right;
   clear:right;

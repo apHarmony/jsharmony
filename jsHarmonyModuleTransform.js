@@ -153,6 +153,7 @@ jsHarmonyModuleTransform.prototype.ApplyTransform = function(txt, desc){
   if(!txt) return txt;
   txt = txt.toString().replace(/{([\w@-]*)}/gm, function(match, p1, offset){
     if(p1 == 'schema') return _this.module.schema;
+    else if(p1 == 'namespace') return _this.module.namespace;
     else if(p1 in _this.sql) return _this.sql[p1];
     else if(p1 in _this.fields) return _this.fields[p1];
     else if(p1 in _this.tables) return _this.tables[p1];
