@@ -36,7 +36,11 @@ exports.InitDB = function(dbid, cb){
   var dbconfig = this.DBConfig[dbid];
   var dbdriver = dbconfig._driver;
   if(!dbconfig) { this.Log.console_error('*** Fatal error: Database ID '+dbid+' not found'); process.exit(8); }
-  if(!dbdriver || !dbdriver.name) { this.Log.console_error('*** Fatal error: Database ID '+dbid+' has missing or invalid _driver'); process.exit(8); }
+  if(!dbdriver || !dbdriver.name) { this.Log.console_error('*** Fatal error: Database ID "'+dbid+'" has missing or invalid _driver'); process.exit(8); }
+  for(var odbid in this.DBConfig){
+    if(odbid==dbid) continue;
+    if(this.DBConfig[odbid] && this.DBConfig[odbid]._driver == dbdriver){ this.Log.console_error('*** Fatal error: Database ID "'+dbid+'" shares database driver with Database ID "'+odbid+'"'); process.exit(8); }
+  }
   var driverName = dbdriver.name;
   if(dbid=='default'){
     //Set MSSQL and PGSQL drivers to Pooled for default connection

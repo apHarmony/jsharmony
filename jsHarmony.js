@@ -211,6 +211,8 @@ jsHarmony.prototype.Init = function(init_cb){
       return cb();
     },
     function(cb){
+      if(!_this.Config.loadModels){ return cb(); }
+
       _this.Cache['application.js'] = '';
       _this.Cache['application.css'] = fs.readFileSync(path.dirname(module.filename)+'/jsHarmony.theme.css', 'utf8');
       var modeldirs = _this.getModelDirs();
@@ -226,7 +228,10 @@ jsHarmony.prototype.Init = function(init_cb){
       _this.ParseInheritance();
       _this.ParseEntities();
       _this.ParsePopups();
-
+      
+      return cb();
+    },
+    function(cb){
       //Validate Configuration
       _this.Config.Validate(_this,'jsHarmony');
       for(var moduleName in _this.Modules){
@@ -234,6 +239,7 @@ jsHarmony.prototype.Init = function(init_cb){
         _this.Modules[moduleName].Config.Validate(_this,'module '+moduleName);
       }
 
+      //Load Field Mapping
       _this.map = _this.Config.field_mapping;
       _this.uimap = _this.Config.ui_field_mapping;
       for(var dbid in _this.DB){
@@ -242,7 +248,7 @@ jsHarmony.prototype.Init = function(init_cb){
 
       //Load AppSrv
       _this.AppSrv = new _this.AppSrvClass(_this);
-      return cb();
+      cb();
     },
     function(cb){
       //Initialize Modules

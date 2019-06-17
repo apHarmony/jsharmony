@@ -249,6 +249,9 @@ function jsHarmonyConfig(config){
   //Load jsHarmony in Silent Mode
   this.silentStart = false;
 
+  //Load models on startup
+  this.loadModels = true;
+
   //Mailer settings
   this.mailer_settings = {
     //SMTP
