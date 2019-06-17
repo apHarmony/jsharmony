@@ -137,7 +137,7 @@ for(var i=0;i<model.fields.length;i++){
   if(XExt.hasAction(field.actions,'BIU') && _.includes(['html','label','linkbutton','button'],field.control)){
     %><input data-id="<%=field.name%>_field_value" type="hidden" class="<%=field.name%>_field_value xform_ctrl xelem<%=model.class%>" value="<%-xejs.GetValue(field, model)%>" /><%
   }
-  if(field.popuplov){ %><a href="#" data-id="<%=field.name%>_xlookup" class="<%=field.name%>_xlookup xform_ctrl xlookup icon" style="<%=field.controlparams.popupiconstyle%>" data-codeval="<%=field.controlparams.codeval%>" data-model="<%=model.id%>" onclick="(function(){<%-jslocals%> jsh.XExt.popupShow('<%=field.model.id%>','<%=field.name%>','<%=field.caption_ext||field.caption%> Selection',undefined,this,{OnControlUpdate:function(obj,e){ xmodel.controller.form.Data.OnControlUpdate(obj,e); }}) }).call(this); return false;"><img src="/images/icon_search.png" /></a>
+  if(field.popuplov){ %><a href="#" data-id="<%=field.name%>_xlookup" class="<%=field.name%>_xlookup xform_ctrl xlookup icon" style="<%=field.controlparams.popupiconstyle%>" data-codeval="<%=field.controlparams.codeval%>" data-model="<%=model.id%>" onclick="(function(){<%-jslocals%> var errmsg = '<%=(_.isString(field.model)?field.model:'')%>'; if(errmsg) return jsh.XExt.Alert(errmsg, undefined, { escapeHTML: false }); jsh.XExt.popupShow('<%=field.model.id%>','<%=field.name%>','<%=field.caption_ext||field.caption%> Selection',undefined,this,{OnControlUpdate:function(obj,e){ xmodel.controller.form.Data.OnControlUpdate(obj,e); }}) }).call(this); return false;"><img src="/images/icon_search.png" /></a>
     <% 
     var popup_model = null;
     if(_.isString(field.model)) popup_model = field.model;

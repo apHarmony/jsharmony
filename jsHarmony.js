@@ -74,6 +74,7 @@ function jsHarmony(config) {
   this.map = {};
   this.uimap = {};
   this.isInitialized = false;
+  this.onLoadingConfig = null; //function(configFiles){ /* Re-order / modify configFiles array */ }
   this.Statistics = {
     StartTime: Date.now(),
     Counts: {
