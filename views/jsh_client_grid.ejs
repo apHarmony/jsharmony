@@ -101,7 +101,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
         <div class="xdialogbox xpromptbox" style="width:400px;">
             <h3>Manage columns:</h3>
             <div align="left" style="padding-top:15px;">
-                <div class="field-inputs">
+                <div class="field-inputs" style="max-height: 170px; overflow: auto;">
                     <%%
                     var fields = Object.keys(xmodel.fields)
                     for(var i=0;i<fields.length;i++){
