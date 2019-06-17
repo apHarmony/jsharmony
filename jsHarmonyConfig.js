@@ -246,10 +246,10 @@ function jsHarmonyConfig(config){
     }
   ];
 
-  //Load jsHarmony in Silent Mode
+  //Load jsHarmony in Silent Mode (without the standard console messages)
   this.silentStart = false;
 
-  //Load models on startup
+  //Load models on startup (set to false for database / initialization scripting)
   this.loadModels = true;
 
   //Mailer settings
