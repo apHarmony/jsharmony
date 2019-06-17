@@ -851,6 +851,20 @@ exports.ParseEntities = function () {
     //Parse fields
     var firstfield = true;
     var fieldnames = {};
+    var file_params = {};
+    _.each(model.fields, function (field) {
+      if(field.type == 'file'){
+        if(field.controlparams && field.controlparams.sqlparams){
+          var filesqlparams = field.controlparams.sqlparams;
+          _.each(['FILE_SIZE','FILE_EXT','FILE_UU','FILE_UTSTMP'], function(elem){
+            if(filesqlparams[elem]){
+              if(!file_params[filesqlparams[elem]]) file_params[filesqlparams[elem]] = [];
+              file_params[filesqlparams[elem]].push(field.name);
+            }
+          });
+        }
+      }
+    });
     _.each(model.fields, function (field) {
       field._auto = field._auto || {};
       var fielddef = db.getFieldDefinition(model.table, field.name,tabledef);
@@ -941,7 +955,10 @@ exports.ParseEntities = function () {
       if (field.name === '') delete field.name;
 
       //Apply default actions
-      if (!('actions' in field) && field.unbound) field.actions = 'BIU';
+      if (!('actions' in field) && field.unbound){
+        field._auto.actions = 1;
+        field.actions = 'BIU';
+      }
       if (!('actions' in field)){
         if(field.key && !model._auto.primary_key && (model.layout != 'multisel') && !isReadOnlyGrid && tabledef && (tabledef.table_type=='table') && Helper.hasAction(model.actions, 'I')){
           if(fielddef && fielddef.coldef && !fielddef.coldef.primary_key && !fielddef.coldef.readonly){
@@ -963,6 +980,7 @@ exports.ParseEntities = function () {
         }
         else if ((field.control == 'html') || (field.control == 'button') || (field.control == 'linkbutton') || (field.control == 'file_download') || (field.control == 'image')) field.actions = 'B';
         else if (('sqlselect' in field) && !('sqlupdate' in field) && !('sqlinsert' in field)) field.actions = 'B';
+        else if (field.name && (field.name in file_params)) field.actions = 'B'; //Field is a file upload parameter
         else {
           if (model.layout=='grid'){
             if(isReadOnlyGrid){
@@ -2056,7 +2074,7 @@ exports.AddFieldIfNotExists = function(model, fieldname, modelsExt){
   var field = _this.AppSrvClass.prototype.getFieldByName(model.fields, fieldname);
   if(field) return true;
   var tabledef = modelsExt[model.id].tabledef;
-  if(fieldname in tabledef.fields){
+  if(tabledef && (fieldname in tabledef.fields)){
     addHiddenField(model, fieldname, { actions: 'B' });
     return true;
   }

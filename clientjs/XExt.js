@@ -168,7 +168,7 @@ exports = module.exports = function(jsh){
       }
       else {
         if (_this.Validation) {
-          var v = new XValidate(jsh);
+          var v = new jsh.XValidate(jsh);
           v.AddValidator('_obj.Value', _this.Caption, 'BIUD', _this.Validation);
           v.ResetValidation();
           var verrors = v.Validate('BIUD', { Value: rslt });
@@ -1124,12 +1124,14 @@ exports = module.exports = function(jsh){
   }
 
   XExt.Alert = function (obj, onAccept, params) {
-    if (!params) params = {};
+    params = _.extend({ escapeHTML: true }, params);
     var msg = '';
     if (_.isString(obj)) msg = obj;
     else msg = JSON.stringify(obj);
-    msg = XExt.escapeHTML(msg);
-    msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
+    if(params.escapeHTML){
+      msg = XExt.escapeHTML(msg);
+      msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
+    }
     //alert(msg);
     jsh.xDialog.unshift('.xalertbox');
     jsh.$root('.xdialogblock .xalertbox').zIndex(jsh.xDialog.length);

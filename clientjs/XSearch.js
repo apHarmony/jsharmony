@@ -27,12 +27,13 @@ exports = module.exports = function(jsh){
   //-----------
   //SEARCHQUERY
   //-----------
-  function SearchQuery(model) {
+  function SearchQuery(xmodel) {
+    this.xmodel = xmodel;
     this.Items = [];
     this.Fields = [];
-    if (typeof model !== 'undefined') {
+    if (xmodel && xmodel.fields) {
       var _this = this;
-      _.each(model.Fields, function (field) {
+      _.each(xmodel.fields, function (field) {
         if (jsh.XExt.hasAction(field.actions, 'BS') && !field.disable_search && !field.unbound) {
           var comparison_type = 'none';
           if (field.lov) comparison_type = 'lov';
@@ -49,8 +50,10 @@ exports = module.exports = function(jsh){
       });
     }
   }
-  SearchQuery.prototype.GetValues = function (_PlaceholderID) {
+  SearchQuery.prototype.GetValues = function () {
     var _this = this;
+    var _PlaceholderID = '';
+    if(this.xmodel && this.xmodel && this.xmodel.controller && this.xmodel.controller.search) _PlaceholderID = this.xmodel.controller.search.PlaceholderID || '';
     _this.Items = [];
     var jSearchExpressions = jsh.$root(_PlaceholderID + ' div.xsearch_expression');
     for(var i=0;i<jSearchExpressions.length;i++){

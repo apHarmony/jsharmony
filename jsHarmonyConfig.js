@@ -350,12 +350,17 @@ jsHarmonyConfig.prototype.LoadJSConfigFolder = function(jsh, fpath){
     patharr.unshift(fbasename);
     fbasepath = path.dirname(fbasepath);
   }
-  //Load app.config.js
-  this.LoadJSConfigFile(jsh, fpath + '/app.config.js');
-  //Load config based on Application Path
-  if(patharr.length) this.LoadJSConfigFile(jsh, fpath + '/app.config.' + patharr.join('_') + '.js');
-  //Load config based on Hostname
-  this.LoadJSConfigFile(jsh, fpath + '/app.config.' + os.hostname().toLowerCase() + '.js');
+  var configFiles = [];
+  //app.config.js
+  configFiles.push(fpath + '/app.config.js');
+  //Config based on Application Path
+  if(patharr.length) configFiles.push(fpath + '/app.config.' + patharr.join('_') + '.js');
+  //Config based on Hostname
+  configFiles.push(fpath + '/app.config.' + os.hostname().toLowerCase() + '.js');
+  //Enable client to reorder / add config files
+  if(jsh.onLoadingConfig) jsh.onLoadingConfig(configFiles);
+  //Load config files
+  for(var i=0;i<configFiles.length;i++) this.LoadJSConfigFile(jsh, configFiles[i]);
 };
 
 jsHarmonyConfig.prototype.LoadJSONConfigFile = function(jsh, fpath, sourceModule, dbDriver){

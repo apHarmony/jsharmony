@@ -305,7 +305,12 @@ exports.LoadDBSchemas = function(cb){
   let codegen = new jsHarmonyCodeGen(_this);
   if(!_this.Config.system_settings.automatic_schema) return cb();
   async.eachOf(_this.DBConfig, function(dbConfig, dbid, db_cb){
+    var wasSilent = _this.DB[dbid].isSilent();
+    if(!wasSilent) _this.DB[dbid].setSilent(true);
+
     codegen.getSchema({ db: dbid }, function(err, rslt){
+      if(!wasSilent) _this.DB[dbid].setSilent(false);
+
       if(err) return db_cb(err);
       if(!rslt) return db_cb();
 
@@ -475,7 +480,9 @@ exports.LoadDBSchemas = function(cb){
       return db_cb();
     });
   }, function(err){
-    if(err) _this.Log.error(err);
+    if(err){
+      if(!_this.Config.silentStart) _this.Log.error(err);
+    }
     return cb();
   });
 };

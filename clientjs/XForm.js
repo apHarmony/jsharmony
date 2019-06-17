@@ -64,9 +64,9 @@ exports = module.exports = function(jsh){
     }
     if (this.OnAfterRender) this.OnAfterRender();
   };
-  XForm.prototype.GetValues = function(){
+  XForm.prototype.GetValues = function(perm){
     if(!this.Data) return;
-    this.Data.GetValues(this.PlaceholderID);
+    this.Data.GetValues(perm||'IUD');
   };
   XForm.prototype.HasUpdates = function (){
     if (this.IsDirty) return true;

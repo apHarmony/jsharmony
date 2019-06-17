@@ -96,9 +96,9 @@ AppSrvModel.prototype.GetModel = function (req, res, fullmodelid) {
 
   if(!('action' in req.query) && (model.unbound || model.nokey)) req.query.action = 'update';
 
-  _this.genClientModel(req, res, fullmodelid, true, null, null, function(rslt){
+  _this.genClientModel(req, res, fullmodelid, true, null, null, null, function(rslt){
     if(_.isString(rslt)){
-      _this.genClientModel(req, res, 'jsHarmony/_BASE_HTML_MESSAGE', true, null, null, function(model){
+      _this.genClientModel(req, res, 'jsHarmony/_BASE_HTML_MESSAGE', true, null, null, null, function(model){
         if(_.isString(model)) return res.end(model);
         model = _.extend(model, { 
           id: fullmodelid, 
@@ -118,23 +118,28 @@ AppSrvModel.prototype.GetModel = function (req, res, fullmodelid) {
   });
 };
 
-AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, parentBindings, sourceModel, onComplete) {
+AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, parentBindings, sourceModel, options, onComplete) {
+  options = _.extend({ targetperm: undefined }, options);
   var _this = this;
   var jsh = this.AppSrv.jsh;
   var model = jsh.getModel(req, modelid, sourceModel);
   if(!model) throw new Error('Model ID not found: ' + modelid);
   var fullmodelid = model.id;
   
-  var targetperm = 'B';
-  if(model.unbound) targetperm = 'U';
-  
-  if ('action' in req.query) {
-    if (req.query.action == 'insert') targetperm = 'I';
-    else if (req.query.action == 'update') targetperm = 'U';
-    else if (req.query.action == 'browse') targetperm = 'B';
-    else return onComplete('Invalid "action" in querystring');
+  var targetperm = '';
+  if(typeof options.targetperm != 'undefined') targetperm = options.targetperm;
+  else {
+    targetperm = 'B';
+    if(model.unbound) targetperm = 'U';
+    
+    if ('action' in req.query) {
+      if (req.query.action == 'insert') targetperm = 'I';
+      else if (req.query.action == 'update') targetperm = 'U';
+      else if (req.query.action == 'browse') targetperm = 'B';
+      else return onComplete('Invalid "action" in querystring');
+    }
+    if (!Helper.hasModelAction(req, model, 'B'+targetperm)) { return onComplete("<div>You do not have access to this form.</div>"); }
   }
-  if (!Helper.hasModelAction(req, model, 'B'+targetperm)) { return onComplete("<div>You do not have access to this form.</div>"); }
   
   //Check if the bindings are based on the key value
   var allConstantBindings = true;
@@ -381,7 +386,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
           rslttabs.push(rslttab);
         }
         //Get value of current tab
-        _this.genClientModel(req, res, req.curtabs[model.id], false, tabbindings, model, function(curtabmodel){
+        _this.genClientModel(req, res, req.curtabs[model.id], false, tabbindings, model, null, function(curtabmodel){
           rslt.tabs = rslttabs;
           rslt.curtabmodel = curtabmodel;
           return cb();
@@ -396,7 +401,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
         var dmodelid = model.duplicate.target;
         var dmodel = jsh.getModel(req, dmodelid, model);
         if (!dmodel) { throw new Error('Duplicate Model ID not found: ' + dmodelid); }
-        _this.genClientModel(req, res, dmodelid, false, model.duplicate.bindings, model, function(dclientmodel){
+        _this.genClientModel(req, res, dmodelid, false, model.duplicate.bindings, model, null, function(dclientmodel){
           if (!_.isString(dclientmodel)) {
             rslt.duplicate = {};
             rslt.duplicate.target = dmodelid;
@@ -620,7 +625,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
     }
     dstfield.validate = jsh.GetClientValidator(req, model, srcfield);
     if (('control' in dstfield) && ((dstfield.control == 'subform') || (dstfield.popuplov))) {
-      _this.genClientModel(req, res, srcfield.target, false, srcfield.bindings, model, function(subform){
+      _this.genClientModel(req, res, srcfield.target, false, srcfield.bindings, model, { targetperm: (dstfield.popuplov ? 'B' : undefined) }, function(subform){
         if(srcfield.control=='subform'){
           //targetperm
           //field.actions (dstfield.actions
