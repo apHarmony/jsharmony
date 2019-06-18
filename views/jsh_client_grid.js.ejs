@@ -838,13 +838,11 @@ xcontroller.Init = function(callback){
   xcontroller.ManageColumns = function(){
     var html = $('.dynamic_columns_template_<%=model.class%>').html();
     html = jsh.ejs.render(html,{xmodel:xmodel});
-    XExt.CustomPrompt(' dynamic', html, function () { //onInit
-      jshInstance.$(".xpromptbox").show();
-      jshInstance.$(".button_cancel").on('click',function () {
-        jshInstance.$(".xdialogblock").html('').hide();
-      });
-      jshInstance.$(".button_ok").on('click',function () {
-        var inputs = jshInstance.$(".field-inputs input");
+    const d_selector = '.dynamic_columns';
+    XExt.CustomPrompt(d_selector, html, function () { //onInit
+      jshInstance.$(d_selector).show();
+    }, function (success) { //onAccept
+      var inputs = jshInstance.$(".field-inputs input");
         var columns = [];
         inputs.map(function (ind, inp) {
           inp = $(inp);
@@ -855,14 +853,11 @@ xcontroller.Init = function(callback){
         jshInstance.$(".xdialogblock").html('').hide();
         xcontroller.SetDisplayLayout(columns);
         xcontroller.RefreshTableHead();
-        xcontroller.Refresh()
-      });
-    }, function (success) { //onAccept
-      // todo ???
+        xcontroller.Refresh();
     }, function () { //onCancel
-      jshInstance.$(".xdialogblock").hide();
+      jshInstance.$(".xdialogblock").html('').hide();
     }, function () { //onClosed
-      jshInstance.$(".xdialogblock").hide();
+      jshInstance.$(".xdialogblock").html('').hide();
     });
   }
 
