@@ -106,7 +106,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
                     var fields = Object.keys(xmodel.fields)
                     for(var i=0;i<fields.length;i++){
                         var fd = xmodel.fields[fields[i]];
-                        if (fd.control==="hidden") continue;
+                        if (!xmodel.controller.isFieldAllowedToDisplay(fd.name)) continue;
                         var display_layout = xmodel.controller.GetDisplayLayout();
                     %%>
                     <label><input type="checkbox" name="<%%=fd.name%%>" value="<%%=fd.name%%>" <%% if(display_layout['columns'].find(function (itm) {if (itm.name === fd.name) return true; })){ %%> checked <%% } %%>> <%%=fd.caption%%></label><br>

@@ -802,17 +802,8 @@ xcontroller.Init = function(callback){
         if (c.name !== clr) return true;
       });
     xcontroller.SetDisplayLayout(cls);
-    jshInstance.$('.thead'+clr).addClass('tdhidden');
     xcontroller.Refresh();
-  }
-
-  xcontroller.SetDisplayLayoutColumns = function(columns) {
-    let d_ls = {standard:{
-        title:'standard',
-        columns:[]
-      }};
-    d_ls['columns']= columns;
-    return d_ls;
+    jshInstance.$('.thead'+clr).addClass('tdhidden');
   }
 
   xcontroller.GetDisplayLayoutColumns = function() {
@@ -834,6 +825,11 @@ xcontroller.Init = function(callback){
     var c = xcontroller.GetDisplayLayout().columns;
     return (!(c.find( (it) => { return (it.name === f_name);})));
   }
+  
+  xcontroller.isFieldAllowedToDisplay = function(f_name){
+    var field = xmodel.fields[f_name];
+    return ((field.name === f_name) && XExt.hasAction(field.actions,'B') && (field.control !== 'hidden') && field.caption);
+  }
 
   xcontroller.ManageColumns = function(){
     var html = $('.dynamic_columns_template_<%=model.class%>').html();
@@ -850,14 +846,12 @@ xcontroller.Init = function(callback){
             columns.push( {name:inp.val()});
           }
         });
-        jshInstance.$(".xdialogblock").html('').hide();
+        jshInstance.$(".xdialogblock").hide();
         xcontroller.SetDisplayLayout(columns);
-        xcontroller.RefreshTableHead();
         xcontroller.Refresh();
+        xcontroller.RefreshTableHead();
     }, function () { //onCancel
-      jshInstance.$(".xdialogblock").html('').hide();
     }, function () { //onClosed
-      jshInstance.$(".xdialogblock").html('').hide();
     });
   }
 
