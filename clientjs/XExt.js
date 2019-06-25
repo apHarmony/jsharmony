@@ -1893,6 +1893,10 @@ exports = module.exports = function(jsh){
     if(val === '') return true;
     return false;
   }
+  
+  XExt.isDisplayLayoutColumnHidden = function (f_name, columns) {
+    return !(columns.find( (it) => { return (it.name == f_name);}));
+}
 
   return XExt;
 }

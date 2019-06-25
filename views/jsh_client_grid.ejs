@@ -1,8 +1,4 @@
 <%-jsh.RenderView('jsh_embed.js',ejsparams)%>
-<% function isHidden(f_name) {
-    var c = model.display_layouts[model.display_layout].columns;
-    return !(c.find( (it) => { return (it.name == f_name);}));
-}%>
 
 <div class="xbodyhead xelem<%=model.class%>">
 <% if(model.topmost) { %><!--%%%EJSPREPEND%%%--><% } %>
@@ -90,41 +86,41 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
         <a class="xsearch_apply" href="#" style="width:80px;" onclick="<%-js('xmodel.controller.RunSearch();')%>"><img src="/images/icon_search.png" alt="Search" title="Search" />GO</a>
         <%% } else { %%>
         <select name="xsearch_join" id="xsearch_join" class="xsearch_join" onchange="<%-js('xmodel.controller.SearchJoinChange(event);')%>" >
-            <option value="and" <%% if(data.Items[i+1].Join == 'and' ) { %%>selected<%% } %%>>and</option>
-            <option value="or" <%% if(data.Items[i+1].Join == 'or') { %%>selected<%% } %%>>or</option>
+          <option value="and" <%% if(data.Items[i+1].Join == 'and' ) { %%>selected<%% } %%>>and</option>
+          <option value="or" <%% if(data.Items[i+1].Join == 'or') { %%>selected<%% } %%>>or</option>
         </select>
         <%% } %%>
     </div>
     <%% } %%>
   </script>
-    <script class="dynamic_columns_template_<%=model.class%>" type="text/x-ejs-template">
-        <div class="xdialogbox xpromptbox dynamic_columns" style="width:400px;">
-            <h3>Manage columns:</h3>
-            <div align="left" style="padding-top:15px;">
-                <div class="field-inputs" style="max-height: 170px; overflow: auto;">
-                    <%%
-                    var fields = Object.keys(xmodel.fields)
-                    for(var i=0;i<fields.length;i++){
-                        var fd = xmodel.fields[fields[i]];
-                        if (!xmodel.controller.isFieldAllowedToDisplay(fd.name)) continue;
-                        var display_layout = xmodel.controller.GetDisplayLayout();
-                    %%>
-                    <label><input type="checkbox" name="<%%=fd.name%%>" value="<%%=fd.name%%>" <%% if(display_layout['columns'].find(function (itm) {if (itm.name === fd.name) return true; })){ %%> checked <%% } %%>> <%%=fd.caption%%></label><br>
-                    <%% } %%>
-                </div>
-                <div style="text-align:center;"><input type="button" value="Save" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div>
-            </div>
+  <script class="dynamic_columns_template_<%=model.class%>" type="text/x-ejs-template">
+    <div class="xdialogbox xpromptbox dynamic_columns" style="width:400px;">
+      <h3>Manage columns:</h3>
+      <div align="left" style="padding-top:15px;">
+        <div class="field-inputs" style="max-height: 170px; overflow: auto;">
+          <%%
+          var fields = Object.keys(xmodel.fields)
+          for(var i=0;i<fields.length;i++){
+            var fd = xmodel.fields[fields[i]];
+            if (!xmodel.controller.isFieldAllowedToDisplay(fd.name)) continue;
+            var display_layout = xmodel.controller.GetDisplayLayout();
+          %%>
+          <label><input type="checkbox" name="<%%=fd.name%%>" value="<%%=fd.name%%>" <%% if(display_layout['columns'].find(function (itm) {if (itm.name === fd.name) return true; })){ %%> checked <%% } %%>> <%%=fd.caption%%></label><br>
+          <%% } %%>
         </div>
-    </script>
-
-    <div class="xcontext_menu search_context_<%=model.class%>">
-        <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchAdd(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_add.png" />Add</a>
-        <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchRemove(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_remove.png" />Remove</a>
+        <div style="text-align:center;"><input type="button" value="Save" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div>
+      </div>
     </div>
-    <div class="xcontext_menu display_context_<%=model.class%>">
-        <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.HideColumn(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_design2.png" />Hide this column</a>
-        <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.ManageColumns(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_design.png" />Manage Columns</a>
-    </div>
+  </script>
+  
+  <div class="xcontext_menu search_context_<%=model.class%>">
+    <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchAdd(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_add.png" />Add</a>
+    <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchRemove(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_remove.png" />Remove</a>
+  </div>
+  <div class="xcontext_menu display_context_<%=model.class%>">
+    <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.HideColumn(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_design2.png" />Hide this column</a>
+    <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.ManageColumns(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_design.png" />Manage Columns</a>
+  </div>
 </div><!-- .xbodyhead -->
   <% if(!model.templates.grid){ %>
   <table class="xtbl xelem<%=model.class%> xform<%=model.class%>" data-id="<%=model.id%>" style="<%=model.tablestyle%>">
@@ -138,8 +134,9 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           }
           else if (!('html' in field)) continue; 
           var fieldclass = '';
-          if(field.control && (field.control=='hidden')) fieldclass += ' tdhidden ';
-          if(isHidden(field.name)) fieldclass += ' tdhidden';
+          if((field.control && (field.control=='hidden')) || XExt.isDisplayLayoutColumnHidden(field.name,model.display_layouts[model.display_layout].columns)) {
+            fieldclass += ' tdhidden ';
+          }
             %>
         <th nowrap class="<%=field.sortclass%> thead<%=field.name%> <%=field.captionclass%> <%=fieldclass%>" style="<%=field.captionstyle%>" data-field="<%=field.name%>"><% if(field.disable_sort||(field.type=='file')||field.unbound){ %><%=field.caption%><% } else { %><a href="#" onClick="<%-js('return xmodel.controller.Sort(this, \''+XExt.escapeHTML((field.lov && !field.lov.showcode)?('__'+jsh.uimap.codetxt+'__'+field.name):field.name)+'\');')%>" ><%=field.caption%></a> <% } %></th>
         <% } %>
@@ -173,7 +170,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           if(field.control && (field.control=='hidden')) fieldclass += 'tdhidden';
           var maxlength = XExt.getMaxLength(field);
           %>
-          <td style="<%=field.cellstyle%>" class="<%=field.cellclass%> <%=xejs.iif(field.control=='checkbox','xcheckbox_column')%> <%=xejs.iif(field.popuplov,'xpopuplov_column')%> <%=fieldclass%> <%% if(xmodel.controller.isHiddenField('<%=field.name%>')) { %%> tdhidden  <%% } %%> ">
+          <td style="<%=field.cellstyle%>" class="<%=field.cellclass%> <%=xejs.iif(field.control=='checkbox','xcheckbox_column')%> <%=xejs.iif(field.popuplov,'xpopuplov_column')%> <%=fieldclass%> <%% if(XExt.isDisplayLayoutColumnHidden('<%=field.name%>', xmodel.controller.GetDisplayLayout()['columns'])) { %%> tdhidden  <%% } %%> ">
               <%
         if((field.control=='label') || (field.control=='html')){
           if(('link' in field) && (XExt.beginsWith(field.link,'#select'))){ %><a href="<%-field.link%>" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this);return false;" ><% }

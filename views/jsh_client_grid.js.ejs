@@ -106,14 +106,12 @@ xcontroller.Init = function(callback){
       if (data[this.q].length <= 0){ xform.Index = -1; }
       else{ xform.Index = 0; }
       this.Prop.ModifiedSinceLoad = false;
-      var th = jshInstance.$('.xelem<%=model.class%> th');
-      th.map(function (ind, t) {
-        t = $(t);
-        var fn= t.data('field');
-        if(xcontroller.isHiddenField(fn)) {
-          jshInstance.$('.thead'+fn).addClass('tdhidden');
+      jshInstance.$('.xelem<%=model.class%> th').each(function () {
+        var field_name= $(this).data('field');
+        if(XExt.isDisplayLayoutColumnHidden(field_name,xcontroller.GetDisplayLayout().columns)) {
+          jshInstance.$('.thead'+field_name).addClass('tdhidden');
         }else{
-          jshInstance.$('.thead'+fn).removeClass('tdhidden');
+          jshInstance.$('.thead'+field_name).removeClass('tdhidden');
         }
       });
     }
@@ -130,7 +128,6 @@ xcontroller.Init = function(callback){
       if(xeditablegrid){
         var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
           startrowid: this.RowCount,
-          display_layout: display_layouts,
           datatable: data[this.q],
         });
         var jparent = jsh.$root(this.PlaceholderID);
@@ -809,11 +806,6 @@ xcontroller.Init = function(callback){
 
   xcontroller.GetDisplayLayout = function() {
     return xmodel['display_layouts'][xmodel.display_layout];
-  }
-
-  xcontroller.isHiddenField = function(f_name){
-    var c = xcontroller.GetDisplayLayout().columns;
-    return (!(c.find( (it) => { return (it.name === f_name);})));
   }
   
   xcontroller.isFieldAllowedToDisplay = function(f_name){
