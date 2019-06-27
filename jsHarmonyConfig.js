@@ -66,7 +66,10 @@ function jsHarmonyConfig(config){
   //"From" email for auto-generated emails
   this.mailer_email = 'DO NOT REPLY <donotreply@company.com>';
   //Google API Settings
-  this.google_settings = { API_KEY: '' };
+  this.google_settings = {
+    API_KEY: '',
+    public_key: false,         //Send key to unauthenticated clients
+  };
   //Debug Settings
   this.debug_params = {
     jsh_error_level: 3,        //Bitmask: 1 = ERROR, 2 = WARNING, 4 = INFO  :: Messages generated while parsing jsHarmony configs
@@ -246,8 +249,11 @@ function jsHarmonyConfig(config){
     }
   ];
 
-  //Load jsHarmony in Silent Mode
+  //Load jsHarmony in Silent Mode (without the standard console messages)
   this.silentStart = false;
+
+  //Load models on startup (set to false for database / initialization scripting)
+  this.loadModels = true;
 
   //Mailer settings
   this.mailer_settings = {

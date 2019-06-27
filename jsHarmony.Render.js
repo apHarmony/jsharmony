@@ -87,8 +87,12 @@ exports.getJSClientParams = function (req) {
   rslt += '_instance: ' + JSON.stringify(req.jshsite.instance) + ',';
   rslt += 'cookie_suffix: ' + JSON.stringify(Helper.GetCookieSuffix(req,_this)) + ',';
   if (req.isAuthenticated) {
-    if (_this.Config.google_settings && _this.Config.google_settings.API_KEY) rslt += 'google_api_key: ' + JSON.stringify(_this.Config.google_settings.API_KEY) + ',';
     rslt += 'isAuthenticated: true,';
+  }
+  if (_this.Config.google_settings && _this.Config.google_settings.API_KEY){
+    if(_this.Config.google_settings.public_key || req.isAuthenticated){
+      rslt += 'google_api_key: ' + JSON.stringify(_this.Config.google_settings.API_KEY) + ',';
+    }
   }
   if (req._roles && ('DEV' in req._roles)){
     rslt += 'dev: 1,';
