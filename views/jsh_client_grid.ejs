@@ -144,15 +144,6 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
         <%-xejs.iif(model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'D'),'<th class="static"></th>')%>
       </tr>
     </thead>
-      <script>
-          jshInstance.$('.xelem<%=model.class%> th').contextmenu(function (e) {
-            if (!jshInstance.$(this).hasClass('static')){
-              e.preventDefault();
-              e.stopPropagation();
-              jshInstance.XExt.ShowContextMenu('.column_header_context_<%= model.class%>', this, event)
-            }
-          });
-      </script>
     <tbody class="xgrid_<%=model.class%>_placeholder"></tbody>
     <script class="xgrid_<%=model.class%>_template" type="text/x-ejs-template" data-target=".xgrid_<%=model.class%>_placeholder">
       <%% for(var j=0;j<datatable.length;j++){ var datarow=datatable[j]; var data = datarow; if((typeof startrowid == 'undefined') || (startrowid === null)) startrowid = j; var rowid = startrowid + j %%>

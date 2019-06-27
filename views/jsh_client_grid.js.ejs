@@ -55,6 +55,13 @@ xcontroller.Init = function(callback){
     var grid_template = '<%=(model.templates.grid||'.xgrid_'+model.class+'_template')%>';
     var grid_placeholder = jsh.$root(grid_template).data('target');
     var scrollControl = (isInlinePopup ? jsh.$root(grid_placeholder).closest('.xpanel')[0] : window);
+    jsh.$root('.xelem<%=model.class%> th').contextmenu(function (e) {
+      if (!$(this).hasClass('static')){
+        e.preventDefault();
+        e.stopPropagation();
+        XExt.ShowContextMenu('.column_header_context_<%= model.class%>', this, event)
+      }
+    });
     xgrid = xcontroller.grid = new jsh.XGrid(modelid,grid_template,grid_placeholder,undefined,true,scrollControl);
     xgrid.NoResultsMessage = '<%-xejs.iif(('noresultsmessage' in model) && (model.noresultsmessage || (model.noresultsmessage==='')),model.noresultsmessage,'No results %%%FORSEARCHPHRASE%%%')%>';
     <% if(!('noresultsmessage' in model)){ %>
