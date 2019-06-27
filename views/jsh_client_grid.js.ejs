@@ -24,7 +24,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var XExt = jsh.XExt;
   var moment = jsh.moment;
   var modelid = '<%=model.id%>';
-  var display_layout = '<%=model.display_layout%>';
+  var current_display_layout = '<%=model.current_display_layout%>';
   var display_layouts = <%-JSON.stringify(model.display_layouts)%>;
   var xmodel = jsh.XModels[modelid];
 
@@ -156,7 +156,7 @@ xcontroller.Init = function(callback){
       else {
         var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
           startrowid: this.RowCount,
-          display_layout: display_layout,
+          current_display_layout: current_display_layout,
           datatable: data[this.q],
         });
         var jobj = $(ejsrslt).appendTo(jsh.$root(this.PlaceholderID));
@@ -358,7 +358,7 @@ xcontroller.Init = function(callback){
           var ejssource = jsh.$root(xgrid.TemplateID).html();
           var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
             startrowid: rowid,
-            display_layout: display_layout,
+            current_display_layout: current_display_layout,
             datatable: [_this.DataSet[rowid]], 
           });
           var jobj = jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']");
@@ -454,7 +454,7 @@ xcontroller.Init = function(callback){
     else ejssource = jsh.$root(xgrid.TemplateID).html();
     var ejsrslt = XExt.renderEJS(ejssource, modelid, {
       startrowid: rowid,
-      display_layout: display_layout,
+      current_display_layout: current_display_layout,
       datatable: [newrow],
     });
 
@@ -805,7 +805,7 @@ xcontroller.Init = function(callback){
   }
 
   xcontroller.GetDisplayLayout = function() {
-    return xmodel['display_layouts'][xmodel.display_layout];
+    return xmodel['display_layouts'][xmodel.current_display_layout];
   }
   
   xcontroller.isFieldAllowedToDisplay = function(f_name){
@@ -814,7 +814,7 @@ xcontroller.Init = function(callback){
   }
 
   xcontroller.ManageColumns = function(){
-    var html = $('.dynamic_columns_template_<%=model.class%>').html();
+    var html = $('.manage_columns_popup_<%=model.class%>').html();
     html = jsh.ejs.render(html,{xmodel:xmodel});
     const d_selector = '.dynamic_columns';
     XExt.CustomPrompt(d_selector, html, function () { //onInit

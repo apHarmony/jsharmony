@@ -538,16 +538,35 @@ exports.ApplyCustomControl = function(model, field, controlname){
   _this.ApplyCustomControl(model, field);
 };
 
-var validateDisplayLayout = function(model){
+function isFieldExist(field_name, model){
+  return model.fields.find(function(field){return(field.name === field_name);});
+}
+
+exports.validateDisplayLayout = function(model){
   if(model.display_layouts){
-    _.forEach(model.display_layouts,function (l, i) {
-      model.display_layouts[i].columns =  _.map(l['columns'],function (column) {
-        if(!column.name){
-          return  {name: column};
+      let _this = this;
+    _.each(model.display_layouts,function (display_layout) {
+      display_layout.columns = _.reduce(display_layout['columns'],function (reduced_list,column) {
+        if(_.isString(column)){
+          if (isFieldExist(column,model)){ // if field exist
+            reduced_list.push({name: column});
+          }else {
+            _this.LogInit_ERROR('Invalid display layout column: "'+JSON.stringify(column)+ '". Field not exist. Ignoring...');
+          }
+        }else {
+          if(column.name && _.isString(column.name)){
+            if(isFieldExist(column.name,model)){
+              reduced_list.push(column);
+            }else{
+              _this.LogInit_ERROR('Invalid display layout column: "'+JSON.stringify(column.name)+ '". Field not exist. Ignoring...');
+            }
+          }else {
+            _this.LogInit_ERROR('Invalid display layout column: "'+JSON.stringify(column)+ '". Ignoring...');
+          }
         }
-        return column;
-      });
-      model.display_layouts[i].columns = _.uniqBy(model.display_layouts[i].columns, 'name');
+        return reduced_list;
+      },[]);
+      display_layout.columns = _.uniqBy(display_layout.columns, 'name');
     })
   }
 }
@@ -1503,6 +1522,7 @@ exports.ParseEntities = function () {
         else if (!Helper.hasAction(sql_param_field.actions, 'C')) { if (!sql_param_field.actions) sql_param_field.actions = ''; sql_param_field.actions += 'C'; }
       });
     }
+    _this.validateDisplayLayout(model);
 
     //Validate Model and Field Parameters
     var _v_model = [
@@ -1536,12 +1556,7 @@ exports.ParseEntities = function () {
     //lov
     var existing_targets = [];
     for (let f in model) { if (f.substr(0, 7) == 'comment') continue; if (!_.includes(_v_model, f)) _this.LogInit_ERROR(model.id + ': Invalid model property: ' + f); }
-    validateDisplayLayout(model);
     
-    // if(model.title == "Settings Definitions"){
-    //   console.log(JSON.stringify(model.display_layouts));
-    //   throw new Error('1111');
-    // }
     var no_B = true;
     var no_key = true;
     if (model.fields) _.each(model.fields, function (field) {

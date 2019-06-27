@@ -93,7 +93,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
     </div>
     <%% } %%>
   </script>
-  <script class="dynamic_columns_template_<%=model.class%>" type="text/x-ejs-template">
+  <script class="manage_columns_popup_<%=model.class%>" type="text/x-ejs-template">
     <div class="xdialogbox xpromptbox dynamic_columns" style="width:400px;">
       <h3>Manage columns:</h3>
       <div align="left" style="padding-top:15px;">
@@ -103,9 +103,9 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           for(var i=0;i<fields.length;i++){
             var fd = xmodel.fields[fields[i]];
             if (!xmodel.controller.isFieldAllowedToDisplay(fd.name)) continue;
-            var display_layout = xmodel.controller.GetDisplayLayout();
+            var current_display_layout = xmodel.controller.GetDisplayLayout();
           %%>
-          <label><input type="checkbox" name="<%%=fd.name%%>" value="<%%=fd.name%%>" <%% if(display_layout['columns'].find(function (itm) {if (itm.name === fd.name) return true; })){ %%> checked <%% } %%>> <%%=fd.caption%%></label><br>
+          <label><input type="checkbox" name="<%%=fd.name%%>" value="<%%=fd.name%%>" <%% if(current_display_layout['columns'].find(function (itm) {if (itm.name === fd.name) return true; })){ %%> checked <%% } %%>> <%%=fd.caption%%></label><br>
           <%% } %%>
         </div>
         <div style="text-align:center;"><input type="button" value="Save" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div>
@@ -117,7 +117,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
     <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchAdd(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_add.png" />Add</a>
     <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchRemove(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_remove.png" />Remove</a>
   </div>
-  <div class="xcontext_menu display_context_<%=model.class%>">
+  <div class="xcontext_menu column_header_context_<%=model.class%>">
     <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.HideColumn(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_design2.png" />Hide this column</a>
     <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.ManageColumns(jsh.xContentMenuItemData); return false;')%>"><img src="/images/icon_design.png" />Manage Columns</a>
   </div>
@@ -134,22 +134,22 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           }
           else if (!('html' in field)) continue; 
           var fieldclass = '';
-          if((field.control && (field.control=='hidden')) || XExt.isDisplayLayoutColumnHidden(field.name,model.display_layouts[model.display_layout].columns)) {
+          if((field.control && (field.control=='hidden')) || XExt.isDisplayLayoutColumnHidden(field.name,model.display_layouts[model.current_display_layout].columns)) {
             fieldclass += ' tdhidden ';
           }
             %>
         <th nowrap class="<%=field.sortclass%> thead<%=field.name%> <%=field.captionclass%> <%=fieldclass%>" style="<%=field.captionstyle%>" data-field="<%=field.name%>"><% if(field.disable_sort||(field.type=='file')||field.unbound){ %><%=field.caption%><% } else { %><a href="#" onClick="<%-js('return xmodel.controller.Sort(this, \''+XExt.escapeHTML((field.lov && !field.lov.showcode)?('__'+jsh.uimap.codetxt+'__'+field.name):field.name)+'\');')%>" ><%=field.caption%></a> <% } %></th>
         <% } %>
-        <%-xejs.iif(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'I'),'<th class="holder"></th>')%>
-        <%-xejs.iif(model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'D'),'<th class="holder"></th>')%>
+        <%-xejs.iif(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'I'),'<th class="static"></th>')%>
+        <%-xejs.iif(model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'D'),'<th class="static"></th>')%>
       </tr>
     </thead>
       <script>
           jshInstance.$('.xelem<%=model.class%> th').contextmenu(function (e) {
-            if (!jshInstance.$(this).hasClass('holder')){
+            if (!jshInstance.$(this).hasClass('static')){
               e.preventDefault();
               e.stopPropagation();
-              jshInstance.XExt.ShowContextMenu('.display_context_<%= model.class%>', this, event)
+              jshInstance.XExt.ShowContextMenu('.column_header_context_<%= model.class%>', this, event)
             }
           });
       </script>

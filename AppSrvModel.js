@@ -501,27 +501,20 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
     
     function (cb) {
       if (model.layout ==='grid'){
-        if (model.display_layouts === false) {  //
-          rslt.display_layout = undefined;
+        if (model.display_layouts === false) {
+          rslt.current_display_layout = undefined;
           rslt.display_layouts = undefined;
         }else{
-          let fields_names = {};
-          _.map(rslt.fields,function(f){
-            fields_names[f.name] = f;
-          });
-          if (typeof model.display_layouts === 'object'){  // defined layouts remove any fields that are not in the rslt.fields array
+          if (model.display_layouts){  // defined layouts remove any fields that are not in the rslt.fields array
             _.forEach(model.display_layouts,function (l, i) {
-              model.display_layouts[i].columns =  _.filter(l['columns'],function (column) {
-                if(fields_names[column.name]) return true;
-              });
-              rslt.display_layouts = model.display_layouts;
-              rslt.display_layout = Object.keys(rslt.display_layouts)[0];
+              rslt.display_layouts = JSON.parse(JSON.stringify(model.display_layouts));
+              rslt.current_display_layout = "standard";
             });
           }else
-            { // generating a “standard” display_layout
+            { // generating a “standard” current_display_layout
             let columns = [];
-            _.each(rslt.fields,function(f){
-              if(f.actions.indexOf("B")>-1 && f.control !== "hidden" && f.caption.length) columns.push({"name":f.name});
+            _.each(rslt.fields,function(field_name){
+              if(Helper.hasAction(field_name.actions,"B") && (field_name.control !== "hidden") && field_name.caption) columns.push({"name":field_name.name});
             });
             rslt.display_layouts = {
               "standard": {
@@ -529,7 +522,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
                 "columns": columns
               }
             }
-            rslt.display_layout = Object.keys(rslt.display_layouts)[0];
+            rslt.current_display_layout = "standard"
           }
         }
       }

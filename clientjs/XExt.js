@@ -1895,7 +1895,14 @@ exports = module.exports = function(jsh){
   }
   
   XExt.isDisplayLayoutColumnHidden = function (f_name, columns) {
-    return !(columns.find( (it) => { return (it.name == f_name);}));
+    let isHidden = true;
+    _.each(columns,function(column){
+      if(column.name === f_name){
+        isHidden = false;
+        return false;
+      }
+    });
+    return isHidden;
 }
 
   return XExt;

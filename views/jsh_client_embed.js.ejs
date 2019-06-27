@@ -55,7 +55,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     fields: null,
     actions:'<%=model.actions%>',
     layout:'<%=model.layout%>',
-    display_layout:'<%=model.display_layout%>',
+    current_display_layout:'<%=model.current_display_layout%>',
     display_layouts:<%-(model.display_layouts)?JSON.stringify(model.display_layouts):'{}'%>,
     enabled: true,
     title: <%-xejs.iif(model.title,JSON.stringify(model.title),"''")%>,
