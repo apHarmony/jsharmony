@@ -87,7 +87,7 @@ jsHarmonyModuleTransform.prototype.Add = function(transform){
     if(transform[elem]){
       for(var prop in transform[elem]){
         if(!(prop in _this[elem])){
-          var errmsg = 'Error adding ' + _this.module.name + ' transform: Invalid ' + elem + ' property: '+prop;
+          var errmsg = 'Error adding ' + (_this.module.name||_this.module.typename) + ' transform: Invalid ' + elem + ' property: '+prop;
           if(_this.module.jsh) _this.module.jsh.Log.error(errmsg);
           else throw new Error(errmsg);
         }
