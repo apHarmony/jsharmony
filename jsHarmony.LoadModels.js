@@ -49,7 +49,7 @@ exports.getModelDirs = function(){
 
 exports.SetModels = function (models) { this.Models = models; };
 
-exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, module, options) {
+exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, moduleName, options) {
   options = _.extend(options, { isBaseDir: true });
   var _this = this;
   var dbDrivers = this.getDBDrivers();
@@ -67,7 +67,7 @@ exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, module, o
         if(fname=='sql') continue;
         if(fname=='public_css') continue;
       }
-      _this.LoadModels(fpath + '/', modeldir, prefix + fname + '/', dbtype, module, { isBaseDir: false });
+      _this.LoadModels(fpath + '/', modeldir, prefix + fname + '/', dbtype, moduleName, { isBaseDir: false });
     }
     if (fname.indexOf('.json', fname.length - 5) == -1) continue;
     if (fname == '_canonical.json') continue;
@@ -83,7 +83,7 @@ exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, module, o
     }
     _this.LogInit_INFO('Loading ' + modelname);
     var modelbasename = _this.getBaseModelName(modelname);
-    var model = _this.ParseJSON(fpath, 'Model ' + modelname);
+    var model = _this.ParseJSON(fpath, moduleName, 'Model ' + modelname);
     if (modelbasename == '_controls') {
       for (var c in model) this.CustomControls[c] = model[c];
     }
@@ -97,17 +97,21 @@ exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, module, o
           if(submodelname && (submodelname[0]=='/')) submodelname = submodelname.substr(1);
           else submodelname = prefix + submodelname;
           _this.LogInit_INFO('Loading sub-model ' + submodelname);
-          _this.AddModel(submodelname, submodel, prefix, fpath, modeldir);
+          _this.AddModel(submodelname, submodel, prefix, fpath, modeldir, moduleName);
         });
       }
-      else this.AddModel(modelname, model, prefix, fpath, modeldir);
+      else this.AddModel(modelname, model, prefix, fpath, modeldir, moduleName);
     }
   }
 };
 
-exports.ParseJSON = function(fname, desc){
+exports.ParseJSON = function(fname, moduleName, desc){
   var _this = this;
   var ftext = Helper.JSONstrip(fs.readFileSync(fname, 'utf8'));
+  //Apply Transform
+  var module = _this.Modules[moduleName];
+  if(module) ftext = module.transform.Apply(ftext, fname);
+  //Parse JSON
   var rslt  = null;
   try {
     rslt = jsParser.Parse(ftext, fname).Tree;
@@ -137,7 +141,7 @@ exports.ParseJSON = function(fname, desc){
   return rslt;
 };
 
-exports.MergeFolder = function (dir) {
+exports.MergeFolder = function (dir, moduleName) {
   var _this = this;
   var f = {};
   if (fs.existsSync(dir)) f = fs.readdirSync(dir);
@@ -159,14 +163,20 @@ exports.MergeFolder = function (dir) {
     var ftext = fs.readFileSync(fname, 'utf8');
     rslt += ftext + '\r\n';
   }
+  //Apply Transform
+  var module = _this.Modules[moduleName];
+  if(module) rslt = module.transform.Apply(rslt, fname);
   return rslt;
 };
 
-exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
+exports.AddModel = function (modelname, model, prefix, modelpath, modeldir, moduleName) {
+  var _this = this;
+  var module = _this.Modules[moduleName];
 
   function prependPropFile(prop, path){
     if (fs.existsSync(path)) {
       var fcontent = fs.readFileSync(path, 'utf8');
+      if(module) fcontent = module.transform.Apply(fcontent, path);
       if (prop in model) fcontent += '\r\n' + model[prop];
       model[prop] = fcontent;
     }
@@ -177,7 +187,6 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
   if(model===null){ delete this.Models[modelname]; return; }
 
   if(!prefix) prefix = '';
-  var _this = this;
   model['id'] = modelname;
   model['idmd5'] = crypto.createHash('md5').update(_this.Config.frontsalt + model.id).digest('hex');
   if('namespace' in model){ _this.LogInit_ERROR(model.id + ': "namespace" attribute should not be set, it is a read-only system parameter'); }
@@ -194,6 +203,8 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir) {
 
   model.using = model.using || [];
   if(!_.isArray(model.using)) model.using = [model.using];
+  if(prefix != model.namespace) model.using.push(prefix);
+  if(module && (module.namespace != prefix) && (module.namespace != model.namespace)) model.using.push(module.namespace);
   for(let i=0;i<model.using.length;i++){
     //Resolve "using" paths
     var upath = model.using[i];
@@ -249,8 +260,12 @@ exports.ParseInheritance = function () {
     _.forOwn(this.Models, function (model) {
       if ('inherits' in model) {
         foundinheritance = true;
-        var parentmodel = _this.getModel(null,model.inherits,model);
-        if (!parentmodel) throw new Error('Model ' + model.id + ': Parent model ' + model.inherits + ' does not exist.');
+        var curmodelid = _this.resolveModelID(model.id);
+        var parentmodel = _this.getModel(null,model.inherits,model,{ ignore: [curmodelid] });
+        if (!parentmodel){
+          if(_this.getModel(null,model.inherits,model)) throw new Error('Model ' + model.id + ' cyclic inheritance.');
+          throw new Error('Model ' + model.id + ': Parent model ' + model.inherits + ' does not exist.');
+        }
         if (parentmodel.id == model.id) throw new Error('Model ' + model.id + ' cyclic inheritance.');
         var origparentmodel = parentmodel;
         var parentinheritance = parentmodel.inherits;

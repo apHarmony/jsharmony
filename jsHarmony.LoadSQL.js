@@ -68,10 +68,6 @@ exports.InitDB = function(dbid, cb){
         _this.LoadSQL(db, dir, driverName, modeldir.module);
       }
     });
-    if(hasSQL){
-      module.transform.Validate();
-      module.transform.Apply();
-    }
   }
   this.AddGlobalSQLParams(db.SQLExt.Funcs, this.map, 'jsh.map.');
   if(cb) return cb();
@@ -201,7 +197,7 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
 
       _this.LogInit_INFO('Loading ' + fpath);
       //Parse text
-      var sql = _this.ParseJSON(fpath, 'SQL');
+      var sql = _this.ParseJSON(fpath, moduleName, 'SQL');
       if((path.basename(fpath).toLowerCase() == ('datatypes.'+type+'.json')) ||
          (path.basename(fpath).toLowerCase() == ('datatypes.json'))){
         for (var datatypeid in sql) {
@@ -229,6 +225,7 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
   var scriptsdir = dir+'scripts/';
   d = _this.LoadSQLFiles(scriptsdir, { ignoreDirectories: false, filterType: type });
   if(moduleName && (d.length > 0)){
+    var module = _this.Modules[moduleName];
     var scripts = {};
 
     //Process folders
@@ -243,7 +240,7 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
           var fname = subd[j].name;
           if(!(fname in subd[j])) scripts[subdname][fname] = '';
           else scripts[subdname][fname] += '\r\n';
-          scripts[subdname][fname] += fs.readFileSync(subd[j].path, 'utf8');
+          scripts[subdname][fname] += module.transform.Apply(fs.readFileSync(subd[j].path, 'utf8'), subd[j].path);
         }
       }
     }
@@ -251,7 +248,7 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
     //Process files
     for(let i=0;i<d.length;i++){
       if(d[i].type=='file'){
-        scripts[d[i].name] = fs.readFileSync(d[i].path, 'utf8');
+        scripts[d[i].name] = module.transform.Apply(fs.readFileSync(d[i].path, 'utf8'), d[i].path);
       }
     }
 

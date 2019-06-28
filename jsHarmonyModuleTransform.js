@@ -23,15 +23,21 @@ var Helper = require('./lib/Helper.js');
 function jsHarmonyModuleTransform(module){
   this.module = module;
 
-  this.tables = {};
-  this.fields = {};
-  this.models = {};
-  this.sql = {};
+  this.tables = this.tables || {};
+  this.fields = this.fields || {};
+  this.models = this.models || {};
+  this.sql = this.sql || {};
 
-  this.ignore_errors = {
+  this.mapping = {};
+  this.transformCount = 0;
+  this.transformTime = 0;
+
+  this.ignore_errors = _.extend(this.ignore_errors, {
     key: {},
     value: {}
-  };
+  });
+
+  this.updateMapping();
 };
 
 jsHarmonyModuleTransform.prototype.hasTransforms = function(){
@@ -99,67 +105,40 @@ jsHarmonyModuleTransform.prototype.Add = function(transform){
     _this.ignore_errors.key = _.extend(_this.ignore_errors.key, transform.ignore_errors.key);
     _this.ignore_errors.value = _.extend(_this.ignore_errors.value, transform.ignore_errors.value);
   }
+  _this.updateMapping();
 }
 
-jsHarmonyModuleTransform.prototype.Apply = function(){
+jsHarmonyModuleTransform.prototype.updateMapping = function(){
+  var mapping = {};
   var _this = this;
-  var jsh = _this.module.jsh;
-  if(!jsh){ if(this.hasTransforms()) throw new Error('Cannot Apply Transforms: jsHarmony Module '+_this.module.name+' missing reference to jsh.'); return; }
-
-  //For each database
-  _.each(jsh.DB, function(db, dbid){
-    var sqlext = db.SQLExt;
-    if(sqlext.Scripts[_this.module.name]){
-      //Apply transforms to each SQL Script
-      var traverse = function(obj, desc, f){
-        for(var elem in obj){
-          if(_.isString(obj[elem])) obj[elem] = f(obj[elem], desc + '.' + elem);
-          else traverse(obj[elem], desc + '.' + elem, f);
-        }
-      };
-      traverse(sqlext.Scripts[_this.module.name], _this.module.name + '.SQL.Scripts', function(txt, desc){ return _this.ApplyTransform(txt, desc); });
-    }
-    //Apply transforms to each SQL Func
-    var funcs = _.keys(sqlext.Funcs);
-    _.each(funcs, function(funcName){
-      var func_desc =  _this.module.name + '.SQL.Funcs' + '.' + funcName;
-      var funcSource = sqlext.Funcs[funcName].source;
-      if(sqlext.Meta.FuncSource[funcName] == _this.module.name){
-        var newFuncName = _this.ApplyTransform(funcName, func_desc);
-        if(newFuncName != funcName){
-          sqlext.Funcs[newFuncName] = sqlext.Funcs[funcName];
-          sqlext.Meta.FuncSource[newFuncName] = _this.module.name;
-          delete sqlext.Funcs[funcName];
-          delete sqlext.Meta.FuncSource[funcName];
-          funcName = newFuncName;
-        }
-        if(_.isString(sqlext.Funcs[funcName])) sqlext.Funcs[funcName] = _this.ApplyTransform(sqlext.Funcs[funcName], func_desc);
-        else {
-          var func = sqlext.Funcs[funcName];
-          if(func.params){
-            for(var i=0; i<func.params.length; i++) func.params[i] = _this.ApplyTransform(func.params[i], func_desc);
-          }
-          if(func.exec) func.exec = _this.ApplyTransform(func.exec, func_desc);
-          if(func.sql) func.sql = _this.ApplyTransform(func.sql, func_desc);
-        }
+  if(_this.module){
+    mapping['{schema}'] = _this.module.schema;
+    mapping['{namespace}'] = _this.module.namespace;
+  }
+  _.each(['tables', 'fields', 'models', 'sql'], function(elem){
+    for(var key in _this[elem]){
+      if((key in mapping) && (mapping[key] != _this[elem][key])){
+        var errmsg = 'Error: Duplicate key '+key+' in '+_this.module.schema+' transform';
+        if(_this.module.jsh) _this.module.jsh.Log.error(errmsg);
+        else console.log(errmsg);
       }
-    });
+      mapping[key] = _this[elem][key];
+    }
   });
-  //For each SQL Func
+  this.mapping = mapping;
 }
 
-jsHarmonyModuleTransform.prototype.ApplyTransform = function(txt, desc){
+jsHarmonyModuleTransform.prototype.Apply = function(txt, desc){
   var _this = this;
   if(!txt) return txt;
-  txt = txt.toString().replace(/{([\w@-]*)}/gm, function(match, p1, offset){
-    if(p1 == 'schema') return _this.module.schema;
-    else if(p1 == 'namespace') return _this.module.namespace;
-    else if(p1 in _this.sql) return _this.sql[p1];
-    else if(p1 in _this.fields) return _this.fields[p1];
-    else if(p1 in _this.tables) return _this.tables[p1];
-    return match;
-  });
-  return txt;
+  var startTime = Date.now();
+  _this.transformCount++;
+  _this.mapping['{schema}'] = _this.module.schema;
+  _this.mapping['{namespace}'] = _this.module.namespace;
+  var rslt = Helper.mapReplace(_this.mapping, txt);
+  _this.transformTime += (Date.now() - startTime);
+  //console.log(_this.transformCount + ' ' + _this.transformTime + ' ' + desc);
+  return rslt;
 }
 
 exports = module.exports = jsHarmonyModuleTransform;

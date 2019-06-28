@@ -182,6 +182,10 @@ jsHarmony.prototype.Init = function(init_cb){
     function(cb){
       //Load Views
       _this.LoadViews();
+      //Validate Module Transforms
+      _.each(_this.Modules, function(module){
+        module.transform.Validate();
+      });
       return cb();
     },
     function(cb){
@@ -195,10 +199,6 @@ jsHarmony.prototype.Init = function(init_cb){
       });
     },
     function(cb){
-      _.each(_this.Modules, function(module){
-        module.transform.Validate();
-        module.transform.Apply();
-      });
       Helper.triggerAsync(_this.Config.onDBDriverLoaded, cb, _this);
     },
     function(cb){
@@ -219,9 +219,9 @@ jsHarmony.prototype.Init = function(init_cb){
       for (var i = 0; i < modeldirs.length; i++) {
         var modeldir = modeldirs[i];
         var prefix = modeldir.namespace||'';
-        if (fs.existsSync(modeldir.path)) _this.LoadModels(modeldir.path, modeldir, prefix, defaultDBDriver);
-        if (fs.existsSync(modeldir.path + 'js/')) _this.Cache['application.js'] += '\r\n' + _this.MergeFolder(modeldir.path + 'js/');
-        if (fs.existsSync(modeldir.path + 'public_css/')) _this.Cache['application.css'] += '\r\n' + _this.MergeFolder(modeldir.path + 'public_css/');
+        if (fs.existsSync(modeldir.path)) _this.LoadModels(modeldir.path, modeldir, prefix, defaultDBDriver, modeldir.module);
+        if (fs.existsSync(modeldir.path + 'js/')) _this.Cache['application.js'] += '\r\n' + _this.MergeFolder(modeldir.path + 'js/', modeldir.module);
+        if (fs.existsSync(modeldir.path + 'public_css/')) _this.Cache['application.css'] += '\r\n' + _this.MergeFolder(modeldir.path + 'public_css/', modeldir.module);
       }
       _this.ParseMacros();
       _this.ParseDeprecated();

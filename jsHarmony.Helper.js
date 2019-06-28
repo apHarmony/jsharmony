@@ -409,20 +409,37 @@ exports.getCanonicalNamespace = function(namespace, parentNamespace){
   //Add trailing slash to namespace if it does not exist
   if(namespace && (namespace[namespace.length-1]!='/')) namespace += '/';
   //Prepend parent namespace if the namespace does not begin with a "/"
-  if(!namespace || (namespace[0]!='/')) namespace = parentNamespace + namespace;
+  if(!namespace || (namespace[0]!='/')){
+    var cmpParentNamespace = parentNamespace;
+    if(cmpParentNamespace){
+      if(cmpParentNamespace[0]=='/') cmpParentNamespace = cmpParentNamespace.substr(1);
+      if(Helper.beginsWith(namespace, cmpParentNamespace)) namespace = namespace.substr(cmpParentNamespace.length);
+    }
+    namespace = parentNamespace + namespace;
+  }
   if(namespace && (namespace[0]=='/')) namespace = namespace.substr(1);
   return namespace;
 }
 
-exports.resolveModelID = function(modelid, sourceModel){
+exports.resolveModelID = function(modelid, sourceModel, options /* { ignore: [] } */){
+
+  function ignoreModel(testmodel){
+    if(!options || !options.ignore || !options.ignore.length) return false;
+    return _.includes(options.ignore, testmodel);
+  }
+
   if(!modelid) return undefined;
   //Absolute
-  if(modelid.substr(0,1)=='/') return modelid.substr(1);
+  if(modelid.substr(0,1)=='/'){
+    var testmodel = modelid.substr(1);
+    if(!ignoreModel(testmodel)) return modelid.substr(1);
+    return undefined;
+  }
   if(!sourceModel) return modelid;
   //Relative to namespace
   if(sourceModel.namespace){
     var testmodel = sourceModel.namespace+modelid;
-    if(testmodel in this.Models) return testmodel;
+    if((testmodel in this.Models) && !ignoreModel(testmodel)) return testmodel;
   }
   //Model Using
   if(sourceModel.using){
@@ -430,7 +447,7 @@ exports.resolveModelID = function(modelid, sourceModel){
       var namespace = sourceModel.using[i];
       var testmodel = namespace+modelid;
       if(testmodel.substr(0,1)=='/') testmodel = testmodel.substr(1);
-      if(testmodel in this.Models) return testmodel;
+      if((testmodel in this.Models) && !ignoreModel(testmodel)) return testmodel;
     }
   }
   //Module Using
@@ -441,15 +458,16 @@ exports.resolveModelID = function(modelid, sourceModel){
         var namespace = module.using[i];
         var testmodel = namespace+modelid;
         if(testmodel.substr(0,1)=='/') testmodel = testmodel.substr(1);
-        if(testmodel in this.Models) return testmodel;
+        if((testmodel in this.Models) && !ignoreModel(testmodel)) return testmodel;
       }
     }
   }
-  return modelid;
+  if(!ignoreModel(modelid)) return modelid;
+  return undefined;
 }
 
-exports.getModel = function(req, modelid, sourceModel) {
-  modelid = this.resolveModelID(modelid, sourceModel);
+exports.getModel = function(req, modelid, sourceModel, options /* { ignore: [] } */) {
+  modelid = this.resolveModelID(modelid, sourceModel, options);
   if(req){
     if(req.jshlocal && (modelid in req.jshlocal.Models)) return req.jshlocal.Models[modelid];
   }

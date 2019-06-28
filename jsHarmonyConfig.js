@@ -372,7 +372,7 @@ jsHarmonyConfig.prototype.LoadJSConfigFolder = function(jsh, fpath){
 jsHarmonyConfig.prototype.LoadJSONConfigFile = function(jsh, fpath, sourceModule, dbDriver){
   if(!fpath) throw new Error('Config file path is required');
   if (!fs.existsSync(fpath)) return;
-  var config = jsh.ParseJSON(fpath, "Config");
+  var config = jsh.ParseJSON(fpath, (sourceModule ? sourceModule.name : undefined), "Config");
   //Add namespace to model names
   if(config && sourceModule){
     if(config.model_groups){
