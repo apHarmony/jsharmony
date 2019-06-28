@@ -625,10 +625,10 @@ exports.SendTXTEmail = function (dbcontext, txt_attrib, email_to, email_cc, emai
       }
       var email_text = '';
       var email_html = '';
-      var email_body = TXT[_this.map.txt_val];
+      var email_body = TXT[_this.map.txt_body];
       if (email_body && (TXT[_this.map.txt_type].toUpperCase()=='HTML')) email_html = email_body;
       else email_text = email_body;
-      _this.SendBaseEmail(dbcontext, TXT[_this.map.txt_tval], email_text, email_html, email_to, email_cc, new_bcc, email_attachments, params, callback)
+      _this.SendBaseEmail(dbcontext, TXT[_this.map.txt_title], email_text, email_html, email_to, email_cc, new_bcc, email_attachments, params, callback)
     }
     else return callback(new Error('Email ' + txt_attrib + ' not found.'));
   });

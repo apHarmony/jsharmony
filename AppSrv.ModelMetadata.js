@@ -355,7 +355,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
       var truncate_lov = false;
       var no_lov_required = false;
       var can_optimize = false;
-      var codeval = null;
+      var code_val = null;
       var lovdb = modeldb;
 
       if(lov && lov.db){
@@ -373,8 +373,8 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
           else if(Helper.hasAction(tgtactions, 'I')){
             if(field.name in req.query){
               if(field.locked_by_querystring){
-                codeval = req.query[field.name];
-                if(codeval) truncate_lov = true;
+                code_val = req.query[field.name];
+                if(code_val) truncate_lov = true;
               }
             }
           }
@@ -386,8 +386,8 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
         else if((model.layout=='exec')||(model.layout=='report')){
           if(field.name in req.query){
             if(field.locked_by_querystring){
-              codeval = req.query[field.name];
-              if(codeval) truncate_lov = true;
+              code_val = req.query[field.name];
+              if(code_val) truncate_lov = true;
             }
           }
         }
@@ -426,11 +426,11 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
         }
       }
       if(truncate_lov){
-        var codevalpname = field.name;
+        var code_valpname = field.name;
         //if(field.name in lov_params) { Helper.GenError(req, res, -4, 'Field parameter already in LOV SQL parameters: '+field.name); fatalError = true; return; }
         if(!(field.name in lov_params)){
           lov_ptypes.push(_this.getDBType(field));
-          lov_params[codevalpname] = _this.DeformatParam(field, codeval, lov_verrors);
+          lov_params[code_valpname] = _this.DeformatParam(field, code_val, lov_verrors);
         }
       }
       if (!_.isEmpty(lov_verrors)) { Helper.GenError(req, res, -2, lov_verrors[''].join('\n')); fatalError = true; return; }
@@ -454,13 +454,13 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
             }
             if (lov.showcode) {
               for (var i = 0; i < rslt.length; i++) {
-                rslt[i][jsh.map.codetxt] = rslt[i][jsh.map.codeval];
+                rslt[i][jsh.map.code_txt] = rslt[i][jsh.map.code_val];
               }
             }
             if ('blank' in lov) {
               var newlov = {};
-              newlov[jsh.map.codeval] = '';
-              newlov[jsh.map.codetxt] = (lov.blank == 1 ? 'Please Select...' : lov.blank);
+              newlov[jsh.map.code_val] = '';
+              newlov[jsh.map.code_txt] = (lov.blank == 1 ? 'Please Select...' : lov.blank);
               rslt.unshift(newlov);
             }
           }

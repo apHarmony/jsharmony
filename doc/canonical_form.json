@@ -121,7 +121,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "tablestyle": "min-width:700px;",
   "formstyle": "min-width:900px;",
   "inlinepopup": 1, //Used internally by program for popuplov child grid
-  "codeval": "J_ID", //Used internally by program for popuplov child grid
+  "code_val": "J_ID", //Used internally by program for popuplov child grid
   "disableautoload": 1, //Disables autoload in grid on scroll to bottom
   "buttons": [
     { 
@@ -260,7 +260,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                         }
                       },
                       { //**Deprecated** - moved to field.popuplov
-                       "codeval": "j_id", //**Deprecated**
+                       "code_val": "j_id", //**Deprecated**
                        "popupstyle": "height:200px;", //**Deprecated**
                        "popup_copy_results": { "c_name": "c_name" }, //**Deprecated**
                        "base_readonly":  1, //**Deprecated**
@@ -290,31 +290,31 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "link": "update:CW", //for grid, "insert:", "browse":, "select", "url:", "download:"...also added tab syntax: "edit:JW&tabs={\"JW\":\"J_QUICK\"}"
       //LOV sql_params must be defined as fields, and must be in the request QueryString
       "lov": { 
-        "sql": "select HP_CODE as codeval,HP_Desc as codetxt from HP where 1=1 %%%TRUNCATE%%% order by HP_Desc", 
+        "sql": "select HP_CODE as code_val,HP_Desc as code_txt from HP where 1=1 %%%TRUNCATE%%% order by HP_Desc", 
         "datalock":{"c_id":"client_c_id"}, 
         "sql_params":["c_id","t_id"],
         "sqlselect": "(select hp_desc from jsharmony.hp where hp.hp_code = h.hp_code)",
         "sqltruncate": "HP_CODE=@HP_CODE", //Limit list to one entry - parameter = field.name
         "always_get_full_lov": 1, //Do not truncate LOV to one value, when field is "B", readonly, or value is set in querystring.
         "db": "default" //Optional property - use an alternate database connection
-      }, //codeval = Value, codetxt = Desc    "nodatalock":["c_id"] (If applicable)
-      "lov": { "sql": "select fcert_id as codeid,fcert_parent_id as codeparentid,fcert_id as codeval,fcert_name as codetxt,'folder' as codeicon from fcert where c_id=(select c_id from E where e_id=@e_id) order by fcert_parent_id, fcert_name, fcert_id", "sql_params":["e_id"] }, //For Tree Control
-      "lov": { "sql2": "select X_ID as codeparent, HP_CODE as codeval,HP_Desc as codetxt from HP order by HP_Desc","parent": "ca_country", "datalock":{"c_id":"client_c_id"} }, //codeparent = Parent Value, codeval = Value, codetxt = Desc
-      "lov": { "sqlmp": "select X_ID as codeparent1, Y_ID as codeparent2, HP_CODE as codeval,HP_Desc as codetxt from HP order by HP_Desc","parents": ["ca_country","other"], "datalock":{"c_id":"client_c_id"} }, //codeparent[#] = Parent Value, codeval = Value, codetxt = Desc
+      }, //code_val = Value, code_txt = Desc    "nodatalock":["c_id"] (If applicable)
+      "lov": { "sql": "select fcert_id as code_id,fcert_parent_id as code_parent_id,fcert_id as code_val,fcert_name as code_txt,'folder' as code_icon from fcert where c_id=(select c_id from E where e_id=@e_id) order by fcert_parent_id, fcert_name, fcert_id", "sql_params":["e_id"] }, //For Tree Control
+      "lov": { "sql2": "select X_ID as code_parent, HP_CODE as code_val,HP_Desc as code_txt from HP order by HP_Desc","parent": "ca_country", "datalock":{"c_id":"client_c_id"} }, //code_parent = Parent Value, code_val = Value, code_txt = Desc
+      "lov": { "sqlmp": "select X_ID as code_parent1, Y_ID as code_parent2, HP_CODE as code_val,HP_Desc as code_txt from HP order by HP_Desc","parents": ["ca_country","other"], "datalock":{"c_id":"client_c_id"} }, //code_parent[#] = Parent Value, code_val = Value, code_txt = Desc
       "lov": { "UCOD": "e_sts" },
       "lov": { "UCOD2": "dscope_dctgr", "schema": "jsharmony","blank": 1,"parent": "ca_country" }, //Alternatively, blank can be set to text: "blank":"(None)" otherwise defaults to "Please Select..."
-      "lov": { "GCOD": "e_ctgr", "showcode": 1 }, //showcode ignores the codetxt and shows the codeval on the front-end.  Useful for States
+      "lov": { "GCOD": "e_ctgr", "showcode": 1 }, //showcode ignores the code_txt and shows the code_val on the front-end.  Useful for States
       "lov": { "GCOD2": "dscope_dctgr", "schema": "jsharmony","blank": 1,"parent": "ca_country" },
-      "lov": { "values": [{ "codeval": "ACTIVE", "codetxt": "Active" },{ "codeval": "CLOSED", "codetxt": "Closed" }] },
+      "lov": { "values": [{ "code_val": "ACTIVE", "code_txt": "Active" },{ "code_val": "CLOSED", "code_txt": "Closed" }] },
       "lov": { "values": { "ACTIVE": "Active", "CLOSED": "Closed" } },
       "lov": { "values": "#LOV_STATUS_AC" },
           config.macros = {
-            "LOV_STATUS_AC": [{ "codeval": "ACTIVE", "codetxt": "Active" },{ "codeval": "CLOSED", "codetxt": "Closed" }] 
+            "LOV_STATUS_AC": [{ "code_val": "ACTIVE", "code_txt": "Active" },{ "code_val": "CLOSED", "code_txt": "Closed" }] 
           }
       "eol": 1,
       "popuplov": {  //Enable POPUPLOV, requires target grid
                        "target":  "J",
-                       "codeval": "j_id",
+                       "code_val": "j_id",
                        "popupstyle": "height:200px;",
                        "popup_copy_results": { "c_name": "c_name" },
                        "base_readonly":  1,

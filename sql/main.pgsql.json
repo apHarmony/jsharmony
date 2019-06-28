@@ -1,6 +1,6 @@
 {
-  "Helper_SendTXTEmail": "select txt_tval,txt_val,txt_bcc,txt_type from jsharmony.txt where txt_process='EMAIL' and txt_attrib=@txt_attrib",
-  "HelperRender_getTXT": "select txt_val from jsharmony.txt where txt_process=@txt_process and txt_attrib=@txt_attrib",
+  "Helper_SendTXTEmail": "select txt_title,txt_body,txt_bcc,txt_type from jsharmony.txt where txt_process='EMAIL' and txt_attrib=@txt_attrib",
+  "HelperRender_getTXT": "select txt_body from jsharmony.txt where txt_process=@txt_process and txt_attrib=@txt_attrib",
   "TRUE": "'true'",
   "FALSE": "'false'"
 }

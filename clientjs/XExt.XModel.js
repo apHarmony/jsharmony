@@ -133,7 +133,7 @@ exports = module.exports = function(jsh){
     //Get LOV Txt
     var lovTxt = '';
     if(field.showlovtxt){
-      var lovTxtName = '__'+jsh.uimap.codetxt+'__'+field.name;
+      var lovTxtName = '__'+jsh.uimap.code_txt+'__'+field.name;
       lovTxt = _this[lovTxtName];
       //Apply formatting
       if ((lovTxtName in _this) && (typeof lovTxt == 'undefined')) lovTxt = '';
@@ -263,7 +263,7 @@ exports = module.exports = function(jsh){
       //If has parent and item missing, don't set the value
       if (has_lov || !has_parent) {
         if (!has_lov) {
-          var codtxt = _this['__' + jsh.uimap.codetxt + '__' + field.name];
+          var codtxt = _this['__' + jsh.uimap.code_txt + '__' + field.name];
           if (!codtxt) codtxt = val;
           jctrl.append($('<option>', { value: val }).text(codtxt));
         }

@@ -1119,8 +1119,8 @@ exports.ParseEntities = function () {
         delete field.__REMOVEFIELD__;
       }
       if (field.controlparams) {
-        if (field.controlparams.CODEVal) { field.controlparams.codeval = field.controlparams.CODEVal; delete field.controlparams.CODEVal; }
-        if ('codeval' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams codeval attribute has been deprecated - use "popuplov":{...}');
+        if (field.controlparams.code_val) { field.controlparams.code_val = field.controlparams.code_val; delete field.controlparams.code_val; }
+        if ('code_val' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams code_val attribute has been deprecated - use "popuplov":{...}');
         if ('popupstyle' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams popupstyle attribute has been deprecated - use "popuplov":{...}');
         if ('popupiconstyle' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams popupiconstyle attribute has been deprecated - use "popuplov":{...}');
         if ('popup_copy_results' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams popup_copy_results attribute has been deprecated - use "popuplov":{...}');
@@ -1130,11 +1130,11 @@ exports.ParseEntities = function () {
         if (('thumbnails' in field.controlparams) && Helper.hasAction(field.actions, 'IU')) _.each(field.controlparams.thumbnails,function(thumbnail){ _this.TestImageMagick(model.id + ' > ' + field.name); });
       }
       if ('popuplov' in field) {
-        if (field.popuplov.CODEVal) { field.popuplov.codeval = field.popuplov.CODEVal; delete field.popuplov.CODEVal; }
+        if (field.popuplov.code_val) { field.popuplov.code_val = field.popuplov.code_val; delete field.popuplov.code_val; }
         _.forOwn(field.popuplov, function (val, key) {
           if (!('controlparams' in field)) field.controlparams = {};
           if (key == 'target') field.target = field.popuplov.target;
-          else if (key == 'codeval') field.controlparams.codeval = field.popuplov.codeval;
+          else if (key == 'code_val') field.controlparams.code_val = field.popuplov.code_val;
           else if (key == 'popupstyle') field.controlparams.popupstyle = field.popuplov.popupstyle;
           else if (key == 'popupiconstyle') field.controlparams.popupiconstyle = field.popuplov.popupiconstyle;
           else if (key == 'popup_copy_results') field.controlparams.popup_copy_results = field.popuplov.popup_copy_results;
@@ -1527,11 +1527,11 @@ exports.ParseEntities = function () {
       'sql_from_db','sql_to_db','sqlsearch_to_db','datatype_config'
     ];
     var _v_controlparams = [
-      'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'base_readonly', 'dateformat',
+      'value_true', 'value_false', 'value_hidden', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'base_readonly', 'dateformat',
       'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'data_file_prefix', 'sqlparams', '_data_file_has_extension', 'show_thumbnail', 'preview_on_click',
       'image', 'thumbnails', 'expand_all', 'expand_to_selected', 'item_context_menu', 'insert_link', 'grid_save_before_update', "update_when_blank", "htmlarea_config"
     ];
-    var _v_popuplov = ['target', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
+    var _v_popuplov = ['target', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
     var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db', 'values'];
     //lov
     var existing_targets = [];

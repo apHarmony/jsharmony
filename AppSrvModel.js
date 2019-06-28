@@ -525,7 +525,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
     if ('controlparams' in srcfield) {
       dstfield.controlparams = {};
       copyValues(dstfield.controlparams, srcfield.controlparams, [
-        'download_button', 'preview_button', 'upload_button', 'delete_button', 'dateformat', 'item_context_menu', 'expand_all', 'expand_to_selected', 'value_true', 'value_false', 'value_hidden', 'codeval', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup','base_readonly','grid_save_before_update','update_when_blank','htmlarea_config','show_thumbnail','preview_on_click',
+        'download_button', 'preview_button', 'upload_button', 'delete_button', 'dateformat', 'item_context_menu', 'expand_all', 'expand_to_selected', 'value_true', 'value_false', 'value_hidden', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup','base_readonly','grid_save_before_update','update_when_blank','htmlarea_config','show_thumbnail','preview_on_click',
       ]);
       if ('thumbnails' in srcfield.controlparams) for (var tname in srcfield.controlparams.thumbnails) {
         var thumb = srcfield.controlparams.thumbnails[tname];

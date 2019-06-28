@@ -49,7 +49,7 @@ exports = module.exports = function(jsh){
     ctrl.empty();
     ctrl.html(jsh.ejs.render('\
       <% for(var i=0;i<data.length;i++){ %>\
-      <option value="<%=data[i][jsh.uimap.codeval]%>"><%=data[i][jsh.uimap.codetxt]%></option>\
+      <option value="<%=data[i][jsh.uimap.code_val]%>"><%=data[i][jsh.uimap.code_txt]%></option>\
       <% } %>'
       , { data: LOV, jsh: jsh }
     ));
@@ -61,20 +61,20 @@ exports = module.exports = function(jsh){
     if (prevval == null) prevval = '';
     ctrl.empty();
     var lovfilter = {};
-    if (!plural) lovfilter[jsh.uimap.codeparent] = parentvals[0];
+    if (!plural) lovfilter[jsh.uimap.code_parent] = parentvals[0];
     else {
       for (var i = 0; i < parentvals.length; i++) {
-        lovfilter[jsh.uimap.codeparent + (i + 1)] = parentvals[i];
+        lovfilter[jsh.uimap.code_parent + (i + 1)] = parentvals[i];
       }
     }
     
     var cLOV = _.filter(LOV, lovfilter);
-    if ((!plural) && (!(jsh.uimap.codeparent in LOV[0]))) cLOV.unshift(LOV[0]);
-    else if ((plural) && (!((jsh.uimap.codeparent + '1') in LOV[0]))) cLOV.unshift(LOV[0]);
+    if ((!plural) && (!(jsh.uimap.code_parent in LOV[0]))) cLOV.unshift(LOV[0]);
+    else if ((plural) && (!((jsh.uimap.code_parent + '1') in LOV[0]))) cLOV.unshift(LOV[0]);
     else if ('lovblank' in field) cLOV.unshift(LOV[0]);
     ctrl.html(jsh.ejs.render('\
       <% for(var i=0;i<data.length;i++){ %>\
-      <option value="<%=data[i][jsh.uimap.codeval]%>"><%=data[i][jsh.uimap.codetxt]%></option>\
+      <option value="<%=data[i][jsh.uimap.code_val]%>"><%=data[i][jsh.uimap.code_txt]%></option>\
       <% } %>'
       , { data: cLOV, jsh: jsh }
     ));
@@ -186,14 +186,14 @@ exports = module.exports = function(jsh){
   XExt.getLOVTxt = function (LOV, val) {
     if (val) val = val.toString();
     for (var i = 0; i < LOV.length; i++) {
-      if (LOV[i][jsh.uimap.codeval] == val) return LOV[i][jsh.uimap.codetxt];
+      if (LOV[i][jsh.uimap.code_val] == val) return LOV[i][jsh.uimap.code_txt];
     }
     return undefined;
   }
   XExt.pushLOV = function (LOV, val, txt) {
     var newlov = {};
-    newlov[jsh.uimap.codeval] = val;
-    newlov[jsh.uimap.codetxt] = txt;
+    newlov[jsh.uimap.code_val] = val;
+    newlov[jsh.uimap.code_txt] = txt;
     LOV.push(newlov);
   }
 
@@ -497,7 +497,7 @@ exports = module.exports = function(jsh){
     'renderLOV': function (lov, selected_value) {
       var rslt = '';
       _.each(lov, function (lovval) {
-        rslt += '<option value="' + XExt.escapeHTML(lovval[jsh.uimap.codeval]) + '" ' + ((lovval[jsh.uimap.codeval] == selected_value)?'selected':'') + '>' + XExt.escapeHTML(lovval[jsh.uimap.codetxt]) + '</option>';
+        rslt += '<option value="' + XExt.escapeHTML(lovval[jsh.uimap.code_val]) + '" ' + ((lovval[jsh.uimap.code_val] == selected_value)?'selected':'') + '>' + XExt.escapeHTML(lovval[jsh.uimap.code_txt]) + '</option>';
       });
       return rslt;
     },
@@ -805,12 +805,12 @@ exports = module.exports = function(jsh){
     for (var i = 0; i < LOV.length; i++) {
       var iLOV = LOV[i];
       var node = new XTreeNode();
-      node.ID = iLOV[jsh.uimap.codeid];
-      node.ParentID = iLOV[jsh.uimap.codeparentid];
-      node.Value = iLOV[jsh.uimap.codeval];
-      node.Text = iLOV[jsh.uimap.codetxt];
-      node.Icon = iLOV[jsh.uimap.codeicon];
-      node.Seq = iLOV[jsh.uimap.codeseq];
+      node.ID = iLOV[jsh.uimap.code_id];
+      node.ParentID = iLOV[jsh.uimap.code_parent_id];
+      node.Value = iLOV[jsh.uimap.code_val];
+      node.Text = iLOV[jsh.uimap.code_txt];
+      node.Icon = iLOV[jsh.uimap.code_icon];
+      node.Seq = iLOV[jsh.uimap.code_seq];
       if (node.Seq) has_seq = true;
       if (_.includes(expanded_nodes, node.Value)) node.Expanded = true;
       if (_.includes(selected_nodes, node.Value)) node.Selected = true;
@@ -823,7 +823,7 @@ exports = module.exports = function(jsh){
       var node = sortednodes[i];
       if (node.ParentID && (node.ParentID in nodes)) nodes[node.ParentID].Children.push(node);
     }
-    if (has_seq) sortednodes = _.sortBy(sortednodes, [jsh.uimap.codeseq, jsh.uimap.codetxt]);
+    if (has_seq) sortednodes = _.sortBy(sortednodes, [jsh.uimap.code_seq, jsh.uimap.code_txt]);
     
     var body = '';
     for (var i = 0; i < tree.length; i++) {
@@ -1334,8 +1334,8 @@ exports = module.exports = function(jsh){
     XExt.execif(parentfield && parentfield.controlparams && parentfield.controlparams.onpopup,
       function (f) { parentfield.controlparams.onpopup(modelid, parentmodelid, fieldid, f); },
       function () {
-      var codeval = $(obj).data('codeval');
-      if (codeval) popupData[modelid].codeval = codeval;
+      var code_val = $(obj).data('code_val');
+      if (code_val) popupData[modelid].code_val = code_val;
       var xgrid = xmodel.controller.grid;
       if(xgrid){
         xgrid.RowCount = 0;
@@ -1399,7 +1399,7 @@ exports = module.exports = function(jsh){
     var rowid = XExt.XModel.GetRowID(modelid, obj);
     var xmodel = jsh.XModels[modelid];
     
-    if (popupData[modelid].codeval) rslt = xmodel.controller.form.DataSet[rowid][popupData[modelid].codeval];
+    if (popupData[modelid].code_val) rslt = xmodel.controller.form.DataSet[rowid][popupData[modelid].code_val];
     if (!rslt) rslt = '';
     popupData[modelid].result = rslt;
     popupData[modelid].rowid = rowid;

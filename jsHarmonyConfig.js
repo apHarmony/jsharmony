@@ -183,21 +183,21 @@ function jsHarmonyConfig(config){
     "user_last_tstmp": "user_last_tstmp",
     "user_role": "user_role",
     "rowcount": "xrowcount",
-    "codeval": "codeval",
-    "codetxt": "codetxt",
-    "codeseq": "codseq",
-    "codeparent": "codeparent",
+    "code_val": "code_val",
+    "code_txt": "code_txt",
+    "code_seq": "code_seq",
+    "code_parent": "code_parent",
   };
   //UI Field Mapping
   this.ui_field_mapping = {
-    "codeval": "codeval",
-    "codetxt": "codetxt",
-    "codeparentid": "codeparentid",
-    "codeicon": "codeicon",
-    "codeid": "codeid",
-    "codeparent": "codeparent",
-    "codeseq": "codeseq",
-    "codetype": "codetype"
+    "code_val": "code_val",
+    "code_txt": "code_txt",
+    "code_parent_id": "code_parent_id",
+    "code_icon": "code_icon",
+    "code_id": "code_id",
+    "code_parent": "code_parent",
+    "code_seq": "code_seq",
+    "code_type": "code_type"
   };
   //DB Schema Replacement
   this.schema_replacement = [];

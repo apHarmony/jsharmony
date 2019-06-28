@@ -54,7 +54,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "fields": [
     {"name":"c_id","type":"bigint","datalock":{"c_id":"client_c_c_id"},"nl":1,
 	      "control":"dropdown_L","actions": "B",
-        "lov": { "sql": "select c_id as codeval,c_name as codetxt from c where 1=1 %%%DATALOCKS%%% order by c_name", "datalock":{"c_id":"client_c_id"}, "blank": "(All)" },
+        "lov": { "sql": "select c_id as code_val,c_name as code_txt from c where 1=1 %%%DATALOCKS%%% order by c_name", "datalock":{"c_id":"client_c_id"}, "blank": "(All)" },
         "default": "js:XExt.UndefinedBlank(jsh._GET['c_id'])", //Set a default value for the field if in query string
         "caption":"Company Name"},
     {"name": "MDate","type": "date","nl": 1,"actions": "B",

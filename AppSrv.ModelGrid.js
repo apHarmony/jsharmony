@@ -79,9 +79,9 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
     if (val.length < 2) throw new Error('Invalid sort string');
     var sortfield = val.substring(1);
     var lovtxtfield = '';
-    if(sortfield.indexOf('__'+_this.jsh.map.codetxt+'__')==0){
+    if(sortfield.indexOf('__'+_this.jsh.map.code_txt+'__')==0){
       var lovtxtfield = sortfield;
-      sortfield = sortfield.substr(_this.jsh.map.codetxt.length + 4);
+      sortfield = sortfield.substr(_this.jsh.map.code_txt.length + 4);
     }
     var sortdir = val[0];
     if (sortdir == 'v') sortdir = 'desc';
@@ -318,8 +318,8 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid) {
         if(!_.includes(exportColumns, fcol)){ delete frow[fcol]; continue; }
         var field = _this.getFieldByName(model.fields, fcol);
         if (field && ('caption' in field)) { header[fcol] = field.caption_ext || field.caption; }
-        else if (fcol.indexOf('__' + jsh.map.codetxt + '__') == 0) {
-          field = _this.getFieldByName(model.fields, fcol.substr(('__' + jsh.map.codetxt + '__').length));
+        else if (fcol.indexOf('__' + jsh.map.code_txt + '__') == 0) {
+          field = _this.getFieldByName(model.fields, fcol.substr(('__' + jsh.map.code_txt + '__').length));
           if (field && ('caption' in field)) { header[fcol] = (field.caption_ext || field.caption || '') + ' Desc'; }
           else header[fcol] = fcol;
         }
@@ -342,9 +342,9 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid) {
         var crow = rslt[fullmodelid][i];
         for (ccol in crow) {
           if(!ccol) continue;
-          //Overwrite codeval with codetxt
-          if(Helper.beginsWith(ccol, '__'+jsh.map.codetxt+'__')){
-            crow[ccol.substr(jsh.map.codetxt.length+4)] = crow[ccol];
+          //Overwrite code_val with code_txt
+          if(Helper.beginsWith(ccol, '__'+jsh.map.code_txt+'__')){
+            crow[ccol.substr(jsh.map.code_txt.length+4)] = crow[ccol];
           }
           //Replace Dates with ISO String
           if (_.isDate(crow[ccol])) {
