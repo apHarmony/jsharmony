@@ -235,7 +235,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     };
     xform.GetReselectParams = function(){
       var rslt = this.GetKeys();
-      //Add bindings for GCOD
+      //Add bindings for codes
       for(var fieldname in xmodel.bindings){
         rslt[fieldname] = xmodel.bindings[fieldname]();
       }
@@ -243,7 +243,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     };
     xform.GetDeleteParams = function(){
       var rslt = _.extend(this.GetFieldParams('D'), this.GetKeys());
-      //Add bindings for GCOD
+      //Add bindings for codes
       for(var fieldname in xmodel.bindings){
         if(fieldname in rslt) rslt[fieldname] = xmodel.bindings[fieldname]();
       }

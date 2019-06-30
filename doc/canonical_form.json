@@ -185,8 +185,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                        {  //file_upload params
                           "sqlparams": {"FILE_SIZE": "d_size",  //File Size
                              "FILE_EXT": "d_ext", //File Extension
-                             "FILE_UTSTMP": "d_utstmp", //Upload Timestamp - will be combined with TSTMP sql
-                             "FILE_UU": "d_uu", //Upload User - will be combined with CUSER sql
+                             "FILE_UTSTMP": "d_utstmp", //Upload Timestamp - will be combined with jsh.map.timestamp sql
+                             "FILE_UU": "d_uu", //Upload User - will be combined with jsh.map.current_user sql
                              "FILE_NAME": "d_filename" //Target file name for download
                            },
                            "image": {
@@ -301,10 +301,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "lov": { "sql": "select fcert_id as code_id,fcert_parent_id as code_parent_id,fcert_id as code_val,fcert_name as code_txt,'folder' as code_icon from fcert where c_id=(select c_id from E where e_id=@e_id) order by fcert_parent_id, fcert_name, fcert_id", "sql_params":["e_id"] }, //For Tree Control
       "lov": { "sql2": "select X_ID as code_parent, HP_CODE as code_val,HP_Desc as code_txt from HP order by HP_Desc","parent": "ca_country", "datalock":{"c_id":"client_c_id"} }, //code_parent = Parent Value, code_val = Value, code_txt = Desc
       "lov": { "sqlmp": "select X_ID as code_parent1, Y_ID as code_parent2, HP_CODE as code_val,HP_Desc as code_txt from HP order by HP_Desc","parents": ["ca_country","other"], "datalock":{"c_id":"client_c_id"} }, //code_parent[#] = Parent Value, code_val = Value, code_txt = Desc
-      "lov": { "UCOD": "e_sts" },
-      "lov": { "UCOD2": "dscope_dctgr", "schema": "jsharmony","blank": 1,"parent": "ca_country" }, //Alternatively, blank can be set to text: "blank":"(None)" otherwise defaults to "Please Select..."
-      "lov": { "GCOD": "e_ctgr", "showcode": 1 }, //showcode ignores the code_txt and shows the code_val on the front-end.  Useful for States
-      "lov": { "GCOD2": "dscope_dctgr", "schema": "jsharmony","blank": 1,"parent": "ca_country" },
+      "lov": { "code": "e_sts" },
+      "lov": { "code2": "dscope_dctgr", "schema": "jsharmony","blank": 1,"parent": "ca_country" }, //Alternatively, blank can be set to text: "blank":"(None)" otherwise defaults to "Please Select..."
+      "lov": { "code": "e_ctgr", "showcode": 1 }, //showcode ignores the code_txt and shows the code_val on the front-end.  Useful for States
+      "lov": { "code2": "dscope_dctgr", "schema": "jsharmony","blank": 1,"parent": "ca_country" },
       "lov": { "values": [{ "code_val": "ACTIVE", "code_txt": "Active" },{ "code_val": "CLOSED", "code_txt": "Closed" }] },
       "lov": { "values": { "ACTIVE": "Active", "CLOSED": "Closed" } },
       "lov": { "values": "#LOV_STATUS_AC" },
@@ -356,6 +356,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //If error/warning/notice begins with "Application Warning - " we will show the warning message
     //If error/warning/notice has the format "Execute Form - MESSAGE //C?c_id=1" we will show the message and open the form
   ],
+  "source_files_prefix": "AUDL", //Prefix for source file extensions (prefix.ejs, prefix.js, ... )
   //Auto-generated
   "_inherits": ["CL_X","CL"] //Array of parent models
   "_basemodel": "CL" //Base parent model

@@ -274,11 +274,15 @@ exports.LoadDBSchemas = function(cb){
   }
 
   function getCODE(dbtype, schema_name, table_name){
-    let code_types = ['ucod','ucod2','gcod','gcod2'];
+    let code_types = ['code','code2','code_sys','code2_sys','code_app','code2_app','ucod','gcod','ucod2','gcod2'];
     for(let i=0;i<code_types.length;i++){
       let code_type = code_types[i];
       if(table_name.indexOf(code_type+'_')==0){
         let codename = table_name.substr(code_type.length+1);
+        if(code_type=='ucod') code_type = 'code_sys';
+        if(code_type=='gcod') code_type = 'code_app';
+        if(code_type=='ucod2') code_type = 'code2_sys';
+        if(code_type=='gcod2') code_type = 'code2_app';
         return {
           code_type: code_type,
           codename: codename,
@@ -290,6 +294,10 @@ exports.LoadDBSchemas = function(cb){
         if(table_name.indexOf('_'+code_type+'_')>=0){
           let codename = table_name.substr(table_name.indexOf('_'+code_type+'_')+code_type.length+2);
           let codeschema = table_name.substr(0,table_name.indexOf('_'+code_type+'_'));
+          if(code_type=='ucod') code_type = 'code_sys';
+          if(code_type=='gcod') code_type = 'code_app';
+          if(code_type=='ucod2') code_type = 'code2_sys';
+          if(code_type=='gcod2') code_type = 'code2_app';
           return {
             code_type: code_type,
             codename: codename,
@@ -325,10 +333,12 @@ exports.LoadDBSchemas = function(cb){
       let tables = {};
       let field_idx = 0;
       let lovs = {
-        ucod: {},
-        ucod2: {},
-        gcod: {},
-        gcod2: {}
+        code: {},
+        code2: {},
+        code_sys: {},
+        code2_sys: {},
+        code_app: {},
+        code2_app: {}
       };
       //Process fields
       for(let i=0;i<rslt.tables.length;i++){
@@ -364,7 +374,7 @@ exports.LoadDBSchemas = function(cb){
 
 
       //Sort LOVs to put default schema first
-      _.map(['ucod','gcod','ucod2','gcod2'],function(code_type){
+      _.map(['code','code2','code_sys','code_app','code2_sys','code2_app'],function(code_type){
         for(let field_name in lovs[code_type]){
           let field_lovs = lovs[code_type][field_name];
           if(field_lovs.length >= 1){
@@ -406,7 +416,7 @@ exports.LoadDBSchemas = function(cb){
           foreignkey.to.code_type = code.code_type;
           foreignkey.to.codename = code.codename;
           foreignkey.to.codeschema = code.codeschema;
-          if((code.code_type=='ucod2')||(code.code_type=='gcod2')){
+          if((code.code_type=='code2_sys')||(code.code_type=='code2_app')||(code.code_type=='code2')){
             //If this is the child column
             if(foreignkey.to.column_name=='code_val2'){
               //Find the parent column
@@ -455,7 +465,7 @@ exports.LoadDBSchemas = function(cb){
           }
 
           //Check LOV by column name
-          _.map(['ucod','gcod'],function(code_type){
+          _.map(['code','code_sys','code_app'],function(code_type){
             if(lovs[code_type][field_name]){
               _.each(lovs[code_type][field_name], function(lov){
                 let code = getCODE(dbConfig._driver.name, lov.schema, lov.table);

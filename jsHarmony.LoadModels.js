@@ -218,7 +218,8 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir, modu
   if(model.path) modelbasedir = path.dirname(model.path) + '/';
   if(modelbasedir){
     //var modelpathbase = modelpath.substr(0,modelpath.length-5);
-    var modelpathbase = modelbasedir + _this.getBaseModelName(model.id);
+    if(!('source_files_prefix' in model)) model.source_files_prefix = _this.getBaseModelName(model.id);
+    var modelpathbase = modelbasedir + model.source_files_prefix;
 
     //Load JS
     prependPropFile('js',modelpathbase + '.js');
@@ -1050,6 +1051,7 @@ exports.ParseEntities = function () {
             }
             else field.control = 'file_upload';
           }
+          else if(('lov' in field) && (model.layout=='multisel')) field.control = 'label';
           else if(('lov' in field) && !isReadOnlyGrid) field.control = 'dropdown';
           else if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
             if(Helper.hasAction(field.actions, 'B') && !field.value){
@@ -1456,8 +1458,9 @@ exports.ParseEntities = function () {
           _this.forEachSqlParam(model, lov.sqlselect, function(pfield_name, pfield){ lov.sqlselect_params.push(pfield_name); });
         }
       }
-      //Check if sqltruncate also has %%%TRUNCATE%%% in sql
+      
       if(field.lov){
+        //Check if sqltruncate also has %%%TRUNCATE%%% in sql
         if(('sql' in lov) || ('sql2' in lov) || ('sqlmp' in lov)){
           var lovsql = (lov.sql||'')+(lov.sql2||'')+(lov.sqlmp||'');
           if(lov.sqltruncate && (lovsql.indexOf('%%%TRUNCATE%%%') < 0)){
@@ -1467,6 +1470,12 @@ exports.ParseEntities = function () {
         else if(lov.sqltruncate){
           _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Cannot use sqltruncate without sql, sql2, or sqlmp');
         }
+
+        //Replace UCOD/UCOD2/GCOD/GCOD2
+        if('UCOD' in lov){ lov.code_sys = lov.UCOD;  delete lov.UCOD; }
+        if('GCOD' in lov){ lov.code_app = lov.GCOD;  delete lov.GCOD; }
+        if('UCOD2' in lov){ lov.code2_sys = lov.UCOD2;  delete lov.UCOD2; }
+        if('GCOD2' in lov){ lov.code2_app = lov.GCOD2;  delete lov.GCOD2; }
       }
     });
     
@@ -1508,7 +1517,7 @@ exports.ParseEntities = function () {
     //Validate Model and Field Parameters
     var _v_model = [
       'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites', 'class', 'using',
-      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings', '_childbindings', '_parentmodels', '_auto', '_sysconfig', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate',
+      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings', '_childbindings', '_parentmodels', '_auto', '_sysconfig', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate', 'source_files_prefix',
       'pagesettings', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_search', 'default_search', 'grid_static', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
@@ -1532,7 +1541,7 @@ exports.ParseEntities = function () {
       'image', 'thumbnails', 'expand_all', 'expand_to_selected', 'item_context_menu', 'insert_link', 'grid_save_before_update', "update_when_blank", "htmlarea_config"
     ];
     var _v_popuplov = ['target', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
-    var _v_lov = ['sql', 'sql2', 'sqlmp', 'UCOD', 'UCOD2', 'GCOD', 'GCOD2', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db', 'values'];
+    var _v_lov = ['sql', 'sql2', 'sqlmp', 'code', 'code2', 'code_sys', 'code2_sys', 'code_app', 'code2_app', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db', 'values'];
     //lov
     var existing_targets = [];
     for (let f in model) { if (f.substr(0, 7) == 'comment') continue; if (!_.includes(_v_model, f)) _this.LogInit_ERROR(model.id + ': Invalid model property: ' + f); }

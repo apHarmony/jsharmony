@@ -265,8 +265,8 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
         if (_.includes(fieldlist, field.controlparams.sqlparams.FILE_UTSTMP)) Helper.remove(fieldlist, field.controlparams.sqlparams.FILE_UTSTMP);
         sql_extfields.push(field.controlparams.sqlparams.FILE_UTSTMP);
         if (!this.getFieldByName(model.fields, field.controlparams.sqlparams.FILE_UTSTMP)) throw new Error(file + ' FILE_UTSTMP parameter not defined as a field');
-        var sql_TSTMP = _this.getSQL(model, 'TSTMP');
-        if(!sql_TSTMP) throw new Error('SQL macro TSTMP needs to be defined: function should return timestamp for upload');
+        var sql_TSTMP = _this.getSQL(model, jsh.map.timestamp);
+        if(!sql_TSTMP) throw new Error('SQL macro '+jsh.map.timestamp+' needs to be defined: function should return timestamp for upload');
         sql_extvalues.push(_this.getSQL(model, sql_TSTMP));
       }
     }
@@ -275,8 +275,8 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
         if (_.includes(fieldlist, field.controlparams.sqlparams.FILE_UU)) Helper.remove(fieldlist, field.controlparams.sqlparams.FILE_UU);
         sql_extfields.push(field.controlparams.sqlparams.FILE_UU);
         if (!this.getFieldByName(model.fields, field.controlparams.sqlparams.FILE_UU)) throw new Error(file + ' FILE_UU parameter not defined as a field');
-        var sql_CUSER = _this.getSQL(model, 'CUSER');
-        if(!sql_CUSER) throw new Error('SQL macro CUSER needs to be defined: function should return User ID for upload');
+        var sql_CUSER = _this.getSQL(model, jsh.map.current_user);
+        if(!sql_CUSER) throw new Error('SQL macro '+jsh.map.current_user+' needs to be defined: function should return User ID for upload');
         sql_extvalues.push(sql_CUSER);
       }
     }

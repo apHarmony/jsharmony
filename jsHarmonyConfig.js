@@ -125,7 +125,7 @@ function jsHarmonyConfig(config){
       "datatypes": true,         //Load datatypes from the database (type, length, precision, required validation, primary key, read-only)
       "attributes": true,        //Load extended attributes from the database (required validation, primary key, read-only)
       "controls": true,          //Load controls from the database
-      "lovs": true,              //Load LOVs (List of Values - UCOD/GCOD/UCOD2/GCOD2) from the database
+      "lovs": true,              //Load LOVs (List of Values - code/code2) from the database
       "keys": true               //Generate primary and foreign keys based on table keys
     },
     //Model validation level - "standard", "strict"
@@ -187,6 +187,14 @@ function jsHarmonyConfig(config){
     "code_txt": "code_txt",
     "code_seq": "code_seq",
     "code_parent": "code_parent",
+    "timestamp": "timestamp",
+    "current_user": "current_user",
+    "code_sys": "code_sys",
+    "code_app": "code_app",
+    "code2_sys": "code2_sys",
+    "code2_app": "code2_app",
+    "code": "code",
+    "code2": "code2"
   };
   //UI Field Mapping
   this.ui_field_mapping = {

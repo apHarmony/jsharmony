@@ -194,9 +194,16 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
     },
     //General Data
     function () {
+      var module_namespace = '';
+      if(model.module){
+        var module = jsh.Modules[model.module];
+        if(module) module_namespace = module.namespace;
+      }
       return {
         'actions': ejsext.getActions(req, model, 'BIUD'),
-        'breadcrumbs': ejsext.BreadCrumbs(req, jsh, fullmodelid)
+        'breadcrumbs': ejsext.BreadCrumbs(req, jsh, fullmodelid),
+        'module_namespace': module_namespace,
+        'module': model.module,
       }
     },
     //Generate Buttons
@@ -476,7 +483,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
       //Module Using
       if(model.module){
         var module = jsh.Modules[model.module];
-        if(module.using) rslt.using = rslt.using.concat(module.using);
+        if(module && module.using) rslt.using = rslt.using.concat(module.using);
       }
 
       return cb();
@@ -569,7 +576,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
     if (srcfield.lov) {
       dstfield.lov = {};
       copyValues(dstfield.lov, srcfield.lov, ['parent','parents','blank','showcode']);
-      if (('UCOD2' in srcfield.lov) || ('sql2' in srcfield.lov)) dstfield.lov.duallov = 1;
+      if (('code2' in srcfield.lov) || ('code2_sys' in srcfield.lov) || ('code2_app' in srcfield.lov) || ('sql2' in srcfield.lov)) dstfield.lov.duallov = 1;
       else if ('sqlmp' in srcfield.lov) dstfield.lov.multilov = 1;
     }
     if('default' in srcfield){

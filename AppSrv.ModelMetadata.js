@@ -396,7 +396,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
       can_optimize = (no_lov_required || truncate_lov);
 
       if(no_lov_required){
-        //If sqlselect is enabled, or if it is a UCOD/UCOD2/GCOD/GCOD2, return
+        //If sqlselect is enabled, or if it is a code/code2, return
         if(('sql' in lov) || ('sql2' in lov) || ('sqlmp' in lov)){
           if(lov.sqlselect) return;
         }
