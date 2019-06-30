@@ -274,7 +274,7 @@ exports.LoadDBSchemas = function(cb){
   }
 
   function getCODE(dbtype, schema_name, table_name){
-    let code_types = ['code','code2','code_sys','code2_sys','code_app','code2_app','ucod','gcod','ucod2','gcod2'];
+    let code_types = ['code_sys','code2_sys','code_app','code2_app','code','code2','ucod2','gcod2','ucod','gcod'];
     for(let i=0;i<code_types.length;i++){
       let code_type = code_types[i];
       if(table_name.indexOf(code_type+'_')==0){

@@ -186,6 +186,7 @@ function jsHarmonyConfig(config){
     "code_val": "code_val",
     "code_txt": "code_txt",
     "code_seq": "code_seq",
+    "code_end_date": "code_end_date",
     "code_parent": "code_parent",
     "timestamp": "timestamp",
     "current_user": "current_user",

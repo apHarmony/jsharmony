@@ -264,6 +264,7 @@ jsHarmony.prototype.Init = function(init_cb){
         }
       }
       _this.isInitialized = true;
+      console.log(_this.map);
       var loadTime = (Date.now()-_this.Statistics.StartTime);
       if(!_this.Config.silentStart){
         _this.Log.console('::jsHarmony Server ready:: '+(loadTime/1000).toFixed(2)+'s');
