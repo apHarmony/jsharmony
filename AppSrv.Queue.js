@@ -57,7 +57,7 @@ exports.PopQueue = function (req, res, queueid) {
   if (!_this.ParamCheck('P', P, ['&ID', '&RSLT', '&NOTES'])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   var validate = new XValidate();
   validate.AddValidator('_obj.ID', 'Queue Task ID', 'B', [XValidate._v_IsNumeric(), XValidate._v_Required()]);
-  validate.AddValidator('_obj.RSLT', 'Queue Task Result', 'B', [XValidate._v_MaxLength(8), XValidate._v_Required()]);
+  validate.AddValidator('_obj.RSLT', 'Queue Task Result', 'B', [XValidate._v_MaxLength(32), XValidate._v_Required()]);
   validate.AddValidator('_obj.NOTES', 'Queue Task Result Notes', 'B', [XValidate._v_MaxLength(4000)]);
   var verrors = validate.Validate('B', P);
   if (!_.isEmpty(verrors)) { return Helper.GenError(req, res, -2, verrors[''].join('\n')); }

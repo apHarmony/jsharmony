@@ -680,7 +680,7 @@ exports.ParseEntities = function () {
     else if(model.caption.length==1) model.caption = ['',model.caption[0],model.caption[0]];
     else if(model.caption.length==2) model.caption = ['',model.caption[0],model.caption[1]];
 
-    model.class = Helper.getClassName(model.id);
+    model.class = Helper.escapeCSSClass(model.id);
 
     if(model.tabs && !('tabpos' in model)) model.tabpos = 'bottom';
 
@@ -787,7 +787,7 @@ exports.ParseEntities = function () {
           //Note: field.popuplov.target has not been converted to field.target at this point
           if (field.control == 'subform') {
             if(!field.name){
-              var fieldName = Helper.getClassName(field.target);
+              var fieldName = Helper.escapeCSSClass(field.target);
               if(fieldName){
                 var conflictField = _this.AppSrvClass.prototype.getFieldByName(model.fields, fieldName);
                 if(!conflictField){
@@ -1121,7 +1121,7 @@ exports.ParseEntities = function () {
         delete field.__REMOVEFIELD__;
       }
       if (field.controlparams) {
-        if (field.controlparams.code_val) { field.controlparams.code_val = field.controlparams.code_val; delete field.controlparams.code_val; }
+        if (field.controlparams.CODEVal) { field.controlparams.code_val = field.controlparams.CODEVal; delete field.controlparams.CODEVal; }
         if ('code_val' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams code_val attribute has been deprecated - use "popuplov":{...}');
         if ('popupstyle' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams popupstyle attribute has been deprecated - use "popuplov":{...}');
         if ('popupiconstyle' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams popupiconstyle attribute has been deprecated - use "popuplov":{...}');
@@ -1132,7 +1132,7 @@ exports.ParseEntities = function () {
         if (('thumbnails' in field.controlparams) && Helper.hasAction(field.actions, 'IU')) _.each(field.controlparams.thumbnails,function(thumbnail){ _this.TestImageMagick(model.id + ' > ' + field.name); });
       }
       if ('popuplov' in field) {
-        if (field.popuplov.code_val) { field.popuplov.code_val = field.popuplov.code_val; delete field.popuplov.code_val; }
+        if (field.popuplov.CODEVal) { field.popuplov.code_val = field.popuplov.CODEVal; delete field.popuplov.CODEVal; }
         _.forOwn(field.popuplov, function (val, key) {
           if (!('controlparams' in field)) field.controlparams = {};
           if (key == 'target') field.target = field.popuplov.target;

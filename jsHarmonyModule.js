@@ -53,7 +53,7 @@ jsHarmonyModule.prototype.SetModuleNamespace = function(){
   if(this.schema === null){
     if(parentModule) this.schema = parentModule.schema + '_' + this.name;
     else this.schema = this.name;
-    this.schema = Helper.getClassName(this.schema.toLowerCase(),{ nodash: true });
+    this.schema = Helper.escapeCSSClass(this.schema.toLowerCase(),{ nodash: true });
   }
   if(this.namespace === null){
     if(parentModule) this.namespace = this.name;

@@ -5,7 +5,7 @@ if(locals.menudata && menudata.MainMenu){
   %><div class="xmenu"><%
     for(var i=0;i<menudata.MainMenu.length;i++){ menuitem = menudata.MainMenu[i];
       xmenu_headings[menuitem.ID] = menuitem.Title;
-      %><a href="<%-menuitem.Link%>" onclick="<%-ejsext.escapeHTML(menuitem.OnClick?menuitem.OnClick+';return false;':'')%>" data-id="<%=menuitem.ID%>" class="xmenuitem xmenuitem_<%=ejsext.escapeCSS(menuitem.ID)%> <%-ejsext.iif(menuitem.Selected,'selected')%>"><%=menuitem.Title%><div class="bottom"></div></a><%
+      %><a href="<%-menuitem.Link%>" onclick="<%-ejsext.escapeHTML(menuitem.OnClick?menuitem.OnClick+';return false;':'')%>" data-id="<%=menuitem.ID%>" class="xmenuitem xmenuitem_<%=ejsext.escapeCSSClass(menuitem.ID)%> <%-ejsext.iif(menuitem.Selected,'selected')%>"><%=menuitem.Title%><div class="bottom"></div></a><%
     }
     %><a class="xmenu_more" href="#"><div class="xmenu_more_bg">Menu <img src="/images/arrow_right_white.png" /><div class="bottom"></div></div></a><%
   %></div><%
@@ -17,7 +17,7 @@ if(locals.menudata && menudata.SubMenus){
     if(parentid in xmenu_headings) parentname = xmenu_headings[parentid];
     %><div style="display:none;" class="xsubmenu xsubmenu_<%=parentid%>" data-parent="<%=parentid%>"><div class="head"><%=parentname%>:</div><%
     for(var i=0;i<submenu.length;i++){ menuitem = submenu[i];
-      %><a href="<%-menuitem.Link%>" onclick="<%-ejsext.escapeHTML(menuitem.OnClick?menuitem.OnClick+';return false;':'')%>" data-id="<%=menuitem.ID%>" class="xsubmenuitem xsubmenuitem_<%=ejsext.escapeCSS(menuitem.ID)%> <%-ejsext.iif(menuitem.Selected,'selected')%>"><%=menuitem.Title%></a><%-ejsext.iif(i<submenu.length-1,'<div>&nbsp;|&nbsp;</div>')%><%
+      %><a href="<%-menuitem.Link%>" onclick="<%-ejsext.escapeHTML(menuitem.OnClick?menuitem.OnClick+';return false;':'')%>" data-id="<%=menuitem.ID%>" class="xsubmenuitem xsubmenuitem_<%=ejsext.escapeCSSClass(menuitem.ID)%> <%-ejsext.iif(menuitem.Selected,'selected')%>"><%=menuitem.Title%></a><%-ejsext.iif(i<submenu.length-1,'<div>&nbsp;|&nbsp;</div>')%><%
     }
     %><a class="xsubmenu_more" href="#">Menu &nbsp;&#9656;</a><%
     %></div><%

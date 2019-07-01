@@ -32,10 +32,9 @@ function jsHarmonyModuleTransform(module){
   this.transformCount = 0;
   this.transformTime = 0;
 
-  this.ignore_errors = _.extend(this.ignore_errors, {
-    key: {},
-    value: {}
-  });
+  if(!this.ignore_errors) this.ignore_errors = {};
+  if(!this.ignore_errors.key) this.ignore_errors.key = {};
+  if(!this.ignore_errors.value) this.ignore_errors.value = {};
 
   this.updateMapping();
 };

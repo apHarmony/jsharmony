@@ -343,7 +343,7 @@ exports = module.exports = function(jsh){
     return q.replace(/[-[\]{}()*+?.,\\/^$|#\s]/g, "\\$&");
   }
   //Escape string for CSS
-  XExt.escapeCSS = function(val, options){
+  XExt.escapeCSSClass = function(val, options){
     //options { nodash: true }
     var rslt = val;
     if(rslt.nodash) rslt = rslt.replace(/[^a-zA-Z0-9_]+/g, '_');

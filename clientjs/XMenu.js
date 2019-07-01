@@ -120,7 +120,7 @@ exports = module.exports = function(jsh){
           if(link_onclick){
             link_onclick = 'onclick="' + link_onclick + ' ;"';
           }
-          var htmlobj = '<a href="' + xmenuitem.attr('href') + '" ' + link_onclick + ' class="xmenusideitem xmenusideitem_' + jsh.XExt.escapeCSS(xmenuitem.data('id')) + ' ' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
+          var htmlobj = '<a href="' + xmenuitem.attr('href') + '" ' + link_onclick + ' class="xmenusideitem xmenusideitem_' + jsh.XExt.escapeCSSClass(xmenuitem.data('id')) + ' ' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
           xmenuside.append(htmlobj);
         }
       }
@@ -137,7 +137,7 @@ exports = module.exports = function(jsh){
     if(!_.isString && _.isArray(selectedmenu)) selectedmenu = selectedmenu[selectedmenu.length-1];
     selectedmenu = (selectedmenu||'').toString().toUpperCase();
 
-    selectedmenu = jsh.XExt.escapeCSS(selectedmenu);
+    selectedmenu = jsh.XExt.escapeCSSClass(selectedmenu);
 
     //Find item
     var jsubmenuitem = jsh.$root('.xsubmenu .xsubmenuitem_'+selectedmenu).first();
@@ -146,7 +146,7 @@ exports = module.exports = function(jsh){
     var menuid = '';
     if(jsubmenuitem.length){
       submenuid = selectedmenu;
-      menuid = jsh.XExt.escapeCSS(jsubmenuitem.closest('.xsubmenu').data('parent'));
+      menuid = jsh.XExt.escapeCSSClass(jsubmenuitem.closest('.xsubmenu').data('parent'));
       jmenuitem = jsh.$root('.xmenu .xmenuitem_'+menuid).first();
     }
     else{
@@ -312,7 +312,7 @@ exports = module.exports = function(jsh){
           if(link_onclick){
             link_onclick = 'onclick="'+jsh.getInstance()+'.$root(\'.xsubmenuside\').hide(); ' + link_onclick + ';"';
           }
-          var htmlobj = '<a href="' + xsubmenuitem.attr('href') + '" ' + link_onclick + ' class="xsubmenusideitem xsubmenusideitem_' + jsh.XExt.escapeCSS(xsubmenuitem.data('id')) + ' ' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
+          var htmlobj = '<a href="' + xsubmenuitem.attr('href') + '" ' + link_onclick + ' class="xsubmenusideitem xsubmenusideitem_' + jsh.XExt.escapeCSSClass(xsubmenuitem.data('id')) + ' ' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
           xsubmenuside.append(htmlobj);
         }
       }

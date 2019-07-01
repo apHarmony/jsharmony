@@ -193,8 +193,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       else ejsrslt = ejsprepend + ejsrslt;
       //console.log(ejsrslt); //Debug EJS output
       jsh.$root('.xbody').html(ejsrslt);
-      var body_class = 'xbody_'+jsh.state.modelid;
-      if(model._basemodel) body_class += ' xbody_'+ model._basemodel;
+      var body_class = XExt.escapeCSSClass('xbody_'+jsh.state.modelid);
+      if(model._basemodel) body_class += ' ' + XExt.escapeCSSClass('xbody_'+ model._basemodel);
       var prevClasses = XExt.getClasses(jsh.$root('.xbody'));
       for(var i=0;i<prevClasses.length;i++){
         if(XExt.beginsWith(prevClasses[i], 'xbody_')){
