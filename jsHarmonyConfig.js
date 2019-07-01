@@ -184,6 +184,8 @@ function jsHarmonyConfig(config){
     "user_role": "user_role",
     "rowcount": "xrowcount",
     "code_val": "code_val",
+    "code_val1": "code_val1",
+    "code_val2": "code_val2",
     "code_txt": "code_txt",
     "code_seq": "code_seq",
     "code_end_date": "code_end_date",

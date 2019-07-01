@@ -274,34 +274,30 @@ exports.LoadDBSchemas = function(cb){
   }
 
   function getCODE(dbtype, schema_name, table_name){
-    let code_types = ['code_sys','code2_sys','code_app','code2_app','code','code2','ucod2','gcod2','ucod','gcod'];
+    let code_types = ['code2','code'];
+    if(map.code_app != map.code) code_types.unshift('code_app');
+    if(map.code_sys != map.code) code_types.unshift('code_sys');
+    if(map.code2_app != map.code2) code_types.unshift('code2_app');
+    if(map.code2_sys != map.code2) code_types.unshift('code2_sys');
     for(let i=0;i<code_types.length;i++){
       let code_type = code_types[i];
-      if(table_name.indexOf(code_type+'_')==0){
-        let codename = table_name.substr(code_type.length+1);
-        if(code_type=='ucod') code_type = 'code_sys';
-        if(code_type=='gcod') code_type = 'code_app';
-        if(code_type=='ucod2') code_type = 'code2_sys';
-        if(code_type=='gcod2') code_type = 'code2_app';
+      if(table_name.indexOf(map[code_type]+'_')==0){
+        let code_name = table_name.substr(map[code_type].length+1);
         return {
           code_type: code_type,
-          codename: codename,
-          codeschema: schema_name
+          code_name: code_name,
+          code_schema: schema_name
         };
       }
       //SQLite additionally has optional schema prefix
       if(dbtype=='sqlite'){
-        if(table_name.indexOf('_'+code_type+'_')>=0){
-          let codename = table_name.substr(table_name.indexOf('_'+code_type+'_')+code_type.length+2);
-          let codeschema = table_name.substr(0,table_name.indexOf('_'+code_type+'_'));
-          if(code_type=='ucod') code_type = 'code_sys';
-          if(code_type=='gcod') code_type = 'code_app';
-          if(code_type=='ucod2') code_type = 'code2_sys';
-          if(code_type=='gcod2') code_type = 'code2_app';
+        if(table_name.indexOf('_'+map[code_type]+'_')>=0){
+          let code_name = table_name.substr(table_name.indexOf('_'+map[code_type]+'_')+map[code_type].length+2);
+          let code_schema = table_name.substr(0,table_name.indexOf('_'+map[code_type]+'_'));
           return {
             code_type: code_type,
-            codename: codename,
-            codeschema: codeschema
+            code_name: code_name,
+            code_schema: code_schema
           };
         }
       }
@@ -310,6 +306,7 @@ exports.LoadDBSchemas = function(cb){
   }
 
   let _this = this;
+  let map = _this.Config.field_mapping;
   //Load Database Schemas
   let codegen = new jsHarmonyCodeGen(_this);
   if(!_this.Config.system_settings.automatic_schema) return cb();
@@ -353,8 +350,8 @@ exports.LoadDBSchemas = function(cb){
         let code = getCODE(dbConfig._driver.name, table_schema, table_name);
         if(code){
           lovs[code.code_type][full_table_name] = 1;
-          if(!lovs[code.code_type][code.codename]) lovs[code.code_type][code.codename] = [];
-          lovs[code.code_type][code.codename].push({ schema: table_schema, table: table_name, full_table_name: full_table_name });
+          if(!lovs[code.code_type][code.code_name]) lovs[code.code_type][code.code_name] = [];
+          lovs[code.code_type][code.code_name].push({ schema: table_schema, table: table_name, full_table_name: full_table_name });
         }
         //Add fields to array
         for(;field_idx<rslt.fields.length;field_idx++){
@@ -414,18 +411,18 @@ exports.LoadDBSchemas = function(cb){
         let code = getCODE(dbConfig._driver.name, foreignkey.to.schema_name, foreignkey.to.table_name);
         if(code){
           foreignkey.to.code_type = code.code_type;
-          foreignkey.to.codename = code.codename;
-          foreignkey.to.codeschema = code.codeschema;
+          foreignkey.to.code_name = code.code_name;
+          foreignkey.to.code_schema = code.code_schema;
           if((code.code_type=='code2_sys')||(code.code_type=='code2_app')||(code.code_type=='code2')){
             //If this is the child column
-            if(foreignkey.to.column_name=='code_val2'){
+            if(foreignkey.to.column_name==map.code_val2){
               //Find the parent column
               let prevKey = ((i>0) ? rslt.foreignkeys[i-1] : null);
               let nextKey = (rslt.foreignkeys.length > (i+1) ? rslt.foreignkeys[i+1]: null);
               let parentKey = null;
               if(prevKey && (prevKey.id==foreignkey.id)) parentKey = prevKey;
               else if(nextKey && (nextKey.id==foreignkey.id)) parentKey = nextKey;
-              if(parentKey && (parentKey.to.column_name.toLowerCase()=='code_val1')){
+              if(parentKey && (parentKey.to.column_name.toLowerCase()==map.code_val1)){
                 foreignkey.to.code_parent = parentKey.from.column_name.toLowerCase();
               }
             }
@@ -471,11 +468,11 @@ exports.LoadDBSchemas = function(cb){
                 let code = getCODE(dbConfig._driver.name, lov.schema, lov.table);
                 field.foreignkeys.lov.push({ 
                   code_type: code_type,
-                  codename: field_name,
-                  codeschema: code.codeschema,
+                  code_name: field_name,
+                  code_schema: code.code_schema,
                   schema_name: lov.schema,
                   table_name: lov.table, 
-                  column_name: 'code_val',
+                  column_name: map.code_val,
                 });
               });
             }
