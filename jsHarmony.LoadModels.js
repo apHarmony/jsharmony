@@ -1472,9 +1472,13 @@ exports.ParseEntities = function () {
         }
 
         //Replace UCOD/UCOD2/GCOD/GCOD2
+        if('ucod' in lov){ lov.code_sys = lov.ucod;  delete lov.ucod; }
         if('UCOD' in lov){ lov.code_sys = lov.UCOD;  delete lov.UCOD; }
+        if('gcod' in lov){ lov.code_app = lov.gcod;  delete lov.gcod; }
         if('GCOD' in lov){ lov.code_app = lov.GCOD;  delete lov.GCOD; }
+        if('ucod2' in lov){ lov.code2_sys = lov.ucod2;  delete lov.ucod2; }
         if('UCOD2' in lov){ lov.code2_sys = lov.UCOD2;  delete lov.UCOD2; }
+        if('gcod2' in lov){ lov.code2_app = lov.gcod2;  delete lov.gcod2; }
         if('GCOD2' in lov){ lov.code2_app = lov.GCOD2;  delete lov.GCOD2; }
       }
     });

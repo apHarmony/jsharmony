@@ -6755,7 +6755,7 @@ exports = module.exports = function(jsh){
       var _this = this;
       var field = this.Fields[id];
       if(field){
-        if (!this._is_insert && !field.unbound && (field.control != 'tree')) {
+        if (!this._is_insert && !field.unbound && (field.control != 'tree') && jsh.XExt.hasAction(field.actions,'IU')) {
           if (this.HasUpdate(id)) {
             if (!jobj.hasClass('updated')) {
               jobj.addClass('updated');

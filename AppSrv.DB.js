@@ -64,15 +64,16 @@ exports.AppDBError = function (req, res, err, stats, errorHandler) {
   if ('model' in err) {
     var model = err.model;
     if ('dberrors' in model) {
+      var errmsg = (err.message||'').toString().toLowerCase();
       for (var i = 0; i < model.dberrors.length; i++) {
         var dberr = model.dberrors[i];
-        var erex = dberr[0];
+        var erex = dberr[0].toString().toLowerCase();
         var etxt = dberr[1];
         if (erex.indexOf('/') == 0) {
           erex = erex.substr(1, erex.length - 2);
-          if (err.message.match(new RegExp(erex))) { return errorHandler(-9, etxt, stats); }
+          if (errmsg.match(new RegExp(erex))) { return errorHandler(-9, etxt, stats); }
         }
-        else if (err.message.indexOf(erex) >= 0) { return errorHandler(-9, etxt, stats); }
+        else if (errmsg.indexOf(erex) >= 0) { return errorHandler(-9, etxt, stats); }
       }
     }
   }

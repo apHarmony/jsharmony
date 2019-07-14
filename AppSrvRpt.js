@@ -334,12 +334,12 @@ AppSrvRpt.prototype.genReportContent = function(req, res, fullmodelid, params, d
     ejsbody_footer = ejsbody_footer.replace(/{{(.*?)}}/g, '<%=ejsext.null_log(jsh.Log,$1,\'$1\')%>');
   }
   else {
-    ejsbody = ejsbody.replace(/{{/g, '<%=(');
-    ejsbody = ejsbody.replace(/}}/g, '||\'\')%>');
-    ejsbody_header = ejsbody_header.replace(/{{/g, '<%=(');
-    ejsbody_header = ejsbody_header.replace(/}}/g, '||\'\')%>');
-    ejsbody_footer = ejsbody_footer.replace(/{{/g, '<%=(');
-    ejsbody_footer = ejsbody_footer.replace(/}}/g, '||\'\')%>');
+    ejsbody = ejsbody.replace(/{{/g, '<%=ejsext.null_blank(');
+    ejsbody = ejsbody.replace(/}}/g, ')%>');
+    ejsbody_header = ejsbody_header.replace(/{{/g, '<%=ejsext.null_blank(');
+    ejsbody_header = ejsbody_header.replace(/}}/g, ')%>');
+    ejsbody_footer = ejsbody_footer.replace(/{{/g, '<%=ejsext.null_blank(');
+    ejsbody_footer = ejsbody_footer.replace(/}}/g, ')%>');
   }
   rslt.body = ejs.render(ejsbody, {
     model: model,

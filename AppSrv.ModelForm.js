@@ -625,7 +625,7 @@ exports.deleteModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
       fileops.push({ op: 'move', src: _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + (filefield.controlparams.data_file_prefix||file) + '_' + keyval + ((filefield.controlparams._data_file_has_extension)?'%%%EXT%%%':''), dst: '' });
       //Delete thumbnails in post-processing
       if (filefield.controlparams.thumbnails) for (var tname in filefield.controlparams.thumbnails) {
-        fileops.push({ op: 'move', src: _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + (filefield.controlparams.data_file_prefix||field.name) + '_' + tname + '_' + keyval + ((filefield.controlparams._data_file_has_extension)?'%%%EXT%%%':''), dst: '' });
+        fileops.push({ op: 'move', src: _this.jsh.Config.datadir + filefield.controlparams.data_folder + '/' + (filefield.controlparams.data_file_prefix||filefield.name) + '_' + tname + '_' + keyval + ((filefield.controlparams._data_file_has_extension)?'%%%EXT%%%':''), dst: '' });
       }
     });
     dbtasks['_POSTPROCESS'] = function (callback) {
