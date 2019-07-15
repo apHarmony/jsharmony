@@ -67,8 +67,8 @@ function jsHarmonyConfig(config){
   this.mailer_email = 'DO NOT REPLY <donotreply@company.com>';
   //Google API Settings
   this.google_settings = {
-    API_KEY: '',
-    public_key: false,         //Send key to unauthenticated clients
+    api_key: '',
+    unauthenticated_access: false,         //Send key to unauthenticated clients
   };
   //Debug Settings
   this.debug_params = {

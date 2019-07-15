@@ -89,9 +89,9 @@ exports.getJSClientParams = function (req) {
   if (req.isAuthenticated) {
     rslt += 'isAuthenticated: true,';
   }
-  if (_this.Config.google_settings && _this.Config.google_settings.API_KEY){
-    if(_this.Config.google_settings.public_key || req.isAuthenticated){
-      rslt += 'google_api_key: ' + JSON.stringify(_this.Config.google_settings.API_KEY) + ',';
+  if (_this.Config.google_settings && _this.Config.google_settings.api_key){
+    if(_this.Config.google_settings.unauthenticated_access || req.isAuthenticated){
+      rslt += 'google_api_key: ' + JSON.stringify(_this.Config.google_settings.api_key) + ',';
     }
   }
   if (req._roles && ('DEV' in req._roles)){
