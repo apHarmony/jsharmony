@@ -803,7 +803,7 @@ exports.ParseEntities = function () {
           }
           //Automatically add file parameters
           if ((field.type == 'file') && field.controlparams && field.controlparams.sqlparams) {
-            _.each(_.pick(field.controlparams.sqlparams,['FILE_EXT','FILE_NAME','FILE_SIZE','FILE_UTSTMP','FILE_UU']), function(fieldname,param){
+            _.each(_.pick(field.controlparams.sqlparams,['file_extension','file_name','file_size','file_upload_timestamp','file_upload_user']), function(fieldname,param){
               if(!_this.AddFieldIfNotExists(model, fieldname, modelsExt)) _this.LogInit_ERROR(model.id + ' > File field ' + fieldname + ': ' + param + ' target field does not exist in model.fields');
             });
           }
@@ -858,7 +858,7 @@ exports.ParseEntities = function () {
       if(field.type == 'file'){
         if(field.controlparams && field.controlparams.sqlparams){
           var filesqlparams = field.controlparams.sqlparams;
-          _.each(['FILE_SIZE','FILE_EXT','FILE_UU','FILE_UTSTMP'], function(elem){
+          _.each(['file_size','file_extension','file_upload_user','file_upload_timestamp'], function(elem){
             if(filesqlparams[elem]){
               if(!file_params[filesqlparams[elem]]) file_params[filesqlparams[elem]] = [];
               file_params[filesqlparams[elem]].push(field.name);
@@ -1202,7 +1202,7 @@ exports.ParseEntities = function () {
             else field.controlparams.show_thumbnail = true;
           }
         }
-        if(!field.controlparams.sqlparams.FILE_EXT) field.controlparams._data_file_has_extension = true;
+        if(!field.controlparams.sqlparams.file_extension) field.controlparams._data_file_has_extension = true;
         if(!field.name && !('data_file_prefix' in field.controlparams)) _this.LogInit_ERROR('Model ' + model.id + ' Field ' + (field.name || '') + ' should have either field.name or field.controlparams.data_file_prefix defined if file.type="file"');
       }
 

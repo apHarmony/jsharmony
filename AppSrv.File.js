@@ -53,9 +53,9 @@ exports.Upload = function (req, res) {
     var xfile = files.file[0];
     var file_size = xfile.size;
     var file_token = '';
-    var file_origname = path.basename(xfile.originalFilename);
+    var file_orig_name = path.basename(xfile.originalFilename);
     var file_path = xfile.path;
-    var file_ext = path.extname(path.basename(file_origname)).toLowerCase(); //Get extension
+    var file_ext = path.extname(path.basename(file_orig_name)).toLowerCase(); //Get extension
     if (!_.includes(jsh.Config.valid_extensions, file_ext)) { return Helper.GenError(req, res, -32, 'File extension is not supported.'); }
     
     async.waterfall([
@@ -73,7 +73,7 @@ exports.Upload = function (req, res) {
         return Helper.GenError(req, res, -99999, 'Error occurred during file operation (' + err.toString() + ')');
       }
       else {
-        rslt = { '_success': 1, 'FILE_SIZE': file_size, 'FILE_TOKEN': file_token, 'FILE_ORIGNAME': file_origname, 'FILE_EXT': file_ext };
+        rslt = { '_success': 1, 'file_size': file_size, 'file_token': file_token, 'file_orig_name': file_orig_name, 'file_extension': file_ext };
         if (req.jsproxyid) return res.end(Helper.js_proxy(req, rslt));
         else return res.end(JSON.stringify(rslt));
       }
@@ -102,21 +102,21 @@ exports.UploadCKEditor = function (req, res) {
     
     var xfile = files.upload[0];
     //var file_size = xfile.size;
-    var file_origname = path.basename(xfile.originalFilename);
+    var file_orig_name = path.basename(xfile.originalFilename);
     var file_path = xfile.path;
-    var file_ext = path.extname(path.basename(file_origname)).toLowerCase(); //Get extension
+    var file_ext = path.extname(path.basename(file_orig_name)).toLowerCase(); //Get extension
     if (!_.includes(jsh.Config.valid_extensions, file_ext)) { return Helper.GenError(req, res, -32, 'File extension is not supported.'); }
     
     async.waterfall([
       async.apply(HelperFS.createFolderIfNotExists, cmsfiles_folder),
       async.apply(HelperFS.clearFiles, public_folder, jsh.Config.public_temp_expiration, -1),
       function (callback) {
-        fs.exists(cmsfiles_folder + file_origname, function (exists) {
+        fs.exists(cmsfiles_folder + file_orig_name, function (exists) {
           if (exists) return callback({ number: -37, message: 'File already exists' });
           else return callback(null);
         });
       },
-      function (callback) { HelperFS.rename(file_path, (cmsfiles_folder + file_origname), callback); }
+      function (callback) { HelperFS.rename(file_path, (cmsfiles_folder + file_orig_name), callback); }
     ], function (err, rslt) {
       //Handle error or return result
       if (err) {
@@ -129,7 +129,7 @@ exports.UploadCKEditor = function (req, res) {
           <script type="text/javascript">\
             (function(){\
               var funcNum = ' + req.query.CKEditorFuncNum + ';\
-              var url = "' + Helper.getFullURL(req, req.baseurl) + 'cmsfiles/' + file_origname + '";\
+              var url = "' + Helper.getFullURL(req, req.baseurl) + 'cmsfiles/' + file_orig_name + '";\
               var message = "Uploaded file successfully";\
               window.parent.CKEDITOR.tools.callFunction(funcNum, url, message);\
             })();\
@@ -194,8 +194,8 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
     var field = this.getFieldByName(model.fields, fieldid);
     if (!('controlparams' in field)) { throw new Error('File ' + fieldid + ' missing controlparams'); }
     if (!('sqlparams' in field.controlparams)) { throw new Error('File ' + fieldid + ' missing sqlparams'); }
-    if ('FILE_EXT' in field.controlparams.sqlparams) { fieldlist.push(field.controlparams.sqlparams.FILE_EXT); }
-    if ('FILE_NAME' in field.controlparams.sqlparams) { fieldlist.push(field.controlparams.sqlparams.FILE_NAME); }
+    if ('file_extension' in field.controlparams.sqlparams) { fieldlist.push(field.controlparams.sqlparams.file_extension); }
+    if ('file_name' in field.controlparams.sqlparams) { fieldlist.push(field.controlparams.sqlparams.file_name); }
     //Get row from database
     var sql_ptypes = [];
     var sql_params = {};
@@ -221,8 +221,8 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
       //Get extension, filename
       if ((rslt == null) || (rslt.length != 1) || (rslt[0] == null)) { return Helper.GenError(req, res, -33, 'Download file not found.'); }
       var fname = keyid;
-      if ('FILE_NAME' in field.controlparams.sqlparams) { fname = rslt[0][field.controlparams.sqlparams.FILE_NAME]; }
-      else if ('FILE_EXT' in field.controlparams.sqlparams) { fname += rslt[0][field.controlparams.sqlparams.FILE_EXT]; }
+      if ('file_name' in field.controlparams.sqlparams) { fname = rslt[0][field.controlparams.sqlparams.file_name]; }
+      else if ('file_extension' in field.controlparams.sqlparams) { fname += rslt[0][field.controlparams.sqlparams.file_extension]; }
       var fpath = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||fieldid) + '_' + keyid;
       if ('thumb' in options) {
         if(('show_thumbnail' in field.controlparams) && (field.controlparams.show_thumbnail===options.thumb)){
@@ -237,7 +237,7 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
       HelperFS.getExtFileName(fpath, function(err, filename){
         if(err) return Helper.GenError(req, res, -33, 'Download file not found.');
         var fext = path.extname(filename);
-        if(field.controlparams._data_file_has_extension && !('FILE_EXT' in field.controlparams.sqlparams)) fname += fext;
+        if(field.controlparams._data_file_has_extension && !('file_extension' in field.controlparams.sqlparams)) fname += fext;
         serveFile(req, res, filename, fname, fext);
       });
     }, undefined, db);
@@ -252,29 +252,29 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
   if (file in P) {
     if (!('controlparams' in field)) { throw new Error('File ' + file + ' missing controlparams'); }
     if (!('sqlparams' in field.controlparams)) { throw new Error('File ' + file + ' missing sqlparams'); }
-    if ('FILE_SIZE' in field.controlparams.sqlparams) {
-      if (!_.includes(fieldlist, field.controlparams.sqlparams.FILE_SIZE)) fieldlist.push(field.controlparams.sqlparams.FILE_SIZE);
-      if (!this.getFieldByName(model.fields, field.controlparams.sqlparams.FILE_SIZE)) throw new Error(file + ' FILE_SIZE parameter not defined as a field');
+    if ('file_size' in field.controlparams.sqlparams) {
+      if (!_.includes(fieldlist, field.controlparams.sqlparams.file_size)) fieldlist.push(field.controlparams.sqlparams.file_size);
+      if (!this.getFieldByName(model.fields, field.controlparams.sqlparams.file_size)) throw new Error(file + ' file_size parameter not defined as a field');
     }
-    if ('FILE_EXT' in field.controlparams.sqlparams) {
-      if (!_.includes(fieldlist, field.controlparams.sqlparams.FILE_EXT)) fieldlist.push(field.controlparams.sqlparams.FILE_EXT);
-      if (!this.getFieldByName(model.fields, field.controlparams.sqlparams.FILE_EXT)) throw new Error(file + ' FILE_EXT parameter not defined as a field');
+    if ('file_extension' in field.controlparams.sqlparams) {
+      if (!_.includes(fieldlist, field.controlparams.sqlparams.file_extension)) fieldlist.push(field.controlparams.sqlparams.file_extension);
+      if (!this.getFieldByName(model.fields, field.controlparams.sqlparams.file_extension)) throw new Error(file + ' file_extension parameter not defined as a field');
     }
-    if ('FILE_UTSTMP' in field.controlparams.sqlparams) {
-      if (!_.includes(sql_extfields, field.controlparams.sqlparams.FILE_UTSTMP)){
-        if (_.includes(fieldlist, field.controlparams.sqlparams.FILE_UTSTMP)) Helper.remove(fieldlist, field.controlparams.sqlparams.FILE_UTSTMP);
-        sql_extfields.push(field.controlparams.sqlparams.FILE_UTSTMP);
-        if (!this.getFieldByName(model.fields, field.controlparams.sqlparams.FILE_UTSTMP)) throw new Error(file + ' FILE_UTSTMP parameter not defined as a field');
+    if ('file_upload_timestamp' in field.controlparams.sqlparams) {
+      if (!_.includes(sql_extfields, field.controlparams.sqlparams.file_upload_timestamp)){
+        if (_.includes(fieldlist, field.controlparams.sqlparams.file_upload_timestamp)) Helper.remove(fieldlist, field.controlparams.sqlparams.file_upload_timestamp);
+        sql_extfields.push(field.controlparams.sqlparams.file_upload_timestamp);
+        if (!this.getFieldByName(model.fields, field.controlparams.sqlparams.file_upload_timestamp)) throw new Error(file + ' file_upload_timestamp parameter not defined as a field');
         var sql_TSTMP = _this.getSQL(model, jsh.map.timestamp);
         if(!sql_TSTMP) throw new Error('SQL macro '+jsh.map.timestamp+' needs to be defined: function should return timestamp for upload');
         sql_extvalues.push(_this.getSQL(model, sql_TSTMP));
       }
     }
-    if ('FILE_UU' in field.controlparams.sqlparams) {
-      if (!_.includes(sql_extfields, field.controlparams.sqlparams.FILE_UU)){
-        if (_.includes(fieldlist, field.controlparams.sqlparams.FILE_UU)) Helper.remove(fieldlist, field.controlparams.sqlparams.FILE_UU);
-        sql_extfields.push(field.controlparams.sqlparams.FILE_UU);
-        if (!this.getFieldByName(model.fields, field.controlparams.sqlparams.FILE_UU)) throw new Error(file + ' FILE_UU parameter not defined as a field');
+    if ('file_upload_user' in field.controlparams.sqlparams) {
+      if (!_.includes(sql_extfields, field.controlparams.sqlparams.file_upload_user)){
+        if (_.includes(fieldlist, field.controlparams.sqlparams.file_upload_user)) Helper.remove(fieldlist, field.controlparams.sqlparams.file_upload_user);
+        sql_extfields.push(field.controlparams.sqlparams.file_upload_user);
+        if (!this.getFieldByName(model.fields, field.controlparams.sqlparams.file_upload_user)) throw new Error(file + ' file_upload_user parameter not defined as a field');
         var sql_CUSER = _this.getSQL(model, jsh.map.current_user);
         if(!sql_CUSER) throw new Error('SQL macro '+jsh.map.current_user+' needs to be defined: function should return User ID for upload');
         sql_extvalues.push(sql_CUSER);
@@ -284,13 +284,13 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
     var filedest = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||file) + '_%%%KEY%%%';
     if (field.controlparams._data_file_has_extension) filedest += '%%%EXT%%%';
     if (P[file] == '') {
-      if ('FILE_SIZE' in field.controlparams.sqlparams) {
-        if (field.controlparams.sqlparams.FILE_SIZE in P) throw new Error('Parameter conflict - ' + field.controlparams.sqlparams.FILE_SIZE);
-        P[field.controlparams.sqlparams.FILE_SIZE] = null;
+      if ('file_size' in field.controlparams.sqlparams) {
+        if (field.controlparams.sqlparams.file_size in P) throw new Error('Parameter conflict - ' + field.controlparams.sqlparams.file_size);
+        P[field.controlparams.sqlparams.file_size] = null;
       }
-      if ('FILE_EXT' in field.controlparams.sqlparams) {
-        if (field.controlparams.sqlparams.FILE_EXT in P) throw new Error('Parameter conflict - ' + field.controlparams.sqlparams.FILE_EXT);
-        P[field.controlparams.sqlparams.FILE_EXT] = null;
+      if ('file_extension' in field.controlparams.sqlparams) {
+        if (field.controlparams.sqlparams.file_extension in P) throw new Error('Parameter conflict - ' + field.controlparams.sqlparams.file_extension);
+        P[field.controlparams.sqlparams.file_extension] = null;
       }
       //Delete File in main operation
       fileops.push({ op: 'move', src: '', dest: filedest });
@@ -316,13 +316,13 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
         if (err != null) { return filecallback(Helper.GenError(req, res, -33, 'File not found.')); }
         //Add parameters, make sure they don't conflict with existing parameters
         var file_size = stat.size;
-        if ('FILE_SIZE' in field.controlparams.sqlparams) {
-          if (field.controlparams.sqlparams.FILE_SIZE in P) throw new Error('Parameter conflict - ' + field.controlparams.sqlparams.FILE_SIZE);
-          P[field.controlparams.sqlparams.FILE_SIZE] = file_size;
+        if ('file_size' in field.controlparams.sqlparams) {
+          if (field.controlparams.sqlparams.file_size in P) throw new Error('Parameter conflict - ' + field.controlparams.sqlparams.file_size);
+          P[field.controlparams.sqlparams.file_size] = file_size;
         }
-        if ('FILE_EXT' in field.controlparams.sqlparams) {
-          if (field.controlparams.sqlparams.FILE_EXT in P) throw new Error('Parameter conflict - ' + field.controlparams.sqlparams.FILE_EXT);
-          P[field.controlparams.sqlparams.FILE_EXT] = file_ext;
+        if ('file_extension' in field.controlparams.sqlparams) {
+          if (field.controlparams.sqlparams.file_extension in P) throw new Error('Parameter conflict - ' + field.controlparams.sqlparams.file_extension);
+          P[field.controlparams.sqlparams.file_extension] = file_ext;
         }
         //Perform validation, if necessary - MaxSize, Extension, Required
         vfiles[file] = {

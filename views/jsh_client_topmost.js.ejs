@@ -943,8 +943,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   XPage.FileUploadComplete = function(rslt) {
     $.colorbox.close();
-    if (!('FILE_TOKEN' in rslt)) return;
-    jsh.xfileupload_ctrl.children('.xform_file_token').val(rslt.FILE_TOKEN);
+    if (!('file_token' in rslt)) return;
+    jsh.xfileupload_ctrl.children('.xform_file_token').val(rslt.file_token);
     jsh.xfileupload_ctrl.children('.xform_file_dbdelete').val('0');
     jsh.xfileupload_ctrl.removeClass('nodocument');
     //Rerender Control

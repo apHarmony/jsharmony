@@ -183,11 +183,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "control": "label", //label,html(value),textbox,textzoom,dropdown,date,textarea,htmlarea,subform,hidden,password,file_upload,file_download,image,button,linkbutton,tree,checkbox
       "controlparams": {
                        {  //file_upload params
-                          "sqlparams": {"FILE_SIZE": "d_size",  //File Size
-                             "FILE_EXT": "d_ext", //File Extension
-                             "FILE_UTSTMP": "d_utstmp", //Upload Timestamp - will be combined with jsh.map.timestamp sql
-                             "FILE_UU": "d_uu", //Upload User - will be combined with jsh.map.current_user sql
-                             "FILE_NAME": "d_filename" //Target file name for download
+                          "sqlparams": {"file_size": "doc_size",  //File Size
+                             "file_extension": "d_ocext", //File Extension
+                             "file_upload_timestamp": "doc_uptstmp", //Upload Timestamp - will be combined with jsh.map.timestamp sql
+                             "file_upload_user": "doc_upuser", //Upload User - will be combined with jsh.map.current_user sql
+                             "file_name": "doc_filename" //Target file name for download
                            },
                            "image": {
                              "crop": [800,600], //Use either crop or resize
@@ -211,28 +211,28 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                            "preview_on_click":true,  //Whether to link to preview the full image on click
                            "data_folder": "D",//Folder for files, must be unique per data_file_prefix
                            "data_file_prefix": "c_doc", //File prefix in PREFIX_KEY.EXT (defaults to field name if blank or not set)
-                           "_data_file_has_extension": false, //System parameter.  Automatically set to true if sqlparams.FILE_EXT not set.  Slower because a directory search is required on each request.  
+                           "_data_file_has_extension": false, //System parameter.  Automatically set to true if sqlparams.file_extension not set.  Slower because a directory search is required on each request.  
                       }, 
                       { //file_download params
                         "sqlparams": {
-                          "FILE_EXT": "d_ext", //File Extension
-                          "FILE_NAME": "d_filename" //Target file name for download
+                          "file_extension": "d_ext", //File Extension
+                          "file_name": "d_filename" //Target file name for download
                         },
                         "download_button": "Download", //Text for download button
                         "data_folder": "D",//Folder for files, must be unique per data_file_prefix
                         "data_file_prefix": "c_doc", //File prefix in PREFIX_KEY.EXT (defaults to field name if blank or not set)
-                        "_data_file_has_extension": false, //System parameter.  Automatically set to true if sqlparams.FILE_EXT not set.  Slower because a directory search is required on each request.  
+                        "_data_file_has_extension": false, //System parameter.  Automatically set to true if sqlparams.file_extension not set.  Slower because a directory search is required on each request.  
                       },
                       { //image params
                         "sqlparams": {
-                          "FILE_EXT": "d_ext", //File Extension
-                          "FILE_NAME": "d_filename" //Target file name for download
+                          "file_extension": "d_ext", //File Extension
+                          "file_name": "d_filename" //Target file name for download
                         },
                         "show_thumbnail":"small", //Target thumbnail for display, or "true" first first thumbnail or image
                         "preview_on_click":true,  //Whether to link to preview the full image on click
                         "data_folder": "D",       //Folder for files, must be unique per data_file_prefix
                         "data_file_prefix": "c_doc", //File prefix in PREFIX_KEY.EXT (defaults to field name if blank or not set)
-                        "_data_file_has_extension": false, //System parameter.  Automatically set to true if sqlparams.FILE_EXT not set.  Slower because a directory search is required on each request.  
+                        "_data_file_has_extension": false, //System parameter.  Automatically set to true if sqlparams.file_extension not set.  Slower because a directory search is required on each request.  
                       },
                       {"item_context_menu": [ //tree params - Context Menu for an Item
                           { "icon": "insert", "text": "Add", "command": "XExt.Alert('insert' + context_item);", "actions": "IUD" }
