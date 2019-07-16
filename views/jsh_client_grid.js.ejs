@@ -517,7 +517,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var rowdata = xform.DataSet[rowid];
     for(var binding in bindings){
       if(binding in rowdata){
-        jsh.XModels[dmodelid][binding] = function(){ return rowdata[binding]; };
+        jsh.XModels[dmodelid].bindings[binding] = function(){ return rowdata[binding]; };
       }
     }
     XExt.popupShow(dmodelid,xmodel.class+'_duplicate','Duplicate <%=model.caption[1]%>',undefined,obj);

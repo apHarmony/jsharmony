@@ -740,6 +740,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       _GET: jsh._GET,
       modelid: modelid,
       xmodel: xmodel,
+      _this: jsh.App[modelid],
       js: function(code,options){ return XExt.wrapJS(code,modelid,options); }
     });
     return ejsrslt;

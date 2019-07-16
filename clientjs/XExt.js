@@ -1347,11 +1347,13 @@ exports = module.exports = function(jsh){
       var code_val = $(obj).data('code_val');
       if (code_val) popupData[modelid].code_val = code_val;
       var xgrid = xmodel.controller.grid;
+      var xform = xmodel.controller.form;
       if(xgrid){
         xgrid.RowCount = 0;
         if (xgrid.Prop) xgrid.Prop.Enabled = true;
         jsh.$root(xgrid.PlaceholderID).html('');
       }
+      if(xform && xform.Prop){ xform.Prop.Enabled = true; }
       var orig_jsh_ignorefocusHandler = jsh.ignorefocusHandler;
       jsh.ignorefocusHandler = true;
       var popup_options = {};
@@ -1392,6 +1394,8 @@ exports = module.exports = function(jsh){
           }
           parentobj.focus();
           jsh.ignorefocusHandler = orig_jsh_ignorefocusHandler;
+          if(xgrid && xgrid.Prop){ xgrid.Prop.Enabled = false; }
+          if(xform && xform.Prop){ xform.Prop.Enabled = false; }
         },
       };
       var xpanel = $(popup_options.href).children('.xpanel');
@@ -1414,7 +1418,6 @@ exports = module.exports = function(jsh){
     popupData[modelid].result = rslt;
     popupData[modelid].rowid = rowid;
     popupData[modelid].resultrow = xmodel.controller.form.DataSet[rowid];
-    xmodel.controller.grid.Prop.Enabled = false;
     $.colorbox.close();
   }
 
@@ -1426,7 +1429,6 @@ exports = module.exports = function(jsh){
     popupData[modelid].result = rslt;
     popupData[modelid].rowid = -1;
     popupData[modelid].resultrow = new xmodel.controller.form.DataType();
-    xmodel.controller.grid.Prop.Enabled = false;
     $.colorbox.close();
   }
 
@@ -1513,9 +1515,10 @@ exports = module.exports = function(jsh){
     }
   }
 
-  XExt.chain = function (obj, f) {
-    if (!obj) return f;
-    return function () { f(); obj(); };
+  //Given an original function orig_f, run f(), then run orig_f()
+  XExt.chain = function (orig_f, f) {
+    if (!orig_f) return f;
+    return function () { f(); orig_f(); };
   }
 
   XExt.execif = function (cond, apply, f) {

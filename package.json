@@ -40,7 +40,7 @@
     "csv": "^1.1.1",
     "ejs": "^2.6.1",
     "express": "^4.14.1",
-    "form-data": "^2.1.2",
+    "form-data": "^2.5.0",
     "gm": "^1.23.0",
     "jsharmony-db": "^1.1.17",
     "jsharmony-validate": "^1.1.5",

@@ -37,6 +37,10 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && !('
     xform.DataType = xmodel.datamodel;
     xform.Data = new xmodel.datamodel();
 
+    var isInlinePopup = <%-xejs.iif(('inlinepopup' in model) && (model.inlinepopup),'true','false')%>;
+    xform.Prop.Enabled = (isInlinePopup ? false : true);
+    xform.Prop.isInlinePopup = isInlinePopup;
+
     <% xejs.eachKey(model.fields,function(field){  if(!field.name) return; %>xform.Data['<%=field['name']%>'] = xmodel.getBindingOrRootKey('<%=field['name']%>');<%}); %>
     xform.GetSelectParams = function(){
       var rslt = xform.GetKeys();
@@ -74,7 +78,13 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && !('
       }
       return rslt; 
     };
-    <%-xejs.iif(no_B,'xform.Select = function(onComplete){ if(onComplete) onComplete(); }; //No data to select')%>
+    var xform_origSelect = xform.Select;
+    xform.Select = function(done){
+      done = done || function(){};
+      <%-xejs.iif(no_B,'return done(); //No data to select')%>
+      if(!xform.Prop.Enabled) return done();
+      return xform_origSelect.call(this, done);
+    };
 
     //Pull keys from parent
     //Get recordset

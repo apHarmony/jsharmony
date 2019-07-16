@@ -45,6 +45,7 @@ exports = module.exports = function(jsh){
     this.DBTaskRows = {};
     this.OnBeforeRender = null;
     this.OnAfterRender = null;
+    this.Prop = {};
   }
 
   XForm.prototype.Render = function(options){
