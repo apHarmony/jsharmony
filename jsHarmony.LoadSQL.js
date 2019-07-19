@@ -65,6 +65,7 @@ exports.InitDB = function(dbid, cb){
     ], function(dir){
       if(fs.existsSync(dir)){
         hasSQL = true;
+        _this.LogInit_PERFORMANCE('Loading SQL from '+dir+' '+(Date.now()-_this.Statistics.StartTime));
         _this.LoadSQL(db, dir, driverName, modeldir.module);
       }
     });
@@ -189,6 +190,7 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
   var d = _this.LoadSQLFiles(dir, { ignoreDirectories: true, filterType: type });  
 
   //Load Base SQL files
+  _this.LogInit_PERFORMANCE('Loading Base SQL Files '+(Date.now()-_this.Statistics.StartTime));
   if(d.length){
     var found_funcs = {};
 
@@ -222,6 +224,7 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
   }
 
   //Load SQL Scripts
+  _this.LogInit_PERFORMANCE('Loading SQL Scripts '+(Date.now()-_this.Statistics.StartTime));
   var scriptsdir = dir+'scripts/';
   d = _this.LoadSQLFiles(scriptsdir, { ignoreDirectories: false, filterType: type });
   if(moduleName && (d.length > 0)){
@@ -240,7 +243,7 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
           var fname = subd[j].name;
           if(!(fname in subd[j])) scripts[subdname][fname] = '';
           else scripts[subdname][fname] += '\r\n';
-          scripts[subdname][fname] += module.transform.Apply(fs.readFileSync(subd[j].path, 'utf8'), subd[j].path);
+          scripts[subdname][fname] += fs.readFileSync(subd[j].path, 'utf8');
         }
       }
     }
@@ -248,7 +251,7 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
     //Process files
     for(let i=0;i<d.length;i++){
       if(d[i].type=='file'){
-        scripts[d[i].name] = module.transform.Apply(fs.readFileSync(d[i].path, 'utf8'), d[i].path);
+        scripts[d[i].name] = fs.readFileSync(d[i].path, 'utf8');
       }
     }
 

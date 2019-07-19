@@ -72,7 +72,7 @@ function jsHarmonyConfig(config){
   };
   //Debug Settings
   this.debug_params = {
-    jsh_error_level: 3,        //Bitmask: 1 = ERROR, 2 = WARNING, 4 = INFO  :: Messages generated while parsing jsHarmony configs
+    jsh_error_level: 3,        //Bitmask: 1 = ERROR, 2 = WARNING, 4 = INFO, 8 = PERFORMANCE  :: Messages generated while parsing jsHarmony configs
     appsrv_requests: false,    //Record all APPSRV requests on LOG/CONSOLE
 
     pipe_log : true,           //Show LOG messages on CONSOLE

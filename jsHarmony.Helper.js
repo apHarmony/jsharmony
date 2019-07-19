@@ -27,6 +27,7 @@ var moment = require('moment');
 var _ERROR = 1;
 var _WARNING = 2;
 var _INFO = 4;
+var _PERFORMANCE = 8;
 
 /*************************
 |    HELPER FUNCTIONS    |
@@ -689,3 +690,4 @@ exports.LogInit = function(severity, msg) {
 exports.LogInit_ERROR = function(msg){ return this.LogInit(_ERROR, msg); }
 exports.LogInit_WARNING = function(msg){ return this.LogInit(_WARNING, msg); }
 exports.LogInit_INFO = function(msg){ return this.LogInit(_INFO, msg); }
+exports.LogInit_PERFORMANCE = function(msg){ return this.LogInit(_PERFORMANCE, msg); }

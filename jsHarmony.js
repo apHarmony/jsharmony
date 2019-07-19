@@ -114,6 +114,8 @@ jsHarmony.prototype.Init = function(init_cb){
     return;
   }
 
+  _this.LogInit_PERFORMANCE('Starting '+(Date.now()-_this.Statistics.StartTime));
+
   //Load Configuration Files
   _this.Config.LoadJSConfigFolder(_this);
   _this.Config.LoadJSONConfigFolder(_this);
@@ -124,6 +126,8 @@ jsHarmony.prototype.Init = function(init_cb){
   async.waterfall([
     function(cb){ _this.Config.Init(cb); },
     function(cb){
+      _this.LogInit_PERFORMANCE('Loading Config '+(Date.now()-_this.Statistics.StartTime));
+
       //Add Application Module
       if(!_this.Modules['application']){
         _this.Modules['application'] = new jsHarmonyModule.ApplicationModule(_this);
@@ -149,6 +153,8 @@ jsHarmony.prototype.Init = function(init_cb){
       return cb();
     },
     function(cb){
+      _this.LogInit_PERFORMANCE('Initializing Config '+(Date.now()-_this.Statistics.StartTime));
+
       //Initialize Module Configs
       async.eachSeries(_this.Modules, function(module, module_cb){
         module.Config.Init(module_cb, _this);
@@ -180,6 +186,8 @@ jsHarmony.prototype.Init = function(init_cb){
       Helper.triggerAsync(_this.Config.onConfigLoaded, cb, _this);
     },
     function(cb){
+      _this.LogInit_PERFORMANCE('Transforming '+(Date.now()-_this.Statistics.StartTime));
+
       //Load Views
       _this.LoadViews();
       //Validate Module Transforms
@@ -189,9 +197,12 @@ jsHarmony.prototype.Init = function(init_cb){
       return cb();
     },
     function(cb){
+      _this.LogInit_PERFORMANCE('Loading DB '+(Date.now()-_this.Statistics.StartTime));
+
       //Load Database Drivers
       if(!_this.DBConfig['default']) { _this.DBConfig['default'] = { _driver: new DB.noDriver() }; }
       async.eachOfSeries(_this.DBConfig, function(db, dbid, db_cb){
+        _this.LogInit_PERFORMANCE('Initializing DB '+dbid+' '+(Date.now()-_this.Statistics.StartTime));
         _this.InitDB(dbid, db_cb);
       }, function(){
         defaultDBDriver = _this.DBConfig['default']._driver.name;
@@ -199,9 +210,12 @@ jsHarmony.prototype.Init = function(init_cb){
       });
     },
     function(cb){
+      _this.LogInit_PERFORMANCE('DB Driver Loaded Event '+(Date.now()-_this.Statistics.StartTime));
       Helper.triggerAsync(_this.Config.onDBDriverLoaded, cb, _this);
     },
     function(cb){
+      _this.LogInit_PERFORMANCE('Loading Schemas '+(Date.now()-_this.Statistics.StartTime));
+
       if(!_this.Config.silentStart) _this.Log.console('Loading models...');
       _this.LoadDBSchemas(cb);
     },
@@ -213,6 +227,8 @@ jsHarmony.prototype.Init = function(init_cb){
     function(cb){
       if(!_this.Config.loadModels){ return cb(); }
 
+      _this.LogInit_PERFORMANCE('Loading Models '+(Date.now()-_this.Statistics.StartTime));
+
       _this.Cache['application.js'] = '';
       _this.Cache['application.css'] = fs.readFileSync(path.dirname(module.filename)+'/jsHarmony.theme.css', 'utf8');
       var modeldirs = _this.getModelDirs();
@@ -223,6 +239,7 @@ jsHarmony.prototype.Init = function(init_cb){
         if (fs.existsSync(modeldir.path + 'js/')) _this.Cache['application.js'] += '\r\n' + _this.MergeFolder(modeldir.path + 'js/', modeldir.module);
         if (fs.existsSync(modeldir.path + 'public_css/')) _this.Cache['application.css'] += '\r\n' + _this.MergeFolder(modeldir.path + 'public_css/', modeldir.module);
       }
+      _this.LogInit_PERFORMANCE('Parsing Models '+(Date.now()-_this.Statistics.StartTime));
       _this.ParseMacros();
       _this.ParseDeprecated();
       _this.ParseInheritance();
@@ -232,6 +249,8 @@ jsHarmony.prototype.Init = function(init_cb){
       return cb();
     },
     function(cb){
+      _this.LogInit_PERFORMANCE('Validating Config '+(Date.now()-_this.Statistics.StartTime));
+
       //Validate Configuration
       _this.Config.Validate(_this,'jsHarmony');
       for(var moduleName in _this.Modules){
@@ -251,12 +270,15 @@ jsHarmony.prototype.Init = function(init_cb){
       cb();
     },
     function(cb){
+      _this.LogInit_PERFORMANCE('Initializing Modules '+(Date.now()-_this.Statistics.StartTime));
+
       //Initialize Modules
       async.eachSeries(_this.Modules, function(module, module_cb){
         module.Init(module_cb);
       }, cb);
     },
     function(cb){
+      _this.LogInit_PERFORMANCE('Initializing Sites '+(Date.now()-_this.Statistics.StartTime));
       for(var siteid in _this.Sites){
         if(!_this.Sites[siteid].initialized){
           _this.Sites[siteid] = new jsHarmonySite(_this, siteid, _this.Sites[siteid]);
