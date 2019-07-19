@@ -401,6 +401,17 @@ AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, d
         if (tmperr) throw tmperr;
         _this.getBrowser(function (browser) {
           var page = null;
+
+          function genReportError(err){
+            var rpterr = Helper.NewError("Error occurred during report generation (" + err.toString() + ')', -99999);
+            if (page != null){
+              return page.close()
+                .then(function(){ return done(rpterr, null); })
+                .catch(function (err) { jsh.Log.error(err); return done(rpterr, null); });
+            }
+            else return done(rpterr, null);
+          }
+
           try {
             browser.newPage().then(function (_page) {
               var tmppdfpath = tmppath + '.pdf';
@@ -561,7 +572,7 @@ AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, d
 
                 fs.writeFile(tmphtmlpath, rptcontent.body||'','utf8',function(err){
                   if(err) return jsh.Log.error(err);
-                  page.goto('file://'+tmphtmlpath, { waitUntil: 'networkidle0' })
+                  page.goto('file://'+tmphtmlpath, { timeout: jsh.Config.report_timeout, waitUntil: 'networkidle0' })
                   .then(function(){
                     page.evaluate(onPageLoad, font_render, font_css).then(function(documentWidth){
                       if(documentWidth && !pagesettings.scale){
@@ -570,38 +581,30 @@ AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, d
                         if(scale > 1) scale = 1;
                         pagesettings.scale = scale;
                       }
-                      //page.emulateMedia('screen').then(function(){
-                        page.pdf(pagesettings).then(function () {
-                          var dispose = function (disposedone) {
-                            page.close().then(function () {
-                              page = null;
-                              fs.close(tmpfd, function () {
-                                fs.unlink(tmphtmlpath, function (err) {
-                                  fs.unlink(tmppath, function (err) {
-                                    if (typeof disposedone != 'undefined') disposedone();
-                                  });
+                      page.pdf(pagesettings).then(function () {
+                        var dispose = function (disposedone) {
+                          page.close().then(function () {
+                            page = null;
+                            fs.close(tmpfd, function () {
+                              fs.unlink(tmphtmlpath, function (err) {
+                                fs.unlink(tmppath, function (err) {
+                                  if (typeof disposedone != 'undefined') disposedone();
                                 });
                               });
-                            }).catch(function (err) { jsh.Log.error(err); });;
-                          };
-                          done(null, tmppdfpath, dispose, data);
-                        }).catch(function (err) { jsh.Log.error(err); });
-                      //}).catch(function (err) { jsh.Log.error(err); });
-                    }).catch(function (err) { jsh.Log.error(err); });
+                            });
+                          }).catch(function (err) { jsh.Log.error(err); });
+                        };
+                        done(null, tmppdfpath, dispose, data);
+                      }).catch(function (err) { genReportError(err); });
+                    }).catch(function (err) { genReportError(err); });
                   })
-                  .catch(function (err) { jsh.Log.error(err); });
+                  .catch(function (err) { genReportError(err); });
                 });
               });
 
-            }).catch(function (err) { jsh.Log.error(err); });
+            }).catch(function (err) { genReportError(err); });
           } catch (err) {
-            var rpterr = Helper.NewError("Error occurred during report generation (" + err.toString() + ')', -99999);
-            if (page != null){
-              return page.close()
-                .then(function(){ return done(rpterr, null); })
-                .catch(function (err) { jsh.Log.error(err); return done(rpterr, null); });
-            }
-            else return done(rpterr, null);
+            genReportError(err);
           }
         }); //, { dnodeOpts: { weak: false } }
       });
@@ -633,6 +636,7 @@ AppSrvRpt.prototype.getBrowser = function (callback) {
     //Recycle browser after _BROWSER_RECYCLE_COUNT uses
     _this.browserreqcount++;
     if (_this.browserreqcount >= _BROWSER_RECYCLE_COUNT) { 
+      jsh.Log.info('Recycling Report Renderer');
       return _this.browser.close()
         .then(function(){ _this.browser = null; return _this.getBrowser(callback); })
         .catch(function(err){ jsh.Log.error('Cound not exit report renderer: '+err.toString()); });

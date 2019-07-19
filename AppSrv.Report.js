@@ -30,6 +30,8 @@ exports.getReport = function (req, res, fullmodelid, Q, P, callback) {
   if (typeof Q == 'undefined') Q = req.query;
   if (typeof P == 'undefined') P = req.body;
   if (typeof callback == 'undefined') callback = function (err, tmppath, dispose) {
+    if(err){ Helper.GenError(req, res, -99999, err.toString()); return; }
+
     /* Report Done */ 
     HelperFS.getFileStats(req, res, tmppath, function (err, stat) {
       if (err != null) return dispose();
@@ -84,6 +86,8 @@ exports.getReportHTML = function (req, res, fullmodelid, Q, P, callback) {
   if (typeof P == 'undefined') P = req.body;
   if (typeof callback == 'undefined') callback = function (err, rptcontent) {
     /* Report Done */ 
+    if(err){ Helper.GenError(req, res, -99999, err.toString()); return; }
+    
     var rslt = '';
     if(_.isArray(rptcontent) && (rptcontent.length == 1)){
       rslt = _this.parseReportHTML(rptcontent[0]);
