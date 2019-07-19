@@ -103,7 +103,7 @@ function jsHarmonyConfig(config){
   this.public_temp_expiration = 5 * 60;
   //Seconds before User Temp Folder files are deleted on next upload.  Default is 6 hours
   this.user_temp_expiration = 6 * 60 * 60;
-  //Timeout for report generation (Default 90 second)
+  //Timeout for report generation (default 90 seconds)
   this.report_timeout = 90 * 1000;
   //jsHarmony System Settings
   this.system_settings = {
