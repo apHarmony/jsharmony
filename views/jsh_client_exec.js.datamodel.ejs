@@ -72,7 +72,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       },<% }%>
       <% if(field.lov && field.lov.parent){ %>"lovparent":<%-JSON.stringify(field.lov.parent)%>, <% } %>
       <% if(field.lov && field.lov.parents){ %>"lovparents":<%-JSON.stringify(field.lov.parents)%>, <% } %>
-      <% if(field.lov && ('blank' in field.lov)){ %>"lovblank":1, <% } %>
+      <% if(field.lov && (('blank' in field.lov) && (field.lov.blank || (field.lov.blank === '')))){ %>"lovblank":1, <% } %>
       <% if(field.lov && !(field.lov.showcode)){ %>"showlovtxt":1, <% } %>
       <% if(field.validate){ %>"validate":<%-JSON.stringify(field.validate)%>, <% } %>
       }), <%});%>

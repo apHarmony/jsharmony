@@ -1457,6 +1457,25 @@ exports.ParseEntities = function () {
           lov.sqlselect_params = [];
           _this.forEachSqlParam(model, lov.sqlselect, function(pfield_name, pfield){ lov.sqlselect_params.push(pfield_name); });
         }
+        if(!('blank' in field.lov)) lov.blank = true;
+        var lov_code_type = '';
+        _.map(['code','code2','code_sys','code_app','code2_sys','code2_app'],function(code_type){
+          if(code_type in lov){
+            if(lov_code_type){ _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Cannot have multiple LOV codes on one field: '+lov_code_type+', '+code_type); }
+            lov_code_type = code_type;
+            var code_table = lov[code_type];
+            var code_schema_index = code_table.indexOf('.');
+            if(code_schema_index >= 0){
+              var code_schema = code_table.substr(0, code_schema_index);
+              if(('schema' in lov) && (lov.schema != code_schema)){
+                _this.LogInit_ERROR(model.id + ' > ' + field.name + ': LOV '+code_type+' schema conflicts with existing schema "'+(lov.schema||'')+'"');
+              }
+              else lov.schema = code_schema;
+              code_table = code_table.substr(code_schema_index+1);
+              lov[code_type] = code_table;
+            }
+          }
+        });
       }
       
       if(field.lov){
@@ -1566,6 +1585,10 @@ exports.ParseEntities = function () {
       }
       if (field.lov) {
         for (let f in field.lov) { if (!_.includes(_v_lov, f)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Invalid lov parameter: ' + f); }
+        if(('blank' in field.lov) && !field.lov.blank && (field.lov.blank !== '')){
+          if(field.unbound && Helper.hasAction(field.actions, 'IU') && !('default' in field)){ _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Unbound LOV field with lov.blank=false must have a default value'); }
+          else if(Helper.hasAction(field.actions, 'I') && !('default' in field)){ _this.LogInit_ERROR(model.id + ' > ' + field.name + ': LOV field with lov.blank=false and "I" action must have a default value'); }
+        }
       }
       //if (_.includes(['label','button','linkbutton'],field.control) && Helper.hasAction(field.actions, 'IUD')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': A '+field.control+' can only have action B'); //Disabled because popuplov / JS can change values
       if (field.value && !_.includes(['label','html','button','linkbutton'],field.control)){ _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The field.value property is only supported for label, html, button, and linkbuttons controls.  Use field.default instead.'); }

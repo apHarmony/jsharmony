@@ -68,7 +68,19 @@ exports = module.exports = function(jsh){
       }
     }
     
-    var cLOV = _.filter(LOV, lovfilter);
+    var cLOV = [];
+    for(var i=0;i<LOV.length;i++){
+      var isMatch = true;
+      if(!LOV[i]) continue;
+      for(var key in lovfilter){
+        if((LOV[i][key]===null)&&(lovfilter[key]===null)){}
+        else if((typeof LOV[i][key]==='undefined')&&(typeof lovfilter[key]==='undefined')){}
+        else if(XExt.isNullUndefinedEmpty(LOV[i][key]) || XExt.isNullUndefinedEmpty(lovfilter[key])) isMatch = false;
+        else if(LOV[i][key] && lovfilter[key] && (LOV[i][key].toString() == lovfilter[key].toString())){}
+        else isMatch = false;
+      }
+      if(isMatch) cLOV.push(LOV[i]);
+    }
     if ((!plural) && (!(jsh.uimap.code_parent in LOV[0]))) cLOV.unshift(LOV[0]);
     else if ((plural) && (!((jsh.uimap.code_parent + '1') in LOV[0]))) cLOV.unshift(LOV[0]);
     else if ('lovblank' in field) cLOV.unshift(LOV[0]);
@@ -882,7 +894,7 @@ exports = module.exports = function(jsh){
         paramstr += 'var '+param+'=params.'+param+';';
       }
     }
-    var jscmd = '(function(){'+XExt.getJSLocals(params.modelid)+paramstr+'return '+str+'}).call(_thisobj)';
+    var jscmd = '(function(){'+XExt.getJSLocals(params.modelid)+paramstr+'return (function(){'+str+'})();}).call(_thisobj)';
     return eval(jscmd);
   }
 
@@ -1904,6 +1916,11 @@ exports = module.exports = function(jsh){
     if(typeof val === 'undefined') return true;
     if(val === null) return true;
     if(val === '') return true;
+    return false;
+  }
+  XExt.isNullUndefinedEmpty = function(val){
+    if(typeof val === 'undefined') return true;
+    if(val === null) return true;
     return false;
   }
 

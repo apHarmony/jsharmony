@@ -457,7 +457,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
                 rslt[i][jsh.map.code_txt] = rslt[i][jsh.map.code_val];
               }
             }
-            if ('blank' in lov) {
+            if (('blank' in lov) && (lov.blank || (lov.blank === ''))) {
               var newlov = {};
               newlov[jsh.map.code_val] = '';
               newlov[jsh.map.code_txt] = (lov.blank == 1 ? 'Please Select...' : lov.blank);
