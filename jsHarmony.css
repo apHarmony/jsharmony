@@ -288,6 +288,10 @@ BODY
 <%-rootcss%> .xpopuplov_column {
   white-space:nowrap;
 }
+<%-rootcss%> .xpopuplov_column .xlookup.icon img {
+  position:relative;
+  top:-1px;
+}
 <%-rootcss%> .xinputerror {
 	border: 2px solid red !important;
 }
