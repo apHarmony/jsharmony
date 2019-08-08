@@ -159,6 +159,15 @@ jsHarmonyServer.prototype.initDebugLogSocket = function(){
               if('_orig_db_requests' in _this.jsh.Config.debug_params) _this.jsh.Config.debug_params.db_requests = _this.jsh.Config.debug_params._orig_db_requests;
               delete _this.jsh.Config._orig_db_requests;
             }
+            //Enable Database Raw SQL option
+            if(sources.database_raw_sql){
+              if(!('_orig_db_raw_sql' in _this.jsh.Config.debug_params)) _this.jsh.Config.debug_params._orig_db_raw_sql = _this.jsh.Config.debug_params.db_raw_sql;
+              _this.jsh.Config.debug_params.db_raw_sql = true;
+            }
+            else {
+              if('_orig_db_raw_sql' in _this.jsh.Config.debug_params) _this.jsh.Config.debug_params.db_raw_sql = _this.jsh.Config.debug_params._orig_db_raw_sql;
+              delete _this.jsh.Config._orig_db_raw_sql;
+            }
             //Enable Authentication option
             if(sources.authentication){
               if(!('_orig_auth_debug' in _this.jsh.Config.debug_params)) _this.jsh.Config.debug_params._orig_auth_debug = _this.jsh.Config.debug_params.auth_debug;
@@ -169,6 +178,7 @@ jsHarmonyServer.prototype.initDebugLogSocket = function(){
               delete _this.jsh.Config._orig_auth_debug;
             }
             ws.sources.database = !!sources.database;
+            ws.sources.database_raw_sql = !!sources.database_raw_sql;
             ws.sources.authentication = !!sources.authentication;
             ws.sources.system = !!sources.system;
             ws.sources.webserver = !!sources.webserver;

@@ -287,6 +287,7 @@ jsHarmony.prototype.Init = function(init_cb){
       }
       _this.isInitialized = true;
       var loadTime = (Date.now()-_this.Statistics.StartTime);
+      _this.Log.clearLastErrorFile();
       if(!_this.Config.silentStart){
         _this.Log.console('::jsHarmony Server ready:: '+(loadTime/1000).toFixed(2)+'s');
         var statsmsg = [];

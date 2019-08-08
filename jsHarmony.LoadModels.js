@@ -1457,7 +1457,7 @@ exports.ParseEntities = function () {
           lov.sqlselect_params = [];
           _this.forEachSqlParam(model, lov.sqlselect, function(pfield_name, pfield){ lov.sqlselect_params.push(pfield_name); });
         }
-        if(!('blank' in field.lov)) lov.blank = true;
+        if(!('blank' in field.lov) && (field.control=='dropdown')) lov.blank = true;
         var lov_code_type = '';
         _.map(['code','code2','code_sys','code_app','code2_sys','code2_app'],function(code_type){
           if(code_type in lov){
@@ -1585,7 +1585,7 @@ exports.ParseEntities = function () {
       }
       if (field.lov) {
         for (let f in field.lov) { if (!_.includes(_v_lov, f)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Invalid lov parameter: ' + f); }
-        if(('blank' in field.lov) && !field.lov.blank && (field.lov.blank !== '')){
+        if(('blank' in field.lov) && !field.lov.blank && !(field.lov.blank === '')){
           if(field.unbound && Helper.hasAction(field.actions, 'IU') && !('default' in field)){ _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Unbound LOV field with lov.blank=false must have a default value'); }
           else if(Helper.hasAction(field.actions, 'I') && !('default' in field)){ _this.LogInit_ERROR(model.id + ' > ' + field.name + ': LOV field with lov.blank=false and "I" action must have a default value'); }
         }
@@ -2265,6 +2265,25 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
       validateSiteRoles(model, tmodel, model.id + ' > ' + field.name + ': ', '', field.roles);
       validateSiteLinks(model, field.link, model.id + ' > ' + field.name + ' link: ', field.link, field.roles);
       validateBindings(field.bindings, model, tmodel, model.id + ' > ' + field.name + ': ', field);
+      if(field.popuplov){
+        var found_code_val = false;
+        var found_child_popup_copy_results = {};
+        var found_parent_popup_copy_results = {};
+        _.each(field.popuplov.popup_copy_results, function(child_field, parent_field){
+          found_child_popup_copy_results[child_field] = false;
+          found_parent_popup_copy_results[parent_field] = false;
+        });
+        _.each(tmodel.fields, function(tfield){
+          if(tfield.name==field.popuplov.code_val) found_code_val = true; 
+          for(var key in found_child_popup_copy_results) if(tfield.name==key) found_child_popup_copy_results[key] = true;
+        });
+        _.each(model.fields, function(pfield){
+          for(var key in found_parent_popup_copy_results) if(pfield.name==key) found_parent_popup_copy_results[key] = true;
+        });
+        if(field.popuplov.code_val && !found_code_val) _this.LogInit_WARNING(model.id + ' > Popup LOV ' + field.name + ': popuplov.code_val "' + field.popuplov.code_val + '" not found in target model');
+        for(var key in found_child_popup_copy_results) if(!found_child_popup_copy_results[key]) _this.LogInit_WARNING(model.id + ' > Popup LOV ' + field.name + ': popuplov.popup_copy_results - Target field "' + key + '" not found in target model');
+        for(var key in found_parent_popup_copy_results) if(!found_parent_popup_copy_results[key]) _this.LogInit_WARNING(model.id + ' > Popup LOV ' + field.name + ': popuplov.popup_copy_results - Parent field "' + key + '" not found in model');
+      }
       ParseModelRoles(jsh, tmodel, srcmodelid, srcactions);
       if(field.control=='subform'){
         if((tmodel.layout=='form') && field._auto.actions){

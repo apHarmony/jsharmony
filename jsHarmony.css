@@ -761,17 +761,12 @@ DIALOG BOXES
   background-color:rgba(0,0,0,0.5);
   z-index:200000;
 }
-<%-rootcss%> .xdebugconsole.visible::before{
-  content:'';
-  display:block;
-  height: 300px;
-}
 <%-rootcss%> .xdebugconsole .debug-panel {
   display:none;
   position: fixed;
   height: 300px;
   width: 100%;
-  z-index:1;
+  z-index:99999;
   border-bottom: 3px solid #aaa;
   background-color: #fff;
 }
@@ -784,24 +779,28 @@ DIALOG BOXES
   bottom: 0;
   right: 0;
 }
-<%-rootcss%> .xdebugconsole.bottom .res-ew, .xdebugconsole.bottom .pos-bottom, .xdebugconsole.right .pos-right {
+<%-rootcss%> .xdebugconsole.right {
+  height:auto !important;
+}
+<%-rootcss%> .xdebugconsole.bottom .res-ew, .xdebugconsole.bottom .dockBottom, .xdebugconsole.right .dockRight {
   display: none;
 }
 <%-rootcss%> .xdebugconsole header{
-  padding: 5px 29px;
-  height: 25px;
+  padding: 7px 16px 5px 19px;
   line-height: 1.1em;
-  font-size: 1.8em;
+  font-size: 14px;
   background-color: #e1e1e1;
   border-bottom: 1px solid #aaa;
   cursor: auto;
 }
 <%-rootcss%> .xdebugconsole .controls{
   float: right;
-  display: inline-block;
+  display: block;
+  position:relative;
+  top:-1px;
 }
 <%-rootcss%> .xdebugconsole .debug-settings{
-  padding: 5px 29px;
+  padding: 5px 15px 3px 15px;
   border-bottom: 1px solid #aaa;
   display: none;
   position: relative;
@@ -813,27 +812,29 @@ DIALOG BOXES
 }
 <%-rootcss%> .xdebugconsole .debug-settings label{
   display: inline-flex;
-  margin-right: 10px;
-  margin-bottom: 3px;
+  margin-right: 12px;
+}
+<%-rootcss%> .xdebugconsole .debug-settings input {
+  margin-right: 5px;
 }
 <%-rootcss%> .xdebugconsole .info-message{
-  padding: 2px 29px;
+  padding: 2px 19px;
   border-bottom: 1px solid #999;
   white-space: pre-wrap;
-  font-size: 14px;
-  line-height: 26px;
+  font-size: 12px;
+  line-height: 15px;
 }
 <%-rootcss%> .xdebugconsole .controls i {
   cursor: pointer;
+  font-size:15px;
+  margin-left:6px;
 }
 <%-rootcss%> .xdebugconsole .xdebuginfo-body {
   position: fixed;
-  height: 264px;
   overflow: auto;
   width: 100%;
 }
 <%-rootcss%> .xdebugconsole.visible.right .xdebuginfo-body {
-  width: 600px;
   margin-left: 3px;
   word-break: break-word;
 }

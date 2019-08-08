@@ -9,14 +9,20 @@
   <div class="debug-panel">
     <div class="resizer res-ew"></div>
     <div class="resizer res-ns"></div>
-    <header>Debug Info
-      <div class="controls"><i class="material-icons" data-action="minimize" title="minimize">&#xe313;</i><i class="material-icons pos-right" data-action="pos-right" title="dock to right">&#xe31c;</i><i class="material-icons pos-bottom" data-action="pos-bottom" title="dock to bottom">&#xe258;</i><i class="material-icons" data-action="settings" title="settings">&#xe8b8;</i><i class="material-icons" data-action="close" title="close">&#xe5cd;</i></div>
+    <header>Debug Console
+      <div class="controls">
+        <i class="material-icons" data-action="toggleSettings" title="Settings">&#xe8b8;</i>
+        <i class="material-icons dockRight" data-action="dockRight" title="Dock to the Right">&#xe31c;</i>
+        <i class="material-icons dockBottom" data-action="dockBottom" title="Dock to the Bottom">&#xe258;</i>
+        <i class="material-icons" data-action="minimizeWindow" title="Minimize">&#xe313;</i>
+        <i class="material-icons" data-action="close" title="Close">&#xe5cd;</i>
+      </div>
     </header>
-    <div class="debug-settings"><legend>Please select debug info source.</legend></div>
+    <div class="debug-settings"></div>
     <div class="xdebuginfo-body"></div>
   </div>
   <div class="debug-panel-minimized" style="display: none;">
-    <div class="controls"><i class="material-icons" data-action="expand">&#xe895;</i></div>
+    <div class="controls"><i class="material-icons" data-action="expandWindow">&#xe895;</i></div>
   </div>
 </div>
 <div class="xloadingblock" style="display:none;"><div><div class="xloadingbox">Loading<br/><img src="/images/loading.gif" alt="Loading" title="Loading" /></div></div></div>

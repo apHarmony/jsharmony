@@ -664,7 +664,8 @@ exports = module.exports = function(jsh){
     return obj.value;
   }
 
-  XExt.makeResizableDiv = function(selector, children) {
+  XExt.makeResizableDiv = function(selector, children, options) {
+    if(!options) options = { onDrag: null, onDragEnd: null };
     var obj = document.querySelector(selector);
     for(var i=0;i<children.length; i++){
       children[i].obj = document.querySelector(children[i].selector);
@@ -718,11 +719,13 @@ exports = module.exports = function(jsh){
             }
           }
         }
+        if(options.onDrag) options.onDrag();
       }
 
       function stopResize() {
         window.removeEventListener('mousemove', resize);
         window.removeEventListener('mouseup', stopResize)
+        if(options.onDragEnd) options.onDragEnd();
       }
     }
   }
