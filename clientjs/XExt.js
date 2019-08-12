@@ -782,7 +782,6 @@ exports = module.exports = function(jsh){
     }
     return settings;
   }
-
   XExt.SetSettingsCookie = function(module_name,cvalue){
     if (typeof module_name === "undefined" || module_name.length <=0){
       throw "Please provide module name!";
@@ -790,6 +789,9 @@ exports = module.exports = function(jsh){
     var settings = XExt.GetSettingsCookie();
     settings[module_name]=cvalue;
     return XExt.SetCookie('settings',JSON.stringify(settings),XExt.COOKIE_MAX_EXPIRATION);
+  }
+  XExt.ClearSettingsCookie = function(){
+    return XExt.ClearCookie('settings');
   }
 
   XExt.currentURL = function(){

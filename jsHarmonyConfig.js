@@ -83,7 +83,7 @@ function jsHarmonyConfig(config){
     delay_requests: 0,         //Add a delay of this many milliseconds to all router requests (for testing latency)
     
     db_requests: false,        //Log every database request through DB.js
-    db_raw_sql: false,         //Log final database SQL requests
+    db_raw_sql: false,         //Log raw database SQL requests
     db_log_level: 6,           //Bitmask: 2 = WARNING, 4 = NOTICES :: Database messages logged to the console / log 
     db_error_sql_state: true,  //Log SQL state during DB error
 

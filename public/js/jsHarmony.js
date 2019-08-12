@@ -7931,7 +7931,6 @@ exports = module.exports = function(jsh){
     }
     return settings;
   }
-
   XExt.SetSettingsCookie = function(module_name,cvalue){
     if (typeof module_name === "undefined" || module_name.length <=0){
       throw "Please provide module name!";
@@ -7939,6 +7938,9 @@ exports = module.exports = function(jsh){
     var settings = XExt.GetSettingsCookie();
     settings[module_name]=cvalue;
     return XExt.SetCookie('settings',JSON.stringify(settings),XExt.COOKIE_MAX_EXPIRATION);
+  }
+  XExt.ClearSettingsCookie = function(){
+    return XExt.ClearCookie('settings');
   }
 
   XExt.currentURL = function(){
@@ -21767,6 +21769,7 @@ var jsHarmony = function(options){
   this.popups = {};
   this.srcfiles = {};
   this.scriptLoader = {};
+  this.lastWindowSize = { width: $(window).width(), height: $(window).height() };
 
   this._GET = this.XExt.parseGET();
   _.extend(this._GET, this.forcequery);
@@ -21824,6 +21827,14 @@ jsHarmony.prototype.BindEvents = function(){
   $(document).ready(function () { _this.XWindowResize(); });
   $(window).resize(function () { _this.XWindowResize(); });
   $(window).scroll(function () { _this.XWindowResize('scroll'); });
+  window.setInterval(function(){
+    var newWindowSize = {
+      width: $(window).width(),
+      height: $(window).height(),
+    };
+    if((newWindowSize.width != _this.lastWindowSize.width) || (newWindowSize.height != _this.lastWindowSize.height)){ _this.XWindowResize(); }
+    _this.lastWindowSize = newWindowSize;
+  }, 500);
   $(document).keydown(function (e) {
     var handled = false;
     if (_this.XPage.CustomShortcutKeys) {
@@ -21932,6 +21943,10 @@ jsHarmony.prototype.XWindowResize = function (source) {
   }
   this.XDialogResize(source, params);
   this.RefreshLayout();
+  this.lastWindowSize = {
+    width: ww,
+    height: wh,
+  };
 }
 jsHarmony.prototype.XDialogResize = function (source, params) {
   this.$root('.xdialogblock').css('width', params.pw + 'px');
