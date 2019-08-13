@@ -75,7 +75,7 @@ exports = module.exports = function(jsh){
       for(var key in lovfilter){
         if((LOV[i][key]===null)&&(lovfilter[key]===null)){}
         else if((typeof LOV[i][key]==='undefined')&&(typeof lovfilter[key]==='undefined')){}
-        else if(XExt.isNullUndefinedEmpty(LOV[i][key]) || XExt.isNullUndefinedEmpty(lovfilter[key])) isMatch = false;
+        else if(XExt.isNullUndefined(LOV[i][key]) || XExt.isNullUndefined(lovfilter[key])) isMatch = false;
         else if(LOV[i][key] && lovfilter[key] && (LOV[i][key].toString() == lovfilter[key].toString())){}
         else isMatch = false;
       }
@@ -1923,7 +1923,7 @@ exports = module.exports = function(jsh){
     if(val === '') return true;
     return false;
   }
-  XExt.isNullUndefinedEmpty = function(val){
+  XExt.isNullUndefined = function(val){
     if(typeof val === 'undefined') return true;
     if(val === null) return true;
     return false;
