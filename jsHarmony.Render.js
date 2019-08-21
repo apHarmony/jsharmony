@@ -116,6 +116,25 @@ exports.RenderEJS = function(code,ejsparams){
   return ejs.render(code,ejsparams);
 };
 
+exports.getSystemCSS = function(cb){
+  var _this = this;
+  if(_this.Cache['jsHarmony.css']) return cb(_this.Cache['jsHarmony.css']);
+  else{
+    var jshDir = path.dirname(module.filename);
+    fs.readFile(jshDir + '/jsHarmony.css','utf8',function(err,data){
+      if(err) _this.Log.error(err);
+      else{
+        _this.Cache['jsHarmony.css'] = data;
+        _this.LoadFilesToString(_this.Config.css_extensions, function(err,extdata){
+          if(err) _this.Log.error(err);
+          _this.Cache['jsHarmony.css'] += "\r\n" + extdata;
+          return cb(_this.Cache['jsHarmony.css']);
+        });
+      }
+    });
+  }
+}
+
 exports.getStylusCSS = function(stylusName, callback){
   var _this = this;
   var sync = false;

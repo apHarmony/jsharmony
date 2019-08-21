@@ -91,22 +91,9 @@ var jsHarmonyRouter = function (jsh, siteid) {
   }
   router.get('/application.css', function (req, res) {
     //Concatenate jsh css with system css
-    var f = function(){ HelperFS.outputContent(req, res, ejs.render(jsh.Cache['jsHarmony.css'] + '\r\n' + jsh.Cache['application.css'], { req: req, rootcss: req.jshsite.rootcss, _: _ }),'text/css'); };
-    if(jsh.Cache['jsHarmony.css']) f();
-    else{
-      var jshDir = path.dirname(module.filename);
-      fs.readFile(jshDir + '/../jsHarmony.css','utf8',function(err,data){
-        if(err) jsh.Log.error(err);
-        else{
-          jsh.Cache['jsHarmony.css'] = data;
-          jsh.LoadFilesToString(jsh.Config.css_extensions, function(err,extdata){
-            if(err) jsh.Log.error(err);
-            jsh.Cache['jsHarmony.css'] += "\r\n" + extdata;
-            f();
-          });
-        }
-      });
-    }
+    jsh.getSystemCSS(function(systemCSS){
+      HelperFS.outputContent(req, res, ejs.render(systemCSS + '\r\n' + jsh.Cache['application.css'], { req: req, rootcss: req.jshsite.rootcss, _: _ }),'text/css');
+    });
   });
   router.all('*', function (req, res, next) {
     if(!siteConfig.auth){ return jsh.Auth.NoAuth(req, res, next); }

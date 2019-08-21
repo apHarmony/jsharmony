@@ -61,6 +61,8 @@ var jsHarmony = function(options){
   this.onNavigated = [];
   this.Navigated = function(obj){ _this.XExt.trigger(_this.onNavigated, obj); }
 
+  this.onInit = null; //function(){};
+
   //Options
   this.forcequery = {};
   this._BASEURL = '/';
@@ -225,7 +227,7 @@ jsHarmony.prototype.loadScript = function(url, cb){
       _this.scriptLoader[url] = null;
       _.each(funcs, function(func){ func(); });
     },
-    error: function (err) { XExt.Alert('Error loading HTML Editor: '+err.toString()); }
+    error: function (err) { console.log(err); _this.XExt.Alert('Error loading script: '+err.toString()); }
   });
 }
 
@@ -266,11 +268,11 @@ jsHarmony.prototype.Init = function(){
   if(_this.root.find('body').length) _this.root = _this.root.find('body');
   this.imageLoader = new this.XImageLoader();
 	this.imageLoader.loadqueue = new Array(
-		'/images/loading.gif',
-		'/images/arrow_down.png',
-		'/images/arrow_down_over.png',
-		'/images/arrow_up.png',
-		'/images/arrow_up_over.png'
+		_this._BASEURL+'images/loading.gif',
+		_this._BASEURL+'images/arrow_down.png',
+		_this._BASEURL+'images/arrow_down_over.png',
+		_this._BASEURL+'images/arrow_up.png',
+		_this._BASEURL+'images/arrow_up_over.png'
   );
   this.imageLoader.StartLoad();
   $('html').click(function () {
@@ -305,6 +307,7 @@ jsHarmony.prototype.Init = function(){
     this.requireHTML5();
   }
   if(this.Config.debug_params.monitor_globals) this.runGlobalsMonitor();
+  if(_this.onInit) _this.onInit();
 }
 
 jsHarmony.prototype.DefaultErrorHandler = function(num,txt){
@@ -329,7 +332,8 @@ jsHarmony.prototype.XDebugInfo = function (txt,clear) {
   this.$root('.xdebuginfo').prepend(txt + '<br/>');
 }
 jsHarmony.prototype.InitDialogs = function () {
-  this.root.append($(XViews['jsh_system']));
+  var _this = this;
+  this.root.append($(ejs.render(XViews['jsh_system'],{ jsh: _this })));
 };
 jsHarmony.prototype.InitControls = function() {
   var _this = this;

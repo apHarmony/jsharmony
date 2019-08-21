@@ -435,6 +435,9 @@ exports = module.exports = function(jsh){
       data: ExecParams.post,
       async: _this.async,
       dataType: 'json',
+      xhrFields: {
+        withCredentials: true
+      },
       success:function(data){
         if(loader) loader.StopLoading(_this);
         if ((data instanceof Object) && ('_error' in data)) {

@@ -196,9 +196,14 @@ exports = module.exports = function(jsh){
     });
   }
   XExt.getLOVTxt = function (LOV, val) {
+    var lov = XExt.getLOV(LOV, val);
+    if(lov) return lov[jsh.uimap.code_txt];
+    return undefined;
+  }
+  XExt.getLOV = function (LOV, val) {
     if (val) val = val.toString();
     for (var i = 0; i < LOV.length; i++) {
-      if (LOV[i][jsh.uimap.code_val] == val) return LOV[i][jsh.uimap.code_txt];
+      if (LOV[i][jsh.uimap.code_val] == val) return LOV[i];
     }
     return undefined;
   }
@@ -538,10 +543,11 @@ exports = module.exports = function(jsh){
   XExt.CKEditor = function (id, config, cb) {
     if (!window.CKEDITOR){
       //Dynamically load CKEditor script, and rerun function when finished
-      window.CKEDITOR_BASEPATH = '/js/ckeditor/';
-      jsh.loadScript('/js/ckeditor/ckeditor.js', function(){ XExt.CKEditor(id, config, cb); });
+      window.CKEDITOR_BASEPATH = jsh._BASEURL+'js/ckeditor/';
+      jsh.loadScript(jsh._BASEURL+'js/ckeditor/ckeditor.js', function(){ XExt.CKEditor(id, config, cb); });
       return;
     }
+    if(!id){ if(cb) cb(); return; }
     if (window.CKEDITOR.instances[id]){ if(cb) cb(); return; }
     
     var elem = jsh.$root('#'+id);

@@ -352,7 +352,7 @@ jsHarmonyConfig.prototype.LoadJSConfigFile = function(jsh, fpath){
     transformConfig(jsh, jsh.Config, jsh.DBConfig);
   }
   catch(ex){
-    jsh.LogInit_ERROR('Error loading config file: '+fpath + ', '+ex.toString());
+    jsh.LogInit_ERROR('Error loading config file: '+fpath + ', '+ex.toString()+' '+ex.stack);
     process.exit(1);
   }
 };

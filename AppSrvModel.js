@@ -559,7 +559,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
       }
       else if (srcfield.link.substr(0,3)=='js:') {
         dstfield.link = '#';
-        dstfield.link_onclick = srcfield.link.substr(3) + ' return false;';
+        dstfield.link_onclick = srcfield.link.substr(3) + '; return false;';
       }
       else {
         dstfield.link = jsh.getURL(req, model, srcfield.link, undefined, model.fields);

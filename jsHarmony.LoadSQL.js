@@ -93,6 +93,7 @@ exports.LoadSQL = function (db, dir, type, moduleName) {
   }
   for(var datatypeid in rslt.CustomDataTypes) sqlext.CustomDataTypes[datatypeid] = rslt.CustomDataTypes[datatypeid];
   sqlext.Scripts = _.merge(sqlext.Scripts, rslt.Scripts);
+  sqlext.Objects = _.merge(sqlext.Objects, rslt.Objects);
 };
 
 exports.LoadSQLFiles = function(dir, options){
@@ -149,6 +150,83 @@ exports.LoadSQLFiles = function(dir, options){
   return rslt;
 };
 
+exports.LoadSQLObjects = function(dir, module, options){
+  var _this = this;
+  options = _.extend({ dbtype: null }, options);
+
+  var rslt = [];
+
+  if (!fs.existsSync(dir)) return [];
+  var d = fs.readdirSync(dir);
+  
+  //Process files
+  for(let i=0;i<d.length;i++){
+    var fname = d[i];
+    var fpath = path.join(dir, fname);
+    var fstat = fs.lstatSync(fpath);
+    var fobj = {
+      name: d[i],
+      path: fpath,
+      type: (fstat.isDirectory()?'folder':'file')
+    };
+
+    if(fobj.type=='file'){
+      if (fname.indexOf('.json', fname.length - 5) == -1) continue;
+      var objname = fname.replace('.json', '');
+      _this.LogInit_INFO('Loading ' + objname);
+      var obj = _this.ParseJSON(fpath, module.name, 'SQL Object ' + objname);
+      if(!('type' in obj)){
+        _.each(obj, function (subobj, subobjname) {
+          _this.LogInit_INFO('Loading sub-object ' + subobjname);
+          rslt.push(_this.ParseSQLObject(module, subobjname, subobj, fpath));
+        });
+      }
+      else rslt.push(_this.ParseSQLObject(module, objname, obj, fpath));
+    }
+    else if(fobj.type=='folder'){
+      if(fname == 'data_files') continue;
+      rslt = rslt.concat(_this.LoadSQLObjects(fpath, module, options));
+    }
+  }
+
+  return rslt;
+}
+
+exports.ParseSQLObject = function(module, objname, obj, fpath){
+  var _this = this;
+  if(!('name' in obj)) obj.name = objname;
+  obj.path = fpath;
+  if(obj.name.indexOf('.')<0){
+    if(module.schema) obj.name = module.schema + '.' + obj.name;
+  }
+
+  if(obj.type=='table') obj._foreignkeys = {};
+  if(obj.columns) _.each(obj.columns, function(column){
+    column.name = column.name||'';
+    if(!column.name) _this.LogInit_ERROR('Database object ' + objname + ' has column missing "name" property');
+    if(!('null' in column)) column.null = true;
+    if(column.foreignkey){
+      var tbls = _.keys(column.foreignkey);
+      if(tbls.length == 0) delete column.foreignkey;
+      if(tbls.length > 1) _this.LogInit_ERROR('Database object ' + objname + ' > Column '+column.name+' cannot have multiple foreign keys');
+      if(module.schema){
+        if(tbls[0].indexOf('.')<0){
+          column.foreignkey[module.schema + '.' + tbls[0]] = column.foreignkey[tbls[0]];
+          delete column.foreignkey[tbls[0]];
+        }
+      }
+      if(obj.type=='table'){
+        for(var tbl in column.foreignkey){
+          if(!(tbl in obj._foreignkeys)) obj._foreignkeys[tbl] = [];
+          obj._foreignkeys[tbl].push(column.foreignkey[tbl]);
+        }
+      }
+    }
+  });
+  //Validate canonical_sqlobject.json
+  return obj;
+}
+
 exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
 
   //Post-process - extract script prefix if in aaa.bbb.sql format
@@ -184,6 +262,7 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
   if(!rslt.CustomDataTypes) rslt.CustomDataTypes = {};
   if(!rslt.Funcs) rslt.Funcs = {};
   if(!rslt.Scripts) rslt.Scripts = { };
+  if(!rslt.Objects) rslt.Objects = { };
 
   var _this = this;
   
@@ -258,6 +337,32 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
     processScriptPrefix(scripts);
 
     rslt.Scripts[moduleName] = scripts;
+  }
+
+  //Load SQL Objects
+  _this.LogInit_PERFORMANCE('Loading SQL Objects '+(Date.now()-_this.Statistics.StartTime));
+  if(moduleName){
+    var module = _this.Modules[moduleName];
+    var objectsdir = dir+'objects/';
+    rslt.Objects[moduleName] = _this.LoadSQLObjects(objectsdir, module, { dbtype: type });
+    if(rslt.Objects[moduleName].length){
+      var objScripts = {
+        'init': {
+          'init': { '00_SQLOBJECT': 'object:init' },
+        },
+        'init_data': {
+          'init': { '00_SQLOBJECT': 'object:init_data' },
+        },
+        'restructure': {
+          'drop': { '00_SQLOBJECT': 'object:restructure_drop' },
+          'init': { '00_SQLOBJECT': 'object:restructure_init' },
+        },
+        'sample_data': { '00_SQLOBJECT': 'object:sample_data' },
+        'drop': { '00_SQLOBJECT': 'object:drop' },
+      }
+      if(!rslt.Scripts[moduleName]) rslt.Scripts[moduleName] = {};
+      rslt.Scripts[moduleName] = _.merge(rslt.Scripts[moduleName], objScripts);
+    }
   }
 
   return rslt;

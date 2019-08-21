@@ -105,40 +105,48 @@ exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, moduleNam
   }
 };
 
-exports.ParseJSON = function(fname, moduleName, desc){
+exports.ParseJSON = function(fname, moduleName, desc, cb){
   var _this = this;
-  var ftext = Helper.JSONstrip(fs.readFileSync(fname, 'utf8'));
-  //Apply Transform
-  var module = _this.Modules[moduleName];
-  if(module) ftext = module.transform.Apply(ftext, fname);
-  //Parse JSON
-  var rslt  = null;
-  try {
-    rslt = jsParser.Parse(ftext, fname).Tree;
-  }
-  catch (ex2) {
-    _this.Log.console_error('-------------------------------------------');
-    _this.Log.console_error('FATAL ERROR Parsing ' + desc + ' in ' + fname);
-
-    if('startpos' in ex2){
-      var errmsg = 'Error: Parse error on line ' + ex2.startpos.line + ', char ' + ex2.startpos.char + '\n';
-      var eline = Helper.getLine(ftext, ex2.startpos.line);
-      if(typeof eline != 'undefined'){
-        errmsg += eline + '\n';
-        for(let i=0;i<ex2.startpos.char;i++) errmsg += '-';
-        errmsg += '^\n';
-      }
-      errmsg += ex2.message + '\n';
-      errmsg += ex2.stack;
-      _this.Log.console(errmsg);
+  var fread = null;
+  if(cb) fread = function(fread_cb){ fs.readFile(fname, 'utf8', fread_cb); }
+  else fread = function(fread_cb){ return fread_cb(null, fs.readFileSync(fname, 'utf8'));  }
+  return fread(function(err, data){
+    if(err) return cb(err);
+    var ftext = fs.readFileSync(fname, 'utf8');
+    ftext = Helper.JSONstrip(ftext);
+    //Apply Transform
+    var module = _this.Modules[moduleName];
+    if(module) ftext = module.transform.Apply(ftext, fname);
+    //Parse JSON
+    var rslt  = null;
+    try {
+      rslt = jsParser.Parse(ftext, fname).Tree;
     }
-    else _this.Log.console(ex2);
-
-    _this.Log.console_error('-------------------------------------------');
-    process.exit(8);
-    throw (ex2);
-  }
-  return rslt;
+    catch (ex2) {
+      _this.Log.console_error('-------------------------------------------');
+      _this.Log.console_error('FATAL ERROR Parsing ' + desc + ' in ' + fname);
+  
+      if('startpos' in ex2){
+        var errmsg = 'Error: Parse error on line ' + ex2.startpos.line + ', char ' + ex2.startpos.char + '\n';
+        var eline = Helper.getLine(ftext, ex2.startpos.line);
+        if(typeof eline != 'undefined'){
+          errmsg += eline + '\n';
+          for(let i=0;i<ex2.startpos.char;i++) errmsg += '-';
+          errmsg += '^\n';
+        }
+        errmsg += ex2.message + '\n';
+        errmsg += ex2.stack;
+        _this.Log.console(errmsg);
+      }
+      else _this.Log.console(ex2);
+  
+      _this.Log.console_error('-------------------------------------------');
+      process.exit(8);
+      throw (ex2);
+    }
+    if(cb) return cb(null, rslt);
+    else return rslt;
+  });
 };
 
 exports.MergeFolder = function (dir, moduleName) {
