@@ -170,6 +170,9 @@ BODY
 <%-rootcss%> a.xtab.disabled:hover{
 	text-decoration:none;
 }
+.xsubform.no-border > .xpanel {
+  border:0;
+}
 <%-rootcss%> .xpanel {
 	border-top:2px solid #333333;
 	border-right:1px solid #333333;
