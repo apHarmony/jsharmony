@@ -74,6 +74,7 @@ function jsHarmony(config) {
   this.map = {};
   this.uimap = {};
   this.isInitialized = false;
+  this.isConfigLoaded = false;
   this.onLoadingConfig = null; //function(configFiles){ /* Re-order / modify configFiles array */ }
   this.Statistics = {
     StartTime: Date.now(),
@@ -226,6 +227,7 @@ jsHarmony.prototype.Init = function(init_cb){
     },
     function(cb){
       if(!_this.Config.loadModels){ return cb(); }
+      _this.isConfigLoaded = true;
 
       _this.LogInit_PERFORMANCE('Loading Models '+(Date.now()-_this.Statistics.StartTime));
 

@@ -681,7 +681,7 @@ exports.LogInit = function(severity, msg) {
   var _this = this;
   if ((this.Config.debug_params.jsh_error_level & severity) > 0) {
     switch (severity) {
-      case _ERROR:{ _this.Statistics.Counts.InitErrors++; if(!_this.Config.silentStart) console.log("ERROR: " + msg); this.SystemErrors.push(msg); break; }
+      case _ERROR:{ _this.Statistics.Counts.InitErrors++; if(!_this.isConfigLoaded || !_this.Config.silentStart) console.log("ERROR: " + msg); this.SystemErrors.push(msg); break; }
       case _WARNING:{  _this.Statistics.Counts.InitWarnings++; if(!_this.Config.silentStart) console.log("WARNING: " + msg); this.SystemErrors.push(msg); break; }
       default: if(!_this.Config.silentStart) _this.Log.info(msg); break;
     }
