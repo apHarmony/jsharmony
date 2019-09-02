@@ -99,6 +99,10 @@ BODY
 /*	min-height:300px;*/
 	padding-bottom:30px;
 }
+<%-rootcss%> .xhead {
+  background-color:#31245d;
+  background-image:url('/images/top.png');
+}
 <%-rootcss%> .bcrumbs { /* TODO */
   color:#777;
   font-size:14px;
@@ -261,7 +265,6 @@ MENU STYLES
 }
 <%-rootcss%> .xmenuhorizontal .xmenu_more_bg {
   padding:43px 20px 18px 26px;
-  background-image:url('<%-req.jshsite.publicurl%>images/top.png');
   background-position-y:-5px;
   background-repeat:repeat-x;
 }
@@ -278,6 +281,7 @@ MENU STYLES
   z-index:9999;
 }
 <%-rootcss%> .xmenuhorizontal .xmenuside a{
+  background-color:#31245d;
   background-image:url('<%-req.jshsite.publicurl%>images/menu_side_bg.png');
   text-align:center;
   height:26px;
