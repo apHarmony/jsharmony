@@ -217,6 +217,8 @@ MENU STYLES
 	padding-top:34px;
 	padding-left:370px;
   min-height:60px;
+  z-index:3;
+  position:relative;
 }
 <%-rootcss%> .xmenuhorizontal .xmenu a{
 	font-family: 'PT Sans', arial, helvetica, sans-serif;
@@ -264,7 +266,7 @@ MENU STYLES
   margin-left:0px;
 }
 <%-rootcss%> .xmenuhorizontal .xmenu_more_bg {
-  padding:43px 20px 18px 26px;
+  padding:43px 22px 18px 28px;
   background-position-y:-5px;
   background-repeat:repeat-x;
 }
