@@ -830,12 +830,9 @@ DIALOG BOXES
   margin-left:6px;
 }
 <%-rootcss%> .xdebugconsole .xdebuginfo-body {
-  position: fixed;
   overflow: auto;
-  width: 100%;
 }
 <%-rootcss%> .xdebugconsole.visible.right .xdebuginfo-body {
-  margin-left: 3px;
   word-break: break-word;
 }
 <%-rootcss%> .xdebugconsole .debug-panel-minimized{

@@ -709,8 +709,10 @@ exports = module.exports = function(jsh){
             obj.style.width = width + 'px';
             obj.style.left = original_x + (e.pageX - original_mouse_x) + 'px';
             for(var i=0;i<children.length; i++){
-              children[i].obj.style.width = (width + children[i].correction_x) + 'px';
-              children[i].obj.style.left = original_x + (e.pageX - original_mouse_x - children[i].correction_x) + 'px';
+              var correction_x = children[i].correction_x;
+              if(_.isFunction(correction_x)) correction_x = correction_x();
+              children[i].obj.style.width = (width + correction_x) + 'px';
+              children[i].obj.style.left = original_x + (e.pageX - original_mouse_x - correction_x) + 'px';
             }
           }
         }
@@ -720,8 +722,10 @@ exports = module.exports = function(jsh){
             obj.style.height = height + 'px';
             obj.style.top = original_y + (e.pageY - original_mouse_y) + 'px';
             for(var i=0;i<children.length; i++){
-              children[i].obj.style.height = (height + children[i].correction_y) + 'px';
-              children[i].obj.style.top = original_y + (e.pageY - original_mouse_y - children[i].correction_y) + 'px'
+              var correction_y = children[i].correction_y;
+              if(_.isFunction(correction_y)) correction_y = correction_y();
+              children[i].obj.style.height = (height + correction_y) + 'px';
+              children[i].obj.style.top = original_y + (e.pageY - original_mouse_y - correction_y) + 'px'
             }
           }
         }

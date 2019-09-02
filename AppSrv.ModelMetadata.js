@@ -461,7 +461,11 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
               var newlov = {};
               newlov[jsh.map.code_val] = '';
               newlov[jsh.map.code_txt] = (lov.blank == 1 ? 'Please Select...' : lov.blank);
-              rslt.unshift(newlov);
+              var already_found = false;
+              for(var i=0;i<rslt.length;i++){
+                if((rslt[i][jsh.map.code_val] == newlov[jsh.map.code_val]) && (rslt[i][jsh.map.code_txt] == newlov[jsh.map.code_txt])){ already_found = true; break; }
+              }
+              if(!already_found) rslt.unshift(newlov);
             }
           }
           callback(err, rslt, stats);

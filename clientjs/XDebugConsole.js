@@ -259,7 +259,10 @@ exports = module.exports = function(jsh){
     this.DebugDialog.hide().removeClass('visible');
     this.updatePanelLayout();
     jsh.XExt.makeResizableDiv('.debug-panel',[
-      {selector:'.xdebuginfo-body',correction_y:-31,correction_x:0},
+      {selector:'.xdebuginfo-body',
+        correction_y:function(){ return _this.getBodyHeight(0); },
+        correction_x:function(){ return (_this.settings.dock == 'bottom') ? 0 : -3; }
+      },
       {selector:'.xdebugconsole',correction_y:0,correction_x:0},
     ], { onDragEnd: function(){
       _this.settings.window_size = _this.getWindowSize();
@@ -285,6 +288,10 @@ exports = module.exports = function(jsh){
     return { width: width, height: height };
   }
 
+  XDebugConsole.prototype.getBodyHeight = function(baseHeight){
+    return baseHeight - 31 - (this.settings.settings_visible ? this.DebugPanel.find('.debug-settings').outerHeight() : 0);
+  }
+
   XDebugConsole.prototype.setWindowSize = function(size){
     if(!size) size = {};
     if(!('width' in size)) size.width = this.default_settings.window_size.width;
@@ -292,10 +299,12 @@ exports = module.exports = function(jsh){
 
     if(this.settings.dock == 'bottom'){
       $('.debug-panel').height(size.height);
+      $('.xdebuginfo-body').height(this.getBodyHeight(size.height));
     }
     else if(this.settings.dock == 'right'){
       $('.debug-panel').width(size.width);
       $('.debug-panel').height(size.height);
+      $('.xdebuginfo-body').height(this.getBodyHeight(size.height));
     }
   }
 
@@ -305,13 +314,17 @@ exports = module.exports = function(jsh){
     }
     this.DebugDialog.addClass(this.settings.dock);
     this.setWindowSize(this.settings.window_size);
+    this.renderSettings();
+  }
+
+  XDebugConsole.prototype.renderSettings = function(){
     this.DebugPanel.find('.debug-settings').toggle(!!this.settings.settings_visible);
   }
 
   XDebugConsole.prototype.toggleSettings = function(){
-    this.DebugPanel.find('.debug-settings').toggle();
-    this.settings.settings_visible = this.DebugPanel.find('.debug-settings').is(':visible');
+    this.settings.settings_visible = !this.settings.settings_visible;
     this.saveSettings();
+    this.renderSettings();
   }
 
   XDebugConsole.prototype.minimizeWindow = function(){
@@ -347,14 +360,12 @@ exports = module.exports = function(jsh){
   }
 
   XDebugConsole.prototype.clear = function() {
-    var body = this.DebugPanel.find('.xdebuginfo-body');
-    body.empty();
+    this.DebugPanel.find('.xdebuginfo-body').empty();
   }
 
   XDebugConsole.prototype.log = function (txt, clear) {
-    var body = this.DebugPanel.find('.xdebuginfo-body');
     if(clear) this.clear();
-    body.prepend('<div class="info-message">'+txt+'</div>');
+    this.DebugPanel.find('.xdebuginfo-body').append($('<div class="info-message">'+txt+'</div>'));
   };
 
   return XDebugConsole;

@@ -6051,7 +6051,10 @@ exports = module.exports = function(jsh){
     this.DebugDialog.hide().removeClass('visible');
     this.updatePanelLayout();
     jsh.XExt.makeResizableDiv('.debug-panel',[
-      {selector:'.xdebuginfo-body',correction_y:-31,correction_x:0},
+      {selector:'.xdebuginfo-body',
+        correction_y:function(){ return _this.getBodyHeight(0); },
+        correction_x:function(){ return (_this.settings.dock == 'bottom') ? 0 : -3; }
+      },
       {selector:'.xdebugconsole',correction_y:0,correction_x:0},
     ], { onDragEnd: function(){
       _this.settings.window_size = _this.getWindowSize();
@@ -6077,6 +6080,10 @@ exports = module.exports = function(jsh){
     return { width: width, height: height };
   }
 
+  XDebugConsole.prototype.getBodyHeight = function(baseHeight){
+    return baseHeight - 31 - (this.settings.settings_visible ? this.DebugPanel.find('.debug-settings').outerHeight() : 0);
+  }
+
   XDebugConsole.prototype.setWindowSize = function(size){
     if(!size) size = {};
     if(!('width' in size)) size.width = this.default_settings.window_size.width;
@@ -6084,10 +6091,12 @@ exports = module.exports = function(jsh){
 
     if(this.settings.dock == 'bottom'){
       $('.debug-panel').height(size.height);
+      $('.xdebuginfo-body').height(this.getBodyHeight(size.height));
     }
     else if(this.settings.dock == 'right'){
       $('.debug-panel').width(size.width);
       $('.debug-panel').height(size.height);
+      $('.xdebuginfo-body').height(this.getBodyHeight(size.height));
     }
   }
 
@@ -6097,13 +6106,17 @@ exports = module.exports = function(jsh){
     }
     this.DebugDialog.addClass(this.settings.dock);
     this.setWindowSize(this.settings.window_size);
+    this.renderSettings();
+  }
+
+  XDebugConsole.prototype.renderSettings = function(){
     this.DebugPanel.find('.debug-settings').toggle(!!this.settings.settings_visible);
   }
 
   XDebugConsole.prototype.toggleSettings = function(){
-    this.DebugPanel.find('.debug-settings').toggle();
-    this.settings.settings_visible = this.DebugPanel.find('.debug-settings').is(':visible');
+    this.settings.settings_visible = !this.settings.settings_visible;
     this.saveSettings();
+    this.renderSettings();
   }
 
   XDebugConsole.prototype.minimizeWindow = function(){
@@ -6139,14 +6152,12 @@ exports = module.exports = function(jsh){
   }
 
   XDebugConsole.prototype.clear = function() {
-    var body = this.DebugPanel.find('.xdebuginfo-body');
-    body.empty();
+    this.DebugPanel.find('.xdebuginfo-body').empty();
   }
 
   XDebugConsole.prototype.log = function (txt, clear) {
-    var body = this.DebugPanel.find('.xdebuginfo-body');
     if(clear) this.clear();
-    body.prepend('<div class="info-message">'+txt+'</div>');
+    this.DebugPanel.find('.xdebuginfo-body').append($('<div class="info-message">'+txt+'</div>'));
   };
 
   return XDebugConsole;
@@ -7858,8 +7869,10 @@ exports = module.exports = function(jsh){
             obj.style.width = width + 'px';
             obj.style.left = original_x + (e.pageX - original_mouse_x) + 'px';
             for(var i=0;i<children.length; i++){
-              children[i].obj.style.width = (width + children[i].correction_x) + 'px';
-              children[i].obj.style.left = original_x + (e.pageX - original_mouse_x - children[i].correction_x) + 'px';
+              var correction_x = children[i].correction_x;
+              if(_.isFunction(correction_x)) correction_x = correction_x();
+              children[i].obj.style.width = (width + correction_x) + 'px';
+              children[i].obj.style.left = original_x + (e.pageX - original_mouse_x - correction_x) + 'px';
             }
           }
         }
@@ -7869,8 +7882,10 @@ exports = module.exports = function(jsh){
             obj.style.height = height + 'px';
             obj.style.top = original_y + (e.pageY - original_mouse_y) + 'px';
             for(var i=0;i<children.length; i++){
-              children[i].obj.style.height = (height + children[i].correction_y) + 'px';
-              children[i].obj.style.top = original_y + (e.pageY - original_mouse_y - children[i].correction_y) + 'px'
+              var correction_y = children[i].correction_y;
+              if(_.isFunction(correction_y)) correction_y = correction_y();
+              children[i].obj.style.height = (height + correction_y) + 'px';
+              children[i].obj.style.top = original_y + (e.pageY - original_mouse_y - correction_y) + 'px'
             }
           }
         }
@@ -9508,7 +9523,8 @@ exports = module.exports = function(jsh){
     this.qExecute(execparams);
   }
   XForm.prototype.qExecute = function (ExecParams) {
-    ExecParams.url = jsh._BASEURL + '_d/' + ExecParams.model + '/';
+    ExecParams.url = jsh._BASEURL + '_d/' + ExecParams.model;
+    if((ExecParams.model.indexOf('?')<=0) && (ExecParams.url[ExecParams.url.length-1] != '/')) ExecParams.url += '/';
     this.qExecuteBase(ExecParams);
   }
   XForm.prototype.qExecuteBase = function(ExecParams){

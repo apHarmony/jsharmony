@@ -419,7 +419,8 @@ exports = module.exports = function(jsh){
     this.qExecute(execparams);
   }
   XForm.prototype.qExecute = function (ExecParams) {
-    ExecParams.url = jsh._BASEURL + '_d/' + ExecParams.model + '/';
+    ExecParams.url = jsh._BASEURL + '_d/' + ExecParams.model;
+    if((ExecParams.model.indexOf('?')<=0) && (ExecParams.url[ExecParams.url.length-1] != '/')) ExecParams.url += '/';
     this.qExecuteBase(ExecParams);
   }
   XForm.prototype.qExecuteBase = function(ExecParams){

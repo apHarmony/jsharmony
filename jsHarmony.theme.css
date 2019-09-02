@@ -101,15 +101,15 @@ BODY
 }
 <%-rootcss%> .bcrumbs { /* TODO */
   color:#777;
-  font-size:12px;
-	margin-left:0px;
+  font-size:14px;
+	margin-left:1px;
 	position:relative;
-	top:-8px;
-	padding-bottom:2px;
+	top:-4px;
+	padding-bottom:9px;
 }
 <%-rootcss%> .bcrumbs a{ /* TODO */
   color:#777;
-  font-size:12px;
+  font-size:14px;
 }
 <%-rootcss%> .xtbl thead tr {
 	background-color:#333333;
@@ -153,7 +153,7 @@ BODY
 	border-right:1px solid #333333;
 }
 <%-rootcss%> a.xtab.selected{
-  background-color:#152142;
+  background-color:#333333;
   color:#ffffff;
 	
 }

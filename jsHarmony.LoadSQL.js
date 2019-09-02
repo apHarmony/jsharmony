@@ -200,29 +200,44 @@ exports.ParseSQLObject = function(module, objname, obj, fpath){
     if(module.schema) obj.name = module.schema + '.' + obj.name;
   }
 
-  if(obj.type=='table') obj._foreignkeys = {};
-  if(obj.columns) _.each(obj.columns, function(column){
-    column.name = column.name||'';
-    if(!column.name) _this.LogInit_ERROR('Database object ' + objname + ' has column missing "name" property');
-    if(!('null' in column)) column.null = true;
-    if(column.foreignkey){
-      var tbls = _.keys(column.foreignkey);
-      if(tbls.length == 0) delete column.foreignkey;
-      if(tbls.length > 1) _this.LogInit_ERROR('Database object ' + objname + ' > Column '+column.name+' cannot have multiple foreign keys');
-      if(module.schema){
-        if(tbls[0].indexOf('.')<0){
-          column.foreignkey[module.schema + '.' + tbls[0]] = column.foreignkey[tbls[0]];
-          delete column.foreignkey[tbls[0]];
+  if(obj.type=='table'){
+    obj._foreignkeys = {};
+    if(obj.columns) _.each(obj.columns, function(column){
+      column.name = column.name||'';
+      if(!column.name) _this.LogInit_ERROR('Database object ' + objname + ' has column missing "name" property');
+      if(!('null' in column)) column.null = true;
+      if(column.foreignkey){
+        var tbls = _.keys(column.foreignkey);
+        if(tbls.length == 0) delete column.foreignkey;
+        if(tbls.length > 1) _this.LogInit_ERROR('Database object ' + objname + ' > Column '+column.name+' cannot have multiple foreign keys');
+        if(module.schema){
+          if(tbls[0].indexOf('.')<0){
+            column.foreignkey[module.schema + '.' + tbls[0]] = column.foreignkey[tbls[0]];
+            delete column.foreignkey[tbls[0]];
+          }
+        }
+        if(obj.type=='table'){
+          for(var tbl in column.foreignkey){
+            if(!(tbl in obj._foreignkeys)) obj._foreignkeys[tbl] = [];
+            obj._foreignkeys[tbl].push(column.foreignkey[tbl]);
+          }
         }
       }
-      if(obj.type=='table'){
-        for(var tbl in column.foreignkey){
-          if(!(tbl in obj._foreignkeys)) obj._foreignkeys[tbl] = [];
-          obj._foreignkeys[tbl].push(column.foreignkey[tbl]);
-        }
+    });
+  }
+
+  if(obj.type=='view'){
+    obj._tables = _.keys(obj.tables)||[];
+    for(var tblname in obj.tables){
+      var tbl = obj.tables[tblname];
+      if(tbl.columns) for(var i=0;i<tbl.columns.length;i++){
+        var col = tbl.columns[i];
+        if(_.isString(col)) tbl.columns[i] = col = { name: col };
       }
     }
-  });
+  }
+
+
   //Validate canonical_sqlobject.json
   return obj;
 }

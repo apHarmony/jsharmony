@@ -86,11 +86,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "css": "CSS CONTENT",  //Custom CSS to be included client-side.  Concatenated with model.css
   "tabpos": "top", //top,bottm
   //"curtab":1, //VIRTUAL PROPERTY, DO NOT OVERWRITE
-  //sqlselect, sqldownloadselect, sqlinsertencrypt, sqlupdate, sqldelete, sqlrowcount
-  "sqlinsert":"insert into %%%TABLE%%%(%%%FIELDS%%%) values(%%%VALUES%%%);select scope_identity() as CHG_ID;",
+  //sqlselect, sqldownloadselect, sqlinsertencrypt, sqlupdate, sqldelete, sqlrowcount,sqlgetkey
+  "sqlinsert":"insert into %%%TABLE%%%(%%%FIELDS%%%) values(%%%VALUES%%%);%%%GETINSERTKEYS%%%",
   "sqlexec": "exec dbo.PLE_NOTIF @c_id,@MDate", //Used by EXEC.  Be sure to add %%%DATALOCKS%%% if applicable
   "sqltype": "multirecordset", //recordset, multirecordset  Used by EXEC.
   "sqlwhere": "C_STS='ACTIVE'", //Additional search query for grid
+  "sqlgetinsertkeys": "select scope_identitiy() as CHG_ID;",
   //onload(xmodel,callback) - Returns false to not bubble (Executed once all selects are complete, on every reselect.  Callback pulls execution away from main thread, return false, and reset links on completion,
   //onloadimmediate(xmodel) - Runs immediately once select is complete, instead of when all selects are complete for all subforms
   //oninit(xmodel) (Executed when form is first loaded)

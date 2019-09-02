@@ -598,6 +598,7 @@ exports.ParseEntities = function () {
     var db = modelExt.db = _this.DB[modelDB];
     modelExt.sqlext = db.SQLExt;
     var tabledef = modelExt.tabledef = db.getTableDefinition(model.table);
+    if(tabledef && tabledef.table_type) model._dbdef = { table_type: tabledef.table_type };
 
     if((model.layout=='grid') && !('commitlevel' in model)){
       if(model.actions && !Helper.hasAction(model.actions, 'IUD')) model.commitlevel = 'none';
@@ -1406,7 +1407,7 @@ exports.ParseEntities = function () {
     }
     
     //Convert mutli-line variables to single string
-    ParseMultiLineProperties(model, ['js', 'sqlselect', 'sqldownloadselect', 'sqlinsert', 'sqlinsertencrypt', 'sqlupdate', 'sqldelete', 'sqlexec', 'sqlwhere', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onvalidate', 'onupdate', 'ondestroy', 'oncommit']);
+    ParseMultiLineProperties(model, ['js', 'sqlselect', 'sqldownloadselect', 'sqlinsert', 'sqlinsertencrypt', 'sqlupdate', 'sqldelete', 'sqlexec', 'sqlwhere', 'sqlgetinsertkeys', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onvalidate', 'onupdate', 'ondestroy', 'oncommit']);
     if (model.breadcrumbs) ParseMultiLineProperties(model.breadcrumbs, ['sql']);
     if (model.fields) _.each(model.fields, function (field) {
       ParseMultiLineProperties(field, ['onchange', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlwhere', 'sqlsort', 'sqlsearch', 'sqlsearchsound', 'value']);
@@ -1548,13 +1549,13 @@ exports.ParseEntities = function () {
     //Validate Model and Field Parameters
     var _v_model = [
       'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites', 'class', 'using',
-      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings', '_childbindings', '_parentmodels', '_auto', '_sysconfig', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate', 'source_files_prefix',
+      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings', '_childbindings', '_parentmodels', '_auto', '_sysconfig', '_dbdef', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate', 'source_files_prefix',
       'pagesettings', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_search', 'default_search', 'grid_static', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
       'js', 'ejs', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
-      'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
+      'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlgetinsertkeys', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
       'path', 'module', 'templates', 'db', 'onecolumn', 'namespace',
       //Report Parameters
       'subheader', 'footerheight', 'headeradd',

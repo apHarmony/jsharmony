@@ -465,7 +465,7 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
     var dbtasks = {};
 
     //Add fields from post
-    if (fields.length > 0){
+    if ((fields.length > 0)||model.sqlupdate){
       _.each(fields, function (field) {
         var fname = field.name;
         if(field.sqlupdate==='') return;
