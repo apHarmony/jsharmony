@@ -260,6 +260,14 @@ function jsHarmonyConfig(config){
       "format": "truetype", //embedded-opentype, woff2, woff, truetype, svg
       "local": ["Roboto","Roboto-Regular"],
       "css": "body { font-family: 'Roboto'; }"
+    },
+    {
+      "font-family": "Roboto",
+      "font-style": "bold",
+      "font-weight": 700,
+      "src": "jsharmony/public/fonts/Roboto-Bold.ttf",
+      "format": "truetype", //embedded-opentype, woff2, woff, truetype, svg
+      "local": ["Roboto Bold","Roboto-Bold"]
     }
   ];
 
