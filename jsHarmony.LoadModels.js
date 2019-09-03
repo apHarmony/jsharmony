@@ -1568,7 +1568,7 @@ exports.ParseEntities = function () {
       'sql_from_db','sql_to_db','sqlsearch_to_db','datatype_config'
     ];
     var _v_controlparams = [
-      'value_true', 'value_false', 'value_hidden', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'base_readonly', 'dateformat',
+      'value_true', 'value_false', 'value_hidden', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'base_readonly', 'dateformat', 'panelstyle',
       'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'data_file_prefix', 'sqlparams', '_data_file_has_extension', 'show_thumbnail', 'preview_on_click',
       'image', 'thumbnails', 'expand_all', 'expand_to_selected', 'item_context_menu', 'insert_link', 'grid_save_before_update', "update_when_blank", "htmlarea_config"
     ];

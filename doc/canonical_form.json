@@ -247,6 +247,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                       },
                       {"grid_save_before_update": 1, //subform params
                        "insert_link": "add:CA", //In case of subform with "form" layout, link is used for "insert" button when record not found
+                       "panelstyle": "",
                       },
                       {"update_when_blank": false, //password params
                       },

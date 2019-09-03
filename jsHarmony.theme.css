@@ -300,7 +300,7 @@ MENU STYLES
 }
 <%-rootcss%> .xmenuhorizontal .xmenuside a.selected {
   color:#fff;
-	background-image:url('<%-req.jshsite.publicurl%>images/menu_highlight_bg.png');
+	background-image:none;
   height:25px;
   padding-top:7px;
 }
