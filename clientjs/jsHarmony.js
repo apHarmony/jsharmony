@@ -66,9 +66,9 @@ var jsHarmony = function(options){
   //Options
   this.forcequery = {};
   this._BASEURL = '/';
+  this._PUBLICURL = '/';
   this._debug = false;
   this.home_url = '';
-  this.public_url = '/';
   this.uimap = {};
   this._instance = '';
   this.google_api_key = '';
@@ -269,11 +269,11 @@ jsHarmony.prototype.Init = function(){
   if(_this.root.find('body').length) _this.root = _this.root.find('body');
   this.imageLoader = new this.XImageLoader();
 	this.imageLoader.loadqueue = new Array(
-		_this.public_url+'images/loading.gif',
-		_this.public_url+'images/arrow_down.png',
-		_this.public_url+'images/arrow_down_over.png',
-		_this.public_url+'images/arrow_up.png',
-		_this.public_url+'images/arrow_up_over.png'
+		_this._PUBLICURL+'images/loading.gif',
+		_this._PUBLICURL+'images/arrow_down.png',
+		_this._PUBLICURL+'images/arrow_down_over.png',
+		_this._PUBLICURL+'images/arrow_up.png',
+		_this._PUBLICURL+'images/arrow_up_over.png'
   );
   this.imageLoader.StartLoad();
   $('html').click(function () {
@@ -354,6 +354,7 @@ jsHarmony.prototype.XWindowResize = function (source) {
     var bodyhead_width = (ww - this.$root('.xbodyhead').offset().left - 10 + sleft);
     this.$root('.xbodyhead').css('max-width', bodyhead_width + 'px');
   }
+  this.$root('.xhead').css('top', (-1 * stop) + 'px');
   this.XDialogResize(source, params);
   this.RefreshLayout();
   this.lastWindowSize = {
@@ -414,8 +415,8 @@ jsHarmony.prototype.InitFileUpload = function () {
             <tr>\
               <td></td>\
               <td style="padding-top:10px;">\
-                <a class="linkbutton" style="padding-right:15px;" href="#" onClick="'+this.getInstance()+'.XPage.FileUploadSubmit();return false;"><img src="/images/icon_ok.png" alt="Upload" title="Upload" />Upload</a>\
-                <a class="linkbutton" href="javascript:'+this.getInstance()+'.$.colorbox.close()"><img src="/images/icon_cancel.png" alt="Cancel" title="Cancel" />Cancel</a></td>\
+                <a class="linkbutton" style="padding-right:15px;" href="#" onClick="'+this.getInstance()+'.XPage.FileUploadSubmit();return false;"><img src="'+this._PUBLICURL+'images/icon_ok.png" alt="Upload" title="Upload" />Upload</a>\
+                <a class="linkbutton" href="javascript:'+this.getInstance()+'.$.colorbox.close()"><img src="'+this._PUBLICURL+'images/icon_cancel.png" alt="Cancel" title="Cancel" />Cancel</a></td>\
             </tr>\
           </table>\
         </form>\

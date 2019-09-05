@@ -7,7 +7,7 @@ if(locals.menudata && menudata.MainMenu){
       xmenu_headings[menuitem.ID] = menuitem.Title;
       %><a href="<%-menuitem.Link%>" onclick="<%-ejsext.escapeHTML(menuitem.OnClick?menuitem.OnClick+';return false;':'')%>" data-id="<%=menuitem.ID%>" class="xmenuitem xmenuitem_<%=ejsext.escapeCSSClass(menuitem.ID)%> <%-ejsext.iif(menuitem.Selected,'selected')%>"><%=menuitem.Title%><div class="bottom"></div></a><%
     }
-    %><a class="xmenu_more" href="#"><div class="xmenu_more_bg">Menu <img src="/images/arrow_right_white.png" /><div class="bottom"></div></div></a><%
+    %><a class="xmenu_more" href="#"><div class="xmenu_more_bg">Menu <img src="<%-req.jshsite.publicurl%>images/arrow_right_white.png" /><div class="bottom"></div></div></a><%
   %></div><%
   %><div class="xmenuside"></div><%
 }

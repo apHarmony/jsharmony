@@ -4,20 +4,20 @@
 <% if(model.topmost || (model.layout == 'form-m') || model.buttons || model.duplicate){ %>
 <div class="xactions <%=xejs.case(model.topmost,'top',(model.layout == 'form-m'),'','secondaryform')%> xelem<%=model.class%>">
   <% if(model.layout == 'form-m') { %>
-    <a href="#" onclick="<%-js('xmodel.controller.form.NavFirst();')%>" class="navbar"><img src="/images/icon_first.png" alt="First" title="First" /></a>
-    <a href="#" onclick="<%-js('xmodel.controller.form.NavPrev();')%>" class="navbar"><img src="/images/icon_prev.png" alt="Prev" title="Prev" /></a>
+    <a href="#" onclick="<%-js('xmodel.controller.form.NavFirst();')%>" class="navbar"><img src="<%-jsh._PUBLICURL%>images/icon_first.png" alt="First" title="First" /></a>
+    <a href="#" onclick="<%-js('xmodel.controller.form.NavPrev();')%>" class="navbar"><img src="<%-jsh._PUBLICURL%>images/icon_prev.png" alt="Prev" title="Prev" /></a>
     <div class="navtext navtext_<%=model.class%>">1 of 1</div>
-    <a href="#" onclick="<%-js('xmodel.controller.form.NavNext();')%>" class="navbar"><img src="/images/icon_next.png" alt="Next" title="Next" /></a>
-    <a href="#" onclick="<%-js('xmodel.controller.form.NavLast();')%>" class="navbar"><img src="/images/icon_last.png" alt="Last" title="Last" /></a>
-    <a href="#" onclick="<%-js('xmodel.controller.form.NavAdd();')%>" style="<%-xejs.visible(XExt.hasAction(model.actions,'I'))%>"><img src="/images/icon_insert.png" alt="Add" title="Add" />Add</a>
-    <a href="#" onclick="<%-js('xmodel.controller.form.NavDelete();')%>" style="<%-xejs.visible(XExt.hasAction(model.actions,'D'))%>"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a>
+    <a href="#" onclick="<%-js('xmodel.controller.form.NavNext();')%>" class="navbar"><img src="<%-jsh._PUBLICURL%>images/icon_next.png" alt="Next" title="Next" /></a>
+    <a href="#" onclick="<%-js('xmodel.controller.form.NavLast();')%>" class="navbar"><img src="<%-jsh._PUBLICURL%>images/icon_last.png" alt="Last" title="Last" /></a>
+    <a href="#" onclick="<%-js('xmodel.controller.form.NavAdd();')%>" style="<%-xejs.visible(XExt.hasAction(model.actions,'I'))%>"><img src="<%-jsh._PUBLICURL%>images/icon_insert.png" alt="Add" title="Add" />Add</a>
+    <a href="#" onclick="<%-js('xmodel.controller.form.NavDelete();')%>" style="<%-xejs.visible(XExt.hasAction(model.actions,'D'))%>"><img src="<%-jsh._PUBLICURL%>images/icon_delete.png" alt="Delete" title="Delete" />Delete</a>
   <% } %>
   <%-jsh.RenderView('jsh_buttons',ejsparams)%>
   <% if(model.topmost){ %>
-    <a href="#" class="save" onclick="<%-instance%>.XPage.Save();return false;" style="display:none;"><img src="/images/icon_save.png" alt="Save" title="Save" />Save</a>
-    <% if(model.layout != 'form-m') { %><a href="#" class="delete" onclick="<%-instance%>.XPage.Delete();return false;" style="display:none;"><img src="/images/icon_delete.png" alt="Delete" title="Delete" />Delete</a><% } %>
-    <a href="#" onclick="<%-instance%>.XPage.Print(); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'print'))%>"><img src="/images/icon_print.png" alt="Print" title="Print" />Print</a>
-    <a href="<%-model.helpurl%>" onclick="<%-js(model.helpurl_onclick)%>" style="<%-xejs.visible(xejs.showSystemButton(model,'help'))%>"><img src="/images/icon_help.png" alt="Help" title="Help" />Help</a>
+    <a href="#" class="save" onclick="<%-instance%>.XPage.Save();return false;" style="display:none;"><img src="<%-jsh._PUBLICURL%>images/icon_save.png" alt="Save" title="Save" />Save</a>
+    <% if(model.layout != 'form-m') { %><a href="#" class="delete" onclick="<%-instance%>.XPage.Delete();return false;" style="display:none;"><img src="<%-jsh._PUBLICURL%>images/icon_delete.png" alt="Delete" title="Delete" />Delete</a><% } %>
+    <a href="#" onclick="<%-instance%>.XPage.Print(); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'print'))%>"><img src="<%-jsh._PUBLICURL%>images/icon_print.png" alt="Print" title="Print" />Print</a>
+    <a href="<%-model.helpurl%>" onclick="<%-js(model.helpurl_onclick)%>" style="<%-xejs.visible(xejs.showSystemButton(model,'help'))%>"><img src="<%-jsh._PUBLICURL%>images/icon_help.png" alt="Help" title="Help" />Help</a>
   <% } %>
 </div><% if(model.topmost){ %><div class="xactions_spacer"></div><% } %>
 <% } %>
@@ -30,7 +30,7 @@
   <% } %>
 <% } else { %>
   <% if(parentfield && XExt.hasAction(model.actions, 'I') && parentfield.controlparams && parentfield.controlparams.insert_link){ %>
-    <div class="xnorecords xelem<%=model.class%>" style="display:none;"><a href="<%-parentfield.controlparams.insert_link%>" onclick="<%-js(parentfield.controlparams.insert_link_onclick,{ returnFalse:0 })%>"><img src="/images/icon_insert.png" alt="Add" title="Add" />Add <%=model.caption[1]%></a></div>
+    <div class="xnorecords xelem<%=model.class%>" style="display:none;"><a href="<%-parentfield.controlparams.insert_link%>" onclick="<%-js(parentfield.controlparams.insert_link_onclick,{ returnFalse:0 })%>"><img src="<%-jsh._PUBLICURL%>images/icon_insert.png" alt="Add" title="Add" />Add <%=model.caption[1]%></a></div>
   <% } else { %>
     <div class="xnorecords xelem<%=model.class%>" style="display:none;">No <%=model.caption[1]%></div>
   <% } %>

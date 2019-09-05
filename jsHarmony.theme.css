@@ -27,7 +27,6 @@ MAIN ELEMENTS
 	color: #000000;  /*202020*/
 	margin:0px;
 	padding:0px;
-	background-repeat:repeat-x;
 }
 <%-(rootcss||'body')%>, 
 <%-rootcss%> p, 
@@ -84,9 +83,10 @@ HEADER AND TOP BUTTONS
 ======================
 */
 <%-rootcss%> .xmain{
-	width:100%;
+  width:100%;
 	min-width:1024px;
-	position:relative;
+  position:relative;
+  display:inline-block;
 }
 /*
 ====
@@ -97,11 +97,20 @@ BODY
 	padding-top:21px;
 	padding-left:29px;
 /*	min-height:300px;*/
-	padding-bottom:30px;
+  padding-bottom:30px;
 }
 <%-rootcss%> .xhead {
+  position:fixed;
+  top:0px;
+  left:0px;
+  width:100%;
+  z-index:1;
   background-color:#31245d;
   background-image:url('<%-req.jshsite.publicurl%>images/top.png');
+  background-repeat:repeat-x;
+}
+<%-rootcss%> .xhead.unfixed {
+  position:relative;
 }
 <%-rootcss%> .bcrumbs { /* TODO */
   color:#777;
@@ -183,7 +192,10 @@ BODY
 	border-left:1px solid #333333;
 	border-bottom:1px solid #333333;
 	padding:10px;
-	min-height:20px;
+  min-height:20px;
+  display:table;
+  box-sizing: border-box;
+  width:100%;
 }
 <%-rootcss%> .xtabbody {
   display:none;
