@@ -596,8 +596,38 @@ exports = module.exports = function(jsh){
     xform.qExecute(xform.PrepExecute('post', xform.q, {}, d, onComplete, onFail)); 
   }
 
-  XForm.Post = XForm.prototype.XExecutePost;
-  XForm.Get = XForm.prototype.XExecute;
+  XForm.prototype.Get = function (url, q, d, onComplete, onFail, options){
+    if(!options) options = {};
+    var xform = new XForm(url, '', '');
+    if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
+    xform.qExecute(xform.PrepExecute('get', xform.q, q, d, onComplete, onFail)); 
+  }
+
+  XForm.prototype.Post = function (url, q, d, onComplete, onFail, options){
+    if(!options) options = {};
+    var xform = new XForm(url, '', '');
+    if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
+    xform.qExecute(xform.PrepExecute('post', xform.q, q, d, onComplete, onFail)); 
+  }
+
+  XForm.prototype.Put = function (url, q, d, onComplete, onFail, options){
+    if(!options) options = {};
+    var xform = new XForm(url, '', '');
+    if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
+    xform.qExecute(xform.PrepExecute('put', xform.q, q, d, onComplete, onFail)); 
+  }
+
+  XForm.prototype.Delete = function (url, q, d, onComplete, onFail, options){
+    if(!options) options = {};
+    var xform = new XForm(url, '', '');
+    if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
+    xform.qExecute(xform.PrepExecute('delete', xform.q, q, d, onComplete, onFail)); 
+  }
+
+  XForm.Post = XForm.prototype.Post;
+  XForm.Put = XForm.prototype.Put;
+  XForm.Delete = XForm.prototype.Delete;
+  XForm.Get = XForm.prototype.Get;
   XForm.RequestSync = XForm.prototype.XExecuteBlock;
 
   return XForm;

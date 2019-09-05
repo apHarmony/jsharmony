@@ -134,6 +134,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
   });
   router.post('/_ul/', function (req, res) {
     req.jsproxyid = 'xfileuploader';
+    if(req.query && ('jsproxyid' in req.query)) req.jsproxyid = req.query.jsproxyid;
     jsh.AppSrv.Upload(req, res);
   });
   router.post('/_ul/json', function (req, res) {

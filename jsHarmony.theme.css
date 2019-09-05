@@ -101,7 +101,7 @@ BODY
 }
 <%-rootcss%> .xhead {
   background-color:#31245d;
-  background-image:url('/images/top.png');
+  background-image:url('<%-req.jshsite.publicurl%>images/top.png');
 }
 <%-rootcss%> .bcrumbs { /* TODO */
   color:#777;

@@ -68,6 +68,7 @@ var jsHarmony = function(options){
   this._BASEURL = '/';
   this._debug = false;
   this.home_url = '';
+  this.public_url = '/';
   this.uimap = {};
   this._instance = '';
   this.google_api_key = '';
@@ -268,11 +269,11 @@ jsHarmony.prototype.Init = function(){
   if(_this.root.find('body').length) _this.root = _this.root.find('body');
   this.imageLoader = new this.XImageLoader();
 	this.imageLoader.loadqueue = new Array(
-		_this._BASEURL+'images/loading.gif',
-		_this._BASEURL+'images/arrow_down.png',
-		_this._BASEURL+'images/arrow_down_over.png',
-		_this._BASEURL+'images/arrow_up.png',
-		_this._BASEURL+'images/arrow_up_over.png'
+		_this.public_url+'images/loading.gif',
+		_this.public_url+'images/arrow_down.png',
+		_this.public_url+'images/arrow_down_over.png',
+		_this.public_url+'images/arrow_up.png',
+		_this.public_url+'images/arrow_up_over.png'
   );
   this.imageLoader.StartLoad();
   $('html').click(function () {

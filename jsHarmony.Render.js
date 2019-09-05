@@ -83,6 +83,7 @@ exports.getJSClientParams = function (req) {
   rslt += '_BASEURL: \'' + req.baseurl + '\',';
   rslt += 'forcequery: ' + JSON.stringify(req.forcequery) + ',';
   rslt += 'home_url: ' + JSON.stringify(req.jshsite.home_url) + ',';
+  rslt += 'public_url: ' + JSON.stringify(req.jshsite.publicurl) + ',';
   rslt += 'uimap: ' + JSON.stringify(_this.uimap) + ',';
   rslt += '_instance: ' + JSON.stringify(req.jshsite.instance) + ',';
   rslt += 'cookie_suffix: ' + JSON.stringify(Helper.GetCookieSuffix(req,_this)) + ',';
