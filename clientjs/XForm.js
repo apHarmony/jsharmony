@@ -596,28 +596,28 @@ exports = module.exports = function(jsh){
     xform.qExecute(xform.PrepExecute('post', xform.q, {}, d, onComplete, onFail)); 
   }
 
-  XForm.reqGet = function (url, q, d, onComplete, onFail, options){
+  XForm.prototype.reqGet = function (url, q, d, onComplete, onFail, options){
     if(!options) options = {};
     var xform = new XForm(url, '', '');
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
     xform.qExecute(xform.PrepExecute('get', xform.q, q, d, onComplete, onFail)); 
   }
 
-  XForm.reqPost = function (url, q, d, onComplete, onFail, options){
+  XForm.prototype.reqPost = function (url, q, d, onComplete, onFail, options){
     if(!options) options = {};
     var xform = new XForm(url, '', '');
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
     xform.qExecute(xform.PrepExecute('post', xform.q, q, d, onComplete, onFail)); 
   }
 
-  XForm.reqPut = function (url, q, d, onComplete, onFail, options){
+  XForm.prototype.reqPut = function (url, q, d, onComplete, onFail, options){
     if(!options) options = {};
     var xform = new XForm(url, '', '');
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
     xform.qExecute(xform.PrepExecute('put', xform.q, q, d, onComplete, onFail)); 
   }
 
-  XForm.reqDelete = function (url, q, d, onComplete, onFail, options){
+  XForm.prototype.reqDelete = function (url, q, d, onComplete, onFail, options){
     if(!options) options = {};
     var xform = new XForm(url, '', '');
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
