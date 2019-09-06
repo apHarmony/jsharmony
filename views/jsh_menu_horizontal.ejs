@@ -15,7 +15,7 @@ if(locals.menudata && menudata.SubMenus){
   for(var parentid in menudata.SubMenus){ var submenu = menudata.SubMenus[parentid];
     var parentname = '';
     if(parentid in xmenu_headings) parentname = xmenu_headings[parentid];
-    %><div style="display:none;" class="xsubmenu xsubmenu_<%=parentid%>" data-parent="<%=parentid%>"><div class="head"><%=parentname%>:</div><%
+    %><div style="display:none;" class="xsubmenu xsubmenu_<%=ejsext.escapeCSSClass(parentid)%>" data-parent="<%=parentid%>"><div class="head"><%=parentname%>:</div><%
     for(var i=0;i<submenu.length;i++){ menuitem = submenu[i];
       %><a href="<%-menuitem.Link%>" onclick="<%-ejsext.escapeHTML(menuitem.OnClick?menuitem.OnClick+';return false;':'')%>" data-id="<%=menuitem.ID%>" class="xsubmenuitem xsubmenuitem_<%=ejsext.escapeCSSClass(menuitem.ID)%> <%-ejsext.iif(menuitem.Selected,'selected')%>"><%=menuitem.Title%></a><%-ejsext.iif(i<submenu.length-1,'<div>&nbsp;|&nbsp;</div>')%><%
     }
