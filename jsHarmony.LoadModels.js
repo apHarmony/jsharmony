@@ -813,7 +813,7 @@ exports.ParseEntities = function () {
           //Automatically add file parameters
           if ((field.type == 'file') && field.controlparams && field.controlparams.sqlparams) {
             _.each(_.pick(field.controlparams.sqlparams,['file_extension','file_name','file_size','file_upload_timestamp','file_upload_user']), function(fieldname,param){
-              if(!_this.AddFieldIfNotExists(model, fieldname, modelsExt)) _this.LogInit_ERROR(model.id + ' > File field ' + fieldname + ': ' + param + ' target field does not exist in model.fields');
+              if(!_this.AddFieldIfNotExists(model, fieldname, modelsExt, 'B')) _this.LogInit_ERROR(model.id + ' > File field ' + fieldname + ': ' + param + ' target field does not exist in model.fields');
             });
           }
         });
@@ -2108,13 +2108,13 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
   else return null;
 };
 
-exports.AddFieldIfNotExists = function(model, fieldname, modelsExt){
+exports.AddFieldIfNotExists = function(model, fieldname, modelsExt, actions){
   var _this = this;
   var field = _this.AppSrvClass.prototype.getFieldByName(model.fields, fieldname);
   if(field) return true;
   var tabledef = modelsExt[model.id].tabledef;
   if(tabledef && (fieldname in tabledef.fields)){
-    addHiddenField(model, fieldname, { actions: 'B' });
+    addHiddenField(model, fieldname, { actions: actions });
     return true;
   }
   return false;

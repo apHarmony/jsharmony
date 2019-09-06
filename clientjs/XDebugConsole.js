@@ -365,7 +365,7 @@ exports = module.exports = function(jsh){
 
   XDebugConsole.prototype.log = function (txt, clear) {
     if(clear) this.clear();
-    this.DebugPanel.find('.xdebuginfo-body').append($('<div class="info-message">'+txt+'</div>'));
+    this.DebugPanel.find('.xdebuginfo-body').prepend($('<div class="info-message">'+txt+'</div>'));
   };
 
   return XDebugConsole;
