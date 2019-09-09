@@ -415,19 +415,24 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
             rslt.duplicate.bindings = model.duplicate.bindings;
             rslt.duplicate.model = dclientmodel;
             rslt.duplicate.popupstyle = '';
+            if('button_text' in model.duplicate) rslt.duplicate.button_text = model.duplicate.button_text;
             if ('popup' in dmodel) rslt.duplicate.popupstyle = 'width: ' + dmodel.popup[0] + 'px; height: ' + dmodel.popup[1] + 'px;';
             if(model.layout != 'grid') rslt.buttons.push({
               'link': '#',
-              'onclick': "if(jsh.XPage.HasUpdates()){ XExt.Alert('Please save changes before duplicating.'); return false; } XExt.popupShow('" + dmodelid + "','" + model.class + "_duplicate','Duplicate " + model.caption[1] + "',undefined,this); return false;",
+              'onclick': "\
+                if(jsh.XPage.HasUpdates()){ XExt.Alert('Please save changes before duplicating.'); return false; }\
+                if(jsh.XModels['" + dmodelid + "'].controller.form) jsh.XModels['" + dmodelid + "'].controller.form.Reset();\
+                XExt.popupShow('" + dmodelid + "','" + model.class + "_duplicate','Duplicate " + model.caption[1] + "',undefined,this);\
+                return false;",
               'actions': 'I',
               'icon': 'copy',
-              'text': (model.duplicate.link_text || 'Duplicate'),
+              'text': (model.duplicate.button_text || 'Duplicate'),
               'style': 'display:none;',
               'class': 'duplicate'
             });
-            if ('link' in model.duplicate) {
-              rslt.duplicate.link = jsh.getURL(req, model, model.duplicate.link, undefined, dmodel.fields);
-              var ptarget = jsh.parseLink(model.duplicate.link);
+            if ('link_on_success' in model.duplicate) {
+              rslt.duplicate.link_on_success = jsh.getURL(req, model, model.duplicate.link_on_success, undefined, dmodel.fields);
+              var ptarget = jsh.parseLink(model.duplicate.link_on_success);
               var duplicateparams = {
                 resizable: 1,
                 scrollbars: 1
@@ -445,7 +450,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
               duplicateparams = _.extend(duplicateparams, ptarget.actionParams);
               var duplicateparamsarr = [];
               for(var key in duplicateparams) duplicateparamsarr.push(key+'='+duplicateparams[key]);
-              rslt.duplicate.link_options = duplicateparamsarr.join(',');
+              rslt.duplicate.link_options_on_success = duplicateparamsarr.join(',');
             }
           }
           return cb();

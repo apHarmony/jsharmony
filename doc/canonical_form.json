@@ -155,7 +155,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "grid_rowcount":  1,
   "grid_require_search": 1, //Do not initially load results
   "grid_static": 1, //Static (uneditable) grid for fast rendering
-  "duplicate": {"target": "E_DUPLICATE", "bindings": {"e_id":"e_id", "c_id": "c_id"},"link":"edit:EW&e_id=new_e_id","link_text": "Duplicate Item"},
+  "duplicate": {"target": "E_DUPLICATE", "bindings": {"e_id":"e_id", "c_id": "c_id"},"link_on_success":"update:EW&e_id=new_e_id","button_text": "Duplicate Item"},
   "templates": { "grid": ".xgrid_calendar_template" },
   "onecolumn": true, //Add newline (nl) after each form field except the first. (form, form-m)  Automatically align width of captions
   "fields": [
@@ -289,7 +289,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       // File can be , ["Required", "MaxSize:5000000" (bytes), "Extension:['.PDF','.JPEG']"]
       "sample": "John Smith",
       "value": "John Smith",
-      "link": "update:CW", //for grid, "insert:", "browse":, "select", "url:", "download:"...also added tab syntax: "edit:JW&tabs={\"JW\":\"J_QUICK\"}"
+      "link": "update:CW", //for grid, "insert:", "browse":, "select", "url:", "download:"...also added tab syntax: "update:JW&tabs={\"JW\":\"J_QUICK\"}"
       //LOV sql_params must be defined as fields, and must be in the request QueryString
       "lov": { 
         "sql": "select HP_CODE as code_val,HP_Desc as code_txt from HP where 1=1 %%%TRUNCATE%%% order by HP_Desc", 

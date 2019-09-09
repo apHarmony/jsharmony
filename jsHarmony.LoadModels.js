@@ -433,6 +433,18 @@ exports.ParseDeprecated = function () {
         model.tabs = new_tabs;
       }
     }
+    if (model.duplicate){
+      if('link_text' in model.duplicate){
+        _this.LogDeprecated(model.id + ': model.duplicate.link_text has been deprecated.  Please use model.duplicate.button_text instead.'); 
+        model.duplicate.button_text = model.duplicate.link_text;
+        delete model.duplicate.link_text;
+      }
+      if('link' in model.duplicate){
+        _this.LogDeprecated(model.id + ': model.duplicate.link has been deprecated.  Please use model.duplicate.link_on_success instead.'); 
+        model.duplicate.link_on_success = model.duplicate.link;
+        delete model.duplicate.link;
+      }
+    }
   });
 };
 
@@ -2251,7 +2263,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     tmodel._parentmodels.duplicate[model.id] = 1;
     model.duplicate.target = tmodel.id;
     validateSiteRoles(model, tmodel, model.id + ' > Duplicate model ' + JSON.stringify(model.duplicate) + ': ', '');
-    validateSiteLinks(model, model.duplicate.link, model.id + ' > Duplicate model ' + JSON.stringify(model.duplicate) + ' link: ', model.duplicate.link);
+    validateSiteLinks(model, model.duplicate.link_on_success, model.id + ' > Duplicate model ' + JSON.stringify(model.duplicate) + ' link_on_success: ', model.duplicate.link_on_success);
     validateBindings(model.duplicate.bindings, model, tmodel, model.id + ' > Duplicate model ' + JSON.stringify(model.duplicate) + ': ', model.duplicate);
     ParseModelRoles(jsh, tmodel, srcmodelid, srcactions);
   }

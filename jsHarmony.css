@@ -260,6 +260,9 @@ BODY
   vertical-align:top;
 }
 <%-rootcss%> .xgrid_action {
+  white-space:nowrap;
+}
+<%-rootcss%> .xgrid_action img {
   position:relative;
   top:2px;
 }

@@ -269,6 +269,15 @@ exports = module.exports = function(jsh){
       if(onComplete) onComplete(rslt);
     }, onFailure));
   }
+  XForm.prototype.Reset = function(){
+    var _this = this;
+    if(_this.Data && _this.Data.Fields){
+      for(var fname in _this.Data.Fields) _this.Data[fname] = '';
+    }
+    _this.ApplyDefaults(_this.Data);
+    _this.ApplyUnboundDefaults(_this.Data);
+    _this.Render();
+  }
   XForm.prototype.ApplyDefaults = function(data){
     var _this = this;
     var xmodel = _this.GetModel();

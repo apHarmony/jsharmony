@@ -165,7 +165,7 @@ exports.parseFieldExpression = function(field, exp, params, options){
 //Tab Links: linktabs[model.id] = tabmodelid
 //  jsh.getURL(req, model, '', linktabs); 
 //Duplicate Model Links
-//  jsh.getURL(req, model, model.duplicate.link, undefined, dmodel.fields);
+//  jsh.getURL(req, model, model.duplicate.link_on_success, undefined, dmodel.fields);
 //Select Links: 'select'
 //  jsh.getURL(req, model, srcfield.link + ':' + model.id, undefined, model.fields); 
 //Field link
@@ -173,12 +173,12 @@ exports.parseFieldExpression = function(field, exp, params, options){
 //Field insert_link
 //  jsh.getURL(req, model, srcfield.controlparams.insert_link, undefined, undefined, srcfield.bindings);
 //
-//ex: edit:EW&E_ID
+//ex: update:EW&E_ID
 //Parameters:
 //  req (Express.Request): Request
 //  target (string): Link target
 //  tabs: Array of selected tabs: { "PARENT_MODEL_ID": "SELECT_TAB_MODEL_ID" }
-//  fields: Array of the model's fields, for adding querystring parameters to the link, based on the link target parameters, ex: edit:EW&e_c_id=c_id
+//  fields: Array of the model's fields, for adding querystring parameters to the link, based on the link target parameters, ex: update:EW&e_c_id=c_id
 //  bindings: Array of the link bindings, for adding additional querystring parameters to the link
 //            Bindings will be evaluated client-side, and overwrite any other querystring parameters
 exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
