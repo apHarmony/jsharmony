@@ -70,6 +70,7 @@ function jsHarmonySite(jsh, id, config){
     onRenderLogin: function (req, res, onComplete) { },
     onRenderLoginForgotPassword: function (req, res, onComplete) { },
     onRenderLoginForgotPasswordReset: function (req, res, onComplete) { },
+    onRenderLogout: function (req, res, onComplete) { },
     allow_insecure_http_logins: false,
     on_auth: function(req, jsh, params, cb){ /*cb(err, rslt)* / },
     on_login: function(req, jsh, params, cb){ /*cb(err, rslt)* / },

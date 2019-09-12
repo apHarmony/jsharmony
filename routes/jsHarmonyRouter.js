@@ -112,7 +112,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
   });
   router.get('/logout', function (req, res, next) {
     if(!siteConfig.auth){ jsh.Log.error('Auth not configured in config'); return next(); }
-    jsh.RenderLogout(req, res, function (rslt) {
+    (siteConfig.auth.onRenderLogout || jsh.RenderLogout).call(jsh, req, res, function (rslt) {
       if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Logout', body: rslt, menudata: {}, selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
