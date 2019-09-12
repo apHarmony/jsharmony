@@ -327,6 +327,30 @@ var jsHarmonyRouter = function (jsh, siteid) {
       title: 'Models', body: jsh.RenderListing(req), selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh
     });
   });
+  router.post('/_js/exec', function (req, res, next) {
+    if(!('SYSADMIN' in req._roles) && !('DEV' in req._roles)) return next();
+    var sql = req.body.sql;
+    var js = req.body.js;
+
+    var jsvars = {
+      appsrv: 'jsh.AppSrv'
+    };
+    var jscmd = '(function(jsh){'+_.reduce(jsvars, function(rslt, val,key){ return 'var '+key+' = '+val+'; ' }, '')+'return (function(){'+js+'})();}).call(undefined, jsh)';
+    var jsrslt = '';
+    var jserr = '';
+    try{
+      var jsrslt = eval(jscmd);
+    }
+    catch(ex){
+      jserr = ex.toString();
+    }
+    var rslt = {
+      '_success': 1,
+      'jsrslt': jsrslt,
+      'err': jserr
+    };
+    res.send(JSON.stringify(rslt));
+  });
   router.post('/_db/exec', function (req, res, next) {
     if(!('SYSADMIN' in req._roles) && !('DEV' in req._roles)) return next();
     var sql = req.body.sql;

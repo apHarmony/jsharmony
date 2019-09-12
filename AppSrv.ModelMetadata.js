@@ -449,6 +449,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
         lov_db_function.call(lovdb, req._DBContext, sql, lov_ptypes, lov_params, dbtrans, function (err, rslt, stats) {
           if (err == null) {
             //Generate warning if the LOV options are too long, and sqlselect, sqltruncate is not defined for the field
+            if(!rslt) rslt = [];
             if(can_optimize && (rslt.length > 1000) && !lov.values){
               jsh.Log.warning(model.id + ' > ' + field.name + ': More than 1000 results returned for LOV query.  Please consider implementing lov.sqlselect, lov.sqltruncate, and adding %%%TRUNCATE%%% to the LOV sql to improve performance.');
             }

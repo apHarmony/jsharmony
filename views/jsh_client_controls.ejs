@@ -39,12 +39,17 @@ for(var i=0;i<model.fields.length;i++){
     else if(field.control=='checkbox') captionclass += ' xform_caption_checkbox';
     if(('caption' in field) && (field.caption)) { 
       var caption_onclick = '';
+      var captioncolon = '';
+      if(field.captioncolon){
+        if(field.captioncolon===true) captioncolon = ': ';
+        else captioncolon = field.captioncolon;
+      }
       if(field.control=='checkbox') caption_onclick = jsh._instance+".$(this).next('.xform_checkbox_container').children('input').click();";
       if((field.nl) && !('captionstyle' in field) && (dflt_captionstyle != "")){ 
-        %><div class="<%=captionclass%> <%=xejs.iif(leadingfield,'leading')%>" style="<%=dflt_captionstyle%>" onclick="<%-caption_onclick%>"><%-xejs.escapeHTMLN(field.caption+((field.caption != '')?': ':''))%></div><%
+        %><div class="<%=captionclass%> <%=xejs.iif(leadingfield,'leading')%>" style="<%=dflt_captionstyle%>" onclick="<%-caption_onclick%>"><%-xejs.escapeHTMLN(field.caption+((field.caption != '')?captioncolon:''))%></div><%
       }
       else {
-        %><div class="<%=captionclass%> <%=xejs.iif(leadingfield,'leading')%>" style="<%=field.captionstyle%>" onclick="<%-caption_onclick%>"><%-xejs.escapeHTMLN(field.caption+((field.caption != '')?': ':''))%></div><%
+        %><div class="<%=captionclass%> <%=xejs.iif(leadingfield,'leading')%>" style="<%=field.captionstyle%>" onclick="<%-caption_onclick%>"><%-xejs.escapeHTMLN(field.caption+((field.caption != '')?captioncolon:''))%></div><%
       }
     }
     else if(model.onecolumn && leadingfield) {

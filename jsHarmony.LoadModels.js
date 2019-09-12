@@ -433,7 +433,7 @@ exports.ParseDeprecated = function () {
         model.tabs = new_tabs;
       }
     }
-    if (model.duplicate){
+    if (model.duplicate && !_.isString(model.duplicate)){
       if('link_text' in model.duplicate){
         _this.LogDeprecated(model.id + ': model.duplicate.link_text has been deprecated.  Please use model.duplicate.button_text instead.'); 
         model.duplicate.button_text = model.duplicate.link_text;
@@ -563,6 +563,7 @@ exports.ApplyCustomControl = function(model, field, controlname){
     else{
       if (!(prop in field)){ field[prop] = val; }
       else if (prop == 'controlclass') field[prop] = field[prop] + ' ' + val;
+      else if (prop == 'captionclass') field[prop] = field[prop] + ' ' + val;
       else { /* Do not apply */ }
     }
   }
@@ -1132,6 +1133,11 @@ exports.ParseEntities = function () {
         if (fieldnames[field.name]) { _this.LogInit_ERROR('Duplicate field ' + field.name + ' in model ' + model.id + '.'); }
         fieldnames[field.name] = 1;
       }
+      if(!('captioncolon' in field)){
+        if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
+          field.captioncolon = true;
+        }
+      }
       if (field.key) { 
         field.actions += 'K'; 
         if(Helper.hasAction(field.actions, 'F') || field.foreignkey){ _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Key field should not also have foreignkey attribute.'); }
@@ -1574,7 +1580,7 @@ exports.ParseEntities = function () {
     ];
     var _v_field = [
       'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'foreignkey', 'serverejs', 'roles', 'ongetvalue', 'cellclass',
-      'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'block', 'blockstyle', 'blockclass', 'lov', 'captionstyle', 'disable_sort', 'enable_search', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass',
+      'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'block', 'blockstyle', 'blockclass', 'lov', 'captionstyle', 'disable_sort', 'enable_search', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass', 'captioncolon',
       'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'always_editable', 'locked_by_querystring', 'precision', 'password', 'hash', 'salt', 'unbound',
       'sqlselect', 'sqlupdate', 'sqlinsert','sqlsort', 'sqlwhere', 'sqlsearchsound', 'sqlsearch', 'onchange', 'lovkey', 'readonly', '__REMOVE__', '__AFTER__','_auto',
       'sql_from_db','sql_to_db','sqlsearch_to_db','datatype_config'

@@ -305,6 +305,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     
     var exec_navigate = function(){
+      if(options.force){
+        window.onbeforeunload = null;
+        jsh.cancelExit = true;
+      }
       jsh.state = new_jsh_state;
       jsh.Load({addHistory: addHistory});
     }

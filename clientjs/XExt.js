@@ -363,7 +363,7 @@ exports = module.exports = function(jsh){
   XExt.escapeCSSClass = function(val, options){
     //options { nodash: true }
     var rslt = val;
-    if(rslt.nodash) rslt = rslt.replace(/[^a-zA-Z0-9_]+/g, '_');
+    if(rslt && rslt.nodash) rslt = rslt.replace(/[^a-zA-Z0-9_]+/g, '_');
     else rslt = rslt.replace(/[^a-zA-Z0-9_-]+/g, '_');
     rslt = XExt.trimLeft(rslt,'-');
     while(rslt.indexOf('__') > 0) rslt = XExt.ReplaceAll(rslt,'__','_');
@@ -622,10 +622,15 @@ exports = module.exports = function(jsh){
     if (jsh.singlepage) return true;
     return false;
   }
-  XExt.navTo = function (url) {
+  XExt.navTo = function (url, options) {
+    options = _.extend({ force: false }, options);
     if (XExt.isSinglePage()) {
       var a = XExt.getURLObj(url);
-      if (!jsh.Navigate(a, undefined, undefined, undefined)) return false;
+      if (!jsh.Navigate(a, undefined, undefined, undefined, options)) return false;
+    }
+    if(options && options.force){
+      window.onbeforeunload = null;
+      jsh.cancelExit = true;
     }
     window.location.href = url;
     return false;
@@ -1187,15 +1192,23 @@ exports = module.exports = function(jsh){
     if (!XExt.isIOS()) jsh.$root('.xalertbox input').focus();
   }
 
-  XExt.Confirm = function (obj, onAccept, onCancel, options) {
-    if (!options) options = {};
+  XExt.Confirm = function (obj, onYes, onNo, options) {
+    var default_options = {
+      button_ok_caption: 'Yes',
+      button_no_caption: 'No',
+      button_cancel_caption: 'Cancel',
+    };
+    if(!options || !options.onCancel){
+      default_options.button_cancel_caption = 'No';
+    }
+    options = _.extend(default_options, options);
     var msg = '';
     if (obj && _.isString(obj)) msg = obj;
     else msg = JSON.stringify(obj);
     msg = XExt.escapeHTML(msg);
     msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
-    //if (window.confirm(msg)) { if (onAccept) onAccept(); }
-    //if (onCancel) onCancel(); 
+    //if (window.confirm(msg)) { if (onYes) onYes(); }
+    //if (onNo) onNo(); 
     jsh.xDialog.unshift('.xconfirmbox');
     jsh.$root('.xdialogblock .xconfirmbox').zIndex(jsh.xDialog.length);
     
@@ -1204,19 +1217,18 @@ exports = module.exports = function(jsh){
     jsh.$root('.xconfirmmessage').html(msg);
     jsh.$root('.xconfirmbox input').off('click');
     jsh.$root('.xconfirmbox input').off('keydown');
-    var cancelfunc = XExt.dialogButtonFunc('.xconfirmbox', oldactive, onCancel);
-    if (options.button_no) {
-      jsh.$root('.xconfirmbox input.button_no').show();
-      jsh.$root('.xconfirmbox input.button_no').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, options.button_no));
+    var cancelfunc = XExt.dialogButtonFunc('.xconfirmbox', oldactive, (options.onCancel ? options.onCancel : onNo));
+    if(options.onCancel){
+      jsh.$root('.xconfirmbox input.button_cancel').show();
+      jsh.$root('.xconfirmbox input.button_cancel').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, options.onCancel));
     }
-    else jsh.$root('.xconfirmbox input.button_no').hide();
+    else jsh.$root('.xconfirmbox input.button_cancel').hide();
     if (options.button_ok_caption) jsh.$root('.xconfirmbox input.button_ok').val(options.button_ok_caption);
     if (options.button_no_caption) jsh.$root('.xconfirmbox input.button_no').val(options.button_no_caption);
     if (options.button_cancel_caption) jsh.$root('.xconfirmbox input.button_cancel').val(options.button_cancel_caption);
 
-
-    jsh.$root('.xconfirmbox input.button_ok').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, onAccept));
-    jsh.$root('.xconfirmbox input.button_cancel').on('click', cancelfunc);
+    jsh.$root('.xconfirmbox input.button_ok').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, onYes));
+    jsh.$root('.xconfirmbox input.button_no').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, onNo));
     jsh.$root('.xconfirmbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
     jsh.$root('.xdialogblock,.xconfirmbox').show();
     jsh.XWindowResize();

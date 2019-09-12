@@ -760,7 +760,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         var jobj = $(this);
         if(jobj.closest('.xform')[0]!=jform[0]) return;
         jobj.width(max_width);
-        jobj.toggle((max_width>0));
+        if(jobj.is(':visible')) jobj.toggle((max_width>0));
       });
     });
   }

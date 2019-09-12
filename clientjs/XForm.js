@@ -121,6 +121,8 @@ exports = module.exports = function(jsh){
         this.DataSet[i]._is_insert = false;
         this.DataSet[i]._orig = null;
       }
+    }
+    if(this.Data){
       this.Data._is_dirty = false;
       this.Data._is_insert = false;
       this.Data._orig = null;
