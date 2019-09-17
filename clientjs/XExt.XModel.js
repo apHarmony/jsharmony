@@ -575,7 +575,7 @@ exports = module.exports = function(jsh){
   XExtXModel.ApplyDefaults = function (xformdata) {
     if(!('_querystring_applied' in xformdata)) xformdata._querystring_applied = [];
     for(var fname in xformdata.Fields){
-      if((fname in jsh._GET) && jsh._GET[fname]){
+      if((fname in jsh._GET) && jsh._GET[fname] && jsh.XExt.isFieldTopmost(xformdata._modelid, fname)){
         xformdata[fname] = jsh._GET[fname];
         xformdata._querystring_applied.push(fname);
       }

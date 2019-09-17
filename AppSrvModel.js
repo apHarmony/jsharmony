@@ -138,7 +138,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
       else if (req.query.action == 'browse') targetperm = 'B';
       else return onComplete('Invalid "action" in querystring');
     }
-    if (!Helper.hasModelAction(req, model, 'B'+targetperm)) { return onComplete("<div>You do not have access to this form.</div>"); }
+    if (!Helper.hasModelAction(req, model, 'B'+targetperm)) { return onComplete("<div>***NO_ACCESS*** You do not have access to this form.</div>"); }
   }
   
   //Check if the bindings are based on the key value

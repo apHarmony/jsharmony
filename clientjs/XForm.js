@@ -283,6 +283,8 @@ exports = module.exports = function(jsh){
   XForm.prototype.ApplyDefaults = function(data){
     var _this = this;
     var xmodel = _this.GetModel();
+    var modelid = undefined;
+    if(xmodel) modelid = xmodel.id;
     var rslt = data;
     if(rslt._is_insert||(xmodel && ((xmodel.layout=='exec')||(xmodel.layout=='report')))){
       _.each(_this.defaults, function (val, fieldname){
@@ -300,7 +302,7 @@ exports = module.exports = function(jsh){
       });
       _.each(_this.DataType.prototype.Fields, function(field){
         if(!field.name || field.unbound) return;
-        if(jsh._GET && (field.name in jsh._GET)) data[field.name] = jsh._GET[field.name];
+        if(jsh._GET && (field.name in jsh._GET) && jsh.XExt.isFieldTopmost(modelid, field.name)) data[field.name] = jsh._GET[field.name];
         else if(_this.defaults && (field.name in _this.defaults)){ }
         else if(field.hasDefault()){
           data[field.name] = jsh.XFormat.Decode(field.format, field.getDefault(data));

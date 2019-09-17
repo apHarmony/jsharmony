@@ -126,16 +126,16 @@ exports = module.exports = function(jsh){
   }
 
   XDebugConsole.prototype.close = function(){
-    if(!this.isRunning()) return;
-
     this.settings.running = 0;
     this.saveSettings();
 
     this.DebugDialog.hide();
     this.clear();
 
-    this.endWebSocketListener();
-    this.unbindXMLHttpRequestListener();
+    if(this.isRunning()){
+      this.endWebSocketListener();
+      this.unbindXMLHttpRequestListener();
+    }
   }
 
   XDebugConsole.prototype.onXMLHttpRequestLoad = function(event){

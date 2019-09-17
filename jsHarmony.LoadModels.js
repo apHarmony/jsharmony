@@ -671,12 +671,19 @@ exports.ParseEntities = function () {
     if ('sites' in model) _this.LogInit_WARNING('Model ' + model.id + ' had previous "sites" attribute - overwritten by system value');
     if(model.roles){
       var roleids = _.keys(model.roles);
+      //Resolve '*' roles
       for(let i=0;i<roleids.length;i++){
         var role = roleids[i];
         if(_.isString(model.roles[role])){
           if(!('main' in model.roles)) model.roles['main'] = {};
           model.roles['main'][role] = model.roles[role];
           delete model.roles[role];
+        }
+        else if(role=='*'){
+          for(var siteid in _this.Sites){
+            var newroles = JSON.parse(JSON.stringify(model.roles[role]));
+            model.roles[siteid] = _.extend({},newroles,model.roles[siteid]);
+          }
         }
       }
     }

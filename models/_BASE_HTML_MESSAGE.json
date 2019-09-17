@@ -2,6 +2,7 @@
   "layout": "form",
   "title": "",
   "actions": "B",
+  "roles": { "*": { "*": "*" } },
   "unbound": 1,
   "hide_system_buttons" : ["print","help"],
   "caption": ["","",""]

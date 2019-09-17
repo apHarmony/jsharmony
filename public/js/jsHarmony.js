@@ -5918,16 +5918,16 @@ exports = module.exports = function(jsh){
   }
 
   XDebugConsole.prototype.close = function(){
-    if(!this.isRunning()) return;
-
     this.settings.running = 0;
     this.saveSettings();
 
     this.DebugDialog.hide();
     this.clear();
 
-    this.endWebSocketListener();
-    this.unbindXMLHttpRequestListener();
+    if(this.isRunning()){
+      this.endWebSocketListener();
+      this.unbindXMLHttpRequestListener();
+    }
   }
 
   XDebugConsole.prototype.onXMLHttpRequestLoad = function(event){
@@ -7090,7 +7090,7 @@ exports = module.exports = function(jsh){
   XExtXModel.ApplyDefaults = function (xformdata) {
     if(!('_querystring_applied' in xformdata)) xformdata._querystring_applied = [];
     for(var fname in xformdata.Fields){
-      if((fname in jsh._GET) && jsh._GET[fname]){
+      if((fname in jsh._GET) && jsh._GET[fname] && jsh.XExt.isFieldTopmost(xformdata._modelid, fname)){
         xformdata[fname] = jsh._GET[fname];
         xformdata._querystring_applied.push(fname);
       }
@@ -8843,6 +8843,20 @@ exports = module.exports = function(jsh){
     if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
     XExt.XModel.SetControlValue(xform.Data, xform.Data.Fields[fieldname], fieldval);
   }
+  XExt.isFieldTopmost = function(modelid, fieldname){
+    if(!modelid) return true;
+    var model = jsh.XModels[modelid];
+    if(!model) return true;
+
+    var parentmodel = jsh.XModels[model.parent];
+    while(parentmodel){
+      if(parentmodel.fields && (fieldname in parentmodel.fields)){
+        return false;
+      }
+      parentmodel = jsh.XModels[parentmodel.parent];
+    }
+    return true;
+  }
   /***********************/
   /* UI Helper Functions */
   /***********************/
@@ -9399,6 +9413,8 @@ exports = module.exports = function(jsh){
   XForm.prototype.ApplyDefaults = function(data){
     var _this = this;
     var xmodel = _this.GetModel();
+    var modelid = undefined;
+    if(xmodel) modelid = xmodel.id;
     var rslt = data;
     if(rslt._is_insert||(xmodel && ((xmodel.layout=='exec')||(xmodel.layout=='report')))){
       _.each(_this.defaults, function (val, fieldname){
@@ -9416,7 +9432,7 @@ exports = module.exports = function(jsh){
       });
       _.each(_this.DataType.prototype.Fields, function(field){
         if(!field.name || field.unbound) return;
-        if(jsh._GET && (field.name in jsh._GET)) data[field.name] = jsh._GET[field.name];
+        if(jsh._GET && (field.name in jsh._GET) && jsh.XExt.isFieldTopmost(modelid, field.name)) data[field.name] = jsh._GET[field.name];
         else if(_this.defaults && (field.name in _this.defaults)){ }
         else if(field.hasDefault()){
           data[field.name] = jsh.XFormat.Decode(field.format, field.getDefault(data));

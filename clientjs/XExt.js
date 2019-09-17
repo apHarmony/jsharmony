@@ -1683,6 +1683,20 @@ exports = module.exports = function(jsh){
     if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
     XExt.XModel.SetControlValue(xform.Data, xform.Data.Fields[fieldname], fieldval);
   }
+  XExt.isFieldTopmost = function(modelid, fieldname){
+    if(!modelid) return true;
+    var model = jsh.XModels[modelid];
+    if(!model) return true;
+
+    var parentmodel = jsh.XModels[model.parent];
+    while(parentmodel){
+      if(parentmodel.fields && (fieldname in parentmodel.fields)){
+        return false;
+      }
+      parentmodel = jsh.XModels[parentmodel.parent];
+    }
+    return true;
+  }
   /***********************/
   /* UI Helper Functions */
   /***********************/
