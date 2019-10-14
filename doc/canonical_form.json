@@ -101,6 +101,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   //ondestroy (xmodel)
   //oncommit(xmodel, rowid, callback) (GRID ONLY) - Executes after db Update / Insert / Delete.
   //onloadstate(xmodel, state)
+  //ongetstate(xmodel)
   //onrowbind(xmodel,jobj,datarow) (GRID ONLY)
   //onroute (routetype ('singlepage'), req, res, f, require, jsh, modelid, params) - Server-side reroute to different page if necessary, called before any ent data loaded - TOW
   //    routetypes: singlepage, model, d, d_transaction, csv, report, d_report, d_report_html, d_reportjob
@@ -141,7 +142,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     {"link": "savenew:", "icon": "insert", "text": "Save and New", "actions": "IU", "group":"Actions" }
     //"link":"js:XExt.popupReport('I',{ c_id: 97 },{ width:900, height:500 });"
   ],
-  "hide_system_buttons" : ["print","export","help","search","clear","insert"], //Current only on Grid
+  "hide_system_buttons" : ["print","export","help","search","clear","insert","add","delete","save"], //Current only on Grid
   "rowstyle": "<#=xejs.iif(1==1,'color:red;','color:yellow;')#>", //Used in grid to style rows dynamically
   "rowclass": "<#-xejs.case(datarow['PLE_SEL_NOTIF'],'xgrid_row_highlight',!datarow['PLE_SEL_NOTIF_OK'],'xgrid_row_disabled')#>", //Used in grid to style rows dynamically
     //xejs.iif(condition,true,[false])  [false] result is optional
@@ -316,6 +317,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           config.macros = {
             "LOV_STATUS_AC": [{ "code_val": "ACTIVE", "code_txt": "Active" },{ "code_val": "CLOSED", "code_txt": "Closed" }] 
           }
+      "lov": { "values": { "ACTIVE": "Active", "CLOSED": "Closed" }, "post_process": "console.log(values);" },
+        //"post_process": "jsh.generateLOVTree(values);"   jsh.generateLOVTree(values, { separator: '/', root_txt: '(Root)', default_root: true })
       "eol": 1,
       "popuplov": {  //Enable POPUPLOV, requires target grid
                        "target":  "J",

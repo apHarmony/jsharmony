@@ -92,7 +92,9 @@ var jsHarmonyRouter = function (jsh, siteid) {
   router.get('/application.css', function (req, res) {
     //Concatenate jsh css with system css
     jsh.getSystemCSS(function(systemCSS){
-      HelperFS.outputContent(req, res, ejs.render(systemCSS + '\r\n' + jsh.Cache['application.css'], { req: req, rootcss: req.jshsite.rootcss, _: _ }),'text/css');
+      var rootcss = req.jshsite.rootcss;
+      if(req.query.rootcss) rootcss = req.query.rootcss;
+      HelperFS.outputContent(req, res, ejs.render(systemCSS + '\r\n' + jsh.Cache['application.css'], { req: req, rootcss: rootcss, _: _ }),'text/css');
     });
   });
   router.all('*', function (req, res, next) {
@@ -344,12 +346,21 @@ var jsHarmonyRouter = function (jsh, siteid) {
     catch(ex){
       jserr = ex.toString();
     }
+    var strrslt = '';
+    try {
+      if(_.isString(jsrslt)) strrslt = jsrslt;
+      else if(!jsrslt) strrslt = JSON.stringify(jsrslt);
+      else strrslt = JSON.stringify(jsrslt, null, 4);
+    }
+    catch(ex){
+      strrslt = Helper.stringify(jsrslt, null, 4);
+    }
     var rslt = {
       '_success': 1,
-      'jsrslt': jsrslt,
+      'jsrslt': strrslt,
       'err': jserr
     };
-    res.send(JSON.stringify(rslt));
+    res.send(rslt);
   });
   router.post('/_db/exec', function (req, res, next) {
     if(!('SYSADMIN' in req._roles) && !('DEV' in req._roles)) return next();

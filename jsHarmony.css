@@ -51,7 +51,6 @@ BODY
   padding-right:25px;
 }
 <%-rootcss%> .xactions {
-	padding-bottom:15px;
 	padding-left:15px;
 	white-space: nowrap;
 	display:inline-block;
@@ -76,12 +75,10 @@ BODY
 <%-rootcss%> .xactions.secondarygrid {
 	float:right;
 	padding-right:10px;
-  min-height:16px;
 }
 <%-rootcss%> .xactions.secondaryform {
 	float:right;
 	padding-right:10px;
-  min-height:16px;
   padding-bottom:0px;
   position:relative;
   top:-5px;
@@ -91,7 +88,8 @@ BODY
 	display:inline-block;
 	color:#000000;
 	text-decoration:none;
-	margin-left:15px;
+  margin-left:15px;
+  margin-bottom:15px;
 }
 <%-rootcss%> .xactions a.first,
 <%-rootcss%> .xactions a.first:visited {

@@ -468,6 +468,10 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
               }
               if(!already_found) rslt.unshift(newlov);
             }
+            if ('post_process' in lov){
+              var jscmd = '(function(){ var values = rslt; return (function(){'+lov.post_process+'})();}).call(lov)';
+              eval(jscmd);
+            }
           }
           callback(err, rslt, stats);
         });

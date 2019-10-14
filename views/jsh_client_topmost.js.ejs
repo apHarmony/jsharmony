@@ -351,12 +351,13 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         var firstControl = jsh.$root('input,select,textarea,.xlookup').not('input[type=hidden]').filter(':visible').first();
         if(firstControl && firstControl.length && !firstControl.is('.datepicker')) firstControl.focus();
         XPage.Select({ modelid: jsh.XModels_root, force: true }, function () {
+          var rootmodel = jsh.XModels[jsh.XModels_root];
           jsh.InitControls();
           XPage.LayoutOneColumn();
           XPage.Show();
           jsh.XWindowResize();
-          if (enable_save) jsh.$root('.xactions.top .save').show();
-          if (enable_delete) jsh.$root('.xactions.top .delete').show();
+          if (enable_save && !_.includes(rootmodel.hide_system_buttons,'save')) jsh.$root('.xactions.top .save').show();
+          if (enable_delete && !_.includes(rootmodel.hide_system_buttons,'delete')) jsh.$root('.xactions.top .delete').show();
           XPage.traverseModels(null, function (xmodel) {
             if (!jsh.is_insert && XExt.hasAction(xmodel.actions, 'I')) jsh.$root('.xactions.xelem' + xmodel.class + ' .duplicate').show();
           });
@@ -796,6 +797,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     _.each(jsh.XModels, function (xmodel) {
       if (!xmodel.isEnabled()) return;
       if (!XExt.hasAction(xmodel.actions, 'B')) return;
+      if (xmodel.ongetstate){ rslt[xmodel.id] = xmodel.ongetstate(xmodel); return; }
       if (xmodel.layout != 'grid') return;
       rslt[xmodel.id] = xmodel.controller.GetState();
     });
@@ -1108,6 +1110,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     win.focus();
   }
 
+  XPage.promptDuplicate = function(modelid, dclass, dcaption, data){
+    var xmodel = jsh.XModels[modelid];
+    if(xmodel.controller.form) xmodel.controller.form.Reset();
+    xmodel.controller.form.Prop.Enabled = true;
+    XPage.Select({ modelid: modelid, onCancel: function(){ } }, function(){
+      XExt.popupShow(modelid,dclass,dcaption,undefined,data);
+    });
+  }
+
   XPage.Duplicate = function(modelid, link, link_options) {
     modelid = XExt.resolveModelID(modelid);
     var win = null;
@@ -1172,7 +1183,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var xmodel = jsh.XModels[modelid];
     var jgroup = jsh.$root('.xactions_group.xelem'+xmodel.class+'[data-group="'+group+'"]');
     
+    var already_open = !!jsh.$root('.xcontext_menu:visible').filter(jgroup).length;
     jsh.$root('.xcontext_menu').hide();
+    if(already_open) return;
+    
     jgroup.css('visibility', 'hidden');
     jgroup.show();
     var xtop = jobj.offset().top + jobj.outerHeight(); var xleft = jobj.offset().left;

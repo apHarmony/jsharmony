@@ -296,6 +296,8 @@ exports = module.exports = function(jsh){
     newInput.name = oldInput.name;
     newInput.className = oldInput.className;
     newInput.style.cssText = oldInput.style.cssText;
+    newInput.accept = oldInput.accept;
+    newInput.multiple = oldInput.multiple;
     oldInput.parentNode.replaceChild(newInput, oldInput);
   };
 
@@ -983,17 +985,18 @@ exports = module.exports = function(jsh){
     //Deselect previously selected value
     jtree.find('.selected').removeClass('selected');
 
-    var nodeid = '';
+    var nodeid = undefined;
     if(nodevalue){
       //Get nodeid from nodevalue
       jtree.find('.tree_item').each(function(){
         if($(this).data('value')==nodevalue) nodeid = $(this).data('id');
       });
-      if(!nodeid){ return XExt.Alert('Tree node with value \'' + nodevalue + '\' not found'); }
-
-      jtree.find('.tree_item.tree_item_' + nodeid).addClass('selected');
-      if (field && field.controlparams) {
-        if (field.controlparams.expand_to_selected) XExt.TreeExpandToSelected(ctrl);
+      if(typeof nodeid == 'undefined'){ return; }
+      else {
+        jtree.find('.tree_item.tree_item_' + nodeid).addClass('selected');
+        if (field && field.controlparams) {
+          if (field.controlparams.expand_to_selected) XExt.TreeExpandToSelected(ctrl);
+        }
       }
     }
 
@@ -1001,7 +1004,7 @@ exports = module.exports = function(jsh){
     if (field && jsh.init_complete) {
       if(xform && xform.Data && options.triggerChange) xform.Data.OnControlUpdate(ctrl);
     }
-    if(nodeid && jtree.data('onselected')) { var rslt = (new Function('nodeid', jtree.data('onselected'))); rslt.call(ctrl, nodeid); }
+    if((typeof nodeid !== 'undefined') && jtree.data('onselected')) { var rslt = (new Function('nodeid', jtree.data('onselected'))); rslt.call(ctrl, nodeid); }
   }
 
   XExt.TreeToggleNode = function (jctrl, nodeid) {
@@ -1031,7 +1034,7 @@ exports = module.exports = function(jsh){
       var jctrl = $(this);
       var jparent = jctrl.parent();
       while (jparent.length && !jparent.is(toptree)) {
-        XExt.TreeExpandNode(toptree, jparent.data('value'));
+        XExt.TreeExpandNode(toptree, jparent.data('id'));
         jparent = jparent.parent();
       }
     });
@@ -1139,6 +1142,7 @@ exports = module.exports = function(jsh){
     jsh.xDialog = [];
     jsh.$root('.xdialogblock').children().hide();
     jsh.$root('.xdialogblock').hide();
+    jsh.$root('.xdialogblock').off('click.close');
   }
 
   XExt.dialogButtonFunc = function (dialogClass, oldactive, onComplete, params) {
@@ -1157,6 +1161,7 @@ exports = module.exports = function(jsh){
       //Verify this is the topmost dialog
       if ((jsh.xDialog.length > 0) && (jsh.xDialog[0] != dialogClass)) return;
       jsh.$root('.xdialogblock ' + dialogClass).hide();
+      jsh.$root('.xdialogblock').off('click' + dialogClass);
       if (jsh.xDialog.length == 1) { jsh.$root('.xdialogblock').hide(); }
       if (jsh.xDialog[0] != dialogClass) { alert('ERROR - Invalid Dialog Stack'); console.log(dialogClass); console.log(jsh.xDialog); }
       if (oldactive) oldactive.focus();
@@ -1290,7 +1295,8 @@ exports = module.exports = function(jsh){
     jsh.$root('.xpromptfield').focus();
   }
 
-  XExt.CustomPrompt = function (sel, html, onInit, onAccept, onCancel, onClosed) {
+  XExt.CustomPrompt = function (sel, html, onInit, onAccept, onCancel, onClosed, options) {
+    options = _.extend({ backgroundClose: false }, options);
     //Classes - default_focus, button_ok, button_cancel
     if (jsh.$root('.xdialogblock ' + sel).length) jsh.$root('.xdialogblock ' + sel).remove();
     jsh.$root('.xdialogblock').append(html);
@@ -1316,11 +1322,17 @@ exports = module.exports = function(jsh){
     if (onInit) onInit(acceptfunc, cancelfunc);
     jsh.$root(sel + ' input.button_ok').on('click', acceptfunc);
     jsh.$root(sel + ' input.button_cancel').on('click', cancelfunc);
-    jsh.$root(sel + ' input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    jsh.$root(sel + ' input:not(:checkbox):not(:button)').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
+    jsh.$root(sel + ' input').on('keydown', function (e) { if (e.keyCode == 27) { e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); } });
+    jsh.$root(sel + ' input:not(:checkbox):not(:button)').on('keydown', function (e) { if (e.keyCode == 13) { e.preventDefault(); e.stopImmediatePropagation(); acceptfunc(); } });
     jsh.$root('.xdialogblock,' + sel).show();
     jsh.XWindowResize();
     jsh.$root(sel + ' .default_focus').focus();
+    if(options.backgroundClose){
+      jsh.$root('.xdialogblock').on('click.close' + sel, function(e){
+        if(e.target != this) return;
+        if(jsh.xDialog.length && (jsh.xDialog[0]==sel)){ e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); }
+      });
+    }
   }
 
   XExt.ZoomEdit = function (val, caption, options, onAccept, onCancel) {
@@ -1525,8 +1537,15 @@ exports = module.exports = function(jsh){
 
   XExt.basename = function (fname) {
     var rslt = fname;
-    if (rslt.lastIndexOf('/') > 0) rslt = rslt.substr(rslt.lastIndexOf('/') + 1);
-    if (rslt.lastIndexOf('\\') > 0) rslt = rslt.substr(rslt.lastIndexOf('\\') + 1);
+    if(!rslt) return rslt;
+    if(rslt == '/') return '';
+    if(rslt == '\\') return '';
+
+    if (rslt.lastIndexOf('/') == (rslt.length-1)) rslt = rslt.substr(0, rslt.length - 1);
+    if (rslt.lastIndexOf('\\') == (rslt.length-1)) rslt = rslt.substr(0, rslt.length - 1);
+
+    if (rslt.lastIndexOf('/') >= 0) rslt = rslt.substr(rslt.lastIndexOf('/') + 1);
+    if (rslt.lastIndexOf('\\') >= 0) rslt = rslt.substr(rslt.lastIndexOf('\\') + 1);
     return rslt;
   }
 
@@ -1855,6 +1874,19 @@ exports = module.exports = function(jsh){
       document.selection.empty();
     }
   }
+  XExt.getSelection = function(obj){
+    if(typeof obj.selectionStart != 'undefined'){ //Chrome
+      return {'start': obj.selectionStart, 'end': obj.selectionEnd};
+    }
+    else if(document.selection){ //IE
+      obj.focus();
+      var r = document.selection.createRange();
+      var r_len = r.text.length;
+      r.moveStart('character', -1 * $(obj).val().length);
+      return {'start': r.text.length - r_len, 'end': r.text.length};
+    }
+    else return undefined;
+  };
   XExt.Tick = function(f){
     window.setTimeout(f,1);
   }
@@ -1916,6 +1948,7 @@ exports = module.exports = function(jsh){
   XExt.bindTabControl = function(obj){
     var jobj = $(obj);
     var jtabbuttons = jobj.children('.xtab');
+    if(!jtabbuttons.length) jtabbuttons = jobj.children('.xtabs').children('.xtab');
     var jtabpanels = jobj.children('.xpanel').children('.xtabbody');
     jtabbuttons.on('click', function(){
       var jtabbutton = $(this);

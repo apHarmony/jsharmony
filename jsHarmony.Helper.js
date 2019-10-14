@@ -572,6 +572,101 @@ exports.GetClientValidator = function (req, model, field) {
   return rslt;
 };
 
+exports.generateLOVTree = function (values, options) {
+  options = _.extend({ separator: '/', root_txt: '(Root)', default_root: true, new_code_val: function(patharr){ return patharr.join("/"); } }, options);
+  var separator = options.separator || '/';
+  
+  var jsh = this;
+  var map = jsh.Config.ui_field_mapping;
+  var rslt = [];
+  var paths = {};
+
+  function mapCode(code){
+    var rslt = {}
+    rslt[map.code_id] = code.code_id;
+    rslt[map.code_parent_id] = code.code_parent_id;
+    rslt[map.code_val] = code.code_val;
+    rslt[map.code_txt] = code.code_txt;
+    rslt[map.code_icon] = code.code_icon;
+    return rslt;
+  }
+
+  //Normalize paths
+  for(var i=0;i<values.length;i++){
+    var path = values[i][map.code_val];
+    while(path.indexOf(separator+separator)>=0) path = Helper.ReplaceAll(path, separator+separator, separator);
+    if(path.indexOf(separator)==0) path = path.substr(separator.length);
+    if(path.lastIndexOf(separator)==path.length-separator.length) path = path.substr(0,path.length-separator.length);
+    if(path in paths) continue;
+
+    //Add value to array
+    values[i][map.code_id] = path;
+    paths[path] = values[i];
+  }
+
+  //Add missing parents to array
+  for(var path in paths){
+    var patharr = path.split(separator);
+    for(var i=0;i<(patharr.length-1);i++){
+      var subpath = patharr.slice(0,i+1).join(separator);
+
+      //Add root node, if necessary
+      if(!('' in paths)){
+        var new_code_val = options.new_code_val(['']);
+        if(_.isObject(options.default_root)) paths[''] = mapCode(options.default_root);
+        else paths[''] = mapCode({ code_id: '', code_parent_id: null, code_val: new_code_val, code_txt: options.root_txt, code_icon: paths[path][map.code_icon] });
+      }
+
+      //Add parent path
+      if(!(subpath in paths)){
+        var new_code_val = options.new_code_val(patharr.slice(0,i+1));
+        paths[subpath] = mapCode({ code_id: subpath, code_parent_id: null, code_val: new_code_val, code_txt: patharr[i], code_icon: paths[path][map.code_icon] });
+      }
+    }
+    if(!path) paths[path][map.code_txt] = options.root_txt;
+    else paths[path][map.code_txt] = patharr[patharr.length-1];
+  }
+
+  //Add root node, if necessary
+  if(options.default_root && !('' in paths)){
+    var new_code_val = options.new_code_val(['']);
+    if(_.isObject(options.default_root)) paths[''] = mapCode(options.default_root);
+    else paths[''] = mapCode({ code_id: '', code_parent_id: null, code_val: new_code_val, code_txt: options.root_txt, code_icon: 'folder' });
+  }
+
+  //Sort by path
+  var rslt = [];
+  for(var path in paths) rslt.push(paths[path]);
+  rslt.sort(function(a,b){
+    var alower = (a[map.code_id]||'').toLowerCase();
+    var blower = (b[map.code_id]||'').toLowerCase();
+    if(alower > blower) return 1;
+    if(alower < blower) return -1;
+    return 0;
+  });
+
+  //Add code_id, code_parent_id
+  var i=1;
+  _.each(rslt, function(val){
+    var parentpath = val[map.code_id].split(separator);
+    if(parentpath.length > 1){
+      parentpath = parentpath.slice(0,parentpath.length-1).join(separator);
+      if(parentpath in paths) val[map.code_parent_id] = paths[parentpath][map.code_id];
+    }
+    else if(!val[map.code_id]) { /* Root node */ }
+    else {
+      if(paths['']) val[map.code_parent_id] = paths[''][map.code_id];
+    }
+    //Find parent node and add missing nodes
+    val[map.code_id] = i;
+    i++;
+  });
+
+  //Update values array
+  while(values.length) values.pop();
+  for(var i=0;i<rslt.length;i++) values.push(rslt[i]);
+}
+
 //Add server-side validators for the model
 exports.AddValidatorFuncs = function (model, field) {
   var jsh = this;

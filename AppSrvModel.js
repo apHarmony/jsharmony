@@ -173,7 +173,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
   var rslt = {};
 
   copyValues(rslt, model, [
-    'id', 'namespace', 'class', 'layout', 'caption', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onupdate', 'oncommit', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy', 'js', 'hide_system_buttons',
+    'id', 'namespace', 'class', 'layout', 'caption', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onupdate', 'oncommit', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'ondestroy', 'js', 'hide_system_buttons',
     'popup', 'rowclass', 'rowstyle', 'tabpanelstyle', 'tablestyle', 'formstyle', 'sort', 'querystring', 'disableautoload', 'tabpos', 'templates', 'unbound',
     'reselectafteredit','newrowposition','validationlevel','default_search','grid_expand_search','grid_rowcount', 'grid_require_search','grid_static','noresultsmessage','ejs','css','onecolumn',
     //Commit Level
@@ -421,8 +421,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
               'link': '#',
               'onclick': "\
                 if(jsh.XPage.HasUpdates()){ XExt.Alert('Please save changes before duplicating.'); return false; }\
-                if(jsh.XModels['" + dmodelid + "'].controller.form) jsh.XModels['" + dmodelid + "'].controller.form.Reset();\
-                XExt.popupShow('" + dmodelid + "','" + model.class + "_duplicate','Duplicate " + model.caption[1] + "',undefined,this);\
+                jsh.XPage.promptDuplicate('" + dmodelid + "', '" + model.class + "_duplicate','Duplicate " + model.caption[1] + "', this);\
                 return false;",
               'actions': 'I',
               'icon': 'copy',

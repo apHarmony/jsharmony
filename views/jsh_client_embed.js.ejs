@@ -73,6 +73,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     keys:[<% xejs.eachKey(model.fields,function(field){%>'<%=field.name%>',<%});%>],
     commitlevel:'<%=(model.commitlevel?model.commitlevel:'')%>',
     curtab:<%-(curtab?JSON.stringify(curtab):'null')%>,
+    hide_system_buttons:<%-(model.hide_system_buttons?JSON.stringify(model.hide_system_buttons):'[]')%>,
     unbound_data: {},
     using: <%-JSON.stringify(model.using)%>,
     <% 
@@ -86,6 +87,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if('onvalidate' in model){ %> onvalidate:function(xmodel, callback){<%-jslocals%><%-model.onvalidate%>}, <% }
     if('ondestroy' in model){ %> ondestroy:function(xmodel){<%-jslocals%><%-model.ondestroy%>}, <% }
     if('onloadstate' in model){ %> onloadstate:function(xmodel, state){<%-jslocals%><%-model.onloadstate%>}, <% }
+    if('ongetstate' in model){ %> ongetstate:function(xmodel, state){<%-jslocals%><%-model.ongetstate%>}, <% }
     if('onrowbind' in model){ %> onrowbind:function(xmodel, jobj, datarow){<%-jslocals%><%-model.onrowbind%>}, <% }
 
     if(model.unbound){ %> unbound:true, <% }

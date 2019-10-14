@@ -332,6 +332,28 @@ exports = module.exports = function(jsh){
           }
         });
       }
+      /*
+      //TSV Paste
+      jobj.on('paste', function(e){
+        var str_data = ((event.clipboardData || window.clipboardData).getData('text')||'').toString();
+        var check_tsv = false;
+        if(str_data){
+          if(str_data.indexOf('\t')>=0) check_tsv = true;
+          else if((str_data.indexOf('\n')>=0) && !jobj.is('textarea,.xtextzoom')) check_tsv = true;
+        }
+        if(check_tsv){
+          var tsv_data = undefined;
+          try{
+            var tsv_data = $.csv.toArrays(str_data, { separator: '\t' });
+          }
+          catch(ex){ }
+          if(tsv_data){
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }
+      });
+      */
     });
     jobj.find('.xelem' + xmodel.class + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e) })
     jobj.find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; return _this.SetFocus(ctrl, e); });

@@ -520,8 +520,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         jsh.XModels[dmodelid].bindings[binding] = function(){ return rowdata[binding]; };
       }
     }
-    if(jsh.XModels[dmodelid].controller.form) jsh.XModels[dmodelid].controller.form.Reset();
-    XExt.popupShow(dmodelid,xmodel.class+'_duplicate','Duplicate <%=model.caption[1]%>',undefined,obj);
+    jsh.XPage.promptDuplicate(dmodelid, xmodel.class+'_duplicate','Duplicate <%=model.caption[1]%>', obj);
     return false;
   }
 

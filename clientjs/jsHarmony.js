@@ -25,6 +25,7 @@ var $ = require('./jquery-1.11.2');
 var jQuery = $;
 require('../public/jquery-ui/js/jquery-ui-1.10.3.custom-aspa.min.js')(jQuery);
 require('../public/js/jquery.colorbox-min.js')(jQuery);
+require('../public/js/jquery.csv.min.js')(jQuery);
 var _ = require('lodash');
 var ejs = require('ejs');
 var async = require('async');
@@ -287,7 +288,7 @@ jsHarmony.prototype.Init = function(){
   _this.InitDialogs();
   _this.InitControls();
   _this.XMenu.Init();
-  this.xLoader = new this.XLoader();
+  if(!this.xLoader) this.xLoader = new this.XLoader();
   this.xLoader.onSquashedClick = function(e){ _this.lastSquashedActionTime = Date.now(); }
   this.xDebugConsole = new this.XDebugConsole();
   $(document).mousemove(function (e) {

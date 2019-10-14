@@ -279,6 +279,18 @@ exports = module.exports = function(){
     return rslt;
   }
 
+  XFormat.bytes = function(val){
+    if(typeof val===undefined) return '';
+    if(val===null) return '';
+    if(isNaN(parseFloat(val))) return val;
+    var sizes = ['B','KB','MB','GB'];
+    for(var i=0;i<sizes.length;i++){
+      if(val < 1000) return val.toString()+' '+sizes[i];
+      val = Math.round(val / 1024);
+    }
+    return XFormat.comma(val) + ' TB';
+  }
+
   XFormat.Apply = function(format,val){
     if(typeof val == 'undefined') return '###MISSING###';
     if(format){

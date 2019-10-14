@@ -308,6 +308,7 @@ exports.ParseInheritance = function () {
         });
         EntityPropMerge(mergedprops, 'reportdata', model, parentmodel, function (newval, oldval) { return _.extend({}, oldval, newval); });
         EntityPropMerge(mergedprops, 'js', model, parentmodel, function (newval, oldval) { return oldval + '\r\n' + newval; });
+        EntityPropMerge(mergedprops, 'css', model, parentmodel, function (newval, oldval) { return oldval + '\r\n' + newval; });
         EntityPropMerge(mergedprops, 'fonts', model, parentmodel, function (newval, oldval) { return (oldval||[]).concat(newval||[]); });
         
         //Merge Everything Else
@@ -611,7 +612,12 @@ exports.ParseEntities = function () {
     var db = modelExt.db = _this.DB[modelDB];
     modelExt.sqlext = db.SQLExt;
     var tabledef = modelExt.tabledef = db.getTableDefinition(model.table);
-    if(tabledef && tabledef.table_type) model._dbdef = { table_type: tabledef.table_type };
+    if(tabledef && tabledef.table_type){
+      model._dbdef = { 
+        table_type: tabledef.table_type ,
+        instead_of_insert: tabledef.instead_of_insert
+      };
+    }
 
     if((model.layout=='grid') && !('commitlevel' in model)){
       if(model.actions && !Helper.hasAction(model.actions, 'IUD')) model.commitlevel = 'none';
@@ -1578,7 +1584,7 @@ exports.ParseEntities = function () {
       'pagesettings', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_search', 'default_search', 'grid_static', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
-      'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'onrowbind', 'ondestroy',
+      'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'ondestroy',
       'js', 'ejs', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlgetinsertkeys', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
       'path', 'module', 'templates', 'db', 'onecolumn', 'namespace',
@@ -1598,7 +1604,7 @@ exports.ParseEntities = function () {
       'image', 'thumbnails', 'expand_all', 'expand_to_selected', 'item_context_menu', 'insert_link', 'grid_save_before_update', "update_when_blank", "htmlarea_config"
     ];
     var _v_popuplov = ['target', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
-    var _v_lov = ['sql', 'sql2', 'sqlmp', 'code', 'code2', 'code_sys', 'code2_sys', 'code_app', 'code2_app', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db', 'values'];
+    var _v_lov = ['sql', 'sql2', 'sqlmp', 'code', 'code2', 'code_sys', 'code2_sys', 'code_app', 'code2_app', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db', 'values', 'post_process'];
     //lov
     var existing_targets = [];
     for (let f in model) { if (f.substr(0, 7) == 'comment') continue; if (!_.includes(_v_model, f)) _this.LogInit_ERROR(model.id + ': Invalid model property: ' + f); }
@@ -2029,7 +2035,7 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
 
   //Get keys in parent model
   var parentKeys = _this.AppSrvClass.prototype.getKeyNames(model.fields);
-  if(!parentKeys.length) { options.log(model.id + ' > ' + elementname + ' Bindings: Parent model has no key'); return; }
+  if(!parentKeys.length) { options.log(model.id + ' > ' + elementname + ' Bindings: Parent model has no key.  Please explicitly define empty bindings (bindings: {}), if intentional'); return; }
 
   var bindings = {};
   var found_bindings = false;

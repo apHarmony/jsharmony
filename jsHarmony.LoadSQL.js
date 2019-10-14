@@ -227,8 +227,18 @@ exports.ParseSQLObject = function(module, objname, obj, fpath){
   }
 
   if(obj.type=='view'){
-    obj._tables = _.keys(obj.tables)||[];
+    obj._tables = {};
+    var tblnames = _.keys(obj.tables);
+    _.each(tblnames, function(tblname){
+      if(module.schema){
+        if(tblname.indexOf('.')<0){
+          obj.tables[module.schema + '.' + tblname] = obj.tables[tblname];
+          delete obj.tables[tblname];
+        }
+      }
+    });
     for(var tblname in obj.tables){
+      obj._tables[tblname] = tblname;
       var tbl = obj.tables[tblname];
       if(tbl.columns) for(var i=0;i<tbl.columns.length;i++){
         var col = tbl.columns[i];

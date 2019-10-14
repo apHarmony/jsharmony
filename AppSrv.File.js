@@ -23,8 +23,8 @@ var async = require('async');
 var path = require('path');
 var multiparty = require('multiparty');
 var HelperFS = require('./lib/HelperFS.js');
+var HelperImg = require('./lib/HelperImg.js');
 var fs = require('fs');
-var imagick = require('gm').subClass({ imageMagick: true });
 
 module.exports = exports = {};
 
@@ -399,83 +399,13 @@ exports.ProcessFileOperations = function (keyval, fileops, rslt, stats, callback
         });
       }
       else if (fileop.op == 'img_resample'){
-        (function(){
-          var img = imagick(filesrc);
-          img.size(function (err, size) {
-            if (err) return opcallback(err);
-            if (fileop.format) {
-              img.setFormat(fileop.format);
-              if (_.includes(['jpeg', 'jpg'], fileop.format)) img.flatten();
-            }
-            img.quality(90);
-            img.autoOrient();
-            img.repage(0, 0, 0, 0);
-            img.noProfile().write(filedest, function (err) {
-              if (err) return opcallback(err);
-              return opcallback(null);
-            });
-          });
-        })();
+        HelperImg.resample(filesrc, filedest, fileop.format, opcallback);
       }
       else if (fileop.op == 'img_crop') {
-        (function(){
-          //Calculate w/h + x/y
-          //Optionally override output format
-          var img = imagick(filesrc);
-          img.size(function (err, size) {
-            if (err) return opcallback(err);
-            var cropw = fileop.size[0];
-            var croph = fileop.size[1];
-            var outerw = cropw;
-            var outerh = croph;
-            if ((size.width / cropw) > (size.height / croph)) {
-              outerw = Math.round(size.width * (croph / size.height));
-            }
-            else {
-              outerh = Math.round(size.height * (cropw / size.width));
-            }
-            var cropx = (outerw - cropw) / 2;
-            var cropy = (outerh - croph) / 2;
-            
-            if (fileop.format) {
-              img.setFormat(fileop.format);
-              if (_.includes(['jpeg', 'jpg'], fileop.format)) img.flatten();
-            }
-            img.quality(90);
-            img.autoOrient();
-            img.resize(outerw, outerh);
-            img.crop(cropw, croph, cropx, cropy);
-            img.repage(0, 0, 0, 0);
-            img.noProfile().write(filedest, function (err) {
-              if (err) return opcallback(err);
-              return opcallback(null);
-            });
-          });
-        })();
+        HelperImg.crop(filesrc, filedest, fileop.size, fileop.format, opcallback);
       }
       else if (fileop.op == 'img_resize') {
-        (function(){
-          var img = imagick(filesrc);
-          var imgoptions = {};
-          if ((fileop.size.length >= 3) && fileop.size[2]) imgoptions = fileop.size[2];
-          if (fileop.format) {
-            img.setFormat(fileop.format);
-            if (_.includes(['jpeg', 'jpg'], fileop.format)) { img.flatten(); }
-          }
-          img.quality(90);
-          img.autoOrient();
-          if (imgoptions.upsize) {
-            img.resize(fileop.size[0], fileop.size[1]);
-          }
-          else img.resize(fileop.size[0], fileop.size[1], '>');
-          if (imgoptions.extend) {
-            img.gravity('Center').extent(fileop.size[0], fileop.size[1]);
-          }
-          img.noProfile().write(filedest, function (err) {
-            if (err) return opcallback(err);
-            return opcallback(null);
-          });
-        })();
+        HelperImg.resize(filesrc, filedest, fileop.size, fileop.format, opcallback);
       }
       else return opcallback(null);
     });
