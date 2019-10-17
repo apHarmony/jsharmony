@@ -192,7 +192,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if(!xmodel.inlinepopup){
         for(var fieldname in xmodel.fields){
           if(xmodel.fields[fieldname].unbound) continue;
-          if((fieldname in jsh._GET) && !(fieldname in xgrid.Data) && (xmodel.constant_bindings.indexOf(fieldname)<0)){
+          if((fieldname in jsh._GET) && !(fieldname in xgrid.Data) && (xmodel.constant_bindings.indexOf(fieldname)<0) && jsh.XExt.isFieldTopmost(modelid, fieldname)){
             var fieldval = jsh._GET[fieldname];
             if((typeof fieldval !== 'undefined') && (fieldval !== null)){
               xgrid.Data[fieldname] = fieldval;

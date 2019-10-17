@@ -7546,7 +7546,7 @@ exports = module.exports = function(jsh){
   //Escape string for CSS
   XExt.escapeCSSClass = function(val, options){
     //options { nodash: true }
-    var rslt = val;
+    var rslt = (val||'').toString();
     if(rslt && rslt.nodash) rslt = rslt.replace(/[^a-zA-Z0-9_]+/g, '_');
     else rslt = rslt.replace(/[^a-zA-Z0-9_-]+/g, '_');
     rslt = XExt.trimLeft(rslt,'-');
@@ -8504,7 +8504,7 @@ exports = module.exports = function(jsh){
     if (onInit) onInit(acceptfunc, cancelfunc);
     jsh.$root(sel + ' input.button_ok').on('click', acceptfunc);
     jsh.$root(sel + ' input.button_cancel').on('click', cancelfunc);
-    jsh.$root(sel + ' input').on('keydown', function (e) { if (e.keyCode == 27) { e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); } });
+    jsh.$root(sel + ' input, ' + sel + ' textarea, ' + sel + ' select').on('keydown', function (e) { if (e.keyCode == 27) { e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); } });
     jsh.$root(sel + ' input:not(:checkbox):not(:button)').on('keydown', function (e) { if (e.keyCode == 13) { e.preventDefault(); e.stopImmediatePropagation(); acceptfunc(); } });
     jsh.$root('.xdialogblock,' + sel).show();
     jsh.XWindowResize();

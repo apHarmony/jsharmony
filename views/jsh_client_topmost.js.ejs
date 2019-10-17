@@ -1112,8 +1112,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   XPage.promptDuplicate = function(modelid, dclass, dcaption, data){
     var xmodel = jsh.XModels[modelid];
-    if(xmodel.controller.form) xmodel.controller.form.Reset();
-    xmodel.controller.form.Prop.Enabled = true;
+    if(xmodel.controller.form){
+      xmodel.controller.form.Reset();
+      xmodel.controller.form.Prop.Enabled = true;
+    }
     XPage.Select({ modelid: modelid, onCancel: function(){ } }, function(){
       XExt.popupShow(modelid,dclass,dcaption,undefined,data);
     });

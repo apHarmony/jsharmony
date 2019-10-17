@@ -89,7 +89,6 @@ BODY
 	color:#000000;
 	text-decoration:none;
   margin-left:15px;
-  margin-bottom:15px;
 }
 <%-rootcss%> .xactions a.first,
 <%-rootcss%> .xactions a.first:visited {
@@ -204,7 +203,7 @@ BODY
 <%-rootcss%> .xform_file_upload .xform_file_download_button { padding-right:25px; }
 <%-rootcss%> .xform_file_upload .xform_file_preview_button { padding-right:25px; }
 <%-rootcss%> .xform_file_upload .xform_file_upload_button { padding-right:25px; }
-<%-rootcss%> .xform_file_upload .xform_file_thumbnail { display:block; padding-top:15px; padding-bottom:5px; }
+<%-rootcss%> .xform_file_upload .xform_file_thumbnail { display:block; padding-top:8px; padding-bottom:5px; }
 <%-rootcss%> .xform_file_upload .xform_file_delete_button {  }
 <%-rootcss%> .xform_file_upload.nodocument .xform_file_download_button { display:none; }
 <%-rootcss%> .xform_file_upload.nodocument .xform_file_preview_button { display:none; }
@@ -247,7 +246,8 @@ BODY
   width:770px;
   height:300px;
 }
-<%-rootcss%> .xform_ctrl_button {
+<%-rootcss%> input.xform_ctrl_button,
+<%-rootcss%> input.xform_ctrl_button.uneditable {
   padding:1px 6px;
 }
 <%-rootcss%> .xtbl td input,
@@ -356,6 +356,10 @@ BODY
   position:relative;
   top:2px;
 }
+<%-rootcss%> h1.xtitle_level2 {
+  display:inline-block;
+  padding:0px 0 12px 0;
+}
 <%-rootcss%> h1.xtitlecaption {
   padding-left:9px;
   display:none;
@@ -365,6 +369,9 @@ BODY
 }
 <%-rootcss%> .xtitlecaption a:hover{
   text-decoration:none;
+}
+<%-rootcss%> .clear_form_m_body {
+  margin-top:8px;
 }
 <%-rootcss%> .xsearch {
   padding-bottom:11px;

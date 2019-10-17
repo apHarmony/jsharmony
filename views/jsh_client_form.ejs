@@ -1,5 +1,5 @@
 <% if(!model.topmost && (model.title !== undefined) && model.title) { %>
-<h1 class="xtitle xelem<%=model.class%>" style="display:inline-block;padding:0px 0 12px 0;"><%-xejs.iif((model.title.indexOf('<'+'#') < 0),XExt.escapeHTML(model.title),'&nbsp;')%></h1>
+<h1 class="xtitle xelem<%=model.class%> xtitle_level2"><%-xejs.iif((model.title.indexOf('<'+'#') < 0),XExt.escapeHTML(model.title),'&nbsp;')%></h1>
 <% } %>
 <% if(model.topmost || (model.layout == 'form-m') || model.buttons || model.duplicate){ %>
 <div class="xactions <%=xejs.case(model.topmost,'top',(model.layout == 'form-m'),'','secondaryform')%> xelem<%=model.class%>">
@@ -22,7 +22,7 @@
 </div><% if(model.topmost){ %><div class="xactions_spacer"></div><% } %>
 <% } %>
 <% if(model.layout == 'form-m') { %>
-  <div class="clear"></div>
+  <div class="clear clear_form_m_body"></div>
   <% if(XExt.hasAction(model.actions, 'I')){ %>
     <div class="xnorecords xelem<%=model.class%>" style="display:none;"><a href="#" onclick="<%-js('xmodel.controller.form.NavAdd();')%>">Add <%=model.caption[1]%></a></div>
   <% } else { %>
