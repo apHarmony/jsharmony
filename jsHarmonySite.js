@@ -161,12 +161,12 @@ jsHarmonySite.prototype.Validate = function(){
     };
     if(Helper.notset(_this.auth.on_loginsuccess)) _this.auth.on_loginsuccess = function(req, jsh, params, cb){ //cb(err, rslt)
       var context = params[jsh.map.user_id];
-      if(_this.auth.getContextUser) context = _this.auth.getContextUser(context, jsh);
+      if(_this.auth.getContextUser) context = _this.auth.getContextUser(params, jsh);
       jsh.AppSrv.ExecRow(context, req.jshsite.auth.sql_loginsuccess, [jsh.AppSrv.DB.types.VarChar(255), jsh.AppSrv.DB.types.BigInt, jsh.AppSrv.DB.types.DateTime(7)], params, cb);
     };
     if(Helper.notset(_this.auth.on_passwordreset)) _this.auth.on_passwordreset = function(req, jsh, params, cb){ //cb(err, rslt)
       var context = params[jsh.map.user_id];
-      if(_this.auth.getContextUser) context = _this.auth.getContextUser(context, jsh);
+      if(_this.auth.getContextUser) context = _this.auth.getContextUser(params, jsh);
       jsh.AppSrv.ExecRow(context, req.jshsite.auth.sql_passwordreset, [jsh.AppSrv.DB.types.VarBinary(200), jsh.AppSrv.DB.types.VarChar(255), jsh.AppSrv.DB.types.BigInt, jsh.AppSrv.DB.types.DateTime(7)], params, cb);
     };
     if(Helper.notset(_this.auth.on_auth)) _this.auth.on_auth = function(req, jsh, params, cb){ //cb(err, rslt)
