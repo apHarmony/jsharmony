@@ -8363,7 +8363,7 @@ exports = module.exports = function(jsh){
     }
     //alert(msg);
     jsh.xDialog.unshift('.xalertbox');
-    jsh.$root('.xdialogblock .xalertbox').zIndex(jsh.xDialog.length);
+    jsh.$root('.xdialogblock .xalertbox.base').zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
@@ -8374,9 +8374,9 @@ exports = module.exports = function(jsh){
     jsh.$root('.xalertbox input').on('click', acceptfunc);
     jsh.$root('.xalertbox input').on('keydown', function (e) { if (e.keyCode == 27) { acceptfunc(); } });
     
-    jsh.$root('.xdialogblock,.xalertbox').show();
+    jsh.$root('.xdialogblock,.xalertbox.base').show();
     jsh.XWindowResize();
-    if (!XExt.isIOS()) jsh.$root('.xalertbox input').focus();
+    if (!XExt.isIOS()) jsh.$root('.xalertbox.base input').focus();
   }
 
   XExt.Confirm = function (obj, onYes, onNo, options) {
@@ -8397,7 +8397,7 @@ exports = module.exports = function(jsh){
     //if (window.confirm(msg)) { if (onYes) onYes(); }
     //if (onNo) onNo(); 
     jsh.xDialog.unshift('.xconfirmbox');
-    jsh.$root('.xdialogblock .xconfirmbox').zIndex(jsh.xDialog.length);
+    jsh.$root('.xdialogblock .xconfirmbox.base').zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
@@ -8417,9 +8417,9 @@ exports = module.exports = function(jsh){
     jsh.$root('.xconfirmbox input.button_ok').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, onYes));
     jsh.$root('.xconfirmbox input.button_no').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, onNo));
     jsh.$root('.xconfirmbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    jsh.$root('.xdialogblock,.xconfirmbox').show();
+    jsh.$root('.xdialogblock,.xconfirmbox.base').show();
     jsh.XWindowResize();
-    if (!XExt.isIOS()) jsh.$root('.xconfirmbox input.button_ok').focus();
+    if (!XExt.isIOS()) jsh.$root('.xconfirmbox.base input.button_ok').focus();
   }
 
   XExt.stringify = function (origvalue, replacer, space) {
@@ -8458,7 +8458,7 @@ exports = module.exports = function(jsh){
     //If cancel or close, rslt = null
     //if (onComplete) onComplete(rslt);
     jsh.xDialog.unshift('.xpromptbox');
-    jsh.$root('.xdialogblock .xpromptbox').zIndex(jsh.xDialog.length);
+    jsh.$root('.xdialogblock .xpromptbox.base').zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
@@ -8472,7 +8472,7 @@ exports = module.exports = function(jsh){
     jsh.$root('.xpromptbox input.button_cancel').on('click', cancelfunc);
     jsh.$root('.xpromptbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
     jsh.$root('.xpromptfield').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
-    jsh.$root('.xdialogblock,.xpromptbox').show();
+    jsh.$root('.xdialogblock,.xpromptbox.base').show();
     jsh.XWindowResize();
     jsh.$root('.xpromptfield').focus();
   }
@@ -8492,7 +8492,7 @@ exports = module.exports = function(jsh){
     
     jsh.$root(sel + ' input').off('click');
     jsh.$root(sel + ' input').off('keydown');
-    var cancelfunc = XExt.dialogButtonFunc(sel, oldactive, function () { if (onCancel) onCancel(); if (onClosed) onClosed(); });
+    var cancelfunc = XExt.dialogButtonFunc(sel, oldactive, function () { if (onCancel) onCancel(); if (onClosed) onClosed(); jsh.$root('.xdialogblock ' + sel).remove(); });
     var acceptfunc_aftervalidate = XExt.dialogButtonFunc(sel, oldactive, function () { if (onClosed) onClosed(); });
     var acceptfunc = function () {
       //Verify this is the topmost dialog
@@ -27923,6 +27923,8 @@ var utils = require('./utils');
 
 var scopeOptionWarned = false;
 var _VERSION_STRING = require('../package.json').version;
+var _DEFAULT_OPEN_DELIMITER = '<';
+var _DEFAULT_CLOSE_DELIMITER = '>';
 var _DEFAULT_DELIMITER = '%';
 var _DEFAULT_LOCALS_NAME = 'locals';
 var _NAME = 'ejs';
@@ -28008,9 +28010,10 @@ function getIncludePath(path, options) {
   var includePath;
   var filePath;
   var views = options.views;
+  var match = /^[A-Za-z]+:\\|^\//.exec(path);
 
   // Abs path
-  if (path.charAt(0) == '/') {
+  if (match && match.length) {
     includePath = exports.resolveInclude(path.replace(/^\/*/,''), options.root || '/', true);
   }
   // Relative paths
@@ -28360,6 +28363,12 @@ exports.renderFile = function () {
  * @public
  */
 
+/**
+ * EJS template class
+ * @public
+ */
+exports.Template = Template;
+
 exports.clearCache = function () {
   exports.cache.reset();
 };
@@ -28374,10 +28383,12 @@ function Template(text, opts) {
   this.source = '';
   this.dependencies = [];
   options.client = opts.client || false;
-  options.escapeFunction = opts.escape || utils.escapeXML;
+  options.escapeFunction = opts.escape || opts.escapeFunction || utils.escapeXML;
   options.compileDebug = opts.compileDebug !== false;
   options.debug = !!opts.debug;
   options.filename = opts.filename;
+  options.openDelimiter = opts.openDelimiter || exports.openDelimiter || _DEFAULT_OPEN_DELIMITER;
+  options.closeDelimiter = opts.closeDelimiter || exports.closeDelimiter || _DEFAULT_CLOSE_DELIMITER;
   options.delimiter = opts.delimiter || exports.delimiter || _DEFAULT_DELIMITER;
   options.strict = opts.strict || false;
   options.context = opts.context;
@@ -28413,7 +28424,11 @@ Template.prototype = {
   createRegex: function () {
     var str = _REGEX_STRING;
     var delim = utils.escapeRegExpChars(this.opts.delimiter);
-    str = str.replace(/%/g, delim);
+    var open = utils.escapeRegExpChars(this.opts.openDelimiter);
+    var close = utils.escapeRegExpChars(this.opts.closeDelimiter);
+    str = str.replace(/%/g, delim)
+      .replace(/</g, open)
+      .replace(/>/g, close);
     return new RegExp(str);
   },
 
@@ -28424,7 +28439,7 @@ Template.prototype = {
     var prepended = '';
     var appended = '';
     var escapeFn = opts.escapeFunction;
-    var asyncCtor;
+    var ctor;
 
     if (!this.source) {
       this.generateSource();
@@ -28474,7 +28489,7 @@ Template.prototype = {
         // Have to use generated function for this, since in envs without support,
         // it breaks in parsing
         try {
-          asyncCtor = (new Function('return (async function(){}).constructor;'))();
+          ctor = (new Function('return (async function(){}).constructor;'))();
         }
         catch(e) {
           if (e instanceof SyntaxError) {
@@ -28486,9 +28501,9 @@ Template.prototype = {
         }
       }
       else {
-        asyncCtor = Function;
+        ctor = Function;
       }
-      fn = new asyncCtor(opts.localsName + ', escapeFn, include, rethrow', src);
+      fn = new ctor(opts.localsName + ', escapeFn, include, rethrow', src);
     }
     catch(e) {
       // istanbul ignore else
@@ -28534,9 +28549,9 @@ Template.prototype = {
 
     if (opts.rmWhitespace) {
       // Have to use two separate replace here as `^` and `$` operators don't
-      // work well with `\r`.
+      // work well with `\r` and empty lines don't work well with the `m` flag.
       this.templateText =
-        this.templateText.replace(/\r/g, '').replace(/^\s+|\s+$/gm, '');
+        this.templateText.replace(/[\r\n]+/g, '\n').replace(/^\s+|\s+$/gm, '');
     }
 
     // Slurp spaces and tabs before <%_ and after _%>
@@ -28546,6 +28561,8 @@ Template.prototype = {
     var self = this;
     var matches = this.parseTemplateText();
     var d = this.opts.delimiter;
+    var o = this.opts.openDelimiter;
+    var c = this.opts.closeDelimiter;
 
     if (matches && matches.length) {
       matches.forEach(function (line, index) {
@@ -28557,12 +28574,12 @@ Template.prototype = {
         var includeSrc;
         // If this is an opening tag, check for closing tags
         // FIXME: May end up with some false positives here
-        // Better to store modes as k/v with '<' + delimiter as key
+        // Better to store modes as k/v with openDelimiter + delimiter as key
         // Then this can simply check against the map
-        if ( line.indexOf('<' + d) === 0        // If it is a tag
-          && line.indexOf('<' + d + d) !== 0) { // and is not escaped
+        if ( line.indexOf(o + d) === 0        // If it is a tag
+          && line.indexOf(o + d + d) !== 0) { // and is not escaped
           closing = matches[index + 2];
-          if (!(closing == d + '>' || closing == '-' + d + '>' || closing == '_' + d + '>')) {
+          if (!(closing == d + c || closing == '-' + d + c || closing == '_' + d + c)) {
             throw new Error('Could not find matching close tag for "' + line + '".');
           }
         }
@@ -28570,7 +28587,7 @@ Template.prototype = {
         if ((include = line.match(/^\s*include\s+(\S+)/))) {
           opening = matches[index - 1];
           // Must be in EVAL or RAW mode
-          if (opening && (opening == '<' + d || opening == '<' + d + '-' || opening == '<' + d + '_')) {
+          if (opening && (opening == o + d || opening == o + d + '-' || opening == o + d + '_')) {
             includeOpts = utils.shallowCopy({}, self.opts);
             includeObj = includeSource(include[1], includeOpts);
             if (self.opts.compileDebug) {
@@ -28638,11 +28655,6 @@ Template.prototype = {
       line = line.replace(/^(?:\r\n|\r|\n)/, '');
       this.truncate = false;
     }
-    else if (this.opts.rmWhitespace) {
-      // rmWhitespace has already removed trailing spaces, just need
-      // to remove linebreaks
-      line = line.replace(/^\n/, '');
-    }
     if (!line) {
       return line;
     }
@@ -28663,35 +28675,37 @@ Template.prototype = {
   scanLine: function (line) {
     var self = this;
     var d = this.opts.delimiter;
+    var o = this.opts.openDelimiter;
+    var c = this.opts.closeDelimiter;
     var newLineCount = 0;
 
     newLineCount = (line.split('\n').length - 1);
 
     switch (line) {
-    case '<' + d:
-    case '<' + d + '_':
+    case o + d:
+    case o + d + '_':
       this.mode = Template.modes.EVAL;
       break;
-    case '<' + d + '=':
+    case o + d + '=':
       this.mode = Template.modes.ESCAPED;
       break;
-    case '<' + d + '-':
+    case o + d + '-':
       this.mode = Template.modes.RAW;
       break;
-    case '<' + d + '#':
+    case o + d + '#':
       this.mode = Template.modes.COMMENT;
       break;
-    case '<' + d + d:
+    case o + d + d:
       this.mode = Template.modes.LITERAL;
-      this.source += '    ; __append("' + line.replace('<' + d + d, '<' + d) + '")' + '\n';
+      this.source += '    ; __append("' + line.replace(o + d + d, o + d) + '")' + '\n';
       break;
-    case d + d + '>':
+    case d + d + c:
       this.mode = Template.modes.LITERAL;
-      this.source += '    ; __append("' + line.replace(d + d + '>', d + '>') + '")' + '\n';
+      this.source += '    ; __append("' + line.replace(d + d + c, d + c) + '")' + '\n';
       break;
-    case d + '>':
-    case '-' + d + '>':
-    case '_' + d + '>':
+    case d + c:
+    case '-' + d + c:
+    case '_' + d + c:
       if (this.mode == Template.modes.LITERAL) {
         this._addOutput(line);
       }
@@ -28775,6 +28789,7 @@ exports.__express = exports.renderFile;
 /* istanbul ignore else */
 if (require.extensions) {
   require.extensions['.ejs'] = function (module, flnm) {
+    console.log('Deprecated: this API will go away in EJS v2.8');
     var filename = flnm || /* istanbul ignore next */ module.filename;
     var options = {
       filename: filename,
@@ -28972,6 +28987,9 @@ exports.cache = {
   get: function (key) {
     return this._data[key];
   },
+  remove: function (key) {
+    delete this._data[key];
+  },
   reset: function () {
     this._data = {};
   }
@@ -28979,33 +28997,28 @@ exports.cache = {
 
 },{}],30:[function(require,module,exports){
 module.exports={
-  "_args": [
-    [
-      "ejs@2.6.1",
-      "C:\\wk\\jsharmony"
-    ]
-  ],
-  "_from": "ejs@2.6.1",
-  "_id": "ejs@2.6.1",
+  "_from": "ejs@^2.6.1",
+  "_id": "ejs@2.7.1",
   "_inBundle": false,
-  "_integrity": "sha1-SY7A1JVlWrxvI81hho2SZGQHGqA=",
+  "_integrity": "sha512-kS/gEPzZs3Y1rRsbGX4UOSjtP/CeJP0CxSNZHYxGfVM/VgLcv0ZqM7C45YyTj2DI2g7+P9Dd24C+IMIg6D0nYQ==",
   "_location": "/ejs",
   "_phantomChildren": {},
   "_requested": {
-    "type": "version",
+    "type": "range",
     "registry": true,
-    "raw": "ejs@2.6.1",
+    "raw": "ejs@^2.6.1",
     "name": "ejs",
     "escapedName": "ejs",
-    "rawSpec": "2.6.1",
+    "rawSpec": "^2.6.1",
     "saveSpec": null,
-    "fetchSpec": "2.6.1"
+    "fetchSpec": "^2.6.1"
   },
   "_requiredBy": [
     "/"
   ],
-  "_resolved": "https://registry.npmjs.org/ejs/-/ejs-2.6.1.tgz",
-  "_spec": "2.6.1",
+  "_resolved": "https://registry.npmjs.org/ejs/-/ejs-2.7.1.tgz",
+  "_shasum": "5b5ab57f718b79d4aca9254457afecd36fa80228",
+  "_spec": "ejs@^2.6.1",
   "_where": "C:\\wk\\jsharmony",
   "author": {
     "name": "Matthew Eernisse",
@@ -29015,6 +29028,7 @@ module.exports={
   "bugs": {
     "url": "https://github.com/mde/ejs/issues"
   },
+  "bundleDependencies": false,
   "contributors": [
     {
       "name": "Timothy Gu",
@@ -29023,6 +29037,7 @@ module.exports={
     }
   ],
   "dependencies": {},
+  "deprecated": false,
   "description": "Embedded JavaScript templates",
   "devDependencies": {
     "browserify": "^13.1.1",
@@ -29058,7 +29073,7 @@ module.exports={
     "lint": "eslint \"**/*.js\" Jakefile",
     "test": "jake test"
   },
-  "version": "2.6.1"
+  "version": "2.7.1"
 }
 
 },{}],31:[function(require,module,exports){
@@ -29077,7 +29092,7 @@ module.exports={
   var undefined;
 
   /** Used as the semantic version number. */
-  var VERSION = '4.17.14';
+  var VERSION = '4.17.15';
 
   /** Used as the size to enable large array optimizations. */
   var LARGE_ARRAY_SIZE = 200;
@@ -46204,5 +46219,5 @@ exports = module.exports = function(jQuery){ (function(t,e,i){function n(i,n,o){
 RegExp.escape=function(r){return r.replace(/[-/\\^$*+?.()|[\]{}]/g,"\\$&")};
 exports = module.exports = function(jQuery){"use strict";var p;(p="undefined"!=typeof jQuery&&jQuery?jQuery:{}).csv={defaults:{separator:",",delimiter:'"',headers:!0},hooks:{castToScalar:function(r,e){if(isNaN(r))return r;if(/\./.test(r))return parseFloat(r);var a=parseInt(r);return isNaN(a)?null:a}},parsers:{parse:function(r,e){var a=e.separator,t=e.delimiter;e.state.rowNum||(e.state.rowNum=1),e.state.colNum||(e.state.colNum=1);var o=[],s=[],n=0,i="",l=!1;function u(){if(n=0,i="",e.start&&e.state.rowNum<e.start)return s=[],e.state.rowNum++,void(e.state.colNum=1);if(void 0===e.onParseEntry)o.push(s);else{var r=e.onParseEntry(s,e.state);!1!==r&&o.push(r)}s=[],e.end&&e.state.rowNum>=e.end&&(l=!0),e.state.rowNum++,e.state.colNum=1}function c(){if(void 0===e.onParseValue)s.push(i);else if(e.headers&&1===e.state.rowNum)s.push(i);else{var r=e.onParseValue(i,e.state);!1!==r&&s.push(r)}i="",n=0,e.state.colNum++}var f=RegExp.escape(a),d=RegExp.escape(t),m=/(D|S|\r\n|\n|\r|[^DS\r\n]+)/,p=m.source;return p=(p=p.replace(/S/g,f)).replace(/D/g,d),m=new RegExp(p,"gm"),r.replace(m,function(r){if(!l)switch(n){case 0:if(r===a){i+="",c();break}if(r===t){n=1;break}if(/^(\r\n|\n|\r)$/.test(r)){c(),u();break}i+=r,n=3;break;case 1:if(r===t){n=2;break}i+=r,n=1;break;case 2:if(r===t){i+=r,n=1;break}if(r===a){c();break}if(/^(\r\n|\n|\r)$/.test(r)){c(),u();break}throw Error("CSVDataError: Illegal State [Row:"+e.state.rowNum+"][Col:"+e.state.colNum+"]");case 3:if(r===a){c();break}if(/^(\r\n|\n|\r)$/.test(r)){c(),u();break}if(r===t)throw Error("CSVDataError: Illegal Quote [Row:"+e.state.rowNum+"][Col:"+e.state.colNum+"]");throw Error("CSVDataError: Illegal Data [Row:"+e.state.rowNum+"][Col:"+e.state.colNum+"]");default:throw Error("CSVDataError: Unknown State [Row:"+e.state.rowNum+"][Col:"+e.state.colNum+"]")}}),0!==s.length&&(c(),u()),o},splitLines:function(r,a){if(r){var t=(a=a||{}).separator||p.csv.defaults.separator,o=a.delimiter||p.csv.defaults.delimiter;a.state=a.state||{},a.state.rowNum||(a.state.rowNum=1);var e=[],s=0,n="",i=!1,l=RegExp.escape(t),u=RegExp.escape(o),c=/(D|S|\n|\r|[^DS\r\n]+)/,f=c.source;return f=(f=f.replace(/S/g,l)).replace(/D/g,u),c=new RegExp(f,"gm"),r.replace(c,function(r){if(!i)switch(s){case 0:if(r===t){n+=r,s=0;break}if(r===o){n+=r,s=1;break}if("\n"===r){d();break}if(/^\r$/.test(r))break;n+=r,s=3;break;case 1:if(r===o){n+=r,s=2;break}n+=r,s=1;break;case 2:var e=n.substr(n.length-1);if(r===o&&e===o){n+=r,s=1;break}if(r===t){n+=r,s=0;break}if("\n"===r){d();break}if("\r"===r)break;throw Error("CSVDataError: Illegal state [Row:"+a.state.rowNum+"]");case 3:if(r===t){n+=r,s=0;break}if("\n"===r){d();break}if("\r"===r)break;if(r===o)throw Error("CSVDataError: Illegal quote [Row:"+a.state.rowNum+"]");throw Error("CSVDataError: Illegal state [Row:"+a.state.rowNum+"]");default:throw Error("CSVDataError: Unknown state [Row:"+a.state.rowNum+"]")}}),""!==n&&d(),e}function d(){if(s=0,a.start&&a.state.rowNum<a.start)return n="",void a.state.rowNum++;if(void 0===a.onParseEntry)e.push(n);else{var r=a.onParseEntry(n,a.state);!1!==r&&e.push(r)}n="",a.end&&a.state.rowNum>=a.end&&(i=!0),a.state.rowNum++}},parseEntry:function(r,e){var a=e.separator,t=e.delimiter;e.state.rowNum||(e.state.rowNum=1),e.state.colNum||(e.state.colNum=1);var o=[],s=0,n="";function i(){if(void 0===e.onParseValue)o.push(n);else{var r=e.onParseValue(n,e.state);!1!==r&&o.push(r)}n="",s=0,e.state.colNum++}if(!e.match){var l=RegExp.escape(a),u=RegExp.escape(t),c=/(D|S|\n|\r|[^DS\r\n]+)/.source;c=(c=c.replace(/S/g,l)).replace(/D/g,u),e.match=new RegExp(c,"gm")}return r.replace(e.match,function(r){switch(s){case 0:if(r===a){n+="",i();break}if(r===t){s=1;break}if("\n"===r||"\r"===r)break;n+=r,s=3;break;case 1:if(r===t){s=2;break}n+=r,s=1;break;case 2:if(r===t){n+=r,s=1;break}if(r===a){i();break}if("\n"===r||"\r"===r)break;throw Error("CSVDataError: Illegal State [Row:"+e.state.rowNum+"][Col:"+e.state.colNum+"]");case 3:if(r===a){i();break}if("\n"===r||"\r"===r)break;if(r===t)throw Error("CSVDataError: Illegal Quote [Row:"+e.state.rowNum+"][Col:"+e.state.colNum+"]");throw Error("CSVDataError: Illegal Data [Row:"+e.state.rowNum+"][Col:"+e.state.colNum+"]");default:throw Error("CSVDataError: Unknown State [Row:"+e.state.rowNum+"][Col:"+e.state.colNum+"]")}}),i(),o}},helpers:{collectPropertyNames:function(r){var e=[],a=[],t=[];for(e in r)for(a in r[e])r[e].hasOwnProperty(a)&&t.indexOf(a)<0&&"function"!=typeof r[e][a]&&t.push(a);return t}},toArray:function(r,e,a){if(void 0!==e&&"function"==typeof e){if(void 0!==a)return console.error("You cannot 3 arguments with the 2nd argument being a function");a=e,e={}}e=void 0!==e?e:{};var t={};t.callback=void 0!==a&&"function"==typeof a&&a,t.separator="separator"in e?e.separator:p.csv.defaults.separator,t.delimiter="delimiter"in e?e.delimiter:p.csv.defaults.delimiter;var o=void 0!==e.state?e.state:{};e={delimiter:t.delimiter,separator:t.separator,onParseEntry:e.onParseEntry,onParseValue:e.onParseValue,state:o};var s=p.csv.parsers.parseEntry(r,e);if(!t.callback)return s;t.callback("",s)},toArrays:function(r,e,a){if(void 0!==e&&"function"==typeof e){if(void 0!==a)return console.error("You cannot 3 arguments with the 2nd argument being a function");a=e,e={}}e=void 0!==e?e:{};var t={};t.callback=void 0!==a&&"function"==typeof a&&a,t.separator="separator"in e?e.separator:p.csv.defaults.separator,t.delimiter="delimiter"in e?e.delimiter:p.csv.defaults.delimiter;var o=[];if(void 0!==(e={delimiter:t.delimiter,separator:t.separator,onPreParse:e.onPreParse,onParseEntry:e.onParseEntry,onParseValue:e.onParseValue,onPostParse:e.onPostParse,start:e.start,end:e.end,state:{rowNum:1,colNum:1}}).onPreParse&&(r=e.onPreParse(r,e.state)),o=p.csv.parsers.parse(r,e),void 0!==e.onPostParse&&(o=e.onPostParse(o,e.state)),!t.callback)return o;t.callback("",o)},toObjects:function(r,e,a){if(void 0!==e&&"function"==typeof e){if(void 0!==a)return console.error("You cannot 3 arguments with the 2nd argument being a function");a=e,e={}}e=void 0!==e?e:{};var t={};t.callback=void 0!==a&&"function"==typeof a&&a,t.separator="separator"in e?e.separator:p.csv.defaults.separator,t.delimiter="delimiter"in e?e.delimiter:p.csv.defaults.delimiter,t.headers="headers"in e?e.headers:p.csv.defaults.headers,e.start="start"in e?e.start:1,t.headers&&e.start++,e.end&&t.headers&&e.end++;var o,s=[];e={delimiter:t.delimiter,separator:t.separator,onPreParse:e.onPreParse,onParseEntry:e.onParseEntry,onParseValue:e.onParseValue,onPostParse:e.onPostParse,start:e.start,end:e.end,state:{rowNum:1,colNum:1},match:!1,transform:e.transform};var n={delimiter:t.delimiter,separator:t.separator,start:1,end:1,state:{rowNum:1,colNum:1},headers:!0};void 0!==e.onPreParse&&(r=e.onPreParse(r,e.state));var i=p.csv.parsers.splitLines(r,n),l=p.csv.toArray(i[0],n);o=p.csv.parsers.splitLines(r,e),e.state.colNum=1,e.state.rowNum=l?2:1;for(var u=0,c=o.length;u<c;u++){for(var f=p.csv.toArray(o[u],e),d={},m=0;m<l.length;m++)d[l[m]]=f[m];void 0!==e.transform?s.push(e.transform.call(void 0,d)):s.push(d),e.state.rowNum++}if(void 0!==e.onPostParse&&(s=e.onPostParse(s,e.state)),!t.callback)return s;t.callback("",s)},fromArrays:function(r,e,a){if(void 0!==e&&"function"==typeof e){if(void 0!==a)return console.error("You cannot 3 arguments with the 2nd argument being a function");a=e,e={}}e=void 0!==e?e:{};var t={};t.callback=void 0!==a&&"function"==typeof a&&a,t.separator="separator"in e?e.separator:p.csv.defaults.separator,t.delimiter="delimiter"in e?e.delimiter:p.csv.defaults.delimiter;var o,s,n,i,l="";for(n=0;n<r.length;n++){for(o=r[n],s=[],i=0;i<o.length;i++){var u=void 0===o[i]||null===o[i]?"":o[i].toString();-1<u.indexOf(t.delimiter)&&(u=u.replace(new RegExp(t.delimiter,"g"),t.delimiter+t.delimiter));var c="\n|\r|S|D";c=(c=c.replace("S",t.separator)).replace("D",t.delimiter),-1<u.search(c)&&(u=t.delimiter+u+t.delimiter),s.push(u)}l+=s.join(t.separator)+"\n"}if(!t.callback)return l;t.callback("",l)},fromObjects:function(r,e,a){if(void 0!==e&&"function"==typeof e){if(void 0!==a)return console.error("You cannot 3 arguments with the 2nd argument being a function");a=e,e={}}e=void 0!==e?e:{};var t={};if(t.callback=void 0!==a&&"function"==typeof a&&a,t.separator="separator"in e?e.separator:p.csv.defaults.separator,t.delimiter="delimiter"in e?e.delimiter:p.csv.defaults.delimiter,t.headers="headers"in e?e.headers:p.csv.defaults.headers,t.sortOrder="sortOrder"in e?e.sortOrder:"declare",t.manualOrder="manualOrder"in e?e.manualOrder:[],t.transform=e.transform,"string"==typeof t.manualOrder&&(t.manualOrder=p.csv.toArray(t.manualOrder,t)),void 0!==t.transform){var o,s=r;for(r=[],o=0;o<s.length;o++)r.push(t.transform.call(void 0,s[o]))}var n,i,l=p.csv.helpers.collectPropertyNames(r);if("alpha"===t.sortOrder&&l.sort(),0<t.manualOrder.length){var u,c=[].concat(t.manualOrder);for(u=0;u<l.length;u++)c.indexOf(l[u])<0&&c.push(l[u]);l=c}var f,d=[];for(t.headers&&d.push(l),n=0;n<r.length;n++){for(i=[],u=0;u<l.length;u++)(f=l[u])in r[n]&&"function"!=typeof r[n][f]?i.push(r[n][f]):i.push("");d.push(i)}return p.csv.fromArrays(d,e,t.callback)}},p.csvEntry2Array=p.csv.toArray,p.csv2Array=p.csv.toArrays,p.csv2Dictionary=p.csv.toObjects,"undefined"!=typeof module&&module.exports&&(module.exports=p.csv)};
 },{}],36:[function(require,module,exports){
-module.exports = exports = "<div class=\"xdialogblock\" style=\"display:none;\">\r\n<div class=\"xdialogbox xalertbox\"><div class=\"xalertmessage\"></div><div align=\"center\"><input type=\"button\" value=\"OK\" /></div></div>\r\n<div class=\"xdialogbox xconfirmbox\"><div class=\"xconfirmmessage\"></div><div align=\"center\"><input type=\"button\" value=\"OK\" class=\"button_ok\" style=\"margin-right:15px;\" /> <input type=\"button\" value=\"No\" class=\"button_no\" style=\"margin-right:15px;\" /> <input type=\"button\" value=\"Cancel\" class=\"button_cancel\" /></div></div>\r\n<div class=\"xdialogbox xpromptbox\"><div class=\"xpromptmessage\"></div><div align=\"right\"><input class=\"xpromptfield\" type=\"text\"><br/><input type=\"button\" value=\"OK\" class=\"button_ok\" style=\"margin-right:15px;\" /> <input type=\"button\" value=\"Cancel\" class=\"button_cancel\" /></div></div>\r\n<div class=\"xdialogbox xtextzoombox\"><div class=\"xtextzoommessage\"></div><div align=\"right\"><textarea class=\"xtextzoomfield\"></textarea><input type=\"button\" value=\"OK\" class=\"button_ok\" style=\"margin-right:15px;\" /> <input type=\"button\" value=\"Cancel\" class=\"button_cancel\" /></div></div>\r\n</div>\r\n<div class=\"xdebuginfo\" style=\"display:none;\"></div>\r\n<div class=\"xdebugconsole\" style=\"display:none;\">\r\n  <div class=\"debug-panel\">\r\n    <div class=\"resizer res-ew\"></div>\r\n    <div class=\"resizer res-ns\"></div>\r\n    <header>Debug Console\r\n      <div class=\"controls\">\r\n        <i class=\"material-icons\" data-action=\"toggleSettings\" title=\"Settings\">&#xe8b8;</i>\r\n        <i class=\"material-icons dockRight\" data-action=\"dockRight\" title=\"Dock to the Right\">&#xe31c;</i>\r\n        <i class=\"material-icons dockBottom\" data-action=\"dockBottom\" title=\"Dock to the Bottom\">&#xe258;</i>\r\n        <i class=\"material-icons\" data-action=\"minimizeWindow\" title=\"Minimize\">&#xe313;</i>\r\n        <i class=\"material-icons\" data-action=\"close\" title=\"Close\">&#xe5cd;</i>\r\n      </div>\r\n    </header>\r\n    <div class=\"debug-settings\"></div>\r\n    <div class=\"xdebuginfo-body\"></div>\r\n  </div>\r\n  <div class=\"debug-panel-minimized\" style=\"display: none;\">\r\n    <div class=\"controls\"><i class=\"material-icons\" data-action=\"expandWindow\">&#xe895;</i></div>\r\n  </div>\r\n</div>\r\n<div class=\"xloadingblock\" style=\"display:none;\"><div><div class=\"xloadingbox\">Loading<br/><img src=\"<%=jsh._PUBLICURL%>images/loading.gif\" alt=\"Loading\" title=\"Loading\" /></div></div></div>\r\n"
+module.exports = exports = "<div class=\"xdialogblock\" style=\"display:none;\">\r\n<div class=\"xdialogbox xalertbox base\"><div class=\"xalertmessage\"></div><div align=\"center\"><input type=\"button\" value=\"OK\" /></div></div>\r\n<div class=\"xdialogbox xconfirmbox base\"><div class=\"xconfirmmessage\"></div><div align=\"center\"><input type=\"button\" value=\"OK\" class=\"button_ok\" style=\"margin-right:15px;\" /> <input type=\"button\" value=\"No\" class=\"button_no\" style=\"margin-right:15px;\" /> <input type=\"button\" value=\"Cancel\" class=\"button_cancel\" /></div></div>\r\n<div class=\"xdialogbox xpromptbox base\"><div class=\"xpromptmessage\"></div><div align=\"right\"><input class=\"xpromptfield\" type=\"text\"><br/><input type=\"button\" value=\"OK\" class=\"button_ok\" style=\"margin-right:15px;\" /> <input type=\"button\" value=\"Cancel\" class=\"button_cancel\" /></div></div>\r\n<div class=\"xdialogbox xtextzoombox base\"><div class=\"xtextzoommessage\"></div><div align=\"right\"><textarea class=\"xtextzoomfield\"></textarea><input type=\"button\" value=\"OK\" class=\"button_ok\" style=\"margin-right:15px;\" /> <input type=\"button\" value=\"Cancel\" class=\"button_cancel\" /></div></div>\r\n</div>\r\n<div class=\"xdebuginfo\" style=\"display:none;\"></div>\r\n<div class=\"xdebugconsole\" style=\"display:none;\">\r\n  <div class=\"debug-panel\">\r\n    <div class=\"resizer res-ew\"></div>\r\n    <div class=\"resizer res-ns\"></div>\r\n    <header>Debug Console\r\n      <div class=\"controls\">\r\n        <i class=\"material-icons\" data-action=\"toggleSettings\" title=\"Settings\">&#xe8b8;</i>\r\n        <i class=\"material-icons dockRight\" data-action=\"dockRight\" title=\"Dock to the Right\">&#xe31c;</i>\r\n        <i class=\"material-icons dockBottom\" data-action=\"dockBottom\" title=\"Dock to the Bottom\">&#xe258;</i>\r\n        <i class=\"material-icons\" data-action=\"minimizeWindow\" title=\"Minimize\">&#xe313;</i>\r\n        <i class=\"material-icons\" data-action=\"close\" title=\"Close\">&#xe5cd;</i>\r\n      </div>\r\n    </header>\r\n    <div class=\"debug-settings\"></div>\r\n    <div class=\"xdebuginfo-body\"></div>\r\n  </div>\r\n  <div class=\"debug-panel-minimized\" style=\"display: none;\">\r\n    <div class=\"controls\"><i class=\"material-icons\" data-action=\"expandWindow\">&#xe895;</i></div>\r\n  </div>\r\n</div>\r\n<div class=\"xloadingblock\" style=\"display:none;\"><div><div class=\"xloadingbox\">Loading<br/><img src=\"<%=jsh._PUBLICURL%>images/loading.gif\" alt=\"Loading\" title=\"Loading\" /></div></div></div>\r\n"
 },{}]},{},[25]);
