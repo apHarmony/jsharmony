@@ -222,7 +222,8 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
         var link_newline = button['nl'] ? 1 : 0;
         var link_group = button['group'] || '';
         if (!ejsext.hasAction(req, model, link_actions)) continue;
-        if('roles' in button) if (!ejsext.hasAction(req, button, link_actions)) continue;
+        if('roles' in button) if (!ejsext.hasFieldAction(req, button, link_actions)) continue;
+        //Helper.hasModelAction(req, model, 'B'+targetperm)
         var link_url = '';
         var link_onclick = '';
         if (link_target && link_target.substr(0, 3) == 'js:') {
