@@ -22,8 +22,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var XExt = jsh.XExt;
   var XPage = jsh.XPage;
 
-  jsh.on('jsh_ready', function(){ XPage.onReady(); });
-
   window.onpopstate = function(event) {
     var state = event.state;
 
@@ -435,7 +433,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   XPage.Destroy = function() {
-    jsh.off('jsh_ready');
+    XPage.unbindEvents();
     for(var key in jsh.App){
       var elem = jsh.App[key];
       if (elem instanceof jsh.XGrid) elem.Destroy();
@@ -446,7 +444,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     jsh.App = {};
     jsh.intervals = [];
+    XPage.bindEvents();
+  }
+
+  XPage.bindEvents = function() {
     jsh.on('jsh_ready', function(){ XPage.onReady(); });
+    jsh.on('jsh_message', function(event, data){ if(data=='jsharmony:refresh') XPage.Refresh(); });
+  }
+
+  XPage.unbindEvents = function() {
+    jsh.off('jsh_ready');
+    jsh.off('jsh_message');
   }
 
   XPage.traverseModelDefinitions = function(model,modelParent,modelEach,onComplete,options){ //modelcb(model,modelParent)
@@ -1201,5 +1209,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     jsh.xContextMenuItem = modelid;
     XExt.CancelBubble(e);
   }
+
+  XPage.bindEvents();
 
 })();

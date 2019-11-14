@@ -431,7 +431,10 @@ AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, d
                   right: '1cm',
                 }
               };
-              if ('pagesettings' in model) pagesettings = _.extend(pagesettings, model.pagesettings);
+              if ('pagesettings' in model){
+                if(model.pagesettings.width && model.pagesettings.height) delete pagesettings.format;
+                pagesettings = _.extend(pagesettings, model.pagesettings);
+              }
               pagesettings.path = tmppdfpath;
 
               var dpi = 96;
@@ -481,8 +484,6 @@ AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, d
                   if(basemargin.bottom) marginBottom = parseUnitsPx(basemargin.bottom,dpi);
                 }
               }
-              if(pagesettings.width) pageWidth = parseUnitsPx(pagesettings.width,dpi);
-              if(pagesettings.height) pageHeight = parseUnitsPx(pagesettings.height,dpi);
               if(pagesettings.format){
                 var fmt = pagesettings.format.toLowerCase();
                 var w = 1;
@@ -510,9 +511,11 @@ AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, d
                 pageWidth = (w / (25.4)) * dpi;
                 pageHeight = (h / (25.4)) * dpi;
               }
+              if(pagesettings.width) pageWidth = parseUnitsPx(pagesettings.width,dpi);
+              if(pagesettings.height) pageHeight = parseUnitsPx(pagesettings.height,dpi);
               if(headerheight) headerHeightPx = parseUnitsPx(headerheight,dpi);
               if(footerheight) footerHeightPx = parseUnitsPx(footerheight,dpi);
-              
+
               var contentWidth = pageWidth - marginLeft - marginRight;
               var contentHeight = pageHeight - marginTop - marginBottom - headerHeightPx - footerHeightPx;
               if (jsh.Config.debug_params.report_debug) { jsh.Log.debug('Calculated Page Size: '+contentHeight + 'x'+contentWidth); }

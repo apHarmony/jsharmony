@@ -62,6 +62,12 @@ var jsHarmony = function(options){
   this.onNavigated = [];
   this.Navigated = function(obj){ _this.XExt.trigger(_this.onNavigated, obj); }
 
+  this.onMessage = [];
+  this.Message = function(data){
+    _this.XExt.trigger(_this.onMessage, data);
+    _this.trigger('jsh_message', data);
+  }
+
   this.onInit = null; //function(){};
 
   //Options
@@ -239,6 +245,7 @@ jsHarmony.prototype.BindEvents = function(){
   $(document).ready(function () { _this.XWindowResize(); });
   $(window).resize(function () { _this.XWindowResize(); });
   $(window).scroll(function () { _this.XWindowResize('scroll'); });
+  window.addEventListener('message', function(event){ _this.Message((event.data || '').toString()); });
   window.setInterval(function(){
     var newWindowSize = {
       width: $(window).width(),

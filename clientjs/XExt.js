@@ -108,9 +108,6 @@ exports = module.exports = function(jsh){
     jsh.$root(selector).css('visibility', 'hidden');
     jsh.$root(selector).show();
     var xtop = options.top; var xleft = options.left;
-    var offset = jsh.$root(selector).offsetParent().offset();
-    xtop -= offset.top - 1;
-    xleft -= offset.left - 1;
 
     var wwidth = $(window).width();
     var wheight = $(window).height() - 20;
@@ -118,6 +115,11 @@ exports = module.exports = function(jsh){
     var dheight = jsh.$root(selector).outerHeight()+4;
     if ((xtop + dheight) > wheight) xtop = wheight - dheight;
     if ((xleft + dwidth) > wwidth) xleft = wwidth - dwidth;
+
+    var offset = jsh.$root(selector).offsetParent().offset();
+    xtop -= offset.top - 1;
+    xleft -= offset.left - 1;
+
     if (xtop < 0) xtop = 0;
     if (xleft < 0) xleft = 0;
 

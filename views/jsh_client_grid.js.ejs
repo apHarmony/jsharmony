@@ -54,11 +54,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var grid_placeholder = jsh.$root(grid_template).data('target');
     var scrollControl = (isInlinePopup ? jsh.$root(grid_placeholder).closest('.xpanel')[0] : window);
     xgrid = xcontroller.grid = new jsh.XGrid(modelid,grid_template,grid_placeholder,undefined,true,scrollControl);
-    xgrid.NoResultsMessage = '<%-xejs.iif(('noresultsmessage' in model) && (model.noresultsmessage || (model.noresultsmessage==='')),model.noresultsmessage,'No results %%%FORSEARCHPHRASE%%%')%>';
+    xgrid.NoResultsMessage = jsh.XExt.renderEJS(<%-JSON.stringify(xejs.iif(('noresultsmessage' in model) && (model.noresultsmessage || (model.noresultsmessage==='')),model.noresultsmessage,'No results %%%FORSEARCHPHRASE%%%'))%>, modelid);
     <% if(!('noresultsmessage' in model)){ %>
     if(xmodel.caption && xmodel.caption[2]){
       if(XExt.hasAction(xmodel.actions, 'I') && xmodel.commitlevel && (xmodel.commitlevel != 'none')){
-        xgrid.NoDataMessage = '<a href="#" onclick="<%-js('xmodel.controller.AddRow();')%>">Add ' + xmodel.caption[1] + '</a>';
+        xgrid.NoDataMessage = '<a href="#" class="xgrid_norecords" onclick="<%-js('xmodel.controller.AddRow();')%>"><img src="<%-jsh._PUBLICURL%>images/icon_insert.png" alt="Add" title="Add" />Add ' + xmodel.caption[1] + '</a>';
       }
       else {
         xgrid.NoDataMessage = 'No ' + xmodel.caption[2];

@@ -309,6 +309,12 @@ BODY
   top:4px;
   padding-right:8px;
 }
+<%-rootcss%> .xgrid_norecords img {
+  position:relative;
+  top:3px;
+  padding-right:6px;
+  height:16px;
+}
 <%-rootcss%> input.updated, 
 <%-rootcss%> select.updated, 
 <%-rootcss%> textarea.updated,
