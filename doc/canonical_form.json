@@ -240,8 +240,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                       {"item_context_menu": [ //tree params - Context Menu for an Item
                           { "icon": "insert", "text": "Add", "command": "XExt.Alert('insert' + context_item);", "actions": "IUD" }
                         ],
-                       "expand_all": false, //Show nodes expanded by default
-                       "expand_to_selected": true //Defaults to true
+                        "expand_all": false, //Show nodes expanded by default
+                        "expand_to_selected": true, //Defaults to true
+                        "onmove": "_this.control_onmove(dragval, dropval, anchor, e);",
+                        "ondrop": "_this.control_ondrop(dropval, anchor, e);",
                       },
                       {"value_true":"ON",   //checkbox params
                        "value_false":"OFF",

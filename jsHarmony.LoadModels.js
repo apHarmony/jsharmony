@@ -297,6 +297,7 @@ exports.ParseInheritance = function () {
           return _this.MergeModelArray(newval, oldval, function(newItem, oldItem, rsltItem){
             if ('validate' in newItem) rsltItem.validate = newItem.validate;
             EntityPropMerge(rsltItem, 'roles', newItem, oldItem, function (newval, oldval) { return _.merge({}, oldval, newval); });
+            EntityPropMerge(rsltItem, 'controlparams', newItem, oldItem, function (newval, oldval) { return _.extend({}, oldval, newval); });
           });
         });
         //Create a clone of parent model instead of object reference
@@ -1601,7 +1602,7 @@ exports.ParseEntities = function () {
     var _v_controlparams = [
       'value_true', 'value_false', 'value_hidden', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'base_readonly', 'dateformat', 'panelstyle',
       'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'data_file_prefix', 'sqlparams', '_data_file_has_extension', 'show_thumbnail', 'preview_on_click',
-      'image', 'thumbnails', 'expand_all', 'expand_to_selected', 'item_context_menu', 'insert_link', 'grid_save_before_update', "update_when_blank", "htmlarea_config"
+      'image', 'thumbnails', 'expand_all', 'expand_to_selected', 'onmove', 'ondrop', 'item_context_menu', 'insert_link', 'grid_save_before_update', "update_when_blank", "htmlarea_config"
     ];
     var _v_popuplov = ['target', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
     var _v_lov = ['sql', 'sql2', 'sqlmp', 'code', 'code2', 'code_sys', 'code2_sys', 'code_app', 'code2_app', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db', 'values', 'post_process'];
@@ -1647,7 +1648,7 @@ exports.ParseEntities = function () {
       if(field.control && (model.layout=='grid') && !_.includes(['hidden','label','html','textbox','textzoom','password','date','textarea','dropdown','checkbox','button','linkbutton','file_download','image'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support ' + field.control + ' control');
       if(field.control && (model.layout=='multisel') && !_.includes(['hidden','label'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Multisel does not support ' + field.control + ' control');
       if(field.unbound && (model.layout=='multisel') && !_.includes(['hidden','label'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Multisel does not support unbound controls');
-      if(field.unbound && field.type) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Unbound fields should not have a field.type property');
+      if(!model.unbound && field.unbound && field.type) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Unbound fields should not have a field.type property');
       if(field.unbound && (field.sqlselect || field.sqlupdate || field.sqlinsert)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Unbound fields should not have a field.sqlselect, field.sqlinsert, or field.sqlupdate properties');
       if(field.unbound && !Helper.hasAction(field.actions, 'IU') && Helper.hasAction(model.actions, 'IU') && field.always_editable) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Unbound fields that do not have "IU" actions should not have field.always_editable set');
       if(((field.control == 'file_upload') || (field.control == 'file_download') || (field.control == 'image')) && (field.type != 'file')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The ' + field.control + ' control requires field.type="file"');

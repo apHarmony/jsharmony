@@ -450,11 +450,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   XPage.bindEvents = function() {
     jsh.on('jsh_ready', function(){ XPage.onReady(); });
     jsh.on('jsh_message', function(event, data){ if(data=='jsharmony:refresh') XPage.Refresh(); });
+    //jsh.on('jsh_mouseDragBegin', function(event, mouseDragObj, origEvent){ });
+    //jsh.on('jsh_mouseDrag', function(event, mouseDragObj, targetObj, origEvent){ });
+    //jsh.on('jsh_mouseDragEnd', function(event, mouseDragObj, targetObj, origEvent){ });
   }
 
   XPage.unbindEvents = function() {
     jsh.off('jsh_ready');
     jsh.off('jsh_message');
+    jsh.off('jsh_mouseDragBegin');
+    jsh.off('jsh_mouseDrag');
+    jsh.off('jsh_mouseDragEnd');
   }
 
   XPage.traverseModelDefinitions = function(model,modelParent,modelEach,onComplete,options){ //modelcb(model,modelParent)
@@ -672,9 +678,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   XPage.traverseModelsAsync = function(rootid, xmodelfunc, done, options) {
     rootid = XExt.resolveModelID(rootid);
     if (!options) options = { };
-    xmodelfunc(jsh.XModels[rootid], function () {
+    var traverseChildren = function () {
       XPage.traverseModelsAsyncWorker(rootid, xmodelfunc, done, options);
-    });
+    };
+    if(rootid in jsh.XModels) xmodelfunc(jsh.XModels[rootid], traverseChildren);
+    else traverseChildren();
   }
 
   XPage.traverseModelsAsyncWorker = function(parentmodelid, xmodelfunc, done, options) {

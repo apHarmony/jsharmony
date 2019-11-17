@@ -126,6 +126,8 @@ var jsHarmony = function(options){
   this.mouseX = 0;
   this.mouseY = 0;
   this.mouseDown = false;
+  this.mouseDragObj = undefined; //jQuery object
+  this.mouseCanDrop = undefined;    //function(obj){ return true; }
   this.last_clicked_time = undefined;
   this.last_clicked = undefined;
   this.DEFAULT_DATEFORMAT = 'mm/dd/yy';
@@ -285,12 +287,7 @@ jsHarmony.prototype.Init = function(){
   );
   this.imageLoader.StartLoad();
   $('html').click(function () {
-    if (_this.xContextMenuVisible) {
-      _this.xContextMenuVisible = false;
-      _this.xContextMenuItem = undefined;
-      _this.xContentMenuItemData = undefined;
-      _this.$root('.xcontext_menu').hide();
-    }
+    _this.hideContextMenu();
   });
   _this.InitDialogs();
   _this.InitControls();
@@ -301,10 +298,17 @@ jsHarmony.prototype.Init = function(){
   $(document).mousemove(function (e) {
     _this.mouseX = e.pageX;
     _this.mouseY = e.pageY;
+    if(_this.mouseDragObj) _this.mouseDrag(_this.mouseDragObj, e);
   }).mousedown(function (e) {
     _this.mouseDown = true;
   }).mouseup(function (e) {
     _this.mouseDown = false;
+    if(_this.mouseDragObj){
+      _this.mouseDragEnd(_this.mouseDragObj, e);
+      _this.mouseDragObj = undefined;
+      e.preventDefault();
+      e.stopPropagation();
+    }
   }).mouseleave(function (e) {
     _this.mouseDown = false;
   });
@@ -317,6 +321,68 @@ jsHarmony.prototype.Init = function(){
   }
   if(this.Config.debug_params.monitor_globals) this.runGlobalsMonitor();
   if(_this.onInit) _this.onInit();
+}
+
+jsHarmony.prototype.mouseDragBegin = function(mouseDragObj, mouseCanDrop, e){
+  var _this = this;
+  _this.hideContextMenu();
+  if(!mouseDragObj) return;
+  _this.mouseDragObj = mouseDragObj;
+  var jobj = $(mouseDragObj);
+  _this.mouseCanDrop = mouseCanDrop;
+  var jclone = jobj.clone();
+  jclone.css('position', 'absolute');
+  jclone.css('z-index', 99998);
+  jclone.css('left', _this.mouseX);
+  jclone.css('top', _this.mouseY);
+  jclone.addClass('xdrag');
+  jclone.removeClass('xdrop');
+  _this.root.prepend(jclone);
+
+  _this.trigger('jsh_mouseDragBegin', [mouseDragObj, e]);
+}
+
+jsHarmony.prototype.mouseDrag = function(mouseDragObj, e){
+  var _this = this;
+  if(!mouseDragObj) return;
+  
+  var jclone = _this.$root('.xdrag');
+  jclone.css('left', _this.mouseX);
+  jclone.css('top', _this.mouseY);
+  var targetObj = null;
+  _this.$root('.xdrop').each(function(){
+	  if(_this.XExt.isMouseWithin(this)){
+      if(!_this.mouseCanDrop || _this.mouseCanDrop(this)){
+        if(!targetObj || $.contains(targetObj, this)) targetObj = this;
+	    }
+	  } 
+  });
+
+  _this.trigger('jsh_mouseDrag', [mouseDragObj, targetObj, e]);
+}
+
+jsHarmony.prototype.mouseDragEnd = function(mouseDragObj, e){
+  var _this = this;
+  if(!mouseDragObj) return;
+  this.$root('.xdrag').remove();
+  var targetObj = null;
+  this.$root('.xdrop').each(function(){
+    if(_this.XExt.isMouseWithin(this)){
+      if(!_this.mouseCanDrop || _this.mouseCanDrop(this)){
+        if(!targetObj || $.contains(targetObj, this)) targetObj = this;
+      }
+    } 
+  });
+  _this.trigger('jsh_mouseDragEnd', [mouseDragObj, targetObj, e]);
+}
+
+jsHarmony.prototype.hideContextMenu = function(){
+  if (this.xContextMenuVisible) {
+    this.xContextMenuVisible = false;
+    this.xContextMenuItem = undefined;
+    this.xContentMenuItemData = undefined;
+    this.$root('.xcontext_menu').hide();
+  }
 }
 
 jsHarmony.prototype.DefaultErrorHandler = function(num,txt){

@@ -7281,6 +7281,7 @@ exports = module.exports = function(jsh){
     if (!e) e = window.event;
     if (e.stopPropagation) e.stopPropagation();
     else e.cancelBubble = true;
+    if(e.preventDefault) e.preventDefault();
   }
 
   XExt.ShowContextMenu = function (selector,context_item,data,options){
@@ -7684,6 +7685,14 @@ exports = module.exports = function(jsh){
       }
       return (effperm + kfc);
     },
+    'hasAction': function () {
+      if (arguments.length == 0) return '';
+      var effperm = arguments[0];
+      for (var i = 0; i < arguments.length; i++) {
+        effperm = XExt.xejs.intersectperm(effperm, arguments[i]);
+      }
+      return effperm;
+    },
     'intersectperm': function (perm1, perm2) {
       if (typeof perm1 == 'undefined') perm1 = '';
       if (typeof perm2 == 'undefined') perm2 = '';
@@ -8017,12 +8026,12 @@ exports = module.exports = function(jsh){
     this.Icon = '';
   }
 
-  XExt.TreeRender = function (ctrl, LOV, field) {
+  XExt.TreeRender = function (jctrl, LOV, field) {
     //Create Cache of Opened Nodes
-    var expanded_nodes = XExt.TreeGetExpandedNodes(ctrl);
-    var selected_nodes = XExt.TreeGetSelectedNodes(ctrl);
+    var expanded_nodes = XExt.TreeGetExpandedNodes(jctrl);
+    var selected_nodes = XExt.TreeGetSelectedNodes(jctrl);
     
-    ctrl.empty();
+    jctrl.empty();
     if (LOV.length == 0) return;
     
     //Create Tree
@@ -8055,13 +8064,83 @@ exports = module.exports = function(jsh){
     
     var body = '';
     for (var i = 0; i < tree.length; i++) {
-      body += XExt.TreeRenderNode(ctrl, tree[i]);
+      body += XExt.TreeRenderNode(jctrl, tree[i]);
     }
-    ctrl.html(body);
+    var treeid = jctrl.data('treeid');
+    if(!treeid){
+      treeid = 1;
+      while(jsh.$root('[data-treeid='+treeid+']').length) treeid++;
+      jctrl.data('treeid', treeid);
+    }
+    jctrl.html(body);
     if (field && field.controlparams) {
-      if (field.controlparams.expand_all) XExt.TreeExpandAll(ctrl);
-      else if (field.controlparams.expand_to_selected) XExt.TreeExpandToSelected(ctrl);
+      if (field.controlparams.expand_all) XExt.TreeExpandAll(jctrl);
+      else if (field.controlparams.expand_to_selected) XExt.TreeExpandToSelected(jctrl);
+      if(field.controlparams.onmove || field.controlparams.ondrop){
+        XExt.TreeEnableDrag(jctrl, field.controlparams.onmove, field.controlparams.ondrop);
+      }
     }
+  }
+
+  //onmove(dragval, dropval, anchor, e)
+  //ondrop(dropval, anchor, e)
+  XExt.TreeEnableDrag = function (jctrl, onmove, ondrop) {
+    var mouseDownTimer = null;
+    //Set up drop points
+    jctrl.find('a.tree_item').addClass('xdrop');
+    //Check if the target can be used as a drop point
+    function mouseCanDrop(target){
+      return true;
+    }
+    //Start drag operation
+    jctrl.find('a.tree_item').mousedown(function(e){
+      if (e.which == 1) {//left mouse button
+        var obj = this;
+        if(XExt.isMouseWithin($(obj).parent().find('.glyph')[0])) return;
+        if(jsh.xContextMenuVisible) return;
+        XExt.CancelBubble(e);
+        if(mouseDownTimer) window.clearTimeout(mouseDownTimer);
+        mouseDownTimer = window.setTimeout(function(){
+          if(mouseDownTimer) jsh.mouseDragBegin(obj, mouseCanDrop, e);
+        }, 250);
+      }
+    });
+    jctrl.find('a.tree_item').mouseup(function(e){
+      if(mouseDownTimer) window.clearTimeout(mouseDownTimer);
+    });
+    //While dragging, update styles on drop points
+    var treeid = jctrl.data('treeid');
+    jsh.off('.jsh_tree_'+treeid);
+    jsh.on('jsh_mouseDrag.jsh_tree_'+treeid,function(event, mouseDragObj, targetObj, origEvent){
+      jctrl.find('.xdragtarget').removeClass('xdragtarget').removeClass('xdragtop').removeClass('xdragbottom').removeClass('xdragfull');
+      if(!targetObj) return;
+      if($(targetObj).data('id')==$(mouseDragObj).data('id')) return;
+      jsh.$root('.xdrag').css('visibility','visible'); 
+
+      var targetAnchor = XExt.getObjectAnchors(targetObj, jsh.mouseX, jsh.mouseY, { fullAnchor: true });
+      $(targetObj).addClass('xdragtarget');
+
+      if(targetAnchor[1]=='top') $(targetObj).addClass('xdragtop');
+      else if(targetAnchor[1]=='bottom') $(targetObj).addClass('xdragbottom');
+      else if(targetAnchor[1]=='full') $(targetObj).addClass('xdragfull');
+    });
+    //On Drop
+    jsh.on('jsh_mouseDragEnd.jsh_tree_'+treeid,function(event, mouseDragObj, targetObj, origEvent){
+      jctrl.find('.xdragtarget').removeClass('xdragtarget');
+      if(!targetObj) return;
+      if($(targetObj).data('id')==$(mouseDragObj).data('id')) return;
+      var mouseDragObjId = $(mouseDragObj).data('id');
+      var targetObjId = $(targetObj).data('id');
+      if(targetObjId==mouseDragObj) return;
+
+      var mouseDragObjVal = $(mouseDragObj).data('value');
+      var targetObjVal = $(targetObj).data('value');
+      
+      var targetAnchor = XExt.getObjectAnchors(targetObj, jsh.mouseX, jsh.mouseY, { fullAnchor: true });
+
+      if(onmove) onmove(mouseDragObjVal, targetObjVal, targetAnchor[1], origEvent);
+      if(ondrop) ondrop(targetObjVal, targetAnchor[1], origEvent);
+    });
   }
 
   XExt.TreeRenderNode = function (ctrl, n) {
@@ -8070,7 +8149,7 @@ exports = module.exports = function(jsh){
       children += XExt.TreeRenderNode(ctrl, n.Children[i]);
     }
     var rslt = jsh.ejs.render('\
-      <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>" onclick=\'<%-instance%>.XExt.TreeSelectNode(this,<%-JSON.stringify(n.Value)%>); return false;\' ondblclick=\'<%-instance%>.XExt.TreeDoubleClickNode(this,<%-JSON.stringify(n.ID)%>); return false;\' oncontextmenu=\'return <%-instance%>.XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'<%-instance%>.XExt.CancelBubble(arguments[0]); <%-instance%>.XExt.TreeToggleNode(<%-instance%>.$(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><img class="icon" src="<%-jsh._PUBLICURL%>images/icon_<%=n.Icon%>.png"><span><%=n.Text%></span></a>\
+      <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>" onclick=\'<%-instance%>.XExt.TreeSelectNode(this,<%-JSON.stringify(n.Value)%>); return false;\' ondblclick=\'<%-instance%>.XExt.TreeDoubleClickNode(this,<%-JSON.stringify(n.ID)%>); return false;\' oncontextmenu=\'return <%-instance%>.XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'<%-instance%>.XExt.CancelBubble(arguments[0]); <%-instance%>.XExt.TreeToggleNode(<%-instance%>.$(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><img class="icon" src="<%-jsh._PUBLICURL%>images/icon_<%=n.Icon%>.png"><span><%=n.Text||"\u00A0"%></span></a>\
       <div class="children <%=(n.Expanded?"expanded":"")%> tree_item_<%=n.ID%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>"><%-children%></div>',
       { n: n, children: children, jsh: jsh, instance: jsh.getInstance() }
     );
@@ -9128,6 +9207,24 @@ exports = module.exports = function(jsh){
     if (y > (joff.top + h)) return false;
     return true;
   }
+  XExt.getObjectAnchors = function(elem, x, y, options) {
+    if(!options) options = {};
+    var jobj = $(elem);
+    var joff = jobj.offset();
+    var w = jobj.outerWidth(false);
+    var h = jobj.outerHeight(false);
+    var fph = Math.abs(((h>0)?((y-joff.top)/h):0) - 0.5);
+  
+    var lp = ((w>0)?((x-joff.left)/w):0) - 0.5;
+    var tp = ((h>0)?((y-joff.top)/h):0) - 0.5;
+    var rslt = [];
+    if(lp < 0) rslt.push('left');
+    else rslt.push('right');
+    if(options.fullAnchor && (fph <= 0.25)) rslt.push('full');
+    else if(tp > 0) rslt.push('bottom');
+    else rslt.push('top');
+    return rslt;
+  }
   //Bind tab control events
   XExt.bindTabControl = function(obj){
     var jobj = $(obj);
@@ -9168,6 +9265,8 @@ exports = module.exports = function(jsh){
         if(testmodel in jsh.XModels) return testmodel;
       }
     }
+    if(modelid in jsh.XModels) return modelid;
+    if(modelid in jsh.XBase) return XExt.resolveModelID(jsh.XBase[modelid][0]);
     return modelid;
   }
   XExt.isNullUndefinedEmpty = function(val){
@@ -9232,6 +9331,7 @@ exports = module.exports = function(jsh){
     this.DBTaskRows = {};
     this.OnBeforeRender = null;
     this.OnAfterRender = null;
+    this.OnDBError = null;
     this.Prop = {};
   }
 
@@ -9649,7 +9749,7 @@ exports = module.exports = function(jsh){
         if(loader) loader.StopLoading(_this);
         if ((data instanceof Object) && ('_error' in data)) {
           if(jsh.DefaultErrorHandler(data._error.Number,data._error.Message)) { }
-          else if(!(_this.OnDBError(data._error,data._stats,ExecParams, data))) { }
+          else if(!(_this.HandleError(data._error,data._stats,ExecParams, data))) { }
           else if((data._error.Number == -9) || (data._error.Number == -5)){ jsh.XExt.Alert(data._error.Message); }
           else { jsh.XExt.Alert('Error #' + data._error.Number + ': ' + data._error.Message); }
           if ('onFail' in ExecParams) ExecParams.onFail(data._error);
@@ -9676,7 +9776,7 @@ exports = module.exports = function(jsh){
         var jdata = data.responseJSON;
         if ((jdata instanceof Object) && ('_error' in jdata)) {
           if (jsh.DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { }
-          else if (!(_this.OnDBError(jdata._error,jdata._stats,ExecParams,data))) { }
+          else if (!(_this.HandleError(jdata._error,jdata._stats,ExecParams,data))) { }
           else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { jsh.XExt.Alert(jdata._error.Message); }
           else { jsh.XExt.Alert('Error #' + jdata._error.Number + ': ' + jdata._error.Message); }
           if ('onFail' in ExecParams) ExecParams.onFail(jdata._error);
@@ -9736,8 +9836,10 @@ exports = module.exports = function(jsh){
     }
     return true;
   };
-  XForm.prototype.OnDBError = function (error, stats, execParams, data){
+  XForm.prototype.HandleError = function (error, stats, execParams, data){
     if(this.OnDBMessage(error)===false) return false;
+
+    if(this.OnDBError && (this.OnDBError(error, stats, execParams, data)===false)) return false;
 
     if(!this.Data) return true;
     
@@ -21887,6 +21989,8 @@ var jsHarmony = function(options){
   this.mouseX = 0;
   this.mouseY = 0;
   this.mouseDown = false;
+  this.mouseDragObj = undefined; //jQuery object
+  this.mouseCanDrop = undefined;    //function(obj){ return true; }
   this.last_clicked_time = undefined;
   this.last_clicked = undefined;
   this.DEFAULT_DATEFORMAT = 'mm/dd/yy';
@@ -22046,12 +22150,7 @@ jsHarmony.prototype.Init = function(){
   );
   this.imageLoader.StartLoad();
   $('html').click(function () {
-    if (_this.xContextMenuVisible) {
-      _this.xContextMenuVisible = false;
-      _this.xContextMenuItem = undefined;
-      _this.xContentMenuItemData = undefined;
-      _this.$root('.xcontext_menu').hide();
-    }
+    _this.hideContextMenu();
   });
   _this.InitDialogs();
   _this.InitControls();
@@ -22062,10 +22161,17 @@ jsHarmony.prototype.Init = function(){
   $(document).mousemove(function (e) {
     _this.mouseX = e.pageX;
     _this.mouseY = e.pageY;
+    if(_this.mouseDragObj) _this.mouseDrag(_this.mouseDragObj, e);
   }).mousedown(function (e) {
     _this.mouseDown = true;
   }).mouseup(function (e) {
     _this.mouseDown = false;
+    if(_this.mouseDragObj){
+      _this.mouseDragEnd(_this.mouseDragObj, e);
+      _this.mouseDragObj = undefined;
+      e.preventDefault();
+      e.stopPropagation();
+    }
   }).mouseleave(function (e) {
     _this.mouseDown = false;
   });
@@ -22078,6 +22184,68 @@ jsHarmony.prototype.Init = function(){
   }
   if(this.Config.debug_params.monitor_globals) this.runGlobalsMonitor();
   if(_this.onInit) _this.onInit();
+}
+
+jsHarmony.prototype.mouseDragBegin = function(mouseDragObj, mouseCanDrop, e){
+  var _this = this;
+  _this.hideContextMenu();
+  if(!mouseDragObj) return;
+  _this.mouseDragObj = mouseDragObj;
+  var jobj = $(mouseDragObj);
+  _this.mouseCanDrop = mouseCanDrop;
+  var jclone = jobj.clone();
+  jclone.css('position', 'absolute');
+  jclone.css('z-index', 99998);
+  jclone.css('left', _this.mouseX);
+  jclone.css('top', _this.mouseY);
+  jclone.addClass('xdrag');
+  jclone.removeClass('xdrop');
+  _this.root.prepend(jclone);
+
+  _this.trigger('jsh_mouseDragBegin', [mouseDragObj, e]);
+}
+
+jsHarmony.prototype.mouseDrag = function(mouseDragObj, e){
+  var _this = this;
+  if(!mouseDragObj) return;
+  
+  var jclone = _this.$root('.xdrag');
+  jclone.css('left', _this.mouseX);
+  jclone.css('top', _this.mouseY);
+  var targetObj = null;
+  _this.$root('.xdrop').each(function(){
+	  if(_this.XExt.isMouseWithin(this)){
+      if(!_this.mouseCanDrop || _this.mouseCanDrop(this)){
+        if(!targetObj || $.contains(targetObj, this)) targetObj = this;
+	    }
+	  } 
+  });
+
+  _this.trigger('jsh_mouseDrag', [mouseDragObj, targetObj, e]);
+}
+
+jsHarmony.prototype.mouseDragEnd = function(mouseDragObj, e){
+  var _this = this;
+  if(!mouseDragObj) return;
+  this.$root('.xdrag').remove();
+  var targetObj = null;
+  this.$root('.xdrop').each(function(){
+    if(_this.XExt.isMouseWithin(this)){
+      if(!_this.mouseCanDrop || _this.mouseCanDrop(this)){
+        if(!targetObj || $.contains(targetObj, this)) targetObj = this;
+      }
+    } 
+  });
+  _this.trigger('jsh_mouseDragEnd', [mouseDragObj, targetObj, e]);
+}
+
+jsHarmony.prototype.hideContextMenu = function(){
+  if (this.xContextMenuVisible) {
+    this.xContextMenuVisible = false;
+    this.xContextMenuItem = undefined;
+    this.xContentMenuItemData = undefined;
+    this.$root('.xcontext_menu').hide();
+  }
 }
 
 jsHarmony.prototype.DefaultErrorHandler = function(num,txt){

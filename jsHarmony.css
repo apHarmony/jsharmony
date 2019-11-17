@@ -465,7 +465,17 @@ BODY
   background-color:#f5f5f5;
   border:1px solid #ddd;
 }
-<%-rootcss%> .xform_ctrl.tree .nochildren .glyph {
+<%-rootcss%> .xform_ctrl.tree a.tree_item.xdragtarget.xdragfull{
+	border:1px dashed #333;
+}
+<%-rootcss%> .xform_ctrl.tree a.tree_item.xdragtarget.xdragtop{
+  border-top:1px dashed #333;
+}
+<%-rootcss%> .xform_ctrl.tree a.tree_item.xdragtarget.xdragbottom{
+  border-bottom:1px dashed #333;
+}
+<%-rootcss%> .xform_ctrl.tree .nochildren .glyph,
+<%-rootcss%> a.tree_item.xdrag .glyph {
   display:none;
 }
 <%-rootcss%> .xform_ctrl.tree .glyph {

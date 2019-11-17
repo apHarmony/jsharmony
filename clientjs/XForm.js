@@ -45,6 +45,7 @@ exports = module.exports = function(jsh){
     this.DBTaskRows = {};
     this.OnBeforeRender = null;
     this.OnAfterRender = null;
+    this.OnDBError = null;
     this.Prop = {};
   }
 
@@ -462,7 +463,7 @@ exports = module.exports = function(jsh){
         if(loader) loader.StopLoading(_this);
         if ((data instanceof Object) && ('_error' in data)) {
           if(jsh.DefaultErrorHandler(data._error.Number,data._error.Message)) { }
-          else if(!(_this.OnDBError(data._error,data._stats,ExecParams, data))) { }
+          else if(!(_this.HandleError(data._error,data._stats,ExecParams, data))) { }
           else if((data._error.Number == -9) || (data._error.Number == -5)){ jsh.XExt.Alert(data._error.Message); }
           else { jsh.XExt.Alert('Error #' + data._error.Number + ': ' + data._error.Message); }
           if ('onFail' in ExecParams) ExecParams.onFail(data._error);
@@ -489,7 +490,7 @@ exports = module.exports = function(jsh){
         var jdata = data.responseJSON;
         if ((jdata instanceof Object) && ('_error' in jdata)) {
           if (jsh.DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { }
-          else if (!(_this.OnDBError(jdata._error,jdata._stats,ExecParams,data))) { }
+          else if (!(_this.HandleError(jdata._error,jdata._stats,ExecParams,data))) { }
           else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { jsh.XExt.Alert(jdata._error.Message); }
           else { jsh.XExt.Alert('Error #' + jdata._error.Number + ': ' + jdata._error.Message); }
           if ('onFail' in ExecParams) ExecParams.onFail(jdata._error);
@@ -549,8 +550,10 @@ exports = module.exports = function(jsh){
     }
     return true;
   };
-  XForm.prototype.OnDBError = function (error, stats, execParams, data){
+  XForm.prototype.HandleError = function (error, stats, execParams, data){
     if(this.OnDBMessage(error)===false) return false;
+
+    if(this.OnDBError && (this.OnDBError(error, stats, execParams, data)===false)) return false;
 
     if(!this.Data) return true;
     

@@ -1,162 +1,162 @@
 {
   "comment":"*** Default jsHarmony Custom Controls ***",
   "date_mmddyy":{
-		"control":"date",
-		"format":["date","MM/DD/YY"],
-		"controlclass":"xdate_mmddyy"
-	},
-	"date_mmddyyyy":{
-		"control":"date",
-		"format":["date","MM/DD/YYYY"],
-		"controlclass":"xdate_mmddyyyy"
+    "control":"date",
+    "format":["date","MM/DD/YY"],
+    "controlclass":"xdate_mmddyy"
+  },
+  "date_mmddyyyy":{
+    "control":"date",
+    "format":["date","MM/DD/YYYY"],
+    "controlclass":"xdate_mmddyyyy"
   },
   "label_mmddyyyy":{
-		"control":"label",
-		"format":["date","MM/DD/YYYY"],
-		"controlclass":"xlabel_mmddyyyy"
+    "control":"label",
+    "format":["date","MM/DD/YYYY"],
+    "controlclass":"xlabel_mmddyyyy"
   },
   "label_hhmmss":{
-		"control":"label",
-		"format":["time","hh:mm:ss A"],
-		"controlclass":"xlabel_hhmmss"
+    "control":"label",
+    "format":["time","hh:mm:ss A"],
+    "controlclass":"xlabel_hhmmss"
   },
   "label_hhmmssz":{
-		"control":"label",
-		"format":["time","HH:mm:ssZ"],
-		"controlclass":"xlabel_hhmmssz"
+    "control":"label",
+    "format":["time","HH:mm:ssZ"],
+    "controlclass":"xlabel_hhmmssz"
   },
-	"dropdown_VS":{
-		"control":"dropdown",
-		"controlclass":"xdropdown_VS"
-	},
-	"dropdown_S":{
-		"control":"dropdown",
-		"controlclass":"xdropdown_S"
-	},
-	"dropdown_M":{
-		"control":"dropdown",
-		"controlclass":"xdropdown_M"
-	},
-	"dropdown_2":{
-		"control":"dropdown",
-		"controlclass":"xdropdown_2",
-		"captionclass":"xcaption_2"
-	},
-	"dropdown_L":{
-		"control":"dropdown",
-		"controlclass":"xdropdown_L"
-	},
-	"dropdown_VL":{
-		"control":"dropdown",
-		"controlclass":"xdropdown_VL"
-	},
-	"label_VS":{
-		"control":"label",
-		"controlclass":"xlabel_VS"
-	},
-	"label_S":{
-		"control":"label",
-		"controlclass":"xlabel_S"
-	},
-	"label_M":{
-		"control":"label",
-		"controlclass":"xlabel_M"
-	},
-	"label_L":{
-		"control":"label",
-		"controlclass":"xlabel_L"
-	},
-	"label_VL":{
-		"control":"label",
-		"controlclass":"xlabel_VL"
-	},
+  "dropdown_VS":{
+    "control":"dropdown",
+    "controlclass":"xdropdown_VS"
+  },
+  "dropdown_S":{
+    "control":"dropdown",
+    "controlclass":"xdropdown_S"
+  },
+  "dropdown_M":{
+    "control":"dropdown",
+    "controlclass":"xdropdown_M"
+  },
+  "dropdown_2":{
+    "control":"dropdown",
+    "controlclass":"xdropdown_2",
+    "captionclass":"xcaption_2"
+  },
+  "dropdown_L":{
+    "control":"dropdown",
+    "controlclass":"xdropdown_L"
+  },
+  "dropdown_VL":{
+    "control":"dropdown",
+    "controlclass":"xdropdown_VL"
+  },
+  "label_VS":{
+    "control":"label",
+    "controlclass":"xlabel_VS"
+  },
+  "label_S":{
+    "control":"label",
+    "controlclass":"xlabel_S"
+  },
+  "label_M":{
+    "control":"label",
+    "controlclass":"xlabel_M"
+  },
+  "label_L":{
+    "control":"label",
+    "controlclass":"xlabel_L"
+  },
+  "label_VL":{
+    "control":"label",
+    "controlclass":"xlabel_VL"
+  },
   "label_h1":{
-		"control":"label",
-		"controlclass":"xlabel_h1"
-	},
+    "control":"label",
+    "controlclass":"xlabel_h1"
+  },
   "label_h2":{
-		"control":"label",
-		"controlclass":"xlabel_h2"
-	},
+    "control":"label",
+    "controlclass":"xlabel_h2"
+  },
   "label_h3":{
-		"control":"label",
-		"controlclass":"xlabel_h3"
-	},
+    "control":"label",
+    "controlclass":"xlabel_h3"
+  },
   "label_h4":{
-		"control":"label",
-		"controlclass":"xlabel_h4"
-	},
+    "control":"label",
+    "controlclass":"xlabel_h4"
+  },
   "label_h5":{
-		"control":"label",
-		"controlclass":"xlabel_h5"
-	},
+    "control":"label",
+    "controlclass":"xlabel_h5"
+  },
   "label_h6":{
-		"control":"label",
-		"controlclass":"xlabel_h6"
-	},
+    "control":"label",
+    "controlclass":"xlabel_h6"
+  },
   "label_notification":{
-		"control":"label",
-		"controlclass":"xlabel_notification"
+    "control":"label",
+    "controlclass":"xlabel_notification"
   },
   "label_error":{
-		"control":"label",
-		"controlclass":"xlabel_error"
-	},
-	"textbox_VS":{
-		"control":"textbox",
-		"controlclass":"xtextbox_VS"
-	},
-	"textbox_S":{
-		"control":"textbox",
-		"controlclass":"xtextbox_S"
-	},
-	"textbox_M":{
-		"control":"textbox",
-		"controlclass":"xtextbox_M"
-	},
-	"textbox_2":{
-		"control":"textbox",
-		"controlclass":"xtextbox_2",
-		"captionclass":"xcaption_2"
-	},
-	"textbox_L":{
-		"control":"textbox",
-		"controlclass":"xtextbox_L"
-	},
-	"textbox_VL":{
-		"control":"textbox",
-		"controlclass":"xtextbox_VL"
-	},
-	"textbox_decimal":{
-		"control":"textbox",
-		"controlclass":"xtextbox_decimal"
-	},
-	"textbox_email":{
-		"control":"textbox",
-		"controlclass":"xtextbox_email"
-	},
-	"textbox_mmddyy":{
-		"control":"textbox",
-		"format":["date","MM/DD/YY"],
-		"controlclass":"xtextbox_mmddyy"
-	},
-	"textbox_hhmmss":{
-		"control":"textbox",
-		"format":["time","hh:mm:ss A"],
-		"controlclass":"xtextbox_hhmmss"
+    "control":"label",
+    "controlclass":"xlabel_error"
   },
-	"textbox_phone":{
-		"control":"textbox",
-		"format":"phone",
-		"controlclass":"xtextbox_phone"
-	},
-	"textbox_tstmp":{
-		"control":"textbox",
-		"format":["date","MM/DD/YY HH:mm"],
-		"controlclass":"xtextbox_tstmp"
+  "textbox_VS":{
+    "control":"textbox",
+    "controlclass":"xtextbox_VS"
+  },
+  "textbox_S":{
+    "control":"textbox",
+    "controlclass":"xtextbox_S"
+  },
+  "textbox_M":{
+    "control":"textbox",
+    "controlclass":"xtextbox_M"
+  },
+  "textbox_2":{
+    "control":"textbox",
+    "controlclass":"xtextbox_2",
+    "captionclass":"xcaption_2"
+  },
+  "textbox_L":{
+    "control":"textbox",
+    "controlclass":"xtextbox_L"
+  },
+  "textbox_VL":{
+    "control":"textbox",
+    "controlclass":"xtextbox_VL"
+  },
+  "textbox_decimal":{
+    "control":"textbox",
+    "controlclass":"xtextbox_decimal"
+  },
+  "textbox_email":{
+    "control":"textbox",
+    "controlclass":"xtextbox_email"
+  },
+  "textbox_mmddyy":{
+    "control":"textbox",
+    "format":["date","MM/DD/YY"],
+    "controlclass":"xtextbox_mmddyy"
+  },
+  "textbox_hhmmss":{
+    "control":"textbox",
+    "format":["time","hh:mm:ss A"],
+    "controlclass":"xtextbox_hhmmss"
+  },
+  "textbox_phone":{
+    "control":"textbox",
+    "format":"phone",
+    "controlclass":"xtextbox_phone"
+  },
+  "textbox_tstmp":{
+    "control":"textbox",
+    "format":["date","MM/DD/YY HH:mm"],
+    "controlclass":"xtextbox_tstmp"
   },
   "textarea_M":{
-		"control":"textarea",
+    "control":"textarea",
     "controlclass":"xtextarea_M",
     "captionclass": "xtextarea_caption"
   }
