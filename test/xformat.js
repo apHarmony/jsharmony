@@ -157,4 +157,14 @@ describe('XFormat',function(){
       { in: false, out: 'false', auxin: ['FALSE','F','N','NO','OFF','0'] },
     ]);
   });
+  //json
+  it('json', function () {
+    testFormat(XFormat.json, XFormat.json_decode, [
+      { in: '', out: '' },
+      { in: '{}', out: '{}'},
+      { in: '{"k":"v"}', out: '{\n  "k": "v"\n}'},
+      { in: 1, out: 1},
+      { in: {}, out: '{}'},
+    ]);
+  });
 });
