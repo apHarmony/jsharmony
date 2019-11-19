@@ -125,7 +125,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         }
       }
       else if(XExt.hasAction(xmodel.actions, 'B')) {
-        if(xmodel.controller.form && !xmodel.controller.form.Data.Commit()){ valid = false; return; }
+        if (xmodel.layout == 'multisel') {}
+        else if(xmodel.controller.form && !xmodel.controller.form.Data.Commit()){ valid = false; return; }
       }
     });
     if (!valid) return options.onFail('validation');

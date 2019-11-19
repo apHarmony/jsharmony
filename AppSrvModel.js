@@ -597,7 +597,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
         dstfield.actions = ejsext.unionperm('BIU', dstfield.actions);
       }
     }
-    dstfield.validate = jsh.GetClientValidator(req, model, srcfield);
+    dstfield.validate = jsh.GetClientValidator(req, model, srcfield, dstfield.actions);
     if (('control' in dstfield) && ((dstfield.control == 'subform') || (dstfield.popuplov))) {
       _this.genClientModel(req, res, srcfield.target, false, srcfield.bindings, model, { targetperm: (dstfield.popuplov ? 'B' : undefined) }, function(subform){
         if(srcfield.control=='subform'){
