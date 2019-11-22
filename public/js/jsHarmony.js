@@ -10205,6 +10205,27 @@ exports = module.exports = function(){
     return (val?true:false);
   }
 
+  XFormat.json = function(val) {
+    if (typeof(val) == "string") {
+      try{
+        val = JSON.parse(val);
+      } catch (e) {
+        return val;
+      }
+    }
+    return JSON.stringify(val,null,2);
+  }
+  XFormat.json_decode = function(val) {
+    if (typeof(val) == "string") {
+      try{
+        val = JSON.parse(val);
+      } catch (e) {
+        return val;
+      }
+    }
+    return JSON.stringify(val);
+  }
+
   XFormat.parseFormat = function(format){
     if(_.isArray(format)) return format;
     format = (format||'').toString();
