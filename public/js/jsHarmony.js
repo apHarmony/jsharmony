@@ -10439,7 +10439,7 @@ exports = module.exports = function(jsh){
           return;
         }
         if (onFail && onFail(data)) { }
-        else if (_this.OnLoadError && _this.OnLoadError(jdata._error)) { }
+        else if (_this.OnLoadError && _this.OnLoadError(data)) { }
         else if (('status' in data) && (data.status == '404')) { jsh.XExt.Alert('(404) The requested page was not found.'); }
         else if (jsh._debug) jsh.XExt.Alert('An error has occurred: ' + data.responseText);
         else jsh.XExt.Alert('An error has occurred.  If the problem continues, please contact the system administrator for assistance.');
