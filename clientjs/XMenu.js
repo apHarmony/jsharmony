@@ -292,7 +292,7 @@ exports = module.exports = function(jsh){
         if ($(obj).hasClass('xsubmenu_more')) return;
         _this.SubMenuItems.push($(obj));
       });
-      _this.CalcSubmenuDimensions();
+      _this.CalcSubmenuDimensions(true);
       
       jSubMenu.find('.xsubmenu_more').off('click');
       jSubMenu.find('.xsubmenu_more').on('click', function () {

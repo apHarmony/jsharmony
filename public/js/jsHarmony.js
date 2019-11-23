@@ -8712,9 +8712,11 @@ exports = module.exports = function(jsh){
           if(xform && xform.Prop){ xform.Prop.Enabled = false; }
         },
       };
-      var xpanel = $(popup_options.href).children('.xpanel');
-      if(xpanel.length){
-        xpanel.css('max-height',($(window).height()-100)+'px');
+      var xsubform = $(popup_options.href).filter('.xsubform');
+      if(xsubform.length){
+        xsubform.css('max-height',($(window).height()-100)+'px');
+        xsubform.css('display','block');
+        xsubform.css('overflow','auto');
       }
       jsh.xPopupStack.push(popup_options);
       $.colorbox(popup_options);
@@ -11133,7 +11135,7 @@ exports = module.exports = function(jsh){
         if ($(obj).hasClass('xsubmenu_more')) return;
         _this.SubMenuItems.push($(obj));
       });
-      _this.CalcSubmenuDimensions();
+      _this.CalcSubmenuDimensions(true);
       
       jSubMenu.find('.xsubmenu_more').off('click');
       jSubMenu.find('.xsubmenu_more').on('click', function () {

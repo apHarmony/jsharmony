@@ -635,10 +635,13 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
       }
     }
     if ('actions' in srcfield) {
-      dstfield.actions = ejsext.getActions(req, model, srcfield.actions);
-      if ('roles' in srcfield) dstfield.actions = ejsext.getActions(req, srcfield, dstfield.actions);
       if(srcfield.always_editable){
-        dstfield.actions = ejsext.unionperm('BIU', dstfield.actions);
+        dstfield.actions = ejsext.getActions(req, { actions: 'BIUD', roles: model.roles }, 'BIUD');
+        if ('roles' in srcfield) dstfield.actions = ejsext.getActions(req, { actions: 'BIUD', roles: srcfield.roles }, dstfield.actions);
+      }
+      else {
+        dstfield.actions = ejsext.getActions(req, model, srcfield.actions);
+        if ('roles' in srcfield) dstfield.actions = ejsext.getActions(req, srcfield, dstfield.actions);
       }
     }
     dstfield.validate = jsh.GetClientValidator(req, model, srcfield, dstfield.actions);
