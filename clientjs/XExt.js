@@ -129,7 +129,7 @@ exports = module.exports = function(jsh){
     if(jsh){
       jsh.xContextMenuVisible = true;
       jsh.xContextMenuItem = context_item;
-      jsh.xContentMenuItemData = data;
+      jsh.xContextMenuItemData = data;
     }
   }
 
@@ -2098,6 +2098,15 @@ exports = module.exports = function(jsh){
     if(val === null) return true;
     return false;
   }
+  
+  XExt.isDisplayLayoutColumnHidden = function (field_name, display_layout, fields) {
+    if(!display_layout || !display_layout.columns) return false;
+    for(var i=0;i<display_layout.columns.length;i++){
+      if(display_layout.columns[i].name == field_name) return false;
+    }
+    if(fields && !fields[field_name]) return false;
+    return true;
+}
 
   return XExt;
 }

@@ -122,7 +122,7 @@ var jsHarmony = function(options){
   this.isHTML5 = (document.createElement('canvas').getContext);
   this.xContextMenuVisible = false;
   this.xContextMenuItem = undefined;
-  this.xContentMenuItemData = undefined;
+  this.xContextMenuItemData = undefined;
   this.mouseX = 0;
   this.mouseY = 0;
   this.mouseDown = false;
@@ -380,7 +380,7 @@ jsHarmony.prototype.hideContextMenu = function(){
   if (this.xContextMenuVisible) {
     this.xContextMenuVisible = false;
     this.xContextMenuItem = undefined;
-    this.xContentMenuItemData = undefined;
+    this.xContextMenuItemData = undefined;
     this.$root('.xcontext_menu').hide();
   }
 }

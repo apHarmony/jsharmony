@@ -577,6 +577,36 @@ exports.ApplyCustomControl = function(model, field, controlname){
   _this.ApplyCustomControl(model, field);
 };
 
+exports.validateDisplayLayouts = function(model){
+  var _this = this;
+  if(model.display_layouts){
+    var field_names = {};
+    _.each(model.fields, function(field){ field_names[field.name] = 1; });
+    for(var display_layout_name in model.display_layouts){
+      var display_layout = model.display_layouts[display_layout_name];
+      var column_names = {};
+      display_layout.columns = _.reduce(display_layout['columns'],function(rslt,column){
+        if(_.isString(column)){
+          var column_name = column;
+          if(!(column_name in field_names)){ _this.LogInit_ERROR('Display layout column not found: '+model.id+'::'+display_layout_name+'::'+column_name); return rslt; }
+          if(column_name in column_names){ _this.LogInit_ERROR('Duplicate display layout column: '+model.id+'::'+display_layout_name+'::'+column_name); return rslt; }
+          rslt.push({name: column_name});
+          column_names[column_name] = 1;
+        }
+        else if(column){
+          var column_name = column.name;
+          if(!column_name){ _this.LogInit_ERROR('Display layout column missing "name" property: '+model.id+'::'+display_layout_name+' '+JSON.stringify(column)); return rslt; }
+          if(!(column_name in field_names)){ _this.LogInit_ERROR('Display layout column not found: '+model.id+'::'+display_layout_name+'::'+column_name); return rslt; }
+          if(column_name in column_names){ _this.LogInit_ERROR('Duplicate display layout column: '+model.id+'::'+display_layout_name+'::'+column_name); return rslt; }
+          rslt.push(column);
+          column_names[column.name] = 1;
+        }
+        return rslt;
+      },[]);
+    }
+  }
+}
+
 exports.ParseEntities = function () {
   var _this = this;
   _this.ParseCustomControls();
@@ -1577,6 +1607,7 @@ exports.ParseEntities = function () {
         else if (!Helper.hasAction(sql_param_field.actions, 'C')) { if (!sql_param_field.actions) sql_param_field.actions = ''; sql_param_field.actions += 'C'; }
       });
     }
+    _this.validateDisplayLayouts(model);
 
     //Validate Model and Field Parameters
     var _v_model = [
@@ -1591,6 +1622,7 @@ exports.ParseEntities = function () {
       'path', 'module', 'templates', 'db', 'onecolumn', 'namespace',
       //Report Parameters
       'subheader', 'footerheight', 'headeradd',
+      'display_layouts'
     ];
     var _v_field = [
       'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'foreignkey', 'serverejs', 'roles', 'ongetvalue', 'cellclass',
@@ -1609,6 +1641,7 @@ exports.ParseEntities = function () {
     //lov
     var existing_targets = [];
     for (let f in model) { if (f.substr(0, 7) == 'comment') continue; if (!_.includes(_v_model, f)) _this.LogInit_ERROR(model.id + ': Invalid model property: ' + f); }
+    
     var no_B = true;
     var no_key = true;
     if (model.fields) _.each(model.fields, function (field) {
