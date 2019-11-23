@@ -7311,7 +7311,7 @@ exports = module.exports = function(jsh){
     if(jsh){
       jsh.xContextMenuVisible = true;
       jsh.xContextMenuItem = context_item;
-      jsh.xContentMenuItemData = data;
+      jsh.xContextMenuItemData = data;
     }
   }
 
@@ -9280,6 +9280,15 @@ exports = module.exports = function(jsh){
     if(val === null) return true;
     return false;
   }
+  
+  XExt.isDisplayLayoutColumnHidden = function (field_name, display_layout, fields) {
+    if(!display_layout || !display_layout.columns) return false;
+    for(var i=0;i<display_layout.columns.length;i++){
+      if(display_layout.columns[i].name == field_name) return false;
+    }
+    if(fields && !fields[field_name]) return false;
+    return true;
+}
 
   return XExt;
 }
@@ -10439,7 +10448,7 @@ exports = module.exports = function(jsh){
           return;
         }
         if (onFail && onFail(data)) { }
-        else if (_this.OnLoadError && _this.OnLoadError(jdata._error)) { }
+        else if (_this.OnLoadError && _this.OnLoadError(data)) { }
         else if (('status' in data) && (data.status == '404')) { jsh.XExt.Alert('(404) The requested page was not found.'); }
         else if (jsh._debug) jsh.XExt.Alert('An error has occurred: ' + data.responseText);
         else jsh.XExt.Alert('An error has occurred.  If the problem continues, please contact the system administrator for assistance.');
@@ -22006,7 +22015,7 @@ var jsHarmony = function(options){
   this.isHTML5 = (document.createElement('canvas').getContext);
   this.xContextMenuVisible = false;
   this.xContextMenuItem = undefined;
-  this.xContentMenuItemData = undefined;
+  this.xContextMenuItemData = undefined;
   this.mouseX = 0;
   this.mouseY = 0;
   this.mouseDown = false;
@@ -22264,7 +22273,7 @@ jsHarmony.prototype.hideContextMenu = function(){
   if (this.xContextMenuVisible) {
     this.xContextMenuVisible = false;
     this.xContextMenuItem = undefined;
-    this.xContentMenuItemData = undefined;
+    this.xContextMenuItemData = undefined;
     this.$root('.xcontext_menu').hide();
   }
 }

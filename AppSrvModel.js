@@ -511,11 +511,55 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
       else return cb();
     },
 
-  ],function(err){
-    if(!rslt.fields) rslt.fields = [];
-    //Return result
-    if(onComplete) onComplete(rslt);
-  });
+    function (cb) {
+      if(model.layout == 'grid'){
+        if(model.display_layouts === false){
+          rslt.current_display_layout_name = undefined;
+          rslt.display_layouts = undefined;
+        }
+        else{
+          var field_names = [];
+          _.each(rslt.fields, function(field){ if(field.name) field_names.push(field.name); });
+          if(model.display_layouts){
+            rslt.display_layouts = {};
+            for(var display_layout_name in model.display_layouts){
+              var rslt_display_layout = { columns: [] }
+              var display_layout = model.display_layouts[display_layout_name];
+              rslt_display_layout.title = ('title' in display_layout) ? display_layout.title : display_layout_name;
+              //Add only the fields that are in the rslt.fields array
+              for(var i=0;i<display_layout.columns.length;i++){
+                var field_name = display_layout.columns[i].name;
+                if(_.includes(field_names, field_name)){
+                  rslt_display_layout.columns.push({ name: field_name });
+                }
+              }
+              rslt.display_layouts[display_layout_name] = rslt_display_layout;
+              if(!rslt.current_display_layout_name) rslt.current_display_layout_name = display_layout_name;
+            }
+          }
+          else{ //Generate a "standard" current_display_layout_name
+            var default_columns = [];
+            _.each(rslt.fields,function(field){
+              if(Helper.hasAction(field.actions,"B") && (field.control !== "hidden") && field.caption) default_columns.push({"name":field.name});
+            });
+            rslt.display_layouts = {
+              "standard": {
+                "title": "Standard",
+                "columns": default_columns
+              }
+            }
+            rslt.current_display_layout_name = "standard";
+          }
+        }
+      }
+      return cb();
+    },
+
+    ],function(err){
+        if(!rslt.fields) rslt.fields = [];
+        //Return result
+        if(onComplete) onComplete(rslt);
+      });
 }
 
 AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, targetperm, onComplete) {

@@ -25,7 +25,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var moment = jsh.moment;
   var modelid = '<%=model.id%>';
   var xmodel = jsh.XModels[modelid];
-
+  var current_display_layout = undefined;
   var xcontroller = xmodel.controller = new XExt.XModel.XController(xmodel);
   var xsearch = null;
   var xeditablegrid = null;
@@ -44,6 +44,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     };
     xcontroller.SearchAddDefault();
     <% if(model.grid_expand_search){ %>xcontroller.SearchExpand(0);<% } %>
+
+    current_display_layout = xcontroller.GetDefaultDisplayLayout();
 
     xform = xcontroller.form = new jsh.XForm(modelid,'','');
     xform.DataType = xmodel.datamodel;
@@ -104,6 +106,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if (data[this.q].length <= 0){ xform.Index = -1; }
       else{ xform.Index = 0; }
       this.Prop.ModifiedSinceLoad = false;
+      xcontroller.UpdateDisplayLayoutColumnHeaders();
     }
     xgrid.OnRender = function(ejssource,data){
       xform.DataSet = xform.DataSet.concat(data[this.q]);
@@ -267,6 +270,18 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     };
 
     xcontroller.UpdateTitleCaption();
+
+    //Enable Display Layouts Context Menu
+    if(xmodel.display_layouts){
+      jsh.$root('.xform<%=model.class%> th').contextmenu(function (e) {
+        if (!$(this).hasClass('static')){
+          e.preventDefault();
+          e.stopPropagation();
+          var field_name = $(this).closest('th').data('field');
+          XExt.ShowContextMenu('.xgrid_column_header_context_<%= model.class%>', field_name);
+        }
+      });
+    }
 
     callback();
   }
@@ -605,6 +620,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       xsearch.Render();
       xgrid.SearchJSON = JSON.stringify(state.Search);
     }
+    if('DisplayLayout' in state){
+      current_display_layout = state.DisplayLayout;
+    }
+    else current_display_layout = xcontroller.GetDefaultDisplayLayout();
   }
 
   xcontroller.Refresh = function(){
@@ -693,13 +712,13 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xsearch.GetValues();
     var searchitems = JSON.parse(JSON.stringify(xsearch.Data.Items));
     var has_search_items = false;
-    _.each(searchitems,function(val){ 
-      if(val.Value.trim() != '') has_search_items = true; 
-      if((val.Comparison == 'null')||(val.Comparison == 'notnull')) has_search_items = true; 
+    _.each(searchitems,function(val){
+      if(val.Value.trim() != '') has_search_items = true;
+      if((val.Comparison == 'null')||(val.Comparison == 'notnull')) has_search_items = true;
     });
-    //if (val.trim() != '') 
+    //if (val.trim() != '')
     var sjson = '';
-    if(has_search_items){ 
+    if(has_search_items){
       sjson = JSON.stringify(searchitems);
     }
     xgrid.State.Search = searchitems;
@@ -769,6 +788,75 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh.$root('.xtitlecaption'+xmodel.class).hide();
     }
     jsh.$root('.xtitlecaption'+xmodel.class+' a').text(txt);
+  }
+  
+  xcontroller.HideColumn = function(field_name){
+    if(!xgrid.Prop.isInlinePopup) if(jsh.XPage.onGridExit(null, function(){ xcontroller.HideColumn(field_name); })) return;
+    var display_layout = xcontroller.GetDisplayLayout();
+    if(!display_layout) return XExt.Alert('No display layout selected');
+    for(var i=0; i<display_layout.columns.length; i++){
+      if(display_layout.columns[i].name == field_name){
+        display_layout.columns.splice(i, 1);
+        i--;
+      }
+    }
+    xcontroller.SetDisplayLayout();
+  }
+
+  xcontroller.SetDisplayLayout = function(display_layout) {
+    if(!display_layout) display_layout = xcontroller.GetDisplayLayout();
+    current_display_layout = display_layout;
+    xcontroller.Refresh();
+    xgrid.State.DisplayLayout = display_layout;
+    jsh.XPage.AddHistory();
+  }
+
+  xcontroller.UpdateDisplayLayoutColumnHeaders = function(){
+    var display_layout = xcontroller.GetDisplayLayout();
+    jsh.$('.xform<%=model.class%> th').not('.static').each(function () {
+      var field_name= $(this).data('field');
+      if(field_name && XExt.isDisplayLayoutColumnHidden(field_name, display_layout, xmodel.fields)){
+        jshInstance.$('.xform<%=model.class%> th.thead'+field_name).addClass('tdhidden');
+      }
+      else {
+        jshInstance.$('.xform<%=model.class%> th.thead'+field_name).removeClass('tdhidden');
+      }
+    });
+  }
+
+  xcontroller.GetDisplayLayout = function(){
+    if(!xmodel.display_layouts) return undefined;
+    return current_display_layout;
+  }
+
+  xcontroller.GetDefaultDisplayLayout = function(){
+    if(xmodel.display_layouts && xmodel.current_display_layout_name){
+      return JSON.parse(JSON.stringify(xmodel.display_layouts[xmodel.current_display_layout_name]));
+    }
+    return undefined;
+  }
+
+  xcontroller.ManageColumns = function(){
+    if(!xgrid.Prop.isInlinePopup) if(jsh.XPage.onGridExit(null, function(){ xcontroller.ManageColumns(); })) return;
+    var html = jsh.$root('.xgrid_template_manage_columns_'+xmodel.class).html();
+    html = XExt.renderEJS(html, modelid);
+    var sel = '.xgrid_manage_columns_'+xmodel.class;
+    XExt.CustomPrompt(sel, html, function () { //onInit
+    }, function (success) { //onAccept
+      var column_checkboxes = jshInstance.$(sel + ' .display_layout_columns input');
+      var columns = [];
+      _.each(column_checkboxes, function(column_checkbox){
+        var jobj = $(column_checkbox);
+        if(jobj.prop('checked')) {
+          columns.push( {name:jobj.val()});
+        }
+      });
+      xcontroller.SetDisplayLayout({
+        title: (current_display_layout ? current_display_layout.title: ''),
+        columns: columns
+      });
+      success();
+    });
   }
 
 })(<%-instance%>);

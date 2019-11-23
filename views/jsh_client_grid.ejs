@@ -1,4 +1,5 @@
 <%-jsh.RenderView('jsh_embed.js',ejsparams)%>
+
 <div class="xbodyhead xelem<%=model.class%>">
 <% if(model.topmost) { %><!--%%%EJSPREPEND%%%--><% } %>
 <% if(!model.topmost && (model.title !== undefined)) { %>
@@ -22,7 +23,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
 </div>
 <div data-id="<%=model.id%>" class="xsearch xsearch_<%=model.class%>"></div>
 <script class="xsearch_template_<%=model.class%>" type="text/x-ejs-template">
-  <%% 
+  <%%
     var comparison_string = [];
     <%-instance%>.XExt.pushLOV(comparison_string,'contains','Contains');
     <%-instance%>.XExt.pushLOV(comparison_string,'notcontains','Does Not Contain');
@@ -79,7 +80,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           <select class="xsearch_comparison" onchange="<%-js('xmodel.controller.SearchComparisonChange();')%>" style="display:none;">
           </select>
         <%% } %%>
-      </div>&nbsp; 
+      </div>&nbsp;
       <input type="text" class="xsearch_value <%%=xejs.iif((selected_column && (selected_column.comparison_type=='date')),'datepicker')%%>" value="<%%=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'',data.Items[i].Value)%%>" onkeyup="<%-js('xmodel.controller.SearchKeyUp(event);')%>" style="<%%=xejs.iif((data.Items[i].Comparison=='null')||(data.Items[i].Comparison=='notnull'),'visibility:hidden;')%%>" />
         <%% if(i==(data.Items.length-1)){ %%>
         <a class="xsearch_apply" href="#" style="width:80px;" onclick="<%-js('xmodel.controller.RunSearch();')%>"><img src="<%-jsh._PUBLICURL%>images/icon_search.png" alt="Search" title="Search" />GO</a>
@@ -92,9 +93,34 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
     </div>
   <%% } %%>
 </script>
+<script class="xgrid_template_manage_columns_<%=model.class%>" type="text/x-ejs-template">
+  <div class="xdialogbox xpromptbox xgrid_manage_columns_<%=model.class%>" style="width:260px;">
+    <h3>Display columns:</h3>
+    <div align="left" style="padding-top:8px;">
+      <div class="display_layout_columns" style="max-height: 170px; overflow: auto;">
+        <%%
+        var current_display_layout = xmodel.controller.GetDisplayLayout();
+        var current_display_layout_column_names = [];
+        _.each(current_display_layout.columns, function(column){ current_display_layout_column_names[column.name] = 1; });
+        _.each(xmodel.fields, function(field){
+          if (!XExt.hasAction(field.actions,'B') || (field.control == 'hidden')) return;
+          %%>
+          <label><input type="checkbox" name="<%%=field.name%%>" value="<%%=field.name%%>" <%% if(current_display_layout_column_names[field.name]){ %%> checked <%% } %%>> <%%=field.caption_ext||field.caption%%></label><br>
+          <%%
+        });
+        %%>
+      </div>
+      <div style="text-align:center;"><input type="button" value="Save" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div>
+    </div>
+  </div>
+</script>
 <div class="xcontext_menu search_context_<%=model.class%>">
-  <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchAdd(jsh.xContentMenuItemData); return false;')%>"><img src="<%-jsh._PUBLICURL%>images/icon_add.png" />Add Search Item</a>
-  <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchRemove(jsh.xContentMenuItemData); return false;')%>"><img src="<%-jsh._PUBLICURL%>images/icon_remove.png" />Remove</a>
+  <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchAdd(jsh.xContextMenuItemData); return false;')%>"><img src="<%-jsh._PUBLICURL%>images/icon_add.png" />Add Search Item</a>
+  <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchRemove(jsh.xContextMenuItemData); return false;')%>"><img src="<%-jsh._PUBLICURL%>images/icon_remove.png" />Remove</a>
+</div>
+<div class="xcontext_menu xgrid_column_header_context_<%=model.class%>">
+  <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.HideColumn(jsh.xContextMenuItem); return false;')%>"><img src="/images/icon_design2.png" />Hide this column</a>
+  <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.ManageColumns(); return false;')%>"><img src="/images/icon_design.png" />Manage Columns</a>
 </div>
 </div><!-- .xbodyhead -->
   <% if(!model.templates.grid){ %>
@@ -102,19 +128,21 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
     <thead>
       <tr>
         <% if(model.inlinepopup){ %><th style="text-align:center;" nowrap>Select</th><% } %>
-        <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
+        <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i];
           if(!('caption' in field)) continue;
           if(('actions' in field)){
             if(!XExt.hasAction(field.actions,'BIU')) continue;
           }
           else if (!('html' in field)) continue; 
           var fieldclass = '';
-          if(field.control && (field.control=='hidden')) fieldclass += 'tdhidden';
+          if(field.control=='hidden'){ fieldclass += ' static tdhidden '; }
+          else if((field.control=='html') && ('value' in field)){ fieldclass += ' static '; }
+          else if(model.current_display_layout_name && XExt.isDisplayLayoutColumnHidden(field.name, model.display_layouts[model.current_display_layout_name])){ fieldclass += ' tdhidden '; }
           %>
-        <th nowrap class="<%=field.sortclass%> thead<%=field.name%> <%=field.captionclass%> <%=fieldclass%>" style="<%=field.captionstyle%>"><% if(field.disable_sort||(field.type=='file')||field.unbound){ %><%=field.caption%><% } else { %><a href="#" onClick="<%-js('return xmodel.controller.Sort(this, \''+XExt.escapeHTML((field.lov && !field.lov.showcode)?('__'+jsh.uimap.code_txt+'__'+field.name):field.name)+'\');')%>"><%=field.caption%></a><% } %></th>
+        <th nowrap class="<%=field.sortclass%> thead<%=field.name%> <%=field.captionclass%> <%=fieldclass%>" style="<%=field.captionstyle%>" data-field="<%=field.name%>"><% if(field.disable_sort||(field.type=='file')||field.unbound){ %><%=field.caption%><% } else { %><a href="#" onClick="<%-js('return xmodel.controller.Sort(this, \''+XExt.escapeHTML((field.lov && !field.lov.showcode)?('__'+jsh.uimap.code_txt+'__'+field.name):field.name)+'\');')%>"><%=field.caption%></a><% } %></th>
         <% } %>
-        <%-xejs.iif(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'I'),'<th class="xgrid_action_thead duplicate"></th>')%>
-        <%-xejs.iif(model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'D'),'<th class="xgrid_action_thead delete"></th>')%>
+        <%-xejs.iif(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'I'),'<th class="xgrid_action_thead duplicate static"></th>')%>
+        <%-xejs.iif(model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'D'),'<th class="xgrid_action_thead delete static"></th>')%>
       </tr>
     </thead>
     <tbody class="xgrid_<%=model.class%>_placeholder"></tbody>
@@ -122,7 +150,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
       <%% for(var j=0;j<datatable.length;j++){ var datarow=datatable[j]; var data = datarow; if((typeof startrowid == 'undefined') || (startrowid === null)) startrowid = j; var rowid = startrowid + j %%>
       <tr class="<%%=(rowid%2==1?'even':'odd')%%> <%-model.rowclass%> xrow_<%=model.class%> xrow" style="<%-model.rowstyle%>" data-id="<%%=rowid%%>">
         <% if(model.inlinepopup){ %><td align="center"><a href="#" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this); return false;">Select</a></td><% } %>
-        <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
+        <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i];
           if(!('caption' in field)) continue;
           if(('actions' in field)){
             if(!XExt.hasAction(field.actions,'BIU')) continue;
@@ -134,7 +162,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           if(field.control && (field.control=='hidden')) fieldclass += 'tdhidden';
           var maxlength = XExt.getMaxLength(field);
           %>
-          <td style="<%-field.cellstyle%>" class="<%-field.cellclass%> <%=xejs.iif(field.control=='checkbox','xcheckbox_column')%> <%=xejs.iif(field.popuplov,'xpopuplov_column')%> <%=fieldclass%>"><% 
+          <td style="<%-field.cellstyle%>" class="<%-field.cellclass%> <%=xejs.iif(field.control=='checkbox','xcheckbox_column')%> <%=xejs.iif(field.popuplov,'xpopuplov_column')%> <%=fieldclass%>  <%% if(XExt.isDisplayLayoutColumnHidden('<%=field.name%>', xmodel.controller.GetDisplayLayout(), xmodel.fields)) { %%> tdhidden  <%% } %%>"><% 
         if((field.control=='label') || (field.control=='html')){
           if(('link' in field) && (XExt.beginsWith(field.link,'#select'))){ %><a href="<%-field.link%>" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this);return false;" ><% }
           else if('link' in field){ %><a data-url="<%-field.link%>" href="<%-XExt.replaceTempEJSTags(field.link)%>" class="xform_link" onclick="<%-js(field.link_onclick)%>"><% }

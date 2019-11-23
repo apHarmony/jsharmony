@@ -366,6 +366,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //If error/warning/notice begins with "Application Warning - " we will show the warning message
     //If error/warning/notice has the format "Execute Form - MESSAGE //C?c_id=1" we will show the message and open the form
   ],
+  "display_layouts": {
+    "standard": {
+      "title": "Standard",
+      "columns": [
+        "column_name_1",
+        "column_name_2"
+         //HTML columns with field.value are always displayed
+         //Columns with field.control="hidden" are never displayed
+      ]
+    }
+  },
   "source_files_prefix": "AUDL", //Prefix for source file extensions (prefix.ejs, prefix.js, ... )
   //Auto-generated
   "_inherits": ["CL_X","CL"] //Array of parent models

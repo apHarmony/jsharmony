@@ -548,6 +548,7 @@ BODY
   color:#000;
   position:relative;
   cursor:pointer; cursor:hand;
+  white-space:nowrap;
 }
 <%-rootcss%> .xcontext_menu img {
   height:12px;
