@@ -250,7 +250,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
               if(link_parsed.action=='insert'){
                 link_bindings = jsh.AddAutomaticBindings(model, link_bindingObj, 'Button '+(link_text||link_target), { req: req, bindType: 'nonKeyFields', additionalFields: link_binding_additionalFields });
               }
-              else{
+              else {
                 link_bindings = jsh.AddAutomaticBindings(model, link_bindingObj, 'Button '+(link_text||link_target), { req: req, bindType: 'childKey' });
               }
             }
@@ -517,7 +517,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
           rslt.current_display_layout_name = undefined;
           rslt.display_layouts = undefined;
         }
-        else{
+        else {
           var field_names = [];
           _.each(rslt.fields, function(field){ if(field.name) field_names.push(field.name); });
           if(model.display_layouts){
@@ -537,10 +537,10 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
               if(!rslt.current_display_layout_name) rslt.current_display_layout_name = display_layout_name;
             }
           }
-          else{ //Generate a "standard" current_display_layout_name
+          else { //Generate a "standard" current_display_layout_name
             var default_columns = [];
             _.each(rslt.fields,function(field){
-              if(Helper.hasAction(field.actions,"B") && (field.control !== "hidden") && field.caption) default_columns.push({"name":field.name});
+              if(Helper.hasAction(field.actions,"B") && (field.control !== "hidden")) default_columns.push({"name":field.name});
             });
             rslt.display_layouts = {
               "standard": {

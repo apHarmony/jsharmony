@@ -105,7 +105,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
         _.each(xmodel.fields, function(field){
           if (!XExt.hasAction(field.actions,'B') || (field.control == 'hidden')) return;
           %%>
-          <label><input type="checkbox" name="<%%=field.name%%>" value="<%%=field.name%%>" <%% if(current_display_layout_column_names[field.name]){ %%> checked <%% } %%>> <%%=field.caption_ext||field.caption%%></label><br>
+          <label><input type="checkbox" name="<%%=field.name%%>" value="<%%=field.name%%>" <%% if(current_display_layout_column_names[field.name]){ %%> checked <%% } %%>> <%%=field.caption_ext||field.caption||field.name%%></label><br>
           <%%
         });
         %%>
