@@ -92,6 +92,7 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && !('
     jsh.$root('.xelem'+xmodel.class).keyup(function(){ if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this); });
     jsh.$root('.xelem'+xmodel.class+'.dropdown').change(function(){ if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this); });
     jsh.$root('.xelem'+xmodel.class+'.checkbox').change(function(){ if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this); });
+    jsh.$root('.xelem'+xmodel.class+'.xtagbox_base').on('input', function(){ if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this); });
 
     <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if((field.control=='date') && (XExt.hasAction(field.actions,'IU'))) {%>
     jsh.$root(".<%=field.name%>.xelem"+xmodel.class).datepicker({ changeMonth: true, changeYear: true, dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||jsh.DEFAULT_DATEFORMAT), onSelect: function(){ if(jsh.is_insert) return; xform.Data.OnControlUpdate(this); } });

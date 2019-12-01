@@ -186,6 +186,10 @@ BODY
   vertical-align:top;
   padding-top:6px;
 }
+<%-rootcss%> .xform_caption_tagbox {
+  vertical-align:top;
+  padding-top:8px;
+}
 <%-rootcss%> .xform_caption_checkbox {
   cursor: default;
   user-select: none;
@@ -322,7 +326,8 @@ BODY
 <%-rootcss%> select.uneditable.updated, 
 <%-rootcss%> textarea.uneditable.updated,
 <%-rootcss%> .xform_label.updated,
-<%-rootcss%> .xform_html.updated
+<%-rootcss%> .xform_html.updated,
+<%-rootcss%> .xtagbox.updated
 {
 	background-color:#faf8c2;
 }
@@ -524,6 +529,59 @@ BODY
   left:-1px;
   margin-right:0px;
   margin-left:7px;
+}
+<%-rootcss%> .xtagbox {
+  display:none;
+  border:1px solid #bfbfbf;
+  box-shadow: 0 1px rgba(0,0,0,0.1) inset;
+  box-sizing: border-box;
+  width:350px;
+  vertical-align:top;
+  cursor: text;
+  padding:1px 3px;
+  min-height:35px;
+}
+<%-rootcss%> .xtagbox span {
+  display:inline-block;
+  vertical-align:top;
+  background-color:#999;
+  color:#fff;
+  border-radius:3px;
+  padding:3px 6px 2px 8px;
+  margin:3px 3px;
+  box-shadow: 0 1px rgba(0,0,0,0.1);
+  cursor:default;
+}
+<%-rootcss%> .xtag_remove {
+  display:inline-block;
+  position:relative;
+  font-size:7px !important;
+  top:-6px;
+  left:2px;
+  cursor: pointer;
+}
+<%-rootcss%> .xtag_input,
+<%-rootcss%> .xform .xtag_input,
+<%-rootcss%> .xtbl td .xtag_input {
+  vertical-align:top;
+  border:none;
+  background-color:transparent;
+  box-shadow:none;
+  border-width:0;
+  width:auto;
+  margin:6px 3px 2px 3px;
+  padding:0 0 0 5px;
+}
+<%-rootcss%> .xtag_input.inactive,
+<%-rootcss%> .xform .xtag_input.inactive,
+<%-rootcss%> .xtbl td .xtag_input.inactive {
+  width:0px;
+  height:0px;
+  margin:0;
+  padding:0;
+}
+<%-rootcss%> .xtag_input:focus {
+  outline: none;
 }
 <%-rootcss%> .xpopup .xpanel {
   overflow:auto;

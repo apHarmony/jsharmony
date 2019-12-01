@@ -119,7 +119,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   router.get('/application.js', function (req, res) {
-    HelperFS.outputContent(req, res, jsh.Cache['application.js'],'text/javascript');
+    HelperFS.outputContent(req, res, jsh.Cache['application.js'], 'text/javascript');
   });
   for (var i = 0; i < siteConfig.private_apps.length; i++) {
     var app = siteConfig.private_apps[i];

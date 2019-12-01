@@ -84,14 +84,15 @@ jsHarmonyModuleTransform.prototype.Validate = function(){
   });
 }
 
-jsHarmonyModuleTransform.prototype.Add = function(transform){
+jsHarmonyModuleTransform.prototype.Add = function(transform, options){
   var _this = this;
+  options = _.extend({ force: false }, options);
 
   if(!transform) return;
   _.each(['tables','fields','models','sql'], function(elem){
     if(transform[elem]){
       for(var prop in transform[elem]){
-        if(!(prop in _this[elem])){
+        if(!options.force && !(prop in _this[elem])){
           var errmsg = 'Error adding ' + (_this.module.name||_this.module.typename) + ' transform: Invalid ' + elem + ' property: '+prop;
           if(_this.module.jsh) _this.module.jsh.Log.error(errmsg);
           else throw new Error(errmsg);

@@ -317,7 +317,6 @@ exports = module.exports = function(jsh){
     var _this = this;
     _this.scrollFunc = function () {
       var pastBottom = ((jsh.$(_this.ScrollControl).outerHeight() + jsh.$(_this.ScrollControl).scrollTop()) >= jsh.$(_this.ScrollControl).get(0).scrollHeight);
-      //console.log((jsh.$(_this.ScrollControl).outerHeight()+jsh.$(_this.ScrollControl).scrollTop()) + ">=" + jsh.$(_this.ScrollControl).get(0).scrollHeight);
       if (!_this.scrolledPastBottom && pastBottom) {
         callback(jsh.$(_this.ScrollControl).height() + jsh.$(_this.ScrollControl).scrollTop());
         _this.scrolledPastBottom = true;

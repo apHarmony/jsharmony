@@ -37,6 +37,7 @@ for(var i=0;i<model.fields.length;i++){
     else if(field.control=='htmlarea') captionclass += ' xform_caption_htmlarea';
     else if(field.control=='image') captionclass += ' xform_caption_image';
     else if(field.control=='checkbox') captionclass += ' xform_caption_checkbox';
+    else if(field.control=='tagbox') captionclass += ' xform_caption_tagbox';
     if(('caption' in field) && (field.caption)) { 
       var caption_onclick = '';
       var captioncolon = '';
@@ -81,6 +82,7 @@ for(var i=0;i<model.fields.length;i++){
   }
   if(field.control=='textbox'){ %><input data-id="<%=field.name%>" type="<%=xejs.getInputType(field)%>" value="<%-xejs.GetValue(field, model)%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" <%-xejs.iif(maxlength >= 0,'maxlength="'+maxlength+'"')%> /><% }
   if(field.control=='textzoom'){ %><textarea data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xform_ctrl_textzoom xelem<%=model.class%> <%=field.controlclass%>"><%-xejs.GetValue(field, model)%></textarea><a href="#" class="xform_ctrl xtextzoom icon" onclick="var jctrl = <%-instance%>.$(this).prev('.<%=field.name%>'); <%-instance%>.XExt.ZoomEdit(jctrl.val(),'<%=field.caption_ext||field.caption%>',{readonly:!jctrl.hasClass('editable')},function(rslt){ <%-instance%>.XExt.setFormControl(<%-instance%>.XExt.getForm('<%=model.id%>'),'<%=field.name%>',rslt); jctrl.focus(); }); return false;"><img src="<%-jsh._PUBLICURL%>images/icon_search.png" height="14" /></a><% }
+  if(field.control=='tagbox'){ %><div style="<%=field.controlstyle%>" class="<%=field.name%>_editor xtagbox xform_ctrl xelem<%=model.class%> <%=field.controlclass%>"></div><input type="text" data-id="<%=field.name%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> xtagbox_base" value="<%-xejs.GetValue(field, model)%>" /><% }
   if(field.control=='password'){ %><input data-id="<%=field.name%>" type="password" value="<%-xejs.GetValue(field, model)%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> <%=field.controlclass%>" /><% }
   if(field.control=='dropdown'){ %><select data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> dropdown <%=field.controlclass%>"><option><%-xejs.GetValue(field, model)%></option></select><% }
   if(field.control=='date'){ %><input data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> datepicker <%=field.controlclass%>" value="<%-xejs.GetValue(field, model)%>" maxlength="10" /><% }

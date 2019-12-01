@@ -31,7 +31,7 @@ module.exports = exports = {};
 |    LOAD MODELS   |
 *******************/
 
-var BASE_CONTROLS = ['label', 'html', 'textbox', 'textzoom', 'dropdown', 'date', 'textarea', 'htmlarea', 'hidden', 'subform', 'html', 'password', 'file_upload', 'file_download', 'button', 'linkbutton', 'tree', 'checkbox','image'];
+var BASE_CONTROLS = ['label', 'html', 'textbox', 'textzoom', 'dropdown', 'date', 'textarea', 'htmlarea', 'hidden', 'subform', 'html', 'password', 'file_upload', 'file_download', 'button', 'linkbutton', 'tree', 'checkbox','image','tagbox'];
 var BASE_DATATYPES = ['DATETIME','VARCHAR','CHAR','BOOLEAN','BIGINT','INT','SMALLINT','TINYINT','DECIMAL','FLOAT','DATE','DATETIME','TIME','ENCASCII','HASH','FILE','BINARY'];
 
 //Get array of all model folders
@@ -1678,7 +1678,7 @@ exports.ParseEntities = function () {
       if(field.actions && field.name && !('type' in field) && !('value' in field) && (field.control != 'subform') && !field.unbound) _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Missing field.type property.  Set field.value or field.unbound if it should not be bound to the data layer.');
       if(field.block && (model.layout=='grid' || model.layout=='multisel')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Model.layout='+model.layout+' does not support the field.block property');
       if(!field.block && (field.blockstyle || field.blockclass)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Field.block must be set to true in order to use the field.blockstyle or field.blockclass properties');
-      if(field.control && (model.layout=='grid') && !_.includes(['hidden','label','html','textbox','textzoom','password','date','textarea','dropdown','checkbox','button','linkbutton','file_download','image'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support ' + field.control + ' control');
+      if(field.control && (model.layout=='grid') && !_.includes(['hidden','label','html','textbox','textzoom','password','date','textarea','dropdown','checkbox','button','linkbutton','file_download','image','tagbox'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support ' + field.control + ' control');
       if(field.control && (model.layout=='multisel') && !_.includes(['hidden','label'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Multisel does not support ' + field.control + ' control');
       if(field.unbound && (model.layout=='multisel') && !_.includes(['hidden','label'],field.control)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Multisel does not support unbound controls');
       if(!model.unbound && field.unbound && field.type) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Unbound fields should not have a field.type property');

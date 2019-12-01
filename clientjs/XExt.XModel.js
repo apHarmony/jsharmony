@@ -93,6 +93,9 @@ exports = module.exports = function(jsh){
       }
       //Put data into the form
       _.each(this.Fields, function (field) {
+        if(field.control=='tagbox'){
+          jsh.XExt.TagBox_Render(parentobj.find('.'+field.name+'_editor.xtagbox'+'.xelem'+xmodel.class), parentobj.find('.'+field.name+'.xelem'+xmodel.class));
+        }
         XExtXModel.RenderField(_this, parentobj, modelid, field);
       });
       if (xmodel.layout == 'form-m') {
@@ -270,6 +273,10 @@ exports = module.exports = function(jsh){
         jctrl.val(val);
       }
     }
+    else if (('control' in field) && (field.control == 'tagbox')) {
+      jctrl.val(val);
+      jsh.XExt.TagBox_Refresh(parentobj.find('.'+field.name+'_editor.xtagbox'+'.xelem'+xmodel.class), jctrl);
+    }
     else{
       jctrl.val(val);
     }
@@ -320,12 +327,14 @@ exports = module.exports = function(jsh){
             if (!jobj.hasClass('updated')) {
               jobj.addClass('updated');
               if(jobj.parent().hasClass('xform_checkbox_container')) jobj.parent().addClass('updated');
+              if(field.control=='tagbox') jobj.prev().addClass('updated');
             }
           }
           else {
             if (jobj.hasClass('updated')) {
               jobj.removeClass('updated');
               if (jobj.parent().hasClass('xform_checkbox_container')) jobj.parent().removeClass('updated');
+              if(field.control=='tagbox') jobj.prev().removeClass('updated');
             }
           }
         }

@@ -816,10 +816,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     jsh.$('.xform<%=model.class%> th').not('.static').each(function () {
       var field_name= $(this).data('field');
       if(field_name && XExt.isDisplayLayoutColumnHidden(field_name, display_layout, xmodel.fields)){
-        jshInstance.$('.xform<%=model.class%> th.thead'+field_name).addClass('tdhidden');
+        jsh.$('.xform<%=model.class%> th.thead'+field_name).addClass('tdhidden');
       }
       else {
-        jshInstance.$('.xform<%=model.class%> th.thead'+field_name).removeClass('tdhidden');
+        jsh.$('.xform<%=model.class%> th.thead'+field_name).removeClass('tdhidden');
       }
     });
   }
@@ -843,7 +843,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var sel = '.xgrid_manage_columns_'+xmodel.class;
     XExt.CustomPrompt(sel, html, function () { //onInit
     }, function (success) { //onAccept
-      var column_checkboxes = jshInstance.$(sel + ' .display_layout_columns input');
+      var column_checkboxes = jsh.$(sel + ' .display_layout_columns input');
       var columns = [];
       _.each(column_checkboxes, function(column_checkbox){
         var jobj = $(column_checkbox);

@@ -6457,9 +6457,15 @@ exports = module.exports = function(jsh){
   //Leave e to null if not calling from a focus event handler
   XEditableGrid.prototype.SetFocus = function (obj, e, onComplete) {
     if (jsh.xDialog.length) return;
-    if (!$(obj).hasClass('editable')) return;
-    if (obj instanceof jshInstance.$) throw new Error('SetFocus obj must not be a jquery object');
-    return this.ControlEnter(obj, e, function(){
+    var containerobj = obj;
+    if (!$(obj).hasClass('editable')){
+      if($(obj).hasClass('xtag_focusable')){
+        containerobj = $(obj).closest('.xtagbox').next()[0];
+      }
+      else return;
+    }
+    if (obj instanceof jsh.$) throw new Error('SetFocus obj must not be a jquery object');
+    return this.ControlEnter(containerobj, e, function(){
       if (!e && document.hasFocus && document.hasFocus()) $(obj).focus();
       if(onComplete) onComplete();
     });
@@ -6481,6 +6487,11 @@ exports = module.exports = function(jsh){
         jobj.focus(function (e) { return _this.SetFocus(this, e); });
       }
       jobj.change(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
+      if(_.includes(classList,'xtagbox_base')){
+        jobj.on('input', function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
+        //jobj.prev().find('input').focus(function (e) { return _this.SetFocus(this, e); });
+        jsh.XExt.TagBox_Focus(jobj.prev(), function(e){ return _this.SetFocus(this, e); });
+      }
       if(_.includes(classList, 'editable')) if(_.includes(classList,'checkbox')) jobj.click(function (e) { return _this.CheckboxUpdate(this, e); });
       if(_.includes(classList,'datepicker') && _.includes(classList,'editable')){
         var ctrl = this;
@@ -6528,6 +6539,7 @@ exports = module.exports = function(jsh){
         if (!jobj.hasClass('editable')) return;
         jobj.addClass('updated');
         if(jobj.parent().hasClass('xform_checkbox_container')) jobj.parent().addClass('updated');
+        if(jobj.hasClass('xtagbox_base')) jobj.prev().addClass('updated');
       });
     }
   }
@@ -6630,6 +6642,9 @@ exports = module.exports = function(jsh){
       }
       //Put data into the form
       _.each(this.Fields, function (field) {
+        if(field.control=='tagbox'){
+          jsh.XExt.TagBox_Render(parentobj.find('.'+field.name+'_editor.xtagbox'+'.xelem'+xmodel.class), parentobj.find('.'+field.name+'.xelem'+xmodel.class));
+        }
         XExtXModel.RenderField(_this, parentobj, modelid, field);
       });
       if (xmodel.layout == 'form-m') {
@@ -6807,6 +6822,10 @@ exports = module.exports = function(jsh){
         jctrl.val(val);
       }
     }
+    else if (('control' in field) && (field.control == 'tagbox')) {
+      jctrl.val(val);
+      jsh.XExt.TagBox_Refresh(parentobj.find('.'+field.name+'_editor.xtagbox'+'.xelem'+xmodel.class), jctrl);
+    }
     else{
       jctrl.val(val);
     }
@@ -6857,12 +6876,14 @@ exports = module.exports = function(jsh){
             if (!jobj.hasClass('updated')) {
               jobj.addClass('updated');
               if(jobj.parent().hasClass('xform_checkbox_container')) jobj.parent().addClass('updated');
+              if(field.control=='tagbox') jobj.prev().addClass('updated');
             }
           }
           else {
             if (jobj.hasClass('updated')) {
               jobj.removeClass('updated');
               if (jobj.parent().hasClass('xform_checkbox_container')) jobj.parent().removeClass('updated');
+              if(field.control=='tagbox') jobj.prev().removeClass('updated');
             }
           }
         }
@@ -7275,6 +7296,147 @@ exports = module.exports = function(jsh){
     //Apply prevval
     var lov_matches = ctrl.children('option').filter(function () { return String($(this).val()).toUpperCase() == String(prevval).toUpperCase(); }).length;
     if (lov_matches > 0) ctrl.val(prevval);
+  }
+
+  XExt.TagBox_Refresh = function(jctrl, jbaseinputctrl){
+    jctrl.find('span').remove();
+    XExt.TagBox_AddTags(jctrl, jbaseinputctrl, jbaseinputctrl.val().split(','));
+  }
+
+  XExt.TagBox_Save = function(jctrl, jbaseinputctrl){
+    var tags = [];
+    jctrl.children('span').each(function(){
+      tags.push($(this).data('val'));
+    });
+    var prevval = jbaseinputctrl.val();
+    jbaseinputctrl.val(tags.join(', '));
+    if(jbaseinputctrl.val()!=prevval) jbaseinputctrl.trigger('input');
+  }
+
+  XExt.TagBox_Focus = function(jctrl, onFocus){
+    jctrl.on('click_remove', function(tmp_e, e){
+      onFocus.call(this, e);
+    });
+    jctrl.find('.xtag_input').on('focus', function(e){
+      onFocus.call(this, e);
+    });
+    jctrl.on('click', function(e){
+      onFocus.call(this, e);
+    });
+  }
+
+  XExt.TagBox_AddTags = function(jctrl, jbaseinputctrl, new_tags){
+
+    var addTag = function(val){
+      val = val.trim();
+      if(!val.length) return;
+      var jnew = $('<span class="notextselect">'+XExt.escapeHTML(val)+'	&#8203;<div class="xtag_remove xtag_focusable">✕</div></span>');
+      jnew.data('val', val)
+      jctrl.find('.xtag_input').before(jnew);
+
+      jnew.find('.xtag_remove').on('click', function(e){
+        jctrl.trigger('click_remove', [e]);
+        if(e.isPropagationStopped()||e.isImmediatePropagationStopped()) return;
+        jctrl.find('.xtag_input').blur();
+        $(this).closest('span').remove();
+        XExt.TagBox_Save(jctrl, jbaseinputctrl);
+      });
+    }
+
+    _.each(new_tags, function(tag){ addTag(tag); });
+    XExt.TagBox_Save(jctrl, jbaseinputctrl);
+  }
+
+  XExt.TagBox_Render = function(jctrl, jbaseinputctrl){
+    jbaseinputctrl.hide();
+    jctrl.empty();
+    jctrl.off('click');
+
+    jctrl.css('display','inline-block');
+    jctrl.addClass('xtag_focusable');
+    jctrl.append('<input class="xtag_input inactive xtag_focusable" />');
+
+    var jinput = jctrl.find('.xtag_input');
+
+    jctrl.on('click', function(){
+      if(jinput.hasClass('inactive')){
+        jinput.val('');
+        jinput[0].parentNode.insertBefore(jinput[0], null);
+        jinput.focus();
+      }
+    });
+
+    if(jbaseinputctrl.data('id')) jinput.data('id', jbaseinputctrl.data('id'));
+
+    jinput.on('input', function(e){
+      var val = $(this).val();
+      if(val.indexOf(',')>=0){ $(this).val(''); XExt.TagBox_AddTags(jctrl, jbaseinputctrl, val.split(',')); }
+      $(this).attr('size',Math.round(($(this).val()||'').toString().length/.87));
+    });
+
+    var isMovingInput = false;
+
+    jinput.on('keydown', function(e){
+      var obj = this;
+      var jobj = $(obj);
+      var handled = false;
+      isMovingInput = false;
+
+      var cursorpos = 0;
+      var sel = XExt.getSelection(obj);
+      if(sel) cursorpos = sel.start;
+
+      if(e.which==39){ //Right
+        if(jobj.next().length && (cursorpos==jobj.val().length)){
+          handled = true;
+          var objnextnext = null;
+          if(jobj.next().next().length) objnextnext = jobj.next().next()[0];
+          isMovingInput = true;
+          jobj[0].parentNode.insertBefore(jobj[0], objnextnext);
+          jobj.focus();
+          isMovingInput = false;
+        }
+      }
+      else if(e.which==37){ //Left
+        if(jobj.prev().length && (cursorpos==0)){
+          handled = true;
+          var objprev = jobj.prev()[0];
+          isMovingInput = true;
+          jobj[0].parentNode.insertBefore(jobj[0], objprev);
+          jobj.focus();
+          isMovingInput = false;
+        }
+      }
+      else if(e.which==8){ //Backspace
+        if(jobj.prev().length && (cursorpos==0)){
+          handled = true;
+          jobj.prev().remove();
+          XExt.TagBox_Save(jctrl, jbaseinputctrl);
+        }
+      }
+      else if(e.which==13){ //Backspace
+        var val = $(this).val();
+        $(this).val('');
+        XExt.TagBox_AddTags(jctrl, jbaseinputctrl, [val]);
+      }
+      if(handled){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    });
+
+    jinput.on('focus', function(){
+      $(this).removeClass('inactive');
+    });
+
+    jinput.on('focusout', function(){
+      if(isMovingInput) return;
+      var val = $(this).val();
+      $(this).val('');
+      XExt.TagBox_AddTags(jctrl, jbaseinputctrl, [val]);
+      $(this).addClass('inactive');
+    });
   }
 
   XExt.CancelBubble = function (e) {
@@ -10621,7 +10783,6 @@ exports = module.exports = function(jsh){
     var _this = this;
     _this.scrollFunc = function () {
       var pastBottom = ((jsh.$(_this.ScrollControl).outerHeight() + jsh.$(_this.ScrollControl).scrollTop()) >= jsh.$(_this.ScrollControl).get(0).scrollHeight);
-      //console.log((jsh.$(_this.ScrollControl).outerHeight()+jsh.$(_this.ScrollControl).scrollTop()) + ">=" + jsh.$(_this.ScrollControl).get(0).scrollHeight);
       if (!_this.scrolledPastBottom && pastBottom) {
         callback(jsh.$(_this.ScrollControl).height() + jsh.$(_this.ScrollControl).scrollTop());
         _this.scrolledPastBottom = true;

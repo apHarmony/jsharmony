@@ -292,9 +292,15 @@ exports = module.exports = function(jsh){
   //Leave e to null if not calling from a focus event handler
   XEditableGrid.prototype.SetFocus = function (obj, e, onComplete) {
     if (jsh.xDialog.length) return;
-    if (!$(obj).hasClass('editable')) return;
-    if (obj instanceof jshInstance.$) throw new Error('SetFocus obj must not be a jquery object');
-    return this.ControlEnter(obj, e, function(){
+    var containerobj = obj;
+    if (!$(obj).hasClass('editable')){
+      if($(obj).hasClass('xtag_focusable')){
+        containerobj = $(obj).closest('.xtagbox').next()[0];
+      }
+      else return;
+    }
+    if (obj instanceof jsh.$) throw new Error('SetFocus obj must not be a jquery object');
+    return this.ControlEnter(containerobj, e, function(){
       if (!e && document.hasFocus && document.hasFocus()) $(obj).focus();
       if(onComplete) onComplete();
     });
@@ -316,6 +322,11 @@ exports = module.exports = function(jsh){
         jobj.focus(function (e) { return _this.SetFocus(this, e); });
       }
       jobj.change(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
+      if(_.includes(classList,'xtagbox_base')){
+        jobj.on('input', function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
+        //jobj.prev().find('input').focus(function (e) { return _this.SetFocus(this, e); });
+        jsh.XExt.TagBox_Focus(jobj.prev(), function(e){ return _this.SetFocus(this, e); });
+      }
       if(_.includes(classList, 'editable')) if(_.includes(classList,'checkbox')) jobj.click(function (e) { return _this.CheckboxUpdate(this, e); });
       if(_.includes(classList,'datepicker') && _.includes(classList,'editable')){
         var ctrl = this;
@@ -363,6 +374,7 @@ exports = module.exports = function(jsh){
         if (!jobj.hasClass('editable')) return;
         jobj.addClass('updated');
         if(jobj.parent().hasClass('xform_checkbox_container')) jobj.parent().addClass('updated');
+        if(jobj.hasClass('xtagbox_base')) jobj.prev().addClass('updated');
       });
     }
   }
