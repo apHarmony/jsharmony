@@ -132,6 +132,7 @@ exports = module.exports = function(jsh){
       jctrl.find('.xtag_input').before(jnew);
 
       jnew.find('.xtag_remove').on('click', function(e){
+        if(jctrl.hasClass('uneditable')) return;
         jctrl.trigger('click_remove', [e]);
         if(e.isPropagationStopped()||e.isImmediatePropagationStopped()) return;
         jctrl.find('.xtag_input').blur();
@@ -174,6 +175,8 @@ exports = module.exports = function(jsh){
     var isMovingInput = false;
 
     jinput.on('keydown', function(e){
+      if(jctrl.hasClass('uneditable')) return;
+
       var obj = this;
       var jobj = $(obj);
       var handled = false;
@@ -229,9 +232,11 @@ exports = module.exports = function(jsh){
 
     jinput.on('focusout', function(){
       if(isMovingInput) return;
-      var val = $(this).val();
-      $(this).val('');
-      XExt.TagBox_AddTags(jctrl, jbaseinputctrl, [val]);
+      if(!jctrl.hasClass('uneditable')){
+        var val = $(this).val();
+        $(this).val('');
+        XExt.TagBox_AddTags(jctrl, jbaseinputctrl, [val]);
+      }
       $(this).addClass('inactive');
     });
   }
@@ -243,10 +248,14 @@ exports = module.exports = function(jsh){
     if(e.preventDefault) e.preventDefault();
   }
 
+  XExt.HideContextMenu = function () {
+    jsh.$root('.xcontext_menu').hide();
+  }
+
   XExt.ShowContextMenu = function (selector,context_item,data,options){
     options = _.extend({ top: jsh.mouseY, left: jsh.mouseX }, options);
     if (!selector) selector = '.xcontext_menu';
-    jsh.$root('.xcontext_menu').hide();
+    XExt.HideContextMenu();
     jsh.$root(selector).css('visibility', 'hidden');
     jsh.$root(selector).show();
     var xtop = options.top; var xleft = options.left;
@@ -271,6 +280,14 @@ exports = module.exports = function(jsh){
       jsh.xContextMenuVisible = true;
       jsh.xContextMenuItem = context_item;
       jsh.xContextMenuItemData = data;
+    }
+  }
+
+  XExt.jForEach = function(jctrls, f){
+    if(!jctrls || !jctrls.length) return;
+    if(jctrls.length==1) f(jctrls);
+    else {
+      for(var i=0;i<jctrls.length;i++) f($(jctrls[i]));
     }
   }
 
@@ -1633,6 +1650,7 @@ exports = module.exports = function(jsh){
       popup_options = {
         modelid: modelid,
         href: ".popup_" + fieldid + '.xelem' + parentmodelclass, inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, title: title, fixed: true,
+        //trapFocus: false,
         fadeOut:0,
         onOpen: function () {
           //When nested popUps are called, onOpen is not called

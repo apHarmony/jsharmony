@@ -87,15 +87,29 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   $(window).focus(function(){ jsh.FocusHandler(); });
 
-  $(document).focusin(function(){
+  $(document).focusin(function(e){
     //If a dialog is open, make sure focus is on an element in the top dialog
     if(jsh.xDialog.length){
       var newobj = document.activeElement;
       if(newobj && !($(newobj).closest(jsh.xDialog[0]).length)){
-        window.setTimeout(function(){ jsh.$root(jsh.xDialog[0] + ' input').first().focus(); },1);
+        window.setTimeout(function(){ jsh.$root(jsh.xDialog[0] + ' input:visible').first().focus(); },1);
       }
       return;
     }
+    /*
+    else if(jsh.xPopupStack.length && document.activeElement){
+      var topPopup = $(jsh.xPopupStack[jsh.xPopupStack.length-1].href);
+      if(document.activeElement.id=='colorbox'){}
+      else if(document.activeElement.id=='cboxOverlay'){}
+      else if(topPopup.length){
+        if(topPopup[0].contains && topPopup[0].contains(document.activeElement)){ }
+        else{
+          e.stopPropagation();
+          topPopup.focus();
+        }
+      }
+    }
+    */
   });
 
   $(document).focusout(function(){ jsh.FocusHandler(); });

@@ -322,12 +322,13 @@ BODY
 <%-rootcss%> input.updated, 
 <%-rootcss%> select.updated, 
 <%-rootcss%> textarea.updated,
+<%-rootcss%> .xtagbox.updated,
 <%-rootcss%> input.uneditable.updated, 
 <%-rootcss%> select.uneditable.updated, 
 <%-rootcss%> textarea.uneditable.updated,
+<%-rootcss%> .xtagbox.uneditable.updated,
 <%-rootcss%> .xform_label.updated,
-<%-rootcss%> .xform_html.updated,
-<%-rootcss%> .xtagbox.updated
+<%-rootcss%> .xform_html.updated
 {
 	background-color:#faf8c2;
 }
@@ -350,7 +351,8 @@ BODY
 }
 <%-rootcss%> input.uneditable,
 <%-rootcss%> select.uneditable,
-<%-rootcss%> textarea.uneditable {
+<%-rootcss%> textarea.uneditable,
+<%-rootcss%> .xtagbox.uneditable {
 	background-color:#f0f0f0;
 	color:#000;
 }
@@ -520,6 +522,9 @@ BODY
   left:-3px;
   margin-right:7px;
 }
+<%-rootcss%> .xlookup.icon.uneditable {
+  display:none;
+}
 <%-rootcss%> .xform .xlookup.icon, 
 <%-rootcss%> .xform .xtextzoom.icon {
   top:6px;
@@ -559,6 +564,9 @@ BODY
   top:-6px;
   left:2px;
   cursor: pointer;
+}
+<%-rootcss%> .xtagbox.uneditable .xtag_remove {
+  cursor: default;
 }
 <%-rootcss%> .xtag_input,
 <%-rootcss%> .xform .xtag_input,

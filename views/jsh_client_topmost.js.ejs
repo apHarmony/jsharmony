@@ -1057,24 +1057,36 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     });
   }
 
-  XPage.Disable = function(jctrl,show_lookup) {
-    jctrl.removeClass('editable');
-    jctrl.addClass('uneditable');
+  XPage.Disable = function(jctrls,show_lookup) {
+    XExt.jForEach(jctrls, function(jctrl){
+      jctrl.removeClass('editable');
+      jctrl.addClass('uneditable');
 
-    if (jctrl.hasClass('dropdown')) jctrl.prop('disabled', true);
-    else if (jctrl.hasClass('checkbox')) jctrl.prop('disabled', true);
-    else jctrl.prop('readonly', true);
-    if (!show_lookup && jctrl.next().hasClass('xlookup')) jctrl.next().hide();
+      if (jctrl.hasClass('dropdown')) jctrl.prop('disabled', true);
+      else if (jctrl.hasClass('checkbox')) jctrl.prop('disabled', true);
+      else if(jctrl.hasClass('xtagbox_base')){
+        jctrl.prev().addClass('uneditable');
+        jctrl.prev().find('input').prop('disabled', true);
+      }
+      else jctrl.prop('readonly', true);
+      if (!show_lookup && jctrl.next().hasClass('xlookup')) jctrl.next().addClass('uneditable');
+    });
   }
 
-  XPage.Enable = function(jctrl) {
-    jctrl.removeClass('uneditable');
-    jctrl.addClass('editable');
+  XPage.Enable = function(jctrls) {
+    XExt.jForEach(jctrls, function(jctrl){
+      jctrl.removeClass('uneditable');
+      jctrl.addClass('editable');
 
-    if (jctrl.hasClass('dropdown')) jctrl.prop('disabled', false);
-    else if (jctrl.hasClass('checkbox')) jctrl.prop('disabled', false);
-    else jctrl.prop('readonly', false);
-    if (jctrl.next().hasClass('xlookup')) jctrl.next().show();
+      if (jctrl.hasClass('dropdown')) jctrl.prop('disabled', false);
+      else if (jctrl.hasClass('checkbox')) jctrl.prop('disabled', false);
+      else if(jctrl.hasClass('xtagbox_base')){
+        jctrl.prev().removeClass('uneditable');
+        jctrl.prev().find('input').prop('disabled', false);
+      }
+      else jctrl.prop('readonly', false);
+      if (jctrl.next().hasClass('xlookup')) jctrl.next().removeClass('uneditable');
+    });
   }
 
   XPage.Print = function() {
@@ -1203,7 +1215,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var jgroup = jsh.$root('.xactions_group.xelem'+xmodel.class+'[data-group="'+group+'"]');
     
     var already_open = !!jsh.$root('.xcontext_menu:visible').filter(jgroup).length;
-    jsh.$root('.xcontext_menu').hide();
+    XExt.HideContextMenu();
     if(already_open) return;
     
     jgroup.css('visibility', 'hidden');
