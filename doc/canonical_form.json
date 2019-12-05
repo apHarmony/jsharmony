@@ -131,7 +131,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "icon": "insert", 
       "text": "Add %%%CAPTION%%%", 
       "actions": "I", 
-      "bindings": { "n_scope_id": "n_scope_id", "n_scope": "'C'", "c_id":  "n_scope_id", "n_type":  "'C'" }, 
+      "bindings": { "n_scope_id": "n_scope_id", "n_scope": "'C'", "c_id":  "n_scope_id", "n_type":  "'C'" },  //bindings syntax: js:return xmodel.id
       "style": "", 
       "class": "", 
       "roles": { "client": { "CLIENT": "*", "C_ADMIN": "B" } }, 

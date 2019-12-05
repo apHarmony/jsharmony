@@ -96,20 +96,19 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       }
       return;
     }
-    /*
     else if(jsh.xPopupStack.length && document.activeElement){
-      var topPopup = $(jsh.xPopupStack[jsh.xPopupStack.length-1].href);
+      //If a colorbox popup is active, do not leave the colorbox
+      var colorbox = document.getElementById('colorbox');
       if(document.activeElement.id=='colorbox'){}
       else if(document.activeElement.id=='cboxOverlay'){}
-      else if(topPopup.length){
-        if(topPopup[0].contains && topPopup[0].contains(document.activeElement)){ }
+      else if(colorbox){
+        if(colorbox.contains && colorbox.contains(document.activeElement)){ }
         else{
           e.stopPropagation();
-          topPopup.focus();
+          $(colorbox).focus();
         }
       }
     }
-    */
   });
 
   $(document).focusout(function(){ jsh.FocusHandler(); });

@@ -1146,7 +1146,7 @@ exports = module.exports = function(jsh){
   }
 
   XExt.JSEval = function(str,_thisobj,params){
-    if(!_thisobj) thisobj = jsh;
+    if(!_thisobj) _thisobj = jsh;
     if(!params) params = {};
     if('modelid' in params) params.modelid = XExt.resolveModelID(params.modelid);
     var paramstr = '';
@@ -1608,6 +1608,7 @@ exports = module.exports = function(jsh){
     modelid = XExt.resolveModelID(modelid);
     options = _.extend({
       OnControlUpdate: null,
+      OnPopupClosed: null,
       rowid: undefined
     }, options);
     var parentmodelid = $(obj).data('model');
@@ -1650,7 +1651,7 @@ exports = module.exports = function(jsh){
       popup_options = {
         modelid: modelid,
         href: ".popup_" + fieldid + '.xelem' + parentmodelclass, inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, title: title, fixed: true,
-        //trapFocus: false,
+        trapFocus: false,
         fadeOut:0,
         onOpen: function () {
           //When nested popUps are called, onOpen is not called
@@ -1683,6 +1684,7 @@ exports = module.exports = function(jsh){
             }
             if (options.OnControlUpdate) options.OnControlUpdate(parentobj[0], popupData[modelid]);
           }
+          if (options.OnPopupClosed) options.OnPopupClosed(popupData[modelid]);
           parentobj.focus();
           jsh.ignorefocusHandler = orig_jsh_ignorefocusHandler;
           if(xgrid && xgrid.Prop){ xgrid.Prop.Enabled = false; }
@@ -1702,12 +1704,14 @@ exports = module.exports = function(jsh){
 
   XExt.popupSelect = function (modelid, obj) {
     modelid = XExt.resolveModelID(modelid);
-    var rslt = null;
+    var rslt = undefined;
     var rowid = XExt.XModel.GetRowID(modelid, obj);
     var xmodel = jsh.XModels[modelid];
     
-    if (popupData[modelid].code_val) rslt = xmodel.controller.form.DataSet[rowid][popupData[modelid].code_val];
-    if (!rslt) rslt = '';
+    if (popupData[modelid].code_val){
+      rslt = xmodel.controller.form.DataSet[rowid][popupData[modelid].code_val];
+      if (!rslt) rslt = '';
+    }
     popupData[modelid].result = rslt;
     popupData[modelid].rowid = rowid;
     popupData[modelid].resultrow = xmodel.controller.form.DataSet[rowid];
@@ -1834,6 +1838,8 @@ exports = module.exports = function(jsh){
     if (!isNaN(str)) rslt = str;
     //If a literal 'TEXT', return the value
     else if (str && (str.length >= 2) && (str[0] == "'") && (str[str.length - 1] == "'")) rslt = str.substr(1, str.length - 2);
+    //If a JS function, execute and return the value
+    else if (str && (str.toString().indexOf('js:') == 0)) rslt = XExt.JSEval(str.substr(3), xmodel, { xmodel: xmodel });
     //If "null", return null
     else if(str && str.trim().toLowerCase()=='null') rslt = null;
     //If a binding, return the evaluated binding

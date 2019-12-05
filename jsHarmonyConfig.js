@@ -91,6 +91,8 @@ function jsHarmonyConfig(config){
 
     monitor_globals: false,    //Enable client-side monitoring of global / window variables: display a message if a new variable is found
     ignore_globals: [],        //Ignore these global variables in the client-side global monitor
+
+    dev_client_js: false,      //Redirect /js/jsHarmony.js to /js/jsHarmony.dev.js for development
   };
   //Number of rows returned per grid load
   this.default_rowlimit = 50;

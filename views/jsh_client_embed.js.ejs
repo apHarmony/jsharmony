@@ -151,7 +151,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           return xform.DataSet[rowid][fieldname];
         }
       }
-      else{ XExt.Alert('Invalid row'); return; }
+      else{ console.trace(); XExt.Alert('Invalid row'); return; }
     }
     if(xform){
       var field = xmodel.fields && xmodel.fields[fieldname];
@@ -184,7 +184,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           return;
         }
       }
-      else{ XExt.Alert('Invalid row'); return; }
+      else{ console.trace(); XExt.Alert('Invalid row'); return; }
     }
     if(xform){
       XExt.setFormControl(xform, fieldname, value);

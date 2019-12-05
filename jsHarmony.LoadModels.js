@@ -2195,6 +2195,7 @@ exports.AddBindingFields = function(model, element, elementname, modelsExt){
     //Check if all bindings exist
     _.each(element.bindings, function(binding, childKey){
       if(childKey && (childKey[0]=="'")){ /* No action */ }
+      else if(childKey && (childKey.toString().indexOf('js:')==0)){ /* No action */ }
       else {
         var tfield = _this.AppSrvClass.prototype.getFieldByName(tmodel.fields, childKey);
         if(!tfield) { 
@@ -2210,6 +2211,7 @@ exports.AddBindingFields = function(model, element, elementname, modelsExt){
         }
       }
       if(binding && (binding[0]=="'")){ /* No action */ }
+      else if(binding && (binding.toString().indexOf('js:')==0)){ /* No action */ }
       else {
         var sfield = _this.AppSrvClass.prototype.getFieldByName(model.fields, binding);
         if(!sfield) { 
@@ -2270,11 +2272,13 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
       var childField = _this.AppSrvClass.prototype.getFieldByName(tmodel.fields, childFieldName);
       var parentField = _this.AppSrvClass.prototype.getFieldByName(model.fields, parentFieldName);
       if(childFieldName && (childFieldName[0]=="'")){ /* No action */ }
+      else if(childFieldName && (childFieldName.toString().indexOf('js:')==0)){ /* No action */ }
       else if(!childField) { _this.LogInit_ERROR((prefix||'') + 'Missing binding target field: '+tmodel.id+' > '+childFieldName); }
       else if((!_.includes(['exec','report'],tmodel.layout)) && Helper.hasAction(childField.actions, 'U') && childField._auto.actions) {
         _this.LogInit_WARNING((prefix||'') + 'Binding target field '+tmodel.id+' > '+childFieldName+' should not have "U" action.  Please explicitly define "actions" if necessary.');
       }
       if(parentFieldName && (parentFieldName[0]=="'")){ /* No action */ }
+      else if(parentFieldName && (parentFieldName.toString().indexOf('js:')==0)){ /* No action */ }
       else if(!parentField) { _this.LogInit_ERROR((prefix||'') + 'Missing binding source field: '+model.id+' > '+parentFieldName); }
       else if((!_.includes(['exec','report'],tmodel.layout)) && (model.layout=='grid') && Helper.hasAction(parentField.actions, 'U') && !(targetField.controlparams && targetField.controlparams.grid_save_before_update)) {
         _this.LogInit_WARNING((prefix||'') + 'Binding source field '+model.id+' > '+parentFieldName+' should not have "U" action'+((targetField.control=='subform')?', unless "controlparams.grid_save_before_update" is specified on the subform control':'')+'.');

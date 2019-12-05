@@ -207,17 +207,17 @@ BODY
 /***************************
 CUSTOM CONTROL STYLES
 ***************************/
-<%-rootcss%> .xmain .xtbl tbody tr.xgrid_row_highlight { background-color:#ffff66; }
-<%-rootcss%> .xmain .xtbl tbody tr.xgrid_row_error { background-color:#ffb8b8; }
-<%-rootcss%> .xmain .xtbl tbody tr.xgrid_row_disabled,
-<%-rootcss%> .xmain .xtbl tbody tr.xgrid_row_disabled a { background-color:#ddd; color:#777; }
-<%-rootcss%> .xmain .xtbl tbody tr.xgrid_row_PREF { background-color:#c6d3ff; }
-<%-rootcss%> .xmain .xtbl tbody tr.xgrid_row_none { background-color:#ffffff; }
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_highlight { background-color:#ffff66; }
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_error { background-color:#ffb8b8; }
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_disabled,
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_disabled a { background-color:#ddd; color:#777; }
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_PREF { background-color:#c6d3ff; }
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_none { background-color:#ffffff; }
 
-<%-rootcss%> .xmain .xtbl tbody tr.xgrid_row_green { background-color:#c2ffb8; }
-<%-rootcss%> .xmain .xtbl tbody tr.xgrid_row_yellow { background-color:#fffeb8; }
-<%-rootcss%> .xmain .xtbl tbody tr.xgrid_row_red { background-color:#ffb8b8; }
-<%-rootcss%> .xmain .xtbl tbody tr.xgrid_row_gray { background-color:#cccccc; }
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_green { background-color:#c2ffb8; }
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_yellow { background-color:#fffeb8; }
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_red { background-color:#ffb8b8; }
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_gray { background-color:#cccccc; }
 
 <%-rootcss%> .xform_button { border:1px solid transparent; }
 <%-rootcss%> .xform_button.highlighted { background-color:yellow; border:1px dashed #666; }

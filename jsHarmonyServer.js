@@ -29,6 +29,7 @@ var url = require('url');
 var _ = require('lodash');
 var jsHarmonyRouter = require('./jsHarmonyRouter.js');
 var Helper = require('./lib/Helper.js');
+var HelperFS = require('./lib/HelperFS.js');
 
 function jsHarmonyServer(serverConfig, jsh){
   this.jsh = jsh;   //jsHarmony Object
@@ -73,6 +74,14 @@ jsHarmonyServer.prototype.Init = function(cb){
 
   app.use(bodyParser.json({ limit: '50mb' }));
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+  if(_this.jsh.Config.debug_params && _this.jsh.Config.debug_params.dev_client_js){
+    app.get('/js/jsHarmony.js', function(req, res){
+      var fcontent = 'alert("jsHarmony.dev.js not compiled.  Please compile using clientcompiler.cmd")';
+      var fpath = path.join(__dirname, 'public','js','jsHarmony.dev.js');
+      if(fs.existsSync(fpath)) fcontent = fs.readFileSync(fpath);
+      HelperFS.outputContent(req, res, fcontent, 'text/css');
+    });
+  }
   app.use(jsHarmonyRouter.PublicRoot(path.join(_this.jsh.Config.appbasepath, 'public')));
   app.use(jsHarmonyRouter.PublicRoot(path.join(__dirname, 'public')));
   app.use('/cmsfiles', express.static(path.join(_this.jsh.Config.datadir, 'cmsfiles')));
