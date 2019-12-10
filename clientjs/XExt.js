@@ -733,6 +733,35 @@ exports = module.exports = function(jsh){
     if(cb) cb();
     return;
   }
+  XExt.TinyMCE = function (id, config, cb) {
+    if (!window.tinymce){
+      //Dynamically load TinyMCE script, and rerun function when finished
+      window.TINYMCE_BASEPATH = jsh._BASEURL+'js/tinymce/';
+      jsh.loadScript(jsh._BASEURL+'js/tinymce/tinymce.min.js', function(){ XExt.TinyMCE(id, config, cb); });
+      return;
+    }
+    if(!config){ if(cb) cb(); return; }
+    if (window.tinymce.get(id)){ if(cb) cb(); return; }
+    
+    var elem = jsh.$root('#'+id);
+    if(!elem.length) elem = jsh.$root('.'+id);
+    if(!elem.length){ return XExt.Alert('Cound not initialize editor on '+id+': form control with that id not found'); }
+    var orig_width = elem.outerWidth();
+    var orig_height = elem.outerHeight();
+    if(!elem.parent().hasClass(id + '_container')){
+      elem.wrap('<div class="' + id + '_container htmlarea_container" style="width:' + orig_width + 'px;"></div>');
+    }
+    config = config || {};
+    config.selector = '#' + id;
+    var prev_init_instance_callback  = config.init_instance_callback ;
+    config.init_instance_callback  = function(instance){
+      if(prev_init_instance_callback) prev_init_instance_callback(instance);
+      if(cb) cb();
+    }
+    config = _.extend({ height: orig_height }, config);
+    window.tinymce.init(config);
+  };
+
   XExt.getOpenerJSH = function(capabilities){
     if (window.opener) {
       var pjsh = window.opener[jsh.getInstance()];
