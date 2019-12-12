@@ -196,6 +196,7 @@ AppSrvRpt.prototype.batchReport = function (req, res, db, dbcontext, model, sql_
                 });
               });
             }, function(err){
+              // *** Be sure to call dispose independently of the callback, because dispose may fail, but it should not be treated as a critical failure
               var dispose = function(disposedone){
                 fs.close(batchtmpfd, function () {
                   fs.unlink(batchtmppath, function (err) {
@@ -585,17 +586,18 @@ AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, d
                         pagesettings.scale = scale;
                       }
                       page.pdf(pagesettings).then(function () {
+                        // *** Be sure to call dispose independently of the callback, because dispose may fail, but it should not be treated as a critical failure
                         var dispose = function (disposedone) {
                           page.close().then(function () {
                             page = null;
                             fs.close(tmpfd, function () {
                               fs.unlink(tmphtmlpath, function (err) {
                                 fs.unlink(tmppath, function (err) {
-                                  if (typeof disposedone != 'undefined') disposedone();
+                                  if (disposedone) disposedone();
                                 });
                               });
                             });
-                          }).catch(function (err) { jsh.Log.error(err); });
+                          }).catch(function (err) { jsh.Log.error(err); if (disposedone) disposedone(); });
                         };
                         done(null, tmppdfpath, dispose, data);
                       }).catch(function (err) { genReportError(err); });
@@ -640,8 +642,10 @@ AppSrvRpt.prototype.getBrowser = function (callback) {
     _this.browserreqcount++;
     if (_this.browserreqcount >= _BROWSER_RECYCLE_COUNT) { 
       jsh.Log.info('Recycling Report Renderer');
-      return _this.browser.close()
-        .then(function(){ _this.browser = null; return _this.getBrowser(callback); })
+      var oldbrowser = _this.browser;
+      _this.browser = null; 
+      return oldbrowser.close()
+        .then(function(){ return _this.getBrowser(callback); })
         .catch(function(err){ jsh.Log.error('Cound not exit report renderer: '+err.toString()); });
     }
     else return callback(_this.browser);
