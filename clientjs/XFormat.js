@@ -272,6 +272,7 @@ exports = module.exports = function(){
     }
     return JSON.stringify(val,null,2);
   }
+
   XFormat.json_decode = function(val) {
     if (typeof(val) == "string") {
       try{
@@ -283,18 +284,29 @@ exports = module.exports = function(){
     return JSON.stringify(val);
   }
 
+  XFormat.js = function(funcstr, val) {
+    var func = eval('(function(val){'+funcstr+'})');
+    return func(val);
+  }
+
   XFormat.parseFormat = function(format){
     if(_.isArray(format)) return format;
     format = (format||'').toString();
     if(format.indexOf(':') < 0) return [format];
     var rslt = [];
-    rslt.push(format.substr(0, format.indexOf(':')));
+    var formatName = format.substr(0, format.indexOf(':'));
+    rslt.push(formatName);
     var args = format.substr(format.indexOf(':')+1);
-    try{
-      args = eval('['+args+']');
+    if(formatName=='js'){
+      args = [args];
     }
-    catch(ex){
-      throw new Error('Invalid syntax in format: '+format);
+    else {
+      try{
+        args = eval('['+args+']');
+      }
+      catch(ex){
+        throw new Error('Invalid syntax in format: '+format);
+      }
     }
     rslt = rslt.concat(args);
     return rslt;

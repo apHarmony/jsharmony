@@ -283,8 +283,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "password": "E_SSN", // For type=encascii
       "salt": "E_SSNHASH", // For type=hash
       "roles": {"CX_X": ""}, //"" to remove actions, * for all actions, else BIUD
-      "format": "phone", //"phone", or "date:'MM/DD/YY HH:mm'", or "tstmp", or "MMDDYY", or "time:'h:mm A'", or "time:'HH:mm'", or "decimal:2", or "decimalext:2" (Decimal that doesn't round up, only adds zeros, up to 20 decimal places), or "decimalcomma:2", or "comma", or "ssn", or "ein", or "bool"  //Date uses Moment.js
+      "format": "phone", //"phone", or "date:'MM/DD/YY HH:mm'", or "tstmp", or "MMDDYY", or "time:'h:mm A'", or "time:'HH:mm'", or "decimal:2", or "decimalext:2" (Decimal that doesn't round up, only adds zeros, up to 20 decimal places), or "decimalcomma:2", or "comma", or "ssn", or "ein", or "bool", or "json"   //Date uses Moment.js
                          //Can alternatively use array syntax for parameters: ["date","MM/DD/YY HH:mm"]
+                         //Read-only formatters: "bytes", "js:return (val||'').toString()"
       "validate": [ "Required", "MaxLength:5", "MinLength:5", "IsNumeric", "IsNumeric:true" (Only positive), "IsDecimal", "IsDecimal:3" (3 decimal places), "IsDecimalComma:2" (Decimal 2 places with commas), "MaxValue:999", "MinValue:100", "RegEx:'/regex/','be a correct value.'", "IsEmail", "IsDate", "IsSSN", "Equals:field.name", "Equals:'_obj.fieldname','Caption'", "Equals:5,'Five'" ],
       "validate": [ //Alternative extended syntax, array can be mixed with string syntax
         { "actions":"BIUD", "function": "MaxLength:20", "caption": "Customer Name", "selector": ".c_name.xelemC" }, //Each parameter except "function" is optional
