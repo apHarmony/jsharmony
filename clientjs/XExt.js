@@ -152,7 +152,7 @@ exports = module.exports = function(jsh){
 
     jctrl.css('display','inline-block');
     jctrl.addClass('xtag_focusable');
-    jctrl.append('<input class="xtag_input inactive xtag_focusable" />');
+    jctrl.append('<input class="xtag_input inactive xtag_focusable" size="1" />');
 
     var jinput = jctrl.find('.xtag_input');
 
@@ -166,10 +166,10 @@ exports = module.exports = function(jsh){
 
     if(jbaseinputctrl.data('id')) jinput.data('id', jbaseinputctrl.data('id'));
 
-    jinput.on('input', function(e){
+    jinput.on('input keyup', function(e){
       var val = $(this).val();
       if(val.indexOf(',')>=0){ $(this).val(''); XExt.TagBox_AddTags(jctrl, jbaseinputctrl, val.split(',')); }
-      $(this).attr('size',Math.round(($(this).val()||'').toString().length/.87));
+      $(this).attr('size',Math.round(($(this).val()||' ').toString().length/.87));
     });
 
     var isMovingInput = false;

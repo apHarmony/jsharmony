@@ -323,7 +323,7 @@ exports = module.exports = function(jsh){
       }
       jobj.change(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
       if(_.includes(classList,'xtagbox_base')){
-        jobj.on('input', function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
+        jobj.on('input keyup', function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
         //jobj.prev().find('input').focus(function (e) { return _this.SetFocus(this, e); });
         jsh.XExt.TagBox_Focus(jobj.prev(), function(e){ return _this.SetFocus(this, e); });
       }

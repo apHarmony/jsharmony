@@ -198,8 +198,7 @@ BODY
   display:inline-block;
 }
 <%-rootcss%> .xtbl td .xform_label,
-<%-rootcss%> .xtbl td .xform_html,
-<%-rootcss%> .xtbl td .xform_link {
+<%-rootcss%> .xtbl td .xform_html {
   display:inline-block;
   vertical-align:text-top;
 }
