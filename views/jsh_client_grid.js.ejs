@@ -769,6 +769,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   xcontroller.Export = function(){
     if(!xgrid.Prop.isInlinePopup) if(jsh.XPage.onGridExit(null,function(){ xcontroller.Export(); })) return;
     xgrid.Load(0,0,function(url){
+      url+='&columns='+encodeURIComponent(JSON.stringify(xcontroller.GetDisplayLayout().columns.map(function(c){return c.name})));
       jsh.getFileProxy().prop('src', url);
     },true);
   }

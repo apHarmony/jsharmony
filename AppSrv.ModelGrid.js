@@ -45,7 +45,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   var db = _this.jsh.getModelDB(req, fullmodelid);
   if ('d' in Q) P = JSON.parse(Q.d);
   
-  if (!_this.ParamCheck('Q', Q, ['|rowstart', '|rowcount', '|sort', '|search', '|searchjson', '|d', '|meta', '|getcount'])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
+  if (!_this.ParamCheck('Q', Q, ['|rowstart', '|rowcount', '|sort', '|search', '|searchjson', '|d', '|meta', '|getcount', '|columns'])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   if (!_this.ParamCheck('P', P, _.map(_.union(searchlist, ['_action']), function (search) { return '|' + search; }))) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
 
   var getcount = ((('rowcount' in Q) && (Q.rowcount == -1)) || (('getcount' in Q) && (Q['getcount'] != '')));
@@ -292,10 +292,12 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid) {
   var model = jsh.getModel(req, fullmodelid);
   var db = _this.jsh.getModelDB(req, fullmodelid);
 
+  var display_columns = req.query.columns||[];
   //Get list of columns to display
   var exportColumns = _this.getFieldNames(req, model.fields, 'B', function(field){
     if(!('caption' in field)) return false;
     if(field.control=='hidden') return false;
+    if(display_columns.length && !display_columns.includes(field.name)) return false;
     return true;
   });
 
