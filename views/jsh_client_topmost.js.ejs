@@ -844,6 +844,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
       nget.state = JSON.stringify(nget_state);
       if (!_.isEmpty(nget)) url += '?' + $.param(nget);
+      state._url = url;
     }
     if(options.replaceHistory) XExt.ReplaceHistory(url, state);
     else XExt.AddHistory(url, state);

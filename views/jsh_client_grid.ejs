@@ -164,7 +164,7 @@ else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in paren
           %>
           <td style="<%-field.cellstyle%>" class="<%-field.cellclass%> <%=xejs.iif(field.control=='checkbox','xcheckbox_column')%> <%=xejs.iif(field.popuplov,'xpopuplov_column')%> <%=fieldclass%>  <%% if(XExt.isDisplayLayoutColumnHidden('<%=field.name%>', xmodel.controller.GetDisplayLayout(), xmodel.fields)) { %%> tdhidden  <%% } %%>"><% 
         if((field.control=='label') || (field.control=='html')){
-          if(('link' in field) && (XExt.beginsWith(field.link,'#select'))){ %><a href="<%-field.link%>" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this);return false;" ><% }
+          if(('link' in field) && (XExt.beginsWith(field.link,'#select'))){ %><a class="xform_link" href="<%-field.link%>" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this);return false;" ><% }
           else if('link' in field){ %><a data-url="<%-field.link%>" href="<%-XExt.replaceTempEJSTags(field.link)%>" class="xform_link" onclick="<%-js(field.link_onclick)%>"><% }
           if((field.control=='html') && ('value' in field)){
             %><%-XExt.replaceTempEJSTags(field.value)%><%
