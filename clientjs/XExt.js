@@ -1081,15 +1081,65 @@ exports = module.exports = function(jsh){
     if (field && field.controlparams) {
       if (field.controlparams.expand_all) XExt.TreeExpandAll(jctrl);
       else if (field.controlparams.expand_to_selected) XExt.TreeExpandToSelected(jctrl);
-      if(field.controlparams.onmove || field.controlparams.ondrop){
-        XExt.TreeEnableDrag(jctrl, field.controlparams.onmove, field.controlparams.ondrop);
-      }
+      if(field.controlparams.ondrop) XExt.TreeEnableDrop(jctrl, field.controlparams.ondrop, field.controlparams.drag_anchor_settings);
+      if(field.controlparams.onmove) XExt.TreeEnableDrag(jctrl, field.controlparams.onmove, field.controlparams.drag_anchor_settings);
     }
   }
 
-  //onmove(dragval, dropval, anchor, e)
   //ondrop(dropval, anchor, e)
-  XExt.TreeEnableDrag = function (jctrl, onmove, ondrop) {
+  XExt.TreeEnableDrop = function (jctrl, ondrop, drag_anchor_settings) {
+    var jtreeitems = jctrl.find('a.tree_item');
+    _.each(jtreeitems, function(obj){
+      var jobj = $(obj);
+      var dragCounter = 0;
+      jobj.on('dragenter', function(e){
+        dragCounter++;
+        if(!jobj.hasClass('xdragtarget')) jobj.addClass('xdragtarget');
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      jobj.on('dragleave', function(e){
+        dragCounter--;
+        if(dragCounter <= 0){
+          dragCounter = 0;
+          jobj.removeClass('xdragtarget').removeClass('xdragtop').removeClass('xdragbottom').removeClass('xdragfull').removeClass('xdragleft').removeClass('xdragright');
+        }
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      jobj.on('dragover', function(e){
+        var targetAnchor = XExt.getObjectAnchors(this, jsh.mouseX, jsh.mouseY, drag_anchor_settings);
+  
+        jobj.removeClass('xdragtop').removeClass('xdragbottom').removeClass('xdragfull').removeClass('xdragleft').removeClass('xdragright');
+        if(targetAnchor[0]=='left') jobj.addClass('xdragleft');
+        else if(targetAnchor[0]=='right') jobj.addClass('xdragright');
+  
+        if(targetAnchor[1]=='top') jobj.addClass('xdragtop');
+        else if(targetAnchor[1]=='bottom') jobj.addClass('xdragbottom');
+        else if(targetAnchor[1]=='full') jobj.addClass('xdragfull');
+  
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      jobj.on('drop', function(e){
+        dragCounter = 0;
+        jobj.removeClass('xdragtarget').removeClass('xdragtop').removeClass('xdragbottom').removeClass('xdragfull').removeClass('xdragleft').removeClass('xdragright');
+        e.preventDefault();
+        e.stopPropagation();
+  
+        var targetObjVal = jobj.data('value');
+        var targetAnchor = XExt.getObjectAnchors(this, jsh.mouseX, jsh.mouseY, drag_anchor_settings);
+        if(ondrop) ondrop(targetObjVal, targetAnchor, e);
+      });
+    });
+    jctrl.on('drop dragenter dragleave dragover', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  }
+
+  //onmove(dragval, dropval, anchor, e)
+  XExt.TreeEnableDrag = function (jctrl, onmove, drag_anchor_settings) {
     var mouseDownTimer = null;
     //Set up drop points
     jctrl.find('a.tree_item').addClass('xdrop');
@@ -1117,13 +1167,16 @@ exports = module.exports = function(jsh){
     var treeid = jctrl.data('treeid');
     jsh.off('.jsh_tree_'+treeid);
     jsh.on('jsh_mouseDrag.jsh_tree_'+treeid,function(event, mouseDragObj, targetObj, origEvent){
-      jctrl.find('.xdragtarget').removeClass('xdragtarget').removeClass('xdragtop').removeClass('xdragbottom').removeClass('xdragfull');
+      jctrl.find('.xdragtarget').removeClass('xdragtarget').removeClass('xdragtop').removeClass('xdragbottom').removeClass('xdragfull').removeClass('xdragleft').removeClass('xdragright');
       if(!targetObj) return;
       if($(targetObj).data('id')==$(mouseDragObj).data('id')) return;
       jsh.$root('.xdrag').css('visibility','visible'); 
 
-      var targetAnchor = XExt.getObjectAnchors(targetObj, jsh.mouseX, jsh.mouseY, { fullAnchor: true });
+      var targetAnchor = XExt.getObjectAnchors(targetObj, jsh.mouseX, jsh.mouseY, drag_anchor_settings);
       $(targetObj).addClass('xdragtarget');
+
+      if(targetAnchor[0]=='left') $(targetObj).addClass('xdragleft');
+      else if(targetAnchor[0]=='right') $(targetObj).addClass('xdragright');
 
       if(targetAnchor[1]=='top') $(targetObj).addClass('xdragtop');
       else if(targetAnchor[1]=='bottom') $(targetObj).addClass('xdragbottom');
@@ -1141,10 +1194,9 @@ exports = module.exports = function(jsh){
       var mouseDragObjVal = $(mouseDragObj).data('value');
       var targetObjVal = $(targetObj).data('value');
       
-      var targetAnchor = XExt.getObjectAnchors(targetObj, jsh.mouseX, jsh.mouseY, { fullAnchor: true });
+      var targetAnchor = XExt.getObjectAnchors(targetObj, jsh.mouseX, jsh.mouseY, drag_anchor_settings);
 
-      if(onmove) onmove(mouseDragObjVal, targetObjVal, targetAnchor[1], origEvent);
-      if(ondrop) ondrop(targetObjVal, targetAnchor[1], origEvent);
+      if(onmove) onmove(mouseDragObjVal, targetObjVal, targetAnchor, origEvent);
     });
   }
 
@@ -2222,7 +2274,10 @@ exports = module.exports = function(jsh){
     return true;
   }
   XExt.getObjectAnchors = function(elem, x, y, options) {
-    if(!options) options = {};
+    //Anchors: 'top','bottom','left','right','full'
+    options = _.extend({ anchors: ['full'], full_threshold: 0.25 }, options);
+    var anchors = {};
+    for(var i=0;i<options.anchors.length;i++) anchors[options.anchors[i]] = 1;
     var jobj = $(elem);
     var joff = jobj.offset();
     var w = jobj.outerWidth(false);
@@ -2231,13 +2286,35 @@ exports = module.exports = function(jsh){
   
     var lp = ((w>0)?((x-joff.left)/w):0) - 0.5;
     var tp = ((h>0)?((y-joff.top)/h):0) - 0.5;
-    var rslt = [];
-    if(lp < 0) rslt.push('left');
-    else rslt.push('right');
-    if(options.fullAnchor && (fph <= 0.25)) rslt.push('full');
-    else if(tp > 0) rslt.push('bottom');
-    else rslt.push('top');
+    var rslt = ['',''];
+
+    if(lp < 0){ if(anchors.left) rslt[0] = 'left'; }
+    else{ if(anchors.right) rslt[0] = 'right'; }
+
+    if(anchors.full && (fph <= 0.25)){ rslt[1] = 'full'; }
+    else if(tp > 0){ if(anchors.bottom) rslt[1] = 'bottom'; }
+    else{ if(anchors.top) rslt[1] = 'top'; }
+
+    if(!rslt[1] && anchors.full) rslt[1] = 'full'; 
+
     return rslt;
+  }
+  XExt.bindDragSource = function(jobj){
+    var mouseDownTimer = null;
+    jobj.mousedown(function(e){
+      if (e.which == 1) {//left mouse button
+        var obj = this;
+        if(jsh.xContextMenuVisible) return;
+        XExt.CancelBubble(e);
+        if(mouseDownTimer) window.clearTimeout(mouseDownTimer);
+        mouseDownTimer = window.setTimeout(function(){
+          if(mouseDownTimer) jsh.mouseDragBegin(obj, function(){ return true; }, e);
+        }, 250);
+      }
+    });
+    jobj.mouseup(function(e){
+      if(mouseDownTimer) window.clearTimeout(mouseDownTimer);
+    });
   }
   //Bind tab control events
   XExt.bindTabControl = function(obj){

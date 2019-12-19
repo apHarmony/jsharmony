@@ -482,6 +482,12 @@ BODY
 <%-rootcss%> .xform_ctrl.tree a.tree_item.xdragtarget.xdragbottom{
   border-bottom:1px dashed #333;
 }
+<%-rootcss%> .xform_ctrl.tree a.tree_item.xdragtarget.xdragleft{
+  border-left:1px dashed #333;
+}
+<%-rootcss%> .xform_ctrl.tree a.tree_item.xdragtarget.xdragright{
+  border-right:1px dashed #333;
+}
 <%-rootcss%> .xform_ctrl.tree .nochildren .glyph,
 <%-rootcss%> a.tree_item.xdrag .glyph {
   display:none;

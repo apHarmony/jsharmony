@@ -69,6 +69,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         <%-xejs.iif('expand_to_selected' in field.controlparams,'"expand_to_selected":'+JSON.stringify(field.controlparams.expand_to_selected)+',') %>
         <%-xejs.iif('onmove' in field.controlparams,'"onmove":function(dragval, dropval, anchor, e){'+jslocals+field.controlparams.onmove+'},') %>
         <%-xejs.iif('ondrop' in field.controlparams,'"ondrop":function(dropval, anchor, e){'+jslocals+field.controlparams.ondrop+'},') %>
+        <%-xejs.iif('drag_anchor_settings' in field.controlparams,'"drag_anchor_settings":'+JSON.stringify(field.controlparams.drag_anchor_settings)+',') %>
         <%-xejs.iif('value_true' in field.controlparams,'"value_true":'+JSON.stringify(field.controlparams.value_true)+',') %>
         <%-xejs.iif('value_false' in field.controlparams,'"value_false":'+JSON.stringify(field.controlparams.value_false)+',') %>
         <%-xejs.iif('value_hidden' in field.controlparams,'"value_hidden":'+JSON.stringify(field.controlparams.value_hidden)+',') %>

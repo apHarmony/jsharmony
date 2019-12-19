@@ -242,8 +242,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                         ],
                         "expand_all": false, //Show nodes expanded by default
                         "expand_to_selected": true, //Defaults to true
+                        //Move one node to another
                         "onmove": "_this.control_onmove(dragval, dropval, anchor, e);",
+                        //Drop external file onto tree node
                         "ondrop": "_this.control_ondrop(dropval, anchor, e);",
+                        "drag_anchor_settings": { "anchors": ["top","bottom","left","right","full"] },
                       },
                       {"value_true":"ON",   //checkbox params
                        "value_false":"OFF",
