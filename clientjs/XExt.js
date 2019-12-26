@@ -577,6 +577,7 @@ exports = module.exports = function(jsh){
   }
   XExt.xejs = {
     'escapeJS': function(val){ return XExt.escapeJS(val); },
+    'escapeHTML': function(val){ return XExt.escapeHTML(val); },
     'escapeHTMLN': function(val){ return XExt.escapeHTMLN(val); },
     'escapeHTMLBR': function(val){ return XExt.escapeHTMLBR(val); },
     'iif': function (cond, tval, fval) {
