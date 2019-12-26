@@ -532,6 +532,15 @@ exports = module.exports = function(jsh){
     while(rslt.indexOf('__') > 0) rslt = XExt.ReplaceAll(rslt,'__','_');
     return rslt;
   };
+  //Escape URL
+  XExt.prettyURL = function(val, options){
+    //options { }
+    var rslt = (val||'').toString().toLowerCase();
+    rslt = rslt.replace(/[^a-zA-Z0-9_\-]+/g, '-');
+    rslt = XExt.trimLeft(rslt,'-');
+    while(rslt.indexOf('--') > 0) rslt = XExt.ReplaceAll(rslt,'--','-');
+    return rslt;
+  };
   XExt.encodeEJSURI = function (val){
     if(val === null) return '';
     if(typeof val == 'undefined') return '';
@@ -1033,6 +1042,7 @@ exports = module.exports = function(jsh){
 
   XExt.TreeRender = function (jctrl, LOV, field) {
     //Create Cache of Opened Nodes
+    var firstRender = !jctrl.children().length;
     var expanded_nodes = XExt.TreeGetExpandedNodes(jctrl);
     var selected_nodes = XExt.TreeGetSelectedNodes(jctrl);
     
@@ -1054,8 +1064,8 @@ exports = module.exports = function(jsh){
       node.Icon = iLOV[jsh.uimap.code_icon];
       node.Seq = iLOV[jsh.uimap.code_seq];
       if (node.Seq) has_seq = true;
-      if (_.includes(expanded_nodes, node.Value)) node.Expanded = true;
-      if (_.includes(selected_nodes, node.Value)) node.Selected = true;
+      if (_.includes(expanded_nodes, (node.Value||'').toString())) node.Expanded = true;
+      if (_.includes(selected_nodes, (node.Value||'').toString())) node.Selected = true;
       
       if (!node.ParentID) tree.push(node);
       nodes[node.ID] = node;
@@ -1079,8 +1089,10 @@ exports = module.exports = function(jsh){
     }
     jctrl.html(body);
     if (field && field.controlparams) {
-      if (field.controlparams.expand_all) XExt.TreeExpandAll(jctrl);
-      else if (field.controlparams.expand_to_selected) XExt.TreeExpandToSelected(jctrl);
+      if(firstRender){
+        if (field.controlparams.expand_all) XExt.TreeExpandAll(jctrl);
+        else if (field.controlparams.expand_to_selected) XExt.TreeExpandToSelected(jctrl);
+      }
       if(field.controlparams.ondrop) XExt.TreeEnableDrop(jctrl, field.controlparams.ondrop, field.controlparams.drag_anchor_settings);
       if(field.controlparams.onmove) XExt.TreeEnableDrag(jctrl, field.controlparams.onmove, field.controlparams.drag_anchor_settings);
     }
@@ -1141,6 +1153,7 @@ exports = module.exports = function(jsh){
   //onmove(dragval, dropval, anchor, e)
   XExt.TreeEnableDrag = function (jctrl, onmove, drag_anchor_settings) {
     var mouseDownTimer = null;
+    var hoverBorderTimer = null;
     //Set up drop points
     jctrl.find('a.tree_item').addClass('xdrop');
     //Check if the target can be used as a drop point
@@ -1162,12 +1175,58 @@ exports = module.exports = function(jsh){
     });
     jctrl.find('a.tree_item').mouseup(function(e){
       if(mouseDownTimer) window.clearTimeout(mouseDownTimer);
+      if(hoverBorderTimer) window.clearTimeout(hoverBorderTimer);
+      mouseDownTimer = null;
+      hoverBorderTimer = null;
     });
     //While dragging, update styles on drop points
     var treeid = jctrl.data('treeid');
     jsh.off('.jsh_tree_'+treeid);
+    var hoverBorderStart = 0;
     jsh.on('jsh_mouseDrag.jsh_tree_'+treeid,function(event, mouseDragObj, targetObj, origEvent){
       jctrl.find('.xdragtarget').removeClass('xdragtarget').removeClass('xdragtop').removeClass('xdragbottom').removeClass('xdragfull').removeClass('xdragleft').removeClass('xdragright');
+      //Check if mouse is hovering over tree border
+      var joff = jctrl.offset();
+      var w = jctrl.outerWidth();
+      var h = jctrl.outerHeight();
+      if ((jsh.mouseX >= joff.left) && (jsh.mouseX <= (joff.left + w))) {
+        if ((jsh.mouseY >= joff.top) && (jsh.mouseY <= (joff.top + 15))){
+          //Hovering over top
+          if(!hoverBorderTimer){
+            hoverBorderStart = 0;
+            hoverBorderTimer = setInterval(function(){
+              var nowTime = new Date().getTime();
+              if(!hoverBorderStart) hoverBorderStart = nowTime;
+              if((nowTime-hoverBorderStart)>300){
+                jctrl.scrollTop(Math.max(jctrl.scrollTop() - 15, 0));
+              }
+            }, 100);
+          }
+        }
+        else if((jsh.mouseY <= (joff.top + h)) && (jsh.mouseY >= (joff.top + h - 15))){
+          //Hovering over bottom
+          if(!hoverBorderTimer){
+            hoverBorderStart = 0;
+            hoverBorderTimer = setInterval(function(){
+              var nowTime = new Date().getTime();
+              if(!hoverBorderStart) hoverBorderStart = nowTime;
+              if((nowTime-hoverBorderStart)>300){
+                jctrl.scrollTop(jctrl.scrollTop() + 15);
+              }
+            }, 100);
+          }
+        }
+        else{
+          if(hoverBorderTimer) window.clearTimeout(hoverBorderTimer);
+          hoverBorderTimer = null;
+        }
+      }
+      else{
+        if(hoverBorderTimer) window.clearTimeout(hoverBorderTimer);
+        hoverBorderTimer = null;
+      }
+
+
       if(!targetObj) return;
       if($(targetObj).data('id')==$(mouseDragObj).data('id')) return;
       jsh.$root('.xdrag').css('visibility','visible'); 
@@ -1887,6 +1946,18 @@ exports = module.exports = function(jsh){
     fname = fname.toString();
     if (fname.length > 247) fname = fname.substr(0, 247);
     return fname.replace(/[\/\?<>\\:\*\|":]/g, '').replace(/[\x00-\x1f\x80-\x9f]/g, '').replace(/^\.+$/, '').replace(/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i, '');
+  }
+
+  XExt.cleanFilePath = function (fpath, options) {
+    options = _.extend({ allow: '/' }, options);
+    if (typeof fpath === undefined) return '';
+    if (fpath === null) return '';
+    
+    fpath = fpath.toString();
+    if (fpath.length > 247) fpath = fpath.substr(0, 247);
+    var chars = '\/\?<>\\:\*\|":';
+    for(var i=0;i < options.allow.length;i++){ chars = chars.replace(options.allow[i], ''); }
+    return fpath.replace(new RegExp('['+RegExp.escape(chars)+']','g'), '').replace(/[\x00-\x1f\x80-\x9f]/g, '').replace(/^\.+$/, '').replace(/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i, '');
   }
 
   XExt.utf8_base64 = function (str) { return window.btoa(unescape(encodeURIComponent(str))); }

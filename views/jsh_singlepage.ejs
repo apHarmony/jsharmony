@@ -247,13 +247,13 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if(data.status == 404){ window.location.href = jsh.state.fullurl; return true; }
       else if(data.status == 302){ window.location.href = jsh.state.fullurl; return true; }
       else if(data.status == 301){ window.location.href = jsh.state.fullurl; return true; }
-      else if(data.responseText && data.responseText.indexOf('***ACCOUNT_UNPAID_BALANCE***')>=0){ window.location.href = jsh._BASEURL+'C_PA_CC'; return true; }
-      else if(data.responseText && data.responseText.indexOf('***JSHARMONY_LOGIN***')>=0){ window.location.href = jsh.state.fullurl; return true; }
+      else if(data.responseText && data.responseText.indexOf('***'+'ACCOUNT_UNPAID_BALANCE'+'***')>=0){ window.location.href = jsh._BASEURL+'C_PA_CC'; return true; }
+      else if(data.responseText && data.responseText.indexOf('***'+'JSHARMONY_LOGIN'+'***')>=0){ window.location.href = jsh.state.fullurl; return true; }
       else if ((data instanceof Object) && ('Number' in data)){ 
         if(data.Number == -11){ XExt.Alert(data.Message?data.Message:'Invalid Model Access'); return true; }
         else if(_.includes([-1,-2],data.Number)){ XExt.Alert(data.Message,null,{ onAcceptImmediate:closeIfPopup }); return true; }
       }
-      else if(data.responseText && data.responseText.indexOf('***NO_ACCESS***')>=0){ XExt.Alert('No Access to '+(jsh&&jsh.state&&jsh.state.modelid?jsh.state.modelid:'')); return true; }
+      else if(data.responseText && data.responseText.indexOf('***'+'NO_ACCESS'+'***')>=0){ XExt.Alert('No Access to '+(jsh&&jsh.state&&jsh.state.modelid?jsh.state.modelid:'')); return true; }
       var msg = 'Failed to load state';
       <% if(req._show_system_errors){ %>msg += ': ' + JSON.stringify(data);<% } %>
       XExt.Alert(msg);

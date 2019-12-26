@@ -217,9 +217,9 @@ exports = module.exports = function(jsh){
       var checkhidden = false;
       if ((val == null) || (typeof val == 'undefined')) val = '';
       if ('controlparams' in field) {
-        if (('value_hidden' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_hidden.toUpperCase())) checkhidden = true;
-        if (('value_true' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_true.toUpperCase())) checkval = true;
-        else if (('value_false' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_false.toUpperCase())) checkval = false;
+        if (('value_hidden' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_hidden.toString().toUpperCase())) checkhidden = true;
+        if (('value_true' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_true.toString().toUpperCase())) checkval = true;
+        else if (('value_false' in field.controlparams) && (val.toString().toUpperCase() == field.controlparams.value_false.toString().toUpperCase())) checkval = false;
         else checkval = jsh.XFormat.bool_decode(val);
       }
       else checkval = jsh.XFormat.bool_decode(val);
