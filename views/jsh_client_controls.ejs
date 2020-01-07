@@ -138,7 +138,7 @@ for(var i=0;i<model.fields.length;i++){
       for(var j=0;j<field.controlparams.item_context_menu.length;j++){ var menu_item = field.controlparams.item_context_menu[j];
         var baseactions = model.actions;
         if(field.unbound && field.always_editable) baseactions = 'BIUD';
-        if(xejs.hasAction(baseactions,field.actions,menu_item.actions)){ %><a href="#" class="<%=menu_item.class%>" onclick="<%-instance%>.$root('.xcontext_menu').hide(); var context_item = <%-instance%>.xContextMenuItem; return (function(){<%-jslocals%><%-menu_item.command%>}).call(this)||false;"><img src="<%-jsh._PUBLICURL%>images/icon_<%=menu_item.icon%>.png" /><%=menu_item.text%></a><% }
+        if(xejs.hasAction(baseactions,field.actions,menu_item.actions)){ %><a href="#" class="<%=menu_item.class%>" onclick="<%-instance%>.$root('.xcontext_menu').hide(); var context_item = <%-instance%>.xContextMenuItem; return (function(){<%-jslocals%><%-menu_item.command%>}).call(this)||false;"<% if(menu_item.onrender){ %>data-onrender="return (function(){<%-jslocals%><%-menu_item.onrender%>}).call(this);"<% } %>><img src="<%-jsh._PUBLICURL%>images/icon_<%=menu_item.icon%>.png" /><%=menu_item.text%></a><% }
       }
       %></div><%
     }

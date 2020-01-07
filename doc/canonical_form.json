@@ -238,7 +238,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                         "_data_file_has_extension": false, //System parameter.  Automatically set to true if sqlparams.file_extension not set.  Slower because a directory search is required on each request.  
                       },
                       {"item_context_menu": [ //tree params - Context Menu for an Item
-                          { "icon": "insert", "text": "Add", "command": "XExt.Alert('insert' + context_item);", "actions": "IUD" }
+                          { "icon": "insert", "text": "Add", "command": "XExt.Alert('insert' + context_item);", "actions": "IUD", "onrender": "(context_item, data) /* JS */ return false to hide;" }
                         ],
                         "expand_all": false, //Show nodes expanded by default
                         "expand_to_selected": true, //Defaults to true

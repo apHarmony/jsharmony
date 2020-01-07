@@ -252,7 +252,7 @@ exports = module.exports = function(jsh){
     jsh.$root('.xcontext_menu').hide();
   }
 
-  XExt.ShowContextMenu = function (selector,context_item,data,options){
+  XExt.ShowContextMenu = function (selector, context_item, data, options){
     options = _.extend({ top: jsh.mouseY, left: jsh.mouseX }, options);
     if (!selector) selector = '.xcontext_menu';
     XExt.HideContextMenu();
@@ -273,6 +273,16 @@ exports = module.exports = function(jsh){
 
     if (xtop < 0) xtop = 0;
     if (xleft < 0) xleft = 0;
+
+    jsh.$root(selector).children('a').each(function(){
+      var obj = this;
+      var onrender = $(obj).data('onrender');
+      if(onrender){
+        var f = (new Function('context_item', 'data', onrender)); 
+        var frslt = f.call(obj, context_item, data);
+        $(this).toggle(frslt !== false);
+      }
+    });
 
     jsh.$root(selector).css({ 'top': xtop, 'left': xleft });
     jsh.$root(selector).css('visibility', 'visible');
@@ -537,7 +547,7 @@ exports = module.exports = function(jsh){
     //options { }
     var rslt = (val||'').toString().toLowerCase();
     rslt = rslt.replace(/[^a-zA-Z0-9_\-]+/g, '-');
-    rslt = XExt.trimLeft(rslt,'-');
+    rslt = XExt.trim(rslt,'-');
     while(rslt.indexOf('--') > 0) rslt = XExt.ReplaceAll(rslt,'--','-');
     return rslt;
   };
@@ -1582,6 +1592,7 @@ exports = module.exports = function(jsh){
       button_ok_caption: 'Yes',
       button_no_caption: 'No',
       button_cancel_caption: 'Cancel',
+      message_type: 'text'
     };
     if(!options || !options.onCancel){
       default_options.button_cancel_caption = 'No';
@@ -1590,8 +1601,11 @@ exports = module.exports = function(jsh){
     var msg = '';
     if (obj && _.isString(obj)) msg = obj;
     else msg = JSON.stringify(obj);
-    msg = XExt.escapeHTML(msg);
-    msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
+    if(options.message_type=='html'){ /* Do nothing */ }
+    else {
+      msg = XExt.escapeHTML(msg);
+      msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
+    }
     //if (window.confirm(msg)) { if (onYes) onYes(); }
     //if (onNo) onNo(); 
     jsh.xDialog.unshift('.xconfirmbox');
