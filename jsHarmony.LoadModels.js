@@ -947,7 +947,14 @@ exports.ParseEntities = function () {
           if(autofield){
             //List of Values
             if(_this.Config.system_settings.automatic_schema.lovs){
+              var no_auto_lov = false;
               if(!('lov' in field) && autofield.lov){
+                if(model.layout=='multisel'){
+                  if(field.foreignkey || field.key) no_auto_lov = true;
+                  _.each(model.fields, function(field){ if(field.lov) no_auto_lov = true; });
+                }
+              }
+              if(!no_auto_lov && !('lov' in field) && autofield.lov){
                 field.lov = autofield.lov;
                 if(field.lov.parent){
                   var foundparent = false;
