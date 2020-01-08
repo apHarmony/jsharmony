@@ -150,7 +150,7 @@ exports = module.exports = function(){
   }
 
   XFormat.comma = function(val){
-    if(typeof val===undefined) return '';
+    if(typeof val === 'undefined') return '';
     if(val===null) return '';
     if(isNaN(parseFloat(val))) return val;
     var n= val.toString().split(".");
@@ -218,7 +218,7 @@ exports = module.exports = function(){
   XFormat.time_decode = function (format, val) {
     if (val === '') return null;
     if (val === null) return null;
-    if (typeof val === undefined) return null;
+    if (typeof val == 'undefined') return null;
     
     if (val.trim() == parseInt(val.trim()).toString()) {
       var vint = parseInt(val.trim());
@@ -264,7 +264,7 @@ exports = module.exports = function(){
 
   XFormat.json = function(val) {
     if (val === null) return val;
-    if (typeof val === undefined) return val;
+    if (typeof val == 'undefined') return val;
     if (typeof(val) == "string") {
       try{
         val = JSON.parse(val);
@@ -277,7 +277,7 @@ exports = module.exports = function(){
 
   XFormat.json_decode = function(val) {
     if (val === null) return val;
-    if (typeof val === undefined) return val;
+    if (typeof val === 'undefined') return val;
     if (typeof(val) == "string") {
       try{
         val = JSON.parse(val);
@@ -317,7 +317,7 @@ exports = module.exports = function(){
   }
 
   XFormat.bytes = function(val){
-    if(typeof val===undefined) return '';
+    if(typeof val == 'undefined') return '';
     if(val===null) return '';
     if(isNaN(parseFloat(val))) return val;
     var sizes = ['B','KB','MB','GB'];
