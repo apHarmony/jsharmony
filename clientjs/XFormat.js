@@ -263,7 +263,10 @@ exports = module.exports = function(){
   }
 
   XFormat.json = function(val) {
+    if (val === null) return val;
+    if (typeof val == 'undefined') return val;
     if (typeof(val) == "string") {
+      if (val === '') return val;
       try{
         val = JSON.parse(val);
       } catch (e) {
@@ -274,7 +277,10 @@ exports = module.exports = function(){
   }
 
   XFormat.json_decode = function(val) {
+    if (val === null) return val;
+    if (typeof val === 'undefined') return val;
     if (typeof(val) == "string") {
+      if (val === '') return val;
       try{
         val = JSON.parse(val);
       } catch (e) {
