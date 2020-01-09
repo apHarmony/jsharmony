@@ -22,8 +22,7 @@ var assert = require('assert');
 var _ = require('lodash');
 var moment = require('moment');
 
-function testFormat(encode, decode, tests, xcompare){
-  if(!xcompare) xcompare = function(a,b){ return a==b; };
+function testFormat(encode, decode, tests){
   _.each(tests, function(test){
     test.args = test.args||[];
     test.auxin = test.auxin||[];
@@ -31,13 +30,13 @@ function testFormat(encode, decode, tests, xcompare){
     xargs.unshift(XFormat);
     var xencode = encode.bind.apply(encode, xargs);
     var xdecode = decode.bind.apply(decode, xargs);
-    assert(xcompare(xencode(test.in),test.out),'Encode(In)==Out '+test.in);
-    assert(xcompare(xdecode(xencode(test.in)),xdecode(test.in)),'Decode(Encode(In))==Decode(In) '+test.in);
-    assert(xcompare(xdecode(xdecode(xencode(test.in))),xdecode(test.in)),'Decode(Decode(Encode(In)))==Decode(In) '+test.in);
+    assert.strictEqual(xencode(test.in),test.out,'Encode(In)==Out '+test.in);
+    assert.strictEqual(xdecode(xencode(test.in)),xdecode(test.in),'Decode(Encode(In))==Decode(In) '+test.in);
+    assert.strictEqual(xdecode(xdecode(xencode(test.in))),xdecode(test.in),'Decode(Decode(Encode(In)))==Decode(In) '+test.in);
     _.each(test.auxin, function(auxin){
-      assert(xcompare(xdecode(auxin),xdecode(test.in)),'Decode(AuxIn)==Decode(In) '+auxin);
-      assert(xcompare(xdecode(xdecode(auxin)),xdecode(test.in)),'Decode(Decode(AuxIn))==Decode(In) '+auxin);
-      assert(xcompare(xdecode(xdecode(auxin)),xdecode(auxin)),'Decode(Decode(AuxIn))==Decode(AuxIn) '+auxin);
+      assert.strictEqual(xdecode(auxin),xdecode(test.in),'Decode(AuxIn)==Decode(In) '+auxin);
+      assert.strictEqual(xdecode(xdecode(auxin)),xdecode(test.in),'Decode(Decode(AuxIn))==Decode(In) '+auxin);
+      assert.strictEqual(xdecode(xdecode(auxin)),xdecode(auxin),'Decode(Decode(AuxIn))==Decode(AuxIn) '+auxin);
     });
   });
 }
@@ -46,31 +45,33 @@ describe('XFormat',function(){
   it('phone', function () {
     testFormat(XFormat.phone, XFormat.phone_decode, [
       { in: '2342342345', out: '(234) 234-2345', auxin: ['1-234-234-2345', '11112342342345','234 234 2345'] },
+      { in: '', out: '' },
+      { in: null, out: null },
     ]);
   });
   //date(format)
   it('date', function () {
     testFormat(XFormat.date, XFormat.date_decode, [
       { in: '2019-02-21T00:00:00.000', out: '02/21/2019', args: ['MM/DD/YYYY'], auxin: ['2019-02-21','2/21/2019'] },
-    ], function(a,b){
-      return a==b;
-    });
+      { in: '', out: '', args: ['MM/DD/YYYY'] },
+      { in: null, out: null, args: ['MM/DD/YYYY'] },
+    ]);
   });
   //tstmp
   it('tstmp', function () {
     testFormat(XFormat.tstmp, XFormat.tstmp_decode, [
       { in: '2019-02-21T14:02:00.000', out: '02/21/19 14:02', auxin: [] },
-    ], function(a,b){
-      return a==b;
-    });
+      { in: '', out: '' },
+      { in: null, out: null },
+    ]);
   });
   //MMDDYY
   it('MMDDYY', function () {
     testFormat(XFormat.MMDDYY, XFormat.MMDDYY_decode, [
       { in: '2019-02-21T00:00:00.000', out: '02/21/19', auxin: [] },
-    ], function(a,b){
-      return a==b;
-    });
+      { in: '', out: '' },
+      { in: null, out: null },
+    ]);
   });
   //decimal(numdigits)
   it('decimal', function () {
@@ -85,6 +86,8 @@ describe('XFormat',function(){
       { in: 11111111.1111, out: '11111111.11', args: [2] },
       { in: '.1111', out: '0.11', args: [2] },
       { in: '11111111111', out: '11111111111.00', args: [2] },
+      { in: '', out: '', args: [2] },
+      { in: null, out: null, args: [2] },
     ]);
   });
   //decimalext(numdigits)
@@ -100,6 +103,8 @@ describe('XFormat',function(){
       { in: 11111111.1111, out: '11111111.1111', args: [2] },
       { in: '.1111', out: '0.1111', args: [2] },
       { in: '11111111111', out: '11111111111.00', args: [2] },
+      { in: '', out: '', args: [2] },
+      { in: null, out: null, args: [2] },
     ]);
   });
   //decimalcomma(numdigits)
@@ -115,6 +120,7 @@ describe('XFormat',function(){
       { in: 11111111.1111, out: '11,111,111.11', args: [2] },
       { in: '.1111', out: '0.11', args: [2] },
       { in: '11111111111', out: '11,111,111,111.00', args: [2] },
+      { in: '', out: '', args: [2] },
     ]);
   });
   //comma
@@ -128,42 +134,47 @@ describe('XFormat',function(){
       { in: '11111111.1111', out: '11,111,111.1111' },
       { in: '.1111', out: '.1111' },
       { in: '11111111111', out: '11,111,111,111' },
+      { in: '', out: '' },
     ]);
   });
   //ssn
   it('ssn', function () {
     testFormat(XFormat.ssn, XFormat.ssn_decode, [
       { in: '222334444', out: '222-33-4444', auxin: ['222 33 4444'] },
+      { in: '', out: '' },
+      { in: null, out: null },
     ]);
   });
   //ein
   it('ein', function () {
     testFormat(XFormat.ein, XFormat.ein_decode, [
       { in: '223333333', out: '22-3333333', auxin: ['22 3333333'] },
+      { in: '', out: '' },
+      { in: null, out: null },
     ]);
   });
   //time
   it('time', function () {
     testFormat(XFormat.time, XFormat.time_decode, [
       { in: '1970-01-01T15:02:01.123', out: '03:02:01.123 pm', args: ['hh:mm:ss.SSS a'], auxin: ['15:02:01.123'] },
-    ], function(a,b){
-      return a==b;
-    });
+      { in: '', out: '', args: ['hh:mm:ss.SSS a'], auxin: [null] },
+    ]);
   });
   //bool
   it('bool', function () {
     testFormat(XFormat.bool, XFormat.bool_decode, [
       { in: true, out: 'true', auxin: ['TRUE','T','Y','YES','ON','1'] },
-      { in: false, out: 'false', auxin: ['FALSE','F','N','NO','OFF','0'] },
+      { in: false, out: 'false', auxin: ['FALSE','F','N','NO','OFF','0', '', null] },
     ]);
   });
   //json
   it('json', function () {
     testFormat(XFormat.json, XFormat.json_decode, [
       { in: '', out: '' },
+      { in: null, out: null },
       { in: '{}', out: '{}'},
       { in: '{"k":"v"}', out: '{\n  "k": "v"\n}'},
-      { in: 1, out: 1},
+      { in: 1, out: '1'},
       { in: {}, out: '{}'},
     ]);
   });
