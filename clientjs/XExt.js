@@ -1955,7 +1955,7 @@ exports = module.exports = function(jsh){
   }
 
   XExt.cleanFileName = function (fname) {
-    if (typeof fname === undefined) return '';
+    if (typeof fname == 'undefined') return '';
     if (fname === null) return '';
     
     fname = fname.toString();
@@ -1965,7 +1965,7 @@ exports = module.exports = function(jsh){
 
   XExt.cleanFilePath = function (fpath, options) {
     options = _.extend({ allow: '/' }, options);
-    if (typeof fpath === undefined) return '';
+    if (typeof fpath == 'undefined') return '';
     if (fpath === null) return '';
     
     fpath = fpath.toString();
