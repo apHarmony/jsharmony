@@ -768,8 +768,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   xcontroller.Export = function(){
     if(!xgrid.Prop.isInlinePopup) if(jsh.XPage.onGridExit(null,function(){ xcontroller.Export(); })) return;
+    var current_display_layout = xcontroller.GetDisplayLayout();
+    if(current_display_layout && _.isArray(current_display_layout.columns)) {
+      var columns_to_export = _.reduce(current_display_layout.columns,function (columns_to_export,column) {
+        columns_to_export.push(column.name);
+          return columns_to_export;
+      },[])
+    }
     xgrid.Load(0,0,function(url){
-      url+='&columns='+encodeURIComponent(JSON.stringify(xcontroller.GetDisplayLayout().columns.map(function(c){return c.name})));
+      if (columns_to_export){
+        url+='&columns='+encodeURIComponent(JSON.stringify(columns_to_export));
+      }
       jsh.getFileProxy().prop('src', url);
     },true);
   }
