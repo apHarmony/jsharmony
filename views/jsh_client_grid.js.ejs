@@ -771,7 +771,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var current_display_layout = xcontroller.GetDisplayLayout();
     if(current_display_layout && _.isArray(current_display_layout.columns)) {
       var columns_to_export = _.reduce(current_display_layout.columns,function (columns_to_export,column) {
-        columns_to_export.push(column.name);
+        if (column.name) columns_to_export.push(column.name);
           return columns_to_export;
       },[])
     }
