@@ -155,7 +155,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     }
     if(xform){
       var field = xmodel.fields && xmodel.fields[fieldname];
-      var formval = XExt.getFormField(xform, fieldname);
+      var formval = undefined;
+      if(field) formval = XExt.getFormField(xform, fieldname);
+      else if(fieldname in xmodel.controller.form.Data) formval = xmodel.controller.form.Data[fieldname];
       if(jsh.is_insert && field && field.key && XExt.isNullUndefinedEmpty(formval) && !XExt.hasAction(field.actions, 'I')) return undefined;
       return formval;
     }

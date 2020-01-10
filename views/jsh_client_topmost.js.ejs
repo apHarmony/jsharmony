@@ -113,10 +113,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //For each model: Commit, validate, and get save operation tasks
     XPage.traverseModels(null, function (xmodel) {
       if (!valid) return;
-      if (XExt.hasAction(xmodel.actions, 'IU') && !xmodel.unbound) {
+      if (XExt.hasAction(xmodel.actions, 'IUD') && !xmodel.unbound) {
         var action = 'U';
         if (xmodel.layout == 'multisel') action = 'U';
-        else if (xmodel.layout == 'grid') action = 'IU';
+        else if (xmodel.layout == 'grid') action = 'IUD';
         else if (xmodel.controller.form.Data._is_insert) action = 'I';
         if (XExt.hasAction(xmodel.actions, action)) {
           var ftasks = xmodel.controller.Save();
