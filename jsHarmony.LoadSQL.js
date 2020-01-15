@@ -246,6 +246,7 @@ exports.ParseSQLObject = function(module, objname, obj, fpath){
         if(_.isString(col)) tbl.columns[i] = col = { name: col };
       }
     }
+    _.each(obj.dependencies, function(tblname){ obj._tables[tblname] = tblname; });
   }
 
 
