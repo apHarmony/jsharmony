@@ -1049,6 +1049,7 @@ exports = module.exports = function(jsh){
     this.Expanded = false;
     this.Selected = false;
     this.Icon = '';
+    this.LazyRender = false;
   }
 
   XExt.TreeRender = function (jctrl, LOV, field) {
@@ -1056,15 +1057,21 @@ exports = module.exports = function(jsh){
     var firstRender = !jctrl.children().length;
     var expanded_nodes = XExt.TreeGetExpandedNodes(jctrl);
     var selected_nodes = XExt.TreeGetSelectedNodes(jctrl);
+
+    var tree = [];
+    var nodes = {};
+    var sortednodes = [];
     
     jctrl.empty();
     if (LOV.length == 0) return;
     
     //Create Tree
-    var tree = [];
-    var nodes = {};
-    var sortednodes = [];
     var has_seq = false;
+    var lazy_render = (LOV.length >= 500);
+    if (field && field.controlparams) {
+      if('lazy_render' in field.controlparams) lazy_render = !!field.controlparams.lazy_render;
+      else if (field.controlparams.expand_all) lazy_render = false;
+    }
     for (var i = 0; i < LOV.length; i++) {
       var iLOV = LOV[i];
       var node = new XTreeNode();
@@ -1074,6 +1081,7 @@ exports = module.exports = function(jsh){
       node.Text = iLOV[jsh.uimap.code_txt];
       node.Icon = iLOV[jsh.uimap.code_icon];
       node.Seq = iLOV[jsh.uimap.code_seq];
+      node.LazyRender = lazy_render;
       if (node.Seq) has_seq = true;
       if (_.includes(expanded_nodes, (node.Value||'').toString())) node.Expanded = true;
       if (_.includes(selected_nodes, (node.Value||'').toString())) node.Selected = true;
@@ -1099,6 +1107,40 @@ exports = module.exports = function(jsh){
       jctrl.data('treeid', treeid);
     }
     jctrl.html(body);
+
+    function renderLazy(){
+      var jthis = $(this);
+      //Get node id
+      var nodeid = jthis.data('id');
+      //Find node by node id
+      var node = nodes[nodeid];
+      if(!node) return;
+      //Render that node
+      var childrenHtml = '';
+      _.each(node.Children, function(child){ childrenHtml += XExt.TreeRenderNode(jctrl, child); });
+      jthis.removeClass('tree_render_lazy').off('tree_render_lazy');
+      jthis.next('.children').append(childrenHtml);
+      jthis.next('.children').find('.tree_render_lazy').on('tree_render_lazy', renderLazy);
+    }
+    jctrl.find('.tree_render_lazy').on('tree_render_lazy', renderLazy);
+    jctrl.off('tree_path').on('tree_path', function(e, treePathInfo){
+      if(treePathInfo){
+        for(var nodeID in nodes){
+          var node = nodes[nodeID];
+          if(node.Value == treePathInfo.value){
+            treePathInfo.path = [node];
+            var parentNode = node;
+            do {
+              if(parentNode.ParentID) parentNode = nodes[parentNode.ParentID];
+              else parentNode = null;
+              if(parentNode) treePathInfo.path.unshift(parentNode);
+            } while(parentNode);
+            break;
+          }
+        }
+      }
+    });
+
     if (field && field.controlparams) {
       if(firstRender){
         if (field.controlparams.expand_all) XExt.TreeExpandAll(jctrl);
@@ -1272,11 +1314,13 @@ exports = module.exports = function(jsh){
 
   XExt.TreeRenderNode = function (ctrl, n) {
     var children = '';
-    for (var i = 0; i < n.Children.length; i++) {
-      children += XExt.TreeRenderNode(ctrl, n.Children[i]);
+    if(n.Expanded || !n.LazyRender){
+      for (var i = 0; i < n.Children.length; i++) {
+        children += XExt.TreeRenderNode(ctrl, n.Children[i]);
+      }
     }
     var rslt = jsh.ejs.render('\
-      <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>" onclick=\'<%-instance%>.XExt.TreeSelectNode(this,<%-JSON.stringify(n.Value)%>); return false;\' ondblclick=\'<%-instance%>.XExt.TreeDoubleClickNode(this,<%-JSON.stringify(n.ID)%>); return false;\' oncontextmenu=\'return <%-instance%>.XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'<%-instance%>.XExt.CancelBubble(arguments[0]); <%-instance%>.XExt.TreeToggleNode(<%-instance%>.$(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><img class="icon" src="<%-jsh._PUBLICURL%>images/icon_<%=n.Icon%>.png"><span><%=n.Text||"\u00A0"%></span></a>\
+      <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length && (n.LazyRender&&!n.Expanded)?"tree_render_lazy":"")%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>" onclick=\'<%-instance%>.XExt.TreeSelectNode(this,<%-JSON.stringify(n.Value)%>); return false;\' ondblclick=\'<%-instance%>.XExt.TreeDoubleClickNode(this,<%-JSON.stringify(n.ID)%>); return false;\' oncontextmenu=\'return <%-instance%>.XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'<%-instance%>.XExt.CancelBubble(arguments[0]); <%-instance%>.XExt.TreeToggleNode(<%-instance%>.$(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><img class="icon" src="<%-jsh._PUBLICURL%>images/icon_<%=n.Icon%>.png"><span><%=n.Text||"\u00A0"%></span></a>\
       <div class="children <%=(n.Expanded?"expanded":"")%> tree_item_<%=n.ID%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>"><%-children%></div>',
       { n: n, children: children, jsh: jsh, instance: jsh.getInstance() }
     );
@@ -1378,15 +1422,23 @@ exports = module.exports = function(jsh){
     var nodeid = undefined;
     if(nodevalue){
       //Get nodeid from nodevalue
-      jtree.find('.tree_item').each(function(){
-        if($(this).data('value')==nodevalue) nodeid = $(this).data('id');
-      });
-      if(typeof nodeid == 'undefined'){ return; }
-      else {
-        jtree.find('.tree_item.tree_item_' + nodeid).addClass('selected');
-        if (field && field.controlparams) {
-          if (field.controlparams.expand_to_selected) XExt.TreeExpandToSelected(ctrl);
-        }
+      function findNode(){ jtree.find('.tree_item').each(function(){ if($(this).data('value')==nodevalue) nodeid = $(this).data('id'); }); }
+      findNode();
+
+      if(typeof nodeid == 'undefined'){
+        //Lazy evaluation
+        var treePathInfo = { value: nodevalue };
+        jtree.trigger('tree_path', [ treePathInfo ]);
+        _.each(treePathInfo.path, function(node){
+          var jtreenode = jtree.find('.tree_item_'+node.ID);
+          if(jtreenode.hasClass('tree_render_lazy')) jtreenode.trigger('tree_render_lazy');
+        });
+        findNode();
+        if(typeof nodeid == 'undefined') return;
+      }
+      jtree.find('.tree_item.tree_item_' + nodeid).addClass('selected');
+      if (field && field.controlparams) {
+        if (field.controlparams.expand_to_selected) XExt.TreeExpandToSelected(ctrl);
       }
     }
 
@@ -1413,7 +1465,9 @@ exports = module.exports = function(jsh){
 
   XExt.TreeExpandNode = function (jctrl, nodeid) {
     var jctrl = jctrl.closest('.xform_ctrl.tree');
-    jctrl.find('.tree_item_' + nodeid).addClass('expanded');
+    var jtreenode = jctrl.find('.tree_item_' + nodeid);
+    if(jtreenode.hasClass('tree_render_lazy')) jtreenode.trigger('tree_render_lazy');
+    jtreenode.addClass('expanded');
     jctrl.find('.tree_item.tree_item_' + nodeid + ' > .glyph').html('&#x25e2;');
   }
 
@@ -1432,9 +1486,21 @@ exports = module.exports = function(jsh){
   }
   XExt.TreeExpandAll = function (ctrl) {
     var jctrl = $(ctrl).closest('.xform_ctrl.tree');
-    jctrl.find('.tree_item').addClass('expanded');
-    jctrl.find('.children').addClass('expanded');
-    jctrl.find('.glyph').html('&#x25e2;');
+    if(!jctrl.find('.tree_render_lazy').length){
+      jctrl.find('.tree_item').addClass('expanded');
+      jctrl.find('.children').addClass('expanded');
+      jctrl.find('.glyph').html('&#x25e2;');
+    }
+    else{
+      var unexpanded = jctrl.find('.tree_item').not('.expanded');
+      var i = 0;
+      while(unexpanded.length){
+        i++;
+        if(i>1000)break;
+        unexpanded.each(function(){ XExt.TreeExpandNode(jctrl, this.getAttribute('data-id')); });
+        unexpanded = jctrl.find('.tree_item').not('.expanded');
+      }
+    }
   }
 
   /*********************

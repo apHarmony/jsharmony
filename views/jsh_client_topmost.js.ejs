@@ -356,7 +356,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           XPage.Show();
           jsh.XWindowResize();
           if (enable_save && !_.includes(rootmodel.hide_system_buttons,'save')) jsh.$root('.xactions.top .save').show();
-          if (enable_delete && !_.includes(rootmodel.hide_system_buttons,'delete')) jsh.$root('.xactions.top .delete').show();
+          if (enable_delete && !_.includes(jsh.XModels[jsh.delete_target].hide_system_buttons,'delete')) jsh.$root('.xactions.top .delete').show();
           XPage.traverseModels(null, function (xmodel) {
             if (!jsh.is_insert && XExt.hasAction(xmodel.actions, 'I')) jsh.$root('.xactions.xelem' + xmodel.class + ' .duplicate').show();
           });

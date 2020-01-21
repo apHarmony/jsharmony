@@ -242,6 +242,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
                         ],
                         "expand_all": false, //Show nodes expanded by default
                         "expand_to_selected": true, //Defaults to true
+                        "lazy_render": false, //Render nodes as needed, instead of up-front
                         //Move one node to another
                         "onmove": "_this.control_onmove(dragval, dropval, anchor, e);",
                         //Drop external file onto tree node

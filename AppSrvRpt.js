@@ -400,7 +400,7 @@ AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, d
     HelperFS.clearFiles(report_folder, jsh.Config.public_temp_expiration, -1, function () {
       tmp.file({ dir: report_folder }, function (tmperr, tmppath, tmpfd) {
         if (tmperr) throw tmperr;
-        _this.getBrowser(function (browser) {
+        _this.getBrowser(function (err, browser) {
           var page = null;
 
           function genReportError(err){
@@ -412,6 +412,8 @@ AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, d
             }
             else return done(rpterr, null);
           }
+
+          if(err) return genReportError(err);
 
           try {
             browser.newPage().then(function (_page) {
@@ -646,9 +648,9 @@ AppSrvRpt.prototype.getBrowser = function (callback) {
       _this.browser = null; 
       return oldbrowser.close()
         .then(function(){ return _this.getBrowser(callback); })
-        .catch(function(err){ jsh.Log.error('Cound not exit report renderer: '+err.toString()); });
+        .catch(function(err){ var errmsg = 'Cound not exit report renderer: '+err.toString(); jsh.Log.error(errmsg); return callback(new Error(errmsg)); });
     }
-    else return callback(_this.browser);
+    else return callback(null, _this.browser);
   }
   jsh.Log.info('Launching Report Renderer');
   puppeteer.launch({ ignoreHTTPSErrors: true }) //, headless: false
@@ -658,9 +660,9 @@ AppSrvRpt.prototype.getBrowser = function (callback) {
         _this.browser = null;
       });
       _this.browserreqcount = 0;
-      return callback(_this.browser);
+      return callback(null, _this.browser);
     })
-    .catch(function(err){ jsh.Log.error(err); });
+    .catch(function(err){ jsh.Log.error(err); return callback(err); });
 }
 
 AppSrvRpt.prototype.runReportJob = function (req, res, fullmodelid, Q, P, onComplete) {

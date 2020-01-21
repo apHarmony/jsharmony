@@ -166,5 +166,6 @@ AppSrv.prototype.getSQL = function (model, sqlid, jsh) {
 
   return DB.ParseSQLBase(sqlid, jsh, db.SQLExt);
 }
+AppSrv.prototype.parseSQL = function(sql, model, jsh){ return this.getSQL(model, sql, jsh); }
 
 module.exports = AppSrv;

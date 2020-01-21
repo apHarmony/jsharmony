@@ -448,6 +448,7 @@ BODY
   color:#000;
   border:1px solid #fff;
   padding-left:4px;
+  position:relative;
 }
 <%-rootcss%> .xform_ctrl.tree.uneditable a.tree_item:hover {
   text-decoration:none;
@@ -464,9 +465,6 @@ BODY
 }
 <%-rootcss%> .xform_ctrl.tree .children.expanded {
   display:block;
-}
-<%-rootcss%> .xform_ctrl.tree a.tree_item.nochildren {
-  padding-left:17px; /* Glyph + Standard Padding */
 }
 <%-rootcss%> .xform_ctrl.tree a.tree_item.selected {
   font-weight:bold;
@@ -493,6 +491,9 @@ BODY
   display:none;
 }
 <%-rootcss%> .xform_ctrl.tree .glyph {
+  position:absolute;
+  top:3px;
+  left:4px;
   display:inline-block;
   width:13px;
   color:#aaa;
@@ -503,11 +504,17 @@ BODY
   color:#aaccff;
 }
 <%-rootcss%> .xform_ctrl.tree .icon {
-  position:relative;
+  position:absolute;
   top:4px;
+  left:17px;
   padding-left:1px;
   padding-right:5px;
   border:0;
+}
+<%-rootcss%> .xform_ctrl.tree span {
+  display:inline-block;
+  padding-left:35px;
+  padding-top:3px;
 }
 <%-rootcss%> .xform_ctrl.checkbox {
   position:relative;

@@ -377,7 +377,7 @@ function SortModelArray(fields){
       if('__AFTER__' in field){
         //Get position of new index
         if(field['__AFTER__']=='__START__') newidx = 0;
-        else if(field['__AFTER__']=='__END__') newidx = fields.length - 1;
+        else if(field['__AFTER__']=='__END__') newidx = fields.length;
         else {
           for(var j = 0; j < fields.length; j++){
             if(fields[j].name == field['__AFTER__']){ 
@@ -1354,13 +1354,13 @@ exports.ParseEntities = function () {
             case 'BIGINT':
             case 'INT':
             case 'SMALLINT':
-              AddValidation(field, 'IsNumeric'); break;
+              AddValidation(field, 'IsNumeric', { ignore: function(validator){ if(validator.substr(0,10)=='IsNumeric:') return true; } }); break;
             case 'TINYINT':
               AddValidation(field, 'MaxValue:255');
               AddValidation(field, 'IsNumeric:true');
               break;
             case 'DECIMAL':
-              AddValidation(field, 'IsDecimal'); break;
+              AddValidation(field, 'IsDecimal', { ignore: function(validator){ if(validator.substr(0,10)=='IsDecimal:') return true; } }); break;
             case 'FLOAT':
               AddValidation(field, 'IsFloat'); break;
             case 'DATE':
@@ -2557,9 +2557,15 @@ exports.ParsePopups = function () {
   });
 };
 
-function AddValidation(field, validator) {
+function AddValidation(field, new_validator, options) {
+  if(!options) options = { ignore: null };
   if (!('validate' in field)) field.validate = [];
-  field.validate.push(validator);
+  for(var i=0;i<field.validate.length;i++){
+    var validator = field.validate[i];
+    if(options.ignore && options.ignore(validator)) return;
+    if(validator == new_validator) return;
+  }
+  field.validate.push(new_validator);
 }
 
 exports.ParseMacros = function() {
