@@ -18,6 +18,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 var Helper = require('./lib/Helper.js');
 var HelperFS = require('./lib/HelperFS.js');
+var HelperRender = require('./lib/HelperRender.js');
 var ejs = require('ejs');
 var stylus = require('stylus');
 var fs = require('fs');
@@ -116,6 +117,13 @@ exports.RenderEJS = function(code,ejsparams){
   if(!('ejsparams' in ejsparams)) ejsparams.ejsparams = ejsparams;
   return ejs.render(code,ejsparams);
 };
+
+exports.RouteView = function(ejsname, title, _options){
+  var _this = this;
+  return function(req, res, next){
+    return HelperRender.reqGet(req, res, _this, ejsname, title, _options);
+  };
+}
 
 exports.getSystemCSS = function(cb){
   var _this = this;

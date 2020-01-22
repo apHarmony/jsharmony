@@ -146,7 +146,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         if(xform){
           //If the rowid is being edited
           if(xform.Index == rowid){
-            if(xform.Data.Fields[fieldname]) return XExt.getFormField(xform, fieldname);
+            var field = xform.Data.Fields[fieldname];
+            var has_field = !!field;
+            if(has_field && !XExt.hasAction(field.actions,'IU') && _.includes(['html','label','linkbutton','button'],field.control)) has_field = false;
+            if(has_field) return XExt.getFormField(xform, fieldname);
           }
           return xform.DataSet[rowid][fieldname];
         }
@@ -156,7 +159,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if(xform){
       var field = xmodel.fields && xmodel.fields[fieldname];
       var formval = undefined;
-      if(field) formval = XExt.getFormField(xform, fieldname);
+      var has_field = !!field;
+      if(has_field && !XExt.hasAction(field.actions,'IU') && _.includes(['html','label','linkbutton','button'],field.control)) has_field = false;
+      if(has_field) formval = XExt.getFormField(xform, fieldname);
       else if(fieldname in xmodel.controller.form.Data) formval = xmodel.controller.form.Data[fieldname];
       if(jsh.is_insert && field && field.key && XExt.isNullUndefinedEmpty(formval) && !XExt.hasAction(field.actions, 'I')) return undefined;
       return formval;
