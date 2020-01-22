@@ -118,10 +118,13 @@ exports.RenderEJS = function(code,ejsparams){
   return ejs.render(code,ejsparams);
 };
 
-exports.RouteView = function(ejsname, title, _options){
+exports.RouteView = function(ejsname, title, _options, nextRoute){
   var _this = this;
   return function(req, res, next){
-    return HelperRender.reqGet(req, res, _this, ejsname, title, _options);
+    var verb = req.method.toLowerCase();
+    if(verb=='get') return HelperRender.reqGet(req, res, _this, ejsname, title, _options);
+    if(nextRoute) return nextRoute(req, res, next);
+    return next();
   };
 }
 
