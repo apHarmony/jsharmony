@@ -83,6 +83,8 @@ exports = module.exports = function(jsh){
     this.SubMenuOverhang = 0;  //How much the full submenu would exceed window dimensions
     this.SubMenuMoreWidth = 0; //Width of the submenu "More" button
 
+    this.paddleAnimation = null;
+
     this.menuid = '';          //Currently selected Menu ID
     this.submenuid = '';       //Currently selected SubMenu ID
   }
@@ -126,6 +128,61 @@ exports = module.exports = function(jsh){
       }
     }
 
+  }
+
+  XMenuHorizontal.prototype.RenderPaddle = function(){
+    return;
+    var _this = this;
+    var jpaddle = jsh.$root('.xmenupaddle');
+    if(!jpaddle.length) return;
+    var jmenuitem = jsh.$root('.xmenu .xmenuitem.selected');
+    var curOpacity = 0;
+    if(typeof jpaddle[0].style.opacity != 'undefined'){ curOpacity = parseFloat(jpaddle[0].style.opacity); }
+
+    var animateParams = {};
+    if(!jmenuitem.length || !jmenuitem.is(':visible')){
+      if(curOpacity != 0){
+        if(_this.paddleAnimation && (_this.paddleAnimation.opacity !== 0)){
+          animateParams = { opacity: 0 };
+        }
+      }
+    }
+    else{
+      //Get target position
+      var tgtpos = jmenuitem.offset();
+      var tgttop = Math.round(tgtpos.top + jmenuitem.outerHeight());
+      var tgtleft = Math.round(tgtpos.left);
+      var tgtwidth = Math.round(jmenuitem.outerWidth());
+
+      var curpos = jpaddle.offset();
+      var curwidth = Math.round(parseFloat(jpaddle[0].style.width));
+      var curheight = Math.round(jpaddle.height());
+      tgttop -= curheight;
+
+      var animateOpacity = curOpacity != 1;
+      var animatePosition = (Math.round(curpos.left) != tgtleft) || (Math.round(curpos.top) != tgttop) || (tgtwidth != curwidth);
+
+      //Set target position if opacity=0, otherwise animate
+      if(curOpacity == 0){
+        jpaddle.css({ top: tgttop, left: tgtleft, width: tgtwidth });
+        animatePosition = false;
+      }
+
+      if(animateOpacity) animateParams.opacity = 1;
+      if(animatePosition){
+        animateParams.top = tgttop+'px';
+        animateParams.left = tgtleft+'px';
+        animateParams.width = tgtwidth+'px';
+      }
+    }
+
+    if(!_.isEmpty(animateParams)){
+      if(_this.paddleAnimation){
+        if(JSON.stringify(animateParams) == JSON.stringify(_this.paddleAnimation)) return;
+      }
+      _this.paddleAnimation = animateParams;
+      jpaddle.stop(true).animate(animateParams, 0, function(){ _this.paddleAnimation = null; });
+    }
   }
 
   //Update the currently selected menu item
@@ -181,6 +238,8 @@ exports = module.exports = function(jsh){
     jsh.$root('.xsubmenuside .xsubmenusideitem').not(jsubmenusideitem).removeClass('selected');
     if (jsubmenuitem && !jsubmenuitem.hasClass('selected')) jsubmenuitem.addClass('selected');
     if (jsubmenusideitem && !jsubmenusideitem.hasClass('selected')) jsubmenusideitem.addClass('selected');
+
+    this.RenderPaddle();
   }
 
   XMenuHorizontal.prototype.RefreshLayout = function(){
@@ -223,6 +282,7 @@ exports = module.exports = function(jsh){
       }
     }
     this.RefreshSubmenuLayout();
+    this.RenderPaddle();
   }
 
   XMenuHorizontal.prototype.RefreshSubmenuLayout = function(){
