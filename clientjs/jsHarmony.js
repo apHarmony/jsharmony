@@ -245,6 +245,7 @@ jsHarmony.prototype.BindEvents = function(){
   var _this = this;
   $(document).ready(function(){ _this.Init(); });
   $(document).ready(function () { _this.XWindowResize(); });
+  $(window).load(function () { _this.XWindowResize(); });
   $(window).resize(function () { _this.XWindowResize(); });
   $(window).scroll(function () { _this.XWindowResize('scroll'); });
   window.addEventListener('message', function(event){ _this.Message((event.data || '').toString()); });
