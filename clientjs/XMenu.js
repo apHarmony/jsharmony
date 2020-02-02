@@ -131,7 +131,6 @@ exports = module.exports = function(jsh){
   }
 
   XMenuHorizontal.prototype.RenderPaddle = function(){
-    return;
     var _this = this;
     var jpaddle = jsh.$root('.xmenupaddle');
     if(!jpaddle.length) return;
@@ -181,7 +180,7 @@ exports = module.exports = function(jsh){
         if(JSON.stringify(animateParams) == JSON.stringify(_this.paddleAnimation)) return;
       }
       _this.paddleAnimation = animateParams;
-      jpaddle.stop(true).animate(animateParams, 0, function(){ _this.paddleAnimation = null; });
+      jpaddle.stop(true).animate(animateParams, 250, function(){ _this.paddleAnimation = null; });
     }
   }
 

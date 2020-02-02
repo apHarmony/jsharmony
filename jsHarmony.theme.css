@@ -251,9 +251,11 @@ MENU STYLES
 }
 <%-rootcss%> .xmenuhorizontal .xmenu a.selected{
 /*	color:#000000;*/
+/*
 	background-image:url('<%-req.jshsite.publicurl%>images/menu_highlight_triangle.png');
 	background-repeat:no-repeat;
   background-position:bottom center;
+*/
 }
 <%-rootcss%> .xmenuhorizontal .xmenu a.selected:hover{
 	text-decoration:none;
@@ -308,8 +310,6 @@ MENU STYLES
 	font-size:15px;
 }
 <%-rootcss%> .xmenuhorizontal .xmenupaddle {
-  display:none;
-  /*
   background-image:url('<%-req.jshsite.publicurl%>images/menu_highlight_triangle.png');
 	background-repeat:no-repeat;
   background-position:bottom center;
@@ -319,7 +319,6 @@ MENU STYLES
   left:0;
   position:absolute;
   opacity:0;
-  */
 }
 <%-rootcss%> .xmenuhorizontal .xmenuside a:hover{
   text-decoration:underline;
