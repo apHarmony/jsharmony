@@ -43,6 +43,7 @@ exports = module.exports = function(jsh){
       var parentobj = jsh.root;
       if (this._jrow) parentobj = this._jrow;
       var xmodel = jsh.XModels[modelid];
+      if(!xmodel) return;
       var isGrid = (xmodel.layout == 'grid');
       //Clear highlighted background of currently edited cells
       parentobj.find('.xelem'+xmodel.class+'.xform_ctrl.updated').removeClass('updated');
@@ -546,6 +547,7 @@ exports = module.exports = function(jsh){
     return function (xform, parentobj) {
       if (!parentobj) parentobj = jsh.root;
       var xmodel = jsh.XModels[modelid];
+      if(!xmodel) return;
       var isGrid = (xmodel.layout == 'grid');
       _.each(this.Fields, function (field) {
         if (!('control' in field)) return; if (field.control == 'subform') return;

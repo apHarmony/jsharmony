@@ -108,53 +108,65 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       this.Prop.ModifiedSinceLoad = false;
       xcontroller.UpdateDisplayLayoutColumnHeaders();
     }
-    xgrid.OnRender = function(ejssource,data){
-      xform.DataSet = xform.DataSet.concat(data[this.q]);
-      for (var i = 0; i < data[this.q].length; i++) {
-        var rowid = this.RowCount + i;
+    xgrid.OnRender = function(ejssource,data,cb){
+      var _this = this;
+      xform.DataSet = xform.DataSet.concat(data[_this.q]);
+      for (var i = 0; i < data[_this.q].length; i++) {
+        var rowid = _this.RowCount + i;
         xform.DataSet[rowid]['_is_insert'] = false;
         xform.DataSet[rowid]['_is_dirty'] = false;
         xform.DataSet[rowid]['_is_deleted'] = false;
         xform.DataSet[rowid]['_orig'] = null;
         xform.ApplyUnboundDefaults(xform.DataSet[rowid]);
       }
-      if(xeditablegrid){
-        var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
-          startrowid: this.RowCount,
-          datatable: data[this.q],
-        });
-        var jparent = jsh.$root(this.PlaceholderID);
-        var jobj = $(ejsrslt).appendTo(jparent);
+      jsh.async.waterfall([
+        function(render_cb){
+          if(xeditablegrid){
+            var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
+              startrowid: _this.RowCount,
+              datatable: data[_this.q],
+            });
+            var jparent = jsh.$root(_this.PlaceholderID);
+            var jobj = $(ejsrslt).appendTo(jparent);
 
-        //Get an array of all rows by id
-        var jrows = {};
-        var numChildren = jparent[0].childNodes.length
-        for(var i=0;i<numChildren;i++){
-          var child = jparent[0].childNodes[i];
-          if(child.nodeName.toLowerCase()=='tr'){
-            var rowid = parseInt(child.getAttribute('data-id'));
-            if(!isNaN(rowid)) jrows[rowid] = child;
+            //Get an array of all rows by id
+            var jrows = {};
+            var numChildren = jparent[0].childNodes.length
+            for(var i=0;i<numChildren;i++){
+              var child = jparent[0].childNodes[i];
+              if(child.nodeName.toLowerCase()=='tr'){
+                var rowid = parseInt(child.getAttribute('data-id'));
+                if(!isNaN(rowid)) jrows[rowid] = child;
+              }
+            }
+
+            var readOnlyGrid = !jsh.XExt.hasAction(xmodel.actions,'IU');
+
+            var rowidx = 0;
+            jsh.async.eachSeries(data[_this.q], function(row, row_cb){
+              var rowid = _this.RowCount + rowidx;
+              xform.SetIndex(rowid, false, $(jrows[rowid]));
+              xform.Render({ resetValidation: false });
+              _this.OnRowBind($(jrows[rowid]), row, readOnlyGrid);
+              rowidx++;
+              if(jsh.init_complete) return row_cb();
+              else setTimeout(row_cb, 0);
+            }, render_cb);
           }
-        }
-
-        var readOnlyGrid = !jsh.XExt.hasAction(xmodel.actions,'IU');
-
-        for (var i = 0; i < data[this.q].length; i++) {
-          var rowid = this.RowCount + i;
-          xform.SetIndex(rowid, false, $(jrows[rowid]));
-          xform.Render({ resetValidation: false });
-          this.OnRowBind($(jrows[rowid]), data[this.q][i], readOnlyGrid);
-        }
-      }
-      else {
-        var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
-          startrowid: this.RowCount,
-          datatable: data[this.q],
-        });
-        var jobj = $(ejsrslt).appendTo(jsh.$root(this.PlaceholderID));
-      }
-      $.colorbox.resize();
-      this.RowCount += data[this.q].length;
+          else {
+            var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
+              startrowid: _this.RowCount,
+              datatable: data[_this.q],
+            });
+            var jobj = $(ejsrslt).appendTo(jsh.$root(_this.PlaceholderID));
+            return render_cb();
+          }
+        },
+      ], function(err){
+        $.colorbox.resize();
+        _this.RowCount += data[_this.q].length;
+        if(cb) return cb();
+      });
     }
     xgrid.OnLoadMoreData = function(){
       if(this.Prop.ModifiedSinceLoad){ this.Select(); return; }
