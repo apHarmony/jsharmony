@@ -163,11 +163,14 @@ BODY
 	margin-right:1px;
 	border-top:1px solid #333333;
 	border-left:1px solid #333333;
-	border-right:1px solid #333333;
+  border-right:1px solid #333333;
+  transition: padding-right 0.5s,padding-left 0.5s;
 }
 <%-rootcss%> a.xtab.selected{
   background-color:#333333;
   color:#ffffff;
+  padding-right: 20px;
+  padding-left: 20px;
 	
 }
 <%-rootcss%> a.xtab.selected:hover{

@@ -30,6 +30,7 @@ var HelperFS = require('../lib/HelperFS.js');
 var jsHarmonySite = require('../jsHarmonySite.js');
 var async = require('async');
 var url = require('url');
+var csv = require('csv');
 
 var jsHarmonyRouter = function (jsh, siteid) {
   if(!(siteid in jsh.Sites)) throw new Error('Site '+siteid+' not defined');
@@ -369,6 +370,8 @@ var jsHarmonyRouter = function (jsh, siteid) {
     if(!(dbid in jsh.DB)) { Helper.GenError(req, res, -4, 'Invalid Database ID'); return; }
     var db = jsh.DB[dbid];
 
+    var export_csv = false;
+
     //Run as user, if applicable
     var dbconfig = jsh.DBConfig[dbid];
     if(req.body.runas_user){
@@ -376,6 +379,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
       dbconfig.user = req.body.runas_user;
       dbconfig.password = req.body.runas_password;
     }
+    if(req.body.export_csv) export_csv = true;
 
     var show_notices = false;
     if(req.body.show_notices) show_notices = true;
@@ -393,8 +397,30 @@ var jsHarmonyRouter = function (jsh, siteid) {
         '_stats': Helper.FormatStats(req, stats, { notices: show_notices, show_all_messages: true }),
         'dbrslt': dbrslt
       };
-      
-      res.send(JSON.stringify(rslt));
+
+      if(export_csv){
+        var csvdata = [];
+        var sql_lines = (sql||'').toString().split('\n');
+        _.each(sql_lines, function(sql_line){ csvdata.push([sql_line]); });
+        csvdata.push([]);
+        for(var rs_id in dbrslt){
+          csvdata.push(['Resultset', rs_id]);
+          var rs = dbrslt[rs_id];
+          if(rs.length) csvdata.push(_.keys(rs[0]));
+          for(var i=0;i < rs.length;i++) csvdata.push(_.values(rs[i]));
+          csvdata.push([]);
+        }
+        //No results found
+        res.writeHead(200, {
+          'Content-Type': 'text/csv',
+          //'Content-Length': stat.size,
+          'Content-Disposition': 'attachment; filename=' + encodeURIComponent('db_exec_'+(new Date().getTime()).toString()+'.csv')
+        });
+        csv.stringify(csvdata, { quotedString: true }).pipe(res);
+      }
+      else {
+        res.send(JSON.stringify(rslt));
+      }
     }, dbconfig);
   });
   // /_debug/:modelid

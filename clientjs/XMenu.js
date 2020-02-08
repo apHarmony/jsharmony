@@ -130,13 +130,13 @@ exports = module.exports = function(jsh){
 
   }
 
-  XMenuHorizontal.prototype.RenderPaddle = function(){
+  XMenuHorizontal.prototype.RenderPaddle = function(newDimensions){
     var _this = this;
     var jpaddle = jsh.$root('.xmenupaddle');
     if(!jpaddle.length) return;
     var jmenuitem = jsh.$root('.xmenu .xmenuitem.selected');
     var curOpacity = 0;
-    if(typeof jpaddle[0].style.opacity != 'undefined'){ curOpacity = parseFloat(jpaddle[0].style.opacity); }
+    if(typeof jpaddle[0].style.opacity != 'undefined'){ curOpacity = parseFloat(jpaddle[0].style.opacity)||0; }
 
     var animateParams = {};
     if(!jmenuitem.length || !jmenuitem.is(':visible')){
@@ -163,7 +163,9 @@ exports = module.exports = function(jsh){
 
       //Set target position if opacity=0, otherwise animate
       if(curOpacity == 0){
-        jpaddle.css({ top: tgttop, left: tgtleft, width: tgtwidth });
+        var cssParams = { top: tgttop+'px', left: tgtleft+'px', width: tgtwidth+'px' };
+        //console.log('Setting ' + JSON.stringify(cssParams));
+        jpaddle.css(cssParams);
         animatePosition = false;
       }
 
@@ -180,6 +182,7 @@ exports = module.exports = function(jsh){
         if(JSON.stringify(animateParams) == JSON.stringify(_this.paddleAnimation)) return;
       }
       _this.paddleAnimation = animateParams;
+      //console.log('Animating '+ JSON.stringify(animateParams));
       jpaddle.stop(true).animate(animateParams, 250, function(){ _this.paddleAnimation = null; });
     }
   }
@@ -249,7 +252,7 @@ exports = module.exports = function(jsh){
     var maxw = $(window).width()-1;
     
     //Refresh dimensions, if necessary
-    _this.CalcDimensions();
+    var newDimensions = _this.CalcDimensions();
 
     var showmore = false;
     //Find out if we need to show "more" menu
@@ -281,7 +284,7 @@ exports = module.exports = function(jsh){
       }
     }
     this.RefreshSubmenuLayout();
-    this.RenderPaddle();
+    this.RenderPaddle(newDimensions);
   }
 
   XMenuHorizontal.prototype.RefreshSubmenuLayout = function(){
@@ -383,7 +386,7 @@ exports = module.exports = function(jsh){
     var _this = this;
     if(!force && (_this.MenuItems.length > 0)){
       var jobj = _this.MenuItems[0];
-      if(jobj.outerWidth(true).toString() == jobj.data('width')) return;
+      if(jobj.outerWidth(true).toString() == jobj.data('width')) return false;
     }
     for(var i=0;i<_this.MenuItems.length;i++){
       var jobj = _this.MenuItems[i];
@@ -392,6 +395,7 @@ exports = module.exports = function(jsh){
     }
     _this.MenuOverhang = jsh.$root('.xmenu').offset().left + parseInt(jsh.$root('.xmenu').css('padding-left').replace(/\D/g, ''));
     if (isNaN(_this.MenuOverhang)) _this.MenuOverhang = 0;
+    return true;
   }
 
   XMenuHorizontal.prototype.CalcSubmenuDimensions = function(force){

@@ -222,6 +222,23 @@ jsHarmony.prototype.getFileProxy = function(){
   return _this.$root('#'+_this.getInstance()+'_xfileproxy');
 }
 
+jsHarmony.prototype.postFileProxy = function(url, params){
+  var _this = this;
+  var jform_container = $('#'+_this.getInstance()+'_xfileform_container');
+  jform_container.empty();
+  var jform = $('<form method="post" id="'+_this.getInstance()+'_xfileform"></form>');
+  jform_container.append(jform);
+  jform.prop('action', url);
+  jform.prop('target', _this.getInstance()+'_xfileproxy');
+  for(var key in params){
+    var jinput = $('<input type="hidden" />');
+    jinput.prop('name', key);
+    jinput.prop('value', (params[key]||'').toString());
+    jform.append(jinput);
+  }
+  jform.submit().remove();
+}
+
 jsHarmony.prototype.loadScript = function(url, cb){
   var _this = this;
   if(url in _this.scriptLoader){
@@ -496,6 +513,7 @@ jsHarmony.prototype.InitFileUpload = function () {
           </table>\
         </form>\
       </div></div>\
+      <div id="'+this.getInstance()+'_xfileform_container"></div>\
       <iframe id="'+this.getInstance()+'_xfileproxy" name="'+this.getInstance()+'_xfileproxy" src="about:blank" style="width:0;height:0;border:0px solid #fff;"></iframe>\
     </div>');
 };
