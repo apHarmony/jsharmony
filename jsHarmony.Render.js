@@ -88,6 +88,7 @@ exports.getJSClientParams = function (req) {
   rslt += 'uimap: ' + JSON.stringify(_this.uimap) + ',';
   rslt += '_instance: ' + JSON.stringify(req.jshsite.instance) + ',';
   rslt += 'cookie_suffix: ' + JSON.stringify(Helper.GetCookieSuffix(req,_this)) + ',';
+  rslt += 'cookie_samesite: ' + JSON.stringify(Helper.GetCookieSameSite(req,_this)) + ',';
   if (req.isAuthenticated) {
     rslt += 'isAuthenticated: true,';
   }

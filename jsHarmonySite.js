@@ -44,6 +44,8 @@ function jsHarmonySite(jsh, id, config){
   this.show_system_errors = true;
   //Salt used by cookieParser to prevent user from modifying cookie data
   this.cookiesalt = '';
+  //Samesite setting override for jsHarmony cookie - strict / lax / none - default is lax
+  this.cookie_samesite = 'lax';
   //Site authentication method - parameters below
   this.auth = undefined;
   /*
@@ -172,6 +174,15 @@ jsHarmonySite.prototype.Validate = function(){
     if(Helper.notset(_this.auth.on_auth)) _this.auth.on_auth = function(req, jsh, params, cb){ //cb(err, rslt)
       jsh.AppSrv.ExecMultiRecordset('login', req.jshsite.auth.sql_auth, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
     };
+  }
+
+  if(!_this.cookie_samesite) _this.cookie_samesite = 'lax';
+  else{
+    _this.cookie_samesite = _this.cookie_samesite.toString().toLowerCase();
+    if(!_.includes(['strict','lax','none'], _this.cookie_samesite)) _this.jsh.Log.error('Site ' +_this.id + ' > cookie_samesite must be either Strict, Lax, or None');
+    if(_this.auth && _this.auth.allow_insecure_http_logins){
+      if(_this.cookie_samesite == 'none') _this.jsh.Log.error('Site ' +_this.id + ' > cookie_samesite=None requires login over HTTPS (samesite=None cannot be used with insecure cookies)');
+    }
   }
 };
 

@@ -988,15 +988,21 @@ exports = module.exports = function(jsh){
     }
     return rslt;
   }
-  XExt.SetCookie = function(cname,cvalue,exmin){
+  XExt.SetCookie = function(cname,cvalue,exmin,options){
     cname= XExt.GetCookieNameWithSuffix(cname);
+    if(!options) options = {};
+    if(!('samesite' in options) && jsh.cookie_samesite) options.samesite = jsh.cookie_samesite;
+    if(!('secure' in options)){ if(window.location.protocol=='https:') options.secure = true; }
     var expires = '';
     if (exmin !== 0){
       var d = new Date();
       d.setTime(d.getTime() + (exmin*60*1000));
       expires = ";expires="+ d.toUTCString();
     }
-    document.cookie = cname + "=" + encodeURIComponent(cvalue) + expires + "; path="+jsh._BASEURL;
+    var cookieval = cname + "=" + encodeURIComponent(cvalue) + expires + ";path="+jsh._BASEURL;
+    if('samesite' in options) cookieval += ';samesite=' + options.samesite.toString().toLowerCase();
+    if(options.secure) cookieval += ';secure';
+    document.cookie = cookieval;
   }
   XExt.ClearCookie = function(cname){
     return XExt.SetCookie(cname,'',-100000);
