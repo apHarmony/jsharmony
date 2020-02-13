@@ -131,7 +131,7 @@ jsHarmony.prototype.Init = function(init_cb){
 
       //Add Application Module
       if(!_this.Modules['application']){
-        _this.Modules['application'] = new jsHarmonyModule.ApplicationModule(_this);
+        _this.AddModule(new jsHarmonyModule.ApplicationModule(_this));
       }
       //Set Module Namespace, so that relative paths can be transformed to absolute
       _this.SetModuleNamespace();

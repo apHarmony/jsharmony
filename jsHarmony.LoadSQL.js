@@ -225,6 +225,20 @@ exports.ParseSQLObject = function(module, objname, obj, fpath){
         }
       }
     });
+    if(obj.foreignkeys) _.each(obj.foreignkeys, function(foreignkey){
+      if(!foreignkey.foreign_table) _this.LogInit_ERROR('Database object ' + objname + ' > Foreign key missing foreign_table property: '+ JSON.stringify(foreignkey));
+      else {
+        if(module.schema){
+          if(foreignkey.foreign_table.indexOf('.')<0){
+            foreignkey.foreign_table = module.schema + '.' + foreignkey.foreign_table;
+          }
+        }
+        if(obj.type=='table'){
+        if(!(foreignkey.foreign_table in obj._foreignkeys)) obj._foreignkeys[foreignkey.foreign_table] = [];
+          obj._foreignkeys[foreignkey.foreign_table].push(foreignkey);
+        }
+      }
+    });
   }
 
   if(obj.type=='view'){

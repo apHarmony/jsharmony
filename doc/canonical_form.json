@@ -360,6 +360,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       "sqlsearch": "(case when X then 1 else 0 end)", //Only applies to grid
       "sqlsearchsound": "c_id in (select c_id from SDX where SDX_COL='CN' and SDX_VAL=SOUNDEX(%%%FIELD%%%))",
       "__REMOVE__":1, //Remove Model field in inherited child
+      "***property***":"__REMOVEPROPERTY__", //Remove property from inherited child
       "__AFTER__": "FIELDNAME", "__START__", "__END__", //Position in inherited child
       //SYSTEM: datatype_config, sql_from_db, sql_to_db
     }
