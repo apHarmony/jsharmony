@@ -150,4 +150,44 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && !('
     });
   }
 
+  xcontroller.Render = function(newData, action){
+    var xdata = xform.Data;
+    if(typeof action == 'undefined') action = 'BIU';
+    for(var fname in xmodel.fields){
+      var field = xmodel.fields[fname];
+      if(XExt.hasAction(field.actions, action)){
+        if((fname in newData) && (fname in xdata)){
+          xdata[fname] = newData[fname];
+        }
+      }
+    }
+    xdata._is_insert = false;
+    xdata._is_dirty = false;
+    xdata._is_deleted = false;
+    xdata._orig = null;
+    xform.Render();
+
+    if (typeof xmodel.onload != 'undefined') xmodel.onload(xmodel);
+    jsh.ResetLinks();
+  }
+
+  xcontroller.setLOV = function(fieldname, lov_data){
+    if(!xform.Data._LOVs) xform.Data._LOVs = {};
+    xform.Data._LOVs[fieldname] = lov_data;
+    xform.LOVs = xform.Data._LOVs;
+  }
+
+  xcontroller.Commit = function(tgtData, action){
+    if(typeof action == 'undefined') action = 'IU';
+    //_this.checkUpdatesInfo();
+    var xdata = xform.Data;
+    if(!xdata.Commit(action)) return false;
+    if(!tgtData) return XExt.Alert('Target data set is not defined');
+
+    for(var key in tgtData){
+      if(key in xdata) tgtData[key] = xdata[key];
+    }
+    return true;
+  }
+
 })(<%-instance%>);

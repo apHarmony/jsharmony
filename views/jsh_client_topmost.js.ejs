@@ -291,6 +291,39 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     });
   }
 
+  XPage.RenderButtons = function(oroot){
+    if(!oroot) oroot = jsh.root;
+    var button_groups = {};
+    $(oroot).find('.xform_button').each(function () {
+      var jbtn = $(this);
+      var btnactions = jbtn.data('actions');
+      if (jsh.is_insert && !XExt.hasAction(btnactions, 'I')) jbtn.hide();
+      else {
+        if(jbtn.hasClass('grouped')){
+          var modelid = jbtn.data('model');
+          var buttonmodel = jsh.XModels[modelid];
+          var group = jbtn.data('group');
+          var button_group_name = modelid+'_'+group;
+          if(!(button_group_name in button_groups)) button_groups[button_group_name] = {
+            modelid: modelid,
+            modelclass: buttonmodel.class,
+            group: group,
+            jbutton: []
+          };
+          button_groups[button_group_name].jbutton.push(jbtn);
+        }
+      }
+    });
+    for(var button_group_name in button_groups){
+      var button_group = button_groups[button_group_name];
+      jsh.$root('.xbody').append('<div class="xactions_group xcontext_menu xelem'+button_group.modelclass+'" data-group="'+button_group.group+'" style="display:none;"></div>');
+      var jgroup = jsh.$root('.xactions_group.xelem'+button_group.modelclass+'[data-group="'+button_group.group+'"]');
+      _.each(button_group.jbutton,function(jbutton){
+        jgroup.append(jbutton);
+      });
+    }
+  }
+
   XPage.onReady = function() {
     XPage.Hide(null,function(xmodel){ return xmodel.layout=='grid'; });
     if (!jsh.XModels[jsh.XModels_root].actions) { XExt.Alert('ERROR - No effective access to root form'); return; }
@@ -314,35 +347,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       },
       function () {
         if ('state' in jsh._GET) XPage.LoadState(JSON.parse(jsh._GET.state));
-        var button_groups = {};
-        jsh.$root('.xform_button').each(function () {
-          var jbtn = $(this);
-          var btnactions = jbtn.data('actions');
-          if (jsh.is_insert && !XExt.hasAction(btnactions, 'I')) jbtn.hide();
-          else {
-            if(jbtn.hasClass('grouped')){
-              var modelid = jbtn.data('model');
-              var buttonmodel = jsh.XModels[modelid];
-              var group = jbtn.data('group');
-              var button_group_name = modelid+'_'+group;
-              if(!(button_group_name in button_groups)) button_groups[button_group_name] = {
-                modelid: modelid,
-                modelclass: buttonmodel.class,
-                group: group,
-                jbutton: []
-              };
-              button_groups[button_group_name].jbutton.push(jbtn);
-            }
-          }
-        });
-        for(var button_group_name in button_groups){
-          var button_group = button_groups[button_group_name];
-          jsh.$root('.xbody').append('<div class="xactions_group xcontext_menu xelem'+button_group.modelclass+'" data-group="'+button_group.group+'" style="display:none;"></div>');
-          var jgroup = jsh.$root('.xactions_group.xelem'+button_group.modelclass+'[data-group="'+button_group.group+'"]');
-          _.each(button_group.jbutton,function(jbutton){
-            jgroup.append(jbutton);
-          });
-        }
+        XPage.RenderButtons();
         XPage.traverseModels(null, function (xmodel) {
           if (typeof xmodel.oninit != 'undefined') xmodel.oninit(xmodel);
         });
@@ -764,10 +769,19 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     return ejsrslt;
   }
 
-  XPage.LayoutOneColumn = function(){
-    jsh.$root('.xform.onecolumn').each(function(){
+  XPage.LayoutOneColumn = function(oroot, options){
+    if(!oroot) oroot = jsh.root;
+    options = _.extend({ reset: false }, options);
+    $(oroot).find('.xform.onecolumn').each(function(){
       var jform = $(this);
       var max_width = 0;
+      if(options.reset){
+        jform.find('.leading').each(function(){ 
+          var jobj = $(this);
+          if(jobj.closest('.xform')[0]!=jform[0]) return;
+          jobj.css('width','auto');
+        });
+      }
       jform.find('.leading').each(function(){ 
         var jobj = $(this);
         if(jobj.closest('.xform')[0]!=jform[0]) return;
@@ -1230,6 +1244,161 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     jsh.xContextMenuVisible = true;
     jsh.xContextMenuItem = modelid;
     XExt.CancelBubble(e);
+  }
+
+  XPage.LoadVirtualModel = function(ocontainer, model, cb){
+    //Render model as HTML
+    XPage.ParseModelDefinition(model, function(err){
+      XExt.Alert('Error in model definition '+(model && model.id ? model.id : '')+': '+err.toString());
+    }, function(){
+      var parent = null;
+      if(model.parent) parent = jsh.XModels[model.parent] || null;
+      var ejsrslt = jsh.Render(model, parent);
+      //CODE_EJSPREPEND is used in top-level forms, to change position of the title
+      if(ejsrslt.indexOf(jsh.CODE_EJSPREPEND)>=0) ejsrslt = ejsrslt.replace(jsh.CODE_EJSPREPEND,'');
+      //Add model to DIV
+      $(ocontainer).html(ejsrslt);
+
+      XPage.traverseModelsAsync(model.id,
+        function (xmodel, done) {
+          xmodel.controller.Init(done);
+        },
+        function () {
+          XPage.RenderButtons(ocontainer);
+          XPage.traverseModels(model.id, function (xmodel) {
+            if (typeof xmodel.oninit != 'undefined') xmodel.oninit(xmodel);
+          });
+          XPage.Select({ modelid: model.id, force: true }, function () {
+            jsh.ResetLinks();
+            jsh.InitControls();
+            XPage.LayoutOneColumn(ocontainer);
+            jsh.XWindowResize();
+            if(cb) return cb(jsh.XModels[model.id]);
+          });
+        }
+      );
+    });
+  }
+
+  XPage.ParseModelDefinition = function(model, onError, onSuccess){
+    if(!onError) onError = function(err){};
+    if(!onSuccess) onSuccess = function(){};
+
+    var hasErrors = false;
+    var handleError = function(err){ hasErrors = true; onError(err); }
+
+    if(!model) return handleError(new Error('Model not defined'));
+    if(!model.id) return handleError(new Error('Model ID is required'));
+    if(model.id in jsh.XModels) return handleError(new Error('Another Model with the same ID is already loaded'));
+    if(!model.layout) return handleError(new Error('Model layout is required'));
+    if(!_.includes(['form','grid'], model.layout)) return handleError(new Error('Model layout must be form or grid'));
+    var modelDefaults = {
+      namespace: '',
+      templates: {},
+      actions: 'BIUD',
+      breadcrumbs: '',
+      module: '',
+      module_namespace: '',
+      using: [],
+      _sysconfig: {},
+      buttons: [],
+      modeltype: 'static',
+      title: '',
+      caption: ['','Item','Items'],
+      unbound: true,
+      forcequery: {},
+      topmost: false,
+      ejs: '',
+      css: '',
+      js: '',
+      fields: [],
+    };
+    for(var key in modelDefaults){
+      if(!(key in model)) model[key] = modelDefaults[key];
+    }
+    if(!model.class) model.class = XExt.escapeCSSClass(model.id);
+    if(_.isFunction(model.js)) model.js = 'jsh.App[modelid] = new (' + model.js.toString() + ')();';
+    if((model.layout=='form') && !('onecolumn' in model)) model.onecolumn = true;
+
+    for(var i=0;i<model.buttons.length;i++){
+      var button = model.buttons[i];
+      if(button.link && (button.link.substr(0,3)=='js:')){
+        button.onclick = "var modelid = '" + XExt.escapeJS(model.id) + "'; "+button.link.substr(3)+'; return false;';
+        button.link = '#';
+      }
+    }
+
+    var firstfield = true;
+    for(var i=0;i<model.fields.length;i++){
+      var field = model.fields[i];
+      if(field.name && field.type){
+        if(!('locked_by_querystring' in field)) field.locked_by_querystring = true;
+        if(!('captioncolon' in field)) field.captioncolon = true;
+      }
+      if(!('actions' in field)){
+        if(_.includes(['html','button','linkbutton','file_download','image'], field.control)) field.actions = 'B';
+        else field.actions = 'BIU';
+      }
+      if(field.validate){
+        for(var j=0;j<field.validate.length;j++){
+          field.validate[j] = XPage.ParseValidator(field.validate[j], model, field, field.actions);
+        }
+      }
+
+      //Apply one-column layout
+      if(model.onecolumn && !('nl' in field)){
+        if((model.layout=='form')||(model.layout=='form-m')||(model.layout=='exec')||(model.layout=='report')){
+          if(!firstfield && ('control' in field)){
+            if((field.control=='html') && ('value' in field) && !field.caption){ /* No action */ }
+            else field.nl = 1;
+          }
+        }
+      }
+
+      //Clear first field flag if no longer the first field
+      if(firstfield && field.control && field.actions){
+        if(!XExt.hasAction(field.actions, 'BIUD')) { /* No action */ }
+        else if(field.control=='hidden') { /* No action */ }
+        else if((field.control=='html') && ('value' in field) && !field.caption) { /* No action */ }
+        else firstfield = false;
+      }
+    }
+
+    if(!hasErrors) onSuccess();
+  }
+
+  XPage.ParseValidator = function(validator, model, field, actions){
+    if(validator && validator.funcs) return validator;
+    if(_.isString(validator)) validator = { function: validator };
+    //Parse validator function
+    var vfuncname = validator.function;
+    var vparams = '';
+    var vsplit = vfuncname.indexOf(':');
+    if (vsplit > 0) { vparams = vfuncname.substr(vsplit + 1); vfuncname = vfuncname.substr(0, vsplit); }
+    var vfunccall = '';
+    if(vfuncname == 'js'){
+      vfunccall = '(function(_caption, _val, _obj){'+validator.function.substr(3)+'})';
+    }
+    else {
+      if (!(('_v_' + vfuncname) in jsh.XValidate)) return validator; //Ignore undefined functions
+      var vfunc = jsh.XValidate['_v_' + vfuncname];
+      if(('_v_' + vfuncname) in jsh.XValidate.BaseValidators){
+        vfunccall = 'XValidate._v_' + vfuncname + '(' + vparams + ')';
+      }
+      else {
+        vfunccall = '('+vfunc.toString()+')(' + vparams + ')';
+      }
+    }
+    //Parse validator actions
+    var vactions = ('actions' in validator)?validator.actions:(field.always_editable?XExt.xejs.getActions(model.actions, "BIU"):actions);
+    var vcaption = ('caption' in validator)?validator.caption:(field.caption_ext||field.caption);
+    var client_validator = {
+      actions: vactions,
+      caption: vcaption,
+      funcs: [vfunccall]
+    };
+    if('selector' in validator) client_validator.selector = validator.selector;
+    return client_validator;
   }
 
   XPage.bindEvents();

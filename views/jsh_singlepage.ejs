@@ -45,8 +45,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var JSHFind = jsh.JSHFind;
   var XLoader = jsh.XLoader;
   var XImageLoader = jsh.XImageLoader;
-  var CODE_EJSPREPEND = '<!--'+'%%%EJSPREPEND%%%'+'-->';
   var initialLoad = true;
+
+  jsh.CODE_EJSPREPEND = '<!--'+'%%%EJSPREPEND%%%'+'-->';
 
   jsh.jslocals = <%-JSON.stringify(req.getJSLocals())%>;
   jsh.state = { GET:{},QS:'',fullpath:'',fullurl:jsh._BASEURL,hash:'',modelid:'',path:'' };
@@ -204,7 +205,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if(model.breadcrumbs) ejsprepend += model.breadcrumbs;
       //if(ejsrslt) ejsrslt = ejsrslt.trim();
       ejsprepend += jsh.title_html;
-      if(ejsrslt.indexOf(CODE_EJSPREPEND)>=0) ejsrslt = ejsrslt.replace(CODE_EJSPREPEND,ejsprepend)
+      if(ejsrslt.indexOf(jsh.CODE_EJSPREPEND)>=0) ejsrslt = ejsrslt.replace(jsh.CODE_EJSPREPEND,ejsprepend)
       else ejsrslt = ejsprepend + ejsrslt;
       //console.log(ejsrslt); //Debug EJS output
       jsh.$root('.xbody').html(ejsrslt);
@@ -261,8 +262,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     });
   }
 
-  jsh.ResetLinks = function(){
-    jsh.$root('a').each(function(i,obj){
+  jsh.ResetLinks = function(rootobj){
+    var jroot = (rootobj ? $(rootobj) : jsh.root);
+    jroot.find('a').each(function(i,obj){
       var jobj = $(obj);
       if(jobj.attr('onclick')) return;
       jobj.attr('onclick','return <%-req.jshsite.instance%>.Navigate(this);');

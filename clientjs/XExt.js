@@ -1761,11 +1761,13 @@ exports = module.exports = function(jsh){
     jsh.$root('.xpromptfield').focus();
   }
 
+  //html - HTML or jQuery object
   XExt.CustomPrompt = function (sel, html, onInit, onAccept, onCancel, onClosed, options) {
-    options = _.extend({ backgroundClose: false }, options);
+    options = _.extend({ backgroundClose: false, reuse: false }, options);
     //Classes - default_focus, button_ok, button_cancel
-    if (jsh.$root('.xdialogblock ' + sel).length) jsh.$root('.xdialogblock ' + sel).remove();
-    jsh.$root('.xdialogblock').append(html);
+    var foundPrevDialog = jsh.$root('.xdialogblock ' + sel).length;
+    if (foundPrevDialog && !options.reuse) jsh.$root('.xdialogblock ' + sel).remove();
+    if (!foundPrevDialog || !options.reuse) jsh.$root('.xdialogblock').append(html);
     
     //ShowDialog
     jsh.xDialog.unshift(sel);
@@ -1776,8 +1778,15 @@ exports = module.exports = function(jsh){
     
     jsh.$root(sel + ' input').off('click');
     jsh.$root(sel + ' input').off('keydown');
-    var cancelfunc = XExt.dialogButtonFunc(sel, oldactive, function () { if (onCancel) onCancel(); if (onClosed) onClosed(); jsh.$root('.xdialogblock ' + sel).remove(); });
-    var acceptfunc_aftervalidate = XExt.dialogButtonFunc(sel, oldactive, function () { if (onClosed) onClosed(); });
+    var cancelfunc = XExt.dialogButtonFunc(sel, oldactive, function () {
+      if (onCancel) onCancel();
+      if (onClosed) onClosed();
+      if(options.reuse) jsh.$root('.xdialogblock ' + sel).hide();
+      else jsh.$root('.xdialogblock ' + sel).remove();
+    });
+    var acceptfunc_aftervalidate = XExt.dialogButtonFunc(sel, oldactive, function () {
+      if (onClosed) onClosed();
+    });
     var acceptfunc = function () {
       //Verify this is the topmost dialog
       if ((jsh.xDialog.length > 0) && (jsh.xDialog[0] != (sel))) return;
@@ -1790,7 +1799,8 @@ exports = module.exports = function(jsh){
     jsh.$root(sel + ' input.button_cancel').on('click', cancelfunc);
     jsh.$root(sel + ' input, ' + sel + ' textarea, ' + sel + ' select').on('keydown', function (e) { if (e.keyCode == 27) { e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); } });
     jsh.$root(sel + ' input:not(:checkbox):not(:button)').on('keydown', function (e) { if (e.keyCode == 13) { e.preventDefault(); e.stopImmediatePropagation(); acceptfunc(); } });
-    jsh.$root('.xdialogblock,' + sel).show();
+    jsh.$root('.xdialogblock,.xdialogblock ' + sel).show();
+    if(jsh.XPage) jsh.XPage.LayoutOneColumn(jsh.$root('.xdialogblock ' + sel)[0], { reset: true });
     jsh.XWindowResize();
     jsh.$root(sel + ' .default_focus').focus();
     if(options.backgroundClose){

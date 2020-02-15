@@ -980,6 +980,11 @@ DIALOG BOXES
 	border-radius: 5px;
 	-moz-border-radius: 5px;
 }
+<%-rootcss%> .xdialogblock .xdialogbox .xform {
+  font-weight:normal;
+  font-size:13px;
+  text-align:left;
+}
 <%-rootcss%> .xalertbox {
 	width:370px;
 	min-height:60px;

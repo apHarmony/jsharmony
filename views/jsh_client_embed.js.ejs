@@ -201,6 +201,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
   xmodel.isEnabled = function(){
     if(xmodel.flags.no_form_record) return false;
+    if(xmodel.controller && xmodel.controller.form && xmodel.controller.form.Prop && ('Enabled' in xmodel.controller.form.Prop) && !xmodel.controller.form.Prop.Enabled) return false;
+    if(xmodel.controller && xmodel.controller.grid && xmodel.controller.grid.Prop && ('Enabled' in xmodel.controller.grid.Prop) && !xmodel.controller.grid.Prop.Enabled) return false;
     return true;
   }
   xmodel.saveUnboundFields = function(row){
