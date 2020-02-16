@@ -1,3 +1,5 @@
+<div class="xbodyhead xelem<%=model.class%>">
+<% if(model.topmost) { %><!--%%%EJSPREPEND%%%--><% } %>
 <% if(!model.topmost && (model.title !== undefined) && model.title) { %>
 <h1 class="xtitle xelem<%=model.class%> xtitle_level2"><%-xejs.iif((model.title.indexOf('<'+'#') < 0),XExt.escapeHTML(model.title),'&nbsp;')%></h1>
 <% } %>
@@ -35,6 +37,7 @@
     <div class="xnorecords xelem<%=model.class%>" style="display:none;">No <%=model.caption[1]%></div>
   <% } %>
 <% } %>
+</div><!-- .xbodyhead -->
 <div class="xformcontainer xelem<%=model.class%>">
 <div class="xform xelem<%=model.class%> xform<%=model.class%> <%=xejs.iif(model.onecolumn,'onecolumn')%>" data-id="<%=model.id%>" style="<%=model.formstyle%>">
 <%-jsh.RenderView('jsh_embed.js',ejsparams)%>

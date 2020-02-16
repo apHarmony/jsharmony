@@ -1,3 +1,5 @@
+<div class="xbodyhead xelem<%=model.class%>">
+<% if(model.topmost) { %><!--%%%EJSPREPEND%%%--><% } %>
 <% if(!model.topmost && (model.title)) { %>
 <h1 class="xtitle xelem<%=model.class%>" style="display:inline-block;padding:0px 0 20px 0;"><%-xejs.iif((model.title.indexOf('<'+'#') < 0),XExt.escapeHTML(model.title),'&nbsp;')%></h1>
 <% } %>
@@ -9,6 +11,7 @@
   <a href="<%-model.helpurl%>" onclick="<%-js(model.helpurl_onclick)%>"><img src="<%-jsh._PUBLICURL%>images/icon_help.png" alt="Help" title="Help" />Help</a>
 </div>
 <% } %>
+</div><!-- .xbodyhead -->
 <%-jsh.RenderView('jsh_embed.js',ejsparams)%>
 <%  
 var lovfield = '';
