@@ -351,7 +351,7 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid, options) {
         for (ccol in crow) {
           if(!ccol) continue;
           //Overwrite code_val with code_txt
-          if(Helper.beginsWith(ccol, '__'+jsh.map.code_txt+'__') && crow[ccol]){ // todo this is temp fix
+          if(Helper.beginsWith(ccol, '__'+jsh.map.code_txt+'__') && crow[ccol]){
             crow[ccol.substr(jsh.map.code_txt.length+4)] = crow[ccol];
           }
           //Replace Dates with ISO String
