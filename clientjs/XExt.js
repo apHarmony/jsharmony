@@ -1800,7 +1800,7 @@ exports = module.exports = function(jsh){
     jsh.$root(sel + ' input, ' + sel + ' textarea, ' + sel + ' select').on('keydown', function (e) { if (e.keyCode == 27) { e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); } });
     jsh.$root(sel + ' input:not(:checkbox):not(:button)').on('keydown', function (e) { if (e.keyCode == 13) { e.preventDefault(); e.stopImmediatePropagation(); acceptfunc(); } });
     jsh.$root('.xdialogblock,.xdialogblock ' + sel).show();
-    if(jsh.XPage) jsh.XPage.LayoutOneColumn(jsh.$root('.xdialogblock ' + sel)[0], { reset: true });
+    if(jsh.XPage && jsh.XPage.LayoutOneColumn) jsh.XPage.LayoutOneColumn(jsh.$root('.xdialogblock ' + sel)[0], { reset: true });
     jsh.XWindowResize();
     jsh.$root(sel + ' .default_focus').focus();
     if(options.backgroundClose){
@@ -2514,7 +2514,7 @@ exports = module.exports = function(jsh){
     if(!modelid) return modelid;
     //Absolute
     if(modelid.substr(0,1)=='/') return modelid.substr(1);
-    if(!sourceModel) sourceModel = jsh.XModels[jsh.XModels_root];
+    if(!sourceModel && jsh.XModels_root) sourceModel = jsh.XModels[jsh.XModels_root];
     if(!sourceModel) return modelid;
     //Relative to namespace
     if(sourceModel.namespace){

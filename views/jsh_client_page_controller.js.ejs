@@ -22,7 +22,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var XExt = jsh.XExt;
   var XPage = jsh.XPage;
 
-  window.onpopstate = function(event) {
+  XPage.handlePopState = function(event){
     var state = event.state;
 
     var loadPrevious = function () {
@@ -43,7 +43,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       }
     }
     loadPrevious();
-  };
+  }
 
   XPage.OnExit = function() {
     if (!jsh.init_complete) return;
@@ -106,6 +106,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   XPage.Save = function(options) {
+    if(!jsh.XModels_root){ XExt.Alert('No root model configured'); return; }
     if (!options) options = {};
     if (!options.onFail) options.onFail = function () { };
     var dbtasks = [];
@@ -244,6 +245,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   XPage.Delete = function() {
+    if(!jsh.XModels_root){ XExt.Alert('No root model configured'); return; }
+
     var xmodel = jsh.XModels[jsh.delete_target];
     xmodel.controller.Delete(function () {
       XPage.RefreshParent();
@@ -325,6 +328,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   XPage.onReady = function() {
+    if(!jsh.XModels_root){ XExt.Alert('No root model configured'); return; }
+
     XPage.Hide(null,function(xmodel){ return xmodel.layout=='grid'; });
     if (!jsh.XModels[jsh.XModels_root].actions) { XExt.Alert('ERROR - No effective access to root form'); return; }
 
@@ -586,6 +591,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   XPage.UpdateTitle = function(options){
+    if(!jsh.XModels_root) return;
+    
     XPage.UpdateWindowTitle(options);
 
     var root_title = jsh.XModels[jsh.XModels_root].title;
@@ -600,8 +607,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   XPage.RenderEJS = function(onComplete) {
     //Get breadcrumbs
-    var rootxmodel = jsh.XModels[jsh.XModels_root];
-    if (rootxmodel.controller.HasBreadCrumbs()) jsh.bcrumbs = rootxmodel.controller.GetBreadCrumbs();
+    if(jsh.XModels_root){
+      var rootxmodel = jsh.XModels[jsh.XModels_root];
+      if (rootxmodel.controller.HasBreadCrumbs()) jsh.bcrumbs = rootxmodel.controller.GetBreadCrumbs();
+    }
 
     //Check for new titles in returned data
     XPage.traverseModels(null, function(xmodel) {
@@ -619,7 +628,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     XPage.UpdateTitle();
 
     //Update Breadcrumbs
-    if (jsh.orig_bcrumbs.indexOf('<#') >= 0) {
+    if (jsh.XModels_root && (jsh.orig_bcrumbs.indexOf('<#') >= 0)) {
       jsh.$root('div.bcrumbs').html(XPage.ParseEJS(jsh.orig_bcrumbs, jsh.XModels_root));
     }
 
@@ -720,9 +729,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         if(bcrumbs) rslt = _.extend(rslt, bcrumbs);
       }
     }
-    var rootxmodel = jsh.XModels[jsh.XModels_root];
-    if(rootxmodel.controller && rootxmodel.controller.HasBreadCrumbs()){
-      rslt = _.extend(rslt, jsh.bcrumbs);
+    if(jsh.XModels_root){
+      var rootxmodel = jsh.XModels[jsh.XModels_root];
+      if(rootxmodel.controller && rootxmodel.controller.HasBreadCrumbs()){
+        rslt = _.extend(rslt, jsh.bcrumbs);
+      }
     }
     return rslt;
   }
@@ -1400,7 +1411,5 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if('selector' in validator) client_validator.selector = validator.selector;
     return client_validator;
   }
-
-  XPage.bindEvents();
 
 })();

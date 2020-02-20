@@ -8,7 +8,7 @@
 
 var xactiontype = 'secondarygrid';
 if(model.topmost) xactiontype = 'top';
-else if((typeof parent != 'undefined') && (parent.topmost) && ('tabpos' in parent) && (parent.tabpos=='top')) xactiontype = 'auxtop';
+else if(parent && (parent.topmost) && ('tabpos' in parent) && (parent.tabpos=='top')) xactiontype = 'auxtop';
 %>
 <h1 class="xtitlecaption xtitlecaption<%=model.class%>" style="display:inline-block;"><a href="#" onclick="<%-instance%>.$root('.xsearch_<%=model.class%>').slideToggle(); return false;">(Search)</a></h1>
 <div class="xactions <%=xactiontype%> xelem<%=model.class%>">

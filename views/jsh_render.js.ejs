@@ -1,0 +1,446 @@
+/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+(function(jsh){
+  var $ = jsh.$;
+  var jQuery = $;
+  var _ = jsh._;
+  var ejs = jsh.ejs;
+  var async = jsh.async;
+  var moment = jsh.moment;
+  var XGrid = jsh.XGrid;
+  var XForm = jsh.XForm;
+  var XExt = jsh.XExt;
+  var XFormat = jsh.XFormat;
+  var XValidate = jsh.XValidate;
+  var XSearch = jsh.XSearch;
+  var XPayment = jsh.XPayment;
+  var XBarcode = jsh.XBarcode;
+  var XScanner = jsh.XScanner;
+  var XEditableGrid = jsh.XEditableGrid;
+  var XMenu = jsh.XMenu;
+  var JSHFind = jsh.JSHFind;
+  var XLoader = jsh.XLoader;
+  var XImageLoader = jsh.XImageLoader;
+  var initialLoad = true;
+
+  jsh.CODE_EJSPREPEND = '<!--'+'%%%EJSPREPEND%%%'+'-->';
+
+  jsh.jslocals = <%-JSON.stringify(req.getJSLocals())%>;
+  jsh.state = { GET:{},QS:'',fullpath:'',fullurl:jsh._BASEURL,hash:'',modelid:'',path:'' };
+  jsh.Config.max_filesize = <%-JSON.stringify(jsh.Config.max_filesize)%>;
+  jsh.Config.debug_params = { ignore_globals: <%-JSON.stringify(jsh.Config.debug_params.ignore_globals)%>, monitor_globals: <%-JSON.stringify(jsh.Config.debug_params.monitor_globals)%> };
+  jsh.Config.require_html5_after_login = <%-JSON.stringify(jsh.Config.require_html5_after_login)%>;
+  jsh.globalparams = <%-JSON.stringify(req.jshsite.getGlobalParams(req))%>;
+  jsh.XFormat.Add(<%-JSON.stringify(req.getJSH().getCustomFormatters())%>);
+  jsh.singlepage = true;
+  jsh.prev_title = '';
+  jsh.prev_title_src = '';
+  jsh.prev_bcrumbs = '';
+  jsh.prev_bcrumbs_src = '';
+  jsh.focusHandler = [];
+  jsh.ignorefocusHandler = false;
+  jsh.queuedInputAction = null;
+  jsh.static_paths = ['logout'];
+
+  jsh.InitFileUpload();
+  jsh.title_html = '';
+  jsh.title = '<%=jsh.Config.app_name%> - %%%PAGETITLE%%%';
+  jsh.frontsalt = <%-JSON.stringify(jsh.Config.frontsalt)%>;
+  jsh.app_errors = [];
+
+  <% if(req._show_system_errors && jsh.SystemErrors){ %>
+    jsh.app_errors = <%-JSON.stringify(jsh.SystemErrors)%>;
+  <% } %>
+
+  $(document).ready(function(){
+    jsh.title_html = "\r\n"+'<h1 style="display:inline-block;" class="xform_title">&nbsp;</h1>' + "\r\n";
+    jsh.state = jsh.GetState();
+    if(!jsh.state) return;
+    if(jsh.urlrouting) jsh.Load();
+    if(jsh.app_errors.length){
+      XExt.Alert("The following jsHarmony errors have occurred:\r\n"+jsh.app_errors.join("\r\n"));
+    }
+  });
+
+  if(jsh.urlrouting){
+    window.onpopstate = function(event) { jsh.XPage.handlePopState(event); };
+  }
+
+  $(window).focus(function(){ jsh.FocusHandler(); });
+
+  $(document).focusin(function(e){
+    //If a dialog is open, make sure focus is on an element in the top dialog
+    if(jsh.xDialog.length){
+      var newobj = document.activeElement;
+      if(newobj && !($(newobj).closest(jsh.xDialog[0]).length)){
+        window.setTimeout(function(){ jsh.$root(jsh.xDialog[0] + ' input:visible').first().focus(); },1);
+      }
+      return;
+    }
+    else if(jsh.xPopupStack.length && document.activeElement){
+      //If a colorbox popup is active, do not leave the colorbox
+      var colorbox = document.getElementById('colorbox');
+      if(document.activeElement.id=='colorbox'){}
+      else if(document.activeElement.id=='cboxOverlay'){}
+      else if(colorbox){
+        if(colorbox.contains && colorbox.contains(document.activeElement)){ }
+        else{
+          e.stopPropagation();
+          $(colorbox).focus();
+        }
+      }
+    }
+  });
+
+  $(document).focusout(function(){ jsh.FocusHandler(); });
+
+  jsh.FocusHandler = function(){
+    if(jsh.ignorefocusHandler || jsh.xDialog.length) return;
+    window.setTimeout(function(){
+      if(jsh.ignorefocusHandler || jsh.xDialog.length) return;
+      for(var i=0;i<jsh.focusHandler.length;i++) jsh.focusHandler[i](document.activeElement);
+    },1);
+  }
+
+  jsh.Load = function(options){
+    jsh.pageStartTime = Date.now();
+    if(!options) options = {
+      //addHistory: false, if we should not add history to the browser state
+      //onRefreshNoChange: function(){ /* If unchanged */ }, if we should only render if the model is different from the cached model
+    };
+
+    //Clear Previous Loaders
+    jsh.xLoader.ClearLoading();
+
+    if(_.includes(jsh.static_paths,jsh.state.path)) { window.location.href = jsh.state.fullurl; return; }
+
+    //Get Model
+    jsh.GetModel(jsh.state.modelid,jsh.state.GET,function(rslt){//On Success
+      var model = rslt;
+      //Do not reload if performing a refresh, and the model is the same as the previous model
+      if(options.onRefreshNoChange && jsh.cur_model && model && (JSON.stringify(model)==JSON.stringify(jsh.cur_model))){ options.onRefreshNoChange(); return; }
+
+      jsh.prev_title = jsh.$root('.xform_title').html();
+      if(!jsh.prev_title) jsh.prev_title = '';
+      jsh.prev_bcrumbs = jsh.$root('div.bcrumbs').html();
+      if(!jsh.prev_bcrumbs) jsh.prev_bcrumbs = '';
+
+      //Update tab in state, if applicable
+      if(jsh.state.GET && jsh.state.GET.tabs){
+        var tabs = jsh.state.GET.tabs;
+        var tabsChanged = false;
+        try{ if(tabs) tabs = JSON.parse(tabs); }
+        catch(ex){ tabs = null; }
+        if(tabs){
+          //Check if any of the tabs need to be updated
+          jsh.XPage.traverseModelDefinitions(model, null, function (model, modelParent) {
+            if(modelParent && modelParent.curtabmodel){
+              if((modelParent.id in tabs) && (tabs[modelParent.id] != model.id)){
+                tabs[modelParent.id] = model.id;
+                tabsChanged = true;
+              }
+            }
+          }, undefined, { ignoreFields: true });
+          if(tabsChanged){
+            //Recalculate jsh.state
+            jsh.state.GET.tabs = JSON.stringify(tabs);
+            jsh.state.QS = '?'+$.param(jsh.state.GET);
+            jsh.state.fullurl = jsh.state.fullpath + jsh.state.QS + jsh.state.hash;
+          }
+        }
+      }
+      if((typeof options.addHistory == 'undefined') || options.addHistory){
+        jsh.XPage.AddHistory(jsh.state, undefined, { replaceHistory: initialLoad });
+      }
+      initialLoad = false;
+
+      jsh.XModels = {};
+      jsh.XBase = {};
+      var ejsrslt = jsh.Render(model);
+      //console.log(ejsrslt); //Show Full Source
+      jsh.XPage.PreDestroy();
+      jsh.$root('.xbody').html('');
+      jsh.XPage.Destroy();
+
+      //Initialize GET/forcequery
+      jsh._GET = XExt.parseGET();
+      jsh.forcequery = model.forcequery;
+      _.extend(jsh._GET, jsh.forcequery);
+
+      //Setup TopMost Variables
+      window.onbeforeunload = function(){ return jsh.XPage.OnExit(); };
+      jsh.cancelExit = false;
+      jsh.focusHandler = [];
+      jsh.ignorefocusHandler = false;
+      jsh.queuedInputAction = null;
+      jsh.is_insert =  (jsh._GET['action']=='insert');
+      jsh.is_browse =  (jsh._GET['action']=='browse');
+      jsh.init_complete = false;
+      jsh.delete_target = null;
+      jsh.bcrumbs = {};
+      jsh.xPopupStack = [];
+      jsh.cur_model = model;
+
+      var ejsprepend = '';
+      if(model.breadcrumbs) ejsprepend += model.breadcrumbs;
+      //if(ejsrslt) ejsrslt = ejsrslt.trim();
+      ejsprepend += jsh.title_html;
+      if(ejsrslt.indexOf(jsh.CODE_EJSPREPEND)>=0) ejsrslt = ejsrslt.replace(jsh.CODE_EJSPREPEND,ejsprepend)
+      else ejsrslt = ejsprepend + ejsrslt;
+      //console.log(ejsrslt); //Debug EJS output
+      jsh.$root('.xbody').html(ejsrslt);
+      var body_class = XExt.escapeCSSClass('xbody_'+jsh.state.modelid);
+      if(model._basemodel) body_class += ' ' + XExt.escapeCSSClass('xbody_'+ model._basemodel);
+      var prevClasses = XExt.getClasses(jsh.$root('.xbody'));
+      for(var i=0;i<prevClasses.length;i++){
+        if(XExt.beginsWith(prevClasses[i], 'xbody_')){
+          jsh.$root('.xbody').removeClass(prevClasses[i]);
+        }
+      }
+      jsh.$root('.xbody').addClass(body_class);
+      //Handle Title
+      if(!model.toptitle) model.toptitle = '';
+      var orig_title = XExt.unescapeEJS(model.toptitle);
+      if (orig_title.indexOf('<#') < 0){
+        jsh.XPage.UpdateTitle({ resolveEJS: false });
+      }
+      else if(jsh.prev_title_src == model.toptitle) jsh.$root('.xform_title').html(jsh.prev_title);
+      else jsh.$root('.xform_title').html('&nbsp;');
+      jsh.prev_title_src = model.toptitle;
+    
+      //Handle breadcrumbs
+      jsh.orig_bcrumbs = XExt.unescapeEJS(jsh.$root('div.bcrumbs').html());
+      if (jsh.orig_bcrumbs.indexOf('<#') < 0) jsh.$root('div.bcrumbs').html(jsh.orig_bcrumbs);
+      else if(jsh.prev_bcrumbs_src == jsh.orig_bcrumbs) jsh.$root('div.bcrumbs').html(jsh.prev_bcrumbs);
+      else jsh.$root('div.bcrumbs').html('&nbsp;'); 
+      jsh.prev_bcrumbs_src = jsh.orig_bcrumbs;
+
+      jsh.$root('.toplink_help').not('.static').attr('href',model.helpurl);
+      jsh.$root('.toplink_help').not('.static').attr('onclick','return (function(){'+XExt.getJSLocals(model.id)+model.helpurl_onclick+'}).call(this);');
+      if(model.menu){ jsh.XMenu.Select(model.menu); }
+      jsh.ResetLinks();
+      jsh.trigger('jsh_ready');
+      return;
+    }, function(data){//On Fail
+      var closeIfPopup = function(){
+        if(history.length==1) window.close();
+      }
+      if(data.status == 404){ window.location.href = jsh.state.fullurl; return true; }
+      else if(data.status == 302){ window.location.href = jsh.state.fullurl; return true; }
+      else if(data.status == 301){ window.location.href = jsh.state.fullurl; return true; }
+      else if(data.responseText && data.responseText.indexOf('***'+'ACCOUNT_UNPAID_BALANCE'+'***')>=0){ window.location.href = jsh._BASEURL+'C_PA_CC'; return true; }
+      else if(data.responseText && data.responseText.indexOf('***'+'JSHARMONY_LOGIN'+'***')>=0){ window.location.href = jsh.state.fullurl; return true; }
+      else if(data.responseText && data.responseText.indexOf('***'+'JSHARMONY_REDIRECT'+'***')==0){ XExt.navTo(data.responseText.substr(data.responseText.indexOf('\n')+1)); return true; }
+      else if ((data instanceof Object) && ('Number' in data)){ 
+        if(data.Number == -11){ XExt.Alert(data.Message?data.Message:'Invalid Model Access'); return true; }
+        else if(_.includes([-1,-2],data.Number)){ XExt.Alert(data.Message,null,{ onAcceptImmediate:closeIfPopup }); return true; }
+      }
+      else if(data.responseText && data.responseText.indexOf('***'+'NO_ACCESS'+'***')>=0){ XExt.Alert('No Access to '+(jsh&&jsh.state&&jsh.state.modelid?jsh.state.modelid:'')); return true; }
+      var msg = 'Failed to load state';
+      <% if(req._show_system_errors){ %>msg += ': ' + JSON.stringify(data);<% } %>
+      XExt.Alert(msg);
+    });
+  }
+
+  jsh.ResetLinks = function(rootobj){
+    var jroot = (rootobj ? $(rootobj) : jsh.root);
+    jroot.find('a').each(function(i,obj){
+      var jobj = $(obj);
+      if(jobj.attr('onclick')) return;
+      jobj.attr('onclick','return <%-req.jshsite.instance%>.Navigate(this);');
+    });
+  }
+
+  jsh.Navigate = function(a,addHistory,orig_url,onCancel,options){
+    options = _.extend({ force: false }, options);
+    var apath = a.pathname;
+    var aqs = a.search;
+    var ahash = a.hash;
+    var amodelid = '';
+
+    jsh.Navigated(a);
+
+    if(apath.indexOf(jsh._BASEURL)==0) apath = apath.substr(jsh._BASEURL.length);
+    else if(apath.indexOf('/') == 0) return true;
+    amodelid = apath;
+    if((amodelid.length > 0) && (amodelid[amodelid.length-1] == '/')) amodelid = amodelid.substr(0,amodelid.length-1);
+
+    if(window.location.host != a.host) return true;
+    
+    //Check for built-in routes
+    if(amodelid.indexOf('/') == 0) amodelid = amodelid.substr(1);
+    var reserved_paths = [
+      '_d/',
+      '_csv/',
+      '_queue/',
+      '_report/',
+      '_model/',
+      '_ul/',
+      '_dl/',
+    ];
+    for(var i=0;i<reserved_paths.length;i++){
+      if(amodelid.indexOf(reserved_paths[i])==0) return;
+    }
+
+    var new_jsh_state = {
+      GET : XExt.parseGET(aqs),
+      QS : aqs,
+      fullpath : a.pathname,
+      fullurl : a.href,
+      hash: ahash,
+      modelid : amodelid,
+      path : apath,
+    }
+    
+    //Check if this is an anchor link to the same page
+    if(!orig_url) orig_url = window.location.pathname+window.location.search;
+    var new_url = new_jsh_state.fullpath+new_jsh_state.QS;
+    if(orig_url == new_url){
+      if(new_jsh_state.hash){ 
+        if((typeof addHistory == 'undefined') || addHistory) jsh.XPage.AddHistory(new_jsh_state,true);
+        XExt.jumpAnchor(new_jsh_state.hash); 
+      }
+      return false;
+    }
+    
+    var exec_navigate = function(){
+      if(options.force){
+        window.onbeforeunload = null;
+        jsh.cancelExit = true;
+      }
+      jsh.state = new_jsh_state;
+      jsh.Load({addHistory: addHistory});
+    }
+
+    //Try to exit, show message if changes on the page
+    if(!jsh.cancelExit && !options.force){
+      var exit_rslt = jsh.XPage.OnExit();
+      if(exit_rslt){
+        XExt.Confirm(exit_rslt + "\n\nAre you sure you want to leave this page?",exec_navigate,function(){
+          if(typeof onCancel != 'undefined') onCancel();
+        });
+        return false;
+      }
+    }
+    exec_navigate();
+    return false;
+  }
+
+  jsh.Render = function(model,parent,parentfield){
+    if(_.isString(model)) return model;
+    if(!('layout' in model)) throw new Error("Model "+model.id+" layout not defined.");
+    var layout = model['layout'];
+    if(layout=='grid') return jsh.RenderGrid(model,parent,parentfield);
+    else if(layout=='form') return jsh.RenderForm(model,parent,parentfield);
+    else if(layout=='form-m') return jsh.RenderForm(model,parent,parentfield);
+    else if (layout == 'multisel') return jsh.RenderMultisel(model,parent,parentfield);
+    else if (layout == 'exec') return jsh.RenderForm(model,parent,parentfield);
+    else if (layout == 'report') return jsh.RenderForm(model,parent,parentfield);
+    else throw new Error("Layout "+layout+" not defined");
+  }
+
+  jsh.RenderGrid = function(model,parent,parentfield){
+    return jsh.RenderBase(model,'jsh_grid',parent,{datatable:[],parentfield:parentfield});
+  }
+
+  jsh.RenderMultisel = function(model,parent,parentfield){
+    return jsh.RenderBase(model,'jsh_multisel',parent,{datatable:[],parentfield:parentfield});
+  }
+
+  jsh.RenderForm = function(model,parent,parentfield){
+    var rslt = jsh.RenderBase(model,'jsh_form',parent,{parentfield:parentfield});
+    if('tabpos' in model){
+      var tabbody = jsh.Render(model.curtabmodel,model);
+      var tab_view = 'jsh_tabs_bottom';
+      if(model.tabpos == 'top') tab_view = 'jsh_tabs_top';
+      rslt = jsh.RenderBase(model,tab_view,parent,{
+        head:rslt, body:tabbody
+      });
+    }
+    return rslt;
+  }
+
+  jsh.RenderBase = function(model,view,parent,params){
+    if (typeof params == 'undefined') params = {};
+    var ejsparams = _.extend({
+      model: model,
+      topmost: (('topmost' in model) && (model.topmost)),
+      parent: parent,
+      parentfield: undefined,
+      ejs: ejs,
+      XExt: XExt,
+      xejs: XExt.xejs,
+      _: _,
+      moment: moment,
+      jsh: jsh,
+      _GET: jsh._GET,
+      instance: <%-JSON.stringify(req.jshsite.instance)%>,
+      jslocals: XExt.getJSLocals(model.id),
+      js: function(code,options){ return XExt.wrapJS(code,model.id,options); }
+    }, params);
+    ejsparams.ejsparams = ejsparams;
+    var rslt = jsh.ejs.render(jsh.GetEJS(view), ejsparams);
+    return rslt;
+  }
+
+  jsh.RenderView = function(view,ejsparams){
+    return jsh.RenderEJS(jsh.GetEJS(view),ejsparams);
+  }
+
+  jsh.RenderEJS = function(code,ejsparams){
+    return jsh.ejs.render(code,ejsparams);
+  }
+
+  jsh.GetModel = function(modelid,d,onComplete,onFail){
+    modelid = XExt.resolveModelID(modelid);
+    XForm.prototype.XExecute('../_model/'+jsh.state.modelid,d, function (rslt) {
+      onComplete(rslt);
+    },onFail);
+  }
+
+  jsh.GetEJS = function(view){
+    if(view in jsh.srcfiles) return jsh.srcfiles[view];
+    jsh.Error(-99999,'View "'+view+'" not found.');
+  }
+
+  jsh.GetState = function(){
+    var rslt = {};
+    rslt.GET = XExt.parseGET();
+    rslt.fullpath = window.location.pathname;
+    rslt.path = rslt.fullpath;
+    rslt.QS = window.location.search;
+    rslt.hash = window.location.hash;
+    if(rslt.path.indexOf(jsh._BASEURL)==0) rslt.path = rslt.path.substr(jsh._BASEURL.length);
+    rslt.modelid = rslt.path;
+    if((rslt.modelid.length > 0) && (rslt.modelid[rslt.modelid.length-1] == '/')) rslt.modelid = rslt.modelid.substr(0,rslt.modelid.length-1);
+    return rslt;
+  }
+
+  jsh.Error = function(num,txt){
+    console.log('Error #'+num+': '+txt);
+    jsh.$root('.xbody').html('<h3>Error #'+num+': '+txt+'</h3>');
+  }
+
+  //Array of source HTML
+  jsh.popups = <%-JSON.stringify(popups)%>;
+  jsh.srcfiles = <%-ejsext.json_encode_ejs(srcfiles)%>;
+  <%-srcfiles['jsh_page_controller.js']%>;
+  jsh.XPage.bindEvents();
+
+})(<%-req.jshsite.instance%>);

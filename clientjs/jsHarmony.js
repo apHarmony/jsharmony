@@ -80,6 +80,7 @@ var jsHarmony = function(options){
   this._instance = '';
   this.google_api_key = '';
   this.isAuthenticated = false;
+  this.urlrouting = true;
   for(var key in options) this[key] = options[key];
 
   //Libraries
@@ -142,7 +143,7 @@ var jsHarmony = function(options){
   this.appStartTime = Date.now();
   this.pageStartTime = Date.now();
 
-  //jsh_client_topmost
+  //jsh_client_page_controller
   this.is_insert = false;
   this.is_browse = false;
   this.init_complete = false;
@@ -555,10 +556,12 @@ jsHarmony.prototype.runGlobalsMonitor = function(){
     for(var id in window){
       if(!(id in _this.globalsMonitorCache)){
         _this.globalsMonitorCache[id] = true;
-        if(_.includes(['google','_xdc_','data-cke-expando','CKEDITOR','CKEDITOR_BASEPATH','data-cke-expando','OverlayView'],id)) continue;
+        if(_.includes(['google','_xdc_','data-cke-expando','CKEDITOR','CKEDITOR_BASEPATH','data-cke-expando','OverlayView','tinyMCE','tinymce','TINYMCE_BASEPATH'],id)) continue;
         if(_.includes(_this.Config.debug_params.ignore_globals,id)) continue;
         if(_this.XExt.beginsWith(id, 'module$contents$')) continue;
+        if(_this.XExt.beginsWith(id, 'mce-data-')) continue;
         if(parseInt(id).toString()==id.toString()) continue;
+        console.log('New global variable: window.'+id);
         _this.XExt.Alert('New global variable: window.'+id);
       }
     }

@@ -446,6 +446,14 @@ var jsHarmonyRouter = function (jsh, siteid) {
       return obj;
     },4));
   });
+  router.get(/^\/js\/jsHarmony.render.js/, function(req, res, next){
+    res.end(ejs.render(jsh.getEJS('jsh_render.js'), {
+      req: req, _: _, ejsext: ejsext, jsh: jsh,
+      srcfiles: jsh.AppSrv.modelsrv.srcfiles,
+      popups: jsh.Popups,
+      _: _
+    }));
+  });
   router.get(/^\/(.*)/, function (req, res, next) {
     //Verify model exists
     var fullmodelid = req.params[0];
@@ -477,10 +485,8 @@ var jsHarmonyRouter = function (jsh, siteid) {
 
 function genSinglePage(jsh, req, res, fullmodelid){
   //Render SinglePage body content
-  var ejsbody = require('ejs').render(jsh.getEJS('jsh_singlepage'), {
+  var ejsbody = ejs.render(jsh.getEJS('jsh_singlepage'), {
     req: req, _: _, ejsext: ejsext, jsh: jsh,
-    srcfiles: jsh.AppSrv.modelsrv.srcfiles,
-    popups: jsh.Popups,
     _: _
   });
   //Set template (popup vs full)
