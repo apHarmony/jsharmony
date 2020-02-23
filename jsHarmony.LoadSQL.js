@@ -336,6 +336,9 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
             if(sqlval.sql) sqlval.sql = Helper.ParseMultiLine(sqlval.sql);
             if(sqlval.exec) sqlval.exec = Helper.ParseMultiLine(sqlval.exec);
           }
+          else if(sqlval && sqlval.object){
+            sqlval = JSON.stringify(sqlval.object);
+          }
           else sqlval = Helper.ParseMultiLine(sqlval);
           rslt.Funcs[funcName] = sqlval;
         }

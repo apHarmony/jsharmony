@@ -58,7 +58,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.queuedInputAction = null;
   jsh.static_paths = ['logout'];
 
-  jsh.InitFileUpload();
   jsh.title_html = '';
   jsh.title = '<%=jsh.Config.app_name%> - %%%PAGETITLE%%%';
   jsh.frontsalt = <%-JSON.stringify(jsh.Config.frontsalt)%>;
@@ -67,16 +66,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   <% if(req._show_system_errors && jsh.SystemErrors){ %>
     jsh.app_errors = <%-JSON.stringify(jsh.SystemErrors)%>;
   <% } %>
-
-  $(document).ready(function(){
-    jsh.title_html = "\r\n"+'<h1 style="display:inline-block;" class="xform_title">&nbsp;</h1>' + "\r\n";
-    jsh.state = jsh.GetState();
-    if(!jsh.state) return;
-    if(jsh.urlrouting) jsh.Load();
-    if(jsh.app_errors.length){
-      XExt.Alert("The following jsHarmony errors have occurred:\r\n"+jsh.app_errors.join("\r\n"));
-    }
-  });
 
   if(jsh.urlrouting){
     window.onpopstate = function(event) { jsh.XPage.handlePopState(event); };
@@ -442,5 +431,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.srcfiles = <%-ejsext.json_encode_ejs(srcfiles)%>;
   <%-srcfiles['jsh_page_controller.js']%>;
   jsh.XPage.bindEvents();
+
+  $(document).ready(function(){
+    jsh.title_html = "\r\n"+'<h1 style="display:inline-block;" class="xform_title">&nbsp;</h1>' + "\r\n";
+    jsh.state = jsh.GetState();
+    if(!jsh.state) return;
+    if(jsh.urlrouting) jsh.Load();
+    if(jsh.app_errors.length){
+      XExt.Alert("The following jsHarmony errors have occurred:\r\n"+jsh.app_errors.join("\r\n"));
+    }
+  });
 
 })(<%-req.jshsite.instance%>);

@@ -296,6 +296,7 @@ jsHarmony.prototype.BindEvents = function(){
 jsHarmony.prototype.Init = function(){
   var _this = this;
   if(_this.root.find('body').length) _this.root = _this.root.find('body');
+  _this.InitFileUpload();
   this.imageLoader = new this.XImageLoader();
 	this.imageLoader.loadqueue = new Array(
 		_this._PUBLICURL+'images/loading.gif',
@@ -494,8 +495,8 @@ jsHarmony.prototype.XDialogResize = function (source, params) {
 jsHarmony.prototype.InitFileUpload = function () {
   if (this.xfileuploadLoader != null) return;
   this.xfileuploadLoader = new Object();
-  document.write('\
-    <div style="display:none;">\
+  this.root.append(
+    '<div style="display:none;">\
 	    <div class="xfileuploader colorbox_inline" align="center" style="height:80px;"><div style="position:relative;">\
         <form class="xfileuploader_form" enctype="multipart/form-data" method="post" target="'+this.getInstance()+'_xfileproxy">\
           <input type="hidden" name="MAX_FILE_SIZE" value="'+this.Config.max_filesize+'" />\

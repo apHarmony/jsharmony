@@ -1,0 +1,19 @@
+{
+  "foreach":{
+    "params": ["ITEMS","JOIN","SQL"],
+    "exec": [
+      "var sqltrim = (SQL||'').toString().trim();",
+      "if((sqltrim.length >= 2) && (sqltrim[0]=='\"') && (sqltrim[sqltrim.length-1]=='\"')) SQL = JSON.parse(sqltrim);",
+      "var jointrim = (JOIN||'').toString().trim();",
+      "if((jointrim.length >= 2) && (jointrim[0]=='\"') && (jointrim[jointrim.length-1]=='\"')) JOIN = JSON.parse(jointrim);",
+      "if(typeof ITEMS === 'string' || ITEMS instanceof String){ try{ ITEMS = JSON.parse(ITEMS); } catch(ex){ throw new Error('Error parsing JSON: '+ex.toString() + ' :: '+ITEMS); } }",
+      "var rslt = [];",
+      "for(var i=0;i<ITEMS.length;i++){",
+      "  var itemsql = SQL;",
+      "  for(var key in ITEMS[i]) itemsql = itemsql.split('{'+key+'}').join(ITEMS[i][key]);",
+      "  rslt.push(itemsql);",
+      "}",
+      "return rslt.join(JOIN||'');"
+    ]
+  }
+}
