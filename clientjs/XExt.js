@@ -2071,13 +2071,21 @@ exports = module.exports = function(jsh){
   //Given an original function orig_f, run f(), then run orig_f()
   XExt.chain = function (orig_f, f) {
     if (!orig_f) return f;
-    return function () { f.apply(this, arguments); orig_f.apply(this, arguments); };
+    return function () {
+      var rslt = f.apply(this, arguments);
+      if(typeof rslt != 'undefined') return rslt;
+      return orig_f.apply(this, arguments);
+    };
   }
 
   //Given an original function orig_f, run f(), then run orig_f()
   XExt.chainToEnd = function (orig_f, f) {
     if (!orig_f) return f;
-    return function () { orig_f.apply(this, arguments); f.apply(this, arguments); };
+    return function () {
+      var rslt = orig_f.apply(this, arguments);
+      if(typeof rslt != 'undefined') return rslt;
+      return f.apply(this, arguments);
+    };
   }
 
   XExt.execif = function (cond, apply, f) {

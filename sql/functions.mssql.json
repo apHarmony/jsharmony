@@ -1,3 +1,4 @@
 {
-  "TRIGGER_EOL": { "object": ";" }
+  "TRIGGER_EOL": { "object": ";" },
+  "EOL": { "object": ";" },
 }

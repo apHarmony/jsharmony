@@ -1,0 +1,93 @@
+/*
+Copyright 2017 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+(function(){
+  var _this = this;
+
+  this.jsh = undefined;
+  this._baseurl = undefined;
+  this.isInitialized = false;
+
+  this.onInit = null; //function(jsh)
+
+  var jsh = null;
+  var XExt = null;
+  var $ = null;
+  var async = null;
+  var jshInitialized = false;
+
+  var jshParams = <%-req.getJSClientParams()%>;
+  jshParams.urlrouting = false;
+  jshParams.onInit = function(){ jshInitialized = true; };
+  this._baseurl = jshParams._BASEURL;
+
+  var util = {
+    loadScript: function(url, cb){
+      var script = document.createElement('script');
+      if(cb) script.onload = cb;
+      script.src = url;
+      document.head.appendChild(script);
+    },
+
+    loadCSS: function(url, cb){
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.type = 'text/css';
+      link.href = url;
+      link.media = 'all';
+      document.head.appendChild(link);
+    },
+  }
+
+  this.init = function(){
+    //Load jsHarmony
+    util.loadScript(_this._baseurl+'js/jsHarmony.js', function(){
+
+      jsh = _this.jsh = window.jshInstance = new jsHarmony(jshParams);
+      $ = jsh.$;
+      XExt = jsh.XExt;
+      async = jsh.async;
+
+      if(_this.onInit) _this.onInit(jsh);
+
+      async.parallel([
+        function(cb){ util.loadScript(_this._baseurl+'application.js', function(){ cb(); }); },
+        function(cb){ util.loadScript(_this._baseurl+'js/site.js', function(){ cb(); }); },
+        function(cb){ util.loadScript(_this._baseurl+'js/jsHarmony.render.js', function(){
+          jsh.Config.debug_params.monitor_globals = false;
+          cb();
+        }); },
+        function(cb){ XExt.waitUntil(function(){ return jshInitialized; }, function(){ cb(); }, undefined, 50); },
+      ], function(err){
+        setTimeout(function(){
+          <%-req.query.oninit||''%>;
+        }, 1);
+      });
+    });
+    util.loadCSS(_this._baseurl+'fonts/jsHarmonyFonts.css');
+    util.loadCSS(_this._baseurl+'application.css?rootcss=<%-encodeURIComponent(req.query.rootcss||'')%>');
+  }
+  
+  this.load = function(){
+    XExt.Alert('Loaded!');
+  }
+  
+  //Run Init
+  _this.init();
+})();

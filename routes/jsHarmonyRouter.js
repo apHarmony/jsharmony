@@ -454,6 +454,15 @@ var jsHarmonyRouter = function (jsh, siteid) {
       _: _
     }));
   });
+  router.get(/^\/js\/jsHarmony.loader.js/, function (req, res, next) {
+    //Verify model exists
+    res.end(ejs.render(jsh.getEJS('jsh_loader.js'), {
+      req: req, _: _, ejsext: ejsext, jsh: jsh,
+      srcfiles: jsh.AppSrv.modelsrv.srcfiles,
+      popups: jsh.Popups,
+      _: _
+    }));
+  });
   router.get(/^\/(.*)/, function (req, res, next) {
     //Verify model exists
     var fullmodelid = req.params[0];
