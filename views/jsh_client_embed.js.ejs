@@ -92,6 +92,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if('onloadstate' in model){ %> onloadstate:function(xmodel, state){<%-jslocals%><%-model.onloadstate%>}, <% }
     if('ongetstate' in model){ %> ongetstate:function(xmodel, state){<%-jslocals%><%-model.ongetstate%>}, <% }
     if('onrowbind' in model){ %> onrowbind:function(xmodel, jobj, datarow){<%-jslocals%><%-model.onrowbind%>}, <% }
+    if('getapi' in model){ %> getapi:function(apitype){<%-jslocals%><%-model.getapi%>}, <% }
 
     if(model.unbound){ %> unbound:true, <% }
     if(model.inlinepopup){ %> inlinepopup:true, <% }
@@ -154,7 +155,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           return xform.DataSet[rowid][fieldname];
         }
       }
-      else{ console.trace(); XExt.Alert('Invalid row'); return; }
+      else{ console.log('Invalid row: '+rowid); console.log(rowref); console.trace(); XExt.Alert('Invalid row'); return; }
     }
     if(xform){
       var field = xmodel.fields && xmodel.fields[fieldname];
@@ -191,7 +192,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           return;
         }
       }
-      else{ console.trace(); XExt.Alert('Invalid row'); return; }
+      else{ console.log('Invalid row: '+rowid); console.log(rowref); console.trace(); XExt.Alert('Invalid row'); return; }
     }
     if(xform){
       XExt.setFormControl(xform, fieldname, value);

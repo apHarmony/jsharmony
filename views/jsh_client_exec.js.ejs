@@ -33,7 +33,7 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && (fi
   var xform = null;
 
   xcontroller.Init = function(callback){
-    xform = xcontroller.form = new jsh.XForm(modelid,'','');
+    xform = xcontroller.form = new jsh.XForm(modelid);
     xform.DataType = xmodel.datamodel;
     xform.Data = new xmodel.datamodel();
 
@@ -117,7 +117,7 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && (fi
     if(!xform.Data.Commit()) return;
     if(xmodel.layout !== 'report'){ XExt.Alert('Model is not a report'); return; }
     //XForm to XGet -> ReportJob
-    var xpostform = new jsh.XForm('_reportjob/'+modelid,'','');
+    var xpostform = new jsh.XForm('_reportjob/'+modelid);
     xpostform.Data = xform.GetFieldParams('B');
     xpostform.Execute(function(rslt){ 
       if('_success' in rslt){
@@ -138,7 +138,7 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && (fi
     }
     if(!xform.Data.Commit()) return;
     //Execute DBFunc
-    var xpostform = new jsh.XForm(modelid,'','');
+    var xpostform = new jsh.XForm(modelid);
     xpostform.GetUpdateParams = function(){ return xform.GetFieldParams('U'); }
     if(options.onBeforeUpdate) options.onBeforeUpdate();
     xpostform.Update(function(rslt){ 

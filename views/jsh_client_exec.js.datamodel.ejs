@@ -49,7 +49,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       <%-xejs.iif('unbound' in field,'"unbound":'+JSON.stringify(field.unbound)+',') %>
       <%-xejs.iif('locked_by_querystring' in field,'"locked_by_querystring":'+JSON.stringify(field.locked_by_querystring)+',') %>
       <%-xejs.iif('onchange' in field,'"onchange":'+JSON.stringify('(function(){'+jslocals+field.onchange+'}).call(this,obj,newval,undoChange,e)')+',') %>
-      <%-xejs.iif('ongetvalue' in field,'"ongetvalue":function(val,field,xmodel){'+jslocals+field.ongetvalue+'},') %>
+      <%-xejs.iif('ongetvalue' in field,'"ongetvalue":function(val,field,xmodel,jctrl,parentobj){'+jslocals+field.ongetvalue+'},') %>
       <%-xejs.iif('key' in field,'"key":'+JSON.stringify(field.key)+',') %>
       <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>
       <%-xejs.iif('value' in field,'"value":'+JSON.stringify(field.value)+',') %>

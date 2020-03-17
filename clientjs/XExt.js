@@ -301,7 +301,7 @@ exports = module.exports = function(jsh){
     }
   }
 
-  XExt.CallAppFunc = function (q, method, d, onComplete, onFail, options){
+  XExt.CallAppFunc = function (url, method, d, onComplete, onFail, options){
     if(!jsh) throw new Error('XExt requires jsHarmony instance to run CallAppFunc');
     if(!options) options = {};
     var getVars = function () {
@@ -318,14 +318,14 @@ exports = module.exports = function(jsh){
         }
       }
       //All variables ready, run main operation
-      var xform = new jsh.XForm(q, '', '');
+      var xform = new jsh.XForm(url);
       xform.Data = d;
       var dq = {}, dp = {};
       if (method == 'get') dq = d;
       else if (method == 'postq') { dq = d; method = 'post'; }
       else if (method == 'putq') { dq = d; method = 'put'; if (options.post) { dp = options.post; } }
       else dp = d;
-      xform.qExecute(xform.PrepExecute(method, xform.q, dq, dp, function (rslt) {
+      xform.qExecute(xform.PrepExecute(method, xform.url, dq, dp, function (rslt) {
         if ('_success' in rslt) {
           if (onComplete) onComplete(rslt);
           else XExt.Alert('Operation completed successfully.');
@@ -824,8 +824,10 @@ exports = module.exports = function(jsh){
     if(modelid){
       ejsparams.modelid = modelid;
       ejsparams.xmodel = jsh.XModels[modelid];
+      ejsparams._this = jsh.App[modelid];
     }
     ejsparams = _.extend(ejsparams, params);
+    if(!('ejsparams' in ejsparams)) ejsparams.ejsparams = ejsparams;
     return jsh.ejs.render(ejssource, ejsparams);
   }
   XExt.replaceTempEJSTags = function(ejssrc){
@@ -1563,7 +1565,7 @@ exports = module.exports = function(jsh){
   }
 
   XExt.XInputAction.prototype.IsExpired = function () {
-    return ((Date.now() - this.tstamp) > 100);
+    return ((Date.now() - this.tstamp) > 500);
   }
 
   XExt.getLastClicked = function () {
@@ -1632,6 +1634,14 @@ exports = module.exports = function(jsh){
     }
   }
 
+  XExt.getDialogContainer = function (sel) {
+    var jsel = $(sel);
+    if(!jsel.length) return window;
+    var jdialog = jsel.closest('.xdialogbox');
+    if(!jdialog.length) return window;
+    return jdialog[0];
+  }
+
   XExt.Alert = function (obj, onAccept, params) {
     params = _.extend({ escapeHTML: true }, params);
     var msg = '';
@@ -1653,6 +1663,8 @@ exports = module.exports = function(jsh){
     var acceptfunc = XExt.dialogButtonFunc('.xalertbox', oldactive, onAccept, { onCompleteImmediate: params.onAcceptImmediate });
     jsh.$root('.xalertbox input').on('click', acceptfunc);
     jsh.$root('.xalertbox input').on('keydown', function (e) { if (e.keyCode == 27) { acceptfunc(); } });
+
+    jsh.$root('.xalertbox').off('acceptDialog').on('acceptDialog', acceptfunc);
     
     jsh.$root('.xdialogblock,.xalertbox.base').show();
     jsh.XWindowResize();
@@ -1689,6 +1701,7 @@ exports = module.exports = function(jsh){
     jsh.$root('.xconfirmbox input').off('click');
     jsh.$root('.xconfirmbox input').off('keydown');
     var cancelfunc = XExt.dialogButtonFunc('.xconfirmbox', oldactive, (options.onCancel ? options.onCancel : onNo));
+    var acceptfunc = XExt.dialogButtonFunc('.xconfirmbox', oldactive, onYes);
     if(options.onCancel){
       jsh.$root('.xconfirmbox input.button_cancel').show();
       jsh.$root('.xconfirmbox input.button_cancel').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, options.onCancel));
@@ -1698,7 +1711,10 @@ exports = module.exports = function(jsh){
     if (options.button_no_caption) jsh.$root('.xconfirmbox input.button_no').val(options.button_no_caption);
     if (options.button_cancel_caption) jsh.$root('.xconfirmbox input.button_cancel').val(options.button_cancel_caption);
 
-    jsh.$root('.xconfirmbox input.button_ok').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, onYes));
+    jsh.$root('.xconfirmbox').off('acceptDialog').on('acceptDialog', acceptfunc);
+    jsh.$root('.xconfirmbox').off('cancelDialog').on('cancelDialog', cancelfunc);
+
+    jsh.$root('.xconfirmbox input.button_ok').on('click', acceptfunc);
     jsh.$root('.xconfirmbox input.button_no').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, onNo));
     jsh.$root('.xconfirmbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
     jsh.$root('.xdialogblock,.xconfirmbox.base').show();
@@ -1754,6 +1770,10 @@ exports = module.exports = function(jsh){
     var acceptfunc = XExt.dialogButtonFunc('.xpromptbox', oldactive, function () { if (onComplete) onComplete(jsh.$root('.xpromptfield').val()); });
     jsh.$root('.xpromptbox input.button_ok').on('click', acceptfunc);
     jsh.$root('.xpromptbox input.button_cancel').on('click', cancelfunc);
+
+    jsh.$root('.xpromptbox').off('acceptDialog').on('acceptDialog', acceptfunc);
+    jsh.$root('.xpromptbox').off('cancelDialog').on('cancelDialog', cancelfunc);
+
     jsh.$root('.xpromptbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
     jsh.$root('.xpromptfield').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
     jsh.$root('.xdialogblock,.xpromptbox.base').show();
@@ -1764,6 +1784,9 @@ exports = module.exports = function(jsh){
   //html - HTML or jQuery object
   XExt.CustomPrompt = function (sel, html, onInit, onAccept, onCancel, onClosed, options) {
     options = _.extend({ backgroundClose: false, reuse: false }, options);
+    if(options.specialKeys === false) options.specialKeys = { enter: false, escape: false };
+    else options.specialKeys = _.extend({ enter: true, escape: true }, options.specialKeys);
+
     //Classes - default_focus, button_ok, button_cancel
     var foundPrevDialog = jsh.$root('.xdialogblock ' + sel).length;
     if (foundPrevDialog && !options.reuse) jsh.$root('.xdialogblock ' + sel).remove();
@@ -1778,12 +1801,20 @@ exports = module.exports = function(jsh){
     
     jsh.$root(sel + ' input').off('click');
     jsh.$root(sel + ' input').off('keydown');
-    var cancelfunc = XExt.dialogButtonFunc(sel, oldactive, function () {
-      if (onCancel) onCancel();
+
+    var cancelDialogFunc = XExt.dialogButtonFunc(sel, oldactive, function () {
       if (onClosed) onClosed();
       if(options.reuse) jsh.$root('.xdialogblock ' + sel).hide();
       else jsh.$root('.xdialogblock ' + sel).remove();
     });
+    var cancelfunc = function(options){
+      options = _.extend({ force: false }, options);
+      options.forceCancel = function(){ cancelfunc({ force: true }); }
+      if (onCancel){
+        if((onCancel(options)===false) && !options.force) return;
+      }
+      cancelDialogFunc();
+    }
     var acceptfunc_aftervalidate = XExt.dialogButtonFunc(sel, oldactive, function () {
       if (onClosed) onClosed();
     });
@@ -1797,18 +1828,38 @@ exports = module.exports = function(jsh){
     if (onInit) onInit(acceptfunc, cancelfunc);
     jsh.$root(sel + ' input.button_ok').on('click', acceptfunc);
     jsh.$root(sel + ' input.button_cancel').on('click', cancelfunc);
-    jsh.$root(sel + ' input, ' + sel + ' textarea, ' + sel + ' select').on('keydown', function (e) { if (e.keyCode == 27) { e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); } });
-    jsh.$root(sel + ' input:not(:checkbox):not(:button)').on('keydown', function (e) { if (e.keyCode == 13) { e.preventDefault(); e.stopImmediatePropagation(); acceptfunc(); } });
+
+    jsh.$root(sel).off('acceptDialog').on('acceptDialog', acceptfunc);
+    jsh.$root(sel).off('cancelDialog').on('cancelDialog', cancelfunc);
+
+    jsh.$root(sel + ' input, ' + sel + ' textarea, ' + sel + ' select').on('keydown', function (e) {
+      if (options.specialKeys.escape && (e.keyCode == 27)) { e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); }
+    });
+    jsh.$root(sel + ' input:not(:checkbox):not(:button)').on('keydown', function (e) {
+      if (options.specialKeys.escape && (e.keyCode == 13)) { e.preventDefault(); e.stopImmediatePropagation(); acceptfunc(); }
+    });
     jsh.$root('.xdialogblock,.xdialogblock ' + sel).show();
     if(jsh.XPage && jsh.XPage.LayoutOneColumn) jsh.XPage.LayoutOneColumn(jsh.$root('.xdialogblock ' + sel)[0], { reset: true });
     jsh.XWindowResize();
-    jsh.$root(sel + ' .default_focus').focus();
+    setTimeout(function(){ jsh.XWindowResize(); }, 1);
+    if(jsh.$root(sel + ' .default_focus').length) jsh.$root(sel + ' .default_focus').focus();
+    else jsh.$root(sel).find('input:visible,textarea:visible,select:visible').first().focus();
     if(options.backgroundClose){
       jsh.$root('.xdialogblock').on('click.close' + sel, function(e){
         if(e.target != this) return;
         if(jsh.xDialog.length && (jsh.xDialog[0]==sel)){ e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); }
       });
     }
+  }
+
+  XExt.AcceptDialog = function(){
+    if(!jsh.xDialog.length) throw new Error('No dialog currently active');
+    $(jsh.xDialog[0]).trigger('acceptDialog');
+  }
+
+  XExt.CancelDialog = function(){
+    if(!jsh.xDialog.length) throw new Error('No dialog currently active');
+    $(jsh.xDialog[0]).trigger('cancelDialog');
   }
 
   XExt.ZoomEdit = function (val, caption, options, onAccept, onCancel) {
@@ -1841,36 +1892,64 @@ exports = module.exports = function(jsh){
 
   var popupData = {};
 
-  XExt.popupShow = function (modelid, fieldid, title, parentobj, obj, options) {
-    modelid = XExt.resolveModelID(modelid);
+  XExt.popupShow = function (modelid, fieldname, title, parentobj, obj, options) {
+    XExt.popup(_.extend(options, {
+      modelid: modelid,
+      fieldname: fieldname,
+      title: title,
+      parentobj: parentobj,
+      obj: obj
+    }));
+  }
+
+  XExt.popup = function (options) {
     options = _.extend({
+      modelid: undefined,
+      fieldname: undefined,
+      title: '',
+      parentobj: undefined,
+      obj: undefined,
       OnControlUpdate: null,
+      OnPopupOpen: null,
       OnPopupClosed: null,
-      rowid: undefined
+      rowid: undefined,
+      container: undefined,
     }, options);
+
+    var modelid = XExt.resolveModelID(options.modelid);
+    var fieldname = options.fieldname;
+    var title = options.title;
+    var parentobj = options.parentobj;
+    var obj = options.obj;
+
     var parentmodelid = $(obj).data('model');
     var parentmodelclass = parentmodelid;
     var parentfield = null;
     var parentmodel = null;
     if (parentmodelid){
       parentmodel = jsh.XModels[parentmodelid];
-      parentfield = parentmodel.fields[fieldid];
+      parentfield = parentmodel.fields[fieldname];
       parentmodelclass = parentmodel.class;
     }
     if(parentmodel && (typeof options.rowid != 'undefined')){
       parentmodel.controller.NavTo(options.rowid, function(){
         delete options.rowid;
-        XExt.popupShow(modelid, fieldid, title, parentobj, obj, options);
+        XExt.popup(options);
       });
       return;
     }
-    if (!parentobj) parentobj = jsh.$root('.' + fieldid + '.xform_ctrl' + '.xelem' + parentmodelclass);
+
+    var POPUP_CONTAINER = '.popup_' + fieldname;
+    if(parentmodelclass) POPUP_CONTAINER += '.xelem' + parentmodelclass;
+    if(options.container) POPUP_CONTAINER = options.container;
+
+    if (!parentobj) parentobj = jsh.$root(POPUP_CONTAINER);
     var numOpens = 0;
     var xmodel = jsh.XModels[modelid];
 
     popupData[modelid] = {};
     XExt.execif(parentfield && parentfield.controlparams && parentfield.controlparams.onpopup,
-      function (f) { parentfield.controlparams.onpopup(modelid, parentmodelid, fieldid, f); },
+      function (f) { parentfield.controlparams.onpopup(modelid, parentmodelid, fieldname, f); },
       function () {
       var code_val = $(obj).data('code_val');
       if (code_val) popupData[modelid].code_val = code_val;
@@ -1887,20 +1966,23 @@ exports = module.exports = function(jsh){
       var popup_options = {};
       popup_options = {
         modelid: modelid,
-        href: ".popup_" + fieldid + '.xelem' + parentmodelclass, inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, title: title, fixed: true,
+        href: POPUP_CONTAINER,
+        inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, fixed: true,
+        title: title, 
         trapFocus: false,
         fadeOut:0,
         onOpen: function () {
-          //When nested popUps are called, onOpen is not called
+          //When nested popups are called, onOpen is not called
         },
         onComplete: function () {
+          if (options.OnPopupOpen) if(options.OnPopupOpen(popupData[modelid])===false) return;;
           numOpens++;
           if(xgrid && (numOpens==1)) xgrid.Select();
-          if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass + ' .xsearch_value').first().is(':visible')){
-            jsh.$root('.popup_' + fieldid + ' .xsearch_value').first().focus();
+          if (jsh.$root(POPUP_CONTAINER + ' .xsearch_value').first().is(':visible')){
+            jsh.$root(POPUP_CONTAINER + ' .xsearch_value').first().focus();
           }
-          else if (jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('td a').length) jsh.$root('.popup_' + fieldid).find('td a').first().focus();
-            //else jsh.$root('.popup_' + fieldid + '.xelem' + parentmodelclass).find('input,select,textarea').first().focus();
+          else if (jsh.$root(POPUP_CONTAINER).find('td a').length) jsh.$root(POPUP_CONTAINER).find('td a').first().focus();
+          //else jsh.$root(POPUP_CONTAINER).find('input,select,textarea').first().focus();
         },
         onClosed: function () {
           var found_popup = false;
@@ -1911,7 +1993,7 @@ exports = module.exports = function(jsh){
 
           if(jsh.xPopupStack.length) $.colorbox(jsh.xPopupStack[jsh.xPopupStack.length-1]);
 
-          if (typeof popupData[modelid].result !== 'undefined') {
+          if (parentobj && (typeof popupData[modelid].result !== 'undefined')) {
             if(parentmodel && parentfield && parentfield.name) parentmodel.set(parentfield.name, popupData[modelid].result, null);
             else parentobj.val(popupData[modelid].result);
             if (popupData[modelid].resultrow && parentfield && parentfield.controlparams && parentfield.controlparams.popup_copy_results) {
@@ -1922,7 +2004,7 @@ exports = module.exports = function(jsh){
             if (options.OnControlUpdate) options.OnControlUpdate(parentobj[0], popupData[modelid]);
           }
           if (options.OnPopupClosed) options.OnPopupClosed(popupData[modelid]);
-          parentobj.focus();
+          if (parentobj) parentobj.focus();
           jsh.ignorefocusHandler = orig_jsh_ignorefocusHandler;
           if(xgrid && xgrid.Prop){ xgrid.Prop.Enabled = false; }
           if(xform && xform.Prop){ xform.Prop.Enabled = false; }

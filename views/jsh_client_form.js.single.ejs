@@ -33,7 +33,10 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && !('
   var xform = null;
 
   xcontroller.Init = function(callback){
-    xform = xcontroller.form = new jsh.XForm(modelid,'','');
+    xform = xcontroller.form = new jsh.XForm({
+      modelid: modelid,
+      API: (xmodel.getapi ? xmodel.getapi('form') : undefined),
+    });
     xform.DataType = xmodel.datamodel;
     xform.Data = new xmodel.datamodel();
 

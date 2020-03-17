@@ -33,6 +33,7 @@ var moment = require('moment');
 var XGrid = require('./XGrid.js');
 var XForm = require('./XForm.js');
 var XExt = require('./XExt.js');
+var XAPI = require('./XAPI.js');
 var XFormat = require('./XFormat.js');
 var XValidate = require('jsharmony-validate');
 var XSearch = require('./XSearch.js');
@@ -92,6 +93,7 @@ var jsHarmony = function(options){
   this.XGrid = XGrid(this);
   this.XForm = XForm(this);
   this.XExt = XExt(this);
+  this.XAPI = XAPI(this);
   this.XFormat = XFormat();
   this.XValidate = XValidate;
   this.XValidate.jsh = this;
@@ -178,7 +180,8 @@ var jsHarmony = function(options){
   this.prev_title_src = '';
   this.prev_bcrumbs = '';
   this.prev_bcrumbs_src = '';
-  this.focusHandler = [];
+  this.focusHandler = [[]];
+  this.focusHandlerIndex = [window];
   this.ignorefocusHandler = false;
   this.queuedInputAction = null;
   this.lastSquashedActionTime = undefined;
@@ -490,6 +493,29 @@ jsHarmony.prototype.XDialogResize = function (source, params) {
     jobj.css('top', dtop + 'px');
     jobj.css('max-width', (params.docw - dpadleft - dpadright - dborderleft - dborderright) + 'px');
   });
+}
+
+jsHarmony.prototype.addFocusHandler = function (dialogContainer, handler) {
+  if(!dialogContainer) dialogContainer = window;
+  var handlerIdx = this.focusHandlerIndex.indexOf(dialogContainer);
+  if(handlerIdx < 0){
+    this.focusHandlerIndex.push(dialogContainer);
+    this.focusHandler.push([]);
+    handlerIdx = this.focusHandlerIndex.length - 1;
+  }
+  this.focusHandler[handlerIdx].push(handler);
+}
+
+jsHarmony.prototype.getFocusHandlers = function (dialogContainer) {
+  if(!dialogContainer) return [];
+  var handlerIdx = this.focusHandlerIndex.indexOf(dialogContainer);
+  if(handlerIdx < 0) return [];
+  return this.focusHandler[handlerIdx]||[];
+}
+
+jsHarmony.prototype.getTopDialogContainer = function () {
+  if(!this.xDialog.length) return window;
+  return $(this.xDialog[0])[0];
 }
 
 jsHarmony.prototype.InitFileUpload = function () {

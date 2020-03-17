@@ -29,7 +29,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var xform = null;
 
   xcontroller.Init = function(callback){
-    xform = xcontroller.form = new jsh.XForm(modelid,'','');
+    xform = xcontroller.form = new jsh.XForm(modelid);
     xform.DataType = xmodel.datamodel;
     xform.Data = new xform.DataType();
     xform.GetSelectParams = function(){

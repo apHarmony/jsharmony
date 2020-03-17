@@ -18,30 +18,42 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var $ = require('./jquery-1.11.2');
+var _ = require('lodash');
 
 exports = module.exports = function(jsh){
 
-  function XGrid(_q,_TemplateID,_PlaceholderID,_CustomScroll,_Paging,_ScrollControl){
+  function XGrid(options){
+    if(_.isString(options)) options = { modelid: options };
+    options = _.extend({
+      modelid: undefined,
+      API: undefined,
+      Paging: undefined,
+      CustomScroll: undefined,
+      ScrollControl: undefined,
+      PlaceholderID: undefined,
+      TemplateID: undefined,
+    }, options);
+
     this._this = this;
-    this.TemplateID = _TemplateID;
-    this.PlaceholderID = _PlaceholderID;
+    this.TemplateID = options.TemplateID;
+    this.PlaceholderID = options.PlaceholderID;
     this.ColSpan = jsh.$root(this.PlaceholderID).parent().find('thead th').length;
-    this.q = _q;
+    this.modelid = options.modelid;
     
-    if(_CustomScroll === undefined) this.CustomScroll = ''; 
+    if(typeof options.CustomScroll == 'undefined') this.CustomScroll = ''; 
     else {
       if(lteIE7()){
         this.CustomScroll = '';
-        _ScrollControl = _CustomScroll;
-        jsh.$(_CustomScroll).css('overflow','auto');
+        options.ScrollControl = options.CustomScroll;
+        jsh.$(options.CustomScroll).css('overflow','auto');
       }
-      else this.CustomScroll = _CustomScroll
+      else this.CustomScroll = options.CustomScroll
     }
     
-    if(_Paging === undefined) this.Paging = true;
-    else this.Paging = _Paging;
-    if(_ScrollControl === undefined) this.ScrollControl = window; 
-    else this.ScrollControl = _ScrollControl;
+    if(options.Paging === undefined) this.Paging = true;
+    else this.Paging = options.Paging;
+    if(options.ScrollControl === undefined) this.ScrollControl = window; 
+    else this.ScrollControl = options.ScrollControl;
     this.Sort = new Array();
     this.Search = '';
     this.SearchJSON = '';
@@ -54,6 +66,7 @@ exports = module.exports = function(jsh){
     this.NoDataMessage = null;
     this.RequireSearchMessage = 'Please search';
     this.RowCount = 0;
+    this.RowLimit = 0;
     this.AutoLoadMore = true;
     if(this.Paging) this.EnableScrollUpdate();
     this.IsLoading = false;
@@ -82,6 +95,7 @@ exports = module.exports = function(jsh){
     this.defaults = {};
     this.bcrumbs = {};
     this.title = null;
+    this.API = (options.API ? options.API : new jsh.XAPI.Grid.jsHarmony(this.modelid));
   }
 
   //Passing 0,-1 for rowcount will return total rowcount
@@ -89,12 +103,13 @@ exports = module.exports = function(jsh){
     if(this.IsLoading){
       return;
     }
+    if(!this.API) throw new Error('API is required for Grid Load');
     this.IsLoading = true;
     var loader = jsh.xLoader;
     if (typeof getCSV == 'undefined') getCSV = false;
     
     var rowstart = typeof rowstart !== 'undefined' ? rowstart : 0;
-    var rowcount = typeof rowcount !== 'undefined' ? rowcount : 0;
+    var rowcount = typeof rowcount !== 'undefined' ? rowcount : this.RowLimit;
     var _this = this;
     
     if(rowstart > 0){
@@ -112,44 +127,41 @@ exports = module.exports = function(jsh){
     }
     if (getCSV) {
       this.IsLoading = false;
-      onComplete(jsh._BASEURL + '_csv/' + this.q + '/?'+$.param(reqdata));
+      this.API.ExportCSV(reqdata, onComplete);
       return;
     }
     if (this.OnBeforeSelect) this.OnBeforeSelect();
     if(loader) loader.StartLoading(_this);
-    $.ajax({
-      type:"GET",
-      cache: false,
-      url:jsh._BASEURL+'_d/'+this.q+'/',
-      data: reqdata,
-      dataType: 'json',
-      success:function(data){
-        var loadtime = ((new Date()).getTime() - starttime);
-        if((rowstart > 0) && (loadtime < 500)){
-          window.setTimeout(function(){ _this.ProcessData(data,rowstart,onComplete,reqdata); },500-loadtime);
-        }
-        else { _this.ProcessData(data,rowstart,onComplete,reqdata); }
-      },
-      error: function (data) {
+    this.API.Select(reqdata, function(errdata, rslt){
+      if(errdata){
+        //Error handler
         if(loader) loader.StopLoading(_this);
         _this.IsLoading = false;
         if (_this.OnLoadComplete) _this.OnLoadComplete();
         if (onComplete) onComplete();
 
-        var jdata = data.responseJSON;
-        if ((jdata instanceof Object) && ('_error' in jdata)) {
-          if (jsh.DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { }
-          else if (_this.OnLoadError && _this.OnLoadError(jdata._error)) { }
-          else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { jsh.XExt.Alert(jdata._error.Message); }
-          else { jsh.XExt.Alert('Error #' + jdata._error.Number + ': ' + jdata._error.Message); }
-          if (onFail) onFail(jdata._error);
+        var jerrdata = errdata.responseJSON;
+        if ((jerrdata instanceof Object) && ('_error' in jerrdata)) {
+          if (jsh.DefaultErrorHandler(jerrdata._error.Number, jerrdata._error.Message)) { }
+          else if (_this.OnLoadError && _this.OnLoadError(jerrdata._error)) { }
+          else if ((jerrdata._error.Number == -9) || (jerrdata._error.Number == -5)) { jsh.XExt.Alert(jerrdata._error.Message); }
+          else { jsh.XExt.Alert('Error #' + jerrdata._error.Number + ': ' + jerrdata._error.Message); }
+          if (onFail) onFail(jerrdata._error);
           return;
         }
-        if (onFail && onFail(data)) { }
-        else if (_this.OnLoadError && _this.OnLoadError(data)) { }
-        else if (('status' in data) && (data.status == '404')) { jsh.XExt.Alert('(404) The requested page was not found.'); }
-        else if (jsh._debug) jsh.XExt.Alert('An error has occurred: ' + data.responseText);
+        if (onFail && onFail(errdata)) { }
+        else if (_this.OnLoadError && _this.OnLoadError(errdata)) { }
+        else if (('status' in errdata) && (errdata.status == '404')) { jsh.XExt.Alert('(404) The requested page was not found.'); }
+        else if (jsh._debug) jsh.XExt.Alert('An error has occurred: ' + errdata.responseText);
         else jsh.XExt.Alert('An error has occurred.  If the problem continues, please contact the system administrator for assistance.');
+      }
+      else{
+        //Success handler
+        var loadtime = ((new Date()).getTime() - starttime);
+        if((rowstart > 0) && (loadtime < 500)){
+          window.setTimeout(function(){ _this.ProcessData(rslt,rowstart,onComplete,reqdata); },500-loadtime);
+        }
+        else { _this.ProcessData(rslt,rowstart,onComplete,reqdata); }
       }
     });
   };
@@ -179,15 +191,15 @@ exports = module.exports = function(jsh){
         }
         if (_this.OnMetaData) _this.OnMetaData(data);
       }
-      if (('_count_' + this.q) in data) {
-        var dcount = data['_count_' + this.q];
+      if (('_count_' + this.modelid) in data) {
+        var dcount = data['_count_' + this.modelid];
         if ((dcount != null)) _this.DBRowCount = dcount['cnt'];
         _this.OnDBRowCount();
         //if ((dcount != null) && (dcount.length == 1)) onComplete(dcount[0]['cnt']);
         //else { jsh.XExt.Alert('Error retrieving total row count.'); }
         //onComplete = null;  //Clear onComplete event, already handled
       }
-      if ((data[this.q].length == 0) && ((_this.NoResultsMessage) || (_this.RequireSearch && _this.RequireSearchMessage))) {
+      if ((data[this.modelid].length == 0) && ((_this.NoResultsMessage) || (_this.RequireSearch && _this.RequireSearchMessage))) {
         _this.EOF = true;
         _this.RenderNoResultsMessage({ search: (((reqdata.search||'').trim()) || ((reqdata.searchjson||'').trim())) });
         _this.RowCount = 0;
@@ -217,11 +229,11 @@ exports = module.exports = function(jsh){
     jsh.XExt.execif(renderData,
       function(f){
         if (ejssource){
-          if (data[_this.q] && _this.OnRender) _this.OnRender(ejssource, data, f);
+          if (data[_this.modelid] && _this.OnRender) _this.OnRender(ejssource, data, f);
           else {
             var ejsrslt = jsh.XExt.renderEJS(ejssource, undefined, {
               startrowid: undefined,
-              datatable: data[_this.q],
+              datatable: data[_this.modelid],
             });
             jsh.$root(_this.PlaceholderID).append(ejsrslt);
             _this.RowCount = jsh.$root(_this.PlaceholderID).find('tr').length;
@@ -231,7 +243,7 @@ exports = module.exports = function(jsh){
       },
       function(){
         if(renderData){
-          _this.EOF = data['_eof_' + _this.q];
+          _this.EOF = data['_eof_' + _this.modelid];
           if ((_this.Paging) && (!_this.EOF)) {
             jsh.$root(_this.PlaceholderID).append('<tr class="xtbl_loadmore"><td colspan="' + _this.ColSpan + '"><a href="#">Load More Data</div></td></tr>');
             jsh.$root(_this.PlaceholderID).find('.xtbl_loadmore').click(function () {

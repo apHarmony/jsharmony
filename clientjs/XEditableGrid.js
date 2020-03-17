@@ -22,13 +22,20 @@ var _ = require('lodash');
 
 exports = module.exports = function(jsh){
 
-  function XEditableGrid(_modelid, _CommitLevel, _ValidationLevel) {
-    this.modelid = _modelid;
+  function XEditableGrid(options) {
+    options = _.extend({
+      modelid: undefined,
+      CommitLevel: 'row',
+      ValidationLevel: 'row',
+      DialogContainer: undefined,
+    }, options);
+    this.modelid = options.modelid;
     this.ErrorClass = 'xinputerror';
-    this.CommitLevel = _CommitLevel;
-    this.ValidationLevel = _ValidationLevel;
+    this.CommitLevel = options.CommitLevel;
+    this.ValidationLevel = options.ValidationLevel;
+    this.DialogContainer = options.DialogContainer;
     this.CurrentCell = null;
-    this.Debug = false;
+    this.Debug = true;
     this.OnCellEnter = null; //(obj,e)
     this.OnCellLeave = null; //(oldobj,newobj,e)
     this.OnRowEnter = null; //(rowid)
@@ -39,6 +46,7 @@ exports = module.exports = function(jsh){
     this.OnValiding = null; //(rowid,obj,oncancel) return true/false
     this.OnCommit = null; //(rowid,obj,onsuccess,oncancel) return true (if no commit required, or immediate result)/false (if delay commit)    newobj,oldobj,onsuccess,oncancel,oldrowid
     this.IsDirty = null; //return true/false
+    this.GetDatasetRowID = null; //return int
     this.OnCancelEdit = null; //(rowid,obj)
     this.SaveBeforeUpdate = false;
     this.Init();
@@ -101,7 +109,7 @@ exports = module.exports = function(jsh){
   XEditableGrid.prototype.Init = function () {
     //Global Focus Change
     var _this = this;
-    jsh.focusHandler.push(function (newobj) {
+    jsh.addFocusHandler(_this.DialogContainer, function (newobj) {
       if(newobj && newobj.tagName && (newobj.tagName.toUpperCase()=='BODY')) newobj = null;
       if (jsh.xLoader.IsLoading) { return; }
       var newrowid = -1;
@@ -214,12 +222,23 @@ exports = module.exports = function(jsh){
   }
 
   XEditableGrid.prototype.CellLeaving = function (oldobj, newobj, e, onsuccess, oncancel) {
+    if(!onsuccess) onsuccess = function(){};
     var oldrowid = -1;
     var newrowid = -1;
     if (oldobj) oldrowid = jsh.XExt.XModel.GetRowID(this.modelid, oldobj);
     if (newobj) newrowid = jsh.XExt.XModel.GetRowID(this.modelid, newobj);
 
     var rowchange = (oldrowid != newrowid);
+
+    if(rowchange){
+      //Changing from outside of grid into inserted row
+      if((oldrowid==-1) && (newrowid >= 0)){
+        if(newrowid === this.GetDatasetRowID()){
+          onsuccess();
+          return true;
+        }
+      }
+    }
     
     if ((this.ValidationLevel == 'cell') || (this.CommitLevel == 'cell')) {
       //Validate Cell, if applicable
@@ -252,7 +271,7 @@ exports = module.exports = function(jsh){
       (this.CommitLevel == 'cell') || 
       ((this.CommitLevel == 'cell') && ((newrowid>=0) && newobj && $(newobj).is(':checkbox'))) || 
       (rowchange && (this.CommitLevel == 'row'))
-  )) {
+      )) {
       if (newobj){ jsh.queuedInputAction = new jsh.XExt.XInputAction(newobj); }
       else if (jsh.queuedInputAction && !jsh.queuedInputAction.IsExpired()) { }
       else jsh.queuedInputAction = null;
@@ -268,13 +287,20 @@ exports = module.exports = function(jsh){
       }, 1);
       
       var onsuccess_override = function () {
-        if (onsuccess) onsuccess(false);
+        onsuccess(false);
         if (!newobj) $(document.activeElement).blur();
         else if (jsh.queuedInputAction){
           if(!jsh.queuedInputAction.IsExpired()){
             //If the previous click was squashed
+            //If the click was squashed by the loading animation
             if(jsh.lastSquashedActionTime && (jsh.lastSquashedActionTime > jsh.queuedInputAction.tstamp)){
               jsh.queuedInputAction.Exec();
+            }
+            else {
+              var jobj = $(jsh.queuedInputAction.obj);
+              if(jobj.is('input,select,textarea') || jobj.hasClass('xform_ctrl')){
+                jsh.queuedInputAction.Exec();
+              }
             }
           }
           jsh.queuedInputAction = null;
@@ -284,20 +310,27 @@ exports = module.exports = function(jsh){
       if (!this.OnCommit(oldrowid, oldobj, onsuccess_override, oncancel)) return false;
     }
     
-    if (onsuccess) onsuccess();
+    onsuccess();
     return true;
   }
 
   //obj must be a DOM element - not a jQuery object
   //Leave e to null if not calling from a focus event handler
   XEditableGrid.prototype.SetFocus = function (obj, e, onComplete) {
-    if (jsh.xDialog.length) return;
+    if(this.DialogContainer != jsh.getTopDialogContainer()) return;
     var containerobj = obj;
     if (!$(obj).hasClass('editable')){
+      containerobj = null;
       if($(obj).hasClass('xtag_focusable')){
         containerobj = $(obj).closest('.xtagbox').next()[0];
       }
-      else return;
+      else {
+        var parentctrl = $(obj).closest('.xform_ctrl');
+        if(parentctrl.length && parentctrl.hasClass('editable')){
+          containerobj = parentctrl[0];
+        }
+      }
+      if(!containerobj) return;
     }
     if (obj instanceof jsh.$) throw new Error('SetFocus obj must not be a jquery object');
     return this.ControlEnter(containerobj, e, function(){

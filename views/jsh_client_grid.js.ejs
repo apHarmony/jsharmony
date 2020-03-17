@@ -34,7 +34,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   var gridCustomTemplate = <%=!!model.templates.grid%>;
 
   xcontroller.Init = function(callback){
-    xsearch = xcontroller.search = new jsh.XForm('','.xsearch_template_'+xmodel.class,'.xsearch_'+xmodel.class);
+    xsearch = xcontroller.search = new jsh.XForm({
+      TemplateID: '.xsearch_template_'+xmodel.class,
+      PlaceholderID: '.xsearch_'+xmodel.class,
+    });
     xsearch.Data = new jsh.XSearch.SearchQuery(xmodel);
     xsearch.OnAfterRender = function(){ 
       jsh.$root('.xsearch_'+xmodel.class+' input.xsearch_value').each(function(){ jsh.XBarcode.EnableScanner($(this)); }); 
@@ -47,15 +50,27 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
     current_display_layout = xcontroller.GetDefaultDisplayLayout();
 
-    xform = xcontroller.form = new jsh.XForm(modelid,'','');
+    xform = xcontroller.form = new jsh.XForm({
+      modelid: modelid,
+      API: (xmodel.getapi ? xmodel.getapi('form') : undefined),
+    });
     xform.DataType = xmodel.datamodel;
     xform.Data = new xmodel.datamodel();
 
     var isInlinePopup = <%-xejs.iif(('inlinepopup' in model) && (model.inlinepopup),'true','false')%>;
     var grid_template = '<%=(model.templates.grid||'.xgrid_'+model.class+'_template')%>';
     var grid_placeholder = jsh.$root(grid_template).data('target');
+    if(!grid_placeholder) throw new Error('Grid render target is required for custom template.  Add "data-target" attribute to template script tag');
     var scrollControl = (isInlinePopup ? jsh.$root(grid_placeholder).closest('.xpanel')[0] : window);
-    xgrid = xcontroller.grid = new jsh.XGrid(modelid,grid_template,grid_placeholder,undefined,true,scrollControl);
+    xgrid = xcontroller.grid = new jsh.XGrid({
+      modelid: modelid,
+      TemplateID: grid_template,
+      PlaceholderID: grid_placeholder,
+      CustomScroll: undefined,
+      Paging: true,
+      ScrollControl: scrollControl,
+      API: (xmodel.getapi ? xmodel.getapi('grid') : undefined),
+    });
     xgrid.NoResultsMessage = jsh.XExt.renderEJS(<%-JSON.stringify(xejs.iif(('noresultsmessage' in model) && (model.noresultsmessage || (model.noresultsmessage==='')),model.noresultsmessage,'No results %%%FORSEARCHPHRASE%%%'))%>, modelid);
     <% if(!('noresultsmessage' in model)){ %>
     if(xmodel.caption && xmodel.caption[2]){
@@ -82,12 +97,18 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xgrid.GetDBRowCount = <%-xejs.iif(('grid_rowcount' in model) && (model.grid_rowcount),'true','false')%>;
 
     <% if(!model.templates.grid && !model.grid_static){ %>
-      xeditablegrid = xcontroller.editablegrid = new jsh.XEditableGrid(modelid,xmodel.commitlevel,'<%-xejs.iif('validationlevel' in model,model.validationlevel,'row')%>');
+      xeditablegrid = xcontroller.editablegrid = new jsh.XEditableGrid({
+        modelid: modelid,
+        CommitLevel: xmodel.commitlevel,
+        ValidationLevel: '<%-xejs.iif('validationlevel' in model,model.validationlevel,'row')%>',
+        DialogContainer: jsh.XExt.getDialogContainer(grid_placeholder),
+      });
       xeditablegrid.Debug = true;
       xeditablegrid.OnRowEnter = function(rowid){ xform.SetIndex(rowid,false); }
       xeditablegrid.OnControlUpdate = function(obj,e){ xform.Data.OnControlUpdate(obj,e); }
       xeditablegrid.OnValidating = function(rowid,obj){ return xform.CommitRow(); }
       xeditablegrid.IsDirty = function(){ return xform.IsDirty; }
+      xeditablegrid.GetDatasetRowID = function(){ return xform.Index; }
       xeditablegrid.OnCommit = xcontroller.OnCommit;
       xeditablegrid.OnCancelEdit = function(rowid,obj){ xcontroller.ResetRow(rowid); }
       xeditablegrid.SaveBeforeUpdate = <%=(parentfield && parentfield.controlparams && parentfield.controlparams.grid_save_before_update?'true':'false')%>;
@@ -103,15 +124,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xgrid.OnDBRowCount = function(data){ xcontroller.UpdateTitleCaption(); };
     xgrid.OnResetDataSet = function(data){
       xform.DataSet = []; xform.ResetDirty();
-      if (data[this.q].length <= 0){ xform.Index = -1; }
+      if (data[this.modelid].length <= 0){ xform.Index = -1; }
       else{ xform.Index = 0; }
       this.Prop.ModifiedSinceLoad = false;
       xcontroller.UpdateDisplayLayoutColumnHeaders();
     }
     xgrid.OnRender = function(ejssource,data,cb){
       var _this = this;
-      xform.DataSet = xform.DataSet.concat(data[_this.q]);
-      for (var i = 0; i < data[_this.q].length; i++) {
+      xform.DataSet = xform.DataSet.concat(data[_this.modelid]);
+      for (var i = 0; i < data[_this.modelid].length; i++) {
         var rowid = _this.RowCount + i;
         xform.DataSet[rowid]['_is_insert'] = false;
         xform.DataSet[rowid]['_is_dirty'] = false;
@@ -124,7 +145,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           if(xeditablegrid){
             var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
               startrowid: _this.RowCount,
-              datatable: data[_this.q],
+              datatable: data[_this.modelid],
             });
             var jparent = jsh.$root(_this.PlaceholderID);
             var jobj = $(ejsrslt).appendTo(jparent);
@@ -143,7 +164,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
             var readOnlyGrid = !jsh.XExt.hasAction(xmodel.actions,'IU');
 
             var rowidx = 0;
-            jsh.async.eachSeries(data[_this.q], function(row, row_cb){
+            jsh.async.eachSeries(data[_this.modelid], function(row, row_cb){
               var rowid = _this.RowCount + rowidx;
               xform.SetIndex(rowid, false, $(jrows[rowid]));
               xform.Render({ resetValidation: false });
@@ -156,7 +177,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           else {
             var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
               startrowid: _this.RowCount,
-              datatable: data[_this.q],
+              datatable: data[_this.modelid],
             });
             var jobj = $(ejsrslt).appendTo(jsh.$root(_this.PlaceholderID));
             return render_cb();
@@ -164,7 +185,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         },
       ], function(err){
         $.colorbox.resize();
-        _this.RowCount += data[_this.q].length;
+        _this.RowCount += data[_this.modelid].length;
         if(cb) return cb();
       });
     }
@@ -313,14 +334,30 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
             var dbtaskid = 'insert_'+taskidx;
             if(dbtaskid in xform.DBTaskRows){
               var dbrowid = xform.DBTaskRows[dbtaskid];
-              xform.DataSet[dbrowid] = _.extend(xform.DataSet[xform.Index], rslt[dbrslt]);
+              var dbdata = rslt[dbrslt];
+              xform.DataSet[dbrowid] = _.extend(xform.DataSet[xform.Index], dbdata);
               xmodel.saveUnboundFields(xform.DataSet[dbrowid]);
-              if(xform.Index == dbrowid) xform.Data = _.extend(xform.Data, rslt[dbrslt]);
+              if(xform.Index == dbrowid) xform.Data = _.extend(xform.Data, dbdata);
+
+              //Render keys
+              for(var key in dbdata){
+                if(key in xform.Data.Fields){
+                  XExt.XModel.RenderField(
+                    xform.DataSet[dbrowid],
+                    jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + dbrowid + "']"), 
+                    xmodel.id, 
+                    xform.Data.Fields[key],
+                    xform.DataSet[dbrowid][key],
+                    { updatePreviousValue: false }
+                  );
+                }
+              }
             }
           }
         }
       }
 
+      //Reset password fields after commit
       _.each(xmodel.fields, function(field){
         if((field.control=='password') && !(field.controlparams && field.controlparams.update_when_blank) && (!XExt.hasAction(field.actions,'B')||field.unbound)){
           _.each(xform.DataSet,function(dbrow){ dbrow[field.name] = ''; });
@@ -336,7 +373,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       xform.ResetDirty();
 
       //Bind oncommit handler if defined
-      var orig_onsuccess = onsuccess;
+      var orig_onsuccess = onsuccess || function(){};
       if(xmodel.oncommit) onsuccess = function(){ xmodel.oncommit(xmodel, rowid, orig_onsuccess); };
       
       if(xgrid.Prop.ReselectAfterEdit) xcontroller.Reselect(rowid,onsuccess);
@@ -360,12 +397,19 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var _this = xform;
     
     if(rowid != _this.Index) if(!_this.SetIndex(rowid,true)) return;
+
     var reqdata = { rowstart: 0, rowcount: 1, d: JSON.stringify(_this.GetReselectParams()) };
-    _this.XExecute(_this.q,reqdata,function(rslt){
+    var loadObj = {};
+    if(jsh.xLoader) jsh.xLoader.StartLoading(loadObj);
+    xgrid.API.Select(reqdata, function(errdata, rslt){
+      if(jsh.xLoader) jsh.xLoader.StopLoading(loadObj);
+
+      if(errdata) return xgrid.API.HandleGenericError(errdata);
+
       //Success
       if('_success' in rslt){
-        if((_this.q in rslt) && (rslt[_this.q].length > 0)){
-          _this.DataSet[rowid] = _.extend(_this.DataSet[rowid],rslt[_this.q][0]);
+        if((_this.modelid in rslt) && (rslt[_this.modelid].length > 0)){
+          _this.DataSet[rowid] = _.extend(_this.DataSet[rowid],rslt[_this.modelid][0]);
           _this.DataSet[rowid]['_is_insert'] = false;
           _this.DataSet[rowid]['_is_dirty'] = false;
           _this.DataSet[rowid]['_orig'] = null;
@@ -386,9 +430,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         if(oncomplete) oncomplete();
       }
       else if(onfail) onfail(err);
-    },function(err){
-      //Fail
-      if(onfail) onfail(err);
     });
   }
 
@@ -488,10 +529,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var oldindex = xform.Index;
     xform.NavTo(rowid,false);
     var newobj = $(jobj).find('.xform_ctrl.editable:visible,.xlookup:visible').not('input[type=hidden]').first();
+    if(newobj.find('.xform_ctrl_subfocus').length) newobj = newobj.find('.xform_ctrl_subfocus').first();
     newobj.focus();
     if(xgrid.OnRowBind) xgrid.OnRowBind(jobj, newrow);
-    xeditablegrid.CurrentCell = document.activeElement;
     newobj.focus();
+    if(newobj.length) xeditablegrid.CurrentCell = newobj[0];
+    else xeditablegrid.CurrentCell = document.activeElement;
     return rowid;
   }
 
@@ -638,9 +681,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     else current_display_layout = xcontroller.GetDefaultDisplayLayout();
   }
 
-  xcontroller.Refresh = function(){
+  xcontroller.Refresh = function(callback){
     if(jsh.XPage.onGridExit(null,function(){ xcontroller.Refresh(); })) return;
-    xgrid.Load();
+    xgrid.Load(undefined,undefined,callback);
   }
 
   xcontroller.Sort = function(obj,fieldname){
@@ -780,9 +823,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   xcontroller.Export = function(){
     if(!xgrid.Prop.isInlinePopup) if(jsh.XPage.onGridExit(null,function(){ xcontroller.Export(); })) return;
-    xgrid.Load(0,0,function(url){
-      jsh.getFileProxy().prop('src', url);
-    },true);
+    xgrid.Load(0,0,undefined,true);
   }
 
   xcontroller.UpdateTitleCaption = function(){
@@ -869,6 +910,26 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       });
       success();
     });
+  }
+
+  xcontroller.Render = function(callback){
+    this.Select(function(){
+      if (typeof xmodel.onload != 'undefined') xmodel.onload(xmodel);
+      jsh.ResetLinks();
+      if(callback) return callback();
+    });
+  }
+
+  xcontroller.setLOV = function(fieldname, lov_data){
+    if(!xform.Data._LOVs) xform.Data._LOVs = {};
+    xform.Data._LOVs[fieldname] = lov_data;
+    xform.LOVs = xform.Data._LOVs;
+    xgrid.LOVs[fieldname] = lov_data;
+  }
+
+  xcontroller.Commit = function(onSuccess){
+    if(!xform.CommitRow()) return;
+    this.OnCommit(xcontroller.GetRowID(), undefined, onSuccess);
   }
 
 })(<%-instance%>);

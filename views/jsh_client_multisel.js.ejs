@@ -42,8 +42,8 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
   var xcontroller = xmodel.controller = new XExt.XModel.XController(xmodel);
 
   xcontroller.Init = function(callback){
-    xgrid = xcontroller.grid = new jsh.XGrid(modelid);
-    xform = xcontroller.form = new jsh.XForm(modelid,'','');
+    xgrid = xcontroller.grid = new jsh.XGrid({ modelid: modelid });
+    xform = xcontroller.form = new jsh.XForm(modelid);
     xgrid.HasUpdates = function(){ return false; };
     xgrid.Data = {};
     xgrid.PlaceholderID = '.xmultisel_'+xmodel.class+'_placeholder';
@@ -80,7 +80,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
       $.ajax({
         type:"GET",
         cache: false,
-        url:jsh._BASEURL+'_d/'+xgrid.q+'/'+_query,
+        url:jsh._BASEURL+'_d/'+xgrid.modelid+'/'+_query,
         dataType: 'json',
         success:function(data){
           if((data instanceof Object) && ('_error' in data)){
@@ -93,7 +93,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
             ejssource = ejssource.replace(/<#/g,'<'+'%').replace(/#>/g,'%'+'>')
             if('_title' in data) xgrid.title = data._title;
             var ejsrslt = jsh.XExt.renderEJS(ejssource, modelid, {
-              datatable:data[xgrid.q]
+              datatable:data[xgrid.modelid]
             });
             jsh.$root(xgrid.PlaceholderID).empty();
             jsh.$root(xgrid.PlaceholderID).append(ejsrslt);
@@ -137,7 +137,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
     }
     var rslt = { 
       'method':'post',
-      'model':xgrid.q,
+      'model':xgrid.modelid,
       'query':_query,
       'post':{'<%=lovfield%>':JSON.stringify(selected_values)},
       'onComplete':undefined

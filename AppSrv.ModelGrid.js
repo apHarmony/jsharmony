@@ -48,7 +48,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   if (!_this.ParamCheck('Q', Q, ['|rowstart', '|rowcount', '|sort', '|search', '|searchjson', '|d', '|meta', '|getcount'])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   if (!_this.ParamCheck('P', P, _.map(_.union(searchlist, ['_action']), function (search) { return '|' + search; }))) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
 
-  var getcount = ((('rowcount' in Q) && (Q.rowcount == -1)) || (('getcount' in Q) && (Q['getcount'] != '')));
+  var getcount = ((('rowcount' in Q) && (Q.rowcount == -1)) || Q.getcount);
   var is_insert = (('_action' in P) && (P['_action'] == 'insert'));
   var is_browse = (('_action' in P) && (P['_action'] == 'browse'));
   delete P['_action'];
@@ -266,7 +266,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
     };
   }
   
-  if ('getcount' in Q) {
+  if (getcount) {
     dbtasks['_count_' + dbtaskname] = function (dbtrans, callback) {
       db.Row(req._DBContext, dbsql.rowcount_sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
         if ((err == null) && (rslt == null)) err = Helper.NewError('Count not found', -14);
@@ -276,7 +276,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
       });
     };
   }
-  if (('meta' in Q) && (Q['meta'] != '')) {
+  if (Q.meta) {
     if(_this.addDefaultTasks(req, res, model, P, dbtasks)===false) return;
     if(_this.addLOVTasks(req, res, model, P, dbtasks, { action: (is_browse?'B':model.actions) })===false) return;
     if(_this.addBreadcrumbTasks(req, res, model, P, dbtasks, 'B')===false) return;

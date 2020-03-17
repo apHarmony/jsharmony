@@ -356,9 +356,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         XPage.traverseModels(null, function (xmodel) {
           if (typeof xmodel.oninit != 'undefined') xmodel.oninit(xmodel);
         });
-        //Focus on the first element on the page
-        var firstControl = jsh.$root('input,select,textarea,.xlookup').not('input[type=hidden]').filter(':visible').first();
-        if(firstControl && firstControl.length && !firstControl.is('.datepicker')) firstControl.focus();
+        
         XPage.Select({ modelid: jsh.XModels_root, force: true }, function () {
           var rootmodel = jsh.XModels[jsh.XModels_root];
           jsh.InitControls();
@@ -380,6 +378,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
             }
           }
           else XExt.ReplaceHistory(window.location.href.toString(), XPage.GetState());
+
+          //Focus on the first element on the page
+          var firstControl = jsh.$root('input,select,textarea,.xlookup').not('input[type=hidden]').filter(':visible').first();
+          if(firstControl && firstControl.length && !firstControl.is('.datepicker')) firstControl.focus();
 
           //Select first search value by default, if form is open
           var firstSearchValue = jsh.$root('.xsearch_value:visible').first();
@@ -900,17 +902,19 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       }
     }
     _.each(jsh.XModels, function (xmodel) {
-      var modelid = xmodel.id;
-      if (!xmodel.isEnabled()) return;
-      if (!XExt.hasAction(xmodel.actions, 'B')) return;
-      if (xmodel.onloadstate) return xmodel.onloadstate(xmodel, state[modelid]);
-      if (xmodel.layout != 'grid') return;
-      if (modelid in state) {
-        xmodel.controller.LoadState(state[modelid]);
-      }
+      XPage.LoadModelState(xmodel, state[xmodel.id]);
     });
     if ('state' in jsh._GET) delete jsh._GET.state;
     return true;
+  }
+
+  XPage.LoadModelState = function(xmodel, modelstate){
+    var modelid = xmodel.id;
+    if (!xmodel.isEnabled()) return;
+    if (!XExt.hasAction(xmodel.actions, 'B')) return;
+    if (xmodel.onloadstate) return xmodel.onloadstate(xmodel, modelstate);
+    if (xmodel.layout != 'grid') return;
+    if (typeof modelstate != 'undefined') xmodel.controller.LoadState(modelstate);
   }
 
   XPage.DownloadFile = function(modelid, field, title) {
@@ -1259,6 +1263,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   XPage.LoadVirtualModel = function(ocontainer, model, cb){
     //Render model as HTML
+    var jcontainer = $(ocontainer);
+    if(!jcontainer.length) throw new Error('Could not load model: Target container not found');
+
     XPage.ParseModelDefinition(model, function(err){
       XExt.Alert('Error in model definition '+(model && model.id ? model.id : '')+': '+err.toString());
     }, function(){
@@ -1267,22 +1274,39 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       var ejsrslt = jsh.Render(model, parent);
       //CODE_EJSPREPEND is used in top-level forms, to change position of the title
       if(ejsrslt.indexOf(jsh.CODE_EJSPREPEND)>=0) ejsrslt = ejsrslt.replace(jsh.CODE_EJSPREPEND,'');
+      if(jcontainer.hasClass('xdialogbox')){
+        ejsrslt += '<div style="clear:both;"></div>';
+      }
       //Add model to DIV
-      $(ocontainer).html(ejsrslt);
+      jcontainer.html(ejsrslt);
 
       XPage.traverseModelsAsync(model.id,
         function (xmodel, done) {
           xmodel.controller.Init(done);
+          if(model.id == xmodel.id){
+            if(model.rowlimit && xmodel.controller.grid) xmodel.controller.grid.RowLimit = model.rowlimit;
+          }
         },
         function () {
-          XPage.RenderButtons(ocontainer);
+          var orig_GET = jsh.XExt.parseGET();
+          if ('state' in orig_GET){
+            var fullstate = {};
+            try{
+              fullstate = JSON.parse(orig_GET.state);
+            }
+            catch(ex){}
+            XPage.traverseModels(model.id, function (xmodel) {
+              XPage.LoadModelState(xmodel, fullstate[xmodel.id]);
+            });
+          }
+          XPage.RenderButtons(jcontainer);
           XPage.traverseModels(model.id, function (xmodel) {
             if (typeof xmodel.oninit != 'undefined') xmodel.oninit(xmodel);
           });
           XPage.Select({ modelid: model.id, force: true }, function () {
             jsh.ResetLinks();
             jsh.InitControls();
-            XPage.LayoutOneColumn(ocontainer);
+            XPage.LayoutOneColumn(jcontainer);
             jsh.XWindowResize();
             if(cb) return cb(jsh.XModels[model.id]);
           });
@@ -1316,7 +1340,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       modeltype: 'static',
       title: '',
       caption: ['','Item','Items'],
-      unbound: true,
       forcequery: {},
       topmost: false,
       ejs: '',
@@ -1324,6 +1347,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       js: '',
       fields: [],
     };
+    if(model.layout=='grid'){
+      modelDefaults = _.extend(modelDefaults, {
+        rowlimit: 0,
+        commitlevel: 'row',
+      });
+    }
     for(var key in modelDefaults){
       if(!(key in model)) model[key] = modelDefaults[key];
     }

@@ -53,7 +53,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.prev_title_src = '';
   jsh.prev_bcrumbs = '';
   jsh.prev_bcrumbs_src = '';
-  jsh.focusHandler = [];
+  jsh.focusHandler = [[]];
+  jsh.focusHandlerIndex = [window];
   jsh.ignorefocusHandler = false;
   jsh.queuedInputAction = null;
   jsh.static_paths = ['logout'];
@@ -99,13 +100,16 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   $(document).focusout(function(){ jsh.FocusHandler(); });
 
-  jsh.FocusHandler = function(){
-    if(jsh.ignorefocusHandler || jsh.xDialog.length) return;
-    window.setTimeout(function(){
-      if(jsh.ignorefocusHandler || jsh.xDialog.length) return;
-      for(var i=0;i<jsh.focusHandler.length;i++) jsh.focusHandler[i](document.activeElement);
-    },1);
-  }
+  jsh.FocusHandler = function(immediate){
+    var focusHandlers = jsh.getFocusHandlers(jsh.getTopDialogContainer());
+    if(jsh.ignorefocusHandler || !focusHandlers.length) return;
+    if(!immediate){
+      window.setTimeout(function(){ jsh.FocusHandler(true); },1);
+      return;
+    }
+    //Execute handler
+    for(var i=0;i<focusHandlers.length;i++) focusHandlers[i](document.activeElement);
+  };
 
   jsh.Load = function(options){
     jsh.pageStartTime = Date.now();
@@ -175,7 +179,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       //Setup TopMost Variables
       window.onbeforeunload = function(){ return jsh.XPage.OnExit(); };
       jsh.cancelExit = false;
-      jsh.focusHandler = [];
+      jsh.focusHandler = [[]];
+      jsh.focusHandlerIndex = [window];
       jsh.ignorefocusHandler = false;
       jsh.queuedInputAction = null;
       jsh.is_insert =  (jsh._GET['action']=='insert');

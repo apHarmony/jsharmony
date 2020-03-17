@@ -23,11 +23,23 @@ var async = require('async');
 
 exports = module.exports = function(jsh){
 
-  function XForm(_q,_TemplateID,_PlaceholderID){
+  function XForm(options){
+    if(_.isString(options)) options = { url: options };
+    options = _.extend({
+      url: '',
+      TemplateID: '',
+      PlaceholderID: '',
+      modelid: '',
+      API: undefined,
+    }, options);
+    if(!options.modelid && options.url) options.modelid = options.url;
+    if(!options.url && options.modelid) options.url = options.modelid;
+
     this._this = this;
-    this.q = _q;
-    this.TemplateID = _TemplateID;
-    this.PlaceholderID = _PlaceholderID;
+    this.url = options.url;
+    this.modelid = options.modelid;
+    this.TemplateID = options.TemplateID;
+    this.PlaceholderID = options.PlaceholderID;
     this.DataType = Object;
     this.Data = new this.DataType();
     this.DataSet = null;
@@ -47,6 +59,7 @@ exports = module.exports = function(jsh){
     this.OnAfterRender = null;
     this.OnDBError = null;
     this.Prop = {};
+    this.API = (options.API ? options.API : new jsh.XAPI.Form.jsHarmony(this.modelid));
   }
 
   XForm.prototype.Render = function(options){
@@ -206,7 +219,10 @@ exports = module.exports = function(jsh){
     }
   }
   XForm.prototype.NewRow = function (){
-    var rslt = this.ApplyDefaults(new this.DataType());
+    var rslt = new this.DataType();
+    rslt._is_insert = true;
+    rslt._is_dirty = true;
+    rslt = this.ApplyDefaults(rslt);
     this.ApplyUnboundDefaults(rslt);
     this.DataSet.push(rslt);
     this.IsDirty = true;
@@ -215,7 +231,7 @@ exports = module.exports = function(jsh){
   XForm.prototype.Select = function(onComplete, onFailure){
     var _this = this;
 
-    this.qExecute(this.PrepExecute('get', this.q, this.GetSelectParams(), {}, function (rslt){
+    this.qExecute(this.PrepExecute('get', this.url, this.GetSelectParams(), {}, function (rslt){
       _this.DataSet = null;
       //Load LOVs
       for(var tbl in rslt){
@@ -233,9 +249,9 @@ exports = module.exports = function(jsh){
       _this.title = _this.Data._title;
       var xmodel = _this.GetModel();
       //Load Data
-      if(_this.q in rslt){
-        if(_.isArray(rslt[_this.q])){
-          _this.DataSet = rslt[_this.q];
+      if(_this.modelid in rslt){
+        if(_.isArray(rslt[_this.modelid])){
+          _this.DataSet = rslt[_this.modelid];
           for (var i = 0; i < _this.DataSet.length; i++) {
             _this.DataSet[i]['_is_insert'] = false;
             _this.DataSet[i]['_is_dirty'] = false;
@@ -255,7 +271,7 @@ exports = module.exports = function(jsh){
           }
         }
         else {
-          _this.Data = _.extend(_this.Data,rslt[_this.q]);
+          _this.Data = _.extend(_this.Data,rslt[_this.modelid]);
           _this.Data._is_insert = false;
           _this.Data._is_dirty = false;
           _this.Data._is_deleted = false;
@@ -281,6 +297,27 @@ exports = module.exports = function(jsh){
     _this.ApplyUnboundDefaults(_this.Data);
     _this.Render();
   }
+  XForm.prototype.ResetDataset = function(){
+    if(this.Data){
+      if(this.Data._orig) this.Data = _.extend(this.Data, this.Data._orig);
+      this.Data._orig = null;
+      this.Data._is_dirty = false;
+    }
+    if(this.DataSet){
+      for(var i=0;i<this.DataSet.length;i++){
+        var row = this.DataSet[i];
+        if(row._orig) row = _.extend(row, row._orig);
+        row._orig = null;
+        row._is_dirty = false;
+        row._is_deleted = false;
+        if(row._is_insert){
+          this.DataSet.splice(i,1);
+          i--;
+        }
+      }
+    }
+    this.DeleteSet = [];
+  }
   XForm.prototype.ApplyDefaults = function(data){
     var _this = this;
     var xmodel = _this.GetModel();
@@ -295,7 +332,7 @@ exports = module.exports = function(jsh){
             var js = val.substr(3);
             //Evaluate JS
             var evalparams = { data: data };
-            if(_this.q in jsh.App) evalparams.modelid = _this.q;
+            if(_this.modelid in jsh.App) evalparams.modelid = _this.modelid;
             val = jsh.XExt.JSEval(js,this,evalparams);
           }
           rslt[fieldname] = val;
@@ -315,8 +352,8 @@ exports = module.exports = function(jsh){
   XForm.prototype.GetModel = function(){
     var _this = this;
     if(!jsh) return;
-    if(!_this.q) return;
-    return jsh.XModels[_this.q];
+    if(!_this.modelid) return;
+    return jsh.XModels[_this.modelid];
   }
   XForm.prototype.ApplyUnboundDefaults = function(data){
     var _this = this;
@@ -390,19 +427,19 @@ exports = module.exports = function(jsh){
     return dbtasks;
   }
   XForm.prototype.PrepUpdate = function(onComplete,onFail){ 
-    return this.PrepExecute('post',this.q,this.GetKeys(),this.GetUpdateParams(),onComplete,onFail); 
+    return this.PrepExecute('post',this.url,this.GetKeys(),this.GetUpdateParams(),onComplete,onFail); 
   }
   XForm.prototype.Update = function(onComplete,onFail){ this.qExecute(this.PrepUpdate(onComplete,onFail)); }
   XForm.prototype.PrepInsert = function(onComplete,onFail){ 
-    return this.PrepExecute('put',this.q,{},this.GetInsertParams(),onComplete,onFail); 
+    return this.PrepExecute('put',this.url,{},this.GetInsertParams(),onComplete,onFail); 
   }
   XForm.prototype.Insert = function(onComplete,onFail){ this.qExecute(this.PrepInsert(onComplete,onFail)); }
   XForm.prototype.PrepDelete = function(onComplete,onFail){ 
-    return this.PrepExecute('delete',this.q,this.GetDeleteParams(),{},onComplete,onFail); 
+    return this.PrepExecute('delete',this.url,this.GetDeleteParams(),{},onComplete,onFail); 
   }
   XForm.prototype.Delete = function(onComplete,onFail){ this.qExecute(this.PrepDelete(onComplete,onFail)); }
   XForm.prototype.Execute = function(onComplete,onFail){ 
-    this.qExecute(this.PrepExecute('get',this.q,this.Data,{},onComplete,onFail)); 
+    this.qExecute(this.PrepExecute('get',this.url,this.Data,{},onComplete,onFail)); 
   }
   XForm.prototype.ExecuteTrans = function (DBTasks, onComplete, onFail) {
     var execdata = [];
@@ -433,76 +470,68 @@ exports = module.exports = function(jsh){
     this.qExecute(execparams);
   }
   XForm.prototype.qExecute = function (ExecParams) {
+    var _this = this;
     if(ExecParams.model){
       if(ExecParams.model[0] == '/') ExecParams.url = ExecParams.model;
       else if(ExecParams.model.indexOf('http://')==0) ExecParams.url = ExecParams.model;
       else if(ExecParams.model.indexOf('https://')==0) ExecParams.url = ExecParams.model;
-      else ExecParams.url = jsh._BASEURL + '_d/' + ExecParams.model;
     }
-    else ExecParams.url = jsh._BASEURL + '_d/' + ExecParams.model;
-    if((ExecParams.model.indexOf('?')<=0) && (ExecParams.url[ExecParams.url.length-1] != '/')) ExecParams.url += '/';
-    this.qExecuteBase(ExecParams);
-  }
-  XForm.prototype.qExecuteBase = function(ExecParams){
-    var _this = this;
-    var url = ExecParams.url;
-    if(!_.isEmpty(ExecParams.query)) url += '?'+$.param(ExecParams.query);
-    var loader = jsh.xLoader;
-    if(loader) loader.StartLoading(_this);
-    $.ajax({
-      type:ExecParams.method.toUpperCase(),
-      cache: false,
-      url: url,
-      data: ExecParams.post,
-      async: _this.async,
-      dataType: 'json',
-      xhrFields: {
-        withCredentials: true
-      },
-      success:function(data){
-        if(loader) loader.StopLoading(_this);
-        if ((data instanceof Object) && ('_error' in data)) {
-          if(jsh.DefaultErrorHandler(data._error.Number,data._error.Message)) { }
-          else if(!(_this.HandleError(data._error,data._stats,ExecParams, data))) { }
-          else if((data._error.Number == -9) || (data._error.Number == -5)){ jsh.XExt.Alert(data._error.Message); }
-          else { jsh.XExt.Alert('Error #' + data._error.Number + ': ' + data._error.Message); }
-          if ('onFail' in ExecParams) ExecParams.onFail(data._error);
+
+    if(!ExecParams.url){
+      if(!ExecParams.model) ExecParams.model = this.modelid;
+    }
+    ExecParams.async = this.async;
+    this.API.Execute(ExecParams, function(errdata, rslt){
+      if(errdata){
+        //Error
+        var jerrdata = {};
+        try { jerrdata = JSON.parse(errdata); }
+        catch(ex){ }
+        if ((jerrdata instanceof Object) && ('_error' in jerrdata)) {
+          if (jsh.DefaultErrorHandler(jerrdata._error.Number, jerrdata._error.Message)) { }
+          else if (!(_this.HandleError(jerrdata._error,jerrdata._stats,ExecParams,errdata))) { }
+          else if ((jerrdata._error.Number == -9) || (jerrdata._error.Number == -5)) { jsh.XExt.Alert(jerrdata._error.Message); }
+          else { jsh.XExt.Alert('Error #' + jerrdata._error.Number + ': ' + jerrdata._error.Message); }
+          if ('onFail' in ExecParams) ExecParams.onFail(jerrdata._error);
           return;
         }
-        if ((data instanceof Object) && ('_stats' in data)) {
-          _this.OnDBStats(data._stats);
+        if (('onFail' in ExecParams) && (ExecParams.onFail(errdata))){ }
+        else if(('status' in errdata) && (errdata.status == '404')){ jsh.XExt.Alert('(404) The requested page was not found.'); }
+        else if(jsh._debug){
+          var errmsg = errdata.toString();
+          if(errdata.responseText) errmsg = errdata.responseText;
+          jsh.XExt.Alert('An error has occurred: ' + errmsg);
         }
-        if((ExecParams.method != 'get') && (data instanceof Object) && ('_success' in data)){
-          _this.OnSuccess(data);
-          if(ExecParams.onComplete) ExecParams.onComplete(data);
-        }
-        else if((ExecParams.method == 'get') && (data instanceof Object)){
-          _this.OnSuccess(data);
-          if(ExecParams.onComplete) ExecParams.onComplete(data);
-        }
-        else {
-          _this.OnUndefined(data);
-          if ('onFail' in ExecParams) ExecParams.onFail(data);
-        }
-      },
-      error:function(data){
-        if(loader) loader.StopLoading(_this);
-        var jdata = data.responseJSON;
-        if ((jdata instanceof Object) && ('_error' in jdata)) {
-          if (jsh.DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { }
-          else if (!(_this.HandleError(jdata._error,jdata._stats,ExecParams,data))) { }
-          else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { jsh.XExt.Alert(jdata._error.Message); }
-          else { jsh.XExt.Alert('Error #' + jdata._error.Number + ': ' + jdata._error.Message); }
-          if ('onFail' in ExecParams) ExecParams.onFail(jdata._error);
-          return;
-        }
-        if (('onFail' in ExecParams) && (ExecParams.onFail(data))){ }
-        else if(('status' in data) && (data.status == '404')){ jsh.XExt.Alert('(404) The requested page was not found.'); }
-        else if(jsh._debug) jsh.XExt.Alert('An error has occurred: ' + data.responseText);
         else jsh.XExt.Alert('An error has occurred.  If the problem continues, please contact the system administrator for assistance.');
       }
+      else {
+        //Success
+        if ((rslt instanceof Object) && ('_error' in rslt)) {
+          if(jsh.DefaultErrorHandler(rslt._error.Number,rslt._error.Message)) { }
+          else if(!(_this.HandleError(rslt._error,rslt._stats,ExecParams, rslt))) { }
+          else if((rslt._error.Number == -9) || (rslt._error.Number == -5)){ jsh.XExt.Alert(rslt._error.Message); }
+          else { jsh.XExt.Alert('Error #' + rslt._error.Number + ': ' + rslt._error.Message); }
+          if ('onFail' in ExecParams) ExecParams.onFail(rslt._error);
+          return;
+        }
+        if ((rslt instanceof Object) && ('_stats' in rslt)) {
+          _this.OnDBStats(rslt._stats);
+        }
+        if((ExecParams.method != 'get') && (rslt instanceof Object) && ('_success' in rslt)){
+          _this.OnSuccess(rslt);
+          if(ExecParams.onComplete) ExecParams.onComplete(rslt);
+        }
+        else if((ExecParams.method == 'get') && (rslt instanceof Object)){
+          _this.OnSuccess(rslt);
+          if(ExecParams.onComplete) ExecParams.onComplete(rslt);
+        }
+        else {
+          _this.OnUndefined(rslt);
+          if ('onFail' in ExecParams) ExecParams.onFail(rslt);
+        }
+      }
     });
-  };
+  }
   XForm.prototype.OnDBStats = function(dbstats){
     var _this = this;
     var rslt = true;
@@ -598,52 +627,52 @@ exports = module.exports = function(jsh){
     return rslt;
   }
 
-  XForm.prototype.XExecute = function(q,d,onComplete,onFail){
-    var xform = new XForm(q,'','');
+  XForm.prototype.XExecute = function(url,d,onComplete,onFail){
+    var xform = new XForm(url);
     xform.Data = d;
     xform.Execute(onComplete,onFail);
   }
 
-  XForm.prototype.XExecuteBlock = function(q,d,onComplete,onFail){
-    var xform = new XForm(q,'','');
+  XForm.prototype.XExecuteBlock = function(url,d,onComplete,onFail){
+    var xform = new XForm(url);
     xform.Data = d;
     xform.async = false;
     xform.Execute(onComplete,onFail);
   }
 
-  XForm.prototype.XExecutePost = function (q, d, onComplete, onFail, options){
+  XForm.prototype.XExecutePost = function (url, d, onComplete, onFail, options){
     if(!options) options = {};
-    var xform = new XForm(q, '', '');
+    var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
-    xform.qExecute(xform.PrepExecute('post', xform.q, {}, d, onComplete, onFail)); 
+    xform.qExecute(xform.PrepExecute('post', xform.url, {}, d, onComplete, onFail)); 
   }
 
   XForm.prototype.reqGet = function (url, q, d, onComplete, onFail, options){
     if(!options) options = {};
-    var xform = new XForm(url, '', '');
+    var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
-    xform.qExecute(xform.PrepExecute('get', xform.q, q, d, onComplete, onFail)); 
+    xform.qExecute(xform.PrepExecute('get', xform.url, q, d, onComplete, onFail)); 
   }
 
   XForm.prototype.reqPost = function (url, q, d, onComplete, onFail, options){
     if(!options) options = {};
-    var xform = new XForm(url, '', '');
+    var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
-    xform.qExecute(xform.PrepExecute('post', xform.q, q, d, onComplete, onFail)); 
+    xform.qExecute(xform.PrepExecute('post', xform.url, q, d, onComplete, onFail)); 
   }
 
   XForm.prototype.reqPut = function (url, q, d, onComplete, onFail, options){
     if(!options) options = {};
-    var xform = new XForm(url, '', '');
+    var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
-    xform.qExecute(xform.PrepExecute('put', xform.q, q, d, onComplete, onFail)); 
+    xform.qExecute(xform.PrepExecute('put', xform.url, q, d, onComplete, onFail)); 
   }
 
   XForm.prototype.reqDelete = function (url, q, d, onComplete, onFail, options){
     if(!options) options = {};
-    var xform = new XForm(url, '', '');
+    var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
-    xform.qExecute(xform.PrepExecute('delete', xform.q, q, d, onComplete, onFail)); 
+    xform.qExecute(xform.PrepExecute('delete', xform.url, q, d, onComplete, onFail)); 
   }
 
   XForm.Post = XForm.prototype.reqPost;

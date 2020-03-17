@@ -200,7 +200,6 @@ BODY
 <%-rootcss%> .xtbl td .xform_label,
 <%-rootcss%> .xtbl td .xform_html {
   display:inline-block;
-  vertical-align:text-top;
 }
 <%-rootcss%> .xform_file_upload { display:inline-block; }
 <%-rootcss%> .xform_file_upload .linkbutton { white-space:nowrap; }
@@ -952,6 +951,15 @@ DIALOG BOXES
   bottom: 0;
   right: 0;
 }
+<%-rootcss%> #cboxContent h1.xtitle {
+  top:5px;
+}
+<%-rootcss%> #cboxContent .xform,
+<%-rootcss%> #cboxContent .xbodyhead,
+<%-rootcss%> #cboxContent .xtbl {
+  margin-left:3px;
+  margin-right:3px;
+}
 <%-rootcss%> .xdialogblock {
 	position:fixed;
 	top:0px;
@@ -978,9 +986,17 @@ DIALOG BOXES
 	color:#505050;
   padding:20px;
 	border-radius: 5px;
-	-moz-border-radius: 5px;
+  -moz-border-radius: 5px;
+  overflow:auto;
 }
-<%-rootcss%> .xdialogblock .xdialogbox .xform {
+<%-rootcss%> .xdialogblock .xdialogbox .xbodyhead { padding-top:2px; }
+<%-rootcss%> .xdialogblock .xdialogbox .xbodyhead .xtitle {
+  padding-top:2px;
+  padding-bottom:17px;
+}
+<%-rootcss%> .xdialogblock .xdialogbox .xform,
+<%-rootcss%> .xdialogblock .xdialogbox .xbodyhead,
+<%-rootcss%> .xdialogblock .xdialogbox .xtbl {
   font-weight:normal;
   font-size:13px;
   text-align:left;

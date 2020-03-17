@@ -28,12 +28,13 @@ exports = module.exports = function(jsh){
     modelid = jsh.XExt.resolveModelID(modelid);
     var jobj = $(obj);
     var xmodel = jsh.XModels[modelid];
-    if(jobj.hasClass('row_independent')) return -1;
-    var cur_row = jobj.closest('.xrow_'+xmodel.class);
-    if (cur_row.length) {
-      return cur_row.data('id');
+    var rslt = -1;
+    if(jobj.hasClass('row_independent')){ }
+    else {
+      var cur_row = jobj.closest('.xrow_'+xmodel.class);
+      if (cur_row.length) rslt = cur_row.data('id');
     }
-    return -1;
+    return rslt;
   }
 
   XExtXModel.OnRender = function (modelid) {
@@ -435,7 +436,7 @@ exports = module.exports = function(jsh){
         if(!val || ((typeof binding_val != 'undefined') && (binding_val !== null) && (binding_val !== ''))) val = binding_val;
       }
 
-      if (field.ongetvalue) val = field.ongetvalue(val, field, xmodel);
+      if (field.ongetvalue) val = field.ongetvalue(val, field, xmodel, jctrl, parentobj);
       if ('format' in field) {
         val = jsh.XFormat.Decode(field.format, val);
       }
