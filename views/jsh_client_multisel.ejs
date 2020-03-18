@@ -5,8 +5,8 @@
 <% } %>
 <% if(model.topmost){ %>
 <div class="xactions top xelem<%=model.class%>">
-  <a href="#" class="save" onclick="<%-instance%>.XPage.Save();return false;" style="display:none;"><img src="<%-jsh._PUBLICURL%>images/icon_save.png" alt="Save" title="Save" />Save</a>
-  <a href="#" class="delete" onclick=""<%-instance%>.XPage.Delete();return false;" style="display:none;"><img src="<%-jsh._PUBLICURL%>images/icon_delete.png" alt="Delete" title="Delete" />Delete</a>
+  <a href="#" class="save top" onclick="<%-instance%>.XPage.Save();return false;" style="display:none;"><img src="<%-jsh._PUBLICURL%>images/icon_save.png" alt="Save" title="Save" />Save</a>
+  <a href="#" class="delete top" onclick=""<%-instance%>.XPage.Delete();return false;" style="display:none;"><img src="<%-jsh._PUBLICURL%>images/icon_delete.png" alt="Delete" title="Delete" />Delete</a>
   <a href="#" onclick=""<%-instance%>.XPage.Print(); return false;"><img src="<%-jsh._PUBLICURL%>images/icon_print.png" alt="Print" title="Print" />Print</a>
   <a href="<%-model.helpurl%>" onclick="<%-js(model.helpurl_onclick)%>"><img src="<%-jsh._PUBLICURL%>images/icon_help.png" alt="Help" title="Help" />Help</a>
 </div>

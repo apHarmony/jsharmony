@@ -484,8 +484,11 @@ exports = module.exports = function(jsh){
     this.API.Execute(ExecParams, function(errdata, rslt){
       if(errdata){
         //Error
+        var errtxt = errdata.toString();
+        if(errdata.responseText) errtxt = errdata.responseText;
+
         var jerrdata = {};
-        try { jerrdata = JSON.parse(errdata); }
+        try { jerrdata = JSON.parse(errtxt); }
         catch(ex){ }
         if ((jerrdata instanceof Object) && ('_error' in jerrdata)) {
           if (jsh.DefaultErrorHandler(jerrdata._error.Number, jerrdata._error.Message)) { }
@@ -497,11 +500,7 @@ exports = module.exports = function(jsh){
         }
         if (('onFail' in ExecParams) && (ExecParams.onFail(errdata))){ }
         else if(('status' in errdata) && (errdata.status == '404')){ jsh.XExt.Alert('(404) The requested page was not found.'); }
-        else if(jsh._debug){
-          var errmsg = errdata.toString();
-          if(errdata.responseText) errmsg = errdata.responseText;
-          jsh.XExt.Alert('An error has occurred: ' + errmsg);
-        }
+        else if(jsh._debug){ jsh.XExt.Alert('An error has occurred: ' + errtxt); }
         else jsh.XExt.Alert('An error has occurred.  If the problem continues, please contact the system administrator for assistance.');
       }
       else {

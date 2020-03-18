@@ -1838,18 +1838,21 @@ exports = module.exports = function(jsh){
     jsh.$root(sel + ' input:not(:checkbox):not(:button)').on('keydown', function (e) {
       if (options.specialKeys.escape && (e.keyCode == 13)) { e.preventDefault(); e.stopImmediatePropagation(); acceptfunc(); }
     });
-    jsh.$root('.xdialogblock,.xdialogblock ' + sel).show();
-    if(jsh.XPage && jsh.XPage.LayoutOneColumn) jsh.XPage.LayoutOneColumn(jsh.$root('.xdialogblock ' + sel)[0], { reset: true });
-    jsh.XWindowResize();
-    setTimeout(function(){ jsh.XWindowResize(); }, 1);
-    if(jsh.$root(sel + ' .default_focus').length) jsh.$root(sel + ' .default_focus').focus();
-    else jsh.$root(sel).find('input:visible,textarea:visible,select:visible').first().focus();
     if(options.backgroundClose){
       jsh.$root('.xdialogblock').on('click.close' + sel, function(e){
         if(e.target != this) return;
         if(jsh.xDialog.length && (jsh.xDialog[0]==sel)){ e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); }
       });
     }
+    jsh.$root('.xdialogblock,.xdialogblock ' + sel).show();
+    if(jsh.XPage && jsh.XPage.LayoutOneColumn) jsh.XPage.LayoutOneColumn(jsh.$root('.xdialogblock ' + sel)[0], { reset: true });
+    jsh.XWindowResize();
+    setTimeout(function(){
+      jsh.XWindowResize();
+      if(jsh.$root(sel + ' .default_focus').length) jsh.$root(sel + ' .default_focus').focus();
+      else jsh.$root(sel).find('input:visible,textarea:visible,select:visible').first().focus();
+    }, 1);
+    
   }
 
   XExt.AcceptDialog = function(){
@@ -1975,7 +1978,7 @@ exports = module.exports = function(jsh){
           //When nested popups are called, onOpen is not called
         },
         onComplete: function () {
-          if (options.OnPopupOpen) if(options.OnPopupOpen(popupData[modelid])===false) return;;
+          if (options.OnPopupOpen) if(options.OnPopupOpen(popupData[modelid])===false) return;
           numOpens++;
           if(xgrid && (numOpens==1)) xgrid.Select();
           if (jsh.$root(POPUP_CONTAINER + ' .xsearch_value').first().is(':visible')){
@@ -2485,8 +2488,8 @@ exports = module.exports = function(jsh){
   }
   XExt.waitUntil = function(cond, f, cancel, timeout){
     if(!timeout) timeout = 100;
-    if(!cancel) cancel = function(){ return false; };
-    if(cancel()) return;
+    if(!cancel) cancel = function(f){ return false; };
+    if(cancel(f)) return;
     if(cond()) return f();
     setTimeout(function(){ XExt.waitUntil(cond, f, cancel, timeout); }, timeout);
   }

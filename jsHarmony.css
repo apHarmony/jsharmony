@@ -53,12 +53,12 @@ BODY
 <%-rootcss%> .xactions {
 	padding-left:15px;
 	white-space: nowrap;
-	display:inline-block;
-
+  display:inline-block;
+  position:relative;
+  top:-2px;
 }
 <%-rootcss%> .xactions.top {
 /*	position:absolute;*/
-  position:relative;
 	padding-bottom:0px;
 	top:-5px;
 	right:0px;
@@ -66,7 +66,6 @@ BODY
 /*	left:638px;*/
 }
 <%-rootcss%> .xactions.auxtop {
-	position:relative;
 	top:-5px;
 	/*right:-15px;  Commented, did not look good on ECALW */ 
 	float:right;
@@ -80,7 +79,6 @@ BODY
 	float:right;
 	padding-right:10px;
   padding-bottom:0px;
-  position:relative;
   top:-5px;
 }
 <%-rootcss%> .xactions a,
@@ -194,12 +192,13 @@ BODY
   cursor: default;
   user-select: none;
 }
-<%-rootcss%> .xform_label,<%-rootcss%> .xform_html {
+<%-rootcss%> .xform_label, <%-rootcss%> .xform_html { 
   display:inline-block;
 }
 <%-rootcss%> .xtbl td .xform_label,
 <%-rootcss%> .xtbl td .xform_html {
   display:inline-block;
+  vertical-align:text-top;
 }
 <%-rootcss%> .xform_file_upload { display:inline-block; }
 <%-rootcss%> .xform_file_upload .linkbutton { white-space:nowrap; }
@@ -365,9 +364,9 @@ BODY
 <%-rootcss%> .xcrumbs a {
 	color:#888888;
 }
+<%-rootcss%> .xbodyhead { padding-top:2px; }
 <%-rootcss%> h1.xtitle {
   position:relative;
-  top:2px;
 }
 <%-rootcss%> h1.xtitle_level2 {
   display:inline-block;
@@ -951,14 +950,10 @@ DIALOG BOXES
   bottom: 0;
   right: 0;
 }
-<%-rootcss%> #cboxContent h1.xtitle {
-  top:5px;
-}
-<%-rootcss%> #cboxContent .xform,
-<%-rootcss%> #cboxContent .xbodyhead,
-<%-rootcss%> #cboxContent .xtbl {
-  margin-left:3px;
-  margin-right:3px;
+<%-rootcss%> #cboxContent h1.xtitle,
+<%-rootcss%> #cboxContent h1.xtitlecaption {
+  top:2px;
+  position:relative;
 }
 <%-rootcss%> .xdialogblock {
 	position:fixed;
@@ -989,7 +984,6 @@ DIALOG BOXES
   -moz-border-radius: 5px;
   overflow:auto;
 }
-<%-rootcss%> .xdialogblock .xdialogbox .xbodyhead { padding-top:2px; }
 <%-rootcss%> .xdialogblock .xdialogbox .xbodyhead .xtitle {
   padding-top:2px;
   padding-bottom:17px;

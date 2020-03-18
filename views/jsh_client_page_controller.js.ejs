@@ -297,6 +297,20 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   XPage.RenderButtons = function(oroot){
     if(!oroot) oroot = jsh.root;
     var button_groups = {};
+    //Merge buttons in tab containers with tabpos="top" with tab
+    XPage.traverseModels(null, function (xmodel) {
+      if(xmodel.curtab && (xmodel.tabpos=='top')){
+        var childModel = jsh.XModels[xmodel.curtab];
+        var parentactions = $('.xactions.xelem'+xmodel.class);
+        var childactions = $('.xactions.xelem'+childModel.class);
+        if(childactions.length && parentactions.length){
+          if(!XExt.hasAction(xmodel.actions, 'IU')){
+            parentactions.children().appendTo(childactions);
+            parentactions.remove();
+          }
+        }
+      }
+    });
     $(oroot).find('.xform_button').each(function () {
       var jbtn = $(this);
       var btnactions = jbtn.data('actions');
@@ -363,12 +377,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           XPage.LayoutOneColumn();
           XPage.Show();
           jsh.XWindowResize();
-          if (enable_save && !_.includes(rootmodel.hide_system_buttons,'save')) jsh.$root('.xactions.top .save').show();
-          if (enable_delete && !_.includes(jsh.XModels[jsh.delete_target].hide_system_buttons,'delete')) jsh.$root('.xactions.top .delete').show();
+          if (enable_save && !_.includes(rootmodel.hide_system_buttons,'save')) jsh.$root('.xactions .save.top').show();
+          if (enable_delete && !_.includes(jsh.XModels[jsh.delete_target].hide_system_buttons,'delete')) jsh.$root('.xactions .delete.top').show();
           XPage.traverseModels(null, function (xmodel) {
-            if (!jsh.is_insert && XExt.hasAction(xmodel.actions, 'I')) jsh.$root('.xactions.xelem' + xmodel.class + ' .duplicate').show();
+            if (!jsh.is_insert && XExt.hasAction(xmodel.actions, 'I')) jsh.$root('.xactions .duplicate.xelem' + xmodel.class).show();
           });
-          jsh.init_complete = true;
+          
           //Update Browser History with URL/state
           if (XExt.isSinglePage()) {
             var new_url = jsh.state.fullpath + jsh.state.QS + jsh.state.hash;
@@ -380,12 +394,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           else XExt.ReplaceHistory(window.location.href.toString(), XPage.GetState());
 
           //Focus on the first element on the page
-          var firstControl = jsh.$root('input,select,textarea,.xlookup').not('input[type=hidden]').filter(':visible').first();
+          var firstControl = jsh.$root('input,select,textarea,.xlookup').not('input[type=hidden]').not('[readonly]').filter(':visible').first();
           if(firstControl && firstControl.length && !firstControl.is('.datepicker')) firstControl.focus();
 
           //Select first search value by default, if form is open
           var firstSearchValue = jsh.$root('.xsearch_value:visible').first();
           if(firstSearchValue && firstSearchValue.length && !firstSearchValue.hasClass('datepicker')) firstSearchValue.select().focus();
+
+          jsh.init_complete = true;
 
           var loadTime = ((Date.now()-jsh.pageStartTime)/1000).toFixed(2);
           console.log('Initialization Complete ' + loadTime + 's');
@@ -600,11 +616,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var root_title = jsh.XModels[jsh.XModels_root].title;
     if(root_title && (root_title.indexOf('<#') >= 0)){
       root_title = XPage.ParseEJS(root_title, jsh.XModels_root);
-      jsh.$root('.xform_title').html(root_title);
     }
-    else {
-      jsh.$root('.xform_title').html(root_title);
-    }
+    jsh.$root('.xform_title').html(root_title);
+    jsh.$root('.xform_title').toggle(!!root_title);
   }
 
   XPage.RenderEJS = function(onComplete) {

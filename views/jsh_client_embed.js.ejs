@@ -76,6 +76,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     keys:[<% xejs.eachKey(model.fields,function(field){%>'<%=field.name%>',<%});%>],
     commitlevel:'<%=(model.commitlevel?model.commitlevel:'')%>',
     curtab:<%-(curtab?JSON.stringify(curtab):'null')%>,
+    tabpos:<%-JSON.stringify(model.tabpos||null)%>,
     hide_system_buttons:<%-(model.hide_system_buttons?JSON.stringify(model.hide_system_buttons):'[]')%>,
     unbound_data: {},
     using: <%-JSON.stringify(model.using)%>,
