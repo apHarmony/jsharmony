@@ -151,6 +151,7 @@ exports = module.exports = function(jsh){
         }
         if (onFail && onFail(errdata)) { }
         else if (_this.OnLoadError && _this.OnLoadError(errdata)) { }
+        else if (('readyState' in errdata) && (errdata.readyState === 0)){ jsh.XExt.Alert('A network error has occurred'); }
         else if (('status' in errdata) && (errdata.status == '404')) { jsh.XExt.Alert('(404) The requested page was not found.'); }
         else if (jsh._debug) jsh.XExt.Alert('An error has occurred: ' + errdata.responseText);
         else jsh.XExt.Alert('An error has occurred.  If the problem continues, please contact the system administrator for assistance.');

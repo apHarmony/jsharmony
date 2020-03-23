@@ -62,6 +62,7 @@ function jsHarmony(config) {
     */
   };
   this.Models = {}; //Do not access this directly - use getModel, hasModel
+  this.Tasks = {};
   this.CustomControls = {};
   this.CustomControlQueries = {};
   this.XValidate = XValidate;
@@ -240,6 +241,7 @@ jsHarmony.prototype.Init = function(init_cb){
         if (fs.existsSync(modeldir.path)) _this.LoadModels(modeldir.path, modeldir, prefix, defaultDBDriver, modeldir.module);
         if (fs.existsSync(modeldir.path + 'js/')) _this.Cache['application.js'] += '\r\n' + _this.MergeFolder(modeldir.path + 'js/', modeldir.module);
         if (fs.existsSync(modeldir.path + 'public_css/')) _this.Cache['application.css'] += '\r\n' + _this.MergeFolder(modeldir.path + 'public_css/', modeldir.module);
+        if (fs.existsSync(modeldir.path + 'tasks/')) _this.LoadTasks(modeldir.path + 'tasks/', modeldir.module);
       }
       _this.LogInit_PERFORMANCE('Parsing Models '+(Date.now()-_this.Statistics.StartTime));
       _this.ParseMacros();
@@ -386,5 +388,6 @@ jsHarmony.prototype = _.extend(jsHarmony.prototype, require('./jsHarmony.Helper.
 jsHarmony.prototype = _.extend(jsHarmony.prototype, require('./jsHarmony.LoadModels.js'));
 jsHarmony.prototype = _.extend(jsHarmony.prototype, require('./jsHarmony.LoadSQL.js'));
 jsHarmony.prototype = _.extend(jsHarmony.prototype, require('./jsHarmony.LoadViews.js'));
+jsHarmony.prototype = _.extend(jsHarmony.prototype, require('./jsHarmony.LoadTasks.js'));
 
 module.exports = jsHarmony;

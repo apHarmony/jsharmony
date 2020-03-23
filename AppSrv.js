@@ -21,6 +21,7 @@ var DB = require('jsharmony-db');
 var Helper = require('./lib/Helper.js');
 var _ = require('lodash');
 var AppSrvRpt = require('./AppSrvRpt.js');
+var AppSrvTask = require('./AppSrvTask.js');
 var AppSrvModel = require('./AppSrvModel.js');
 
 function AppSrv(_jsh) {
@@ -28,6 +29,7 @@ function AppSrv(_jsh) {
   this.jsh = _jsh;
   this.DB = DB;
   this.rptsrv = new AppSrvRpt(this);
+  this.tasksrv = new AppSrvTask(this);
   this.JobProc = null;
   this.modelsrv = new AppSrvModel(this);
   this.QueueSubscriptions = []; // { id: "QUEUEID", req: req, res: res }

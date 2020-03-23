@@ -116,7 +116,7 @@ exports.parseLink = function (target) {
       if (Helper.beginsWith(opts[i], 'tabs=')) tabs = opts[i].substr(5);
       else {
         var keystr = opts[i];
-        prekeys = keystr.split(',');
+        var prekeys = keystr.split(',');
         _.each(prekeys, function (val) {
           var keydata = val.split('=');
           if (keydata.length > 1) keys[keydata[0]] = keydata[1];
@@ -667,8 +667,8 @@ exports.generateLOVTree = function (values, options) {
   for(var i=0;i<rslt.length;i++) values.push(rslt[i]);
 }
 
-//Add server-side validators for the model
-exports.AddValidatorFuncs = function (model, field) {
+//Add server-side validators for models and tasks
+exports.AddValidatorFuncs = function (xvalidate, field, desc) {
   var jsh = this;
   if(!field.validate) return;
   _.each(field.validate, function (validator) {
@@ -682,7 +682,7 @@ exports.AddValidatorFuncs = function (model, field) {
 
     if (validator.runat && !_.includes(validator.runat,'server')) return;
 
-    if((vfuncname != 'js') && !(('_v_'+vfuncname) in jsh.XValidate)){ jsh.LogInit_ERROR(model.id + ' > ' + field.name + ': Undefined validator used in field.validate: '+vfuncname); return; }
+    if((vfuncname != 'js') && !(('_v_'+vfuncname) in jsh.XValidate)){ jsh.LogInit_ERROR(desc + ' > ' + field.name + ': Undefined validator used in field.validate: '+vfuncname); return; }
 
     var vfunc = null;
     try{
@@ -690,14 +690,14 @@ exports.AddValidatorFuncs = function (model, field) {
       else vfunc = eval('jsh.XValidate._v_' + vfuncname + '(' + vparams + ')');
     }
     catch(ex){
-      if(ex){ jsh.LogInit_ERROR(model.id + ' > ' + field.name + ': Error initializing validator '+vfuncname+': '+ex.toString()); return; }
+      if(ex){ jsh.LogInit_ERROR(desc + ' > ' + field.name + ': Error initializing validator '+vfuncname+': '+ex.toString()); return; }
     }
-    if(!vfunc){ jsh.LogInit_ERROR(model.id + ' > ' + field.name + ': Error initializing validator '+vfuncname+': No function returned from jsh.XValidate._v_'+vfuncname); return; }
+    if(!vfunc){ jsh.LogInit_ERROR(desc + ' > ' + field.name + ': Error initializing validator '+vfuncname+': No function returned from jsh.XValidate._v_'+vfuncname); return; }
     if(vfunc.runat && !_.includes(vfunc.runat,'server')) return; //Ignore client-only functions
 
     //Do not add validators to unbound fields
     if(field.unbound) return;
-    model.xvalidate.AddValidator(
+    xvalidate.AddValidator(
       '_obj.' + field.name,
       vcaption,
       vactions,

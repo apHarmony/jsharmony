@@ -1,0 +1,7 @@
+{
+  "testArray": [1, "val", [3, 4] ],
+  "testObject": { "a": 1, "b":2 },
+  "testFunc": @samplefunc(1, "two"),
+  "testNumber": 1.23e4,
+  "testString": "abcdefg",
+}

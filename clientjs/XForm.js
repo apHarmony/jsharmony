@@ -499,6 +499,7 @@ exports = module.exports = function(jsh){
           return;
         }
         if (('onFail' in ExecParams) && (ExecParams.onFail(errdata))){ }
+        else if(('readyState' in errdata) && (errdata.readyState === 0)){ jsh.XExt.Alert('A network error has occurred'); }
         else if(('status' in errdata) && (errdata.status == '404')){ jsh.XExt.Alert('(404) The requested page was not found.'); }
         else if(jsh._debug){ jsh.XExt.Alert('An error has occurred: ' + errtxt); }
         else jsh.XExt.Alert('An error has occurred.  If the problem continues, please contact the system administrator for assistance.');

@@ -65,6 +65,7 @@ exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, moduleNam
       if(options.isBaseDir){
         if(fname=='js') continue;
         if(fname=='sql') continue;
+        if(fname=='tasks') continue;
         if(fname=='public_css') continue;
       }
       _this.LoadModels(fpath + '/', modeldir, prefix + fname + '/', dbtype, moduleName, { isBaseDir: false });
@@ -112,6 +113,7 @@ exports.ParseJSON = function(fname, moduleName, desc, cb){
   else fread = function(fread_cb){ return fread_cb(null, fs.readFileSync(fname, 'utf8'));  }
   return fread(function(err, data){
     if(err) return cb(err);
+    var fdir = path.dirname(fname);
     var ftext = fs.readFileSync(fname, 'utf8');
     ftext = Helper.JSONstrip(ftext);
     //Apply Transform
@@ -120,7 +122,20 @@ exports.ParseJSON = function(fname, moduleName, desc, cb){
     //Parse JSON
     var rslt  = null;
     try {
-      rslt = jsParser.Parse(ftext, fname).Tree;
+      rslt = jsParser.Parse(ftext, fname, {
+        functions: {
+          '@importstr': function(filename){
+            var filepath = filename;
+            if(!path.isAbsolute(filepath)) filepath = path.join(fdir, filepath);
+            return fs.readFileSync(filepath, 'utf8');
+          },
+          '@importjson': function(filename){
+            var filepath = filename;
+            if(!path.isAbsolute(filepath)) filepath = path.join(fdir, filepath);
+            return _this.ParseJSON(filepath, moduleName, desc + ' :: Script ' + filename);
+          },
+        }
+      }).Tree;
     }
     catch (ex2) {
       _this.Log.console_error('-------------------------------------------');
@@ -1344,45 +1359,8 @@ exports.ParseEntities = function () {
           }
         }
         if(!has_datatype_validator){
-          switch (field.type.toUpperCase()) {
-            case 'VARCHAR':
-            case 'CHAR':
-              if (('length' in field) && (field.length >= 0)) AddValidation(field, 'MaxLength:' + field.length);
-              break;
-            case 'BOOLEAN':
-              break;
-            case 'BIGINT':
-            case 'INT':
-            case 'SMALLINT':
-              AddValidation(field, 'IsNumeric', { ignore: function(validator){ if(validator.substr(0,10)=='IsNumeric:') return true; } }); break;
-            case 'TINYINT':
-              AddValidation(field, 'MaxValue:255');
-              AddValidation(field, 'IsNumeric:true');
-              break;
-            case 'DECIMAL':
-              AddValidation(field, 'IsDecimal', { ignore: function(validator){ if(validator.substr(0,10)=='IsDecimal:') return true; } }); break;
-            case 'FLOAT':
-              AddValidation(field, 'IsFloat'); break;
-            case 'DATE':
-            case 'DATETIME':
-              AddValidation(field, 'IsDate'); break;
-            case 'TIME':
-              AddValidation(field, 'IsTime'); break;
-            case 'ENCASCII':
-              if (('length' in field) && (field.length >= 0)) AddValidation(field, 'MaxLength:' + (field.length - 1));
-              break;
-            case 'HASH':
-              break;
-            case 'FILE':
-              if (!field.controlparams || !field.controlparams.data_folder) { _this.LogInit_ERROR('Model ' + model.id + ' Field ' + (field.name || '') + ' missing field.controlparams.data_folder'); }
-              HelperFS.createFolderIfNotExists(_this.Config.datadir + field.controlparams.data_folder, function () { });
-              break;
-            case 'BINARY':
-              var flen = -1;
-              if (('length' in field) && (field.length >= 0)) flen = field.length;
-              AddValidation(field, 'IsBinary:'+flen);
-              break;
-          }
+          var defaultValidators = _this.getDefaultValidators(field);
+          _.each(defaultValidators, function(validator){ AddValidation(field, validator); });
         }
       }
       if(firstfield && field.control && field.actions){
@@ -1753,7 +1731,7 @@ exports.ParseEntities = function () {
 
     //Generate Validators
     _.each(model.fields, function (field) {
-      if(field.validate) _this.AddValidatorFuncs(model, field);
+      if(field.validate) _this.AddValidatorFuncs(model.xvalidate, field, model.id);
     });
   });
 
@@ -2556,6 +2534,63 @@ exports.ParsePopups = function () {
     }
   });
 };
+
+exports.getDefaultValidators = function(field){
+  var _this = this;
+  var rslt = [];
+  if(!field.type) return rslt;
+
+  function addDefaultValidator(new_validator, options){
+    if(!options) options = { ignore: null };
+    if(field.validate) for(var i=0;i<field.validate.length;i++){
+      var validator = field.validate[i];
+      if(options.ignore && options.ignore(validator)) return;
+      if(validator == new_validator) return;
+    }
+    rslt.push(new_validator);
+  }
+
+  switch (field.type.toString().toUpperCase()) {
+    case 'VARCHAR':
+    case 'CHAR':
+      if (('length' in field) && (field.length >= 0)) addDefaultValidator('MaxLength:' + field.length);
+      break;
+    case 'BOOLEAN':
+      break;
+    case 'BIGINT':
+    case 'INT':
+    case 'SMALLINT':
+      addDefaultValidator('IsNumeric', { ignore: function(validator){ if(validator.substr(0,10)=='IsNumeric:') return true; } }); break;
+    case 'TINYINT':
+      addDefaultValidator('MaxValue:255');
+      addDefaultValidator('IsNumeric:true');
+      break;
+    case 'DECIMAL':
+      addDefaultValidator('IsDecimal', { ignore: function(validator){ if(validator.substr(0,10)=='IsDecimal:') return true; } }); break;
+    case 'FLOAT':
+      addDefaultValidator('IsFloat'); break;
+    case 'DATE':
+    case 'DATETIME':
+      addDefaultValidator('IsDate'); break;
+    case 'TIME':
+      addDefaultValidator('IsTime'); break;
+    case 'ENCASCII':
+      if (('length' in field) && (field.length >= 0)) addDefaultValidator('MaxLength:' + (field.length - 1));
+      break;
+    case 'HASH':
+      break;
+    case 'FILE':
+      if (!field.controlparams || !field.controlparams.data_folder) { _this.LogInit_ERROR('Model ' + model.id + ' Field ' + (field.name || '') + ' missing field.controlparams.data_folder'); }
+      HelperFS.createFolderIfNotExists(_this.Config.datadir + field.controlparams.data_folder, function () { });
+      break;
+    case 'BINARY':
+      var flen = -1;
+      if (('length' in field) && (field.length >= 0)) flen = field.length;
+      addDefaultValidator('IsBinary:'+flen);
+      break;
+  }
+  return rslt;
+}
 
 function AddValidation(field, new_validator, options) {
   if(!options) options = { ignore: null };

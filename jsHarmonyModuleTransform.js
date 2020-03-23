@@ -135,7 +135,7 @@ jsHarmonyModuleTransform.prototype.Apply = function(txt, desc){
   _this.transformCount++;
   _this.mapping['{schema}'] = _this.module.schema;
   _this.mapping['{namespace}'] = _this.module.namespace;
-  var rslt = Helper.mapReplace(_this.mapping, txt);
+  var rslt = Helper.cubeMapReplace(_this.mapping, txt);
   _this.transformTime += (Date.now() - startTime);
   //console.log(_this.transformCount + ' ' + _this.transformTime + ' ' + desc);
   return rslt;
