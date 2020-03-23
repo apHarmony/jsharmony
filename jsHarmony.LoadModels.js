@@ -65,7 +65,6 @@ exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, moduleNam
       if(options.isBaseDir){
         if(fname=='js') continue;
         if(fname=='sql') continue;
-        if(fname=='tasks') continue;
         if(fname=='public_css') continue;
       }
       _this.LoadModels(fpath + '/', modeldir, prefix + fname + '/', dbtype, moduleName, { isBaseDir: false });
@@ -1597,7 +1596,7 @@ exports.ParseEntities = function () {
     //Validate Model and Field Parameters
     var _v_model = [
       'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites', 'class', 'using',
-      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings', '_childbindings', '_parentmodels', '_auto', '_sysconfig', '_dbdef', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate', 'source_files_prefix',
+      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings', '_childbindings', '_parentmodels', '_auto', '_sysconfig', '_dbdef', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate', 'task', 'source_files_prefix',
       'pagesettings', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_search', 'default_search', 'grid_static', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
@@ -1733,6 +1732,8 @@ exports.ParseEntities = function () {
     _.each(model.fields, function (field) {
       if(field.validate) _this.AddValidatorFuncs(model.xvalidate, field, model.id);
     });
+
+    if(model.task) _this.ParseTask(model);
   });
 
   var all_lovs = {};

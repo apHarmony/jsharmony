@@ -32,16 +32,16 @@ function AppSrvTaskLogger(jsh) {
 
   this.isSendingEmail = false;
 
-  var rslt = function(task, loglevel, msg){ return _this.log(task, loglevel, msg); };
-  rslt.debug = function(task, msg){ _this.log(task, 'debug', msg); }
-  rslt.info = function(task, msg){ _this.log(task, 'info', msg); }
-  rslt.warning = function(task, msg){ _this.log(task, 'warning', msg); }
-  rslt.error = function(task, msg){ _this.log(task, 'error', msg); }
+  var rslt = function(model, loglevel, msg){ return _this.log(model, loglevel, msg); };
+  rslt.debug = function(model, msg){ _this.log(model, 'debug', msg); }
+  rslt.info = function(model, msg){ _this.log(model, 'info', msg); }
+  rslt.warning = function(model, msg){ _this.log(model, 'warning', msg); }
+  rslt.error = function(model, msg){ _this.log(model, 'error', msg); }
 
   return rslt;
 }
 
-AppSrvTaskLogger.prototype.log = function(task, loglevel, msg){
+AppSrvTaskLogger.prototype.log = function(model, loglevel, msg){
   var _this = this;
 
   if(!msg) return;
@@ -49,12 +49,12 @@ AppSrvTaskLogger.prototype.log = function(task, loglevel, msg){
 
   if(!_.includes(['debug','info','warning','error'], loglevel)) throw new Error('Invalid loglevel: ' + loglevel);
 
-  if(!task || !task.logtarget){
+  if(!model || !model.task || !model.task.logtarget){
     if(_.includes(['info','warning','error'], loglevel)) _this.jsh.Log[loglevel](msg);
   }
 
-  if(task){
-    _.each(task.log, function(logtarget){
+  if(model && model.task){
+    _.each(model.task.log, function(logtarget){
       var logfile = logtarget.path;
       if(!logfile) return;
       if(logtarget.events && !_.includes(logtarget.events, loglevel)) return;
@@ -71,27 +71,27 @@ AppSrvTaskLogger.prototype.log = function(task, loglevel, msg){
     });
 
     if(loglevel == 'error'){
-      _.each(task.onerror, function(erroraction){
+      _.each(model.task.onerror, function(erroraction){
         if(erroraction.email){
           //Send email on error
-          _this.sendErrorEmail(task, erroraction.email, msg);
+          _this.sendErrorEmail(model.task, erroraction.email, msg);
         }
       });
     }
   }
 }
 
-AppSrvTaskLogger.prototype.sendErrorEmail = function(task, email_params, txt){
+AppSrvTaskLogger.prototype.sendErrorEmail = function(model, email_params, txt){
   var _this = this;
 
   var email_to = email_params.to || !_this.jsh.Config.error_email;
   if(!email_to){ _this.jsh.Log.error('Could not send task error email - No TO address specified'); }
   if(!_this.jsh.SendEmail) return;
   if(_this.isSendingEmail){
-    setTimeout(function(){ _this.sendErrorEmail(task, email_params, txt); }, 100);
+    setTimeout(function(){ _this.sendErrorEmail(model, email_params, txt); }, 100);
     return;
   }
-  var email_subject = email_params.subject || ((_this.platform.Config.app_name||'') + ':: Error executing task ' + task.id);
+  var email_subject = email_params.subject || ((_this.platform.Config.app_name||'') + ':: Error executing task ' + model.id);
   var mparams = {
     to: email_to,
     subject: email_subject,
@@ -148,46 +148,48 @@ AppSrvTask.prototype.addParam = function(params, fields, key, value){
   params[key] = { name: key, value: value, type: this.getParamType(fields, key, value) };
 }
 
-AppSrvTask.prototype.logParams = function(task, params){
+AppSrvTask.prototype.logParams = function(model, params){
   var rslt = JSON.stringify(this.getParamValues(params),null,4);
-  this.log.debug(task, task.id + ': Params ' + rslt);
+  this.log.debug(model, model.id + ': Params ' + rslt);
 }
 
-AppSrvTask.prototype.exec = function (taskid, taskparams, taskcallback) {
+AppSrvTask.prototype.exec = function (req, res, dbcontext, modelid, taskparams, taskcallback) {
   taskparams = taskparams || {};
 
   var _this = this;
-  var task = null;
+  var model = null;
 
   var callback = function(err, rslt){
     if(err){
-      _this.log.error(task, err.toString());
-      taskcallback(err);
-      return;
+      _this.log.error(model, err.toString());
+      return taskcallback(err);
     }
-    taskcallback(null, rslt);
+    return taskcallback(null, rslt);
   }
 
-  if (!this.jsh.hasTask(taskid)) return callback(new Error("Error: Task " + taskid + " is not defined."));
-  task = this.jsh.Tasks[taskid];
+  if (!this.jsh.hasTask(req, modelid)) return callback(new Error("Error: Task Model " + modelid + " is not defined."));
+  model = this.jsh.getModel(req, modelid);
+  var task = model.task;
 
-  this.log.info(task, 'Running task: ' + taskid);
+  this.log.info(model, 'Running task: ' + model.id);
 
   var verrors = this.validateFields(task, taskparams);
   if(verrors) return callback(new Error('Task parameter errors: ' + verrors));
 
   var params = {};
-  for(var key in taskparams){ _this.addParam(params, task.fields, key, taskparams[key]); }
+  for(var key in taskparams){ _this.addParam(params, model.fields, key, taskparams[key]); }
+
+  if(dbcontext && !taskparams._DBContext) _this.addParam(params, [], '_DBContext', dbcontext);
 
   var options = {
     trans: { },
     exec_counter: [],
   }
 
-  this.exec_actions(task, task.actions, params, options, callback);
+  this.exec_actions(model, task.actions, params, options, callback);
 }
 
-AppSrvTask.prototype.exec_actions = function (task, actions, params, options, callback) {
+AppSrvTask.prototype.exec_actions = function (model, actions, params, options, callback) {
   var _this = this;
   var rslt = _this.getParamValues(params);
   options.exec_counter.push(0);
@@ -201,10 +203,10 @@ AppSrvTask.prototype.exec_actions = function (task, actions, params, options, ca
       'js','email',
     ];
     options.exec_counter[options.exec_counter.length-1]++;
-    _this.log.debug(task, task.id + ': ' + _this.jsh.getTaskActionDesc(action, options));
+    _this.log.debug(model, model.id + ': ' + _this.jsh.getTaskActionDesc(action, options));
     if(_.includes(standard_actions, action_type)){
       try{
-        _this['exec_'+action_type](task, action, params, options, action_cb);
+        _this['exec_'+action_type](model, action, params, options, action_cb);
       }
       catch(ex){
         return action_cb(ex);
@@ -212,7 +214,7 @@ AppSrvTask.prototype.exec_actions = function (task, actions, params, options, ca
     }
     else return action_cb(new Error('Action.exec "' + action_type + '" not supported'));
   }, function(err){
-    if(err) _this.jsh.Log.error('Error executing task ' + task.id + ': ' + err.toString());
+    if(err) _this.jsh.Log.error('Error executing task ' + model.id + ': ' + err.toString());
     options.exec_counter.pop();
     callback(err, rslt);
   });
@@ -248,7 +250,7 @@ AppSrvTask.prototype.replaceParams = function(params, val){
   return val;
 }
 
-AppSrvTask.prototype.exec_sqltrans = function(task, action, params, options, action_cb){
+AppSrvTask.prototype.exec_sqltrans = function(model, action, params, options, action_cb){
   //sqltrans (db, actions)
 
   var _this = this;
@@ -269,7 +271,7 @@ AppSrvTask.prototype.exec_sqltrans = function(task, action, params, options, act
     transOptions.trans[dbid] = dbtrans;
 
     //Execute Actions
-    _this.exec_actions(task, action.actions, params, transOptions, function(err){
+    _this.exec_actions(model, action.actions, params, transOptions, function(err){
       return callback(err);
     });
   }
@@ -278,7 +280,7 @@ AppSrvTask.prototype.exec_sqltrans = function(task, action, params, options, act
   });
 }
 
-AppSrvTask.prototype.exec_sql = function(task, action, params, options, action_cb){
+AppSrvTask.prototype.exec_sql = function(model, action, params, options, action_cb){
   //sql (sql, db, into, foreach_row)
 
   var _this = this;
@@ -303,8 +305,8 @@ AppSrvTask.prototype.exec_sql = function(task, action, params, options, action_c
   dbtasks['action'] = function (callback) {
     //Execute SQL
     db.Recordset(dbcontext, sql, sql_ptypes, sql_params, options.trans[dbid], function (err, rslt, stats) {
-      if (stats) stats.task = task;
-      if (err) { err.task = task; err.sql = sql; _this.logParams(task, params); return callback(err, rslt, stats); }
+      if (stats) stats.model = model;
+      if (err) { err.model = model; err.sql = sql; _this.logParams(model, params); return callback(err, rslt, stats); }
 
       Helper.execif(action.foreach_row && rslt,
         function(f){
@@ -323,7 +325,7 @@ AppSrvTask.prototype.exec_sql = function(task, action, params, options, action_c
               
               //Execute Actions
               options.exec_counter[options.exec_counter.length-1]++;
-              _this.exec_actions(task, action.foreach_row, rowparams, options, row_cb);
+              _this.exec_actions(model, action.foreach_row, rowparams, options, row_cb);
             }, function(err){
               options.exec_counter.pop();
               if(err) return callback(err);
@@ -342,7 +344,7 @@ AppSrvTask.prototype.exec_sql = function(task, action, params, options, action_c
   });
 }
 
-AppSrvTask.prototype.exec_create_folder = function(task, action, params, options, action_cb){
+AppSrvTask.prototype.exec_create_folder = function(model, action, params, options, action_cb){
   //create_folder (path)
 
   var _this = this;
@@ -355,7 +357,7 @@ AppSrvTask.prototype.exec_create_folder = function(task, action, params, options
   HelperFS.createFolderIfNotExists(fpath, action_cb);
 }
 
-AppSrvTask.prototype.exec_delete_folder = function(task, action, params, options, action_cb){
+AppSrvTask.prototype.exec_delete_folder = function(model, action, params, options, action_cb){
   //delete_folder (path, recursive)
 
   var _this = this;
@@ -377,7 +379,7 @@ AppSrvTask.prototype.exec_delete_folder = function(task, action, params, options
   });
 }
 
-AppSrvTask.prototype.exec_list_files = function(task, action, params, options, action_cb){
+AppSrvTask.prototype.exec_list_files = function(model, action, params, options, action_cb){
   //list_files (path, matching, into, foreach_file) *** matching can be exact match, wildcard, or /regex/
 
   var _this = this;
@@ -443,7 +445,7 @@ AppSrvTask.prototype.exec_list_files = function(task, action, params, options, a
         
         //Execute Actions for the file
         options.exec_counter[options.exec_counter.length-1]++;
-        _this.exec_actions(task, action.foreach_file, actionparams, options, file_cb);
+        _this.exec_actions(model, action.foreach_file, actionparams, options, file_cb);
       });
     }, function(err){
       options.exec_counter.pop();
@@ -452,7 +454,7 @@ AppSrvTask.prototype.exec_list_files = function(task, action, params, options, a
   });
 }
 
-AppSrvTask.prototype.exec_delete_file = function(task, action, params, options, action_cb){
+AppSrvTask.prototype.exec_delete_file = function(model, action, params, options, action_cb){
   //delete_file (path)
 
   var _this = this;
@@ -473,7 +475,7 @@ AppSrvTask.prototype.exec_delete_file = function(task, action, params, options, 
   });
 }
 
-AppSrvTask.prototype.exec_copy_file = function(task, action, params, options, action_cb){
+AppSrvTask.prototype.exec_copy_file = function(model, action, params, options, action_cb){
   //copy_file (path, dest, overwrite)
 
   var _this = this;
@@ -532,7 +534,7 @@ AppSrvTask.prototype.exec_write_file = function(task, action, params, options, a
   });
 }
 
-AppSrvTask.prototype.exec_append_file = function(task, action, params, options, action_cb){
+AppSrvTask.prototype.exec_append_file = function(model, action, params, options, action_cb){
   //append_file (path, text)
 
   var _this = this;
@@ -559,7 +561,7 @@ AppSrvTask.prototype.exec_append_file = function(task, action, params, options, 
   });
 }
 
-AppSrvTask.prototype.exec_read_file = function(task, action, params, options, action_cb){
+AppSrvTask.prototype.exec_read_file = function(model, action, params, options, action_cb){
   //read_file (path, into, foreach_line)
 
   var _this = this;
@@ -586,7 +588,7 @@ AppSrvTask.prototype.exec_read_file = function(task, action, params, options, ac
     _this.addParam(lineparams, [], action.into + '.text', line);
 
     options.exec_counter[options.exec_counter.length-1]++;
-    _this.exec_actions(task, action.foreach_line, lineparams, options, function(err){
+    _this.exec_actions(model, action.foreach_line, lineparams, options, function(err){
       return line_cb(err);
     });
   }
@@ -657,7 +659,7 @@ AppSrvTask.prototype.exec_read_file = function(task, action, params, options, ac
   });
 }
 
-AppSrvTask.prototype.getCSVSQLData = function(task, action, params, options, onrow, callback){
+AppSrvTask.prototype.getCSVSQLData = function(model, action, params, options, onrow, callback){
   var _this = this;
 
   var sql = action.sql;
@@ -678,8 +680,8 @@ AppSrvTask.prototype.getCSVSQLData = function(task, action, params, options, onr
   dbtasks['action'] = function (callback) {
     //Execute SQL
     db.Recordset(dbcontext, sql, sql_ptypes, sql_params, options.trans[dbid], function (err, rslt, stats) {
-      if (stats) stats.task = task;
-      if (err) { err.task = task; err.sql = sql; _this.logParams(task, params); return callback(err, rslt, stats); }
+      if (stats) stats.model = model;
+      if (err) { err.model = model; err.sql = sql; _this.logParams(model, params); return callback(err, rslt, stats); }
 
       _.each(rslt, function(row){
         onrow(row);
@@ -692,7 +694,7 @@ AppSrvTask.prototype.getCSVSQLData = function(task, action, params, options, onr
   });
 }
 
-AppSrvTask.prototype.exec_write_csv = function(task, action, params, options, action_cb){
+AppSrvTask.prototype.exec_write_csv = function(model, action, params, options, action_cb){
   //write_csv (path, db, data, sql, overwrite, headers)
   //handle data: {}, [], [[]], [{}]
   //can't have both data and sql
@@ -747,7 +749,7 @@ AppSrvTask.prototype.exec_write_csv = function(task, action, params, options, ac
     csvwriter.pipe(filestream);
 
     if(action.sql){
-      _this.getCSVSQLData(task, action, params, options, function(row){
+      _this.getCSVSQLData(model, action, params, options, function(row){
         csvwriter.write(row);
       }, function(err){
         if(err){
@@ -764,7 +766,7 @@ AppSrvTask.prototype.exec_write_csv = function(task, action, params, options, ac
   });
 }
 
-AppSrvTask.prototype.exec_append_csv = function(task, action, params, options, action_cb){
+AppSrvTask.prototype.exec_append_csv = function(model, action, params, options, action_cb){
   //append_csv (path, db, data, sql)
 
   var _this = this;
@@ -816,7 +818,7 @@ AppSrvTask.prototype.exec_append_csv = function(task, action, params, options, a
     csvwriter.pipe(filestream);
 
     if(action.sql){
-      _this.getCSVSQLData(task, action, params, options, function(row){
+      _this.getCSVSQLData(model, action, params, options, function(row){
         csvwriter.write(row);
       }, function(err){
         if(err){
@@ -833,7 +835,7 @@ AppSrvTask.prototype.exec_append_csv = function(task, action, params, options, a
   });
 }
 
-AppSrvTask.prototype.exec_read_csv = function(task, action, params, options, action_cb){
+AppSrvTask.prototype.exec_read_csv = function(model, action, params, options, action_cb){
   //read_csv (path, into, foreach_row, fields, headers)
 
   var _this = this;
@@ -876,7 +878,7 @@ AppSrvTask.prototype.exec_read_csv = function(task, action, params, options, act
     }
 
     options.exec_counter[options.exec_counter.length-1]++;
-    _this.exec_actions(task, action.foreach_row, rowparams, options, function(err){
+    _this.exec_actions(model, action.foreach_row, rowparams, options, function(err){
       return row_cb(err);
     });
   }
@@ -917,7 +919,7 @@ AppSrvTask.prototype.exec_read_csv = function(task, action, params, options, act
   f.pipe(csvparser);
 }
 
-AppSrvTask.prototype.exec_js = function(task, action, params, options, action_cb){
+AppSrvTask.prototype.exec_js = function(model, action, params, options, action_cb){
   //js (js, into, foreach)
 
   var _this = this;
@@ -950,7 +952,7 @@ AppSrvTask.prototype.exec_js = function(task, action, params, options, action_cb
         
         //Execute Actions
         options.exec_counter[options.exec_counter.length-1]++;
-        _this.exec_actions(task, action.foreach, rowparams, options, row_cb);
+        _this.exec_actions(model, action.foreach, rowparams, options, row_cb);
       }, function(err){
         options.exec_counter.pop();
         return action_cb(err);
@@ -961,7 +963,7 @@ AppSrvTask.prototype.exec_js = function(task, action, params, options, action_cb
   return action_cb();
 }
 
-AppSrvTask.prototype.exec_email = function(task, action, params, options, action_cb){
+AppSrvTask.prototype.exec_email = function(model, action, params, options, action_cb){
   //email (to, cc, bcc, subject, text, html, attachments)
 
   var _this = this;

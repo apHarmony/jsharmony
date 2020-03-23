@@ -391,4 +391,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "_referencedby": ["C","C_CC"], //Forms that link to this form
   "_sysconfig": {},
   "namespace": "jsHarmonyFactory",
+  //Import external files
+  "key": @importstr("sample.sql"),
+  "key": @importjson("sample.scriplet"),
 }

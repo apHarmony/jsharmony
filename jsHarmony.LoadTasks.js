@@ -26,56 +26,24 @@ var jsHarmonyCodeGen = require('./lib/CodeGen.js');
 
 module.exports = exports = {};
 
-exports.LoadTasks = function (taskdir, moduleName) {
-  var _this = this;
-  if(!fs.existsSync(taskdir)){ _this.LogInit_ERROR('Task folder ' + taskdir + ' not found'); return; }
-  var ftasks = fs.readdirSync(taskdir);
-  for (let i in ftasks) {
-    var fname = ftasks[i];
-    var fpath = taskdir + fname;
-    var fstat = fs.lstatSync(fpath);
-    if(fstat.isDirectory()){
-      _this.LoadTasks(fpath + '/', moduleName);
-    }
-    if (fname.indexOf('.json', fname.length - 5) == -1) continue;
-    var taskid = fname.replace('.json', '');
-    _this.LogInit_INFO('Loading Task ' + taskid);
-    var task = _this.ParseJSON(fpath, moduleName, 'Task ' + taskid);
-    if (!('tasks' in task)) {
-      //Parse file as multiple-task file
-      _.each(task, function (subtask, subtaskid) {
-        _this.LogInit_INFO('Loading sub-task ' + subtaskid);
-        _this.AddTask(subtaskid, subtask, fpath, taskdir, moduleName);
-      });
-    }
-    else this.AddTask(taskid, task, fpath, taskdir, moduleName);
-  }
-};
-
 function addFieldValidator(field, validator){
   if(!field.validation) field.validation = [];
   field.validation.push(validator);
 }
 
-exports.AddTask = function(taskid, task, fpath, taskdir, moduleName){
+exports.ParseTask = function(model){
   var _this = this;
-  var module = _this.Modules[moduleName];
-  if(!task.module && module) task.module = moduleName;
 
-  if(taskid in _this.Tasks){ _this.LogInit_ERROR('Error loading task ' + taskid + ': Another task with the same ID is already defined'); return; }
-  task.id = taskid;
-  if(!task.path && fpath) task.path = fpath;
+  var task = model.task;
+  if(!task) return;
 
   var params = {};
-  _this.ParseTaskValidation(task, task.id);
-  _.each(task.fields, function(field){
+  _.each(model.fields, function(field){
     if(field.name) params[field.name] = true;
   });
 
-  if(!('actions' in task)){ _this.LogInit_ERROR('Error loading task ' + taskid + ': Missing task.actions property'); return; }
-  _.each(task.actions, function(action){ _this.ParseTaskAction(task, action, params); });
-
-  _this.Tasks[taskid] = task;
+  if(!('actions' in task)){ _this.LogInit_ERROR('Error loading' + model.id + ' task: Missing task.actions property'); return; }
+  _.each(task.actions, function(action){ _this.ParseTaskAction(model, action, params); });
 
 }
 
@@ -95,20 +63,20 @@ exports.getTaskActionDesc = function(action, options){
   return rslt;
 }
 
-exports.ParseTaskAction = function(task, action, params){
+exports.ParseTaskAction = function(model, action, params){
   var _this = this;
   params = _.extend({}, params);
 
-  _this.ParseTaskValidation(action, task.id);
+  _this.ParseTaskValidation(action, model.id);
 
   function parseChildActions(actionType, childActionProperty, variableDesc){
     if(action[childActionProperty]){
       if(variableDesc){
-        if(!action.into) _this.LogInit_ERROR('Error loading task ' + taskid + ': '+actionType+'.'+childActionProperty+' requires '+actionType+'.into property to define the variable name for the '+variableDesc+' object');
-        if(action.into in params) _this.LogInit_ERROR('Error loading task ' + taskid + ': '+actionType+'.into property would override an existing variable');
+        if(!action.into) _this.LogInit_ERROR('Error loading task ' + model.id + ': '+actionType+'.'+childActionProperty+' requires '+actionType+'.into property to define the variable name for the '+variableDesc+' object');
+        if(action.into in params) _this.LogInit_ERROR('Error loading task ' + model.id + ': '+actionType+'.into property would override an existing variable');
         params[action.into] = true;
       }
-      _.each(action[childActionProperty], function(action){ _this.ParseTaskAction(task, action); });
+      _.each(action[childActionProperty], function(action){ _this.ParseTaskAction(model, action); });
     }
   }
 
@@ -186,9 +154,11 @@ exports.ParseTaskAction = function(task, action, params){
       if(!_.includes(['txt_attrib','to','cc','bcc','attachments'], key)) _this.LogInit_ERROR('Invalid email action property: txt.' + key + ' in action ' + _this.getTaskActionDesc(action));
     }
   }
-  else _this.LogInit_ERROR('Error loading task ' + task.id + ': Invalid action.exec "'+action.exec+'"');
+  else _this.LogInit_ERROR('Error loading task ' + model.id + ': Invalid action.exec "'+action.exec+'"');
 }
 
-exports.hasTask = function(taskid){
-  return !!this.Tasks[taskid];
+exports.hasTask = function(req, modelid){
+  var model = this.getModel(req, modelid);
+  if(!model) return false;
+  return !!model.task;
 }
