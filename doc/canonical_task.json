@@ -28,25 +28,29 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     {"name":"cust_id","type":"bigint","validate":["Required"]}
   ],
   "task": {
-    "actions": [
-      //Can use @parameters in the following properties: sql, path, dest, data, email, jsharmony_txt
+    "commands": [
+      //Can use @parameters in the following properties: sql, path, dest, data, email, jsharmony_txt, cmd
+      //sql, js can be multiline array
       //Format { "exec": "...", "param1": "value1", "param2": "value2" }
       //Paths can be absolute, or relative to datadir
       /*
       sql (sql, db, into, foreach_row)
-      sqltrans(db, actions)
+      sqltrans(db, for)
       delete_folder (path)
       create_folder (path)
+      move_folder (path, dest)
       list_files (path, into, foreach_file) *** path can be glob / regex
       delete_file (path)
       copy_file (path, dest, overwrite)
+      move_file (path, dest, overwrite)
       write_file (path, text)
       append_file (path, text)
       read_file (path, into, foreach_line)
       write_csv (path, db, data, sql, headers)
       append_csv (path, db, dtaa, sql)
       read_csv (path, into, foreach_row, headers)
-      js (js, cmd, into, foreach) --> update parameters, custom validation, return an array foreach
+      js (js, cmd, into, foreach) --> update parameters, custom validation, return an array foreach - can return promise for async operations
+      shell (path, params, cwd)
       email ( email: {to, cc, bcc, subject, text, html, attachments} ) //Attachments = { path: ... }
       email ( jsharmony_txt: {txt_attrib, to, cc, bcc, attachments} )  //Attachments = { path: ... }
       */
@@ -54,7 +58,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       { "exec": "sql", "sql": "insert into cust(cust_name, cust_sts) values ('New customer', 'ACTIVE');" },
       { "exec": "delete_folder", "path": "sample_task", "recursive": true },
       { "exec": "create_folder", "path": "sample_task" },
-      { "exec": "sqltrans", "actions": [
+      { "exec": "sqltrans", "for": [
         { "exec": "sql", "sql": "select cust_id, cust_name from cust", "into": "src",
           "fields":[
             {"name":"cust_id","type":"bigint"},
@@ -97,9 +101,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         ]
       },
       { "exec": "copy_file", "path": "sample_task\\numbers.csv", "dest": "sample_task\\numbers2.csv", "overwrite": true },
+      { "exec": "move_file", "path": "sample_task\\numbers2.csv", "dest": "sample_task\\numbers3.csv", "overwrite": true },
+      { "exec": "create_folder", "path": "sample_task\\test_folder" },
+      { "exec": "move_folder", "path": "sample_task\\test_folder", "dest": "sample_task\\test_folder2" },
       { "exec": "js", "js": "return [{ key: 1 },{ key: 2 },{ key: 4 }]", "into": "jsdata", "foreach": [
         { "exec": "append_file", "path": "sample_task\\jsoutput.txt", "text": "Key: @jsdata.key\n" },
       ] },
+      { "exec": "js", "js": "return new Promise(function(resolve,reject){ resolve([{ rslt: 'success'}]); });", "into": "jspromise", "foreach": [
+        { "exec": "append_file", "path": "sample_task\\jspromise.txt", "text": "Rslt: @jspromise.rslt\n" },
+      ] },
+      { "exec": "shell", "path": "cmd", "params": ["/c", "echo abc > sample_task\\a.a"] },
+      //{ "exec": "js", "js": "return new Promise(function(resolve,reject){ reject(new Error('Test Promise Failure')); });" },
       { "exec": "email", "email": { "to": "test@test.com", "subject": "Task Complete", "text": "The task is complete: @cust_id", "attachments": [ { "path": "sample_task\\numbers.csv" } ] } },
       //{ "exec": "js", "js": "_this.addParam(params, [], 'SYS_USER_NAME', 'cccc');" },
       //{ "exec": "js", "js": "_this.addParam(params, [], 'SUPPORT_EMAIL', 'bbbb');" },

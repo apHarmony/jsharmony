@@ -24,6 +24,7 @@ var fs = require('fs');
 var async = require('async');
 var path = require('path');
 var csv = require('csv');
+var spawn = require("child_process").spawn;
 
 //Task Logger
 function AppSrvTaskLogger(jsh) {
@@ -71,10 +72,10 @@ AppSrvTaskLogger.prototype.log = function(model, loglevel, msg){
     });
 
     if(loglevel == 'error'){
-      _.each(model.task.onerror, function(erroraction){
-        if(erroraction.email){
+      _.each(model.task.onerror, function(errorcommand){
+        if(errorcommand.email){
           //Send email on error
-          _this.sendErrorEmail(model.task, erroraction.email, msg);
+          _this.sendErrorEmail(model.task, errorcommand.email, msg);
         }
       });
     }
@@ -186,33 +187,33 @@ AppSrvTask.prototype.exec = function (req, res, dbcontext, modelid, taskparams, 
     exec_counter: [],
   }
 
-  this.exec_actions(model, task.actions, params, options, callback);
+  this.exec_commands(model, task.commands, params, options, callback);
 }
 
-AppSrvTask.prototype.exec_actions = function (model, actions, params, options, callback) {
+AppSrvTask.prototype.exec_commands = function (model, commands, params, options, callback) {
   var _this = this;
   var rslt = _this.getParamValues(params);
   options.exec_counter.push(0);
-  async.eachSeries(actions, function(action, action_cb){
-    var action_type = action.exec;
-    var standard_actions = [
+  async.eachSeries(commands, function(command, command_cb){
+    var operation_type = command.exec;
+    var standard_operations = [
       'sql','sqltrans',
-      'create_folder','delete_folder','list_files',
-      'delete_file','copy_file','write_file','append_file','read_file',
+      'create_folder','move_folder','delete_folder','list_files',
+      'delete_file','copy_file','move_file','write_file','append_file','read_file',
       'write_csv','append_csv','read_csv',
-      'js','email',
+      'js','shell','email',
     ];
     options.exec_counter[options.exec_counter.length-1]++;
-    _this.log.debug(model, model.id + ': ' + _this.jsh.getTaskActionDesc(action, options));
-    if(_.includes(standard_actions, action_type)){
+    _this.log.debug(model, model.id + ': ' + _this.jsh.getTaskCommandDesc(command, options));
+    if(_.includes(standard_operations, operation_type)){
       try{
-        _this['exec_'+action_type](model, action, params, options, action_cb);
+        _this['exec_'+operation_type](model, command, params, options, command_cb);
       }
       catch(ex){
-        return action_cb(ex);
+        return command_cb(ex);
       }
     }
-    else return action_cb(new Error('Action.exec "' + action_type + '" not supported'));
+    else return command_cb(new Error('operation.exec "' + operation_type + '" not supported'));
   }, function(err){
     if(err) _this.jsh.Log.error('Error executing task ' + model.id + ': ' + err.toString());
     options.exec_counter.pop();
@@ -250,82 +251,82 @@ AppSrvTask.prototype.replaceParams = function(params, val){
   return val;
 }
 
-AppSrvTask.prototype.exec_sqltrans = function(model, action, params, options, action_cb){
-  //sqltrans (db, actions)
+AppSrvTask.prototype.exec_sqltrans = function(model, command, params, options, command_cb){
+  //sqltrans (db, for)
 
   var _this = this;
 
   //Resolve database connection
-  var dbid = action.db || 'default';
-  if(!(dbid in _this.jsh.DB)) return action_cb(new Error('Database connection '+dbid+' not found'));
+  var dbid = command.db || 'default';
+  if(!(dbid in _this.jsh.DB)) return command_cb(new Error('Database connection '+dbid+' not found'));
   var db = this.jsh.DB[dbid];
 
   //Make sure a transaction with the same dbid is not already in progress
-  if(dbid in options.trans) return action_cb(new Error('Database connection '+dbid+' already has a transaction in progress.  Nested task transactions are not supported.'));
+  if(dbid in options.trans) return command_cb(new Error('Database connection '+dbid+' already has a transaction in progress.  Nested task transactions are not supported.'));
 
   var dbtasks = {};
-  dbtasks['action'] = function (dbtrans, callback) {
+  dbtasks['commands'] = function (dbtrans, callback) {
     //Add transaction to options
     var transOptions = _.extend({}, options);
     transOptions.trans = _.extend({}, transOptions.trans);
     transOptions.trans[dbid] = dbtrans;
 
-    //Execute Actions
-    _this.exec_actions(model, action.actions, params, transOptions, function(err){
+    //Execute Commands
+    _this.exec_commands(model, command.for, params, transOptions, function(err){
       return callback(err);
     });
   }
   db.ExecTransTasks(dbtasks, function (err, rslt, stats) {
-    return action_cb(err);
+    return command_cb(err);
   });
 }
 
-AppSrvTask.prototype.exec_sql = function(model, action, params, options, action_cb){
+AppSrvTask.prototype.exec_sql = function(model, command, params, options, command_cb){
   //sql (sql, db, into, foreach_row)
 
   var _this = this;
 
-  var sql = action.sql;
-  if(!sql) return action_cb(new Error('SQL action missing "sql" property - no SQL to execute'));
+  var sql = command.sql;
+  if(!sql) return command_cb(new Error('SQL command missing "sql" property - no SQL to execute'));
 
-  if(action.foreach_row && !action.into) return action_cb(new Error('Action with "foreach_row" requires "into" property'));
+  if(command.foreach_row && !command.into) return command_cb(new Error('Command with "foreach_row" requires "into" property'));
 
   //Generate array of parameters
   var sql_ptypes = _this.getParamTypes(params);
   var sql_params = _this.getParamValues(params);
 
   //Resolve database connection
-  var dbid = action.db || 'default';
-  if(!(dbid in _this.jsh.DB)) return action_cb(new Error('Database connection '+dbid+' not found'));
+  var dbid = command.db || 'default';
+  if(!(dbid in _this.jsh.DB)) return command_cb(new Error('Database connection '+dbid+' not found'));
   var db = this.jsh.DB[dbid];
   
-  var dbcontext = 'task' || action._DBContext || sql_params._DBContext;
+  var dbcontext = 'task' || command._DBContext || sql_params._DBContext;
 
   var dbtasks = {};
-  dbtasks['action'] = function (callback) {
+  dbtasks['command'] = function (callback) {
     //Execute SQL
     db.Recordset(dbcontext, sql, sql_ptypes, sql_params, options.trans[dbid], function (err, rslt, stats) {
       if (stats) stats.model = model;
       if (err) { err.model = model; err.sql = sql; _this.logParams(model, params); return callback(err, rslt, stats); }
 
-      Helper.execif(action.foreach_row && rslt,
+      Helper.execif(command.foreach_row && rslt,
         function(f){
-          if(action.foreach_row && rslt){
+          if(command.foreach_row && rslt){
             options.exec_counter.push(0);
             async.eachSeries(rslt, function(row, row_cb){
               //Validate
-              var verrors = _this.validateFields(action, row);
-              if(verrors) return row_cb(new Error('Error validating ' + action.into + ': ' + verrors + '\nData: ' + JSON.stringify(row)));
+              var verrors = _this.validateFields(command, row);
+              if(verrors) return row_cb(new Error('Error validating ' + command.into + ': ' + verrors + '\nData: ' + JSON.stringify(row)));
 
               //Add to parameters
               var rowparams = _.extend({}, params);
               for(var key in row){
-                _this.addParam(rowparams, action.fields, action.into + '.' + key, row[key]);
+                _this.addParam(rowparams, command.fields, command.into + '.' + key, row[key]);
               }
               
-              //Execute Actions
+              //Execute Commands
               options.exec_counter[options.exec_counter.length-1]++;
-              _this.exec_actions(model, action.foreach_row, rowparams, options, row_cb);
+              _this.exec_commands(model, command.foreach_row, rowparams, options, row_cb);
             }, function(err){
               options.exec_counter.pop();
               if(err) return callback(err);
@@ -340,67 +341,99 @@ AppSrvTask.prototype.exec_sql = function(model, action, params, options, action_
     });
   }
   db.ExecTasks(dbtasks, function (err, rslt, stats) {
-    return action_cb(err);
+    return command_cb(err);
   });
 }
 
-AppSrvTask.prototype.exec_create_folder = function(model, action, params, options, action_cb){
+AppSrvTask.prototype.exec_create_folder = function(model, command, params, options, command_cb){
   //create_folder (path)
 
   var _this = this;
 
-  var fpath = action.path;
-  if(!fpath) return action_cb(new Error('create_folder action missing "path" property'));
+  var fpath = command.path;
+  if(!fpath) return command_cb(new Error('create_folder command missing "path" property'));
   fpath = _this.replaceParams(params, fpath);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
-  HelperFS.createFolderIfNotExists(fpath, action_cb);
+  HelperFS.createFolderIfNotExists(fpath, command_cb);
 }
 
-AppSrvTask.prototype.exec_delete_folder = function(model, action, params, options, action_cb){
+AppSrvTask.prototype.exec_move_folder = function(model, command, params, options, command_cb){
+  //move_folder (path, dest)
+
+  var _this = this;
+
+  var fpath = command.path;
+  if(!fpath) return command_cb(new Error('move_folder command missing "path" property'));
+  fpath = _this.replaceParams(params, fpath);
+  if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
+
+  var fdest = command.dest;
+  if(!fdest) return command_cb(new Error('move_folder command missing "dest" property'));
+  fdest = _this.replaceParams(params, fdest);
+  if(!path.isAbsolute(fdest)) fdest = path.join(_this.jsh.Config.datadir, fdest);
+
+  fs.lstat(fpath, function(err, stats){
+    if (err && (err.code == 'ENOENT')) return command_cb(new Error('move_folder source path does not exist'));
+    else if(err) return command_cb(err);
+    else if(!stats.isDirectory()) return command_cb(new Error('move_folder source path is not a directory'));
+
+    fs.lstat(fdest, function(err, stats){
+      if (err && (err.code == 'ENOENT')){ /* OK - destination does not exist */ }
+      else if(err) return command_cb(err);
+      else return command_cb(new Error('move_folder destination path already exists'));
+  
+      fs.rename(fpath, fdest, function(err){
+        command_cb(err);
+      });
+    });
+  });
+}
+
+AppSrvTask.prototype.exec_delete_folder = function(model, command, params, options, command_cb){
   //delete_folder (path, recursive)
 
   var _this = this;
 
-  var fpath = action.path;
-  if(!fpath) return action_cb(new Error('delete_folder action missing "path" property'));
+  var fpath = command.path;
+  if(!fpath) return command_cb(new Error('delete_folder command missing "path" property'));
   fpath = _this.replaceParams(params, fpath);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
   fs.exists(fpath, function(exists){
-    if(!exists) return action_cb();
+    if(!exists) return command_cb();
 
-    if(action.recursive){
-      HelperFS.rmdirRecursive(fpath, action_cb);
+    if(command.recursive){
+      HelperFS.rmdirRecursive(fpath, command_cb);
     }
     else {
-      fs.unlink(fpath, action_cb);
+      fs.unlink(fpath, command_cb);
     }
   });
 }
 
-AppSrvTask.prototype.exec_list_files = function(model, action, params, options, action_cb){
+AppSrvTask.prototype.exec_list_files = function(model, command, params, options, command_cb){
   //list_files (path, matching, into, foreach_file) *** matching can be exact match, wildcard, or /regex/
 
   var _this = this;
 
-  var fpath = action.path;
-  if(!fpath) return action_cb(new Error('list_files action missing "path" property'));
+  var fpath = command.path;
+  if(!fpath) return command_cb(new Error('list_files command missing "path" property'));
   fpath = _this.replaceParams(params, fpath);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
-  if(!action.foreach_file) return action_cb(new Error('list_files action missing "foreach_file" property'));
-  if(!action.into) return action_cb(new Error('list_files action missing "into" property'));
+  if(!command.foreach_file) return command_cb(new Error('list_files command missing "foreach_file" property'));
+  if(!command.into) return command_cb(new Error('list_files command missing "into" property'));
 
   fs.readdir(fpath, function(err, files){
-    if(err) return action_cb(err);
+    if(err) return command_cb(err);
     options.exec_counter.push(0);
     async.eachSeries(files, function(filename, file_cb){
       //Check if file name matches patterns
-      if(action.matching){
+      if(command.matching){
         var foundmatch = false;
-        for(var i=0;i<action.matching.length;i++){
-          var matchexpr = (action.matching[i]||'').toString();
+        for(var i=0;i<command.matching.length;i++){
+          var matchexpr = (command.matching[i]||'').toString();
           if(!matchexpr) continue;
           var matchrex = null;
           if(matchexpr[0]=='/'){
@@ -439,139 +472,172 @@ AppSrvTask.prototype.exec_list_files = function(model, action, params, options, 
         if(stats.isDirectory()) return file_cb();
 
         //Add to parameters
-        var actionparams = _.extend({}, params);
-        _this.addParam(actionparams, [], action.into + '.path', filepath);
-        _this.addParam(actionparams, [], action.into + '.filename', filename);
+        var commandparams = _.extend({}, params);
+        _this.addParam(commandparams, [], command.into + '.path', filepath);
+        _this.addParam(commandparams, [], command.into + '.filename', filename);
         
-        //Execute Actions for the file
+        //Execute Commands for the file
         options.exec_counter[options.exec_counter.length-1]++;
-        _this.exec_actions(model, action.foreach_file, actionparams, options, file_cb);
+        _this.exec_commands(model, command.foreach_file, commandparams, options, file_cb);
       });
     }, function(err){
       options.exec_counter.pop();
-      return action_cb(err);
+      return command_cb(err);
     });
   });
 }
 
-AppSrvTask.prototype.exec_delete_file = function(model, action, params, options, action_cb){
+AppSrvTask.prototype.exec_delete_file = function(model, command, params, options, command_cb){
   //delete_file (path)
 
   var _this = this;
 
-  var fpath = action.path;
-  if(!fpath) return action_cb(new Error('delete_file action missing "path" property'));
+  var fpath = command.path;
+  if(!fpath) return command_cb(new Error('delete_file command missing "path" property'));
   fpath = _this.replaceParams(params, fpath);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
   fs.lstat(fpath, function(err, stats){
-    if (err && (err.code == 'ENOENT')) return action_cb();
-    else if(err) return action_cb(err);
-    else if(stats.isDirectory()) return action_cb(new Error('delete_file target path is a directory'));
+    if (err && (err.code == 'ENOENT')) return command_cb();
+    else if(err) return command_cb(err);
+    else if(stats.isDirectory()) return command_cb(new Error('delete_file target path is a directory'));
 
     fs.unlink(fpath, function(err){
-      return action_cb(err);
+      return command_cb(err);
     });
   });
 }
 
-AppSrvTask.prototype.exec_copy_file = function(model, action, params, options, action_cb){
+AppSrvTask.prototype.exec_copy_file = function(model, command, params, options, command_cb){
   //copy_file (path, dest, overwrite)
 
   var _this = this;
 
-  var fpath = action.path;
-  if(!fpath) return action_cb(new Error('copy_file action missing "path" property'));
+  var fpath = command.path;
+  if(!fpath) return command_cb(new Error('copy_file command missing "path" property'));
   fpath = _this.replaceParams(params, fpath);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
-  var fdest = action.dest;
-  if(!fdest) return action_cb(new Error('copy_file action missing "dest" property'));
+  var fdest = command.dest;
+  if(!fdest) return command_cb(new Error('copy_file command missing "dest" property'));
   fdest = _this.replaceParams(params, fdest);
   if(!path.isAbsolute(fdest)) fdest = path.join(_this.jsh.Config.datadir, fdest);
 
   fs.lstat(fpath, function(err, stats){
-    if (err && (err.code == 'ENOENT')) return action_cb(new Error('copy_file source path does not exist'));
-    else if(err) return action_cb(err);
-    else if(stats.isDirectory()) return action_cb(new Error('copy_file source path is a directory'));
+    if (err && (err.code == 'ENOENT')) return command_cb(new Error('copy_file source path does not exist'));
+    else if(err) return command_cb(err);
+    else if(stats.isDirectory()) return command_cb(new Error('copy_file source path is a directory'));
 
     fs.lstat(fdest, function(err, stats){
       if (err && (err.code == 'ENOENT')){ /* OK - destination does not exist */ }
-      else if(err) return action_cb(err);
-      else if(stats.isDirectory()) return action_cb(new Error('copy_file destination path is a directory'));
-      else if(!action.overwrite) return action_cb(new Error('copy_file target path already exists.  Use "overwrite" property to force overwrite'));
+      else if(err) return command_cb(err);
+      else if(stats.isDirectory()) return command_cb(new Error('copy_file destination path is a directory'));
+      else if(!command.overwrite) return command_cb(new Error('copy_file destination path already exists.  Use "overwrite" property to force overwrite'));
   
       HelperFS.copyFile(fpath, fdest, function(err){
-        action_cb(err);
+        command_cb(err);
       });
     });
   });
 }
 
-AppSrvTask.prototype.exec_write_file = function(task, action, params, options, action_cb){
-  //write_file (path, text, overwrite)
+AppSrvTask.prototype.exec_move_file = function(model, command, params, options, command_cb){
+  //move_file (path, dest, overwrite)
 
   var _this = this;
 
-  var fpath = action.path;
-  if(!fpath) return action_cb(new Error('write_file action missing "path" property'));
+  var fpath = command.path;
+  if(!fpath) return command_cb(new Error('move_file command missing "path" property'));
   fpath = _this.replaceParams(params, fpath);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
-  var ftext = action.text;
-  if(!ftext) return action_cb(new Error('write_file action missing "text" property'));
-  ftext = _this.replaceParams(params, ftext);
+  var fdest = command.dest;
+  if(!fdest) return command_cb(new Error('move_file command missing "dest" property'));
+  fdest = _this.replaceParams(params, fdest);
+  if(!path.isAbsolute(fdest)) fdest = path.join(_this.jsh.Config.datadir, fdest);
 
   fs.lstat(fpath, function(err, stats){
-    if (err && (err.code == 'ENOENT')){ /* File not found - OK */ }
-    else if(err) return action_cb(err);
-    else if(stats.isDirectory()) return action_cb(new Error('write_file target path is a directory'));
-    else if(!action.overwrite) return action_cb(new Error('write_file target path already exists.  Use "overwrite" property to force overwrite'));
+    if (err && (err.code == 'ENOENT')) return command_cb(new Error('move_file source path does not exist'));
+    else if(err) return command_cb(err);
+    else if(stats.isDirectory()) return command_cb(new Error('move_file source path is a directory'));
 
-    fs.writeFile(fpath, ftext, 'utf8', function(err){
-      return action_cb(err);
+    fs.lstat(fdest, function(err, stats){
+      if (err && (err.code == 'ENOENT')){ /* OK - destination does not exist */ }
+      else if(err) return command_cb(err);
+      else if(stats.isDirectory()) return command_cb(new Error('move_file destination path is a directory'));
+      else if(!command.overwrite) return command_cb(new Error('move_file destination path already exists.  Use "overwrite" property to force overwrite'));
+  
+      fs.rename(fpath, fdest, function(err){
+        command_cb(err);
+      });
     });
   });
 }
 
-AppSrvTask.prototype.exec_append_file = function(model, action, params, options, action_cb){
+AppSrvTask.prototype.exec_write_file = function(task, command, params, options, command_cb){
+  //write_file (path, text, overwrite)
+
+  var _this = this;
+
+  var fpath = command.path;
+  if(!fpath) return command_cb(new Error('write_file command missing "path" property'));
+  fpath = _this.replaceParams(params, fpath);
+  if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
+
+  var ftext = command.text;
+  if(!ftext) return command_cb(new Error('write_file command missing "text" property'));
+  ftext = _this.replaceParams(params, ftext);
+
+  fs.lstat(fpath, function(err, stats){
+    if (err && (err.code == 'ENOENT')){ /* File not found - OK */ }
+    else if(err) return command_cb(err);
+    else if(stats.isDirectory()) return command_cb(new Error('write_file target path is a directory'));
+    else if(!command.overwrite) return command_cb(new Error('write_file target path already exists.  Use "overwrite" property to force overwrite'));
+
+    fs.writeFile(fpath, ftext, 'utf8', function(err){
+      return command_cb(err);
+    });
+  });
+}
+
+AppSrvTask.prototype.exec_append_file = function(model, command, params, options, command_cb){
   //append_file (path, text)
 
   var _this = this;
 
-  var fpath = action.path;
-  if(!fpath) return action_cb(new Error('append_file action missing "path" property'));
+  var fpath = command.path;
+  if(!fpath) return command_cb(new Error('append_file command missing "path" property'));
   fpath = _this.replaceParams(params, fpath);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
-  var ftext = action.text;
-  if(!ftext) return action_cb(new Error('append_file action missing "text" property'));
+  var ftext = command.text;
+  if(!ftext) return command_cb(new Error('append_file command missing "text" property'));
   ftext = _this.replaceParams(params, ftext);
 
   fs.lstat(fpath, function(err, stats){
     var file_exists = false;
     if (err && (err.code == 'ENOENT')){ /* File not found - OK */ }
-    else if(err) return action_cb(err);
-    else if(stats.isDirectory()) return action_cb(new Error('append_file target path is a directory'));
+    else if(err) return command_cb(err);
+    else if(stats.isDirectory()) return command_cb(new Error('append_file target path is a directory'));
     else file_exists = true;
 
     fs.appendFile(fpath, ftext, (file_exists ? 'utf8' : {}), function(err){
-      return action_cb(err);
+      return command_cb(err);
     });
   });
 }
 
-AppSrvTask.prototype.exec_read_file = function(model, action, params, options, action_cb){
+AppSrvTask.prototype.exec_read_file = function(model, command, params, options, command_cb){
   //read_file (path, into, foreach_line)
 
   var _this = this;
 
-  var fpath = action.path;
-  if(!fpath) return action_cb(new Error('read_file action missing "path" property'));
+  var fpath = command.path;
+  if(!fpath) return command_cb(new Error('read_file command missing "path" property'));
   fpath = _this.replaceParams(params, fpath);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
-  if(action.foreach_line && !action.into) return action_cb(new Error('Action with "foreach_line" requires "into" property'));
+  if(command.foreach_line && !command.into) return command_cb(new Error('Command with "foreach_line" requires "into" property'));
 
   //Read CSV file
   var hasError = false;
@@ -585,10 +651,10 @@ AppSrvTask.prototype.exec_read_file = function(model, action, params, options, a
   function processLine(line, line_cb){
     //Add to parameters
     var lineparams = _.extend({}, params);
-    _this.addParam(lineparams, [], action.into + '.text', line);
+    _this.addParam(lineparams, [], command.into + '.text', line);
 
     options.exec_counter[options.exec_counter.length-1]++;
-    _this.exec_actions(model, action.foreach_line, lineparams, options, function(err){
+    _this.exec_commands(model, command.foreach_line, lineparams, options, function(err){
       return line_cb(err);
     });
   }
@@ -634,12 +700,12 @@ AppSrvTask.prototype.exec_read_file = function(model, action, params, options, a
       hasError = true;
       f.destroy();
       options.exec_counter.pop();
-      return action_cb(err);
+      return command_cb(err);
     }
     else{
       if((processData(processDataHandler)===true) && hasFinished){
         options.exec_counter.pop();
-        return action_cb();
+        return command_cb();
       }
     }
   }
@@ -659,25 +725,25 @@ AppSrvTask.prototype.exec_read_file = function(model, action, params, options, a
   });
 }
 
-AppSrvTask.prototype.getCSVSQLData = function(model, action, params, options, onrow, callback){
+AppSrvTask.prototype.getCSVSQLData = function(model, command, params, options, onrow, callback){
   var _this = this;
 
-  var sql = action.sql;
-  if(!sql) return callback(new Error('Action missing "sql" property - no SQL to execute'));
+  var sql = command.sql;
+  if(!sql) return callback(new Error('Command missing "sql" property - no SQL to execute'));
 
   //Generate array of parameters
   var sql_ptypes = _this.getParamTypes(params);
   var sql_params = _this.getParamValues(params);
 
   //Resolve database connection
-  var dbid = action.db || 'default';
+  var dbid = command.db || 'default';
   if(!(dbid in _this.jsh.DB)) return callback(new Error('Database connection '+dbid+' not found'));
   var db = this.jsh.DB[dbid];
   
-  var dbcontext = 'task' || action._DBContext || sql_params._DBContext;
+  var dbcontext = 'task' || command._DBContext || sql_params._DBContext;
 
   var dbtasks = {};
-  dbtasks['action'] = function (callback) {
+  dbtasks['command'] = function (callback) {
     //Execute SQL
     db.Recordset(dbcontext, sql, sql_ptypes, sql_params, options.trans[dbid], function (err, rslt, stats) {
       if (stats) stats.model = model;
@@ -694,32 +760,32 @@ AppSrvTask.prototype.getCSVSQLData = function(model, action, params, options, on
   });
 }
 
-AppSrvTask.prototype.exec_write_csv = function(model, action, params, options, action_cb){
+AppSrvTask.prototype.exec_write_csv = function(model, command, params, options, command_cb){
   //write_csv (path, db, data, sql, overwrite, headers)
   //handle data: {}, [], [[]], [{}]
   //can't have both data and sql
 
   var _this = this;
 
-  var fpath = action.path;
-  if(!fpath) return action_cb(new Error('write_csv action missing "path" property'));
+  var fpath = command.path;
+  if(!fpath) return command_cb(new Error('write_csv command missing "path" property'));
   fpath = _this.replaceParams(params, fpath);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
-  if((!action.data && !action.sql) || (action.data && action.sql)) return action_cb(new Error('write_csv action requires either "data" or "sql" property'));
+  if((!command.data && !command.sql) || (command.data && command.sql)) return command_cb(new Error('write_csv command requires either "data" or "sql" property'));
 
   var fdata = null;
-  if(action.data){
-    fdata = action.data;
-    if(!fdata) return action_cb(new Error('write_csv action missing "data" property'));
+  if(command.data){
+    fdata = command.data;
+    if(!fdata) return command_cb(new Error('write_csv command missing "data" property'));
     fdata = _this.replaceParams(params, fdata);
   }
 
   fs.lstat(fpath, function(err, stats){
     if (err && (err.code == 'ENOENT')){ /* File not found - OK */ }
-    else if(err) return action_cb(err);
-    else if(stats.isDirectory()) return action_cb(new Error('write_csv target path is a directory'));
-    else if(!action.overwrite) return action_cb(new Error('write_csv target path already exists.  Use "overwrite" property to force overwrite'));
+    else if(err) return command_cb(err);
+    else if(stats.isDirectory()) return command_cb(new Error('write_csv target path is a directory'));
+    else if(!command.overwrite) return command_cb(new Error('write_csv target path already exists.  Use "overwrite" property to force overwrite'));
 
     var hasError = false;
 
@@ -727,34 +793,34 @@ AppSrvTask.prototype.exec_write_csv = function(model, action, params, options, a
     filestream.on('error', function(err){
       if(hasError) return;
       hasError = true;
-      return action_cb(err);
+      return command_cb(err);
     });
     filestream.on('finish', function(){
       if(hasError) return;
-      return action_cb();
+      return command_cb();
     });
 
     var csv_options = { quotedString: true };
-    if(action.headers) csv_options.header = true;
-    if(action.fields){
-      var columns = _.map(action.fields, function(field){ if(_.isString(field)) return field; return field.name });
-      if(!_.isEmpty(columns)) action.columns = columns;
+    if(command.headers) csv_options.header = true;
+    if(command.fields){
+      var columns = _.map(command.fields, function(field){ if(_.isString(field)) return field; return field.name });
+      if(!_.isEmpty(columns)) command.columns = columns;
     }
     var csvwriter = csv.stringify(csv_options);
     csvwriter.on('error', function(err){
       if(hasError) return;
       hasError = true;
-      return action_cb(err);
+      return command_cb(err);
     });
     csvwriter.pipe(filestream);
 
-    if(action.sql){
-      _this.getCSVSQLData(model, action, params, options, function(row){
+    if(command.sql){
+      _this.getCSVSQLData(model, command, params, options, function(row){
         csvwriter.write(row);
       }, function(err){
         if(err){
           hasError = true;
-          return action_cb(err);
+          return command_cb(err);
         }
         csvwriter.end();
       });
@@ -766,29 +832,29 @@ AppSrvTask.prototype.exec_write_csv = function(model, action, params, options, a
   });
 }
 
-AppSrvTask.prototype.exec_append_csv = function(model, action, params, options, action_cb){
+AppSrvTask.prototype.exec_append_csv = function(model, command, params, options, command_cb){
   //append_csv (path, db, data, sql)
 
   var _this = this;
 
-  var fpath = action.path;
-  if(!fpath) return action_cb(new Error('append_csv action missing "path" property'));
+  var fpath = command.path;
+  if(!fpath) return command_cb(new Error('append_csv command missing "path" property'));
   fpath = _this.replaceParams(params, fpath);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
-  if((!action.data && !action.sql) || (action.data && action.sql)) return action_cb(new Error('append_csv action requires either "data" or "sql" property'));
+  if((!command.data && !command.sql) || (command.data && command.sql)) return command_cb(new Error('append_csv command requires either "data" or "sql" property'));
 
   var fdata = null;
-  if(action.data){
-    fdata = action.data;
-    if(!fdata) return action_cb(new Error('append_csv action missing "data" property'));
+  if(command.data){
+    fdata = command.data;
+    if(!fdata) return command_cb(new Error('append_csv command missing "data" property'));
     fdata = _this.replaceParams(params, fdata);
   }
 
   fs.lstat(fpath, function(err, stats){
     if (err && (err.code == 'ENOENT')){ /* File not found - OK */ }
-    else if(err) return action_cb(err);
-    else if(stats.isDirectory()) return action_cb(new Error('append_csv target path is a directory'));
+    else if(err) return command_cb(err);
+    else if(stats.isDirectory()) return command_cb(new Error('append_csv target path is a directory'));
 
     var hasError = false;
 
@@ -796,34 +862,34 @@ AppSrvTask.prototype.exec_append_csv = function(model, action, params, options, 
     filestream.on('error', function(err){
       if(hasError) return;
       hasError = true;
-      return action_cb(err);
+      return command_cb(err);
     });
     filestream.on('finish', function(){
       if(hasError) return;
-      return action_cb();
+      return command_cb();
     });
 
     var csv_options = { quotedString: true };
-    if(action.headers) csv_options.header = true;
-    if(action.fields){
-      var columns = _.map(action.fields, function(field){ if(_.isString(field)) return field; return field.name });
-      if(!_.isEmpty(columns)) action.columns = columns;
+    if(command.headers) csv_options.header = true;
+    if(command.fields){
+      var columns = _.map(command.fields, function(field){ if(_.isString(field)) return field; return field.name });
+      if(!_.isEmpty(columns)) command.columns = columns;
     }
     var csvwriter = csv.stringify(csv_options);
     csvwriter.on('error', function(err){
       if(hasError) return;
       hasError = true;
-      return action_cb(err);
+      return command_cb(err);
     });
     csvwriter.pipe(filestream);
 
-    if(action.sql){
-      _this.getCSVSQLData(model, action, params, options, function(row){
+    if(command.sql){
+      _this.getCSVSQLData(model, command, params, options, function(row){
         csvwriter.write(row);
       }, function(err){
         if(err){
           hasError = true;
-          return action_cb(err);
+          return command_cb(err);
         }
         csvwriter.end();
       });
@@ -835,23 +901,23 @@ AppSrvTask.prototype.exec_append_csv = function(model, action, params, options, 
   });
 }
 
-AppSrvTask.prototype.exec_read_csv = function(model, action, params, options, action_cb){
+AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, command_cb){
   //read_csv (path, into, foreach_row, fields, headers)
 
   var _this = this;
 
-  var fpath = action.path;
-  if(!fpath) return action_cb(new Error('read_csv action missing "path" property'));
+  var fpath = command.path;
+  if(!fpath) return command_cb(new Error('read_csv command missing "path" property'));
   fpath = _this.replaceParams(params, fpath);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
-  if(action.foreach_row && !action.into) return action_cb(new Error('Action with "foreach_row" requires "into" property'));
+  if(command.foreach_row && !command.into) return command_cb(new Error('Command with "foreach_row" requires "into" property'));
 
   //Read CSV file
   var column_headers = false;
-  if(action.headers) column_headers = true;
-  if(action.fields){
-    column_headers = _.map(action.fields, function(field){ if(_.isString(field)) return field; return field.name });
+  if(command.headers) column_headers = true;
+  if(command.fields){
+    column_headers = _.map(command.fields, function(field){ if(_.isString(field)) return field; return field.name });
   }
   var csvparser = csv.parse({ columns: column_headers, relax_column_count: true });
   var hasError = false;
@@ -868,17 +934,17 @@ AppSrvTask.prototype.exec_read_csv = function(model, action, params, options, ac
     if(row===null){ hasReadable = false; return true; }
 
     //Validate
-    var verrors = _this.validateFields(action, row);
-    if(verrors) return row_cb(new Error('Error validating ' + action.into + ': ' + verrors + '\nData: ' + JSON.stringify(row)));
+    var verrors = _this.validateFields(command, row);
+    if(verrors) return row_cb(new Error('Error validating ' + command.into + ': ' + verrors + '\nData: ' + JSON.stringify(row)));
 
     //Add to parameters
     var rowparams = _.extend({}, params);
     for(var key in row){
-      _this.addParam(rowparams, action.fields, action.into + '.' + key, row[key]);
+      _this.addParam(rowparams, command.fields, command.into + '.' + key, row[key]);
     }
 
     options.exec_counter[options.exec_counter.length-1]++;
-    _this.exec_actions(model, action.foreach_row, rowparams, options, function(err){
+    _this.exec_commands(model, command.foreach_row, rowparams, options, function(err){
       return row_cb(err);
     });
   }
@@ -889,12 +955,12 @@ AppSrvTask.prototype.exec_read_csv = function(model, action, params, options, ac
       hasError = true;
       f.destroy();
       options.exec_counter.pop();
-      return action_cb(err);
+      return command_cb(err);
     }
     else{
       if((processRow(processRowHandler)===true) && hasFinished){
         options.exec_counter.pop();
-        return action_cb();
+        return command_cb();
       }
     }
   }
@@ -912,70 +978,114 @@ AppSrvTask.prototype.exec_read_csv = function(model, action, params, options, ac
       hasReadable = true;
       if(processRow(processRowHandler)===true){
         options.exec_counter.pop();
-        return action_cb();
+        return command_cb();
       }
     }
   });
   f.pipe(csvparser);
 }
 
-AppSrvTask.prototype.exec_js = function(model, action, params, options, action_cb){
+AppSrvTask.prototype.exec_js = function(model, command, params, options, command_cb){
   //js (js, into, foreach)
 
   var _this = this;
 
-  if(!action.js) return action_cb(new Error('JS action requires "js" property'));
-  if(action.foreach && !action.into) return action_cb(new Error('Action with "foreach" requires "into" property'));
+  if(!command.js) return command_cb(new Error('JS command requires "js" property'));
+  if(command.foreach && !command.into) return command_cb(new Error('Command with "foreach" requires "into" property'));
 
-  var jsstr = '(function(){ ' + action.js.toString() + ' })();';
+  var jsstr = '(function(){ ' + command.js.toString() + ' })();';
   var jsrslt = null;
   try{
     jsrslt = eval(jsstr);
   }
   catch(ex){
-    if(ex) return action_cb(ex);
+    if(ex) return command_cb(ex);
   }
 
-  if(action.foreach){
-    if((jsrslt === null) || (typeof jsrslt == 'undefined')){ }
-    else{
-      if(!_.isArray(jsrslt)) jsrslt = [jsrslt];
-
-      options.exec_counter.push(0);
-      async.eachSeries(jsrslt, function(row, row_cb){
-
-        //Add to parameters
-        var rowparams = _.extend({}, params);
-        for(var key in row){
-          _this.addParam(rowparams, action.fields, action.into + '.' + key, row[key]);
+  Helper.execif((jsrslt && jsrslt.then && jsrslt.catch),
+    function(f){
+      jsrslt
+        .then(function(rslt){ jsrslt = rslt; f(); })
+        .catch(function(err){ return command_cb(err); });
+    },
+    function(){
+      if(command.foreach){
+        if((jsrslt === null) || (typeof jsrslt == 'undefined')){ }
+        else{
+          if(!_.isArray(jsrslt)) jsrslt = [jsrslt];
+    
+          options.exec_counter.push(0);
+          async.eachSeries(jsrslt, function(row, row_cb){
+    
+            //Add to parameters
+            var rowparams = _.extend({}, params);
+            for(var key in row){
+              _this.addParam(rowparams, command.fields, command.into + '.' + key, row[key]);
+            }
+            
+            //Execute Commands
+            options.exec_counter[options.exec_counter.length-1]++;
+            _this.exec_commands(model, command.foreach, rowparams, options, row_cb);
+          }, function(err){
+            options.exec_counter.pop();
+            return command_cb(err);
+          });
+          return;
         }
-        
-        //Execute Actions
-        options.exec_counter[options.exec_counter.length-1]++;
-        _this.exec_actions(model, action.foreach, rowparams, options, row_cb);
-      }, function(err){
-        options.exec_counter.pop();
-        return action_cb(err);
-      });
-      return;
+      }
+      return command_cb();
     }
-  }
-  return action_cb();
+  );
+
+  
 }
 
-AppSrvTask.prototype.exec_email = function(model, action, params, options, action_cb){
+AppSrvTask.prototype.exec_shell = function(model, command, params, options, command_cb){
+  //shell (path, params, cwd)
+
+  var _this = this;
+
+  if(!command.path) return command_cb(new Error('Shell command requires "path" property'));
+  var cmdpath = _this.replaceParams(params, command.path);
+
+  var cmdparams = [];
+  if(command.params){
+    cmdparams = _this.replaceParams(params, command.params);
+  }
+
+  var cwd = command.cwd;
+  if(!cwd) cwd = _this.jsh.Config.datadir;
+  else {
+    cwd = _this.replaceParams(params, cwd);
+    if(!path.isAbsolute(cwd)) cwd = path.join(_this.jsh.Config.datadir, cwd);
+  }
+
+  var hasError = false;
+  var cmd = spawn(cmdpath, cmdparams, { cwd: cwd });
+  cmd.on('error', function(err){
+    if(hasError) return;
+    hasError = true;
+    return command_cb(err);
+  });
+  cmd.on('close', function(){
+    if(hasError) return;
+    return command_cb();
+  });
+}
+
+AppSrvTask.prototype.exec_email = function(model, command, params, options, command_cb){
   //email (to, cc, bcc, subject, text, html, attachments)
 
   var _this = this;
 
-  if((!action.email && !action.jsharmony_txt) || (action.email && action.jsharmony_txt)) return action_cb(new Error('email action requires either "email" or "jsharmony_txt" property'));
+  if((!command.email && !command.jsharmony_txt) || (command.email && command.jsharmony_txt)) return command_cb(new Error('email command requires either "email" or "jsharmony_txt" property'));
 
-  if(action.email){
-    var emailparams = _this.replaceParams(params, action.email);
+  if(command.email){
+    var emailparams = _this.replaceParams(params, command.email);
 
     //Make sure to and subject exists
-    if(!emailparams.to) return action_cb(new Error('email action missing "email.to" property'));
-    if(!emailparams.subject) return action_cb(new Error('email action missing "email.subject" property'));
+    if(!emailparams.to) return command_cb(new Error('email command missing "email.to" property'));
+    if(!emailparams.subject) return command_cb(new Error('email command missing "email.subject" property'));
 
     //Add path to attachments
     if(emailparams && emailparams.attachments && emailparams.attachments.length){
@@ -988,17 +1098,17 @@ AppSrvTask.prototype.exec_email = function(model, action, params, options, actio
     }
 
     //Send email
-    if(!_this.jsh.SendEmail) return action_cb(new Error('jsHarmony SendEmail not configured'));
+    if(!_this.jsh.SendEmail) return command_cb(new Error('jsHarmony SendEmail not configured'));
     _this.jsh.SendEmail(emailparams, function(){
-      if(action_cb) action_cb();
+      if(command_cb) command_cb();
     });
   }
-  else if(action.jsharmony_txt){
-    var emailparams = _this.replaceParams(params, action.jsharmony_txt);
+  else if(command.jsharmony_txt){
+    var emailparams = _this.replaceParams(params, command.jsharmony_txt);
 
     //Make sure to and subject exists
-    if(!emailparams.txt_attrib) return action_cb(new Error('email action missing "jsharmony_txt.txt_attrib" property'));
-    if(!emailparams.to) return action_cb(new Error('email action missing "jsharmony_txt.to" property'));
+    if(!emailparams.txt_attrib) return command_cb(new Error('email command missing "jsharmony_txt.txt_attrib" property'));
+    if(!emailparams.to) return command_cb(new Error('email command missing "jsharmony_txt.to" property'));
 
     //Add path to attachments
     if(emailparams && emailparams.attachments && emailparams.attachments.length){
@@ -1011,11 +1121,11 @@ AppSrvTask.prototype.exec_email = function(model, action, params, options, actio
     }
 
     var dataparams = _this.getParamValues(params);
-    var dbcontext = 'task' || action._DBContext || dataparams._DBContext;
+    var dbcontext = 'task' || command._DBContext || dataparams._DBContext;
 
     //Send email
     _this.jsh.SendTXTEmail(dbcontext, emailparams.txt_attrib, emailparams.to, emailparams.cc, emailparams.bcc, emailparams.attachments, dataparams, function(err){
-      if(action_cb) action_cb();
+      if(command_cb) command_cb();
     });
   }
 }
