@@ -22,7 +22,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   //Same top-level settings as Forms
   "layout": "exec",
   "title": "Task Title",
-  "actions": "B",
+  "actions": "U",
   "roles": { "ADMIN": "U" },
   "fields": [
     {"name":"cust_id","type":"bigint","validate":["Required"]}
@@ -39,7 +39,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       delete_folder (path)
       create_folder (path)
       move_folder (path, dest)
-      list_files (path, into, foreach_file) *** path can be glob / regex
+      list_files (path, into, foreach_file) *** path can be wildcard / regex
       delete_file (path)
       copy_file (path, dest, overwrite)
       move_file (path, dest, overwrite)
@@ -47,7 +47,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       append_file (path, text)
       read_file (path, into, foreach_line)
       write_csv (path, db, data, sql, headers)
-      append_csv (path, db, dtaa, sql)
+      append_csv (path, db, data, sql)
       read_csv (path, into, foreach_row, headers)
       js (js, cmd, into, foreach) --> update parameters, custom validation, return an array foreach - can return promise for async operations
       shell (path, params, cwd)
@@ -74,7 +74,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           { "exec": "read_csv", "path": "@csvfile.path", "into": "csvdata", "headers": false,
             "fields": [
               {"name":"country"},
-              {"name":"cust_code"},
+              {"name":"id"},
             ],
             "foreach_row": [
               { "exec": "sql", "sql": "insert into cust(cust_name, cust_sts) values (@csvdata.id, 'ACTIVE');" },
