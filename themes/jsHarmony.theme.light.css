@@ -353,18 +353,20 @@ MENU STYLES
   position:absolute;
   right:0px;
   top:5px;
-  padding:0 0 0 1px;
-  background-image:none;
-  background-repeat:repeat-y;
+  padding:0 14px 0 1px;
+  background-image:url('/images/arrow_right_white.png');
+  background-repeat:no-repeat;
+  background-position:73px 48px;
   margin-left:0px;
   border-left:1px solid #00000033;
 }
 <%-rootcss%> .xmenuhorizontal .xmenu_more_bg {
-  padding:43px 22px 18px 28px;
+  padding:43px 22px 20px 28px;
   background-position-y:-5px;
   background-repeat:repeat-x;
 }
 <%-rootcss%> .xmenuhorizontal a.xmenu_more img {
+  display:none;
   position:relative;
   top:-1px;
   padding-left:4px;
@@ -428,7 +430,7 @@ MENU STYLES
   display:inline-block;
 }
 <%-rootcss%> .xmenuhorizontal .xsubmenu a.selected {
-  border-bottom:2px solid #777;
+  border-bottom:2px solid #aaa;
   padding-bottom:2px;
 }
 <%-rootcss%> .xmenuhorizontal .xsubmenu a:hover {
