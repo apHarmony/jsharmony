@@ -42,8 +42,8 @@ exports.ParseTask = function(model){
     if(field.name) params[field.name] = true;
   });
 
-  if(!('actions' in task)){ _this.LogInit_ERROR('Error loading' + model.id + ' task: Missing task.actions property'); return; }
-  _.each(task.actions, function(action){ _this.ParseTaskAction(model, action, params); });
+  if(!('commands' in task)){ _this.LogInit_ERROR('Error loading' + model.id + ' task: Missing task.commands property'); return; }
+  _.each(task.commands, function(command){ _this.ParseTaskCommand(model, command, params); });
 
 }
 
@@ -57,104 +57,117 @@ exports.ParseTaskValidation = function(obj, desc){
   });
 }
 
-exports.getTaskActionDesc = function(action, options){
-  var rslt = JSON.stringify(_.pick(action,['exec','db','sql','path','into','overwrite','dest','sqldata','headers','cmd','subject','to','bcc','cc']));
+exports.getTaskCommandDesc = function(command, options){
+  var rslt = JSON.stringify(_.pick(command,['exec','db','sql','path','into','overwrite','dest','sqldata','headers','cmd','subject','to','bcc','cc']));
   if(options && options.exec_counter) rslt += ' #' + options.exec_counter.join('-');
   return rslt;
 }
 
-exports.ParseTaskAction = function(model, action, params){
+exports.ParseTaskCommand = function(model, command, params){
   var _this = this;
   params = _.extend({}, params);
 
-  _this.ParseTaskValidation(action, model.id);
+  _this.ParseTaskValidation(command, model.id);
 
-  function parseChildActions(actionType, childActionProperty, variableDesc){
-    if(action[childActionProperty]){
+  function parseChildCommands(commandType, childCommandProperty, variableDesc){
+    if(command[childCommandProperty]){
       if(variableDesc){
-        if(!action.into) _this.LogInit_ERROR('Error loading task ' + model.id + ': '+actionType+'.'+childActionProperty+' requires '+actionType+'.into property to define the variable name for the '+variableDesc+' object');
-        if(action.into in params) _this.LogInit_ERROR('Error loading task ' + model.id + ': '+actionType+'.into property would override an existing variable');
-        params[action.into] = true;
+        if(!command.into) _this.LogInit_ERROR('Error loading task ' + model.id + ': '+commandType+'.'+childCommandProperty+' requires '+commandType+'.into property to define the variable name for the '+variableDesc+' object');
+        if(command.into in params) _this.LogInit_ERROR('Error loading task ' + model.id + ': '+commandType+'.into property would override an existing variable');
+        params[command.into] = true;
       }
-      _.each(action[childActionProperty], function(action){ _this.ParseTaskAction(model, action); });
+      _.each(command[childCommandProperty], function(command){ _this.ParseTaskCommand(model, command); });
     }
   }
 
-  function validateActionProperties(props){
-    for(var key in action){
+  function validateCommandProperties(props){
+    for(var key in command){
       if(key == 'exec') continue;
       if(key == 'xvalidate') continue;
-      if(!_.includes(props, key)) _this.LogInit_ERROR('Invalid ' + action.exec + ' action property: ' + key + ' in action ' + _this.getTaskActionDesc(action));
+      if(!_.includes(props, key)) _this.LogInit_ERROR('Invalid ' + command.exec + ' command property: ' + key + ' in command ' + _this.getTaskCommandDesc(command));
     }
   }
 
-  if(action.exec == 'sql'){
-    validateActionProperties(['sql','db','into','foreach_row','fields']);
-    parseChildActions('sql', 'foreach_row', 'row');
+  if(command.exec == 'sql'){
+    validateCommandProperties(['sql','db','into','foreach_row','fields']);
+    if(command.sql) command.sql = Helper.ParseMultiLine(command.sql);
+    parseChildCommands('sql', 'foreach_row', 'row');
   }
-  else if(action.exec == 'sqltrans'){
-    validateActionProperties(['db','actions']);
-    parseChildActions('sqltrans', 'actions');
+  else if(command.exec == 'sqltrans'){
+    validateCommandProperties(['db','for']);
+    parseChildCommands('sqltrans', 'for');
   }
-  else if(action.exec == 'delete_folder'){
-    validateActionProperties(['path','recursive']);
+  else if(command.exec == 'delete_folder'){
+    validateCommandProperties(['path','recursive']);
   }
-  else if(action.exec == 'create_folder'){
-    validateActionProperties(['path']);
+  else if(command.exec == 'create_folder'){
+    validateCommandProperties(['path']);
   }
-  else if(action.exec == 'list_files'){
-    validateActionProperties(['path','matching','into','foreach_file']);
-    if(action.matching && _.isString(action.matching)) action.matching = [action.matching];
-    parseChildActions('list_files', 'foreach_file', 'file');
+  else if(command.exec == 'move_folder'){
+    validateCommandProperties(['path','dest']);
   }
-  else if(action.exec == 'delete_file'){
-    validateActionProperties(['path']);
+  else if(command.exec == 'list_files'){
+    validateCommandProperties(['path','matching','into','foreach_file']);
+    if(command.matching && _.isString(command.matching)) command.matching = [command.matching];
+    parseChildCommands('list_files', 'foreach_file', 'file');
   }
-  else if(action.exec == 'copy_file'){
-    validateActionProperties(['path','dest','overwrite']);
+  else if(command.exec == 'delete_file'){
+    validateCommandProperties(['path']);
   }
-  else if(action.exec == 'write_file'){
-    validateActionProperties(['path','text','overwrite']);
+  else if(command.exec == 'copy_file'){
+    validateCommandProperties(['path','dest','overwrite']);
   }
-  else if(action.exec == 'append_file'){
-    validateActionProperties(['path','text']);
+  else if(command.exec == 'move_file'){
+    validateCommandProperties(['path','dest','overwrite']);
   }
-  else if(action.exec == 'read_file'){
-    validateActionProperties(['path','into','foreach_line']);
-    parseChildActions('read_file', 'foreach_line', 'line');
+  else if(command.exec == 'write_file'){
+    validateCommandProperties(['path','text','overwrite']);
   }
-  else if(action.exec == 'write_csv'){
-    validateActionProperties(['path','db','data','sql','headers','overwrite','fields']);
-    if(action.data){
-      if(!_.isArray(action.data)) action.data = [action.data]; //{} => [{}]
-      else if(!action.data.length || (!_.isArray(action.data[0]) && !_.isObject(action.data[0]))) action.data = [action.data]; //[] => [[]]
+  else if(command.exec == 'append_file'){
+    validateCommandProperties(['path','text']);
+  }
+  else if(command.exec == 'read_file'){
+    validateCommandProperties(['path','into','foreach_line']);
+    parseChildCommands('read_file', 'foreach_line', 'line');
+  }
+  else if(command.exec == 'write_csv'){
+    validateCommandProperties(['path','db','data','sql','headers','overwrite','fields']);
+    if(command.sql) command.sql = Helper.ParseMultiLine(command.sql);
+    if(command.data){
+      if(!_.isArray(command.data)) command.data = [command.data]; //{} => [{}]
+      else if(!command.data.length || (!_.isArray(command.data[0]) && !_.isObject(command.data[0]))) command.data = [command.data]; //[] => [[]]
     }
   }
-  else if(action.exec == 'append_csv'){
-    validateActionProperties(['path','db','data','sql','headers','fields']);
-    if(action.data){
-      if(!_.isArray(action.data)) action.data = [action.data]; //{} => [{}]
-      else if(!action.data.length || (!_.isArray(action.data[0]) && !_.isObject(action.data[0]))) action.data = [action.data]; //[] => [[]]
+  else if(command.exec == 'append_csv'){
+    validateCommandProperties(['path','db','data','sql','headers','fields']);
+    if(command.sql) command.sql = Helper.ParseMultiLine(command.sql);
+    if(command.data){
+      if(!_.isArray(command.data)) command.data = [command.data]; //{} => [{}]
+      else if(!command.data.length || (!_.isArray(command.data[0]) && !_.isObject(command.data[0]))) command.data = [command.data]; //[] => [[]]
     }
   }
-  else if(action.exec == 'read_csv'){
-    validateActionProperties(['path','into','foreach_row','headers','fields']);
-    parseChildActions('read_csv', 'foreach_row', 'row');
+  else if(command.exec == 'read_csv'){
+    validateCommandProperties(['path','into','foreach_row','headers','fields']);
+    parseChildCommands('read_csv', 'foreach_row', 'row');
   }
-  else if(action.exec == 'js'){
-    validateActionProperties(['js','into','foreach']);
-    parseChildActions('js', 'foreach', 'item');
+  else if(command.exec == 'shell'){
+    validateCommandProperties(['path', 'params', 'cwd']);
   }
-  else if(action.exec == 'email'){
-    validateActionProperties(['email','jsharmony_txt']);
-    if(action.email) for(var key in action.email){
-      if(!_.includes(['to','cc','bcc','subject','text','html','attachments'], key)) _this.LogInit_ERROR('Invalid email action property: email.' + key + ' in action ' + _this.getTaskActionDesc(action));
+  else if(command.exec == 'js'){
+    validateCommandProperties(['js','into','foreach']);
+    if(command.js) command.js = Helper.ParseMultiLine(command.js);
+    parseChildCommands('js', 'foreach', 'item');
+  }
+  else if(command.exec == 'email'){
+    validateCommandProperties(['email','jsharmony_txt']);
+    if(command.email) for(var key in command.email){
+      if(!_.includes(['to','cc','bcc','subject','text','html','attachments'], key)) _this.LogInit_ERROR('Invalid email command property: email.' + key + ' in command ' + _this.getTaskCommandDesc(command));
     }
-    if(action.txt) for(var key in action.jsharmony_txt){
-      if(!_.includes(['txt_attrib','to','cc','bcc','attachments'], key)) _this.LogInit_ERROR('Invalid email action property: txt.' + key + ' in action ' + _this.getTaskActionDesc(action));
+    if(command.txt) for(var key in command.jsharmony_txt){
+      if(!_.includes(['txt_attrib','to','cc','bcc','attachments'], key)) _this.LogInit_ERROR('Invalid email command property: txt.' + key + ' in command ' + _this.getTaskCommandDesc(command));
     }
   }
-  else _this.LogInit_ERROR('Error loading task ' + model.id + ': Invalid action.exec "'+action.exec+'"');
+  else _this.LogInit_ERROR('Error loading task ' + model.id + ': Invalid command.exec "'+command.exec+'"');
 }
 
 exports.hasTask = function(req, modelid){
