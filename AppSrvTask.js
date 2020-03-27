@@ -323,6 +323,16 @@ AppSrvTask.prototype.exec_sql = function(model, command, params, options, comman
               for(var key in row){
                 _this.addParam(rowparams, command.fields, command.into + '.' + key, row[key]);
               }
+
+              //Add null for empty columns
+              _.each(command.fields, function(field){
+                var fieldName = (_.isString(field) ? field : field.name);
+                if(!fieldName) return;
+                var paramName = command.into + '.' + fieldName;
+                if(!(paramName in rowparams)){
+                  _this.addParam(rowparams, command.fields, paramName, null);
+                }
+              });
               
               //Execute Commands
               options.exec_counter[options.exec_counter.length-1]++;
@@ -942,6 +952,15 @@ AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, c
     for(var key in row){
       _this.addParam(rowparams, command.fields, command.into + '.' + key, row[key]);
     }
+    //Add null for empty columns
+    _.each(command.fields, function(field){
+      var fieldName = (_.isString(field) ? field : field.name);
+      if(!fieldName) return;
+      var paramName = command.into + '.' + fieldName;
+      if(!(paramName in rowparams)){
+        _this.addParam(rowparams, command.fields, paramName, null);
+      }
+    });
 
     options.exec_counter[options.exec_counter.length-1]++;
     _this.exec_commands(model, command.foreach_row, rowparams, options, function(err){
@@ -1020,7 +1039,7 @@ AppSrvTask.prototype.exec_js = function(model, command, params, options, command
             //Add to parameters
             var rowparams = _.extend({}, params);
             for(var key in row){
-              _this.addParam(rowparams, command.fields, command.into + '.' + key, row[key]);
+              _this.addParam(rowparams, [], command.into + '.' + key, row[key]);
             }
             
             //Execute Commands
