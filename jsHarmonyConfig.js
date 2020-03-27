@@ -245,6 +245,12 @@ function jsHarmonyConfig(config){
   //When the database drivers are loaded, before the schema is read
   this.onDBDriverLoaded = [];  //function(cb, jsh){ return cb(); }
 
+  //Theme CSS files
+  this.themes = {
+    'light': [ 'jsharmony.theme.light.css' ],
+    'classic': [ 'jsharmony.theme.light.css' ]
+  };
+  this.theme = 'light';
   //Additional CSS files for jsHarmony.css
   this.css_extensions = [
     path.dirname(module.filename) + '/public/jquery-ui/css/jquery-ui-1.10.3.custom.min.css',

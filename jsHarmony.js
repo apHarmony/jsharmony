@@ -231,9 +231,20 @@ jsHarmony.prototype.Init = function(init_cb){
 
       _this.LogInit_PERFORMANCE('Loading Models '+(Date.now()-_this.Statistics.StartTime));
 
-      _this.Cache['application.js'] = '';
-      _this.Cache['application.css'] = fs.readFileSync(path.dirname(module.filename)+'/jsHarmony.theme.css', 'utf8');
       var modeldirs = _this.getModelDirs();
+      _this.Cache['application.js'] = '';
+      _this.Cache['application.css'] = '';
+      if(_this.Config.theme && _this.Config.themes[_this.Config.theme]){
+        _.each(_this.Config.themes[_this.Config.theme], function(css_path){
+          if(css_path){
+            for (var i = 0; i < modeldirs.length; i++) {
+              var modeldir = modeldirs[i];
+              var module_css_path = path.join(modeldir.path, '../themes', css_path);
+              if (fs.existsSync(module_css_path)) _this.Cache['application.css'] += '\r\n' + fs.readFileSync(module_css_path, 'utf8');
+            }
+          }
+        });
+      }
       for (var i = 0; i < modeldirs.length; i++) {
         var modeldir = modeldirs[i];
         var prefix = modeldir.namespace||'';

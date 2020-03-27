@@ -341,12 +341,12 @@ BODY
   border:1px dashed #aaa;
 }
 <%-rootcss%> input.uneditable {
-  border:1px solid #aaa;
+  border:thin solid #aaa;
   padding: 2px 1px 2px 4px;
 }
 <%-rootcss%> select.uneditable,
 <%-rootcss%> textarea.uneditable {
-  border:1px solid #aaa;
+  border:thin solid #aaa;
 }
 <%-rootcss%> input.uneditable,
 <%-rootcss%> select.uneditable,
@@ -1148,4 +1148,5 @@ PRINT STYLESHEET
   <%-rootcss%> .xhead { display:none; }
   <%-rootcss%> .xbody,
   <%-rootcss%> .xmain { display:block !important; }
+  <%-rootcss%> .xbody { margin-top:0px !important; }
 }

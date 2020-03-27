@@ -1,0 +1,504 @@
+/*
+Copyright 2020 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*
+=============
+MAIN ELEMENTS
+=============
+*/
+<%-(rootcss||'body')%> { 
+	background-color: #fff; 
+	color: #333;  /*202020*/
+	margin:0px;
+	padding:0px;
+}
+<%-(rootcss||'body')%>, 
+<%-rootcss%> p, 
+<%-rootcss%> ol, 
+<%-rootcss%> ul, 
+<%-rootcss%> td {
+  font-family: 'Roboto', arial, helvetica, sans-serif;
+  font-size:   13px;
+  line-height: 18px;
+}
+<%-rootcss%> pre {
+  background-color: #eee;
+  padding: 10px;
+  font-size: 11px;
+}
+<%-rootcss%> a,
+<%-rootcss%> .link { color: #6b8ed6; text-decoration:none; }
+<%-rootcss%> a:visited { color: #6b8ed6; }
+<%-rootcss%> a:hover { text-decoration:underline;}
+<%-rootcss%> h1{
+	font-family: 'PT Sans', arial, helvetica, sans-serif;
+	color:#555;
+	font-size:24px;
+	margin:0;
+	padding:0 0 19px 0;
+	font-weight:normal;
+}
+<%-rootcss%> h2{
+	font-family: 'PT Sans', arial, helvetica, sans-serif;
+	color:#555;
+	font-size:19px;
+	margin:0px 0 0px 0;
+	padding:0 0 15px 0;
+	font-weight:bold;
+}
+<%-rootcss%> p {
+	margin:0;
+  padding:0 0 22px 0;
+	line-height:1.4em;
+}
+<%-rootcss%> input,
+<%-rootcss%> textarea {
+  font-family: 'PT Sans', arial, helvetica, sans-serif;
+	padding-left:3px;
+}
+<%-rootcss%> select {
+  padding-top:2px;
+  padding-bottom:2px;
+}
+
+/*
+======================
+HEADER AND TOP BUTTONS
+======================
+*/
+<%-rootcss%> .xmain{
+  width:100%;
+	min-width:1024px;
+  position:relative;
+  display:inline-block;
+}
+/*
+====
+BODY
+====
+*/
+<%-rootcss%> .xbody {
+	padding-top:21px;
+	padding-left:29px;
+/*	min-height:300px;*/
+  padding-bottom:30px;
+}
+<%-rootcss%> .xhead {
+  position:fixed;
+  top:0px;
+  left:0px;
+  width:100%;
+  z-index:1;
+  background-color:#24528F;
+  background-image:url('<%-req.jshsite.publicurl%>images/top.flat.png');
+  background-repeat:repeat-x;
+}
+<%-rootcss%> .xhead.unfixed {
+  position:relative;
+}
+<%-rootcss%> .bcrumbs { /* TODO */
+  color:#777;
+  font-size:13px;
+	margin-left:1px;
+	position:relative;
+	top:-4px;
+	padding-bottom:9px;
+}
+<%-rootcss%> .bcrumbs a{ /* TODO */
+  color:#777;
+  font-size:13px;
+}
+<%-rootcss%> .xtbl thead tr {
+	color:#999;
+}
+<%-rootcss%> .xtbl thead th {
+	text-align:left;
+	font-weight:normal;
+  color:#777;
+  background-color:#fff;
+  padding:7px 7px 6px 7px;
+  border-top:1px solid #ddd;
+  border-bottom:2px solid #ddd;
+	border-right:1px solid #ddd;
+	border-left:1px solid #ddd;
+}
+<%-rootcss%> .xtbl thead th a {
+	color:#777;
+	display:block;
+}
+<%-rootcss%> .xtbl tbody {
+  border-bottom: 1px solid #ddd;
+}
+<%-rootcss%> .xtbl tbody tr.even {
+	background-color:#f7f7f7;
+}
+<%-rootcss%> .xtbl tbody td {
+	border-left:1px solid #ddd;
+	border-right:1px solid #ddd;
+	padding:5px 7px 5px 7px;
+  vertical-align:text-top;
+  color: #333;
+}
+<%-rootcss%> .xtbl .xtbl_loadmore a {
+	display:block;
+	text-align:center;
+	padding:6px;
+	background-color:#fefefe;
+  border:1px solid #ddd;
+  color:#555;
+}
+<%-rootcss%> .xtbl td.xtbl_noresults a,
+<%-rootcss%> .xtbl td.xtbl_noresults a:visited {
+  color:#555;
+}
+<%-rootcss%> a.xtab,<%-rootcss%> a.xtab:visited{
+  background-color:#f2f2f2;
+  color:#555;
+	padding:5px 15px;
+	margin-right:1px;
+	border-top:1px solid #bbb;
+	border-left:1px solid #bbb;
+  border-right:1px solid #bbb;
+  transition: padding-right 0.5s,padding-left 0.5s;
+}
+<%-rootcss%> a.xtab.selected{
+  background-color:#fff;
+  color:#555;
+  padding-right: 20px;
+  padding-left: 20px;
+	
+}
+<%-rootcss%> a.xtab.selected:hover{
+	text-decoration:none;
+}
+<%-rootcss%> a.xtab.last{
+	margin-right:0;
+}
+<%-rootcss%> a.xtab.disabled{
+	background-color:#eeeeee;
+	color:#cccccc;
+}
+<%-rootcss%> a.xtab.disabled:hover{
+	text-decoration:none;
+}
+.xsubform.no-border > .xpanel {
+  border:0;
+}
+<%-rootcss%> .xpanel {
+	border-top:2px solid #bbb;
+	border-right:1px solid #bbb;
+	border-left:1px solid #bbb;
+	border-bottom:1px solid #bbb;
+	padding:10px;
+  min-height:20px;
+  display:table;
+  box-sizing: border-box;
+  width:100%;
+}
+<%-rootcss%> .xtabbody {
+  display:none;
+}
+<%-rootcss%> .xtabbody.selected {
+  display:block;
+}
+<%-rootcss%> .xactions a,
+<%-rootcss%> .xactions a:visited {
+  color: #555;
+}
+<%-rootcss%> .xcontext_menu { border-bottom:1px solid #ddd; }
+<%-rootcss%> .xcontext_menu a,
+<%-rootcss%> .xcontext_menu a:visited {
+  border-top:1px solid #ddd;
+  border-right:1px solid #ddd;
+  border-left:1px solid #ddd;
+  color: #555;
+}
+<%-rootcss%> .xcontext_menu a:hover {
+  background-color:#f7f7f7;
+}
+<%-rootcss%> input.uneditable,
+<%-rootcss%> select.uneditable,
+<%-rootcss%> textarea.uneditable,
+<%-rootcss%> .xtagbox.uneditable {
+	background-color:#f5f5f5;
+}
+<%-rootcss%> input.updated, 
+<%-rootcss%> select.updated, 
+<%-rootcss%> textarea.updated,
+<%-rootcss%> .xtagbox.updated,
+<%-rootcss%> input.uneditable.updated, 
+<%-rootcss%> select.uneditable.updated, 
+<%-rootcss%> textarea.uneditable.updated,
+<%-rootcss%> .xtagbox.uneditable.updated,
+<%-rootcss%> .xform_label.updated,
+<%-rootcss%> .xform_html.updated
+{
+	background-color:#fffedf;
+}
+<%-rootcss%> .xform_checkbox_container.updated {
+  background-color:#fffedf;
+}
+
+<%-rootcss%> .xloadingblock div .xloadingbox {
+  border:1px solid #ddd;
+  font-weight:400;
+  color:#777;
+}
+<%-rootcss%> .xdialogblock .xdialogbox {
+  border:1px solid #bbb;
+  font-weight:normal;
+  line-height:20px;
+  font-size:14px;
+}
+<%-rootcss%> .xtbl th.sortAsc a {
+  background-image: url('/images/arrow_up_gray.png');
+}
+<%-rootcss%> .xtbl th.sortDesc a {
+  background-image: url('/images/arrow_down_gray.png');
+}
+<%-rootcss%> a.linkbutton,
+<%-rootcss%> a.linkbutton:visited {
+  color: #333;
+}
+<%-rootcss%> .xform .htmlarea_container { border: none; }
+<%-rootcss%> .xform_ctrl.tree a.tree_item { color: #333; }
+<%-rootcss%> .xform_ctrl.tree { border-color: #ddd; }
+<%-rootcss%> .xform_ctrl.tree a.tree_item.selected { background-color:#f8f8f8; }
+<%-rootcss%> .xdebugconsole .res-ns{ height: 1px; }
+<%-rootcss%> .xdebugconsole .res-ew{ width: 1px; }
+<%-rootcss%> .xdebugconsole header{ background-color:#f2f2f2; }
+/***************************
+CUSTOM CONTROL STYLES
+***************************/
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_highlight { background-color:#ffff66; }
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_error { background-color:#ffb8b8; }
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_disabled,
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_disabled a { background-color:#ddd; color:#777; }
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_PREF { background-color:#c6d3ff; }
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_none { background-color:#ffffff; }
+
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_green { background-color:#c2ffb8; }
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_yellow { background-color:#fffeb8; }
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_red { background-color:#ffb8b8; }
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_gray { background-color:#cccccc; }
+
+<%-rootcss%> .xform_button { border:1px solid transparent; }
+<%-rootcss%> .xform_button.highlighted { background-color:yellow; border:1px dashed #666; }
+
+/***************************
+MENU STYLES
+***************************/
+<%-rootcss%> .xmenuhorizontal .xmenu {
+	padding-top:34px;
+	padding-left:370px;
+  min-height:60px;
+  z-index:3;
+  position:relative;
+}
+<%-rootcss%> .xmenuhorizontal .xmenu a{
+	font-family: 'PT Sans', arial, helvetica, sans-serif;
+	color:#ffffff;
+	text-decoration:none;
+	font-size:15px;
+	display:inline-block;
+	padding:14px 8px 27px 8px;
+	position:relative;
+	margin-right:7px;
+	margin-left:7px;
+}
+<%-rootcss%> .xmenuhorizontal .xmenu a:hover{
+	text-decoration:underline;
+}
+<%-rootcss%> .xmenuhorizontal .xmenu a .bottom{
+	display:none;
+}
+<%-rootcss%> .xmenuhorizontal .xmenu a.selected{
+/*	color:#000000;*/
+/*
+	background-image:url('<%-req.jshsite.publicurl%>images/menu_highlight_triangle.png');
+	background-repeat:no-repeat;
+  background-position:bottom center;
+*/
+}
+<%-rootcss%> .xmenuhorizontal .xmenu a.selected:hover{
+	text-decoration:none;
+}
+<%-rootcss%> .xmenuhorizontal .xmenu a.selected .bottom{
+	background-image:url('<%-req.jshsite.publicurl%>images/menu_highlight_bl.png');
+	width:6px;
+	height:10px;
+	display:block;
+	position:absolute;
+	top:52px;
+	left:-6px;
+}
+<%-rootcss%> .xmenuhorizontal .xmenu a.xmenu_more {
+  display:none;
+  position:absolute;
+  right:0px;
+  top:5px;
+  padding:0 0 0 1px;
+  background-image:none;
+  background-repeat:repeat-y;
+  margin-left:0px;
+  border-left:1px solid #00000033;
+}
+<%-rootcss%> .xmenuhorizontal .xmenu_more_bg {
+  padding:43px 22px 18px 28px;
+  background-position-y:-5px;
+  background-repeat:repeat-x;
+}
+<%-rootcss%> .xmenuhorizontal a.xmenu_more img {
+  position:relative;
+  top:-1px;
+  padding-left:4px;
+}
+<%-rootcss%> .xmenuhorizontal .xmenuside {
+  display:none;
+  position:absolute;
+  top:84px;
+  right:0px;
+  z-index:9999;
+}
+<%-rootcss%> .xmenuhorizontal .xmenuside a{
+  background-color:#24528F;
+  background-image:none;
+  text-align:center;
+  height:26px;
+  color:white;
+  display:block;
+  padding:6px 35px 0px 35px;
+  font-family: 'PT Sans', arial, helvetica, sans-serif;
+	color:#ffffff;
+	text-decoration:none;
+  font-size:15px;
+  border-top:1px solid #00000033;
+}
+<%-rootcss%> .xmenuhorizontal .xmenupaddle {
+  background-image:url('<%-req.jshsite.publicurl%>images/menu_highlight_triangle.png');
+	background-repeat:no-repeat;
+  background-position:bottom center;
+  width:209px;
+  height:18px;
+  top:0;
+  left:0;
+  position:absolute;
+  opacity:0;
+  z-indeX:10000;
+}
+<%-rootcss%> .xmenuhorizontal .xmenuside a:hover{
+  text-decoration:underline;
+}
+<%-rootcss%> .xmenuhorizontal .xmenuside a.selected {
+  color:#fff;
+	background-image:none;
+  height:25px;
+  padding-top:7px;
+}
+/* SUBMENU */
+<%-rootcss%> .xmenuhorizontal .xsubmenu{
+	padding-left:26px;
+  position:relative;
+}
+<%-rootcss%> .xmenuhorizontal .xsubmenu div { display:inline-block; }
+<%-rootcss%> .xmenuhorizontal .xsubmenu .head{
+	font-weight:bold;
+  padding-right:6px;
+}
+<%-rootcss%> .xmenuhorizontal .xsubmenu a {
+	font-family: 'PT Sans', arial, helvetica, sans-serif;
+	color:#202020;
+	text-decoration:none;
+  display:inline-block;
+}
+<%-rootcss%> .xmenuhorizontal .xsubmenu a.selected {
+  border-bottom:2px solid #777;
+  padding-bottom:2px;
+}
+<%-rootcss%> .xmenuhorizontal .xsubmenu a:hover {
+	text-decoration:underline;
+}
+<%-rootcss%> .xmenuhorizontal .xsubmenu a.selected:hover {
+	text-decoration:none;
+}
+<%-rootcss%> .xmenuhorizontal .xsubmenu .xsubmenu_more {
+  position:absolute;
+  display:block;
+  top:-8px;
+  right:0px;
+  padding:7px 29px 0 29px;
+  background-color:#f5f5f5;
+  border-left:1px solid #ccc;
+  border-right:1px solid #ccc;
+  height:23px;
+  z-index:2;
+}
+<%-rootcss%> .xmenuhorizontal .xsubmenuside {
+  position:absolute;
+  top:117px;
+  right:0px;
+  z-index:9998;
+}
+<%-rootcss%> .xmenuhorizontal .xsubmenuside a {
+  background-color:#f5f5f5;
+  text-align:left;
+  font-family: 'PT Sans', arial, helvetica, sans-serif;
+	color:#202020;
+	text-decoration:none;
+  display:block;
+  padding:6px 16px 5px 16px;
+  font-size:13px;
+  border-bottom:1px solid #ccc;
+  border-right:1px solid #ccc;
+  border-left:1px solid #ccc;
+}
+<%-rootcss%> .xmenuhorizontal .xsubmenuside a.selected {
+	border-left:6px solid #ccc;
+}
+<%-rootcss%> .xmenuhorizontal .xsubmenuside a:hover {
+	text-decoration:underline;
+}
+<%-rootcss%> .xmenuhorizontal .xsubmenuside a.selected:hover {
+	text-decoration:none;
+}
+<%-rootcss%> .xhead .xtoplinks {
+	background-color:#24528F;
+}
+<%-rootcss%> .xhead .xtoplinks {
+	background-color:#1d4b87;
+}
+<%-rootcss%> .xhead .xtoplinks:before{
+  border-top-color:#1d4b87;
+}
+
+/*
+================
+PRINT STYLESHEET
+================
+*/
+@media print {
+  <%-rootcss%> .xtbl thead th { 
+    color:#555; 
+    border:1px solid #ddd;
+  }
+  <%-rootcss%> .xbody { padding:20px 0 0 15px; }
+  <%-rootcss%> .xtbl thead th a { color:#555; }
+  <%-rootcss%> .xmenuhorizontal .xmenu { display:none !important; }
+  <%-rootcss%> .xmenuhorizontal .xsubmenu { display:none !important; }
+}

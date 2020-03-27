@@ -42,6 +42,8 @@ function jsHarmonySite(jsh, id, config){
   this.rootcss = '';
   //Whether to display debug information in the system errors (should be set to false for production)
   this.show_system_errors = true;
+  //Site title
+  this.title = '';
   //Salt used by cookieParser to prevent user from modifying cookie data
   this.cookiesalt = '';
   //Samesite setting override for jsHarmony cookie - strict / lax / none - default is lax

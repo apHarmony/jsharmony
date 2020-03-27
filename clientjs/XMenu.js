@@ -144,6 +144,9 @@ exports = module.exports = function(jsh){
         if(_this.paddleAnimation && (_this.paddleAnimation.opacity !== 0)){
           animateParams = { opacity: 0 };
         }
+        else if(!_this.paddleAnimation){
+          animateParams = { opacity: 0 };
+        }
       }
     }
     else{
