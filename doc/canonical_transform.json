@@ -1,0 +1,82 @@
+/*
+Copyright 2020 apHarmony
+
+This file is part of jsHarmony.
+
+jsHarmony is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jsHarmony is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this package.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+// Model Transforms
+// Used when model.inherits = self
+
+1. objects
+  a. add property to existing object
+    {"key": "value"}
+  b. remove property
+    {"key": "__REMOVEPROPERTY__"}
+  c. replace entire object
+    {
+      "__REPLACE__": true
+      "key": "value"
+    }
+  d. remove entire object
+    {
+      "__REMOVE__": true
+    }
+
+2. arrays
+  a. add element
+  [
+    {"key": "value", "__AFTER__": "name:ZZZZZZZZ"} //property match, end if no match
+    {"key": "value", "__AFTER__": 0} //index
+    {"key": "value", "__AFTER__": "__START__"} //to start of array
+    {"key": "value", "__AFTER__": "__END__"} //to end of array
+    {"key": "value"} //to end of array
+  ]
+  b. update element
+  [
+    {"__MATCH__": "name:ZZZZZ", "key": "value"}
+  ]
+  c. remove element
+  [
+    {"__MATCH__": "name:ZZZZZ", "__REMOVE__": true}
+  ]
+  d. replace element
+  [
+    {"__MATCH__": "name:ZZZZZ", "__REPLACE__": true, "key": "value"}
+  ]
+  e. reorder element
+  [
+    {"__MATCH__": "name:ZZZZZ", "__AFTER__": 0}
+  ]
+  f. replace entire array:
+  [
+    {"__MATCH__": "*", "__REMOVE__": true}
+    {"key": "value"}
+  ]
+  g. if this is a model.fields array - use "name" to match / overwrite fields
+
+3. strings
+  a. concatenate
+    {
+      "sql": {"__PREFIX__": "Prefix", "__SUFFIX__": "Suffix"}
+    }
+  b. replace
+    {
+      "sql": "New SQL"
+    }
+  c. remove
+    {
+      "sql": "__REMOVEPROPERTY__"
+    }

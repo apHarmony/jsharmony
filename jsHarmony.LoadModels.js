@@ -213,6 +213,7 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir, modu
   model['idmd5'] = crypto.createHash('md5').update(_this.Config.frontsalt + model.id).digest('hex');
   if('namespace' in model){ _this.LogInit_ERROR(model.id + ': "namespace" attribute should not be set, it is a read-only system parameter'); }
   model._inherits = [];
+  model._transforms = [];
   model._referencedby = [];
   model._parentmodels = { tab: {}, duplicate: {}, subform: {}, popuplov: {}, button: {} };
   model._parentbindings = {};
@@ -264,6 +265,14 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir, modu
   }
   if (!('helpid' in model) && !('inherits' in model)) model.helpid = modelname;
   if ('onroute' in model) model.onroute = (new Function('routetype', 'req', 'res', 'callback', 'require', 'jsh', 'modelid', 'params', model.onroute));
+  //Check if model inherits self - if so, add to _transforms
+  if((modelname in this.Models) && model.inherits){
+    var parentModel = _this.getModel(null,model.inherits,model);
+    if(parentModel===this.Models[modelname]){
+      parentModel._transforms.push(model);
+      return;
+    }
+  }
   this.Models[modelname] = model;
 };
 
@@ -334,9 +343,163 @@ exports.ParseInheritance = function () {
         _.each(_this.Models[model.id].fields, function(field){ if(!field) return; for (var prop in field) { if (field[prop] == '__REMOVEPROPERTY__') { delete field[prop]; } } });
         delete _this.Models[model.id].inherits;
       }
+      while(model._transforms && model._transforms.length){
+        var transform = model._transforms.shift();
+        _this.ApplyModelTransform(model, transform);
+      }
+      delete _this.Models[model.id]._transforms;
     });
   }
 };
+
+exports.ApplyModelTransform = function(model, transform){
+  var systemProperties = ['inherits','id','idmd5','_inherits','_transforms','_referencedby','_parentmodels','_parentbindings','_childbindings','_auto','_sysconfig','path','module','namespace','source_files_prefix','using','fields'];
+  //Append "using" references
+  _.each(transform.using, function(ref){ if(ref && !_.includes(model.using, ref)) model.using.push(ref); });
+  _.each(systemProperties, function(key){
+    if((key=='fields') && transform.fields && transform.fields.length) return;
+    delete transform[key];
+  });
+  this.MergeModelTransform(model, transform);
+  this.CleanTransform(model);
+}
+
+exports.CleanTransform = function(obj){
+  if(!obj) return;
+  if(_.isString(obj)) return;
+  else if(_.isArray(obj)){
+    for(var i=0;i<obj.length;i++){
+      if(obj.__MATCH__){
+        obj.splice(i,1);
+        i--;
+      }
+      else this.CleanTransform(obj[i]);
+    }
+  }
+  else{
+    for(var key in obj){
+      if(obj[key]){
+        if(obj[key]=='__REMOVEPROPERTY__') delete obj[key];
+        else if(obj[key].__REMOVE__) delete obj[key];
+        else if(obj[key].__PREFIX__||obj[key].__SUFFIX__) obj[key] = (obj[key].__PREFIX__||'') + (obj[key].__SUFFIX__||'');
+        else if(key=='__REPLACE__') delete obj[key];
+        else this.CleanTransform(obj[key]);
+      }
+    }
+  }
+}
+
+exports.TransformArrayMatch = function(arr, query, transform){
+  //Search through arr for query
+  if(!query || !arr) return false;
+  var _this = this;
+  var found = false;
+  var queryField = query.split(':');
+  if(query=='*') queryField = ['*','*'];
+  else if(queryField.length != 2) _this.LogInit_ERROR('Invalid transform __MATCH__ expression: ' + query);
+
+  for(var i=0;i<arr.length;i++){
+    var elem = arr[i];
+    //Check for match
+    var match = false;
+    if(query=='*') match = true;
+    else if(_.isObject(elem)){
+      if(queryField[0] in elem){
+        if((queryField[1]=='*')||(queryField[1]===elem[queryField[0]])) match = true;
+      }
+    }
+
+    if(match){
+      found = true;
+      if(transform){
+        if(transform.__REMOVE__){
+          //Remove item
+          arr.splice(i,1);
+          i--;
+        }
+        else if(transform.__REPLACE__){
+          //Replace item
+          arr[i] = JSON.parse(JSON.stringify(transform));
+          delete arr[i].__MATCH__;
+          delete arr[i].__REPLACE__;
+        }
+        else if(!_.isObject(elem)){
+          arr[i] = JSON.parse(JSON.stringify(transform));
+          delete arr[i].__MATCH__;
+        }
+        else _this.MergeModelTransform(elem, transform);
+      }
+    }
+  }
+  return found;
+}
+
+exports.MergeModelTransform = function(base, transform){
+  if(!base || !transform) return;
+  var _this = this;
+  for(var key in transform){
+    var bval = base[key];
+    var tval = transform[key];
+    if(key=='__MATCH__') continue;
+    else if(tval=='__REMOVEPROPERTY__') delete base[key];
+    else if(_.isArray(tval)){
+      if(_.isArray(bval)){
+        //Array Transform
+        for(var i=0;i<tval.length;i++){
+          var telem = tval[i];
+          if(_.isObject(telem)){
+            if(telem.__MATCH__){
+              //Apply match
+              _this.TransformArrayMatch(bval, telem.__MATCH__, telem);
+              tval.splice(i,1);
+              i--;
+              continue;
+            }
+            else if((key=='fields')&&telem.name){
+              //Apply based on name
+              var found = _this.TransformArrayMatch(bval, 'name:'+telem.name, telem);
+              if(found){
+                tval.splice(i,1);
+                i--;
+                continue;
+              }
+            }
+          }
+          //Add to array
+          bval.push(telem);
+        }
+      }
+      else base[key] = tval;
+      //Re-sort array
+      SortModelArray(base[key]);
+    }
+    else if(_.isObject(tval)){
+      //Object Transform
+      if(tval['__REMOVE__']) delete base[key];
+      else if(tval['__REPLACE__']){
+        delete tval['__REPLACE__'];
+        base[key] = tval;
+      }
+      else if(Helper.isNullUndefined(bval)) base[key] = tval;
+      else if(_.isString(bval)){
+        //String Transform
+        if(tval.__PREFIX__ || tval.__SUFFIX__){
+          if(!Helper.isNullUndefined(tval.__PREFIX__)) base[key] = tval.__PREFIX__.toString() + base[key];
+          if(!Helper.isNullUndefined(tval.__SUFFIX__)) base[key] = base[key] + tval.__SUFFIX__.toString();
+        }
+        else base[key] = tval;
+      }
+      else if(_.isArray(bval)){
+        base[key] = tval;
+      }
+      else if(_.isObject(bval)){
+        _this.MergeModelTransform(bval, tval);
+      }
+      else base[key] = tval;
+    }
+    else base[key] = tval;
+  }
+}
 
 function EntityPropMerge(mergedprops, prop, model, parent, mergefunc) {
   if ((prop in model) && (prop in parent)) mergedprops[prop] = mergefunc(model[prop], parent[prop]);
@@ -381,33 +544,56 @@ exports.MergeModelArray = function(newval, oldval, eachItem){
   return rslt;
 };
 
-function SortModelArray(fields){
+function SortModelArray(arr){
   var cnt = 0;
   do {
     cnt = 0;
-    for(let i = 0; i < fields.length; i++) {
-      var field = fields[i];
+    for(let i = 0; i < arr.length; i++) {
+      var elem = arr[i];
       var newidx = -1;
-      if('__AFTER__' in field){
+      if('__AFTER__' in elem){
         //Get position of new index
-        if(field['__AFTER__']=='__START__') newidx = 0;
-        else if(field['__AFTER__']=='__END__') newidx = fields.length;
-        else {
-          for(var j = 0; j < fields.length; j++){
-            if(fields[j].name == field['__AFTER__']){ 
-              if(j > i) newidx = j + 1;
-              else newidx = j; 
-              break; 
+        if(_.isInteger(elem['__AFTER__'])){
+          newidx = elem['__AFTER__'] + 1;
+          if(newidx > arr.length) newidx = arr.length;
+          //else if(newidx > i) newidx--; /* if moving forward, subtract 1 */
+        }
+        else if(elem['__AFTER__']=='__START__') newidx = 0;
+        else if(elem['__AFTER__']=='__END__') newidx = arr.length;
+        else if(_.isString(elem['__AFTER__'])){
+          if(elem['__AFTER__'].indexOf(':')>=0){
+            elemQuery = elem['__AFTER__'].split(':');
+            if(elemQuery.length == 2){
+              var qField = elemQuery[0];
+              var qVal = elemQuery[1];
+              for(var j = 0; j < arr.length; j++){
+                if(qField in arr[j]){
+                  if((qVal=='*') || (arr[j][qField] === qVal)){ 
+                    newidx = j + 1;
+                    //if(newidx > i) newidx--; /* if moving forward, subtract 1 */
+                    break; 
+                  }
+                }
+              }
+            }
+          }
+          if(newidx == -1){
+            for(var j = 0; j < arr.length; j++){
+              if(arr[j].name == elem['__AFTER__']){ 
+                newidx = j + 1;
+                //if(newidx > i) newidx--; /* if moving forward, subtract 1 */
+                break; 
+              }
             }
           }
         }
         if(newidx >= 0){
           cnt++;
-          delete field['__AFTER__'];
+          delete elem['__AFTER__'];
           if(newidx != i){
-            fields.splice(i, 1);
+            arr.splice(i, 1);
             if(newidx > i) newidx--;
-            fields.splice(newidx, 0, field);
+            arr.splice(newidx, 0, elem);
             if(newidx > i) i--;
           }
         }
@@ -1596,7 +1782,7 @@ exports.ParseEntities = function () {
     //Validate Model and Field Parameters
     var _v_model = [
       'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites', 'class', 'using',
-      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_referencedby', '_parentbindings', '_childbindings', '_parentmodels', '_auto', '_sysconfig', '_dbdef', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate', 'task', 'source_files_prefix',
+      'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_transforms', '_referencedby', '_parentbindings', '_childbindings', '_parentmodels', '_auto', '_sysconfig', '_dbdef', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate', 'task', 'source_files_prefix',
       'pagesettings', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_search', 'default_search', 'grid_static', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',

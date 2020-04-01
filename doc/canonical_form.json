@@ -390,6 +390,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "_basemodel": "CL" //Base parent model
   "_referencedby": ["C","C_CC"], //Forms that link to this form
   "_sysconfig": {},
+  "_transforms": [],
   "namespace": "jsHarmonyFactory",
   //Import external files
   "key": @importstr("sample.sql"),

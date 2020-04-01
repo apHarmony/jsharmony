@@ -35,6 +35,7 @@ var csv = require('csv');
 var jsHarmonyRouter = function (jsh, siteid) {
   if(!(siteid in jsh.Sites)) throw new Error('Site '+siteid+' not defined');
   var siteConfig = jsh.Sites[siteid];
+  siteConfig.processCustomRouting = processCustomRouting;
   siteConfig.Validate();
   var router = express.Router();
   router.jsh = jsh;

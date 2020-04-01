@@ -1398,6 +1398,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           field.validate[j] = XPage.ParseValidator(field.validate[j], model, field, field.actions);
         }
       }
+      if(!('caption' in field)){
+        if(_.includes(['subform','html','hidden'],field.control)) field.caption = '';
+        else if(_.includes(['linkbutton','button','label'],field.control) && ('value' in field)){
+          if(model.layout=='grid') field.caption = field.value;
+          else field.caption = '';
+        }
+        else if ('name' in field) {
+          field.caption = field.name;
+        }
+      }
+      if(_.includes(['linkbutton','button'],field.control) && ('caption' in field) && !('value' in field)) field.value = field.caption;
 
       //Apply one-column layout
       if(model.onecolumn && !('nl' in field)){

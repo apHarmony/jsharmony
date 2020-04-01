@@ -96,9 +96,9 @@ AppSrvModel.prototype.GetModel = function (req, res, fullmodelid) {
 
   if(!('action' in req.query) && (model.unbound || model.nokey)) req.query.action = 'update';
 
-  _this.genClientModel(req, res, fullmodelid, true, null, null, null, function(rslt){
+  _this.genClientModel(req, res, fullmodelid, { topmost: true, parentBindings: null, sourceModel: null, onComplete: function(rslt){
     if(_.isString(rslt)){
-      _this.genClientModel(req, res, 'jsHarmony/_BASE_HTML_MESSAGE', true, null, null, null, function(model){
+      _this.genClientModel(req, res, 'jsHarmony/_BASE_HTML_MESSAGE', { topmost: true, parentBindings: null, sourceModel: null, onComplete: function(model){
         if(_.isString(model)) return res.end(model);
         model = _.extend(model, { 
           id: fullmodelid, 
@@ -109,23 +109,55 @@ AppSrvModel.prototype.GetModel = function (req, res, fullmodelid) {
           ejs: rslt
         });
         res.end(JSON.stringify(model));
-      });
+      } });
       return;
     }
     else {
       res.end(JSON.stringify(rslt));
     }
-  });
+  } });
 };
 
-AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, parentBindings, sourceModel, options, onComplete) {
-  options = _.extend({ targetperm: undefined }, options);
+AppSrvModel.prototype.GetChildModel = function (req, res, modelid, options) {
+  options = _.extend({
+    topmost: undefined,
+    parentBindings: undefined,
+    sourceModel: undefined,
+    targetperm: undefined,
+    onComplete: undefined,
+  }, options);
+
   var _this = this;
   var jsh = this.AppSrv.jsh;
-  var model = jsh.getModel(req, modelid, sourceModel);
+
+  Helper.execif(!options.topmost && req && req.jshsite && req.jshsite.processCustomRouting,
+    function(f){
+      req.jshsite.processCustomRouting('model_child', req, res, jsh, modelid, function(){
+        f();
+      });
+    },
+    function(){
+      _this.genClientModel(req, res, modelid, options);
+    }
+  );
+}
+
+AppSrvModel.prototype.genClientModel = function (req, res, modelid, options) {
+  options = _.extend({
+    topmost: undefined,
+    parentBindings: undefined,
+    sourceModel: undefined,
+    targetperm: undefined,
+    onComplete: undefined,
+  }, options);
+  var _this = this;
+  var jsh = this.AppSrv.jsh;
+  var model = jsh.getModel(req, modelid, options.sourceModel);
+
   if(!model) throw new Error('Model ID not found: ' + modelid);
   var fullmodelid = model.id;
   
+  var onComplete = options.onComplete;
   var targetperm = '';
   if(typeof options.targetperm != 'undefined') targetperm = options.targetperm;
   else {
@@ -143,13 +175,13 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
   
   //Check if the bindings are based on the key value
   var allConstantBindings = true;
-  _.each(parentBindings, function(value, key){
+  _.each(options.parentBindings, function(value, key){
     if(typeof jsh.getStaticBinding(value) == 'undefined') allConstantBindings = false;
   });
   //If insert, and the model has any dynamic bindings, show message that the user needs to save first to edit the data
   if((targetperm=='I') && !Helper.hasModelAction(req, model, 'I')){
     if(!allConstantBindings) {
-      if(!topmost && _.includes(['exec','report','multisel'], model.layout)){ }
+      if(!options.topmost && _.includes(['exec','report','multisel'], model.layout)){ }
       else {
         return onComplete("<div>Please save to manage "+model.caption[1]+" data.</div>");
       }
@@ -181,7 +213,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
       if(model.commitlevel){
         if(model.commitlevel=='auto'){
           if(!Helper.hasModelAction(req, model, 'IUD')) rslt.commitlevel = 'none';
-          else if(topmost) rslt.commitlevel = 'row';
+          else if(options.topmost) rslt.commitlevel = 'row';
           else rslt.commitlevel = 'page';
         }
         else rslt.commitlevel = model.commitlevel;
@@ -189,7 +221,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
     },
     //Add Bindings
     function() {
-      if(parentBindings) rslt.bindings = parentBindings;
+      if(options.parentBindings) rslt.bindings = options.parentBindings;
       else if(model.bindings) rslt.bindings = model.bindings;
     },
     //General Data
@@ -394,11 +426,11 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
           rslttabs.push(rslttab);
         }
         //Get value of current tab
-        _this.genClientModel(req, res, req.curtabs[model.id], false, tabbindings, model, null, function(curtabmodel){
+        _this.GetChildModel(req, res, req.curtabs[model.id], { topmost: false, parentBindings: tabbindings, sourceModel: model, onComplete: function(curtabmodel){
           rslt.tabs = rslttabs;
           rslt.curtabmodel = curtabmodel;
           return cb();
-        });
+        } });
       }
       else return cb();
     },
@@ -409,7 +441,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
         var dmodelid = model.duplicate.target;
         var dmodel = jsh.getModel(req, dmodelid, model);
         if (!dmodel) { throw new Error('Duplicate Model ID not found: ' + dmodelid); }
-        _this.genClientModel(req, res, dmodelid, false, model.duplicate.bindings, model, null, function(dclientmodel){
+        _this.GetChildModel(req, res, dmodelid, { topmost: false, parentBindings: model.duplicate.bindings, sourceModel: model, onComplete: function(dclientmodel){
           if (!_.isString(dclientmodel)) {
             rslt.duplicate = {};
             rslt.duplicate.target = dmodelid;
@@ -454,7 +486,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
             }
           }
           return cb();
-        });
+        } });
       }
       else return cb();
     },
@@ -496,7 +528,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, topmost, par
 
     //Set up fields
     function(cb){
-      if (topmost) {
+      if (options.topmost) {
         rslt['topmost'] = 1;
         rslt['menu'] = '';
         copyValues(rslt, model, ['menu']);
@@ -646,7 +678,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
     }
     dstfield.validate = jsh.GetClientValidator(req, model, srcfield, dstfield.actions);
     if (('control' in dstfield) && ((dstfield.control == 'subform') || (dstfield.popuplov))) {
-      _this.genClientModel(req, res, srcfield.target, false, srcfield.bindings, model, { targetperm: (dstfield.popuplov ? 'B' : undefined) }, function(subform){
+      _this.GetChildModel(req, res, srcfield.target, { topmost: false, parentBindings: srcfield.bindings, sourceModel: model, targetperm: (dstfield.popuplov ? 'B' : undefined), onComplete: function(subform){
         if(srcfield.control=='subform'){
           //targetperm
           //field.actions (dstfield.actions
@@ -684,7 +716,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
         dstfield.model = subform;
         rslt.push(dstfield);
         return cb();
-      });
+      } });
     }
     else {
       rslt.push(dstfield);
