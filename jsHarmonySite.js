@@ -18,6 +18,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var _ = require('lodash');
+var crypto = require('crypto');
 var Helper = require('./lib/Helper.js');
 
 ///////////////
@@ -174,6 +175,29 @@ jsHarmonySite.prototype.Validate = function(){
     if(Helper.notset(_this.auth.on_auth)) _this.auth.on_auth = function(req, jsh, params, cb){ //cb(err, rslt)
       jsh.AppSrv.ExecMultiRecordset('login', req.jshsite.auth.sql_auth, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
     };
+    if(Helper.notset(_this.auth.on_authenticate)) _this.auth.on_authenticate = function(req, jsh, user_info, cb){ //cb(err, rslt)
+      var xpassword = '';
+      if ('password' in req.body) xpassword = req.body.password;
+      var prehash = crypto.createHash('sha1').update(user_info[jsh.map.user_id] + xpassword + req.jshsite.auth.salt).digest('hex');
+      if (user_info[jsh.map.user_hash] == null) {
+        if(jsh.Config.debug_params.auth_debug) jsh.Log('Login: DB Password empty', { source: 'authentication' });
+        cb('Invalid email address or password');
+      }
+      else {
+        var dbhash = user_info[jsh.map.user_hash].toString('hex');
+        if(jsh.Config.debug_params.auth_debug){
+          jsh.Log('Login DB Hash:     '+dbhash, { source: 'authentication' });
+          jsh.Log('Login Client Hash: '+prehash, { source: 'authentication' });
+        }
+        if (dbhash == prehash) {
+          cb(null, prehash);
+        }
+      }
+    }
+    if(Helper.notset(_this.auth.on_validate)) _this.auth.on_validate = function(req, jsh, user_info, cb){ //cb(err, rslt)
+      var dbhash = user_info[jsh.map.user_hash].toString('hex');
+      cb(null, dbhash);
+    }
   }
 
   if(!_this.cookie_samesite) _this.cookie_samesite = 'lax';
