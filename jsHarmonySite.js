@@ -194,6 +194,16 @@ jsHarmonySite.prototype.Validate = function(){
         }
       }
     }
+    if(Helper.notset(_this.auth.on_superauthenticate)) _this.auth.on_superauthenticate = function(req, jsh, admin_info, cb){ //cb(err, rslt)
+      var xpassword = '';
+      if ('password' in req.body) xpassword = req.body.password;
+      var prehash = crypto.createHash('sha1').update(admin_info[jsh.map.user_id] + xpassword + req.jshsite.auth.supersalt).digest('hex');
+      if ((admin_info[jsh.map.user_hash] != null) && (admin_info[jsh.map.user_hash].toString('hex') == prehash)) {
+        cb(null, prehash);
+        return;
+      }
+      else { cb('Invalid email address or password'); }
+    }
     if(Helper.notset(_this.auth.on_validate)) _this.auth.on_validate = function(req, jsh, user_info, cb){ //cb(err, rslt)
       var dbhash = user_info[jsh.map.user_hash].toString('hex');
       cb(null, dbhash);

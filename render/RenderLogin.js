@@ -125,16 +125,20 @@ exports = module.exports = function (req, res, onComplete) {
       req.jshsite.auth.on_superlogin(req, jsh, sqlparams, function (err, rslt) {
         if ((rslt != null) && (rslt.length == 1) && (rslt[0] != null) && (rslt[0].length == 1)) {
           var admin_info = rslt[0][0];
-          var prehash = crypto.createHash('sha1').update(admin_info[jsh.map.user_id] + xpassword + req.jshsite.auth.supersalt).digest('hex');
-          if ((admin_info[jsh.map.user_hash] != null) && (admin_info[jsh.map.user_hash].toString('hex') == prehash)) {
-            account.username = uemail;
-            loginfunc(true);
-            return;
-          }
-          else { verrors[''] = 'Invalid email address or password'; }
+          req.jshsite.auth.on_superauthenticate(req, jsh, admin_info, function(error, token) {
+            if (token) {
+              account.username = uemail;
+              loginfunc(true);
+            } else {
+              verrors[''] = error;
+              onComplete(RenderPage(req, jsh, account, source, verrors));
+            }
+          });
         }
-        else { verrors[''] = 'Invalid email address or password'; }
-        onComplete(RenderPage(req, jsh, account, source, verrors));
+        else {
+          verrors[''] = 'Invalid email address or password';
+          onComplete(RenderPage(req, jsh, account, source, verrors));
+        }
       });
     }
     else loginfunc(false);
