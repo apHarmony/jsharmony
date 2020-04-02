@@ -19,7 +19,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 // Canonical Example - Database Object
 {
-  "type": "table", //table, code, code2
+  "type": "table", //table, view, code, code2
   "caption": ["Branch", "Branches"],
   "columns": [
     { //Column 
@@ -45,10 +45,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     ["branch_name","branch_user_id"] //Multi-unique
   ],
   "index": [
-    { "columns": ["environment_id", "series_code"] }
+    { "columns": ["environment_id"] },
+    { "columns": ["environment_id", "series_code"] } //Multi-index
   ],
   "triggers": [
-    { "on": ["update", "insert"],
+    { "on": ["update", "insert","delete","validate_insert","validate_update"],
       "exec": [
         "set(branch_mtstmp,jsh.map.timestamp);"
         //set(field, value)
