@@ -30,9 +30,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   "task": {
     "commands": [
       //Can use @parameters in the following properties: sql, path, dest, data, email, jsharmony_txt, cmd
+      //Can use "js:" prefix to execute javascript in the following properties: sql, path, dest, data, email, jsharmony_txt, cmd
       //sql, js can be multiline array
       //Format { "exec": "...", "param1": "value1", "param2": "value2" }
-      //Paths can be absolute, or relative to datadir
+      //Paths can be absolute, or relative to datadir (except for shell.path - path can be set via cwd)
       /*
       sql (sql, db, into, foreach_row)
       sqltrans(db, for)

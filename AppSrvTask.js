@@ -85,7 +85,7 @@ AppSrvTaskLogger.prototype.log = function(model, loglevel, msg){
 AppSrvTaskLogger.prototype.sendErrorEmail = function(model, email_params, txt){
   var _this = this;
 
-  var email_to = email_params.to || !_this.jsh.Config.error_email;
+  var email_to = email_params.to || _this.jsh.Config.error_email;
   if(!email_to){ _this.jsh.Log.error('Could not send task error email - No TO address specified'); }
   if(!_this.jsh.SendEmail) return;
   if(_this.isSendingEmail){
@@ -102,7 +102,6 @@ AppSrvTaskLogger.prototype.sendErrorEmail = function(model, email_params, txt){
   _this.isSendingEmail = true;
   _this.jsh.SendEmail(mparams, function(){
     _this.isSendingEmail = false;
-    if(cb) cb();
   });
 }
 
@@ -233,6 +232,11 @@ AppSrvTask.prototype.replaceParams = function(params, val){
   var _this = this;
   //Traverse val
   if(_.isString(val)){
+    if(val.substr(0,3)=='js:'){
+      val = Helper.JSEval(val.substr(3), _this, {
+        jsh: _this.jsh
+      });
+    }
     return Helper.mapReplace(params, val, {
       getKey: function(key){ return '@' + key; },
       getValue: function(key){ return params[key].value; }
