@@ -2483,6 +2483,12 @@ exports = module.exports = function(jsh){
     }
     else return undefined;
   };
+  XExt.getSalt = function(len){
+    var rslt = "";
+    var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=][}{|~,.<>?";
+    for(var i=0;i<len;i++) rslt += chars.charAt(Math.floor(Math.random()*chars.length));
+    return rslt;
+  }
   XExt.Tick = function(f){
     window.setTimeout(f,1);
   }
