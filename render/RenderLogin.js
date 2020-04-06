@@ -19,6 +19,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 var ejs = require('ejs');
 var crypto = require('crypto');
+var async = require('async');
 var ejsext = require('../lib/ejsext.js');
 var Helper = require('../lib/Helper.js');
 var HelperFS = require('../lib/HelperFS.js');
@@ -48,7 +49,6 @@ exports = module.exports = function (req, res, onComplete) {
   
   if (req.method == 'POST') {
     var curtime = Date.now();
-    var good_login = false;
     var expiry = false;
     var ipaddr = req.connection.remoteAddress;
     account.remember = ('remember' in req.body);
@@ -66,47 +66,52 @@ exports = module.exports = function (req, res, onComplete) {
       req.jshsite.auth.on_login(req, jsh, sqlparams, function (err, rslt) {
         if ((rslt != null) && (rslt.length == 1) && (rslt[0].length == 1)) {
           var user_info = rslt[0][0];
-          var prehash = crypto.createHash('sha1').update(user_info[jsh.map.user_id] + xpassword + req.jshsite.auth.salt).digest('hex');
           if ((user_info[jsh.map.user_status]||'').toUpperCase() != 'ACTIVE') {
             if(jsh.Config.debug_params.auth_debug) jsh.Log('Login: User account not ACTIVE', { source: 'authentication' });
             verrors[''] = 'Your account has been suspended.  Please contact support at <a href="mailto:' + jsh.Config.support_email + '">' + jsh.Config.support_email + '</a> for more information'; 
           }
-          else if (user_info[jsh.map.user_hash] == null) { 
-            if(jsh.Config.debug_params.auth_debug) jsh.Log('Login: DB Password empty', { source: 'authentication' });
-            verrors[''] = 'Invalid email address or password'; 
-          }
           else {
-            var dbhash = user_info[jsh.map.user_hash].toString('hex');
-            if(jsh.Config.debug_params.auth_debug){
-              jsh.Log('Login DB Hash:     '+dbhash, { source: 'authentication' });
-              jsh.Log('Login Client Hash: '+prehash, { source: 'authentication' });
-            }
-            if (nopass) prehash = dbhash;
-            if (dbhash == prehash) {
-              var user_id = user_info[jsh.map.user_id];
-              good_login = true;
-              var pe_ll_tstmp = new Date();
-              account.tstmp = Helper.DateToSQLISO(pe_ll_tstmp);
-              account.password = crypto.createHash('sha1').update(prehash + account.tstmp).digest('hex');
-              var sqlparams = {};
-              sqlparams[jsh.map.user_last_ip] = ipaddr;
-              sqlparams[jsh.map.user_id] = user_id;
-              sqlparams[jsh.map.user_last_tstmp] = pe_ll_tstmp;
-              if(jsh.Config.debug_params.auth_debug) jsh.Log('Login: Success', { source: 'authentication' });
-              req.jshsite.auth.on_loginsuccess(req, jsh, sqlparams, function (err, rslt) {
-                if ((rslt != null) && (rslt.length == 1) && (rslt[0] != null) && (rslt[0][jsh.map.rowcount] == 1)) {
-                  Helper.ClearCookie(req, res, jsh, 'account', { 'path': req.baseurl });
-                  Helper.SetCookie(req, res, jsh, 'account', account, { 'expires': expiry, 'path': req.baseurl });
-                  Helper.Redirect302(res, source);
-                  onComplete(false);
-                  return;
+            (function(onAuthenticate){ //Perform Authentication
+              if (nopass) {
+                req.jshsite.auth.getTrustedToken(req, jsh, user_info, onAuthenticate);
+              } else {
+                req.jshsite.auth.validatePassword(req, jsh, user_info, xpassword, onAuthenticate);
+              }
+            })(
+              function(error, token) { //onAuthenticate
+                if (error) {
+                  verrors[''] = error;
+                  return onComplete(RenderPage(req, jsh, account, source, verrors));
                 }
-                else { verrors[''] = 'An unexpected error has occurred'; }
-                onComplete(RenderPage(req, jsh, account, source, verrors));
-              });
-              return;
-            }
-            else { verrors[''] = 'Invalid email address or password'; }
+                else if (token) {
+                  var user_id = user_info[jsh.map.user_id];
+                  var pe_ll_tstmp = new Date();
+                  account.tstmp = Helper.DateToSQLISO(pe_ll_tstmp);
+                  account.password = crypto.createHash('sha1').update(token + account.tstmp).digest('hex');
+                  var sqlparams = {};
+                  sqlparams[jsh.map.user_last_ip] = ipaddr;
+                  sqlparams[jsh.map.user_id] = user_id;
+                  sqlparams[jsh.map.user_last_tstmp] = pe_ll_tstmp;
+                  if(jsh.Config.debug_params.auth_debug) jsh.Log('Login: Success', { source: 'authentication' });
+                  req.jshsite.auth.on_loginsuccess(req, jsh, sqlparams, function (err, rslt) {
+                    if ((rslt != null) && (rslt.length == 1) && (rslt[0] != null) && (rslt[0][jsh.map.rowcount] == 1)) {
+                      Helper.ClearCookie(req, res, jsh, 'account', { 'path': req.baseurl });
+                      Helper.SetCookie(req, res, jsh, 'account', account, { 'expires': expiry, 'path': req.baseurl });
+                      Helper.Redirect302(res, source);
+                      return onComplete(false);
+                    }
+                    else {
+                      verrors[''] = 'An unexpected error has occurred';
+                      return onComplete(RenderPage(req, jsh, account, source, verrors));
+                    }
+                  });
+                }
+                else {
+                  verrors[''] = 'An unexpected error has occurred';
+                  return onComplete(RenderPage(req, jsh, account, source, verrors));
+                }
+              }
+            );
           }
         }
         else { 
@@ -115,8 +120,8 @@ exports = module.exports = function (req, res, onComplete) {
             if(err) jsh.Log(err);
           }
           verrors[''] = 'Invalid email address or password'; 
+          onComplete(RenderPage(req, jsh, account, source, verrors));
         }
-        onComplete(RenderPage(req, jsh, account, source, verrors));
       });
     }
     var superindex = account.username.indexOf(":");
@@ -128,16 +133,22 @@ exports = module.exports = function (req, res, onComplete) {
       req.jshsite.auth.on_superlogin(req, jsh, sqlparams, function (err, rslt) {
         if ((rslt != null) && (rslt.length == 1) && (rslt[0] != null) && (rslt[0].length == 1)) {
           var admin_info = rslt[0][0];
-          var prehash = crypto.createHash('sha1').update(admin_info[jsh.map.user_id] + xpassword + req.jshsite.auth.supersalt).digest('hex');
-          if ((admin_info[jsh.map.user_hash] != null) && (admin_info[jsh.map.user_hash].toString('hex') == prehash)) {
-            account.username = uemail;
-            loginfunc(true);
-            return;
-          }
-          else { verrors[''] = 'Invalid email address or password'; }
+          req.jshsite.auth.validateSuperPassword(req, jsh, admin_info, xpassword, function(error, token) {
+            if (error) {
+              verrors[''] = error;
+            }
+            else if (token) {
+              account.username = uemail;
+              loginfunc(true);
+              return;
+            }
+            onComplete(RenderPage(req, jsh, account, source, verrors));
+          });
         }
-        else { verrors[''] = 'Invalid email address or password'; }
-        onComplete(RenderPage(req, jsh, account, source, verrors));
+        else {
+          verrors[''] = 'Invalid email address or password';
+          onComplete(RenderPage(req, jsh, account, source, verrors));
+        }
       });
     }
     else loginfunc(false);

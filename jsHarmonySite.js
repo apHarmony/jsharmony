@@ -18,6 +18,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var _ = require('lodash');
+var crypto = require('crypto');
 var Helper = require('./lib/Helper.js');
 
 ///////////////
@@ -75,6 +76,9 @@ function jsHarmonySite(jsh, id, config){
     onRenderLoginForgotPassword: function (req, res, onComplete) { },
     onRenderLoginForgotPasswordReset: function (req, res, onComplete) { },
     onRenderLogout: function (req, res, onComplete) { },
+    getTrustedToken: function (req, jsh, user_info, cb) { },   //cb = function(err, token){ }
+    validatePassword: function (req, jsh, user_info, password, cb) { },   //cb = function(err, token){ }
+    validateSuperPassword: function (req, jsh, admin_info, password, cb) { },   //cb = function(err, token){ }
     allow_insecure_http_logins: false,
     on_auth: function(req, jsh, params, cb){ /*cb(err, rslt)* / },
     on_login: function(req, jsh, params, cb){ /*cb(err, rslt)* / },
@@ -176,6 +180,35 @@ jsHarmonySite.prototype.Validate = function(){
     if(Helper.notset(_this.auth.on_auth)) _this.auth.on_auth = function(req, jsh, params, cb){ //cb(err, rslt)
       jsh.AppSrv.ExecMultiRecordset('login', req.jshsite.auth.sql_auth, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
     };
+    if(Helper.notset(_this.auth.validatePassword)) _this.auth.validatePassword = function(req, jsh, user_info, password, cb){ //cb(err, token)
+      var prehash = crypto.createHash('sha1').update(user_info[jsh.map.user_id] + password + req.jshsite.auth.salt).digest('hex');
+      if (user_info[jsh.map.user_hash] == null) {
+        if(jsh.Config.debug_params.auth_debug) jsh.Log('Login: DB Password empty', { source: 'authentication' });
+        cb('Invalid email address or password');
+      }
+      else {
+        var dbhash = user_info[jsh.map.user_hash].toString('hex');
+        if(jsh.Config.debug_params.auth_debug){
+          jsh.Log('Login DB Hash:     '+dbhash, { source: 'authentication' });
+          jsh.Log('Login Client Hash: '+prehash, { source: 'authentication' });
+        }
+        if (dbhash == prehash) {
+          cb(null, prehash);
+        }
+      }
+    }
+    if(Helper.notset(_this.auth.validateSuperPassword)) _this.auth.validateSuperPassword = function(req, jsh, admin_info, password, cb){ //cb(err, token)
+      var prehash = crypto.createHash('sha1').update(admin_info[jsh.map.user_id] + password + req.jshsite.auth.supersalt).digest('hex');
+      if ((admin_info[jsh.map.user_hash] != null) && (admin_info[jsh.map.user_hash].toString('hex') == prehash)) {
+        cb(null, prehash);
+        return;
+      }
+      else { cb('Invalid email address or password'); }
+    }
+    if(Helper.notset(_this.auth.getTrustedToken)) _this.auth.getTrustedToken = function(req, jsh, user_info, cb){ //cb(err, token)
+      var dbhash = user_info[jsh.map.user_hash].toString('hex');
+      cb(null, dbhash);
+    }
   }
 
   if(!_this.cookie_samesite) _this.cookie_samesite = 'lax';
