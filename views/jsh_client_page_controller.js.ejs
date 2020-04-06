@@ -462,6 +462,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   XPage.Destroy = function() {
+    jsh.trigger('jsh_pageDestroy');
     XPage.unbindEvents();
     for(var key in jsh.App){
       var elem = jsh.App[key];
@@ -487,6 +488,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   XPage.unbindEvents = function() {
     jsh.off('jsh_ready');
     jsh.off('jsh_message');
+    jsh.off('jsh_pageDestroy');
     jsh.off('jsh_mouseDragBegin');
     jsh.off('jsh_mouseDrag');
     jsh.off('jsh_mouseDragEnd');

@@ -23,6 +23,8 @@ var _ = require('lodash');
 exports = module.exports = function(jsh){
 
   function XGrid(options){
+    var _this = this;
+
     if(_.isString(options)) options = { modelid: options };
     options = _.extend({
       modelid: undefined,
@@ -68,7 +70,10 @@ exports = module.exports = function(jsh){
     this.RowCount = 0;
     this.RowLimit = 0;
     this.AutoLoadMore = true;
-    if(this.Paging) this.EnableScrollUpdate();
+    if(this.Paging){
+      this.EnableScrollUpdate();
+      if(jsh) jsh.on('jsh_pageDestroy', function(){ _this.Destroy(); });
+    }
     this.IsLoading = false;
     this.TemplateHTMLFunc = null;
     this.LastColumns = new Array(); //Used in Tool Search
