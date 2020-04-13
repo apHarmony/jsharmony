@@ -331,6 +331,7 @@ exports.ParseInheritance = function () {
           return _this.MergeModelArray(newval, oldval);
         });
         EntityPropMerge(mergedprops, 'reportdata', model, parentmodel, function (newval, oldval) { return _.extend({}, oldval, newval); });
+        EntityPropMerge(mergedprops, 'ejs', model, parentmodel, function (newval, oldval) { return oldval + '\r\n' + newval; });
         EntityPropMerge(mergedprops, 'js', model, parentmodel, function (newval, oldval) { return oldval + '\r\n' + newval; });
         EntityPropMerge(mergedprops, 'css', model, parentmodel, function (newval, oldval) { return oldval + '\r\n' + newval; });
         EntityPropMerge(mergedprops, 'fonts', model, parentmodel, function (newval, oldval) { return (oldval||[]).concat(newval||[]); });
