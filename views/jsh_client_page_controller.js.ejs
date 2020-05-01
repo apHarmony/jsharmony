@@ -1395,6 +1395,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         if(_.includes(['html','button','linkbutton','file_download','image'], field.control)) field.actions = 'B';
         else field.actions = 'BIU';
       }
+      if(field.always_editable) field.actions = 'BIU';
+      else field.actions = XExt.xejs.getActions(model.actions, field.actions);
       if(field.validate){
         for(var j=0;j<field.validate.length;j++){
           field.validate[j] = XPage.ParseValidator(field.validate[j], model, field, field.actions);
