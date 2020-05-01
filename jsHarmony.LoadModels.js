@@ -276,7 +276,7 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir, modu
   this.Models[modelname] = model;
 };
 
-exports.ParseInheritance = function () {
+exports.ParseModelInheritance = function () {
   var _this = this;
   var foundinheritance = true;
   //Add model groups

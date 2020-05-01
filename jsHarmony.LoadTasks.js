@@ -147,7 +147,7 @@ exports.ParseTaskCommand = function(model, command, params){
     }
   }
   else if(command.exec == 'read_csv'){
-    validateCommandProperties(['path','into','foreach_row','headers','fields']);
+    validateCommandProperties(['path','into','foreach_row','headers','fields','pipe','csv_options']);
     parseChildCommands('read_csv', 'foreach_row', 'row');
   }
   else if(command.exec == 'shell'){

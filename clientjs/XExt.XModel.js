@@ -234,10 +234,12 @@ exports = module.exports = function(jsh){
       if(lovTxt) val = lovTxt;
       if(jctrl.hasClass('xform_label_static')){
         if(field.value && field.value.indexOf('<#')>=0){
+          var baseval = val;
           val = field.value;
           val = val.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
           val = jsh.XExt.renderEJS(val, modelid, {
-            data: _this
+            data: _this,
+            val: baseval,
           });
           jctrl.html(val);
           showLabel = !!val;
@@ -265,8 +267,9 @@ exports = module.exports = function(jsh){
       var lov_matches = jctrl.children('option').filter(function () { return String($(this).val()).toUpperCase() == String(val).toUpperCase(); }).length;
       var has_lov = (lov_matches > 0);
       var has_parent = (('lovparent' in field) || ('lovparents' in field));
-      //If has parent and item missing, don't set the value
-      if (has_lov || !has_parent) {
+      //If has parent and item missing, don't set the value, unless it is read-only
+      var form_action = (_this._is_insert?'I':'U');
+      if (has_lov || !has_parent || !jsh.XExt.hasAction(field.actions, form_action)) {
         if (!has_lov) {
           var codtxt = _this['__' + jsh.uimap.code_txt + '__' + field.name];
           if (!codtxt) codtxt = val;

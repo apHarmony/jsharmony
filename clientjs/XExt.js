@@ -2598,10 +2598,13 @@ exports = module.exports = function(jsh){
     jtabbuttons.on('click', function(){
       var jtabbutton = $(this);
       if(jtabbutton.hasClass('selected')) return;
+      var tabFor = jtabbutton.attr('for');
       jtabbuttons.removeClass('selected');
-      jtabpanels.removeClass('selected');
       jtabbutton.addClass('selected');
-      jtabpanels.filter('.'+jtabbutton.attr('for')).addClass('selected');
+      if(tabFor){
+        jtabpanels.removeClass('selected');
+        jtabpanels.filter('.'+tabFor).addClass('selected');
+      }
     });
     if(!jtabbuttons.filter('.selected').length) jtabbuttons.first().addClass('selected');
     jtabpanels.filter('.'+jtabbuttons.filter('.selected').attr('for')).addClass('selected');

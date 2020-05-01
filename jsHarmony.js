@@ -219,6 +219,8 @@ jsHarmony.prototype.Init = function(init_cb){
 
       if(!_this.Config.silentStart) _this.Log.console('Loading models...');
       _this.LoadDBSchemas(cb);
+      _this.ParseSQLObjectInheritance();
+      _this.ParseSQLObjects();
     },
     function(cb){
       //Configure Mailer
@@ -255,7 +257,7 @@ jsHarmony.prototype.Init = function(init_cb){
       _this.LogInit_PERFORMANCE('Parsing Models '+(Date.now()-_this.Statistics.StartTime));
       _this.ParseMacros();
       _this.ParseDeprecated();
-      _this.ParseInheritance();
+      _this.ParseModelInheritance();
       _this.ParseEntities();
       _this.ParsePopups();
       

@@ -916,7 +916,7 @@ AppSrvTask.prototype.exec_append_csv = function(model, command, params, options,
 }
 
 AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, command_cb){
-  //read_csv (path, into, foreach_row, fields, headers)
+  //read_csv (path, into, foreach_row, fields, headers, pipe, csv_options)
 
   var _this = this;
 
@@ -933,16 +933,25 @@ AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, c
   if(command.fields){
     column_headers = _.map(command.fields, function(field){ if(_.isString(field)) return field; return field.name });
   }
-  var csvparser = csv.parse({ columns: column_headers, relax_column_count: true });
+  var csv_options = command.csv_options || {};
+  var csvparser = csv.parse(_.extend({ columns: column_headers, relax_column_count: true }, csv_options));
   var hasError = false;
   var hasReadable = false;
   var hasFinished = false;
   var f = fs.createReadStream(fpath);
+  if(command.pipe){
+    var fpipe = Helper.JSEval(command.pipe, _this, {
+      jsh: _this.jsh
+    });
+    f = f.pipe(fpipe);
+  }
 
   options.exec_counter.push(0);
+  var rowcnt = 0;
 
   function processRow(row_cb){
     if(hasError) return;
+    rowcnt++;
 
     var row = csvparser.read();
     if(row===null){ hasReadable = false; return true; }
@@ -968,7 +977,11 @@ AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, c
 
     options.exec_counter[options.exec_counter.length-1]++;
     _this.exec_commands(model, command.foreach_row, rowparams, options, function(err){
-      return row_cb(err);
+      Helper.execif(rowcnt%10==0, function(f){
+        setTimeout(f,1);
+      }, function(){
+        return row_cb(err);
+      });
     });
   }
 
