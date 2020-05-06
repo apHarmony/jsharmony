@@ -184,7 +184,6 @@ jsHarmonySite.prototype.Validate = function(){
       var prehash = crypto.createHash('sha1').update(user_info[jsh.map.user_id] + password + req.jshsite.auth.salt).digest('hex');
       if (user_info[jsh.map.user_hash] == null) {
         if(jsh.Config.debug_params.auth_debug) jsh.Log('Login: DB Password empty', { source: 'authentication' });
-        cb('Invalid email address or password');
       }
       else {
         var dbhash = user_info[jsh.map.user_hash].toString('hex');
@@ -193,9 +192,10 @@ jsHarmonySite.prototype.Validate = function(){
           jsh.Log('Login Client Hash: '+prehash, { source: 'authentication' });
         }
         if (dbhash == prehash) {
-          cb(null, prehash);
+          return cb(null, prehash);
         }
       }
+      return cb('Invalid email address or password');
     }
     if(Helper.notset(_this.auth.validateSuperPassword)) _this.auth.validateSuperPassword = function(req, jsh, admin_info, password, cb){ //cb(err, token)
       var prehash = crypto.createHash('sha1').update(admin_info[jsh.map.user_id] + password + req.jshsite.auth.supersalt).digest('hex');
