@@ -50,7 +50,7 @@ exports = module.exports = function (req, res, onComplete){
     req._DBContext = 'loginforgotpassword';
     var sqlparams = {};
     sqlparams[jsh.map.user_email] = fdata.username;
-    req.jshsite.auth.on_auth(req, jsh, sqlparams, function (err, rslt) {
+    req.jshsite.auth.on_auth(req, jsh, fdata, sqlparams, function (err, rslt) {
       if ((rslt != null) && (rslt.length == 1) && (rslt[0].length == 2) && (rslt[0][0].length >= 1)) {
         var all_suspended = true;
         for (var i = 0; i < rslt[0][0].length; i++) {

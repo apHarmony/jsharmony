@@ -219,6 +219,7 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
     
     this.ExecRow(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt) {
       //Get extension, filename
+      if(err) jsh.Log.error(err);
       if ((rslt == null) || (rslt.length != 1) || (rslt[0] == null)) { return Helper.GenError(req, res, -33, 'Download file not found.'); }
       var fname = keyid;
       if ('file_name' in field.controlparams.sqlparams) { fname = rslt[0][field.controlparams.sqlparams.file_name]; }

@@ -63,7 +63,7 @@ function jsHarmonySite(jsh, id, config){
     getuser_name: function (user_info, jsh) { return user_info[jsh.map.user_firstname] + ' ' + user_info[jsh.map.user_lastname]; },
     getContextUser: function (user_info, jsh) { return 'S' + user_info[jsh.map.user_id]; },
     onAuthComplete: function (req, user_info, jsh, onSuccess) { onSuccess(); },
-    preprocess_account: function (AppSrv, account, onComplete, onFail) { onComplete(); },
+    preprocess_account: function (AppSrv, account, onComplete, onFail, req) { onComplete(); },
     getToken = function (AppSrv, req, cb) {
       cb({
         __auth_user_id: req.user_id,
@@ -80,7 +80,7 @@ function jsHarmonySite(jsh, id, config){
     validatePassword: function (req, jsh, user_info, password, cb) { },   //cb = function(err, token){ }
     validateSuperPassword: function (req, jsh, admin_info, password, cb) { },   //cb = function(err, token){ }
     allow_insecure_http_logins: false,
-    on_auth: function(req, jsh, params, cb){ /*cb(err, rslt)* / },
+    on_auth: function(req, jsh, account, params, cb){ /*cb(err, rslt)* / },
     on_login: function(req, jsh, params, cb){ /*cb(err, rslt)* / },
     on_loginsuccess: function(req, jsh, params, cb){ /*cb(err, rslt)* / },
     on_superlogin: function(req, jsh, params, cb){ /*cb(err, rslt)* / },
@@ -177,7 +177,7 @@ jsHarmonySite.prototype.Validate = function(){
       if(_this.auth.getContextUser) context = _this.auth.getContextUser(params, jsh);
       jsh.AppSrv.ExecRow(context, req.jshsite.auth.sql_passwordreset, [jsh.AppSrv.DB.types.VarBinary(200), jsh.AppSrv.DB.types.VarChar(255), jsh.AppSrv.DB.types.BigInt, jsh.AppSrv.DB.types.DateTime(7)], params, cb);
     };
-    if(Helper.notset(_this.auth.on_auth)) _this.auth.on_auth = function(req, jsh, params, cb){ //cb(err, rslt)
+    if(Helper.notset(_this.auth.on_auth)) _this.auth.on_auth = function(req, jsh, account, params, cb){ //cb(err, rslt)
       jsh.AppSrv.ExecMultiRecordset('login', req.jshsite.auth.sql_auth, [jsh.AppSrv.DB.types.VarChar(255)], params, cb);
     };
     if(Helper.notset(_this.auth.validatePassword)) _this.auth.validatePassword = function(req, jsh, user_info, password, cb){ //cb(err, token)
