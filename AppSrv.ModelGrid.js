@@ -312,7 +312,7 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid) {
     //Add header
     if (rslt[fullmodelid].length > 0) {
       var header = {};
-      var frow = rslt[fullmodelid][0];
+      var frow = _.extend({}, rslt[fullmodelid][0]);
       for (var fcol in frow) {
         //Ignore columns that should not be exported
         if(!_.includes(exportColumns, fcol)){ delete frow[fcol]; continue; }
@@ -326,6 +326,8 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid) {
         else header[fcol] = fcol;
       }
       rslt[fullmodelid].unshift(header);
+      var dataidx = 1;
+      //If data was truncated, add notification row
       if (!eof) {
         var eofrow = {};
         for (var fcol in frow) {
@@ -336,15 +338,17 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid) {
           break;
         }
         rslt[fullmodelid].unshift(eofrow);
+        dataidx++;
       }
-      //Escape Dates
-      for (var i = 1; i < rslt[fullmodelid].length; i++) {
+      //Process data
+      for (var i = dataidx; i < rslt[fullmodelid].length; i++) {
         var crow = rslt[fullmodelid][i];
         for (ccol in crow) {
           if(!ccol) continue;
           //Overwrite code_val with code_txt
           if(Helper.beginsWith(ccol, '__'+jsh.map.code_txt+'__')){
-            crow[ccol.substr(jsh.map.code_txt.length+4)] = crow[ccol];
+            var lovval = crow[ccol];
+            if(lovval !== null) crow[ccol.substr(jsh.map.code_txt.length+4)] = crow[ccol];
           }
           //Replace Dates with ISO String
           if (_.isDate(crow[ccol])) {
