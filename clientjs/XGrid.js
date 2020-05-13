@@ -105,7 +105,8 @@ exports = module.exports = function(jsh){
   }
 
   //Passing 0,-1 for rowcount will return total rowcount
-  XGrid.prototype.Load = function(rowstart,rowcount,onComplete,getCSV,onFail){
+  XGrid.prototype.Load = function(rowstart,rowcount,onComplete,getCSV,onFail,options){
+    options = _.extend({ /* params: { ... } */}, options);
     if(this.IsLoading){
       return;
     }
@@ -131,6 +132,7 @@ exports = module.exports = function(jsh){
       _this.DBRowCount = -1;
       reqdata.getcount = 1;
     }
+    if(options.params) _.extend(reqdata, options.params);
     if (getCSV) {
       this.IsLoading = false;
       this.API.ExportCSV(reqdata, onComplete);
