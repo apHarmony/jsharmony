@@ -51,7 +51,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
   <script class="xmultisel_<%=model.class%>_template" type="text/x-ejs-template">
     <%% for(var j=0;j<datatable.length;j++){ let datarow=datatable[j]; let data = datarow; %%>
     <tr class="<%%=(j%2==1?'even':'odd')%%>">
-      <td align="center" style="vertical-align:middle;"><div class="xform_ctrl xform_checkbox_container xelem<%=model.class%>"><input type="checkbox" class="xselitem xform_ctrl checkbox xelem<%=model.class%> <%-xejs.iif(!XExt.hasAction(model.actions,'IU'),'uneditable','editable')%>" value="<%%=data[jsh.uimap.code_val]%%>" <%-xejs.iif(!XExt.hasAction(model.actions,'IU'),'disabled="disabled"')%> <%% if(data['<%=lovfield%>']!==null){ %%>checked="checked"<%% } %%> data-orig-checked="<%% if(data['<%=lovfield%>']!==null){ %%>checked<%% } %%>" /></div></td>
+      <td align="center"><div class="xform_ctrl xform_checkbox_container xelem<%=model.class%>"><input type="checkbox" class="xselitem xform_ctrl checkbox xelem<%=model.class%> <%-xejs.iif(!XExt.hasAction(model.actions,'IU'),'uneditable','editable')%>" value="<%%=data[jsh.uimap.code_val]%%>" <%-xejs.iif(!XExt.hasAction(model.actions,'IU'),'disabled="disabled"')%> <%% if(data['<%=lovfield%>']!==null){ %%>checked="checked"<%% } %%> data-orig-checked="<%% if(data['<%=lovfield%>']!==null){ %%>checked<%% } %%>" /></div></td>
     <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i]; 
       if(!('caption' in field)) continue; 
       if(!('actions' in field)) continue; 

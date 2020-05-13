@@ -85,6 +85,7 @@ exports = module.exports = function(jsh){
     this.OnRowBind = null;
     this.OnMetaData = null; //(data)
     this.OnDBRowCount = null;
+    this.OnDestroyingRows = null; //(jobj)
     this.OnResetDataSet = null; //()
     this.OnRender = null; //(ejssource,data,cb)
     this.OnLoadMoreData = null; //()
@@ -207,6 +208,7 @@ exports = module.exports = function(jsh){
       }
       if ((data[this.modelid].length == 0) && ((_this.NoResultsMessage) || (_this.RequireSearch && _this.RequireSearchMessage))) {
         _this.EOF = true;
+        if (_this.OnDestroyingRows) _this.OnDestroyingRows(jsh.$root(_this.PlaceholderID).children());
         _this.RenderNoResultsMessage({ search: (((reqdata.search||'').trim()) || ((reqdata.searchjson||'').trim())) });
         _this.RowCount = 0;
         if (_this.OnResetDataSet) _this.OnResetDataSet(data);
@@ -225,6 +227,7 @@ exports = module.exports = function(jsh){
         else ejssource = jsh.$root(_this.TemplateID).html();
         
         if (rowstart == 0) {
+          if (_this.OnDestroyingRows) _this.OnDestroyingRows(jsh.$root(_this.PlaceholderID).children());
           jsh.$root(_this.PlaceholderID).empty();
           _this.RowCount = 0;
           if (_this.OnResetDataSet) _this.OnResetDataSet(data);

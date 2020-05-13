@@ -163,11 +163,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       }
       initialLoad = false;
 
+      jsh.XPage.PreDestroy();
       jsh.XModels = {};
       jsh.XBase = {};
       var ejsrslt = jsh.Render(model);
       //console.log(ejsrslt); //Show Full Source
-      jsh.XPage.PreDestroy();
       jsh.$root('.xbody').html('');
       jsh.XPage.Destroy();
 

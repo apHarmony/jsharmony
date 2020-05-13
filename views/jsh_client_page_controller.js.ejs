@@ -451,6 +451,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   XPage.PreDestroy = function() {
     //Call OnDestroy Handlers
     _.each(jsh.XModels, function (xmodel) {
+      if (xmodel.controller && xmodel.controller.OnDestroy) xmodel.controller.OnDestroy();
       if (typeof xmodel.ondestroy != 'undefined') xmodel.ondestroy(xmodel);
     });
     //Clear CKEDITORs
@@ -1397,12 +1398,16 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       }
       if(field.always_editable) field.actions = 'BIU';
       else field.actions = XExt.xejs.getActions(model.actions, field.actions);
+      if(!('control' in field)){
+        if(field.value) field.control = 'html';
+        else if(XExt.hasAction(field.actions, 'B')) field.control = 'label';
+      }
       if(field.validate){
         for(var j=0;j<field.validate.length;j++){
           field.validate[j] = XPage.ParseValidator(field.validate[j], model, field, field.actions);
         }
       }
-      if(!('caption' in field)){
+      if(!('caption' in field) || (typeof field.caption == 'undefined')){
         if(_.includes(['subform','html','hidden'],field.control)) field.caption = '';
         else if(_.includes(['linkbutton','button','label'],field.control) && ('value' in field)){
           if(model.layout=='grid') field.caption = field.value;

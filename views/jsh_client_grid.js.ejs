@@ -120,6 +120,13 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       xmodel.datamodel.prototype.BindLOV(xform,jobj);
       if(xmodel.onrowbind) xmodel.onrowbind(xmodel,jobj,datarow);
     };
+    xgrid.OnDestroyingRows = function(jobj){
+      if(!xeditablegrid) return;
+      jobj.filter('tr[data-id]').each(function(){
+        var jobj = $(this);
+        if(xmodel.onrowunbind) xmodel.onrowunbind(xmodel,jobj,jobj.data('id'));
+      });
+    }
     xgrid.OnMetaData = function(data){ xform.LOVs = this.LOVs; xform.defaults = this.defaults; xform.title = this.title; }
     xgrid.OnDBRowCount = function(data){ xcontroller.UpdateTitleCaption(); };
     xgrid.OnResetDataSet = function(data){
@@ -319,6 +326,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     callback();
   }
 
+  xcontroller.OnDestroy = function(){
+    if(!xeditablegrid) return;
+    jsh.$root(xgrid.PlaceholderID).find("tr[data-id]").each(function(){
+      var jobj = $(this);
+      if(xmodel.onrowunbind) xmodel.onrowunbind(xmodel,jobj,jobj.data('id'));
+    });
+  }
+
   xcontroller.OnCommit = function(rowid,obj,onsuccess,oncancel){
     var dbtasks = xform.PrepSaveDataSet();
     
@@ -421,6 +436,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
             datatable: [_this.DataSet[rowid]], 
           });
           var jobj = jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']");
+          if(xmodel.onrowunbind) xmodel.onrowunbind(xmodel,jobj,rowid);
           jobj.replaceWith($(ejsrslt));
           jobj = jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']");
           _this.SetIndex(rowid,false);
@@ -607,7 +623,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         xform.DataSet[rowid]._is_insert = false;
         xform.DataSet[rowid]._is_dirty = false;
         xform.DataSet[rowid]._orig = null;
-        jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']").remove();
+        var jrow = jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']");
+        if(xmodel.onrowunbind) xmodel.onrowunbind(xmodel,jrow,rowid);
+        jrow.remove();
         if(!jsh.$root(xgrid.PlaceholderID).find('tr').length) xgrid.RenderNoResultsMessage();
         xeditablegrid.CurrentCell = null;
         if(xform.Index==rowid){ 
