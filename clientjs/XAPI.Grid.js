@@ -353,7 +353,7 @@ exports = module.exports = function(jsh){
   }
 
   XAPIGrid.jsHarmony.prototype.ExportCSV = function(params, callback){
-    var url = jsh._BASEURL + '_csv/' + this.modelid + '/?'+$.param(params)
+    var url = jsh._BASEURL + '_csv/' + this.modelid + '/?'+$.param(params);
     jsh.getFileProxy().prop('src', url);
     if(callback) callback();
   }

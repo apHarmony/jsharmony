@@ -285,17 +285,29 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   return dbtasks;
 }
 
-exports.exportCSV = function (req, res, dbtasks, fullmodelid) {
+exports.exportCSV = function (req, res, dbtasks, fullmodelid, options) {
   var _this = this;
   var jsh = _this.jsh;
   if (!jsh.hasModel(req, fullmodelid)) throw new Error('Model not found');
+  options = _.extend({ /* columns: '["column1","column2"]'  */ }, options);
   var model = jsh.getModel(req, fullmodelid);
   var db = _this.jsh.getModelDB(req, fullmodelid);
-
+  if(options.columns){
+    if(_.isString(options.columns)){
+      try {
+        options.columns = JSON.parse(options.columns);
+      }
+      catch (e) {
+        return Helper.GenError(req, res, -4, 'Invalid Parameters: ' + e.toString());
+      }
+    }
+    if(!_.isArray(options.columns)) return Helper.GenError(req, res, -4, 'Invalid Parameters');
+  }
   //Get list of columns to display
   var exportColumns = _this.getFieldNames(req, model.fields, 'B', function(field){
     if(!('caption' in field)) return false;
     if(field.control=='hidden') return false;
+    if(options.columns && !_.includes(options.columns, field.name)) return false;
     return true;
   });
 
