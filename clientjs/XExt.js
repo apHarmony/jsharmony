@@ -1545,7 +1545,7 @@ exports = module.exports = function(jsh){
     return rslt;
   }
 
-  XExt.getTypedValue = function (field, value){
+  XExt.getTypedFieldValue = function (field, value){
     if(!field || !field.type) return value;
     if(XExt.isNullUndefined(value)) return value;
     if (_.includes(['varchar', 'char', 'binary', 'hash'], field.type)) return value.toString();

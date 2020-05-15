@@ -91,13 +91,13 @@ exports = module.exports = function(jsh){
 
         _.each(keys, function(key){
           var val = row[key];
-          if(model) val = jsh.XExt.getTypedValue(jsh.XExt.getFieldByName(model, key), val);
+          if(model) val = jsh.XExt.getTypedFieldValue(jsh.XExt.getFieldByName(model, key), val);
           vals.push(val);
         });
       }
       else{
         var val = row[exp.Column];
-        if(model) val = jsh.XExt.getTypedValue(jsh.XExt.getFieldByName(model, exp.Column), val);
+        if(model) val = jsh.XExt.getTypedFieldValue(jsh.XExt.getFieldByName(model, exp.Column), val);
         vals = [val];
       }
 
@@ -221,8 +221,8 @@ exports = module.exports = function(jsh){
         var col2 = row2[sortexp.col];
         
         if(sortexp.field){
-          col1 = jsh.XExt.getTypedValue(sortexp.field, col1);
-          col2 = jsh.XExt.getTypedValue(sortexp.field, col2);
+          col1 = jsh.XExt.getTypedFieldValue(sortexp.field, col1);
+          col2 = jsh.XExt.getTypedFieldValue(sortexp.field, col2);
         }
 
         if(_.isString(col1)) col1 = col1.toUpperCase();
