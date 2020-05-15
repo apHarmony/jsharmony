@@ -1545,6 +1545,39 @@ exports = module.exports = function(jsh){
     return rslt;
   }
 
+  XExt.getTypedValue = function (field, value){
+    if(!field || !field.type) return value;
+    if(XExt.isNullUndefined(value)) return value;
+    if (_.includes(['varchar', 'char', 'binary', 'hash'], field.type)) return value.toString();
+    else if (_.includes(['bigint', 'int', 'smallint', 'tinyint'], field.type)) return parseInt(value);
+    else if (_.includes(['decimal', 'float'], field.type)) return parseFloat(value);
+    else if (field.type == 'time'){
+      var dtstr = jsh.XFormat.time_decode(null, value);
+      if(XExt.isNullUndefined(dtstr)) return dtstr;
+      return new Date(dtstr);
+    }
+    else if (_.includes(['datetime', 'date'], field.type)){
+      var dtstr = jsh.XFormat.date_decode(null, value);
+      if(XExt.isNullUndefined(dtstr)) return dtstr;
+      return new Date(dtstr);
+    }
+    else if (field.type == 'boolean') return jsh.XFormat.bool_decode(value);
+    return value;
+  }
+
+  XExt.getFieldByName = function (model, fieldname){
+    if(!model || !model.fields) return null;
+    if(model.fields.length){
+      for(var i=0;i<model.fields.length;i++){
+        if(model.fields[i] && (model.fields[i].name==fieldname)) return model.fields[i];
+      }
+    }
+    else {
+      if(fieldname in model.fields) return model.fields[fieldname];
+    }
+    return null;
+  }
+
   XExt.XInputAction = function (_obj, _overrideFunc) {
     if (_obj && (_obj instanceof $) && (_obj.length)) this.obj = _obj[0];
     else this.obj = _obj;

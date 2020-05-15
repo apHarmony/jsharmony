@@ -74,7 +74,7 @@ exports = module.exports = function(jsh){
   XAPIGrid.rowSearchMatch = function(model, row, searchjson){
     if(!row) return false;
     if(!searchjson || !searchjson.length) return true;
-    
+
     var exprslt = [];
 
     //Compare
@@ -89,11 +89,20 @@ exports = module.exports = function(jsh){
         if(model) keys = _.map(model.fields, function(field){ return field.name })||[];
         else keys = _.keys(jsh.XExt.XModel.GetOwnFields(row));
 
-        _.each(keys, function(key){ vals.push(row[key]); });
+        _.each(keys, function(key){
+          var val = row[key];
+          if(model) val = jsh.XExt.getTypedValue(jsh.XExt.getFieldByName(model, key), val);
+          vals.push(val);
+        });
       }
-      else vals = [row[exp.Column]];
+      else{
+        var val = row[exp.Column];
+        if(model) val = jsh.XExt.getTypedValue(jsh.XExt.getFieldByName(model, exp.Column), val);
+        vals = [val];
+      }
 
       var cmprslt = false;
+
 
       if(!_.includes(['null','notnull','contains','notcontains','=','<>','beginswith','endswith','>','<','>=','<='], exp.Comparison)){ exprslt.push(null); continue; }
 
@@ -106,6 +115,8 @@ exports = module.exports = function(jsh){
         else if(exp.Comparison=='notnull'){
           if(!jsh.XExt.isNullUndefinedEmpty(val)) cmprslt = true;
         }
+        else if(jsh.XExt.isNullUndefinedEmpty(cmpval)) cmprslt = true; //Ignore search query if search value is empty
+        else if(jsh.XExt.isNullUndefined(val)) cmprslt = false; //Return false for comparison queries if row value is null
         else {
           if(jsh.XExt.isNullUndefined(cmpval)) cmpval = '';
           if(jsh.XExt.isNullUndefined(val)) val = '';
@@ -133,7 +144,12 @@ exports = module.exports = function(jsh){
             }
             else if(_.isNumber(val)) cmpval = Number(cmpval);
             else if(_.isBoolean(val)) cmpval = jsh.XFormat.bool_decode(cmpval);
-            else if(_.isDate(val)) cmpval = jsh.XFormat.date_decode(cmpval);
+            else if(_.isDate(val)){
+              if(!cmpval) continue;
+              cmpval = new Date(jsh.XFormat.date_decode(null, cmpval));
+              val = val.getTime();
+              cmpval = cmpval.getTime();
+            }
             
             if(exp.Comparison=='='){
               if(val==cmpval) cmprslt = true;
@@ -179,7 +195,7 @@ exports = module.exports = function(jsh){
     return false;
   }
 
-  XAPIGrid.rowSort = function(_sort){
+  XAPIGrid.rowSort = function(model, _sort){
     //-1 if #1 is first
     //1 if #2 is first
     var sort = [];
@@ -188,7 +204,11 @@ exports = module.exports = function(jsh){
       if(!sortexp || (sortexp.length < 2)) continue;
       var sortdir = sortexp[0];
       var sortcol = sortexp.substr(1);
-      sort.push({ dir: sortdir, col: sortcol });
+      sort.push({
+        dir: sortdir,
+        col: sortcol,
+        field: jsh.XExt.getFieldByName(model, sortcol),
+      });
     }
     return function(row1,row2){
       if(!row1 && !row2) return 0;
@@ -199,6 +219,11 @@ exports = module.exports = function(jsh){
         var sortexp = sort[i];
         var col1 = row1[sortexp.col];
         var col2 = row2[sortexp.col];
+        
+        if(sortexp.field){
+          col1 = jsh.XExt.getTypedValue(sortexp.field, col1);
+          col2 = jsh.XExt.getTypedValue(sortexp.field, col2);
+        }
 
         if(_.isString(col1)) col1 = col1.toUpperCase();
         if(_.isString(col2)) col2 = col2.toUpperCase();
@@ -275,7 +300,7 @@ exports = module.exports = function(jsh){
     resultset = _.filter(resultset, function(row){ return XAPIGrid.rowSearchMatch(model, row, params.searchjson); });
 
     //Apply sort
-    if(params.sort) resultset.sort(XAPIGrid.rowSort(params.sort));
+    if(params.sort) resultset.sort(XAPIGrid.rowSort(model, params.sort));
 
     //Apply paging
     var fullcount = resultset.length;

@@ -229,6 +229,7 @@ exports = module.exports = function(){
     var rslt = null;
     if (val instanceof Date) rslt = moment(val);
     else rslt = moment(this.parseDate(val));
+    if (format && !rslt.isValid()) rslt = moment(val.trim(), format, true); //Strict parsing
     if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm", true); //Strict parsing
     if (!rslt.isValid()) rslt = moment(val.trim(), "hh:mm a", true); //Strict parsing
     if (!rslt.isValid()) rslt = moment(val.trim(), "HH:mm", true); //Strict parsing
