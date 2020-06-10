@@ -533,7 +533,8 @@ exports.TransformDBTasks = function(collection, f){
   });
 };
 
-exports.ExecTasks = function (req, res, dbtasks, trans, callback) {
+exports.ExecTasks = function (req, res, dbtasks, trans, callback, options) {
+  options = _.extend({ db: undefined }, options);
   /*
   dbtasks is an array of:
     function(dbtrans, callback, transtbl){ ... }
@@ -547,7 +548,7 @@ exports.ExecTasks = function (req, res, dbtasks, trans, callback) {
     if (Helper.endsWith(key, '_POSTPROCESS')) posttasks.push(dbtask);
     else return dbtask;
   });
-  var db = _this.jsh.getDB('default');
+  var db = options.db || _this.jsh.getDB('default');
   var dbfunc = db.ExecTasks;
   if ((typeof trans != 'undefined') && trans) dbfunc = db.ExecTransTasks;
   else{

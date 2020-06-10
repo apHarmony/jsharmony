@@ -176,6 +176,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     var dbtasks = {};
     if (jsh.Config.debug_params.appsrv_requests) jsh.Log.info(data);
     var i = 0;
+    var firstdb = undefined;
     async.eachSeries(data, function (action, callback) {
       i += 1;
       var query = {};
@@ -204,11 +205,12 @@ var jsHarmonyRouter = function (jsh, siteid) {
         else if (method == 'put') jsh.AppSrv.putModel(req, res, fullmodelid, true, query, post, actionprocessed);
         else if (method == 'post') jsh.AppSrv.postModel(req, res, fullmodelid, true, query, post, actionprocessed);
         else if (method == 'delete') jsh.AppSrv.deleteModel(req, res, fullmodelid, true, query, post, actionprocessed);
+        firstdb = jsh.getModelDB(req, fullmodelid);
       }, { query: query, post: post });
     }, function (err) {
       if (err == null) {
         //Execute them all
-        jsh.AppSrv.ExecTasks(req, res, dbtasks, true);
+        jsh.AppSrv.ExecTasks(req, res, dbtasks, true, undefined, { db: firstdb });
       }
     });
   });
