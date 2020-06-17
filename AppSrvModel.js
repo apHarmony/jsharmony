@@ -59,7 +59,7 @@ AppSrvModel.prototype.loadEJS = function () {
     'jsh_tabs_bottom': jsh.getEJS('jsh_client_tabs_bottom'),
     'jsh_tabs_top': jsh.getEJS('jsh_client_tabs_top'),
     'jsh_tabs_controls': jsh.getEJS('jsh_client_tabs_controls'),
-    'jsh_page_controller.js': jsh.getEJS('jsh_client_page_controller.js'),
+    'jsh_page.js': jsh.getEJS('jsh_client_page.js'),
     'jsh_form.js': jsh.getEJS('jsh_client_form.js'),
     'jsh_form.js.datamodel': jsh.getEJS('jsh_client_form.js.datamodel'),
     'jsh_form.js.single': jsh.getEJS('jsh_client_form.js.single'),

@@ -896,6 +896,11 @@ exports = module.exports = function(jsh){
     obj.innerHTML = val;
     return obj.value;
   }
+  XExt.ParseMultiLine = function (val){
+    if (!val) return val;
+    if (_.isArray(val)) return val.join(' ');
+    return val.toString();
+  }
 
   XExt.makeResizableDiv = function(selector, children, options) {
     if(!options) options = { onDrag: null, onDragEnd: null };
@@ -1010,7 +1015,7 @@ exports = module.exports = function(jsh){
     return XExt.SetCookie(cname,'',-100000);
   }
   XExt.GetSettingsCookie = function(module_name){
-    var settings ={};
+    var settings = {};
     try{
       settings = JSON.parse(jsh.XExt.GetCookie('settings')[0]);
     }catch (e) {

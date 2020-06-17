@@ -434,7 +434,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   //Array of source HTML
   jsh.popups = <%-JSON.stringify(popups)%>;
   jsh.srcfiles = <%-ejsext.json_encode_ejs(srcfiles)%>;
-  <%-srcfiles['jsh_page_controller.js']%>;
+  <%-srcfiles['jsh_page.js']%>;
   jsh.XPage.bindEvents();
 
   $(document).ready(function(){

@@ -1385,6 +1385,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       }
     }
 
+    if(model.css) model.css = XExt.ParseMultiLine(model.css);
+    if(model.js) model.js = XExt.ParseMultiLine(model.js);
+
     var firstfield = true;
     for(var i=0;i<model.fields.length;i++){
       var field = model.fields[i];

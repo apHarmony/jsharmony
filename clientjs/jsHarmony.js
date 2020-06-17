@@ -145,7 +145,7 @@ var jsHarmony = function(options){
   this.appStartTime = Date.now();
   this.pageStartTime = Date.now();
 
-  //jsh_client_page_controller
+  //jsh_client_page
   this.is_insert = false;
   this.is_browse = false;
   this.init_complete = false;
