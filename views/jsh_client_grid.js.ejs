@@ -941,9 +941,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   xcontroller.Render = function(callback){
     this.Select(function(){
-      if (typeof xmodel.onload != 'undefined') xmodel.onload(xmodel);
+      if (typeof xmodel.onload != 'undefined') if(xmodel.onload(xmodel, callback) === false) return;
       jsh.ResetLinks();
-      if(callback) return callback();
+      if(callback) callback();
     });
   }
 

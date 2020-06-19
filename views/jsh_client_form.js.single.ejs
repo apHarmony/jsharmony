@@ -153,7 +153,7 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && !('
     });
   }
 
-  xcontroller.Render = function(newData, action){
+  xcontroller.Render = function(newData, action, callback){
     var xdata = xform.Data;
     if(typeof action == 'undefined') action = 'BIU';
     for(var fname in xmodel.fields){
@@ -170,8 +170,9 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && !('
     xdata._orig = null;
     xform.Render();
 
-    if (typeof xmodel.onload != 'undefined') xmodel.onload(xmodel);
+    if (typeof xmodel.onload != 'undefined') if(xmodel.onload(xmodel, callback) === false) return;
     jsh.ResetLinks();
+    if(callback) callback();
   }
 
   xcontroller.setLOV = function(fieldname, lov_data){
