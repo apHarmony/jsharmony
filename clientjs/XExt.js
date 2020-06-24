@@ -1821,7 +1821,7 @@ exports = module.exports = function(jsh){
 
   //html - HTML or jQuery object
   XExt.CustomPrompt = function (sel, html, onInit, onAccept, onCancel, onClosed, options) {
-    options = _.extend({ backgroundClose: false, reuse: false }, options);
+    options = _.extend({ backgroundClose: false, reuse: false, restoreFocus: true }, options);
     if(options.specialKeys === false) options.specialKeys = { enter: false, escape: false };
     else options.specialKeys = _.extend({ enter: true, escape: true }, options.specialKeys);
 
