@@ -1836,6 +1836,7 @@ exports = module.exports = function(jsh){
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
+    oldactive = options.restoreFocus ? oldactive : undefined;
     
     jsh.$root(sel + ' input').off('click');
     jsh.$root(sel + ' input').off('keydown');
