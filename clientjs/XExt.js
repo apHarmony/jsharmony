@@ -880,7 +880,7 @@ exports = module.exports = function(jsh){
     }
     return true;
   }
-  XExt.StripTags = function (val, ignore) {
+  XExt.StripTags = function (val, ignore, options) {
     if (!val) return val;
 
     options = _.extend({ addSpaces: false }, options);
