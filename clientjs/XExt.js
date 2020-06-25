@@ -882,14 +882,25 @@ exports = module.exports = function(jsh){
   }
   XExt.StripTags = function (val, ignore) {
     if (!val) return val;
+
+    options = _.extend({ addSpaces: false }, options);
     
     ignore = (((ignore || '') + '').toLowerCase().match(/<[a-z][a-z0-9]*>/g) || []).join('')
     var clienttags = /<\/?([a-z][a-z0-9]*)\b[^>]*>/gi
     var servertags = /<!--[\s\S]*?-->|<\?(?:php)?[\s\S]*?\?>/gi
+    var replaceStr = (options.addSpaces ? ' ' : '');
     
-    return XExt.unescapeHTMLEntity(val.replace(servertags, '').replace(clienttags, function ($0, $1) {
-      return ignore.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : ''
+    var rslt = XExt.unescapeHTMLEntity(val.replace(servertags, replaceStr).replace(clienttags, function ($0, $1) {
+      return ignore.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : replaceStr
     }));
+  
+    if(options.addSpaces){
+      //Trim double-spaces
+      while(rslt.indexOf('  ')>=0) rslt = rslt.replace(/  /gi,' ');
+      rslt = rslt.trim();
+    }
+  
+    return rslt;
   }
   XExt.unescapeHTMLEntity = function(val){
     var obj = document.createElement("textarea");

@@ -119,8 +119,8 @@ else if(parent && (parent.topmost) && ('tabpos' in parent) && (parent.tabpos=='t
   <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.SearchRemove(jsh.xContextMenuItemData); return false;')%>"><img src="<%-jsh._PUBLICURL%>images/icon_remove.png" />Remove</a>
 </div>
 <div class="xcontext_menu xgrid_column_header_context_<%=model.class%>">
-  <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.HideColumn(jsh.xContextMenuItem); return false;')%>"><img src="/images/icon_design2.png" />Hide this column</a>
-  <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.ManageColumns(); return false;')%>"><img src="/images/icon_design.png" />Manage Columns</a>
+  <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.HideColumn(jsh.xContextMenuItem); return false;')%>"><img src="<%-jsh._PUBLICURL%>images/icon_design2.png" />Hide this column</a>
+  <a onclick="<%-js('jsh.$root(\'.xcontext_menu\').hide(); xmodel.controller.ManageColumns(); return false;')%>"><img src="<%-jsh._PUBLICURL%>images/icon_design.png" />Manage Columns</a>
 </div>
 </div><!-- .xbodyhead -->
   <% if(!model.templates.grid){ %>
