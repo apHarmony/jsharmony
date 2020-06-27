@@ -346,10 +346,18 @@ exports = module.exports = function(jsh){
         var oldval = field._previous_value;
         var newval = _this.GetValue(field);
         var firedUndo = false;
-        if ('onchange' in field) {
+        var xmodel = jsh.XModels[modelid];
+        if (('onchange' in field) || (xmodel && ('onchange' in xmodel))){
           var undoChange = function(){ firedUndo = true; var xmodel = jsh.XModels[modelid]; field._previous_value = oldval; xmodel.set(field.name, oldval, null); };
           if(!XExtXModel.StringEquals(oldval, newval)){
-            var rslt = (new Function('obj', 'newval', 'undoChange', 'e', field.onchange)); rslt.call(_this, obj, newval, undoChange, e);
+            if(field.onchange){
+              var fieldEvent = (new Function('obj', 'newval', 'undoChange', 'e', field.onchange));
+              fieldEvent.call(_this, obj, newval, undoChange, e);
+            }
+
+            if(xmodel && xmodel.onchange){
+              xmodel.onchange.call(_this, obj, newval, e);
+            }
           }
         }
         if(!firedUndo) field._previous_value = newval;

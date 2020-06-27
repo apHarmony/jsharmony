@@ -2655,6 +2655,8 @@ exports = module.exports = function(jsh){
         jtabpanels.removeClass('selected');
         jtabpanels.filter('.'+tabFor).addClass('selected');
       }
+      var ontabselected = jtabbutton.data('ontabselected')
+      if(ontabselected) XExt.JSEval(ontabselected, jtabbutton[0]);
     });
     if(!jtabbuttons.filter('.selected').length) jtabbuttons.first().addClass('selected');
     jtabpanels.filter('.'+jtabbuttons.filter('.selected').attr('for')).addClass('selected');

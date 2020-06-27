@@ -1640,7 +1640,7 @@ exports.ParseEntities = function () {
     }
     
     //Convert mutli-line variables to single string
-    ParseMultiLineProperties(model, ['js', 'sqlselect', 'sqldownloadselect', 'sqlinsert', 'sqlinsertencrypt', 'sqlupdate', 'sqldelete', 'sqlexec', 'sqlwhere', 'sqlgetinsertkeys', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onvalidate', 'onupdate', 'ondestroy', 'oncommit']);
+    ParseMultiLineProperties(model, ['js', 'sqlselect', 'sqldownloadselect', 'sqlinsert', 'sqlinsertencrypt', 'sqlupdate', 'sqldelete', 'sqlexec', 'sqlwhere', 'sqlgetinsertkeys', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onvalidate', 'onupdate', 'ondestroy', 'oncommit', 'onchange']);
     if (model.breadcrumbs) ParseMultiLineProperties(model.breadcrumbs, ['sql']);
     if (model.fields) _.each(model.fields, function (field) {
       ParseMultiLineProperties(field, ['onchange', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlwhere', 'sqlsort', 'sqlsearch', 'sqlsearchsound', 'value']);
@@ -1787,7 +1787,7 @@ exports.ParseEntities = function () {
       'pagesettings', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_search', 'default_search', 'grid_static', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
-      'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'onrowunbind', 'ondestroy', 'getapi',
+      'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'onrowunbind', 'ondestroy', 'onchange', 'getapi',
       'js', 'ejs', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlgetinsertkeys', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
       'path', 'module', 'templates', 'db', 'onecolumn', 'namespace',
