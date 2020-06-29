@@ -27,6 +27,7 @@ exports = module.exports = function(jsh){
 
   XExt.XModel = require('./XExt.XModel.js')(jsh);
   XExt.COOKIE_MAX_EXPIRATION = 2147483647;
+  XExt.DOUBLECLICK_TIMEOUT = 500; //ms
   XExt.ejsDelimiter = { open: '<%', close: '%>' };
 
   XExt.parseGET = function (qs) {
@@ -1344,7 +1345,7 @@ exports = module.exports = function(jsh){
       }
     }
     var rslt = jsh.ejs.render('\
-      <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length && (n.LazyRender&&!n.Expanded)?"tree_render_lazy":"")%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>" onclick=\'<%-instance%>.XExt.TreeSelectNode(this,<%-JSON.stringify(n.Value)%>); return false;\' ondblclick=\'<%-instance%>.XExt.TreeDoubleClickNode(this,<%-JSON.stringify(n.ID)%>); return false;\' oncontextmenu=\'return <%-instance%>.XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'<%-instance%>.XExt.CancelBubble(arguments[0]); <%-instance%>.XExt.TreeToggleNode(<%-instance%>.$(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><img class="icon" src="<%-jsh._PUBLICURL%>images/icon_<%=n.Icon%>.png"><span><%=n.Text||"\u00A0"%></span></a>\
+      <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length && (n.LazyRender&&!n.Expanded)?"tree_render_lazy":"")%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>" onclick=\'<%-instance%>.XExt.TreeSelectNode(this,<%-JSON.stringify(n.Value)%>,{ source: "click" }); return false;\' oncontextmenu=\'return <%-instance%>.XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'<%-instance%>.XExt.CancelBubble(arguments[0]); <%-instance%>.XExt.TreeToggleNode(<%-instance%>.$(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><img class="icon" src="<%-jsh._PUBLICURL%>images/icon_<%=n.Icon%>.png"><span><%=n.Text||"\u00A0"%></span></a>\
       <div class="children <%=(n.Expanded?"expanded":"")%> tree_item_<%=n.ID%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>"><%-children%></div>',
       { n: n, children: children, jsh: jsh, instance: jsh.getInstance() }
     );
@@ -1427,10 +1428,36 @@ exports = module.exports = function(jsh){
   }
 
   XExt.TreeSelectNode = function (ctrl, nodevalue, options) {
-    if(!options) options = { triggerChange: true };
+    if(!options) options = { triggerChange: true, source: '' };
     if(!('triggerChange' in options)) options.triggerChange = true;
 
     var jctrl = $(ctrl);
+
+    if(options.source=='click'){
+      var curClick = (new Date()).getTime();
+      var startX = jsh.mouseX;
+      var startY = jsh.mouseY;
+      var lastClick = parseInt(jctrl.data('lastclick')||0);
+      jctrl.data('lastclick', curClick.toString());
+
+      if((curClick-lastClick)<=XExt.DOUBLECLICK_TIMEOUT){
+        XExt.TreeDoubleClickNode(ctrl, jctrl.data('id'));
+        jctrl.data('lastclick', '');
+      }
+      else {
+        XExt.handleOnce(jsh.xLoader.onMouseDown, function(e){
+          var loaderClick = (new Date()).getTime();
+          if(jctrl.data('lastclick') && ((loaderClick-curClick)<=XExt.DOUBLECLICK_TIMEOUT)){
+            var diffX = Math.abs(jsh.mouseX - startX);
+            var diffY = Math.abs(jsh.mouseY - startY);
+            if((diffX <= 8) && (diffY <= 8)){
+              XExt.TreeDoubleClickNode(ctrl, jctrl.data('id'));
+              jctrl.data('lastclick', '');
+            }
+          }
+        });
+      }
+    }
     
     var xform = XExt.getFormFromObject(ctrl);
     var fieldname = XExt.getFieldFromObject(ctrl);
@@ -2290,12 +2317,26 @@ exports = module.exports = function(jsh){
   XExt.trigger = function(handlers /*, param1, param2 */){
     if(!handlers) handlers = [];
     if(!_.isArray(handlers)) handlers = [handlers];
+    handlers = handlers.slice();
     var params = [];
     if(arguments.length > 1) params = Array.prototype.slice.call(arguments, 1);
     //Run handlers
     _.each(handlers, function(handler){
       handler.apply(null, params);
     });
+  }
+
+  XExt.handleOnce = function(handlers, f){
+    var hasExecuted = false;
+    var onceHandler = function(){
+      for(var i=0;i<handlers.length;i++){
+        if(handlers[i] == onceHandler) handlers.splice(i,1);
+      }
+      if(hasExecuted) return;
+      hasExecuted = true;
+      f.apply(null, arguments);
+    };
+    handlers.push(onceHandler);
   }
 
   /*************************/

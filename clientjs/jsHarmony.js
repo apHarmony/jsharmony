@@ -316,7 +316,7 @@ jsHarmony.prototype.Init = function(){
   _this.InitControls();
   _this.XMenu.Init();
   if(!this.xLoader) this.xLoader = new this.XLoader();
-  this.xLoader.onSquashedClick = function(e){ _this.lastSquashedActionTime = Date.now(); }
+  this.xLoader.onSquashedClick.push(function(e){ _this.lastSquashedActionTime = Date.now(); });
   this.xDebugConsole = new this.XDebugConsole();
   $(document).mousemove(function (e) {
     _this.mouseX = e.pageX;

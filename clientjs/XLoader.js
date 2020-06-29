@@ -27,17 +27,23 @@ exports = module.exports = function(jsh){
     this.IsLoading = false;
     this.LoadQueue = new Array();
     this.MouseStack = 0;
-    this.onSquashedClick = null;
+    this.onSquashedClick = [];
+    this.onMouseDown = [];
+    this.onMouseUp = [];
 
     //Check if required elements have been rendered to the page
     if(!jsh.$root('.xloadingblock').length) console.error('xloadingblock not found on page during XLoader initialization');
 
     //Keep counter to match mousedown / mouseup events, to detect squashed clicks (clicks blocked by the transparent loading background)
-    jsh.$root('.xloadingblock').on('mousedown', function(){
+    jsh.$root('.xloadingblock').on('mousedown', function(e){
       _this.MouseStack++;
+      jsh.XExt.trigger(_this.onMouseDown, e);
+    });
+    jsh.$root('.xloadingblock').on('mouseup', function(e){
+      jsh.XExt.trigger(_this.onMouseUp, e);
     });
     jsh.$root('.xloadingblock').on('click mouseup', function(e){
-      if(_this.MouseStack<=0){ if(_this.onSquashedClick) _this.onSquashedClick(e); }
+      if(_this.MouseStack<=0){ jsh.XExt.trigger(_this.onSquashedClick, e); }
       _this.MouseStack--;
     });
   }

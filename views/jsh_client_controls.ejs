@@ -24,12 +24,12 @@ for(var i=0;i<model.fields.length;i++){
   var field = model.fields[i];
   //hasAction previously validated against "B" - expanded to BIU to render "I"-only fields
   if(!('control' in field)) continue; if(!(XExt.hasAction(field.actions,'BIU'))) continue;
-  if(('caption' in field) && (field.control!='subform') && 
+  var ignore_eol = false;
+  if((field.nl) && (field.control!='hidden')){ leadingfield = true; if(!prev_block){ %><br class="nl"/><% } }
+  if(leadingfield && ('caption' in field) && (field.control!='subform') && 
      ('captionstyle' in field) && (field.captionstyle != "") && (dflt_captionstyle == "")){
     dflt_captionstyle = field.captionstyle;
   }
-  var ignore_eol = false;
-  if((field.nl) && (field.control!='hidden')){ leadingfield = true; if(!prev_block){ %><br class="nl"/><% } }
   if(field.block){ %><div class="xform_block <%=field.blockclass%>" style="<%=field.blockstyle%>"><% }
   if((field.control!='subform') && (field.control!='hidden')){
     var captionclass = 'xform_caption '+(field.captionclass||'');
