@@ -68,7 +68,7 @@ exports = module.exports = function(jsh){
         lovfilter[jsh.uimap.code_parent + (i + 1)] = parentvals[i];
       }
     }
-    
+
     var cLOV = [];
     for(var i=0;i<LOV.length;i++){
       var isMatch = true;
@@ -279,7 +279,7 @@ exports = module.exports = function(jsh){
       var obj = this;
       var onrender = $(obj).data('onrender');
       if(onrender){
-        var f = (new Function('context_item', 'data', onrender)); 
+        var f = (new Function('context_item', 'data', onrender));
         var frslt = f.call(obj, context_item, data);
         $(this).toggle(frslt !== false);
       }
@@ -514,7 +514,7 @@ exports = module.exports = function(jsh){
       "/": '&#x2F;',
       '\u00A0':'&#xa0;'
     };
-    
+
     return String(val).replace(/[\u00A0&<>"'\/]/g, function (s) {
       return entityMap[s];
     });
@@ -741,7 +741,7 @@ exports = module.exports = function(jsh){
     }
     if(!id){ if(cb) cb(); return; }
     if (window.CKEDITOR.instances[id]){ if(cb) cb(); return; }
-    
+
     var elem = jsh.$root('#'+id);
     if(!elem.length) elem = jsh.$root('.'+id);
     if(!elem.length){ return XExt.Alert('Cound not initialize editor on '+id+': form control with that id not found'); }
@@ -763,7 +763,7 @@ exports = module.exports = function(jsh){
     }
     if(!config){ if(cb) cb(); return; }
     if (window.tinymce.get(id)){ if(cb) cb(); return; }
-    
+
     var elem = jsh.$root('#'+id);
     if(!elem.length) elem = jsh.$root('.'+id);
     if(!elem.length){ return XExt.Alert('Cound not initialize editor on '+id+': form control with that id not found'); }
@@ -885,22 +885,22 @@ exports = module.exports = function(jsh){
     if (!val) return val;
 
     options = _.extend({ addSpaces: false }, options);
-    
+
     ignore = (((ignore || '') + '').toLowerCase().match(/<[a-z][a-z0-9]*>/g) || []).join('')
     var clienttags = /<\/?([a-z][a-z0-9]*)\b[^>]*>/gi
     var servertags = /<!--[\s\S]*?-->|<\?(?:php)?[\s\S]*?\?>/gi
     var replaceStr = (options.addSpaces ? ' ' : '');
-    
+
     var rslt = XExt.unescapeHTMLEntity(val.replace(servertags, replaceStr).replace(clienttags, function ($0, $1) {
       return ignore.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : replaceStr
     }));
-  
+
     if(options.addSpaces){
       //Trim double-spaces
       while(rslt.indexOf('  ')>=0) rslt = rslt.replace(/  /gi,' ');
       rslt = rslt.trim();
     }
-  
+
     return rslt;
   }
   XExt.unescapeHTMLEntity = function(val){
@@ -1086,10 +1086,10 @@ exports = module.exports = function(jsh){
     var tree = [];
     var nodes = {};
     var sortednodes = [];
-    
+
     jctrl.empty();
     if (LOV.length == 0) return;
-    
+
     //Create Tree
     var has_seq = false;
     var lazy_render = (LOV.length >= 500);
@@ -1110,7 +1110,7 @@ exports = module.exports = function(jsh){
       if (node.Seq) has_seq = true;
       if (_.includes(expanded_nodes, (node.Value||'').toString())) node.Expanded = true;
       if (_.includes(selected_nodes, (node.Value||'').toString())) node.Selected = true;
-      
+
       if (!node.ParentID) tree.push(node);
       nodes[node.ID] = node;
       sortednodes.push(node);
@@ -1120,7 +1120,7 @@ exports = module.exports = function(jsh){
       if (node.ParentID && (node.ParentID in nodes)) nodes[node.ParentID].Children.push(node);
     }
     if (has_seq) sortednodes = _.sortBy(sortednodes, [jsh.uimap.code_seq, jsh.uimap.code_txt]);
-    
+
     var body = '';
     for (var i = 0; i < tree.length; i++) {
       body += XExt.TreeRenderNode(jctrl, tree[i]);
@@ -1199,15 +1199,15 @@ exports = module.exports = function(jsh){
       });
       jobj.on('dragover', function(e){
         var targetAnchor = XExt.getObjectAnchors(this, jsh.mouseX, jsh.mouseY, drag_anchor_settings);
-  
+
         jobj.removeClass('xdragtop').removeClass('xdragbottom').removeClass('xdragfull').removeClass('xdragleft').removeClass('xdragright');
         if(targetAnchor[0]=='left') jobj.addClass('xdragleft');
         else if(targetAnchor[0]=='right') jobj.addClass('xdragright');
-  
+
         if(targetAnchor[1]=='top') jobj.addClass('xdragtop');
         else if(targetAnchor[1]=='bottom') jobj.addClass('xdragbottom');
         else if(targetAnchor[1]=='full') jobj.addClass('xdragfull');
-  
+
         e.preventDefault();
         e.stopPropagation();
       });
@@ -1216,7 +1216,7 @@ exports = module.exports = function(jsh){
         jobj.removeClass('xdragtarget').removeClass('xdragtop').removeClass('xdragbottom').removeClass('xdragfull').removeClass('xdragleft').removeClass('xdragright');
         e.preventDefault();
         e.stopPropagation();
-  
+
         var targetObjVal = jobj.data('value');
         var targetAnchor = XExt.getObjectAnchors(this, jsh.mouseX, jsh.mouseY, drag_anchor_settings);
         if(ondrop) ondrop(targetObjVal, targetAnchor, e);
@@ -1307,7 +1307,7 @@ exports = module.exports = function(jsh){
 
       if(!targetObj) return;
       if($(targetObj).data('id')==$(mouseDragObj).data('id')) return;
-      jsh.$root('.xdrag').css('visibility','visible'); 
+      jsh.$root('.xdrag').css('visibility','visible');
 
       var targetAnchor = XExt.getObjectAnchors(targetObj, jsh.mouseX, jsh.mouseY, drag_anchor_settings);
       $(targetObj).addClass('xdragtarget');
@@ -1330,7 +1330,7 @@ exports = module.exports = function(jsh){
 
       var mouseDragObjVal = $(mouseDragObj).data('value');
       var targetObjVal = $(targetObj).data('value');
-      
+
       var targetAnchor = XExt.getObjectAnchors(targetObj, jsh.mouseX, jsh.mouseY, drag_anchor_settings);
 
       if(onmove) onmove(mouseDragObjVal, targetObjVal, targetAnchor, origEvent);
@@ -1390,8 +1390,8 @@ exports = module.exports = function(jsh){
     var jtree = jctrl.closest('.xform_ctrl.tree');
     var fieldname = XExt.getFieldFromObject(ctrl);
     var menuid = '._item_context_menu_' + fieldname;
-    if(jtree.data('oncontextmenu')) { 
-      var f = (new Function('n', jtree.data('oncontextmenu'))); 
+    if(jtree.data('oncontextmenu')) {
+      var f = (new Function('n', jtree.data('oncontextmenu')));
       var frslt = f.call(ctrl, n);
       if((frslt === false) || (frslt===true)) return frslt;
     }
@@ -1458,12 +1458,12 @@ exports = module.exports = function(jsh){
         });
       }
     }
-    
+
     var xform = XExt.getFormFromObject(ctrl);
     var fieldname = XExt.getFieldFromObject(ctrl);
     var field = undefined;
     if (xform && fieldname) field = xform.Data.Fields[fieldname];
-    
+
     var jtree = jctrl.closest('.xform_ctrl.tree');
     if (jtree.hasClass('uneditable')) return;
 
@@ -1671,8 +1671,8 @@ exports = module.exports = function(jsh){
   }
 
   XExt.isIOS = function () {
-    if ((navigator.userAgent.match(/iPhone/i)) || 
-        (navigator.userAgent.match(/iPod/i)) || 
+    if ((navigator.userAgent.match(/iPhone/i)) ||
+        (navigator.userAgent.match(/iPod/i)) ||
         (navigator.userAgent.match(/iPad/i))) {
       return true;
     }
@@ -1730,7 +1730,7 @@ exports = module.exports = function(jsh){
     //alert(msg);
     jsh.xDialog.unshift('.xalertbox');
     jsh.$root('.xdialogblock .xalertbox.base').zIndex(jsh.xDialog.length);
-    
+
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
     jsh.$root('.xalertmessage').html(msg);
@@ -1741,7 +1741,7 @@ exports = module.exports = function(jsh){
     jsh.$root('.xalertbox input').on('keydown', function (e) { if (e.keyCode == 27) { acceptfunc(); } });
 
     jsh.$root('.xalertbox').off('acceptDialog').on('acceptDialog', acceptfunc);
-    
+
     jsh.$root('.xdialogblock,.xalertbox.base').show();
     jsh.XWindowResize();
     if (!XExt.isIOS()) jsh.$root('.xalertbox.base input').focus();
@@ -1767,10 +1767,10 @@ exports = module.exports = function(jsh){
       msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
     }
     //if (window.confirm(msg)) { if (onYes) onYes(); }
-    //if (onNo) onNo(); 
+    //if (onNo) onNo();
     jsh.xDialog.unshift('.xconfirmbox');
     jsh.$root('.xdialogblock .xconfirmbox.base').zIndex(jsh.xDialog.length);
-    
+
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
     jsh.$root('.xconfirmmessage').html(msg);
@@ -1824,10 +1824,10 @@ exports = module.exports = function(jsh){
     var msg = '';
     if (obj && _.isString(obj)) msg = obj;
     else msg = JSON.stringify(obj);
-    
+
     if (!dflt) dflt = '';
     if (!_.isString(dflt)) dflt = JSON.stringify(dflt);
-    
+
     msg = XExt.escapeHTML(msg);
     msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
     //var rslt = window.prompt(msg, dflt);
@@ -1835,7 +1835,7 @@ exports = module.exports = function(jsh){
     //if (onComplete) onComplete(rslt);
     jsh.xDialog.unshift('.xpromptbox');
     jsh.$root('.xdialogblock .xpromptbox.base').zIndex(jsh.xDialog.length);
-    
+
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
     jsh.$root('.xpromptmessage').html(msg);
@@ -1867,15 +1867,15 @@ exports = module.exports = function(jsh){
     var foundPrevDialog = jsh.$root('.xdialogblock ' + sel).length;
     if (foundPrevDialog && !options.reuse) jsh.$root('.xdialogblock ' + sel).remove();
     if (!foundPrevDialog || !options.reuse) jsh.$root('.xdialogblock').append(html);
-    
+
     //ShowDialog
     jsh.xDialog.unshift(sel);
     jsh.$root('.xdialogblock ' + sel).zIndex(jsh.xDialog.length);
-    
+
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
     oldactive = options.restoreFocus ? oldactive : undefined;
-    
+
     jsh.$root(sel + ' input').off('click');
     jsh.$root(sel + ' input').off('keydown');
 
@@ -1898,7 +1898,7 @@ exports = module.exports = function(jsh){
     var acceptfunc = function () {
       //Verify this is the topmost dialog
       if ((jsh.xDialog.length > 0) && (jsh.xDialog[0] != (sel))) return;
-      
+
       if (onAccept) return onAccept(function () { acceptfunc_aftervalidate(); });
       else acceptfunc_aftervalidate();
     }
@@ -1916,9 +1916,12 @@ exports = module.exports = function(jsh){
       if (options.specialKeys.escape && (e.keyCode == 13)) { e.preventDefault(); e.stopImmediatePropagation(); acceptfunc(); }
     });
     if(options.backgroundClose){
-      jsh.$root('.xdialogblock').on('click.close' + sel, function(e){
-        if(e.target != this) return;
-        if(jsh.xDialog.length && (jsh.xDialog[0]==sel)){ e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); }
+        jsh.$root('.xdialogblock').off('mousedown.close' + sel).on('mousedown.close' + sel, function(e1){
+        if(e1.target !== this) return;
+        jsh.$root('.xdialogblock').off('mouseup.once_close' + sel).one('mouseup.once_close' + sel, function(e2){
+          if(e2.target !== this) return;
+          if(jsh.xDialog.length && (jsh.xDialog[0]==sel)){ cancelfunc(); }
+        });
       });
     }
     jsh.$root('.xdialogblock,.xdialogblock ' + sel).show();
@@ -1929,7 +1932,7 @@ exports = module.exports = function(jsh){
       if(jsh.$root(sel + ' .default_focus').length) jsh.$root(sel + ' .default_focus').focus();
       else jsh.$root(sel).find('input:visible,textarea:visible,select:visible').first().focus();
     }, 1);
-    
+
   }
 
   XExt.AcceptDialog = function(){
@@ -1948,14 +1951,14 @@ exports = module.exports = function(jsh){
     val = val.toString();
     jsh.xDialog.unshift('.xtextzoombox');
     jsh.$root('.xdialogblock .xtextzoombox').zIndex(jsh.xDialog.length);
-    
+
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
     jsh.$root('.xtextzoommessage').html(caption);
     jsh.$root('.xtextzoombox input').off('click');
     jsh.$root('.xtextzoombox input').off('keydown');
     jsh.$root('.xtextzoomfield').val(val);
-    
+
     jsh.$root('.xtextzoomfield').prop('readonly', (options.readonly?true:false));
     if(options.readonly) jsh.$root('.xtextzoomfield').removeClass('editable').addClass('uneditable');
     else jsh.$root('.xtextzoomfield').removeClass('uneditable').addClass('editable');
@@ -2048,7 +2051,7 @@ exports = module.exports = function(jsh){
         modelid: modelid,
         href: POPUP_CONTAINER,
         inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, fixed: true,
-        title: title, 
+        title: title,
         trapFocus: false,
         fadeOut:0,
         onOpen: function () {
@@ -2106,7 +2109,7 @@ exports = module.exports = function(jsh){
     var rslt = undefined;
     var rowid = XExt.XModel.GetRowID(modelid, obj);
     var xmodel = jsh.XModels[modelid];
-    
+
     if (popupData[modelid].code_val){
       rslt = xmodel.controller.form.DataSet[rowid][popupData[modelid].code_val];
       if (!rslt) rslt = '';
@@ -2121,7 +2124,7 @@ exports = module.exports = function(jsh){
     modelid = XExt.resolveModelID(modelid);
     var rslt = null;
     var xmodel = jsh.XModels[modelid];
-    
+
     popupData[modelid].result = rslt;
     popupData[modelid].rowid = -1;
     popupData[modelid].resultrow = new xmodel.controller.form.DataType();
@@ -2148,14 +2151,14 @@ exports = module.exports = function(jsh){
   XExt.numOccurrences = function (val, find) {
     if (!val) return 0;
     if (!find) return (val.length + 1);
-    
+
     var rslt = 0;
     var pos = 0;
     var step = find.length;
-    
+
     while (true) {
       pos = val.indexOf(find, pos);
-      if (pos >= 0) { rslt++; pos += step; } 
+      if (pos >= 0) { rslt++; pos += step; }
       else break;
     }
     return rslt;
@@ -2201,7 +2204,7 @@ exports = module.exports = function(jsh){
   XExt.cleanFileName = function (fname) {
     if (typeof fname == 'undefined') return '';
     if (fname === null) return '';
-    
+
     fname = fname.toString();
     if (fname.length > 247) fname = fname.substr(0, 247);
     return fname.replace(/[\/\?<>\\:\*\|":]/g, '').replace(/[\x00-\x1f\x80-\x9f]/g, '').replace(/^\.+$/, '').replace(/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i, '');
@@ -2211,7 +2214,7 @@ exports = module.exports = function(jsh){
     options = _.extend({ allow: '/' }, options);
     if (typeof fpath == 'undefined') return '';
     if (fpath === null) return '';
-    
+
     fpath = fpath.toString();
     if (fpath.length > 247) fpath = fpath.substr(0, 247);
     var chars = '\/\?<>\\:\*\|":';
@@ -2465,7 +2468,7 @@ exports = module.exports = function(jsh){
       var w = obj.width;
       var h = obj.height;
       var ctx = obj.getContext("2d");
-      
+
       ctx.beginPath();
       ctx.lineWidth = 1;
       ctx.moveTo(0, 0);
@@ -2473,7 +2476,7 @@ exports = module.exports = function(jsh){
       ctx.lineTo(w, h);
       ctx.lineTo(0, h);
       ctx.lineTo(0, 0);
-      
+
       ctx.beginPath();
       ctx.lineWidth = 1.5;
       ctx.moveTo(0, 0);
@@ -2520,10 +2523,10 @@ exports = module.exports = function(jsh){
       if(className) s.className = className;
       var sel = window.getSelection();
       if(!sel || !sel.rangeCount) return null;// throw new Error('Control does not have an available');
-      sel.getRangeAt(0).insertNode(s); 
+      sel.getRangeAt(0).insertNode(s);
       return s;
     }
-    else if(document.selection && document.selection.createRange){ 
+    else if(document.selection && document.selection.createRange){
       document.selection.createRange().text = txt;
       return null;
     }
@@ -2604,7 +2607,7 @@ exports = module.exports = function(jsh){
     if((pos.left < minH) || (pos.left > maxH)) jcontainer.scrollLeft(pos.left);
     if((posbottom < minV) || (posbottom > maxV)){
       if(posbottom < minV) jcontainer.scrollTop(pos.top);
-      else { 
+      else {
         var newscrollTop = posbottom - cH;
         if(newscrollTop < 0) newscrollTop = 0;
         jcontainer.scrollTop(newscrollTop);
@@ -2647,7 +2650,7 @@ exports = module.exports = function(jsh){
     var w = jobj.outerWidth(false);
     var h = jobj.outerHeight(false);
     var fph = Math.abs(((h>0)?((y-joff.top)/h):0) - 0.5);
-  
+
     var lp = ((w>0)?((x-joff.left)/w):0) - 0.5;
     var tp = ((h>0)?((y-joff.top)/h):0) - 0.5;
     var rslt = ['',''];
@@ -2659,7 +2662,7 @@ exports = module.exports = function(jsh){
     else if(tp > 0){ if(anchors.bottom) rslt[1] = 'bottom'; }
     else{ if(anchors.top) rslt[1] = 'top'; }
 
-    if(!rslt[1] && anchors.full) rslt[1] = 'full'; 
+    if(!rslt[1] && anchors.full) rslt[1] = 'full';
 
     return rslt;
   }
@@ -2740,7 +2743,7 @@ exports = module.exports = function(jsh){
     if(val === null) return true;
     return false;
   }
-  
+
   XExt.isDisplayLayoutColumnHidden = function (field_name, display_layout, fields) {
     if(!display_layout || !display_layout.columns) return false;
     for(var i=0;i<display_layout.columns.length;i++){
