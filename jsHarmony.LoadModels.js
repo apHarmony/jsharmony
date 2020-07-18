@@ -235,6 +235,9 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir, modu
     model.using[i] = upath;
   }
   if(!('fields' in model)) model.fields = [];
+  _.each(model.buttons, function(button){
+    button._orig_model = modelname;
+  });
   if('css' in model) model.css = Helper.ParseMultiLine(model.css);
   //if (modelname in this.Models) throw new Error('Cannot add ' + modelname + '.  The model already exists.')
   var modelbasedir = '';
@@ -323,13 +326,18 @@ exports.ParseModelInheritance = function () {
             EntityPropMerge(rsltItem, 'controlparams', newItem, oldItem, function (newval, oldval) { return _.extend({}, oldval, newval); });
           });
         });
+        if(model.buttons && parentmodel.buttons){
+          //Check if child model has zero-length buttons
+          if(!model.buttons.length){
+            _this.LogInit_WARNING('Inheriting model ' + model.id + ' has empty buttons array.  Avoid empty button arrays in child models');
+          }
+        }
         //Create a clone of parent model instead of object reference
         if (('fields' in parentmodel) && !('fields' in model)) model.fields = parentmodel.fields.slice(0);
         EntityPropMerge(mergedprops, 'roles', model, parentmodel, function (newval, oldval) { return newval||oldval; });
         EntityPropMerge(mergedprops, 'pagesettings', model, parentmodel, function (newval, oldval) { return _.merge({}, oldval, newval); });
-        EntityPropMerge(mergedprops, 'tabs', model, parentmodel, function (newval, oldval) {
-          return _this.MergeModelArray(newval, oldval);
-        });
+        EntityPropMerge(mergedprops, 'tabs', model, parentmodel, function (newval, oldval) { return _this.MergeModelArray(newval, oldval); });
+        EntityPropMerge(mergedprops, 'buttons', model, parentmodel, function (newval, oldval) { return _this.MergeModelArray(newval, oldval); });
         EntityPropMerge(mergedprops, 'reportdata', model, parentmodel, function (newval, oldval) { return _.extend({}, oldval, newval); });
         EntityPropMerge(mergedprops, 'ejs', model, parentmodel, function (newval, oldval) { return oldval + '\r\n' + newval; });
         EntityPropMerge(mergedprops, 'js', model, parentmodel, function (newval, oldval) { return oldval + '\r\n' + newval; });
@@ -343,6 +351,13 @@ exports.ParseModelInheritance = function () {
         for (var prop in _this.Models[model.id]) { if (_this.Models[model.id][prop] == '__REMOVEPROPERTY__') { delete _this.Models[model.id][prop]; } }
         _.each(_this.Models[model.id].fields, function(field){ if(!field) return; for (var prop in field) { if (field[prop] == '__REMOVEPROPERTY__') { delete field[prop]; } } });
         delete _this.Models[model.id].inherits;
+
+        if(model.buttons && parentmodel.buttons){
+          //Check if named buttons are used in both model and parent model
+          if(!!_.filter(_this.Models[model.id].buttons, function(button){ return !button.name; }).length){
+            _this.LogInit_WARNING('Model ' + model.id + ' buttons may conflict with parent model '+parentmodel.id+' buttons.  Use button.name on all buttons to prevent conflicts in inherited models');
+          }
+        }
       }
       while(model._transforms && model._transforms.length){
         var transform = model._transforms.shift();
@@ -516,7 +531,14 @@ exports.MergeModelArray = function(newval, oldval, eachItem){
     _this.Log.console(newval);
     throw(ex);
   }
-  _.each(oldval, function (field) {
+  var removeAll = false;
+  for(let i=0;i<rslt.length;i++){
+    if(rslt[i]['__REMOVEALL__']){
+      for(let j=0; j <= i; j++) rslt[j]['__REMOVE__'] = true;
+      removeAll = true;
+    }
+  }
+  if(!removeAll) _.each(oldval, function (field) {
     if ((typeof field.name != 'undefined') && (field.name)) {
       var modelfield = _.find(rslt, function (mfield) { return mfield.name == field.name; });
     }
@@ -1648,9 +1670,26 @@ exports.ParseEntities = function () {
       if (field.controlparams) ParseMultiLineProperties(field.controlparams, ['onpopup']);
     });
 
-    //Apply default actions to buttons
+    var buttonnames = {};
     _.each(model.buttons, function(button){
+      //Apply default actions to buttons
       if(!('actions' in button)) button.actions = 'BIU';
+
+      //Check for button name conflicts
+      if ('name' in button) {
+        if (buttonnames[button.name]) { _this.LogInit_ERROR('Duplicate button ' + button.name + ' in model ' + model.id + '.'); }
+        buttonnames[button.name] = 1;
+      }
+
+      //Add automatic name
+      if(!button.name){
+        var buttonname = 'unnamed_button_';
+        var idx = 1;
+        while(buttonnames[buttonname+idx]) idx++;
+        buttonname = buttonname + idx;
+        button.name = buttonname;
+        buttonnames[buttonname] = 1;
+      }
     });
 
     //Automatically add sql_params based on SQL
