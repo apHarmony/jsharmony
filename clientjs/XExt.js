@@ -1682,7 +1682,8 @@ exports = module.exports = function(jsh){
     jsh.xDialog = [];
     jsh.$root('.xdialogblock').children().hide();
     jsh.$root('.xdialogblock').hide();
-    jsh.$root('.xdialogblock').off('click.close');
+    jsh.$root('.xdialogblock').off('mousedown.close');
+    jsh.$root('.xdialogblock').off('mouseup.close');
   }
 
   XExt.dialogButtonFunc = function (dialogClass, oldactive, onComplete, params) {
@@ -1916,9 +1917,15 @@ exports = module.exports = function(jsh){
       if (options.specialKeys.escape && (e.keyCode == 13)) { e.preventDefault(); e.stopImmediatePropagation(); acceptfunc(); }
     });
     if(options.backgroundClose){
-      jsh.$root('.xdialogblock').on('click.close' + sel, function(e){
-        if(e.target != this) return;
-        if(jsh.xDialog.length && (jsh.xDialog[0]==sel)){ e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); }
+      jsh.$root('.xdialogblock').on('mousedown.close' + sel, function(e){
+        if(!$(e.target).is('.xdialogoverlay,.xdialogblock')) return;
+        var mouseDownTime = new Date().getTime();
+        jsh.$root('.xdialogblock').one('mouseup.close', function(e){
+          var mouseUpTime = new Date().getTime();
+          if((mouseUpTime - mouseDownTime) > 5000) return;
+          if(!$(e.target).is('.xdialogoverlay,.xdialogblock')) return;
+          if(jsh.xDialog.length && (jsh.xDialog[0]==sel)){ e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); }
+        });
       });
     }
     jsh.$root('.xdialogblock,.xdialogblock ' + sel).show();
