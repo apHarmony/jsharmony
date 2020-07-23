@@ -138,9 +138,9 @@ function jsHarmonyConfig(config){
     "validation_level": "standard"
   };
   //Valid file upload extensions
-  this.valid_extensions = [".jpg", ".jpeg", ".pdf", ".png", ".tif", ".tiff", ".gif", ".mp4", ".ogv", ".webm", ".mp3", ".wav", ".avi", ".txt", ".xlsm", ".xls", ".xlsx", ".bak", ".zip", ".csv"];
+  this.valid_extensions = [".jpg", ".jpeg", ".pdf", ".png", ".svg", ".tif", ".tiff", ".gif", ".mp4", ".ogv", ".webm", ".mp3", ".wav", ".avi", ".txt", ".xlsm", ".xls", ".xlsx", ".bak", ".zip", ".csv"];
   //Valid image extensions
-  this.supported_images = ['.jpg','.jpeg','.gif','.png'];
+  this.supported_images = ['.jpg','.jpeg','.gif','.png','.svg'];
   //Time before log entries are flushed to disk
   this.LogSleepDelay = 1000;
   //Application base path (containing models folder)
