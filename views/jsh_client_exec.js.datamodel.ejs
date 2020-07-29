@@ -54,26 +54,29 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       <%-xejs.iif('lovkey' in field,'"lovkey":'+JSON.stringify(field.lovkey)+',') %>
       <%-xejs.iif('value' in field,'"value":'+JSON.stringify(field.value)+',') %>
       <% if('default' in field){ %>"default":<%-XExt.XModel.ParseDefault(field.default, jslocals)%>,<% } %>
-      <% if('controlparams' in field){ %>controlparams:{
-        <%-xejs.iif('thumbnail_width' in field.controlparams,'"thumbnail_width":'+JSON.stringify(field.controlparams.thumbnail_width)+',') %>
-        <%-xejs.iif('show_thumbnail' in field.controlparams,'"show_thumbnail":'+JSON.stringify(field.controlparams.show_thumbnail)+',') %>
-        <%-xejs.iif('preview_on_click' in field.controlparams,'"preview_on_click":'+JSON.stringify(field.controlparams.preview_on_click)+',') %>
-        <%-xejs.iif('expand_all' in field.controlparams,'"expand_all":'+JSON.stringify(field.controlparams.expand_all)+',') %>
-        <%-xejs.iif('expand_to_selected' in field.controlparams,'"expand_to_selected":'+JSON.stringify(field.controlparams.expand_to_selected)+',') %>
-        <%-xejs.iif('lazy_render' in field.controlparams,'"lazy_render":'+JSON.stringify(field.controlparams.lazy_render)+',') %>
-        <%-xejs.iif('onmove' in field.controlparams,'"onmove":function(dragval, dropval, anchor, e){'+jslocals+field.controlparams.onmove+'},') %>
-        <%-xejs.iif('ondrop' in field.controlparams,'"ondrop":function(dropval, anchor, e){'+jslocals+field.controlparams.ondrop+'},') %>
-        <%-xejs.iif('drag_anchor_settings' in field.controlparams,'"drag_anchor_settings":'+JSON.stringify(field.controlparams.drag_anchor_settings)+',') %>
-        <%-xejs.iif('value_true' in field.controlparams,'"value_true":'+JSON.stringify(field.controlparams.value_true)+',') %>
-        <%-xejs.iif('value_false' in field.controlparams,'"value_false":'+JSON.stringify(field.controlparams.value_false)+',') %>
-        <%-xejs.iif('value_hidden' in field.controlparams,'"value_hidden":'+JSON.stringify(field.controlparams.value_hidden)+',') %>
-        <%-xejs.iif('popup_copy_results' in field.controlparams,'"popup_copy_results":'+JSON.stringify(field.controlparams.popup_copy_results)+',') %>
-        <%-xejs.iif('base_readonly' in field.controlparams,'"base_readonly":'+JSON.stringify(field.controlparams.base_readonly)+',') %>
-        <%-xejs.iif('onpopup' in field.controlparams,'"onpopup":function(popupmodelid, parentmodelid, fieldid, onComplete){'+jslocals+field.controlparams.onpopup+'},') %>
-        <%-xejs.iif('dateformat' in field.controlparams,'"dateformat":'+JSON.stringify(field.controlparams.dateformat)+',') %>
-        <%-xejs.iif('update_when_blank' in field.controlparams,'"update_when_blank":'+JSON.stringify(field.controlparams.update_when_blank)+',') %>
-        <%-xejs.iif('htmlarea_config' in field.controlparams,'"htmlarea_config":'+JSON.stringify(field.controlparams.htmlarea_config)+',') %>
-      },<% }%>
+      controlparams:{
+        <% if('controlparams' in field){ %>
+          <%-xejs.iif('thumbnail_width' in field.controlparams,'"thumbnail_width":'+JSON.stringify(field.controlparams.thumbnail_width)+',') %>
+          <%-xejs.iif('show_thumbnail' in field.controlparams,'"show_thumbnail":'+JSON.stringify(field.controlparams.show_thumbnail)+',') %>
+          <%-xejs.iif('preview_on_click' in field.controlparams,'"preview_on_click":'+JSON.stringify(field.controlparams.preview_on_click)+',') %>
+          <%-xejs.iif('expand_all' in field.controlparams,'"expand_all":'+JSON.stringify(field.controlparams.expand_all)+',') %>
+          <%-xejs.iif('expand_to_selected' in field.controlparams,'"expand_to_selected":'+JSON.stringify(field.controlparams.expand_to_selected)+',') %>
+          <%-xejs.iif('lazy_render' in field.controlparams,'"lazy_render":'+JSON.stringify(field.controlparams.lazy_render)+',') %>
+          <%-xejs.iif('onmove' in field.controlparams,'"onmove":function(dragval, dropval, anchor, e){'+jslocals+field.controlparams.onmove+'},') %>
+          <%-xejs.iif('ondrop' in field.controlparams,'"ondrop":function(dropval, anchor, e){'+jslocals+field.controlparams.ondrop+'},') %>
+          <%-xejs.iif('drag_anchor_settings' in field.controlparams,'"drag_anchor_settings":'+JSON.stringify(field.controlparams.drag_anchor_settings)+',') %>
+          <%-xejs.iif('value_true' in field.controlparams,'"value_true":'+JSON.stringify(field.controlparams.value_true)+',') %>
+          <%-xejs.iif('value_false' in field.controlparams,'"value_false":'+JSON.stringify(field.controlparams.value_false)+',') %>
+          <%-xejs.iif('value_hidden' in field.controlparams,'"value_hidden":'+JSON.stringify(field.controlparams.value_hidden)+',') %>
+          <%-xejs.iif('popup_copy_results' in field.controlparams,'"popup_copy_results":'+JSON.stringify(field.controlparams.popup_copy_results)+',') %>
+          <%-xejs.iif('base_readonly' in field.controlparams,'"base_readonly":'+JSON.stringify(field.controlparams.base_readonly)+',') %>
+          <%-xejs.iif('onpopup' in field.controlparams,'"onpopup":function(popupmodelid, parentmodelid, fieldid, onComplete){'+jslocals+field.controlparams.onpopup+'},') %>
+          <%-xejs.iif('dateformat' in field.controlparams,'"dateformat":'+JSON.stringify(field.controlparams.dateformat)+',') %>
+          <%-xejs.iif('update_when_blank' in field.controlparams,'"update_when_blank":'+JSON.stringify(field.controlparams.update_when_blank)+',') %>
+          <%-xejs.iif('htmlarea_config' in field.controlparams,'"htmlarea_config":'+JSON.stringify(field.controlparams.htmlarea_config)+',') %>
+          <%-xejs.iif('placeholder' in field.controlparams,'"placeholder":'+JSON.stringify(field.controlparams.placeholder)+',') %>
+        <% }%>
+      },
       <% if(field.lov && field.lov.parent){ %>"lovparent":<%-JSON.stringify(field.lov.parent)%>, <% } %>
       <% if(field.lov && field.lov.parents){ %>"lovparents":<%-JSON.stringify(field.lov.parents)%>, <% } %>
       <% if(field.lov && (('blank' in field.lov) && (field.lov.blank || (field.lov.blank === '')))){ %>"lovblank":1, <% } %>

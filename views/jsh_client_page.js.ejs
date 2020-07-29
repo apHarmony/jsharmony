@@ -1399,6 +1399,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         if(_.includes(['html','button','linkbutton','file_download','image'], field.control)) field.actions = 'B';
         else field.actions = 'BIU';
       }
+      if(!('controlparams' in field)) field.controlparams = {};
       if(field.always_editable) field.actions = 'BIU';
       else field.actions = XExt.xejs.getActions(model.actions, field.actions);
       if(!('control' in field)){

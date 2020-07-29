@@ -610,10 +610,10 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
     if (srcfield.popuplov) dstfield.popuplov = 1;
     if (srcfield.sqlsearchsound) dstfield.search_sound = 1;
     if (jsh.Config.use_sample_data && ('sample' in srcfield)) dstfield.sample = srcfield.sample;
+    dstfield.controlparams = {};
     if ('controlparams' in srcfield) {
-      dstfield.controlparams = {};
       copyValues(dstfield.controlparams, srcfield.controlparams, [
-        'download_button', 'preview_button', 'upload_button', 'delete_button', 'dateformat', 'item_context_menu', 'expand_all', 'onmove', 'ondrop', 'drag_anchor_settings', 'expand_to_selected', 'lazy_render', 'value_true', 'value_false', 'value_hidden', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup','base_readonly','grid_save_before_update','update_when_blank','htmlarea_config','show_thumbnail','preview_on_click','panelstyle',
+        'download_button', 'preview_button', 'upload_button', 'delete_button', 'dateformat', 'item_context_menu', 'expand_all', 'onmove', 'ondrop', 'drag_anchor_settings', 'expand_to_selected', 'lazy_render', 'value_true', 'value_false', 'value_hidden', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup','base_readonly','grid_save_before_update','update_when_blank','htmlarea_config','show_thumbnail','preview_on_click','panelstyle','placeholder',
       ]);
       if ('thumbnails' in srcfield.controlparams) for (var tname in srcfield.controlparams.thumbnails) {
         var thumb = srcfield.controlparams.thumbnails[tname];

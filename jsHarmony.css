@@ -241,6 +241,9 @@ BODY
 <%-rootcss%> .xform .htmlarea_container textarea {
   margin:0;
 }
+<%-rootcss%> .xform_ctrl::placeholder {
+  color:#aaa;
+}
 <%-rootcss%> .xform_ctrl_textarea {
   width:400px;
   height:50px;
