@@ -235,6 +235,7 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir, modu
     model.using[i] = upath;
   }
   if(!('fields' in model)) model.fields = [];
+  if(_.isString(model.buttons)){ _this.LogInit_ERROR(model.id + ': Invalid value for model.buttons attribute'); delete model.buttons; }
   _.each(model.buttons, function(button){
     button._orig_model = modelname;
   });
@@ -327,9 +328,15 @@ exports.ParseModelInheritance = function () {
           });
         });
         if(model.buttons && parentmodel.buttons){
-          //Check if child model has zero-length buttons
-          if(!model.buttons.length){
-            _this.LogInit_WARNING('Inheriting model ' + model.id + ' has empty buttons array.  Avoid empty button arrays in child models');
+          if(_this.Config.system_settings.deprecated.disable_button_inheritance[model.module]){
+            //If button inheritance is disabled, remove all inherited buttons prior to parsing
+            if(_.isArray(model.buttons)) model.buttons.unshift({ "__REMOVEALL__": true });
+          }
+          else {
+            //Check if child model has zero-length buttons
+            if(!model.buttons.length){
+              _this.LogInit_WARNING('Inheriting model ' + model.id + ' has empty buttons array.  Avoid empty button arrays in child models');
+            }
           }
         }
         //Create a clone of parent model instead of object reference
@@ -353,9 +360,11 @@ exports.ParseModelInheritance = function () {
         delete _this.Models[model.id].inherits;
 
         if(model.buttons && parentmodel.buttons){
-          //Check if named buttons are used in both model and parent model
-          if(!!_.filter(_this.Models[model.id].buttons, function(button){ return !button.name; }).length){
-            _this.LogInit_WARNING('Model ' + model.id + ' buttons may conflict with parent model '+parentmodel.id+' buttons.  Use button.name on all buttons to prevent conflicts in inherited models');
+          if(!_this.Config.system_settings.deprecated.disable_button_inheritance[model.module]){
+            //Check if named buttons are used in both model and parent model
+            if(!!_.filter(_this.Models[model.id].buttons, function(button){ return !button.name; }).length){
+              _this.LogInit_WARNING('Model ' + model.id + ' buttons may conflict with parent model '+parentmodel.id+' buttons.  Use button.name on all buttons to prevent conflicts in inherited models');
+            }
           }
         }
       }
@@ -523,6 +532,8 @@ function EntityPropMerge(mergedprops, prop, model, parent, mergefunc) {
 
 exports.MergeModelArray = function(newval, oldval, eachItem){
   var _this = this;
+  if(!newval || _.isString(newval)) return newval;
+
   try{
     var rslt = newval.slice(0);
   }
