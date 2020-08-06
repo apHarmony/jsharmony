@@ -133,6 +133,10 @@ function jsHarmonyConfig(config){
       "lovs": true,              //Load LOVs (List of Values - code/code2) from the database
       "keys": true               //Generate primary and foreign keys based on table keys
     },
+    //Deprecated Options Compatibility
+    "deprecated": {
+      "disable_button_inheritance": { } //Disable button inheritance for each Module in the array. ex: { "application": true }
+    },
     //Model validation level - "standard", "strict"
     //  Strict: MISSING_CAPTION
     "validation_level": "standard"
