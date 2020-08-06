@@ -102,6 +102,7 @@ exports = module.exports = function(jsh){
     this.bcrumbs = {};
     this.title = null;
     this.API = (options.API ? options.API : new jsh.XAPI.Grid.jsHarmony(this.modelid));
+    this.MinLoadTime = 500;
   }
 
   //Passing 0,-1 for rowcount will return total rowcount
@@ -167,8 +168,8 @@ exports = module.exports = function(jsh){
       else{
         //Success handler
         var loadtime = ((new Date()).getTime() - starttime);
-        if((rowstart > 0) && (loadtime < 500)){
-          window.setTimeout(function(){ _this.ProcessData(rslt,rowstart,onComplete,reqdata); },500-loadtime);
+        if((rowstart > 0) && (loadtime < this.MinLoadTime)){
+          window.setTimeout(function(){ _this.ProcessData(rslt,rowstart,onComplete,reqdata); },this.MinLoadTime-loadtime);
         }
         else { _this.ProcessData(rslt,rowstart,onComplete,reqdata); }
       }

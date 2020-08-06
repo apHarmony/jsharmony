@@ -147,7 +147,7 @@ else if(parent && (parent.topmost) && ('tabpos' in parent) && (parent.tabpos=='t
     </thead>
     <tbody class="xgrid_<%=model.class%>_placeholder"></tbody>
     <script class="xgrid_<%=model.class%>_template" type="text/x-ejs-template" data-target=".xgrid_<%=model.class%>_placeholder">
-      <%% for(var j=0;j<datatable.length;j++){ var datarow=datatable[j]; var data = datarow; if((typeof startrowid == 'undefined') || (startrowid === null)) startrowid = j; var rowid = startrowid + j %%>
+      <%% for(var j=0;j<datatable.length;j++){ var datarow=datatable[j]; var data = datarow; if((typeof startrowid == 'undefined') || (startrowid === null)) startrowid = j; var rowid = startrowid + j;  %%>
       <tr class="<%%=(rowid%2==1?'even':'odd')%%> <%-model.rowclass%> xrow_<%=model.class%> xrow" style="<%-model.rowstyle%>" data-id="<%%=rowid%%>">
         <% if(model.inlinepopup){ %><td align="center"><a href="#" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this); return false;">Select</a></td><% } %>
         <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i];

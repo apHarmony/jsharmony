@@ -987,6 +987,7 @@ DIALOG BOXES
   -moz-border-radius: 5px;
   overflow:auto;
   max-height: calc(100vh - 20px);
+  box-sizing:border-box;
 }
 <%-rootcss%> .xdialogblock .xdialogoverlay {
   background-color: rgba(0,0,0,0.4);

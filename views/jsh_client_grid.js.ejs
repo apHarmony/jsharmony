@@ -500,9 +500,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var jobj = jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']");
     var newobj = $(jobj).find('.xform_ctrl.editable:visible,.xlookup:visible').not('input[type=hidden]').first();
     if(newobj.length){
-      xeditablegrid.SetFocus(newobj[0], null, function(){
+      if(xeditablegrid.IsContainerActive()){
+        xeditablegrid.SetFocus(newobj[0], null, function(){
+          if(onSelected) onSelected();
+        });
+      }
+      else {
         if(onSelected) onSelected();
-      });
+      }
     }
     else return XExt.Alert('No selectable element found in grid row');
   }
@@ -610,63 +615,69 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     return false;
   }
 
-  xcontroller.DeleteRow = function(rowid){
+  xcontroller.DeleteRow = function(rowid, options){
     if(!xeditablegrid) return;
-    XExt.Confirm("Are you sure you want to delete this <%=model.caption[1]%>?",function(){
-      var oldrowid = xcontroller.GetRowID();
+    options = _.extend({ force: false }, options);
+    XExt.execif(!options.force,
+      function(f){
+        XExt.Confirm("Are you sure you want to delete this <%=model.caption[1]%>?",f);
+      },
+      function(){
+        var oldrowid = xcontroller.GetRowID();
 
-      if(oldrowid != rowid) if(!xform.CommitRow()) return;
-    
-      var exec_delete = function(){
-        xgrid.Prop.ModifiedSinceLoad = true;
-        xform.DataSet[rowid]._is_deleted = true;
-        xform.DataSet[rowid]._is_insert = false;
-        xform.DataSet[rowid]._is_dirty = false;
-        xform.DataSet[rowid]._orig = null;
-        var jrow = jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']");
-        if(xmodel.onrowunbind) xmodel.onrowunbind(xmodel,jrow,rowid);
-        jrow.remove();
-        if(!jsh.$root(xgrid.PlaceholderID).find('tr').length) xgrid.RenderNoResultsMessage();
-        xeditablegrid.CurrentCell = null;
-        if(xform.Index==rowid){ 
-          xform.Data._is_insert = false;
-          xform.Data._is_dirty = false;
-          xform.Data._orig = null;
-          xform.Index = -1;
-          for(var i=0;i<xform.Count();i++){
-            if(!xform.DataSet[i]._is_deleted){ 
-              xform.SetIndex(i,false);
-              break;
+        if(oldrowid != rowid) if(!xform.CommitRow()) return;
+      
+        var exec_delete = function(){
+          xgrid.Prop.ModifiedSinceLoad = true;
+          xform.DataSet[rowid]._is_deleted = true;
+          xform.DataSet[rowid]._is_insert = false;
+          xform.DataSet[rowid]._is_dirty = false;
+          xform.DataSet[rowid]._orig = null;
+          var jrow = jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']");
+          if(xmodel.onrowunbind) xmodel.onrowunbind(xmodel,jrow,rowid);
+          jrow.remove();
+          if(!jsh.$root(xgrid.PlaceholderID).find('tr').length) xgrid.RenderNoResultsMessage();
+          xeditablegrid.CurrentCell = null;
+          if(xform.Index==rowid){ 
+            xform.Data._is_insert = false;
+            xform.Data._is_dirty = false;
+            xform.Data._orig = null;
+            xform.Index = -1;
+            for(var i=0;i<xform.Count();i++){
+              if(!xform.DataSet[i]._is_deleted){ 
+                xform.SetIndex(i,false);
+                break;
+              }
             }
           }
+          xform.RecheckDirty();
         }
-        xform.RecheckDirty();
-      }
 
-      if(!(xform.DataSet[rowid]._is_insert)){
-        if(!(xform.DataSet[rowid] in xform.DeleteSet)) xform.DeleteSet.push(xform.DataSet[rowid]);
+        if(!(xform.DataSet[rowid]._is_insert)){
+          if(!(xform.DataSet[rowid] in xform.DeleteSet)) xform.DeleteSet.push(xform.DataSet[rowid]);
 
-        if(xmodel.commitlevel == 'page'){
-          exec_delete();
-        }
-        else{
-          var dbtasks = xform.PrepSaveDataSet(true);
-          xform.ExecuteTrans(dbtasks,function(rslt){
-            //On Complete
+          if(xmodel.commitlevel == 'page'){
             exec_delete();
-            xform.ResetDirty();
-        if(xmodel.oncommit) xmodel.oncommit(xmodel, -1, function(){});
-          },function(data){
-            //On Fail
-            _.remove(xform.DeleteSet,xform.DataSet[rowid]);
-            xform.RecheckDirty();
-            if(data && ('responseText' in data)) XExt.Alert('An error has occurred: ' + data.responseText);
-            return true; //Error handled
-          });
+          }
+          else{
+            var dbtasks = xform.PrepSaveDataSet(true);
+            xform.ExecuteTrans(dbtasks,function(rslt){
+              //On Complete
+              exec_delete();
+              xform.ResetDirty();
+          if(xmodel.oncommit) xmodel.oncommit(xmodel, -1, function(){});
+            },function(data){
+              //On Fail
+              _.remove(xform.DeleteSet,xform.DataSet[rowid]);
+              xform.RecheckDirty();
+              if(data && ('responseText' in data)) XExt.Alert('An error has occurred: ' + data.responseText);
+              return true; //Error handled
+            });
+          }
         }
+        else exec_delete();
       }
-      else exec_delete();
-    });
+    );
   }
 
   xcontroller.Save = function(){

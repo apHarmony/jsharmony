@@ -314,10 +314,14 @@ exports = module.exports = function(jsh){
     return true;
   }
 
+  XEditableGrid.prototype.IsContainerActive = function () {
+    return (this.DialogContainer == jsh.getTopDialogContainer());
+  }
+
   //obj must be a DOM element - not a jQuery object
   //Leave e to null if not calling from a focus event handler
   XEditableGrid.prototype.SetFocus = function (obj, e, onComplete) {
-    if(this.DialogContainer != jsh.getTopDialogContainer()) return;
+    if(!this.IsContainerActive()) return;
     var containerobj = obj;
     if (!$(obj).hasClass('editable')){
       containerobj = null;
