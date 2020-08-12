@@ -393,6 +393,8 @@ jsHarmonyConfig.prototype.LoadJSConfigFolder = function(jsh, fpath){
   var configFiles = [];
   //app.config.js
   configFiles.push(fpath + '/app.config.js');
+  //Localized config
+  configFiles.push(fpath + '/app.config.local.js');
   //Config based on Application Path
   if(patharr.length) configFiles.push(fpath + '/app.config.' + patharr.join('_') + '.js');
   //Config based on Hostname
@@ -450,6 +452,8 @@ jsHarmonyConfig.prototype.LoadJSONConfigFolder = function(jsh, fpath, sourceModu
   fpath += '/models';
   //Load app.config.js
   this.LoadJSONConfigFile(jsh, fpath + '/_config.json', sourceModule);
+  //Load app.config.local.js
+  this.LoadJSONConfigFile(jsh, fpath + '/_config.local.json', sourceModule);
   //Load config based on Application Path
   this.LoadJSONConfigFile(jsh, fpath + '/_config.' + patharr.join('_') + '.json', sourceModule);
   //Load config based on Hostname

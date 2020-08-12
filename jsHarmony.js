@@ -219,8 +219,11 @@ jsHarmony.prototype.Init = function(init_cb){
 
       if(!_this.Config.silentStart) _this.Log.console('Loading models...');
       _this.LoadDBSchemas(cb);
+    },
+    function(cb){
       _this.ParseSQLObjectInheritance();
       _this.ParseSQLObjects();
+      return cb();
     },
     function(cb){
       //Configure Mailer
