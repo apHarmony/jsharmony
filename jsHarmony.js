@@ -221,6 +221,7 @@ jsHarmony.prototype.Init = function(init_cb){
       _this.LoadDBSchemas(cb);
     },
     function(cb){
+      _this.LogInit_PERFORMANCE('Loading SQL Objects '+(Date.now()-_this.Statistics.StartTime));
       _this.ParseSQLObjectInheritance();
       _this.ParseSQLObjects();
       return cb();
