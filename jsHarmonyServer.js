@@ -361,12 +361,8 @@ jsHarmonyServer.prototype.Run = function(cb){
     _this.addWebSocketHandler(server);
     server.timeout = _this.serverConfig.request_timeout;
     _this.ListenPort(server, _this.serverConfig.http_port, _this.serverConfig.http_ip, function(){
-      _this.jsh.Log.info('Listening on HTTP port ' + server.address().port);
-      if(!_this.serverConfig.http_port){
-        var server_txt = _this.serverConfig.http_ip;
-        if(server_txt == '0.0.0.0') server_txt = os.hostname().toLowerCase();
-        _this.jsh.Log.info('Log in at http://'+server_txt+':'+server.address().port);
-      }
+      _this.jsh.Log.info(_this.jsh.Config.app_name + ' listening on HTTP port ' + server.address().port);
+      _this.jsh.Log.info('Log in at '+_this.getURL());
       Helper.triggerAsync(_this.jsh.Config.onServerReady, null, [server]);
       if (cb) cb([server]);
     }, function(err){
@@ -398,16 +394,12 @@ jsHarmonyServer.prototype.Run = function(cb){
       _this.ListenPort(server, _this.serverConfig.https_port, _this.serverConfig.https_ip, function(){
         new_https_port = server.address().port;
         if(!http_redirect){
-          _this.jsh.Log.info('Listening on HTTPS port ' + new_https_port);
+          _this.jsh.Log.info(_this.jsh.Config.app_name + ' listening on HTTPS port ' + new_https_port);
         }
         else {
-          _this.jsh.Log.info('Listening on HTTP/HTTPS ports ' + new_http_port + '/' + new_https_port);
+          _this.jsh.Log.info(_this.jsh.Config.app_name + ' listening on HTTP/HTTPS ports ' + new_http_port + '/' + new_https_port);
         }
-        if(!_this.serverConfig.https_port){
-          var server_txt = _this.serverConfig.https_ip;
-          if(server_txt == '0.0.0.0') server_txt = os.hostname().toLowerCase();
-          _this.jsh.Log.info('Log in at https://'+server_txt+':'+new_https_port);
-        }
+        _this.jsh.Log.info('Log in at '+_this.getURL());
         if(servers.push(server));
         Helper.triggerAsync(_this.jsh.Config.onServerReady, null, servers);
         if(cb_https) cb_https(servers);
@@ -450,6 +442,37 @@ jsHarmonyServer.prototype.Run = function(cb){
     }
   }
 };
+
+jsHarmonyServer.prototype.getURL = function(){
+  var _this = this;
+  var https_server = false;
+  var http_redirect = false;
+  var http_server = false;
+
+  if('https_port' in _this.serverConfig) https_server = true;
+  if('http_port' in _this.serverConfig){
+    if(https_server) http_redirect = true;
+    else http_server = true;
+  }
+
+  var server_txt = '';
+  var server_port = '';
+  if(http_server){
+    server_txt = _this.serverConfig.http_ip;
+    for(var i=0;i<_this.servers.length;i++){
+      if(_this.servers[i] instanceof http.Server){ server_port = _this.servers[i].address().port; break; }
+    }
+  }
+  if(https_server){
+    server_txt = _this.serverConfig.https_ip;
+    for(var i=0;i<_this.servers.length;i++){
+      if(_this.servers[i] instanceof https.Server){ server_port = _this.servers[i].address().port; break; }
+    }
+  }
+  if(server_txt == '0.0.0.0') server_txt = os.hostname().toLowerCase();
+  if(server_txt && server_port) return 'https://'+server_txt+':'+server_port;
+  return '';
+}
 
 jsHarmonyServer.prototype.Close = function(cb){
   var _this = this;
