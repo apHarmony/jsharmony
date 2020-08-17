@@ -986,8 +986,7 @@ DIALOG BOXES
 	border-radius: 5px;
   -moz-border-radius: 5px;
   overflow:auto;
-  max-height: calc(100vh - 20px);
-  box-sizing:border-box;
+  max-height: calc(100vh - 66px);
 }
 <%-rootcss%> .xdialogblock .xdialogoverlay {
   background-color: rgba(0,0,0,0.4);
@@ -1043,10 +1042,12 @@ DIALOG BOXES
 <%-rootcss%> .xpromptfield {
   margin: 20px 0 0px 0;
   width:100%;
+  box-sizing:border-box;
 }
 <%-rootcss%> .xtextzoomfield {
   margin: 20px 0 0px 0;
   width:100%;
+  box-sizing:border-box;
   height:300px;
 }
 <%-rootcss%> .xdialogbox h3 {
