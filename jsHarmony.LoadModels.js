@@ -642,14 +642,24 @@ exports.LogDeprecated = function(msg) {
   this.Log.console('**DEPRECATED** ' + msg);
 };
 
-exports.TestImageMagick  = function(strField){
+exports.TestImageExtension  = function(strField){
   var _this = this;
-  _this._IMAGEMAGICK_FIELDS.push(strField); 
-  if(_this._IMAGEMAGICK_FIELDS.length > 1) return;
-  var imagick = require('gm').subClass({ imageMagick: true });
-  if(_this.Config.system_settings.ignore_imagemagick) return;
-  imagick(100,100,'white').setFormat('PNG').toBuffer(function(err,b){
-    if(err) _this.LogInit_ERROR('Please install ImageMagick.  Used by: ' + _.uniq(_this._IMAGEMAGICK_FIELDS).join(', '));
+  _this._IMAGE_FIELDS.push(strField); 
+  if(_this._IMAGE_FIELDS.length > 1) return;
+  if(_this.Config.system_settings.ignore_image_extension) return;
+  var errMsg = 'Image controls were detected in this project: ' + _.uniq(_this._IMAGE_FIELDS).join(', ')+'\n';
+  errMsg += '  Please add support for a jsHarmony Image Extension:\n';
+  errMsg += '    jsharmony-image-sharp - Has bundled DLLs for Node 10+\n';
+  errMsg += '    jsharmony-image-magick - Requires ImageMagick installation, has GIF resize support\n';
+  errMsg += '  To add a jsHarmony Image Extension:\n';
+  errMsg += '    1. Run npm install:\n';
+  errMsg += '       npm install jsharmony-image-sharp\n';
+  errMsg += '    2. Add the extension to app.config.js / app.config.local.js:\n';
+  errMsg += "       jsh.Extensions.image = require('jsharmony-image-sharp');\n";
+  errMsg += '\n';
+  if(!_this.Extensions.image) return _this.LogInit_ERROR(errMsg);
+  _this.Extensions.image.init(function(err){
+    if(err) return _this.LogInit_ERROR(errMsg);
   });
 };
 
@@ -1441,8 +1451,8 @@ exports.ParseEntities = function () {
         if ('popup_copy_results' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams popup_copy_results attribute has been deprecated - use "popuplov":{...}');
         if ('base_readonly' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams base_readonly attribute has been deprecated - use "popuplov":{...}');
         if ('onpopup' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams onpopup attribute has been deprecated - use "popuplov":{...}');
-        if (('image' in field.controlparams) && Helper.hasAction(field.actions, 'IU') && (field.controlparams.image)) _this.TestImageMagick(model.id + ' > ' + field.name);
-        if (('thumbnails' in field.controlparams) && Helper.hasAction(field.actions, 'IU')) _.each(field.controlparams.thumbnails,function(thumbnail){ _this.TestImageMagick(model.id + ' > ' + field.name); });
+        if (('image' in field.controlparams) && Helper.hasAction(field.actions, 'IU') && (field.controlparams.image)) _this.TestImageExtension(model.id + ' > ' + field.name);
+        if (('thumbnails' in field.controlparams) && Helper.hasAction(field.actions, 'IU')) _.each(field.controlparams.thumbnails,function(thumbnail){ _this.TestImageExtension(model.id + ' > ' + field.name); });
       }
       if ('popuplov' in field) {
         if (field.popuplov.CODEVal) { field.popuplov.code_val = field.popuplov.CODEVal; delete field.popuplov.CODEVal; }

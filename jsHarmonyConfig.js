@@ -112,8 +112,8 @@ function jsHarmonyConfig(config){
   this.system_settings = {
     //Make datalock lookups case-insensitive
     "case_insensitive_datalocks": true,
-    //Do not check for ImageMagick on startup
-    "ignore_imagemagick": false,
+    //Do not check for Image Extension on startup
+    "ignore_image_extension": false,
     //Enable direct http access to encrypted content
     "allow_insecure_http_encryption": false,
     //Suffix override for jsHarmony cookie name - default is _PORT, to enable multiple applications on the same domain

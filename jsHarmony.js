@@ -38,6 +38,7 @@ function jsHarmony(config) {
 
   this.Config = new jsHarmonyConfig(config);
   this.Modules = {};
+  this.Extensions = {};
   this.Views = {};
   this.DBConfig = {};
   this.DB = {};
@@ -69,7 +70,7 @@ function jsHarmony(config) {
   this.Popups = {};
   this.Cache = {};
   this.FontCache = {};
-  this._IMAGEMAGICK_FIELDS = [];
+  this._IMAGE_FIELDS = [];
   this.AppSrv = null;
   this.map = {};
   this.uimap = {};

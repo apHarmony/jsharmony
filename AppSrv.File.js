@@ -23,7 +23,6 @@ var async = require('async');
 var path = require('path');
 var multiparty = require('multiparty');
 var HelperFS = require('./lib/HelperFS.js');
-var HelperImg = require('./lib/HelperImg.js');
 var fs = require('fs');
 
 module.exports = exports = {};
@@ -400,13 +399,16 @@ exports.ProcessFileOperations = function (keyval, fileops, rslt, stats, callback
         });
       }
       else if (fileop.op == 'img_resample'){
-        HelperImg.resample(filesrc, filedest, fileop.format, opcallback);
+        if(!jsh.Extensions.image) return opcallback(new Error("Image Extensions have not been enabled - cannot resample"));
+        jsh.Extensions.image.resample(filesrc, filedest, fileop.format, opcallback);
       }
       else if (fileop.op == 'img_crop') {
-        HelperImg.crop(filesrc, filedest, fileop.size, fileop.format, opcallback);
+        if(!jsh.Extensions.image) return opcallback(new Error("Image Extensions have not been enabled - cannot crop"));
+        jsh.Extensions.image.crop(filesrc, filedest, fileop.size, fileop.format, opcallback);
       }
       else if (fileop.op == 'img_resize') {
-        HelperImg.resize(filesrc, filedest, fileop.size, fileop.format, opcallback);
+        if(!jsh.Extensions.image) return opcallback(new Error("Image Extensions have not been enabled - cannot resize"));
+        jsh.Extensions.image.resize(filesrc, filedest, fileop.size, fileop.format, opcallback);
       }
       else return opcallback(null);
     });
