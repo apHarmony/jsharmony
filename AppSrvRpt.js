@@ -18,7 +18,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var _ = require('lodash');
-var puppeteer = require('puppeteer');
 var path = require('path');
 var fs = require('fs');
 var tmp = require('tmp');
@@ -29,7 +28,6 @@ var ejs = require('ejs');
 var ejsext = require('./lib/ejsext.js');
 var moment = require('moment');
 var querystring = require('querystring');
-var pdfMerge = require('pdf-merge');
 var _HEADER_ZOOM = 0.75;
 var _BROWSER_RECYCLE_COUNT = 50;
 
@@ -188,7 +186,9 @@ AppSrvRpt.prototype.batchReport = function (req, res, db, dbcontext, model, sql_
                 HelperFS.getFileStats(req, res, tmppath, function (err, stat) {
                   if (err){ dispose(); return cb('Report file not found'); }
                   pdfFiles.push(tmppath);
-                  pdfMerge(pdfFiles,{ output: batchtmppdfpath }).then(function(){
+                  
+                  if(!jsh.Extensions.report){ return cb('Report Extension has not been enabled.  Please configure jsh.Extensions.report'); }
+                  jsh.Extensions.report.pdfMerge()(pdfFiles,{ output: batchtmppdfpath }).then(function(){
                     pdfFiles = [batchtmppdfpath];
                     dispose();
                     return cb(null);
@@ -653,7 +653,8 @@ AppSrvRpt.prototype.getBrowser = function (callback) {
     else return callback(null, _this.browser);
   }
   jsh.Log.info('Launching Report Renderer');
-  puppeteer.launch({ ignoreHTTPSErrors: true }) //, headless: false
+  if(!jsh.Extensions.report){ var errmsg = 'Report Extension has not been enabled.  Please configure jsh.Extensions.report'; jsh.Log.error(errmsg); return callback(new Error(errmsg)); }
+  jsh.Extensions.report.puppeteer().launch({ ignoreHTTPSErrors: true }) //, headless: false
     .then(function(rslt){
       _this.browser = rslt;
       _this.browser.on('disconnected', function(){

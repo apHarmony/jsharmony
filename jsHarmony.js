@@ -71,6 +71,7 @@ function jsHarmony(config) {
   this.Cache = {};
   this.FontCache = {};
   this._IMAGE_FIELDS = [];
+  this._REPORT_MODELS = [];
   this.AppSrv = null;
   this.map = {};
   this.uimap = {};

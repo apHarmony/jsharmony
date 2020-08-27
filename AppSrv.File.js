@@ -399,15 +399,15 @@ exports.ProcessFileOperations = function (keyval, fileops, rslt, stats, callback
         });
       }
       else if (fileop.op == 'img_resample'){
-        if(!jsh.Extensions.image) return opcallback(new Error("Image Extensions have not been enabled - cannot resample"));
+        if(!jsh.Extensions.image) return opcallback(new Error("Image Extensions have not been enabled - cannot resample.  Please configure jsh.Extensions.image"));
         jsh.Extensions.image.resample(filesrc, filedest, fileop.format, opcallback);
       }
       else if (fileop.op == 'img_crop') {
-        if(!jsh.Extensions.image) return opcallback(new Error("Image Extensions have not been enabled - cannot crop"));
+        if(!jsh.Extensions.image) return opcallback(new Error("Image Extensions have not been enabled - cannot crop.  Please configure jsh.Extensions.image"));
         jsh.Extensions.image.crop(filesrc, filedest, fileop.size, fileop.format, opcallback);
       }
       else if (fileop.op == 'img_resize') {
-        if(!jsh.Extensions.image) return opcallback(new Error("Image Extensions have not been enabled - cannot resize"));
+        if(!jsh.Extensions.image) return opcallback(new Error("Image Extensions have not been enabled - cannot resize.  Please configure jsh.Extensions.image"));
         jsh.Extensions.image.resize(filesrc, filedest, fileop.size, fileop.format, opcallback);
       }
       else return opcallback(null);
