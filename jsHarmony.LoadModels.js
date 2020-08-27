@@ -17,6 +17,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 var _ = require('lodash');
+var async = require('async');
 var fs = require('fs');
 var path = require('path');
 var crypto = require('crypto');
@@ -642,38 +643,35 @@ exports.LogDeprecated = function(msg) {
   this.Log.console('**DEPRECATED** ' + msg);
 };
 
-exports.TestImageExtension  = function(){
+exports.TestImageExtension  = function(cb){
   var _this = this;
-  if(!_this._IMAGE_FIELDS.length) return;
-  if(_this.Config.system_settings.ignore_image_extension) return;
-  var errMsg = 'Image controls were detected in this project: ' + _.uniq(_this._IMAGE_FIELDS).join(', ')+'\n';
+  if(!_this.Extensions.dependencies.image || !_this.Extensions.dependencies.image.length) return cb();
+  if(_this.Config.system_settings.ignore_image_extension) return cb();
+  var errMsg = 'Image controls were detected in this project: ' + _.uniq(_this.Extensions.dependencies.image).join(', ')+'\n';
   errMsg += '  Please add support for a jsHarmony Image Extension:\n';
-  errMsg += '    jsharmony-image-sharp - Has bundled DLLs for Node 10+\n';
+  errMsg += '    jsharmony-image-sharp - Includes bundled DLLs for Node 10+\n';
   errMsg += '    jsharmony-image-magick - Requires ImageMagick installation, has GIF resize support\n';
   errMsg += '  To add a jsHarmony Image Extension:\n';
   errMsg += '    1. Install a jsHarmony Image Extension:\n';
   errMsg += '       npm install jsharmony-image-sharp\n';
   errMsg += '    2. Add the extension to app.config.js / app.config.local.js:\n';
-  errMsg += "       jsh.Extensions.image = require('jsharmony-image-sharp');\n";
-  errMsg += '\n';
-  if(!_this.Extensions.image) return _this.LogInit_ERROR(errMsg);
-  _this.Extensions.image.init(function(err){
-    if(err) return _this.LogInit_ERROR(errMsg);
-  });
+  errMsg += "       jsh.Extensions.image = require('jsharmony-image-sharp');";
+  if(!_this.Extensions.image){ return cb(errMsg); }
+  _this.Extensions.image.init(function(err){ return cb(err && errMsg); });
 };
 
-exports.TestReportExtension  = function(){
+exports.TestReportExtension  = function(cb){
   var _this = this;
-  if(!_this._REPORT_MODELS.length) return;
-  if(_this.Config.system_settings.ignore_report_extension) return;
-  var errMsg = 'Report models were detected in this project: ' + _.uniq(_this._REPORT_MODELS).join(', ')+'\n';
+  if(!_this.Extensions.dependencies.report || !_this.Extensions.dependencies.report.length) return cb();
+  if(_this.Config.system_settings.ignore_report_extension) return cb();
+  var errMsg = '\n\nReport models were detected in this project: ' + _.uniq(_this.Extensions.dependencies.report).join(', ')+'\n';
   errMsg += '  Please add support for a jsHarmony Report Extension:\n';
   errMsg += '    1. Install the jsHarmony Report Extension:\n';
   errMsg += '       npm install jsharmony-report\n';
   errMsg += '    2. Add the extension to app.config.js / app.config.local.js:\n';
-  errMsg += "       jsh.Extensions.report = require('jsharmony-report');\n";
-  errMsg += '\n';
-  if(!_this.Extensions.report) return _this.LogInit_ERROR(errMsg);
+  errMsg += "       jsh.Extensions.report = require('jsharmony-report');";
+  if(!_this.Extensions.report) return cb(err && errMsg);
+  return cb();
 };
 
 exports.ParseDeprecated = function () {
@@ -1190,7 +1188,7 @@ exports.ParseEntities = function () {
         }
       }
     });
-    if(model.actions && (model.layout=='report')) _this._REPORT_MODELS.push(model.id);
+    if(model.actions && (model.layout=='report')) _this.Extensions.logDependency('report', model.id);
     _.each(model.fields, function (field) {
       field._auto = field._auto || {};
       var fielddef = db.getFieldDefinition(model.table, field.name,tabledef);
@@ -1465,8 +1463,8 @@ exports.ParseEntities = function () {
         if ('popup_copy_results' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams popup_copy_results attribute has been deprecated - use "popuplov":{...}');
         if ('base_readonly' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams base_readonly attribute has been deprecated - use "popuplov":{...}');
         if ('onpopup' in field.controlparams) _this.LogDeprecated(model.id + ' > ' + field.name + ': The controlparams onpopup attribute has been deprecated - use "popuplov":{...}');
-        if (('image' in field.controlparams) && Helper.hasAction(field.actions, 'IU') && (field.controlparams.image)) _this._IMAGE_FIELDS.push(model.id + ' > ' + field.name);
-        if (('thumbnails' in field.controlparams) && Helper.hasAction(field.actions, 'IU')) _.each(field.controlparams.thumbnails,function(thumbnail){ _this._IMAGE_FIELDS.push(model.id + ' > ' + field.name); });
+        if (('image' in field.controlparams) && Helper.hasAction(field.actions, 'IU') && (field.controlparams.image)) _this.Extensions.logDependency('image', model.id + ' > ' + field.name);
+        if (('thumbnails' in field.controlparams) && Helper.hasAction(field.actions, 'IU')) _.each(field.controlparams.thumbnails,function(thumbnail){ _this.Extensions.logDependency('image', model.id + ' > ' + field.name); });
       }
       if ('popuplov' in field) {
         if (field.popuplov.CODEVal) { field.popuplov.code_val = field.popuplov.CODEVal; delete field.popuplov.CODEVal; }
@@ -2195,13 +2193,31 @@ exports.ParseEntities = function () {
     if(fname != basename) _this.LogInit_ERROR('jsh.CustomFormatters.'+fname+' > Base formatter jsh.CustomFormatters.'+basename+' not defined');
     else _this.LogInit_ERROR('jsh.CustomFormatters.'+fname+' > Decode formatter jsh.CustomFormatters.'+fname+'_decode not defined');
   }
-
-  //Test Image Extension
-  _this.TestImageExtension();
-
-  //Test Report Extension
-  _this.TestReportExtension();
 };
+
+exports.InitExtensions = function(cb){
+  var _this = this;
+
+  async.waterfall([
+    function(init_cb){
+      //Test Image Extension
+      _this.TestImageExtension(function(err){
+        if(err) _this.LogInit_ERROR(err);
+        return init_cb();
+      });
+    },
+
+    function(init_cb){
+      //Test Report Extension
+      _this.TestReportExtension(function(err){
+        if(err) _this.LogInit_ERROR(err);
+        return init_cb();
+      });
+    }
+  ], function(err){
+    return cb(err);
+  });
+}
 
 function ParseMultiLineProperties(obj, arr) {
   _.each(arr, function (p) { if (p in obj) obj[p] = Helper.ParseMultiLine(obj[p]); });

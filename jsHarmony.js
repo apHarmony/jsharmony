@@ -25,6 +25,7 @@ var Helper = require('./lib/Helper.js');
 var HelperFS = require('./lib/HelperFS.js');
 var AppSrv = require('./AppSrv.js');
 var jsHarmonyConfig = require('./jsHarmonyConfig.js');
+var jsHarmonyExtensions = require('./jsHarmonyExtensions.js');
 var jsHarmonySite = require('./jsHarmonySite.js');
 var jsHarmonyServer = require('./jsHarmonyServer.js');
 var jsHarmonyModule = require('./jsHarmonyModule.js');
@@ -38,7 +39,7 @@ function jsHarmony(config) {
 
   this.Config = new jsHarmonyConfig(config);
   this.Modules = {};
-  this.Extensions = {};
+  this.Extensions = new jsHarmonyExtensions();
   this.Views = {};
   this.DBConfig = {};
   this.DB = {};
@@ -70,8 +71,6 @@ function jsHarmony(config) {
   this.Popups = {};
   this.Cache = {};
   this.FontCache = {};
-  this._IMAGE_FIELDS = [];
-  this._REPORT_MODELS = [];
   this.AppSrv = null;
   this.map = {};
   this.uimap = {};
@@ -297,6 +296,10 @@ jsHarmony.prototype.Init = function(init_cb){
       async.eachSeries(_this.Modules, function(module, module_cb){
         module.Init(module_cb);
       }, cb);
+    },
+    function(cb){
+      //Initialize Extensions
+      _this.InitExtensions(cb);
     },
     function(cb){
       _this.LogInit_PERFORMANCE('Initializing Sites '+(Date.now()-_this.Statistics.StartTime));

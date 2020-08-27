@@ -187,11 +187,13 @@ AppSrvRpt.prototype.batchReport = function (req, res, db, dbcontext, model, sql_
                   if (err){ dispose(); return cb('Report file not found'); }
                   pdfFiles.push(tmppath);
                   
-                  if(!jsh.Extensions.report){ return cb('Report Extension has not been enabled.  Please configure jsh.Extensions.report'); }
-                  jsh.Extensions.report.pdfMerge()(pdfFiles,{ output: batchtmppdfpath }).then(function(){
-                    pdfFiles = [batchtmppdfpath];
-                    dispose();
-                    return cb(null);
+                  jsh.Extensions.report.getPdfMerge(function(err, pdfMerge){
+                    if(err) return cb(err);
+                    pdfMerge(pdfFiles,{ output: batchtmppdfpath }).then(function(){
+                      pdfFiles = [batchtmppdfpath];
+                      dispose();
+                      return cb(null);
+                    });
                   });
                 });
               });
@@ -653,17 +655,19 @@ AppSrvRpt.prototype.getBrowser = function (callback) {
     else return callback(null, _this.browser);
   }
   jsh.Log.info('Launching Report Renderer');
-  if(!jsh.Extensions.report){ var errmsg = 'Report Extension has not been enabled.  Please configure jsh.Extensions.report'; jsh.Log.error(errmsg); return callback(new Error(errmsg)); }
-  jsh.Extensions.report.puppeteer().launch({ ignoreHTTPSErrors: true }) //, headless: false
-    .then(function(rslt){
-      _this.browser = rslt;
-      _this.browser.on('disconnected', function(){
-        _this.browser = null;
-      });
-      _this.browserreqcount = 0;
-      return callback(null, _this.browser);
-    })
-    .catch(function(err){ jsh.Log.error(err); return callback(err); });
+  jsh.Extensions.report.getPuppeteer(function(err, puppeteer){
+    if(err){ jsh.Log.error(err.toString()); return callback(new Error(err.toString())); }
+    puppeteer.launch({ ignoreHTTPSErrors: true }) //, headless: false
+      .then(function(rslt){
+        _this.browser = rslt;
+        _this.browser.on('disconnected', function(){
+          _this.browser = null;
+        });
+        _this.browserreqcount = 0;
+        return callback(null, _this.browser);
+      })
+      .catch(function(err){ jsh.Log.error(err); return callback(err); });
+  });
 }
 
 AppSrvRpt.prototype.runReportJob = function (req, res, fullmodelid, Q, P, onComplete) {
