@@ -664,14 +664,14 @@ exports.TestReportExtension  = function(cb){
   var _this = this;
   if(!_this.Extensions.dependencies.report || !_this.Extensions.dependencies.report.length) return cb();
   if(_this.Config.system_settings.ignore_report_extension) return cb();
-  var errMsg = '\n\nReport models were detected in this project: ' + _.uniq(_this.Extensions.dependencies.report).join(', ')+'\n';
+  var errMsg = 'Report models were detected in this project: ' + _.uniq(_this.Extensions.dependencies.report).join(', ')+'\n';
   errMsg += '  Please add support for a jsHarmony Report Extension:\n';
   errMsg += '    1. Install the jsHarmony Report Extension:\n';
   errMsg += '       npm install jsharmony-report\n';
   errMsg += '    2. Add the extension to app.config.js / app.config.local.js:\n';
   errMsg += "       jsh.Extensions.report = require('jsharmony-report');";
   if(!_this.Extensions.report) return cb(err && errMsg);
-  return cb();
+  _this.Extensions.report.init(function(err){ return cb(err && errMsg); });
 };
 
 exports.ParseDeprecated = function () {
@@ -2198,7 +2198,7 @@ exports.ParseEntities = function () {
 exports.InitExtensions = function(cb){
   var _this = this;
 
-  async.waterfall([
+  async.parallel([
     function(init_cb){
       //Test Image Extension
       _this.TestImageExtension(function(err){

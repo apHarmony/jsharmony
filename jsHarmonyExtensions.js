@@ -19,6 +19,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 function jsHarmonyExtensions(){
   this.image = {
+    type: '',
     init: function(callback){ return callback(new Error("Image Extensions have not been enabled.  Please configure jsh.Extensions.image")); },
     driver: function(){ throw new Error("Image Extensions have not been enabled.  Please configure jsh.Extensions.image"); },
     getDriver: function(callback){ return callback(new Error("Image Extensions have not been enabled.  Please configure jsh.Extensions.image")); },
@@ -29,6 +30,8 @@ function jsHarmonyExtensions(){
   };
 
   this.report = {
+    type: '',
+    init: function(callback){ return callback(new Error("Report Extensions have not been enabled.  Please configure jsh.Extensions.report")); },
     pdfMerge: function(){ throw new Error("Report Extensions have not been enabled.  Please configure jsh.Extensions.report"); },
     getPdfMerge: function(callback){ return callback(new Error("Report Extensions have not been enabled.  Please configure jsh.Extensions.report")); },
     puppeteer: function(){ throw new Error("Report Extensions have not been enabled.  Please configure jsh.Extensions.report"); },
