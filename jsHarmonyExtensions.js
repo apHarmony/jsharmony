@@ -27,6 +27,7 @@ function jsHarmonyExtensions(){
     size: function(src, callback){ return callback(new Error("Image Extensions have not been enabled - cannot get size.  Please configure jsh.Extensions.image")); },
     crop: function(src, dest, destsize, format, callback){ return callback(new Error("Image Extensions have not been enabled - cannot crop.  Please configure jsh.Extensions.image")); },
     resize: function(src, dest, destsize, format, callback){ return callback(new Error("Image Extensions have not been enabled - cannot resize.  Please configure jsh.Extensions.image")); },
+    compare: function(src1, src2, dest, options, callback){ return callback(new Error("Image Extensions have not been enabled - cannot compare.  Please configure jsh.Extensions.image")); },
   };
 
   this.report = {
