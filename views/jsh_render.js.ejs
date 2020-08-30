@@ -257,6 +257,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     jroot.find('a').each(function(i,obj){
       var jobj = $(obj);
       if(jobj.attr('onclick')) return;
+      if(jobj.closest('.mce-content-body,[contenteditable],.htmlarea_container').length) return;
       jobj.attr('onclick','return <%-req.jshsite.instance%>.Navigate(this);');
     });
   }
