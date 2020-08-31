@@ -242,6 +242,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if(!(modelid in jsh.App)) jsh.App[modelid] = {};
     <%-jsh.RenderEJS(model.js,ejsparams)%>
   <% } %>
+  <% if('jslib' in model){ %>
+    if(!(modelid in jsh.App)) jsh.App[modelid] = {};
+    <%-model.jslib%>
+  <% } %>
 })(<%-instance%>);
 </script>
 <% if(('css' in model) && model.css && model.css.trim()){ %>

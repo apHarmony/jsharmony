@@ -95,6 +95,7 @@ exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, moduleNam
       if (!('layout' in model) && !('inherits' in model)) {
         //Parse file as multiple-model file
         _.each(model, function (submodel, submodelname) {
+          if(_.isString(submodel)){ _this.LogInit_ERROR('Invalid model definition: ' + fpath + '.  Each model must have a "layout" or "inherits" property.'); return; }
           if(submodelname && (submodelname[0]=='/')) submodelname = submodelname.substr(1);
           else submodelname = prefix + submodelname;
           _this.LogInit_INFO('Loading sub-model ' + submodelname);
@@ -251,6 +252,8 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir, modu
 
     //Load JS
     prependPropFile('js',modelpathbase + '.js');
+    //Load JS Library
+    prependPropFile('jslib',modelpathbase + '.lib.js');
     //Load CSS
     var cssfname = (modelpathbase + '.css');
     if(model.layout=='report') cssfname = (modelpathbase + '.form.css');
@@ -349,6 +352,7 @@ exports.ParseModelInheritance = function () {
         EntityPropMerge(mergedprops, 'reportdata', model, parentmodel, function (newval, oldval) { return _.extend({}, oldval, newval); });
         EntityPropMerge(mergedprops, 'ejs', model, parentmodel, function (newval, oldval) { return oldval + '\r\n' + newval; });
         EntityPropMerge(mergedprops, 'js', model, parentmodel, function (newval, oldval) { return oldval + '\r\n' + newval; });
+        EntityPropMerge(mergedprops, 'jslib', model, parentmodel, function (newval, oldval) { return oldval + '\r\n' + newval; });
         EntityPropMerge(mergedprops, 'css', model, parentmodel, function (newval, oldval) { return oldval + '\r\n' + newval; });
         EntityPropMerge(mergedprops, 'fonts', model, parentmodel, function (newval, oldval) { return (oldval||[]).concat(newval||[]); });
         
@@ -1696,7 +1700,7 @@ exports.ParseEntities = function () {
     }
     
     //Convert mutli-line variables to single string
-    ParseMultiLineProperties(model, ['js', 'sqlselect', 'sqldownloadselect', 'sqlinsert', 'sqlinsertencrypt', 'sqlupdate', 'sqldelete', 'sqlexec', 'sqlwhere', 'sqlgetinsertkeys', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onvalidate', 'onupdate', 'ondestroy', 'oncommit', 'onchange']);
+    ParseMultiLineProperties(model, ['js', 'jslib', 'sqlselect', 'sqldownloadselect', 'sqlinsert', 'sqlinsertencrypt', 'sqlupdate', 'sqldelete', 'sqlexec', 'sqlwhere', 'sqlgetinsertkeys', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onvalidate', 'onupdate', 'ondestroy', 'oncommit', 'onchange']);
     if (model.breadcrumbs) ParseMultiLineProperties(model.breadcrumbs, ['sql']);
     if (model.fields) _.each(model.fields, function (field) {
       ParseMultiLineProperties(field, ['onchange', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlwhere', 'sqlsort', 'sqlsearch', 'sqlsearchsound', 'value']);
@@ -1861,7 +1865,7 @@ exports.ParseEntities = function () {
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_search', 'default_search', 'grid_static', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'onrowunbind', 'ondestroy', 'onchange', 'getapi',
-      'js', 'ejs', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
+      'js', 'jslib', 'ejs', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlgetinsertkeys', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
       'path', 'module', 'templates', 'db', 'onecolumn', 'namespace',
       //Report Parameters
