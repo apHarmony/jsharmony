@@ -443,7 +443,7 @@ jsHarmonyServer.prototype.Run = function(cb){
   }
 };
 
-jsHarmonyServer.prototype.getURL = function(){
+jsHarmonyServer.prototype.getURL = function(hostname){
   var _this = this;
   var https_server = false;
   var http_redirect = false;
@@ -469,6 +469,9 @@ jsHarmonyServer.prototype.getURL = function(){
       if(_this.servers[i] instanceof https.Server){ server_port = _this.servers[i].address().port; break; }
     }
   }
+
+  if(hostname && server_port) return 'https://'+hostname+':'+server_port;
+
   if(server_txt == '0.0.0.0') server_txt = os.hostname().toLowerCase();
   if(server_txt && server_port) return 'https://'+server_txt+':'+server_port;
   return '';
