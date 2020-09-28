@@ -3,6 +3,22 @@
 <div class="xdialogbox xconfirmbox base"><div class="xconfirmmessage"></div><div align="center"><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="No" class="button_no" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>
 <div class="xdialogbox xpromptbox base"><div class="xpromptmessage"></div><div align="right"><input class="xpromptfield" type="text"><br/><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>
 <div class="xdialogbox xtextzoombox base"><div class="xtextzoommessage"></div><div align="right"><textarea autocomplete="off" class="xtextzoomfield"></textarea><input type="button" value="OK" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div></div>
+<div class="xdialogbox xhintsbox base">
+  <div class="xhintsmessage"></div>
+  <div align="right">
+    <div class="xhints_listing"></div>
+    <input type="button" value="Insert" class="button_ok" style="margin-right:15px;" />
+    <input type="button" value="Cancel" class="button_cancel" />
+  </div>
+  <script type="text/x-ejs-template" class="xhints_rowtemplate">
+    <div class="xhints_row">
+      <label>
+      <input type="checkbox">
+      <span></span>
+      </label>
+    </div>
+  </script>
+</div>
 </div>
 <div class="xdebuginfo" style="display:none;"></div>
 <div class="xdebugconsole" style="display:none;">

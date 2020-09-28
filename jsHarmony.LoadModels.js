@@ -1483,6 +1483,7 @@ exports.ParseEntities = function () {
           else if (key == 'onpopup') field.controlparams.onpopup = field.popuplov.onpopup;
         });
       }
+
       //Add foreign keys
       if(!field.key){
         if(!Helper.hasAction(field.actions, 'F')){
@@ -1685,6 +1686,15 @@ exports.ParseEntities = function () {
           }
         }
       }
+
+      if(field.hints){
+        if(!_.isObject(field.hints)) field.hints = {};
+        field.hints = _.extend({
+          caption: undefined,
+          separator: ', ',
+        }, field.hints);
+        if(!field.lov) _this.LogInit_ERROR('Model ' + model.id + ' > ' + field.name + ': field.hints requires a field.lov to be defined');
+      }
     });
 
     //Check multisel
@@ -1875,7 +1885,7 @@ exports.ParseEntities = function () {
     var _v_field = [
       'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'foreignkey', 'serverejs', 'roles', 'ongetvalue', 'cellclass',
       'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'block', 'blockstyle', 'blockclass', 'lov', 'captionstyle', 'disable_sort', 'enable_search', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass', 'captioncolon',
-      'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'always_editable', 'locked_by_querystring', 'precision', 'password', 'hash', 'salt', 'unbound',
+      'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'hints', 'always_editable', 'locked_by_querystring', 'precision', 'password', 'hash', 'salt', 'unbound',
       'sqlselect', 'sqlupdate', 'sqlinsert','sqlsort', 'sqlwhere', 'sqlsearchsound', 'sqlsearch', 'onchange', 'lovkey', 'readonly', '__REMOVE__', '__AFTER__','_auto',
       'sql_from_db','sql_to_db','sqlsearch_to_db','datatype_config'
     ];

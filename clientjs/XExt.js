@@ -385,6 +385,30 @@ exports = module.exports = function(jsh){
     newlov[jsh.uimap.code_txt] = txt;
     LOV.push(newlov);
   }
+  XExt.parseLOV = function (LOV) {
+    var rslt = LOV;
+    if(_.isArray(LOV)){
+      rslt = LOV.slice();
+      for(var i=0;i<LOV.length;i++){
+        if(_.isString(rslt[i])){
+          var val = rslt[i];
+          rslt[i] = {};
+          rslt[i][jsh.uimap.code_val] = val;
+          rslt[i][jsh.uimap.code_txt] = val;
+        }
+      }
+    }
+    else if(_.isObject(LOV)){
+      rslt = [];
+      for(var key in LOV){
+        var newval = {};
+        newval[jsh.uimap.code_val] = key;
+        newval[jsh.uimap.code_txt] = LOV[key];
+        rslt.push(newval);
+      }
+    }
+    return rslt;
+  }
 
   XExt.endsWith = function (str, suffix) {
     return str.match(suffix + "$") == suffix;
@@ -1975,6 +1999,50 @@ exports = module.exports = function(jsh){
     jsh.$root('.xdialogblock,.xtextzoombox').show();
     jsh.XWindowResize();
     jsh.$root('.xtextzoomfield').focus();
+  }
+
+  XExt.ShowHints = function (lov, caption, options, onInsert, onCancel) {
+    if(!options) options = {};
+    if(!lov) lov = [];
+    jsh.xDialog.unshift('.xhintsbox');
+    var jdialog = jsh.$root('.xdialogblock .xhintsbox');
+    jdialog.zIndex(jsh.xDialog.length);
+
+    var oldactive = document.activeElement;
+    if (oldactive) $(oldactive).blur();
+    jsh.$root('.xhintsmessage').html(caption);
+    jsh.$root('.xhintsbox input').off('click');
+    jsh.$root('.xhintsbox input').off('keydown');
+
+    var tmpl = jdialog.find('.xhints_rowtemplate').html();
+    var jlisting = jdialog.find('.xhints_listing');
+    jlisting.empty();
+    if(_.isArray(lov)) _.each(lov, function(item){
+      var jrow = $(tmpl);
+      jrow.find('input').val(item[jsh.uimap.code_val]);
+      jrow.find('span').text(item[jsh.uimap.code_txt]);
+      if(options.readonly) jrow.find('input').remove();
+      jlisting.append(jrow);
+    });
+
+    jdialog.find('input.button_ok,input:checkbox').toggle(!options.readonly);
+
+    var getValues = function(){
+      var rslt = [];
+      jdialog.find('.xhints_listing input:checkbox:checked').each(function(){ rslt.push($(this).val()); });
+      return rslt;
+    };
+    var cancelfunc = XExt.dialogButtonFunc('.xhintsbox', oldactive, function () { if (onCancel) onCancel(); });
+    var insertfunc = XExt.dialogButtonFunc('.xhintsbox', oldactive, function () { if (onInsert) onInsert(getValues()); });
+    jdialog.find('input.button_ok').on('click', function(){
+      if(!getValues().length) return XExt.Alert('Please select one or more values to insert');
+      insertfunc();
+    });
+    jdialog.find('input.button_cancel').on('click', cancelfunc);
+    jdialog.find('input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    jsh.$root('.xdialogblock,.xhintsbox').show();
+    jsh.XWindowResize();
+    jdialog.find('input').first().focus();
   }
 
   var popupData = {};

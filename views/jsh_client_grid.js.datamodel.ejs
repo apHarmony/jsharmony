@@ -51,6 +51,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       <%-xejs.iif('readonly' in field,'"readonly":'+JSON.stringify(field.readonly)+',') %>
       <%-xejs.iif('control' in field,'"control":'+JSON.stringify(field.control)+',') %>
       <%-xejs.iif('always_editable' in field,'"always_editable":'+JSON.stringify(field.always_editable)+',') %>
+      <%-xejs.iif('hints' in field,'"hints":'+JSON.stringify(field.hints)+',') %>
       <%-xejs.iif('unbound' in field,'"unbound":'+JSON.stringify(field.unbound)+',') %>
       <%-xejs.iif('locked_by_querystring' in field,'"locked_by_querystring":'+JSON.stringify(field.locked_by_querystring)+',') %>
       <%-xejs.iif('onchange' in field,'"onchange":'+JSON.stringify('(function(){'+jslocals+field.onchange+'}).call(this,obj,newval,undoChange,e)')+',') %>

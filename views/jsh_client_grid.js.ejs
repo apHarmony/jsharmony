@@ -958,6 +958,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     });
   }
 
+  xcontroller.getLOV = function(fieldname){
+    if(!xform.Data._LOVs) xform.Data._LOVs = {};
+    return xform.Data._LOVs[fieldname];
+  }
+
   xcontroller.setLOV = function(fieldname, lov_data){
     if(!xform.Data._LOVs) xform.Data._LOVs = {};
     xform.Data._LOVs[fieldname] = lov_data;

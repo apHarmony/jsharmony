@@ -167,6 +167,7 @@ for(var i=0;i<model.fields.length;i++){
     </div>
     <%
   }
+  if(field.hints){ %><a href="#" data-id="<%=field.name%>_xhints" class="<%=field.name%>_xhints xform_ctrl xhints icon" data-model="<%=model.id%>" onclick="(function(){<%-jslocals%> var jctrl = <%-instance%>.$(this).prev('.<%=field.name%>'); <%-instance%>.XExt.ShowHints(xmodel.controller.getLOV('<%=field.name%>'),'<%=(field.hints&&field.hints.caption)||('Add '+(field.caption_ext||field.caption))%>',{readonly:!jctrl.hasClass('editable')},function(rslt){ if(!rslt || !rslt.length) return; var prevval = jctrl.val().trim();  if(prevval) rslt.unshift(jctrl.val()); <%-instance%>.XExt.setFormControl(<%-instance%>.XExt.getForm('<%=model.id%>'),'<%=field.name%>',rslt.join('<%=field.hints.separator%>')); jctrl.focus(); }); }).call(this); return false;"><img src="<%-jsh._PUBLICURL%>images/icon_wand.png" /></a> <% }
   if(field.block){ %></div><% }
   prev_block = !!field.block;
   if(field.eol){ %><br/><% }

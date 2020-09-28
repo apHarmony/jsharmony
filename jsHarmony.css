@@ -292,10 +292,12 @@ BODY
   display:inline-block;
   vertical-align:top;
 }
-<%-rootcss%> .xpopuplov_column {
+<%-rootcss%> .xpopuplov_column,
+<%-rootcss%> .xhints_column {
   white-space:nowrap;
 }
-<%-rootcss%> .xpopuplov_column .xlookup.icon img {
+<%-rootcss%> .xpopuplov_column .xlookup.icon img,
+<%-rootcss%> .xhints_column .xhints.icon img {
   position:relative;
   top:-1px;
 }
@@ -530,7 +532,12 @@ BODY
 <%-rootcss%> .xform .checkbox_container {
   margin-right: 10px;
 }
-<%-rootcss%> .xlookup.icon, 
+<%-rootcss%> .xhints.icon img {
+  position:relative;
+  top:-2px;
+}
+<%-rootcss%> .xlookup.icon,
+<%-rootcss%> .xhints.icon,
 <%-rootcss%> .xtextzoom.icon {
   position:relative;
   top:4px;
@@ -540,11 +547,13 @@ BODY
 <%-rootcss%> .xlookup.icon.uneditable {
   display:none;
 }
-<%-rootcss%> .xform .xlookup.icon, 
+<%-rootcss%> .xform .xlookup.icon,
+<%-rootcss%> .xform .xhints.icon,
 <%-rootcss%> .xform .xtextzoom.icon {
   top:6px;
 }
 <%-rootcss%> .xrow .xlookup.icon,
+<%-rootcss%> .xrow .xhints.icon,
 <%-rootcss%> .xrow .xtextzoom.icon {
   left:-1px;
   margin-right:0px;
@@ -1025,6 +1034,11 @@ DIALOG BOXES
 	min-height:60px;
 	text-align:left;
 }
+<%-rootcss%> .xhintsbox {
+	width:510px;
+	min-height:60px;
+	text-align:left;
+}
 <%-rootcss%> .xalertmessage,
 <%-rootcss%> .xconfirmmessage,
 <%-rootcss%> .xpromptmessage {
@@ -1049,6 +1063,28 @@ DIALOG BOXES
   width:100%;
   box-sizing:border-box;
   height:300px;
+}
+<%-rootcss%> .xhints_listing {
+  margin: 20px 0 0px 0;
+  width:100%;
+  box-sizing:border-box;
+  height:300px;
+  border:1px solid #dedede;
+  overflow-y:auto;
+}
+<%-rootcss%> .xhints_listing .xhints_row label {
+  display:flex;
+  border-bottom:1px solid #f9f9f9;
+  padding:5px 8px 4px 8px;
+}
+<%-rootcss%> .xhints_listing .xhints_row label:hover {
+  background-color:#f7f7f7;
+}
+<%-rootcss%> .xhints_listing span {
+  display:block;
+  flex-grow:1;
+  text-align:left;
+  padding-left:6px;
 }
 <%-rootcss%> .xdialogbox h3 {
   margin-top:5px;

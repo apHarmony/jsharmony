@@ -162,7 +162,7 @@ else if(parent && (parent.topmost) && ('tabpos' in parent) && (parent.tabpos=='t
           if(field.control && (field.control=='hidden')) fieldclass += 'tdhidden';
           var maxlength = XExt.getMaxLength(field);
           %>
-          <td style="<%-field.cellstyle%>" class="<%-field.cellclass%> <%=xejs.iif(field.control=='checkbox','xcheckbox_column')%> <%=xejs.iif(field.popuplov,'xpopuplov_column')%> <%=fieldclass%>  <%% if(XExt.isDisplayLayoutColumnHidden('<%=field.name%>', xmodel.controller.GetDisplayLayout(), xmodel.fields)) { %%> tdhidden  <%% } %%>"><% 
+          <td style="<%-field.cellstyle%>" class="<%-field.cellclass%> <%=xejs.iif(field.control=='checkbox','xcheckbox_column')%> <%=xejs.iif(field.popuplov,'xpopuplov_column')%> <%=xejs.iif(field.hints,'xhints_column')%> <%=fieldclass%>  <%% if(XExt.isDisplayLayoutColumnHidden('<%=field.name%>', xmodel.controller.GetDisplayLayout(), xmodel.fields)) { %%> tdhidden  <%% } %%>"><% 
         if((field.control=='label') || (field.control=='html')){
           if(('link' in field) && (XExt.beginsWith(field.link,'#select'))){ %><a class="xform_link" href="<%-field.link%>" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this);return false;" ><% }
           else if('link' in field){ %><a data-url="<%-field.link%>" href="<%-XExt.replaceTempEJSTags(field.link)%>" class="xform_link" onclick="<%-js(field.link_onclick)%>"><% }
@@ -213,6 +213,7 @@ else if(parent && (parent.topmost) && ('tabpos' in parent) && (parent.tabpos=='t
           %><input autocomplete="off" data-id="<%=field.name%>_field_value" type="hidden" class="<%=field.name%>_field_value xform_ctrl xelem<%=model.class%>" value="<%-xejs.GetValue(field, model)%>" /><%
         }
         if(field.popuplov){ %><a href="#" data-id="<%=field.name%>_xlookup" class="xform_ctrl xlookup icon <%=field.name%>_xlookup" data-code_val="<%=field.controlparams.code_val%>" data-model="<%=model.id%>" onclick="<%-instance%>.XExt.popupShow('<%=field.model.id%>','<%=field.name%>','<%=field.caption_ext||field.caption%> Selection',<%-instance%>.$(this).prev('.<%=field.name%>'),this,{rowid: <%%=rowid%%>,OnControlUpdate:function(obj,e){ <%-instance%>.XModels['<%=model.id%>'].controller.editablegrid.ControlUpdate(obj,e); }})"><img src="<%-jsh._PUBLICURL%>images/icon_search.png" height="14" /></a><% }
+        if(field.hints){ %><a href="#" data-id="<%=field.name%>_xhints" class="xform_ctrl xhints icon <%=field.name%>_xhints" data-model="<%=model.id%>" onclick="(function(){<%-jslocals%> var jctrl = <%-instance%>.$(this).prev('.<%=field.name%>'); <%-instance%>.XExt.ShowHints(xmodel.controller.getLOV('<%=field.name%>'),'<%=(field.hints&&field.hints.caption)||('Add '+(field.caption_ext||field.caption))%>',{readonly:!jctrl.hasClass('editable')},function(rslt){ if(!rslt || !rslt.length) return; var prevval = jctrl.val().trim();  if(prevval) rslt.unshift(jctrl.val()); <%-instance%>.XExt.setFormControl(<%-instance%>.XExt.getForm('<%=model.id%>'),'<%=field.name%>',rslt.join('<%=field.hints.separator%>')); jctrl.focus(); }); }).call(this); return false;"><img src="<%-jsh._PUBLICURL%>images/icon_wand.png" /></a> <% }
           %></td>
         <% } %>
         <% if(model.duplicate && model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'I')){

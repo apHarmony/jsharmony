@@ -1299,10 +1299,18 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
       XPage.traverseModelsAsync(model.id,
         function (xmodel, done) {
-          xmodel.controller.Init(done);
-          if(model.id == xmodel.id){
-            if(model.rowlimit && xmodel.controller.grid) xmodel.controller.grid.RowLimit = model.rowlimit;
-          }
+          xmodel.controller.Init(function(){
+            if(model.id == xmodel.id){
+              if(model.rowlimit && xmodel.controller.grid) xmodel.controller.grid.RowLimit = model.rowlimit;
+            }
+            for(var i=0;i<model.fields.length;i++){
+              var field = model.fields[i];
+              if(field.name && field.lov && field.lov.values){
+                xmodel.controller.setLOV(field.name, XExt.parseLOV(field.lov.values));
+              }
+            }
+            done();
+          });
         },
         function () {
           var orig_GET = jsh.XExt.parseGET();

@@ -604,7 +604,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
     var dstfield = {};
     copyValues(dstfield, srcfield, [
       'name', 'key', 'control', 'caption', 'caption_ext', 'captionstyle', 'captionclass', 'captioncolon', 'nl', 'eol', 'type', 'length',
-      'value', 'controlclass', 'target', 'bindings', 'format', 'readonly', 'always_editable', 'locked_by_querystring', 'ongetvalue', 'unbound', 'onchange', 'onclick', 'hidden',
+      'value', 'controlclass', 'target', 'bindings', 'format', 'readonly', 'hints', 'always_editable', 'locked_by_querystring', 'ongetvalue', 'unbound', 'onchange', 'onclick', 'hidden',
       'html', 'cellstyle', 'cellclass', 'lovkey', 'controlstyle', 'block', 'blockstyle', 'blockclass', 'disable_sort', 'disable_search'
     ]);
     if (srcfield.popuplov) dstfield.popuplov = 1;
