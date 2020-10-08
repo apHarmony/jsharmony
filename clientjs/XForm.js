@@ -494,8 +494,8 @@ exports = module.exports = function(jsh){
           if (jsh.DefaultErrorHandler(jerrdata._error.Number, jerrdata._error.Message)) { }
           else if (!(_this.HandleError(jerrdata._error,jerrdata._stats,ExecParams,errdata))) { }
           else if ((jerrdata._error.Number == -9) || (jerrdata._error.Number == -5)) { jsh.XExt.Alert(jerrdata._error.Message); }
+          if (('onFail' in ExecParams) && ExecParams.onFail(jerrdata._error)) { }
           else { jsh.XExt.Alert('Error #' + jerrdata._error.Number + ': ' + jerrdata._error.Message); }
-          if ('onFail' in ExecParams) ExecParams.onFail(jerrdata._error);
           return;
         }
         if (('onFail' in ExecParams) && (ExecParams.onFail(errdata))){ }
@@ -510,8 +510,8 @@ exports = module.exports = function(jsh){
           if(jsh.DefaultErrorHandler(rslt._error.Number,rslt._error.Message)) { }
           else if(!(_this.HandleError(rslt._error,rslt._stats,ExecParams, rslt))) { }
           else if((rslt._error.Number == -9) || (rslt._error.Number == -5)){ jsh.XExt.Alert(rslt._error.Message); }
+          if (('onFail' in ExecParams) && ExecParams.onFail(rslt._error)) { }
           else { jsh.XExt.Alert('Error #' + rslt._error.Number + ': ' + rslt._error.Message); }
-          if ('onFail' in ExecParams) ExecParams.onFail(rslt._error);
           return;
         }
         if ((rslt instanceof Object) && ('_stats' in rslt)) {
