@@ -651,6 +651,7 @@ exports = module.exports = function(jsh){
     if(!options) options = {};
     var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
+    if(options.async === false) xform.async = false;
     xform.qExecute(xform.PrepExecute('get', xform.url, q, d, onComplete, onFail)); 
   }
 
@@ -658,6 +659,7 @@ exports = module.exports = function(jsh){
     if(!options) options = {};
     var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
+    if(options.async === false) xform.async = false;
     xform.qExecute(xform.PrepExecute('post', xform.url, q, d, onComplete, onFail)); 
   }
 
@@ -665,6 +667,7 @@ exports = module.exports = function(jsh){
     if(!options) options = {};
     var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
+    if(options.async === false) xform.async = false;
     xform.qExecute(xform.PrepExecute('put', xform.url, q, d, onComplete, onFail)); 
   }
 
@@ -672,6 +675,7 @@ exports = module.exports = function(jsh){
     if(!options) options = {};
     var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
+    if(options.async === false) xform.async = false;
     xform.qExecute(xform.PrepExecute('delete', xform.url, q, d, onComplete, onFail)); 
   }
 
