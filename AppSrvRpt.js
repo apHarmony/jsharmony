@@ -405,8 +405,8 @@ AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, d
         _this.getBrowser(function (err, browser) {
           var page = null;
 
-          function genReportError(err){
-            var rpterr = Helper.NewError("Error occurred during report generation (" + err.toString() + ')', -99999);
+          function genReportError(err, source){
+            var rpterr = Helper.NewError("Error occurred during report generation"+(source ? ' - ' + source: '')+" (" + err.toString() + ')', -99999);
             if (page != null){
               return page.close()
                 .then(function(){ return done(rpterr, null); })
@@ -415,7 +415,7 @@ AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, d
             else return done(rpterr, null);
           }
 
-          if(err) return genReportError(err);
+          if(err) return genReportError(err, 'getBrowser');
 
           try {
             browser.newPage().then(function (_page) {
@@ -605,15 +605,13 @@ AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, d
                             }).catch(function (err) { jsh.Log.error(err); if (disposedone) disposedone(); });
                           };
                           done(null, tmppdfpath, dispose, data);
-                        }).catch(function (err) { genReportError(err); });
+                        }).catch(function (err) { genReportError(err, 'page.pdf'); });
                       }, (jsh.Config.debug_params.report_interactive ? 500000 : 0));
-                    }).catch(function (err) { genReportError(err); });
-                  })
-                  .catch(function (err) { genReportError(err); });
+                    }).catch(function (err) { genReportError(err, 'onPageLoad'); });
+                  }).catch(function (err) { genReportError(err, 'page.goto'); });
                 });
               });
-
-            }).catch(function (err) { genReportError(err); });
+            }).catch(function (err) { genReportError(err, 'browser.newPage'); });
           } catch (err) {
             genReportError(err);
           }
