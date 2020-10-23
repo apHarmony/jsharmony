@@ -589,22 +589,24 @@ AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, d
                         if(scale > 1) scale = 1;
                         pagesettings.scale = scale;
                       }
-                      page.pdf(pagesettings).then(function () {
-                        // *** Be sure to call dispose independently of the callback, because dispose may fail, but it should not be treated as a critical failure
-                        var dispose = function (disposedone) {
-                          page.close().then(function () {
-                            page = null;
-                            fs.close(tmpfd, function () {
-                              fs.unlink(tmphtmlpath, function (err) {
-                                fs.unlink(tmppath, function (err) {
-                                  if (disposedone) disposedone();
+                      setTimeout(function(){
+                        page.pdf(pagesettings).then(function () {
+                          // *** Be sure to call dispose independently of the callback, because dispose may fail, but it should not be treated as a critical failure
+                          var dispose = function (disposedone) {
+                            page.close().then(function () {
+                              page = null;
+                              fs.close(tmpfd, function () {
+                                fs.unlink(tmphtmlpath, function (err) {
+                                  fs.unlink(tmppath, function (err) {
+                                    if (disposedone) disposedone();
+                                  });
                                 });
                               });
-                            });
-                          }).catch(function (err) { jsh.Log.error(err); if (disposedone) disposedone(); });
-                        };
-                        done(null, tmppdfpath, dispose, data);
-                      }).catch(function (err) { genReportError(err); });
+                            }).catch(function (err) { jsh.Log.error(err); if (disposedone) disposedone(); });
+                          };
+                          done(null, tmppdfpath, dispose, data);
+                        }).catch(function (err) { genReportError(err); });
+                      }, (jsh.Config.debug_params.report_interactive ? 500000 : 0));
                     }).catch(function (err) { genReportError(err); });
                   })
                   .catch(function (err) { genReportError(err); });
@@ -657,7 +659,9 @@ AppSrvRpt.prototype.getBrowser = function (callback) {
   jsh.Log.info('Launching Report Renderer');
   jsh.Extensions.report.getPuppeteer(function(err, puppeteer){
     if(err){ jsh.Log.error(err.toString()); return callback(new Error(err.toString())); }
-    puppeteer.launch({ ignoreHTTPSErrors: true }) //, headless: false
+    var launchParams = { ignoreHTTPSErrors: true }
+    if(jsh.Config.debug_params.report_interactive) launchParams.headless = false;
+    puppeteer.launch(launchParams)
       .then(function(rslt){
         _this.browser = rslt;
         _this.browser.on('disconnected', function(){

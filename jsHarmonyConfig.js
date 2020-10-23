@@ -79,6 +79,7 @@ function jsHarmonyConfig(config){
     hide_deprecated: false,    //Hide deprecated property error messages
     disable_email: false,      //Disable sending outgoing emails
     report_debug: false,       //Display report warnings (Null value, etc.)
+    report_interactive: false, //Launch Report Viewer in Interactive Mode - Show Browser in Desktop
     auth_debug: false,         //Debug Login / Authentication - Log Hashes
     delay_requests: 0,         //Add a delay of this many milliseconds to all router requests (for testing latency)
     
@@ -272,7 +273,6 @@ function jsHarmonyConfig(config){
       "font-weight": 400,
       "src": "jsharmony/public/fonts/Roboto-Regular.ttf",
       "format": "truetype", //embedded-opentype, woff2, woff, truetype, svg
-      "local": ["Roboto","Roboto-Regular"],
       "css": "body { font-family: 'Roboto'; }"
     },
     {
@@ -280,8 +280,7 @@ function jsHarmonyConfig(config){
       "font-style": "bold",
       "font-weight": 700,
       "src": "jsharmony/public/fonts/Roboto-Bold.ttf",
-      "format": "truetype", //embedded-opentype, woff2, woff, truetype, svg
-      "local": ["Roboto Bold","Roboto-Bold"]
+      "format": "truetype" //embedded-opentype, woff2, woff, truetype, svg
     }
   ];
 

@@ -175,16 +175,16 @@ exports.DeformatParam = function (field, val, verrors) {
   }
   else if (field.type == 'encascii') {
     //return Helper.stringToASCIIBuffer(val);
-    return new Buffer(val, 'ascii');
+    return Buffer.from(val, 'ascii');
   }
   else if (field.type == 'binary') {
     if(!val) return null;
     if(val && (val.toString().substr(0,2).toLowerCase()=='0x')){
       val = val.toString().substr(2);
       if(val.length % 2 == 1) val = val + '0';
-      return new Buffer(val, 'hex');
+      return Buffer.from(val, 'hex');
     }
-    return new Buffer(val, 'ascii');
+    return Buffer.from(val, 'ascii');
   }
   else if (field.type == 'boolean') {
     if (val === '') return null;

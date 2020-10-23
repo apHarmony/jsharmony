@@ -220,7 +220,7 @@ exports.loadFonts = function(fonts, callback){
       if(!fpath){ _this.Log.error('Font not found: '+font.src); return font_cb(); }
       fs.readFile(fpath, function(err, data){
         if(err){ _this.Log.error('Error reading font: '+font.src+', '+err.toString()); return font_cb(); }
-        _this.FontCache[font.src] = (new Buffer(data).toString('base64'));
+        _this.FontCache[font.src] = (Buffer.from(data).toString('base64'));
         return cache_cb();
       });
     },function(){
