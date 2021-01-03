@@ -262,6 +262,10 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir, modu
     var ejsfname = (modelpathbase + '.ejs');
     if(model.layout=='report') ejsfname = (modelpathbase + '.form.ejs');
     prependPropFile('ejs',ejsfname);
+    //Load Header EJS
+    var headerfname = (modelpathbase + '.header.ejs');
+    if(model.layout=='report') headerfname = (modelpathbase + '.form.header.ejs');
+    prependPropFile('header',headerfname);
     //Load Report EJS
     if(model.layout=='report'){
       prependPropFile('pageheader',modelpathbase + '.header.ejs');
@@ -351,6 +355,7 @@ exports.ParseModelInheritance = function () {
         EntityPropMerge(mergedprops, 'buttons', model, parentmodel, function (newval, oldval) { return _this.MergeModelArray(newval, oldval); });
         EntityPropMerge(mergedprops, 'reportdata', model, parentmodel, function (newval, oldval) { return _.extend({}, oldval, newval); });
         EntityPropMerge(mergedprops, 'ejs', model, parentmodel, function (newval, oldval) { return oldval + '\r\n' + newval; });
+        EntityPropMerge(mergedprops, 'header', model, parentmodel, function (newval, oldval) { return oldval + '\r\n' + newval; });
         EntityPropMerge(mergedprops, 'js', model, parentmodel, function (newval, oldval) { return oldval + '\r\n' + newval; });
         EntityPropMerge(mergedprops, 'jslib', model, parentmodel, function (newval, oldval) { return oldval + '\r\n' + newval; });
         EntityPropMerge(mergedprops, 'css', model, parentmodel, function (newval, oldval) { return oldval + '\r\n' + newval; });
@@ -1020,6 +1025,7 @@ exports.ParseEntities = function () {
       }
     }
     if (!('ejs' in model)) model.ejs = '';
+    if (!('header' in model)) model.header = '';
     if (!('templates' in model)) model.templates = {};
     if ('sort' in model) {
       if (model.sort && model.sort.length) {
@@ -1745,20 +1751,20 @@ exports.ParseEntities = function () {
       //1. Add fkeys
       //2. Parse sql title, and add any params, if sql_params are not defined
       if (model.fields) _.each(model.fields, function (field) {
-        _this.AddSqlParams(model, field.lov, ['sql','sql2','sqlmp']);
-        _this.AddSqlParams(model, field.default);
+        _this.AddSqlParams(model, field.lov, model.id + ' > ' + field.name + ' > field.lov', ['sql','sql2','sqlmp']);
+        _this.AddSqlParams(model, field.default, model.id + ' > ' + field.name + ' > field.default');
       });
       if(model.breadcrumbs){
-        _this.AddSqlParams(model, model.breadcrumbs);
-        _this.AddSqlParams(model, model.breadcrumbs.insert);
-        _this.AddSqlParams(model, model.breadcrumbs.update);
-        _this.AddSqlParams(model, model.breadcrumbs.browse);
+        _this.AddSqlParams(model, model.breadcrumbs, model.id + ' > model.breadcrumbs');
+        _this.AddSqlParams(model, model.breadcrumbs.insert, model.id + ' > model.breadcrumbs.insert');
+        _this.AddSqlParams(model, model.breadcrumbs.update, model.id + ' > model.breadcrumbs.update');
+        _this.AddSqlParams(model, model.breadcrumbs.browse, model.id + ' > model.breadcrumbs.browse');
       }
       if(model.title){
-        _this.AddSqlParams(model, model.title);
-        _this.AddSqlParams(model, model.title.insert);
-        _this.AddSqlParams(model, model.title.update);
-        _this.AddSqlParams(model, model.title.browse);
+        _this.AddSqlParams(model, model.title, model.id + ' > model.title');
+        _this.AddSqlParams(model, model.title.insert, model.id + ' > model.title.insert');
+        _this.AddSqlParams(model, model.title.update, model.id + ' > model.title.update');
+        _this.AddSqlParams(model, model.title.browse, model.id + ' > model.title.browse');
       }
     }
     
@@ -1875,7 +1881,7 @@ exports.ParseEntities = function () {
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_search', 'default_search', 'grid_static', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'onrowunbind', 'ondestroy', 'onchange', 'getapi',
-      'js', 'jslib', 'ejs', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
+      'js', 'jslib', 'ejs', 'header', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlgetinsertkeys', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
       'path', 'module', 'templates', 'db', 'onecolumn', 'namespace',
       //Report Parameters
@@ -1944,7 +1950,6 @@ exports.ParseEntities = function () {
       if(field.unbound && !Helper.hasAction(field.actions, 'IU') && Helper.hasAction(model.actions, 'IU') && field.always_editable) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Unbound fields that do not have "IU" actions should not have field.always_editable set');
       if(((field.control == 'file_upload') || (field.control == 'file_download') || (field.control == 'image')) && (field.type != 'file')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The ' + field.control + ' control requires field.type="file"');
       if(((field.control == 'file_download') || (field.control == 'image')) && Helper.hasAction(field.actions, 'IU')) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': The ' + field.control + ' control field.actions must be "B" (browse-only).');
-      if((model.layout=='grid')&&(model.sqlselect)&&((model.sqlselect.indexOf('%%%ROWSTART%%%') < 0)||(model.sqlselect.indexOf('%%%ROWCOUNT%%%') < 0)) && (model.sqlselect.indexOf('%%%SQLSUFFIX%%%') < 0)) _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid with model.sqlselect defined must use either %%%SQLSUFFIX%%% or (%%%ROWSTART%%% and %%%ROWCOUNT%%%) to implement paging');
       //field.type=encascii, check if password is defined
       if(field.type=='encascii'){
         if(model.layout=='grid') _this.LogInit_ERROR(model.id + ' > ' + field.name + ': Grid does not support field.type="encascii" (Use field.type="hash" for searching encrypted values)');
@@ -1978,6 +1983,7 @@ exports.ParseEntities = function () {
     if (no_key && !model.nokey && !model.unbound && ((model.layout == 'form') || (model.layout == 'form-m'))) {
       _this.LogInit_ERROR(model.id + ': No key is defined.  Use nokey or unbound attributes if intentional.');
     }
+    if((model.layout=='grid')&&(model.sqlselect)&&((model.sqlselect.indexOf('%%%ROWSTART%%%') < 0)||(model.sqlselect.indexOf('%%%ROWCOUNT%%%') < 0)) && (model.sqlselect.indexOf('%%%SQLSUFFIX%%%') < 0)) _this.LogInit_ERROR(model.id + ': Grid with model.sqlselect defined must use either %%%SQLSUFFIX%%% or (%%%ROWSTART%%% and %%%ROWCOUNT%%%) to implement paging');
     if(model.unbound){
       _.each(['table','sqlselect','sqlinsert','sqlupdate','sqldelete','sqlexec','sqlrowcount','sqldownloadselect','sqlinsertencrypt'],function(prop){
         if(model[prop]){
@@ -2259,7 +2265,7 @@ exports.forEachSqlParam = function(model, sql, f){ /* f(pfield_name) */
   }
 };
 
-exports.AddSqlParams = function(model, element, props){
+exports.AddSqlParams = function(model, element, desc, props){
   var _this = this;
   if(!props) props = ['sql'];
   if(!element) return;
@@ -2268,14 +2274,21 @@ exports.AddSqlParams = function(model, element, props){
     if(element[prop]) sql += _this.AppSrvClass.prototype.getSQL(model, element[prop], _this)+' '; 
   });
   sql = sql.trim();
-  if (sql && !('sql_params' in element)) {
-    var params = _this.AppSrvClass.prototype.getSQLParameters(sql, model.fields, _this);
-    if(params.length){
-      for(let i=0;i<params.length;i++){
-        var pfield = _this.AppSrvClass.prototype.getFieldByName(model.fields, params[i]);
-        if (!Helper.hasAction(pfield.actions, 'F') && !pfield.key){ pfield.actions += 'F'; }
+  if (sql) {
+    if ('sql_params' in element) {
+      _.each(element.sql_params, function(sql_param){
+        if(sql.indexOf('@'+sql_param) < 0) _this.LogInit_WARNING((desc?(desc + ' : '):'') + 'Possible extra sql_param @' + sql_param+' - not used in SQL expression');
+      });
+    }
+    else {
+      var params = _this.AppSrvClass.prototype.getSQLParameters(sql, model.fields, _this);
+      if(params.length){
+        for(let i=0;i<params.length;i++){
+          var pfield = _this.AppSrvClass.prototype.getFieldByName(model.fields, params[i]);
+          if (!Helper.hasAction(pfield.actions, 'F') && !pfield.key){ pfield.actions += 'F'; }
+        }
+        element.sql_params = params;
       }
-      element.sql_params = params;
     }
   }
 };

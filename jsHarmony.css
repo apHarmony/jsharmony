@@ -270,6 +270,9 @@ BODY
   position:relative;
   top:2px;
 }
+<%-rootcss%> .xrow.readonly .xgrid_action.delete {
+  display:none;
+}
 <%-rootcss%> .xtbl td.xcheckbox_column {
   text-align:center;
 }
@@ -615,6 +618,26 @@ BODY
 <%-rootcss%> .xtag_input:focus {
   outline: none;
 }
+<%-rootcss%> .xaccordiontab {
+  cursor: pointer;
+  border: 1px solid #ccc;
+  padding: 8px 30px 7px 15px;
+  margin-bottom: 5px;
+  color:#333;
+  position:relative;
+  font-size:1.1em;
+  font-weight:bold;
+}
+<%-rootcss%> .xaccordionstate {
+  position:absolute;
+  top:5px;
+  right:5px;
+}
+<%-rootcss%> .xaccordionbody {
+  display:none;
+  padding:0.05px 10px 6px 10px;
+  margin-bottom: 5px;
+}
 <%-rootcss%> .xpopup .xpanel {
   overflow:auto;
   height:400px;
@@ -822,7 +845,7 @@ LOADING ANIMATION
 	top:122px;
 	width:100%;
 	bottom:0;
-	z-index:99999;
+	z-index:999999999;
 	text-align:center;
 }
 <%-(rootcss||'body')%>.popup .xloadingblock { top:0px; }
@@ -881,14 +904,14 @@ DIALOG BOXES
   left:0px;
   color:#c2ffb8;
   background-color:rgba(0,0,0,0.5);
-  z-index:200000;
+  z-index:1000000000;
 }
 <%-rootcss%> .xdebugconsole .debug-panel {
   display:none;
   position: fixed;
   height: 300px;
   width: 100%;
-  z-index:99999;
+  z-index:999999999;
   border-bottom: 3px solid #aaa;
   background-color: #fff;
 }
@@ -973,7 +996,7 @@ DIALOG BOXES
 	width:100%;
 	bottom:0;
   left:0px;
-	z-index:199999;
+	z-index:1999999999;
 	text-align:center;
   background-color:rgba(0,0,0,0.1);
   -webkit-transform-style: preserve-3d;
@@ -1052,6 +1075,7 @@ DIALOG BOXES
 <%-rootcss%> .xdialogbox input.button_cancel {
   margin: 20px 0 0px 0;
   padding:4px 15px;
+  line-height:1;
 }
 <%-rootcss%> .xpromptfield {
   margin: 20px 0 0px 0;

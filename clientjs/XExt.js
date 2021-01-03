@@ -835,6 +835,7 @@ exports = module.exports = function(jsh){
     return rslt;
   }
   XExt.renderEJS = function(ejssource, modelid, params){
+    if(!ejssource) return '';
     modelid = XExt.resolveModelID(modelid);
     var ejsparams = {
       xejs: XExt.xejs,
@@ -2777,6 +2778,36 @@ exports = module.exports = function(jsh){
     if(!jtabbuttons.filter('.selected').length) jtabbuttons.first().addClass('selected');
     jtabpanels.filter('.'+jtabbuttons.filter('.selected').attr('for')).addClass('selected');
     jobj.addClass('initialized');
+  }
+  //Bind accordion events
+  XExt.bindAccordion = function(obj){
+    var rightArrow = '&#xE5CC;';
+    var downArrow = '&#xE313;';
+    var jobj = $(obj);
+    var jbody = jobj.next('.xaccordionbody');
+    var jstate = $('<span class="material-icons xaccordionstate"></span>');
+    jobj.append(jstate);
+
+    var hideBody = function(){
+      jobj.removeClass('expanded');
+      jbody.slideUp();
+      jstate.html(rightArrow);
+    }
+    var showBody = function(){
+      jobj.addClass('expanded');
+      jbody.slideDown();
+      jstate.html(downArrow);
+    }
+
+
+    jobj.on('click', function(){
+      var isExpanded = jobj.hasClass('expanded');
+      if(isExpanded) hideBody();
+      else showBody();
+    });
+    jobj.addClass('initialized');
+    if(jbody.hasClass('expanded')) showBody();
+    else hideBody();
   }
   //Resolve Model ID
   XExt.resolveModelID = function(modelid, sourceModel){

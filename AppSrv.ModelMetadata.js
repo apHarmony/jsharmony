@@ -469,8 +469,10 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
               if(!already_found) rslt.unshift(newlov);
             }
             if ('post_process' in lov){
-              var jscmd = '(function(){ var values = rslt; return (function(){'+lov.post_process+'})();}).call(lov)';
-              eval(jscmd);
+              var base_callback = callback;
+              var jscmd = '(function(){ var values = rslt; var callback = function(err, rslt){ base_callback(err, rslt); }; return (function(){'+lov.post_process+'})();}).call(lov)';
+              var jscmdrslt = eval(jscmd);
+              if(jscmdrslt === false) return;
             }
           }
           callback(err, rslt, stats);

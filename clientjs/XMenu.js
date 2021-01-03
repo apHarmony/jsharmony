@@ -152,8 +152,9 @@ exports = module.exports = function(jsh){
     else{
       //Get target position
       var tgtpos = jmenuitem.offset();
+      var tgtparentpos = jmenuitem.parent().offset();
       var tgttop = Math.round(tgtpos.top + jmenuitem.outerHeight());
-      var tgtleft = Math.round(tgtpos.left);
+      var tgtleft = Math.round(tgtpos.left - tgtparentpos.left);
       var tgtwidth = Math.round(jmenuitem.outerWidth());
 
       var curpos = jpaddle.offset();

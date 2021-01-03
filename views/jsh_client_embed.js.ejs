@@ -56,6 +56,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     fields: null,
     actions:'<%=model.actions%>',
     layout:'<%=model.layout%>',
+    breadcrumbs_html:<%-JSON.stringify(model.breadcrumbs||null)%>,
     current_display_layout_name:'<%=model.current_display_layout_name||''%>',
     display_layouts:<%-(model.display_layouts)?JSON.stringify(model.display_layouts):'false'%>,
     enabled: true,

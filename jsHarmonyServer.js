@@ -457,11 +457,13 @@ jsHarmonyServer.prototype.getURL = function(hostname){
 
   var server_txt = '';
   var server_port = '';
+  var server_scheme = 'https://';
   if(http_server){
     server_txt = _this.serverConfig.http_ip;
     for(var i=0;i<_this.servers.length;i++){
       if(_this.servers[i] instanceof http.Server){ server_port = _this.servers[i].address().port; break; }
     }
+    if(!https_server) server_scheme = 'http://';
   }
   if(https_server){
     server_txt = _this.serverConfig.https_ip;
@@ -470,10 +472,10 @@ jsHarmonyServer.prototype.getURL = function(hostname){
     }
   }
 
-  if(hostname && server_port) return 'https://'+hostname+':'+server_port;
+  if(hostname && server_port) return server_scheme+hostname+':'+server_port;
 
   if(server_txt == '0.0.0.0') server_txt = os.hostname().toLowerCase();
-  if(server_txt && server_port) return 'https://'+server_txt+':'+server_port;
+  if(server_txt && server_port) return server_scheme+server_txt+':'+server_port;
   return '';
 }
 

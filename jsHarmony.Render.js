@@ -114,6 +114,7 @@ exports.RenderView = function(view,ejsparams){
 };
 
 exports.RenderEJS = function(code,ejsparams){
+  if(!code) return '';
   if(!ejsparams) ejsparams = {};
   if(!('ejsparams' in ejsparams)) ejsparams.ejsparams = ejsparams;
   return ejs.render(code,ejsparams);

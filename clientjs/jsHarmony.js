@@ -436,6 +436,7 @@ jsHarmony.prototype.InitDialogs = function () {
 jsHarmony.prototype.InitControls = function() {
   var _this = this;
   $('.xtabcontrol').not('.initialized').each(function(){ _this.XExt.bindTabControl(this); });
+  $('.xaccordiontab').not('.initialized').each(function(){ _this.XExt.bindAccordion(this); });
 }
 jsHarmony.prototype.XWindowResize = function (source) {
   var ww = $(window).width();

@@ -456,7 +456,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
   router.get(/^\/js\/jsHarmony.render.js/, function(req, res, next){
     res.end(ejs.render(jsh.getEJS('jsh_render.js'), {
       req: req, _: _, ejsext: ejsext, jsh: jsh,
-      srcfiles: jsh.AppSrv.modelsrv.srcfiles,
+      srcfiles: jsh.AppSrv.modelsrv.getSrcFiles(),
       popups: jsh.Popups,
       _: _
     }));
@@ -465,7 +465,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     //Verify model exists
     res.end(ejs.render(jsh.getEJS('jsh_loader.js'), {
       req: req, _: _, ejsext: ejsext, jsh: jsh,
-      srcfiles: jsh.AppSrv.modelsrv.srcfiles,
+      srcfiles: jsh.AppSrv.modelsrv.getSrcFiles(),
       popups: jsh.Popups,
       _: _
     }));
@@ -563,7 +563,12 @@ function processCustomRouting(routetype, req, res, jsh, fullmodelid, cb, params)
     else if(routetype=='d_transaction'){ onroute_params = params; }
     else { onroute_params = { query: req.query, post: req.body }; }
 
-    return model.onroute(routetype, req, res, cb, require, jsh, fullmodelid, onroute_params);
+    try{
+      model.onroute(routetype, req, res, cb, require, jsh, fullmodelid, onroute_params);
+    }
+    catch(ex){
+      Helper.GenError(req, res, -99999, 'Error processing model.onroute for '+fullmodelid+'::'+routetype+' with '+JSON.stringify(onroute_params)+': '+ex.toString());
+    }
   }
   else return cb();
 }

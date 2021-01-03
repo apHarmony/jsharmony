@@ -41,6 +41,7 @@
 <div class="xformcontainer xelem<%=model.class%>">
 <div class="xform xelem<%=model.class%> xform<%=model.class%> <%=xejs.iif(model.onecolumn,'onecolumn')%>" data-id="<%=model.id%>" style="<%=model.formstyle%>">
 <%-jsh.RenderView('jsh_embed.js',ejsparams)%>
+<%-jsh.RenderEJS(model.header,ejsparams)%>
 <%-jsh.RenderView('jsh_controls',ejsparams)%>
 <% if(model.duplicate){
   var popup_model = null;

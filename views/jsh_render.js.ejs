@@ -258,6 +258,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       var jobj = $(obj);
       if(jobj.attr('onclick')) return;
       if(jobj.closest('.mce-content-body,[contenteditable],.htmlarea_container').length) return;
+      if(jobj.attr('target')) return;
       jobj.attr('onclick','return <%-req.jshsite.instance%>.Navigate(this);');
     });
   }
@@ -399,6 +400,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.RenderEJS = function(code,ejsparams){
+    if(!code) return '';
     return jsh.ejs.render(code,ejsparams);
   }
 

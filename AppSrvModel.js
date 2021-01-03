@@ -43,6 +43,7 @@ Current server-side dependencies:
 function AppSrvModel(appsrv) {
   this.AppSrv = appsrv;
   this.srcfiles = {};
+  this.initialized_srcfiles = {};
   this.loadEJS();
 }
 
@@ -74,15 +75,23 @@ AppSrvModel.prototype.loadEJS = function () {
     'jsh_exec.js.datamodel': jsh.getEJS('jsh_client_exec.js.datamodel'),
     'jsh_buttons': jsh.getEJS('jsh_client_buttons'),
   };
-  for (var sname in this.srcfiles) {
-    this.srcfiles[sname] = removeEmptyBytes(this.srcfiles[sname]);
-  }
 }
 
-function removeEmptyBytes(str){
+AppSrvModel.prototype.getSrcFiles = function(){
+  for (var sname in this.srcfiles) {
+    if(!(sname in this.initialized_srcfiles)){
+      this.srcfiles[sname] = this.removeEmptyBytes(this.srcfiles[sname]);
+      this.initialized_srcfiles[sname] = true;
+    }
+  }
+  return this.srcfiles;
+}
+
+AppSrvModel.prototype.removeEmptyBytes = function(str){
   //var rslt = str.replace(/div/g, "");
   //var rslt = str.replace(/\p{65279}/g, "");
-  var rslt = str.replace(/\uFEFF/g, "");
+  if(str === null || (typeof str == 'undefined')) str = '';
+  var rslt = str.toString().replace(/\uFEFF/g, "");
   return rslt;
 }
 
@@ -207,7 +216,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, options) {
   copyValues(rslt, model, [
     'id', 'namespace', 'class', 'layout', 'caption', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onupdate', 'oncommit', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'onrowunbind', 'getapi', 'ondestroy', 'onchange', 'js', 'jslib', 'hide_system_buttons',
     'popup', 'rowclass', 'rowstyle', 'tabpanelstyle', 'tablestyle', 'formstyle', 'sort', 'querystring', 'disableautoload', 'tabpos', 'templates', 'unbound',
-    'reselectafteredit','newrowposition','validationlevel','default_search','grid_expand_search','grid_rowcount', 'grid_require_search','grid_static','noresultsmessage','ejs','css','onecolumn',
+    'reselectafteredit','newrowposition','validationlevel','default_search','grid_expand_search','grid_rowcount', 'grid_require_search','grid_static','noresultsmessage','ejs','header','css','onecolumn',
     //Commit Level
     function(){
       if(model.commitlevel){

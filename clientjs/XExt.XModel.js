@@ -312,6 +312,8 @@ exports = module.exports = function(jsh){
       is_editable = false;
       show_lookup_when_readonly = true;
     }
+    if(is_editable && jctrl.hasClass('readonly')) is_editable = false;
+    if(is_editable && isGrid && jctrl.closest('tr.xrow').hasClass('readonly')) is_editable = false;
 
     if (is_editable && !jctrl.hasClass('editable')) { jsh.XPage.Enable(jctrl); }
     else if (!is_editable && !jctrl.hasClass('uneditable')) { jsh.XPage.Disable(jctrl, show_lookup_when_readonly); }
