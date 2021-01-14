@@ -58,23 +58,30 @@ exports.ExecScalar = function (context, sql, ptypes, params, callback, dbconfig,
   this.ExecDBFunc(db.Scalar, context, sql, ptypes, params, callback, dbconfig, db);
 };
 
+exports.GetDBErrorMessage = function(dberrors, errmsg){
+  if(!dberrors) return null;
+  var errmsg = (errmsg||'').toString().toLowerCase();
+  for (var i = 0; i < dberrors.length; i++) {
+    var dberr = dberrors[i];
+    var erex = dberr[0].toString().toLowerCase();
+    var etxt = dberr[1];
+    if (erex.indexOf('/') == 0) {
+      erex = erex.substr(1, erex.length - 2);
+      if (errmsg.match(new RegExp(erex))) { return etxt; }
+    }
+    else if (errmsg.indexOf(erex) >= 0) { return etxt; }
+  }
+  return null;
+}
+
 exports.AppDBError = function (req, res, err, stats, errorHandler) {
   if(err.stats) stats = err.stats;
   if(!errorHandler) errorHandler = function(num, txt, stats){ return Helper.GenError(req, res, num, txt, { stats: stats }); };
   if ('model' in err) {
     var model = err.model;
     if ('dberrors' in model) {
-      var errmsg = (err.message||'').toString().toLowerCase();
-      for (var i = 0; i < model.dberrors.length; i++) {
-        var dberr = model.dberrors[i];
-        var erex = dberr[0].toString().toLowerCase();
-        var etxt = dberr[1];
-        if (erex.indexOf('/') == 0) {
-          erex = erex.substr(1, erex.length - 2);
-          if (errmsg.match(new RegExp(erex))) { return errorHandler(-9, etxt, stats); }
-        }
-        else if (errmsg.indexOf(erex) >= 0) { return errorHandler(-9, etxt, stats); }
-      }
+      var dberrormsg = exports.GetDBErrorMessage(model.dberrors, err.message);
+      if(dberrormsg !== null) { return errorHandler(-9, dberrormsg, stats); }
     }
   }
   //Not necessary because sql is printed out in node debug in log below

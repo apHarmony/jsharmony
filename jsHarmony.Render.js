@@ -274,9 +274,10 @@ exports.loadFonts = function(fonts, callback){
 };
 
 //Return a 404 error page
-exports.Gen404 = function (req, res) {
+exports.Gen404 = function (req, res, options) {
+  options = _.extend({ view: '404', renderParams: {} }, options);
   res.status(404);
-  if (req.accepts('html')) { res.render(this.getView(req, '404', { disable_override: true }), { url: req.url }); return; }
+  if (req.accepts('html')) { res.render(this.getView(req, options.view, { disable_override: true }), { url: req.url, renderParams: options.renderParams }); return; }
   if (req.accepts('json')) { res.send({ error: 'Not found' }); return; }
   res.type('txt').send('Not found');
 };

@@ -73,7 +73,7 @@ exports.LoadViewsFolder = function (dpath, dont_overwrite) {
     if (files[i].indexOf('.ejs', files[i].length - 4) == -1) continue;
     var viewname = files[i].substr(0, files[i].length - 4);
     if(dont_overwrite && (viewname in _this.Views)) continue;
-    _this.Views[viewname] = dpath + '/' + files[i];
+    _this.Views[viewname] = path.join(dpath, files[i]);
   }
 };
 
