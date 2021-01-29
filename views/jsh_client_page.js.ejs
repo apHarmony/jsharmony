@@ -1340,18 +1340,21 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     });
   }
 
-  XPage.ParseModelDefinition = function(model, onError, onSuccess){
+  XPage.ParseModelDefinition = function(model, onError, onSuccess, options){
+    options = _.extend({ ignoreErrors: false }, options);
     if(!onError) onError = function(err){};
     if(!onSuccess) onSuccess = function(){};
 
     var hasErrors = false;
     var handleError = function(err){ hasErrors = true; onError(err); }
 
-    if(!model) return handleError(new Error('Model not defined'));
-    if(!model.id) return handleError(new Error('Model ID is required'));
-    if(model.id in jsh.XModels) return handleError(new Error('Another Model with the same ID is already loaded'));
-    if(!model.layout) return handleError(new Error('Model layout is required'));
-    if(!_.includes(['form','grid'], model.layout)) return handleError(new Error('Model layout must be form or grid'));
+    if(!options.ignoreErrors){
+      if(!model) return handleError(new Error('Model not defined'));
+      if(!model.id) return handleError(new Error('Model ID is required'));
+      if(model.id in jsh.XModels) return handleError(new Error('Another Model with the same ID is already loaded'));
+      if(!model.layout) return handleError(new Error('Model layout is required'));
+      if(!_.includes(['form','grid'], model.layout)) return handleError(new Error('Model layout must be form or grid'));
+    }
     var modelDefaults = {
       namespace: '',
       templates: {},
@@ -1410,8 +1413,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if(!('controlparams' in field)) field.controlparams = {};
       if(field.always_editable) field.actions = 'BIU';
       else field.actions = XExt.xejs.getActions(model.actions, field.actions);
+      if(!('type' in field)){
+        if(field.control != 'html') field.type = 'varchar';
+      }
       if(!('control' in field)){
         if(field.value) field.control = 'html';
+        else if(XExt.hasAction(field.actions, 'IU')){
+          field.control = 'textbox';
+          field.controlclass = 'xtextbox_M';
+        }
         else if(XExt.hasAction(field.actions, 'B')) field.control = 'label';
       }
       if(field.validate){

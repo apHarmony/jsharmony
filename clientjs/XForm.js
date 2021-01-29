@@ -218,14 +218,17 @@ exports = module.exports = function(jsh){
       this.NavTo(this.Index,false);
     }
   }
-  XForm.prototype.NewRow = function (){
+  XForm.prototype.NewRow = function (options){
+    if(!options) options = { unbound: false };
     var rslt = new this.DataType();
     rslt._is_insert = true;
     rslt._is_dirty = true;
     rslt = this.ApplyDefaults(rslt);
     this.ApplyUnboundDefaults(rslt);
-    this.DataSet.push(rslt);
-    this.IsDirty = true;
+    if(!options.unbound){
+      this.DataSet.push(rslt);
+      this.IsDirty = true;
+    }
     return rslt;
   }
   XForm.prototype.Select = function(onComplete, onFailure){

@@ -123,6 +123,23 @@ var jsHarmonyRouter = function (jsh, siteid) {
   router.get('/application.js', function (req, res) {
     HelperFS.outputContent(req, res, jsh.Cache['application.js'], 'text/javascript');
   });
+  router.get(/^\/js\/jsHarmony.render.js/, function(req, res, next){
+    res.end(ejs.render(jsh.getEJS('jsh_render.js'), {
+      req: req, _: _, ejsext: ejsext, jsh: jsh,
+      srcfiles: jsh.AppSrv.modelsrv.getSrcFiles(),
+      popups: jsh.Popups,
+      _: _
+    }));
+  });
+  router.get(/^\/js\/jsHarmony.loader.js/, function (req, res, next) {
+    //Verify model exists
+    res.end(ejs.render(jsh.getEJS('jsh_loader.js'), {
+      req: req, _: _, ejsext: ejsext, jsh: jsh,
+      srcfiles: jsh.AppSrv.modelsrv.getSrcFiles(),
+      popups: jsh.Popups,
+      _: _
+    }));
+  });
   for (var i = 0; i < siteConfig.private_apps.length; i++) {
     var app = siteConfig.private_apps[i];
     for (var j in app) router.all(j, app[j].bind(jsh.AppSrv));
@@ -452,23 +469,6 @@ var jsHarmonyRouter = function (jsh, siteid) {
       _.each(keys, function(key){ obj[key] = val[key]; });
       return obj;
     },4));
-  });
-  router.get(/^\/js\/jsHarmony.render.js/, function(req, res, next){
-    res.end(ejs.render(jsh.getEJS('jsh_render.js'), {
-      req: req, _: _, ejsext: ejsext, jsh: jsh,
-      srcfiles: jsh.AppSrv.modelsrv.getSrcFiles(),
-      popups: jsh.Popups,
-      _: _
-    }));
-  });
-  router.get(/^\/js\/jsHarmony.loader.js/, function (req, res, next) {
-    //Verify model exists
-    res.end(ejs.render(jsh.getEJS('jsh_loader.js'), {
-      req: req, _: _, ejsext: ejsext, jsh: jsh,
-      srcfiles: jsh.AppSrv.modelsrv.getSrcFiles(),
-      popups: jsh.Popups,
-      _: _
-    }));
   });
   router.get(/^\/(.*)/, function (req, res, next) {
     //Verify model exists

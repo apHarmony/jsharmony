@@ -82,13 +82,24 @@ MAIN ELEMENTS
   opacity:1;
   z-index:auto;
   background-color:transparent;
+  width:auto;
 }
 <%-rootcss%> select {
+  font-family: 'PT Sans', arial, helvetica, sans-serif;
   padding-top:2px;
   padding-bottom:2px;
   line-height:normal;
   height:auto;
+  appearance: auto;
+  -moz-appearance: auto;
+  -ms-appearance: auto;
+  -webkit-appearance: auto;
+  display:inline-block;
+  float:none;
+  opacity:1;
+  z-index:auto;
   background-color:transparent;
+  width:auto;
 }
 <%-rootcss%> label {
   margin:0;

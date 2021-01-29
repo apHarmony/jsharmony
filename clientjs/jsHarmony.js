@@ -250,16 +250,19 @@ jsHarmony.prototype.loadScript = function(url, cb){
     else return _this.scriptLoader[url].push(cb);
   }
   _this.scriptLoader[url] = [cb];
-  $.ajax({
-    url: url,
-    dataType: "script",
-    complete: function(){
-      var funcs = _this.scriptLoader[url];
-      _this.scriptLoader[url] = null;
-      _.each(funcs, function(func){ func(); });
-    },
-    error: function (err) { console.log(err); _this.XExt.Alert('Error loading script: '+err.toString()); }
-  });
+  var script = document.createElement('script');
+  script.onload = function(){
+    var funcs = _this.scriptLoader[url];
+    _this.scriptLoader[url] = null;
+    _.each(funcs, function(func){ func(); });
+  }
+  script.onerror = function (err) {
+    console.log(err);
+    _this.XExt.Alert('Error loading script: '+err.toString());
+  }
+  script.src = url;
+  script.async = true;
+  document.head.appendChild(script);
 }
 
 jsHarmony.prototype.BindEvents = function(){

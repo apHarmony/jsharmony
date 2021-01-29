@@ -445,6 +445,12 @@ jsHarmonyServer.prototype.Run = function(cb){
   }
 };
 
+jsHarmonyServer.prototype.getURLFromReq = function(req){
+  var hostname = req.headers.host;
+  if(hostname.indexOf(':')>=0) hostname = hostname.split(':')[0];
+  return this.getURL(hostname);
+}
+
 jsHarmonyServer.prototype.getURL = function(hostname){
   var _this = this;
   var https_server = false;

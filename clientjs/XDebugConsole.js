@@ -92,7 +92,12 @@ exports = module.exports = function(jsh){
       return;
     }
     if(this.saveSettingsTimer){ window.clearTimeout(this.saveSettingsTimer); this.saveSettingsTimer = null; }
-    jsh.XExt.SetSettingsCookie(this.SettingsCookieID,this.settings);
+    try{
+      jsh.XExt.SetSettingsCookie(this.SettingsCookieID,this.settings);
+    }
+    catch(ex){
+      console.error(ex);
+    }
   }
 
   XDebugConsole.prototype.getSourcesForWebSocket = function(){

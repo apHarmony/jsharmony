@@ -411,10 +411,10 @@ exports = module.exports = function(jsh){
   }
 
   XExt.endsWith = function (str, suffix) {
-    return str.match(suffix + "$") == suffix;
+    return (str||'').toString().match(suffix + "$") == suffix;
   }
   XExt.beginsWith = function (str, prefix) {
-    return str.indexOf(prefix) === 0;
+    return (str||'').toString().indexOf(prefix) === 0;
   }
 
   XExt.hasAction = function (actions, perm) {

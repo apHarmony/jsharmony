@@ -517,7 +517,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if(xeditablegrid.CurrentCell) if(!xform.CommitRow()) return;
     //Save parent and other items before adding, if commitlevel is row or cell
     if(xeditablegrid.SaveBeforeUpdate && ((xmodel.commitlevel == 'row') || (xmodel.commitlevel == 'cell'))){
-      if (jsh.XPage.GetChanges().length > 0) { return XExt.Alert('Please save all changes before adding a row.'); }
+      if (jsh.XPage.GetChanges().length > 0) { XExt.Alert('Please save all changes before adding a row.'); return; }
     }
     
     var newrow = xform.NewRow();
