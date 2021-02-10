@@ -107,13 +107,17 @@ exports.LoadModels = function (modelbasedir, modeldir, prefix, dbtype, moduleNam
   }
 };
 
-exports.ParseJSON = function(fname, moduleName, desc, cb){
+exports.ParseJSON = function(fname, moduleName, desc, cb, options){
+  if(!options) options = { fatalError: true };
   var _this = this;
   var fread = null;
   if(cb) fread = function(fread_cb){ fs.readFile(fname, 'utf8', fread_cb); }
   else fread = function(fread_cb){ return fread_cb(null, fs.readFileSync(fname, 'utf8'));  }
   return fread(function(err, data){
-    if(err) return cb(err);
+    if(err){
+      if(cb) return cb(err);
+      throw err;
+    }
     var fdir = path.dirname(fname);
     var ftext = fs.readFileSync(fname, 'utf8');
     ftext = Helper.JSONstrip(ftext);
@@ -140,25 +144,26 @@ exports.ParseJSON = function(fname, moduleName, desc, cb){
     }
     catch (ex2) {
       _this.Log.console_error('-------------------------------------------');
-      _this.Log.console_error('FATAL ERROR Parsing ' + desc + ' in ' + fname);
+      var errmsg = (options.fatalError ? 'FATAL ' : '') + 'ERROR Parsing ' + desc + ' in ' + fname + '\n';
   
       if('startpos' in ex2){
-        var errmsg = 'Error: Parse error on line ' + ex2.startpos.line + ', char ' + ex2.startpos.char + '\n';
+        errmsg += 'Error: Parse error on line ' + ex2.startpos.line + ', char ' + ex2.startpos.char + '\n';
         var eline = Helper.getLine(ftext, ex2.startpos.line);
         if(typeof eline != 'undefined'){
           errmsg += eline + '\n';
           for(let i=0;i<ex2.startpos.char;i++) errmsg += '-';
           errmsg += '^\n';
         }
-        errmsg += ex2.message + '\n';
-        errmsg += ex2.stack;
-        _this.Log.console(errmsg);
+        errmsg += ex2.message;
       }
-      else _this.Log.console(ex2);
+      else errmsg += ex2.toString();
+      _this.Log.console_error(errmsg);
+      _this.Log.console(ex2.stack);
   
       _this.Log.console_error('-------------------------------------------');
-      process.exit(8);
-      throw (ex2);
+      if(options.fatalError) process.exit(8);
+      if(cb) return cb(new Error(errmsg));
+      throw (new Error(errmsg));
     }
     if(cb) return cb(null, rslt);
     else return rslt;

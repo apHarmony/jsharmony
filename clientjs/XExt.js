@@ -554,14 +554,40 @@ exports = module.exports = function(jsh){
     return XExt.ReplaceAll(XExt.ReplaceAll(val.toString(), '\n', ' '), '\r', '');
   }
   //Escape string for regular expression matching
-  XExt.escapeRegEx = function (q) {
-    return q.replace(/[-[\]{}()*+?.,\\/^$|#\s]/g, "\\$&");
+  XExt.escapeRegEx = function (q, options) {
+    options = _.extend({ ignore: '' }, options);
+    var chars = {
+      '-':'-',
+      '[':'[',
+      ']':'\\]',
+      '{':'{',
+      '}':'}',
+      '(':'(',
+      ')':')',
+      '*':'*',
+      '+':'+',
+      '?':'?',
+      '.':'.',
+      ',':',',
+      '\\':'\\\\',
+      '/':'/',
+      '^':'^',
+      '$':'$',
+      '|':'|',
+      '#':'#',
+    };
+    var rxstr = '';
+    for(var key in chars){
+      if(!options.ignore || (options.ignore.indexOf(key)<0)) rxstr += chars[key];
+    }
+    return q.replace(new RegExp('['+rxstr+'\\s]','g'), "\\$&");
   }
   //Escape string for CSS
   XExt.escapeCSSClass = function(val, options){
     //options { nodash: true }
+    if(!options) options = { nodash: false };
     var rslt = (val||'').toString();
-    if(rslt && rslt.nodash) rslt = rslt.replace(/[^a-zA-Z0-9_]+/g, '_');
+    if(rslt && options.nodash) rslt = rslt.replace(/[^a-zA-Z0-9_]+/g, '_');
     else rslt = rslt.replace(/[^a-zA-Z0-9_-]+/g, '_');
     rslt = XExt.trimLeft(rslt,'-');
     while(rslt.indexOf('__') > 0) rslt = XExt.ReplaceAll(rslt,'__','_');
@@ -2839,6 +2865,7 @@ exports = module.exports = function(jsh){
     if(typeof val === 'undefined') return true;
     if(val === null) return true;
     if(val === '') return true;
+    if(val === false) return true;
     return false;
   }
   XExt.isNullUndefined = function(val){
