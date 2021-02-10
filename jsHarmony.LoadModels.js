@@ -1756,7 +1756,7 @@ exports.ParseEntities = function () {
       //1. Add fkeys
       //2. Parse sql title, and add any params, if sql_params are not defined
       if (model.fields) _.each(model.fields, function (field) {
-        _this.AddSqlParams(model, field.lov, model.id + ' > ' + field.name + ' > field.lov', ['sql','sql2','sqlmp']);
+        _this.AddSqlParams(model, field.lov, model.id + ' > ' + field.name + ' > field.lov', ['sql','sql2','sqlmp','sqlselect','sqltruncate']);
         _this.AddSqlParams(model, field.default, model.id + ' > ' + field.name + ' > field.default');
       });
       if(model.breadcrumbs){
