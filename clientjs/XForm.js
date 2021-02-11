@@ -494,6 +494,7 @@ exports = module.exports = function(jsh){
         try { jerrdata = JSON.parse(errtxt); }
         catch(ex){ }
         if ((jerrdata instanceof Object) && ('_error' in jerrdata)) {
+          jerrdata._error.toString = function(){ return _this.FormatError(this); };
           //Standard Error Handlers
           var handled = false;
           if (jsh.DefaultErrorHandler(jerrdata._error.Number, jerrdata._error.Message)) { handled = true; }
@@ -514,6 +515,7 @@ exports = module.exports = function(jsh){
       else {
         //Success
         if ((rslt instanceof Object) && ('_error' in rslt)) {
+          rslt._error.toString = function(){ return _this.FormatError(this); };
           var handled = false;
           if(jsh.DefaultErrorHandler(rslt._error.Number,rslt._error.Message)) { handled = true; }
           else if(!(_this.HandleError(rslt._error,rslt._stats,ExecParams, rslt))) { handled = true; }
@@ -540,6 +542,14 @@ exports = module.exports = function(jsh){
         }
       }
     });
+  }
+  XForm.prototype.FormatError = function(err){
+    if(!err) return '';
+    var rslt = '';
+    if(err.Number) rslt += 'Error #' + err.Number + ': ';
+    if(err.Message) rslt += err.Message;
+    if(!err) rslt = JSON.stringify(err);
+    return rslt;
   }
   XForm.prototype.OnDBStats = function(dbstats){
     var _this = this;
