@@ -138,6 +138,7 @@ var jsHarmony = function(options){
 
   this.imageLoader = null;
   this.xLoader = null;
+  this.xDialogLoader = null;
   this.xDebugConsole = null;
   this.xDialog = [];
   this.xPopupStack = [];
@@ -319,6 +320,7 @@ jsHarmony.prototype.Init = function(){
   _this.InitControls();
   _this.XMenu.Init();
   if(!this.xLoader) this.xLoader = new this.XLoader();
+  if(!this.xDialogLoader) this.xDialogLoader = new this.XLoader('.xdialogloadingblock');
   this.xLoader.onSquashedClick.push(function(e){ _this.lastSquashedActionTime = Date.now(); });
   this.xDebugConsole = new this.XDebugConsole();
   $(document).mousemove(function (e) {
@@ -607,8 +609,8 @@ jsHarmony.prototype.trigger = function(){ $(this).trigger.apply($(this), argumen
 var jsHarmonyGlobal = { };
 
 var instances = [];
-if(global.jsHarmony) instances = global.jsHarmony.instances;
-if(window.jsHarmony) instances = window.jsHarmony.instances;
+if(global.jsHarmony) instances = global.jsHarmony.Instances;
+if(window.jsHarmony) instances = window.jsHarmony.Instances;
 jsHarmony.Instances = instances;
 jsHarmony.jQuery = $;
 

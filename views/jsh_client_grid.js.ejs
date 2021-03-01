@@ -394,13 +394,17 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if(xgrid.Prop.ReselectAfterEdit) xcontroller.Reselect(rowid,onsuccess);
       else if(onsuccess) onsuccess();
 
-    },function(data){
+    },function(data, handled){
       //On Fail
       if(xform.Data._jrow){
         $(xform.Data._jrow).find('.xform_ctrl').addClass(xmodel.datamodel.prototype.xvalidate.ErrorClass);
       }
       if(oncancel) oncancel(false);
-      if(data && ('responseText' in data)) XExt.Alert('An error has occurred: ' + data.responseText);
+      if(!handled){
+        if(data && data.Message) jsh.XExt.Alert((data.Number && ('Error #' + data.Number + ': ')) + data.Message)
+        else if(data && ('responseText' in data)) XExt.Alert('An error has occurred: ' + data.responseText);
+        else XExt.Alert('An unexpected error has occurred');
+      }
       return true; //Error handled
     });
     return false;
@@ -666,11 +670,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
               exec_delete();
               xform.ResetDirty();
           if(xmodel.oncommit) xmodel.oncommit(xmodel, -1, function(){});
-            },function(data){
+            },function(data, handled){
               //On Fail
               _.remove(xform.DeleteSet,xform.DataSet[rowid]);
               xform.RecheckDirty();
-              if(data && ('responseText' in data)) XExt.Alert('An error has occurred: ' + data.responseText);
+              if(!handled){
+                if(data && data.Message) jsh.XExt.Alert((data.Number && ('Error #' + data.Number + ': ')) + data.Message)
+                else if(data && ('responseText' in data)) XExt.Alert('An error has occurred: ' + data.responseText);
+                else XExt.Alert('An unexpected error has occurred');
+              }
               return true; //Error handled
             });
           }

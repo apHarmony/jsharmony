@@ -394,12 +394,16 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           else XExt.ReplaceHistory(window.location.href.toString(), XPage.GetState());
 
           //Focus on the first element on the page
-          var firstControl = jsh.$root('input,select,textarea,.xlookup').not('input[type=hidden]').not('[readonly]').filter(':visible').first();
-          if(firstControl && firstControl.length && !firstControl.is('.datepicker')) firstControl.focus();
+          var forceFocus = jsh.$root('.xforcefocus').not('input[type=hidden]').filter(':visible');
+          if(forceFocus && forceFocus.length) forceFocus.first().focus();
+          else {
+            var firstControl = jsh.$root('input,select,textarea,.xlookup').not('input[type=hidden]').not('[readonly]').filter(':visible').first();
+            if(firstControl && firstControl.length && !firstControl.is('.datepicker')) firstControl.focus();
 
-          //Select first search value by default, if form is open
-          var firstSearchValue = jsh.$root('.xsearch_value:visible').first();
-          if(firstSearchValue && firstSearchValue.length && !firstSearchValue.hasClass('datepicker')) firstSearchValue.select().focus();
+            //Select first search value by default, if form is open
+            var firstSearchValue = jsh.$root('.xsearch_value:visible').first();
+            if(firstSearchValue && firstSearchValue.length && !firstSearchValue.hasClass('datepicker')) firstSearchValue.select().focus();
+          }
 
           jsh.init_complete = true;
 

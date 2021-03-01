@@ -37,6 +37,10 @@ function jsHarmonyModule(name){
   this.schema = null;    //Database schema
   this.namespace = null; //jsHarmony Model Namespace
   this.dependencies = []; //List of module names
+
+  //Events
+  this.onFilterSQLScripts = null; //function(fileObj){ return true / false; }  Run for each SQL script, to decide whether to load it into memory
+                                  // fileObj:: { name, path, type ("file" or "folder") }
 }
 jsHarmonyModule.prototype.getModelPath = function(){
   if(this.Config.moduledir) return this.Config.moduledir+'/models/';

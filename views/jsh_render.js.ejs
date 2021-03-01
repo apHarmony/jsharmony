@@ -439,6 +439,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.srcfiles = <%-ejsext.json_encode_ejs(srcfiles)%>;
   <%-srcfiles['jsh_page.js']%>;
   jsh.XPage.bindEvents();
+  jsh.trigger('jsh_render_init');
 
   $(document).ready(function(){
     jsh.title_html = "\r\n"+'<h1 style="display:inline-block;" class="xform_title">&nbsp;</h1>' + "\r\n";

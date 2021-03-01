@@ -117,7 +117,10 @@ exports = module.exports = function(jsh){
     var parentobj = jsh.root;
     if (xformdata._jrow) parentobj = xformdata._jrow;
     var jctrl = XExtXModel.RenderField(xformdata, parentobj, xformdata._modelid, field, val, { updatePreviousValue: false });
-    if(jctrl && jctrl.length) xformdata.OnControlUpdate(jctrl[0]);
+    if(jctrl && jctrl.length){
+      jctrl.trigger('change');
+      xformdata.OnControlUpdate(jctrl[0]);
+    }
   }
 
   XExtXModel.RenderField = function (_this, parentobj, modelid, field, val, options){

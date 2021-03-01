@@ -22,7 +22,7 @@ var _ = require('lodash');
 
 exports = module.exports = function(jsh){
 
-  function XLoader(){
+  function XLoader(_containerClass){
     var _this = this;
     this.IsLoading = false;
     this.LoadQueue = new Array();
@@ -30,25 +30,27 @@ exports = module.exports = function(jsh){
     this.onSquashedClick = [];
     this.onMouseDown = [];
     this.onMouseUp = [];
+    this.containerClass = _containerClass || '.xloadingblock';
 
     //Check if required elements have been rendered to the page
-    if(!jsh.$root('.xloadingblock').length) console.error('xloadingblock not found on page during XLoader initialization');
+    if(!jsh.$root(_this.containerClass).length) console.error(_this.containerClass+' not found on page during XLoader initialization');
 
     //Keep counter to match mousedown / mouseup events, to detect squashed clicks (clicks blocked by the transparent loading background)
-    jsh.$root('.xloadingblock').on('mousedown', function(e){
+    jsh.$root(_this.containerClass).on('mousedown', function(e){
       _this.MouseStack++;
       jsh.XExt.trigger(_this.onMouseDown, e);
     });
-    jsh.$root('.xloadingblock').on('mouseup', function(e){
+    jsh.$root(_this.containerClass).on('mouseup', function(e){
       jsh.XExt.trigger(_this.onMouseUp, e);
     });
-    jsh.$root('.xloadingblock').on('click mouseup', function(e){
+    jsh.$root(_this.containerClass).on('click mouseup', function(e){
       if(_this.MouseStack<=0){ jsh.XExt.trigger(_this.onSquashedClick, e); }
       _this.MouseStack--;
     });
   }
 
   XLoader.prototype.StartLoading = function(obj){
+    var _this = this;
     if(!_.includes(this.LoadQueue,obj)) this.LoadQueue.push(obj);
     if(this.IsLoading) return;
     jsh.root.css('cursor','wait');
@@ -56,9 +58,9 @@ exports = module.exports = function(jsh){
     this.MouseStack = 0;
     if(jsh.xDialog.length) jsh.$root('input,select,textarea').not(':button').blur();
     else jsh.$root('input,select,textarea').blur();
-    jsh.$root('.xloadingbox').stop().fadeTo(0,0);
-    jsh.$root('.xloadingblock').show();
-    jsh.$root('.xloadingbox').fadeTo(2000,1);
+    jsh.$root(_this.containerClass+' .xloadingbox').stop().fadeTo(0,0);
+    jsh.$root(_this.containerClass).show();
+    jsh.$root(_this.containerClass+' .xloadingbox').fadeTo(2000,1);
   }
 
   XLoader.prototype.StopLoading = function (obj){
@@ -73,10 +75,11 @@ exports = module.exports = function(jsh){
   };
 
   XLoader.prototype.StopLoadingBase = function () {
+    var _this = this;
     this.IsLoading = false;
-    jsh.$root('.xloadingbox').stop();
-    var curfade = GetOpacity(jsh.$root('.xloadingbox')[0]);
-    jsh.$root('.xloadingbox').fadeTo(500 * curfade, 0, function () { if (!this.IsLoading) { jsh.$root('.xloadingblock').hide(); } });
+    jsh.$root(_this.containerClass+' .xloadingbox').stop();
+    var curfade = GetOpacity(jsh.$root(_this.containerClass+' .xloadingbox')[0]);
+    jsh.$root(_this.containerClass+' .xloadingbox').fadeTo(500 * curfade, 0, function () { if (!this.IsLoading) { jsh.$root(_this.containerClass).hide(); } });
     jsh.root.css('cursor', '');
   }
 

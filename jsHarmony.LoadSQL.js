@@ -96,7 +96,7 @@ exports.LoadSQL = function (db, dir, type, moduleName) {
   sqlext.Objects = _.merge(sqlext.Objects, rslt.Objects);
 };
 
-exports.LoadSQLFiles = function(dir, options){
+exports.LoadSQLFiles = function(module, dir, options){
   options = _.extend({ ignoreDirectories: true, filterType: '' },options||{});
   var dbDrivers = this.getDBDrivers();
   if (!fs.existsSync(dir)) return [];
@@ -144,6 +144,10 @@ exports.LoadSQLFiles = function(dir, options){
       if (found_other_dbtype){
         continue;
       }
+    }
+
+    if(module && module.onFilterSQLScripts){
+      if(module.onFilterSQLScripts(fobj)===false) continue;
     }
 
     rslt.push(fobj);
@@ -243,8 +247,9 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
   if(!rslt.Objects) rslt.Objects = { };
 
   var _this = this;
+  var module = (moduleName ? _this.Modules[moduleName] : null);
   
-  var d = _this.LoadSQLFiles(dir, { ignoreDirectories: true, filterType: type });  
+  var d = _this.LoadSQLFiles(module, dir, { ignoreDirectories: true, filterType: type });  
 
   //Load Base SQL files
   _this.LogInit_PERFORMANCE('Loading Base SQL Files '+(Date.now()-_this.Statistics.StartTime));
@@ -286,8 +291,8 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
   //Load SQL Scripts
   _this.LogInit_PERFORMANCE('Loading SQL Scripts '+(Date.now()-_this.Statistics.StartTime));
   var scriptsdir = dir+'scripts/';
-  var d = _this.LoadSQLFiles(scriptsdir, { ignoreDirectories: false, filterType: type });
-  if(moduleName && (d.length > 0)){
+  var d = _this.LoadSQLFiles(module, scriptsdir, { ignoreDirectories: false, filterType: type });
+  if(module && (d.length > 0)){
     var module = _this.Modules[moduleName];
     var scripts = {};
 
@@ -296,9 +301,9 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
       if(d[i].type=='folder'){
         var subdname = d[i].name;
         var subdpath = d[i].path;
-        if(subdname == type){ d=d.concat(_this.LoadSQLFiles(subdpath+'/', { ignoreDirectories: false, filterType: type })); continue; }
-        var subd1 = _this.LoadSQLFiles(subdpath+'/', { ignoreDirectories: true, filterType: type });
-        var subd2 = _this.LoadSQLFiles(subdpath+'/'+type+'/', { ignoreDirectories: true, filterType: type });
+        if(subdname == type){ d=d.concat(_this.LoadSQLFiles(module, subdpath+'/', { ignoreDirectories: false, filterType: type })); continue; }
+        var subd1 = _this.LoadSQLFiles(module, subdpath+'/', { ignoreDirectories: true, filterType: type });
+        var subd2 = _this.LoadSQLFiles(module, subdpath+'/'+type+'/', { ignoreDirectories: true, filterType: type });
         var subd = subd1.concat(subd2);
         scripts[subdname] = {};
         for(var j=0;j<subd.length;j++){
@@ -684,18 +689,18 @@ exports.ParseSQLObjects = function(){
           if(!obj._dependencies) obj._dependencies = {};
           _.each(obj.dependencies, function(tblname){ obj._dependencies[tblname] = tblname; });
         }
-      
-        if(obj.type=='view'){
-          obj._tables = {};
-          var tblnames = _.keys(obj.tables);
-          _.each(tblnames, function(tblname){
-            if(module.schema){
-              if(tblname.indexOf('.')<0){
-                obj.tables[module.schema + '.' + tblname] = obj.tables[tblname];
-                delete obj.tables[tblname];
-              }
+        else if(obj.type=='view'){
+          var resolvedTables = {};
+          if(obj.tables) for(var tblname in obj.tables){
+            if(module.schema && ((tblname.indexOf('.')<0))){
+              resolvedTables[module.schema + '.' + tblname] = obj.tables[tblname];
             }
-          });
+            else {
+              resolvedTables[tblname] = obj.tables[tblname];
+            }
+          }
+          obj.tables = resolvedTables;
+          obj._tables = {};
           for(var tblname in obj.tables){
             obj._tables[tblname] = tblname;
             var tbl = obj.tables[tblname];
@@ -705,6 +710,11 @@ exports.ParseSQLObjects = function(){
             }
           }
           _.each(obj.dependencies, function(tblname){ obj._tables[tblname] = tblname; });
+        }
+        else {
+          //Other
+          if(!obj._dependencies) obj._dependencies = {};
+          _.each(obj.dependencies, function(tblname){ obj._dependencies[tblname] = tblname; });
         }
 
         //Validate canonical_sqlobject.json

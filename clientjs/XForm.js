@@ -501,7 +501,7 @@ exports = module.exports = function(jsh){
           else if (!(_this.HandleError(jerrdata._error,jerrdata._stats,ExecParams,errdata))) { handled = true; }
           else if ((jerrdata._error.Number == -9) || (jerrdata._error.Number == -5)) { jsh.XExt.Alert(jerrdata._error.Message); handled = true; }
           //onFail handler
-          if (('onFail' in ExecParams) && ExecParams.onFail(jerrdata._error)) { }
+          if (('onFail' in ExecParams) && ExecParams.onFail(jerrdata._error, handled)) { }
           else if(handled) { }
           else { jsh.XExt.Alert('Error #' + jerrdata._error.Number + ': ' + jerrdata._error.Message); }
           return;
@@ -520,7 +520,7 @@ exports = module.exports = function(jsh){
           if(jsh.DefaultErrorHandler(rslt._error.Number,rslt._error.Message)) { handled = true; }
           else if(!(_this.HandleError(rslt._error,rslt._stats,ExecParams, rslt))) { handled = true; }
           else if((rslt._error.Number == -9) || (rslt._error.Number == -5)){ jsh.XExt.Alert(rslt._error.Message); handled = true; }
-          if (('onFail' in ExecParams) && ExecParams.onFail(rslt._error)) { }
+          if (('onFail' in ExecParams) && ExecParams.onFail(rslt._error, handled)) { }
           else if(handled) { }
           else { jsh.XExt.Alert('Error #' + rslt._error.Number + ': ' + rslt._error.Message); }
           return;

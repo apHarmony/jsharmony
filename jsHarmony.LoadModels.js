@@ -383,13 +383,16 @@ exports.ParseModelInheritance = function () {
           }
         }
       }
-      while(model._transforms && model._transforms.length){
-        var transform = model._transforms.shift();
-        _this.ApplyModelTransform(model, transform);
-      }
-      delete _this.Models[model.id]._transforms;
     });
   }
+  //Apply Transforms
+  _.forOwn(this.Models, function (model) {
+    while(model._transforms && model._transforms.length){
+      var transform = model._transforms.shift();
+      _this.ApplyModelTransform(model, transform);
+    }
+    delete _this.Models[model.id]._transforms;
+  });
 };
 
 exports.ApplyModelTransform = function(model, transform){
@@ -1896,7 +1899,7 @@ exports.ParseEntities = function () {
     var _v_field = [
       'name', 'type', 'actions', 'control', 'caption', 'length', 'sample', 'validate', 'controlstyle', 'key', 'foreignkey', 'serverejs', 'roles', 'ongetvalue', 'cellclass',
       'controlclass', 'value', 'onclick', 'datalock', 'hidden', 'link', 'nl', 'block', 'blockstyle', 'blockclass', 'lov', 'captionstyle', 'disable_sort', 'enable_search', 'disable_search', 'disable_search_all', 'cellstyle', 'captionclass', 'captioncolon',
-      'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'hints', 'always_editable', 'locked_by_querystring', 'precision', 'password', 'hash', 'salt', 'unbound',
+      'caption_ext', '_orig_control', 'format', 'eol', 'target', 'bindings', 'default', 'controlparams', 'popuplov', 'hints', 'always_editable', 'focus', 'locked_by_querystring', 'precision', 'password', 'hash', 'salt', 'unbound',
       'sqlselect', 'sqlupdate', 'sqlinsert','sqlsort', 'sqlwhere', 'sqlsearchsound', 'sqlsearch', 'onchange', 'lovkey', 'readonly', '__REMOVE__', '__AFTER__','_auto',
       'sql_from_db','sql_to_db','sqlsearch_to_db','datatype_config'
     ];

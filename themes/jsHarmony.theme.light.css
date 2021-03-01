@@ -284,7 +284,8 @@ BODY
   background-color:#fffedf;
 }
 
-<%-rootcss%> .xloadingblock div .xloadingbox {
+<%-rootcss%> .xloadingblock div .xloadingbox,
+<%-rootcss%> .xloadingcontainer div .xloadingbox {
   border:1px solid #ddd;
   font-weight:400;
   color:#777;

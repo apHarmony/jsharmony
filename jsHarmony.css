@@ -839,7 +839,8 @@ CUSTOM CONTROLS
 LOADING ANIMATION
 =================
 */
-<%-rootcss%> .xloadingblock {
+<%-rootcss%> .xloadingblock,
+<%-rootcss%> .xloadingcontainer {
 	display:none;
 	position:fixed;
 	top:122px;
@@ -848,13 +849,16 @@ LOADING ANIMATION
 	z-index:999999999;
 	text-align:center;
 }
-<%-(rootcss||'body')%>.popup .xloadingblock { top:0px; }
-<%-rootcss%> .xloadingblock div {
+<%-(rootcss||'body')%>.popup .xloadingblock,
+<%-(rootcss||'body')%>.popup .xloadingcontainer { top:0px; }
+<%-rootcss%> .xloadingblock div,
+<%-rootcss%> .xloadingcontainer div {
 	position:absolute;
 	top:50%;
 	left:50%;
 }
-<%-rootcss%> .xloadingblock div .xloadingbox {
+<%-rootcss%> .xloadingblock div .xloadingbox,
+<%-rootcss%> .xloadingcontainer div .xloadingbox {
 	display:none;
 	background-color:white;
 	border:3px solid #aaa;
@@ -869,13 +873,11 @@ LOADING ANIMATION
 	text-align:center;
 	font-size:15px;
 	font-weight:bold;
-/*	color:#34231f;*/
 	color:#454545;
 	opacity:0.8;
 	border-radius: 5px;
 	-moz-border-radius: 5px;
 }
-/*<%-rootcss%> .uie8 .xloadingblock div .xloadingbox { font-family: 'Open Sans Bold', sans-serif; }*/
 <%-rootcss%> .xloadingbox img {
 	padding-top:18px;
 }

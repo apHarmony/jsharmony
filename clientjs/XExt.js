@@ -2342,7 +2342,7 @@ exports = module.exports = function(jsh){
     };
   }
 
-  //Given an original function orig_f, run f(), then run orig_f()
+  //Given an original function orig_f, run orig_f(), then run f()
   XExt.chainToEnd = function (orig_f, f) {
     if (!orig_f) return f;
     return function () {
