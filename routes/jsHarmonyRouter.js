@@ -488,6 +488,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
       for(var i=0;i<server.serverConfig.webSockets.length;i++){
         var webSocket = server.serverConfig.webSockets[i];
         if(webSocket.path==pathname){
+          res._headers = res._headers || {};
           res.end('WEBSOCKET');
           return;
         }
