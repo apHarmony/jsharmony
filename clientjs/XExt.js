@@ -1739,7 +1739,7 @@ exports = module.exports = function(jsh){
 
   XExt.dialogButtonFunc = function (dialogClass, oldactive, onComplete, params) {
     if (!params) params = {};
-    return function () {
+    var rslt = function () {
       //Delete duplicates from stack
       for (var i = 0; i < jsh.xDialog.length; i++) {
         for (var j = 0; j < i; j++) {
@@ -1760,6 +1760,10 @@ exports = module.exports = function(jsh){
       window.setTimeout(function () { jsh.xDialog.shift(); if (onComplete) onComplete(); }, 1);
       if (params.onCompleteImmediate) params.onCompleteImmediate();
     }
+    if(!params.onClosing) return rslt;
+    return function(){
+      params.onClosing(rslt);
+    };
   }
 
   XExt.getDialogContainer = function (sel) {
@@ -1911,7 +1915,7 @@ exports = module.exports = function(jsh){
 
   //html - HTML or jQuery object
   XExt.CustomPrompt = function (sel, html, onInit, onAccept, onCancel, onClosed, options) {
-    options = _.extend({ backgroundClose: false, reuse: false, restoreFocus: true }, options);
+    options = _.extend({ backgroundClose: false, reuse: false, restoreFocus: true, onClosing: null }, options);
     if(options.specialKeys === false) options.specialKeys = { enter: false, escape: false };
     else options.specialKeys = _.extend({ enter: true, escape: true }, options.specialKeys);
 
@@ -1935,7 +1939,7 @@ exports = module.exports = function(jsh){
       if (onClosed) onClosed();
       if(options.reuse) jsh.$root('.xdialogblock ' + sel).hide();
       else jsh.$root('.xdialogblock ' + sel).remove();
-    });
+    }, { onClosing: options.onClosing });
     var cancelfunc = function(options){
       options = _.extend({ force: false }, options);
       options.forceCancel = function(){ cancelfunc({ force: true }); }
@@ -1946,7 +1950,7 @@ exports = module.exports = function(jsh){
     }
     var acceptfunc_aftervalidate = XExt.dialogButtonFunc(sel, oldactive, function () {
       if (onClosed) onClosed();
-    });
+    }, { onClosing: options.onClosing });
     var acceptfunc = function () {
       //Verify this is the topmost dialog
       if ((jsh.xDialog.length > 0) && (jsh.xDialog[0] != (sel))) return;
