@@ -692,7 +692,7 @@ exports.ParseSQLObjects = function(){
         else if(obj.type=='view'){
           var resolvedTables = {};
           if(obj.tables) for(var tblname in obj.tables){
-            if(module.schema && ((tblname.indexOf('.')<0))){
+            if(module.schema && ((tblname.indexOf('.')<0)) && !obj.tables[tblname].sql){
               resolvedTables[module.schema + '.' + tblname] = obj.tables[tblname];
             }
             else {
