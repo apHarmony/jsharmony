@@ -48,7 +48,7 @@ exports = module.exports = function (req, res, onComplete) {
   var sqlparams = {};
   sqlparams[jsh.map.user_email] = fdata.username;
   req.jshsite.auth.on_auth(req, jsh, fdata, sqlparams, function (err, rslt) {
-    if ((rslt != null) && (rslt.length == 1) && (rslt[0].length == 2) && (rslt[0][0].length == 1)) {
+    if ((rslt != null) && (rslt.length == 1) && (rslt[0].length == 2) && (rslt[0][0].length >= 1)) {
       var user_info = rslt[0][0][0];
       if (user_info[jsh.map.user_status].toUpperCase() == 'ACTIVE') {
         var user_id = user_info[jsh.map.user_id];
