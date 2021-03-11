@@ -138,7 +138,8 @@ function jsHarmonyConfig(config){
     },
     //Deprecated Options Compatibility
     "deprecated": {
-      "disable_button_inheritance": { } //Disable button inheritance for each Module in the array. ex: { "application": true }
+      "disable_button_inheritance": { }, //Disable button inheritance for each Module in the array. ex: { "application": true }
+      "disable_sqlwhere_on_form_update_delete": false, //Disable auto-adding sqlwhere conditions to update and delete SQL statements
     },
     //Model validation level - "standard", "strict"
     //  Strict: MISSING_CAPTION

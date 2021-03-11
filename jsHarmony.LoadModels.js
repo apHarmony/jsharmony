@@ -1889,7 +1889,7 @@ exports.ParseEntities = function () {
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_search', 'default_search', 'grid_static', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'onrowunbind', 'ondestroy', 'onchange', 'getapi',
-      'js', 'jslib', 'ejs', 'header', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
+      'js', 'jslib', 'ejs', 'header', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'sqlwhere_disabled_on_insert', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlgetinsertkeys', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
       'path', 'module', 'templates', 'db', 'onecolumn', 'namespace',
       //Report Parameters
@@ -2015,6 +2015,12 @@ exports.ParseEntities = function () {
     else if((model.layout=='multisel')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_ERROR(model.id + ': Multisel layout only supports BU actions');
     else if((model.layout=='report')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_ERROR(model.id + ': Report layout only supports BU actions');
     if((model.layout=='grid')&&model.grid_static&&(Helper.hasAction(model.actions, 'IUD'))) _this.LogInit_ERROR(model.id + ': The model.grid_static property cannot be used with IUD actions');
+
+    if(!_this.Config.system_settings.deprecated.disable_sqlwhere_on_form_update_delete){
+      if(model.sqlwhere && Helper.hasAction(model.actions, 'I') && !model.sqlinsert){
+        if(!model.sqlwhere_disabled_on_insert) _this.LogInit_ERROR(model.id + ': model.sqlwhere is not supported with I action.  Use the model.sqlwhere_disabled_on_insert property to disable sqlwhere on insert.');
+      }
+    }
 
     //Generate Validators
     _.each(model.fields, function (field) {
