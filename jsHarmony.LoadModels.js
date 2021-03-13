@@ -247,6 +247,7 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir, modu
     button._orig_model = modelname;
   });
   if('css' in model) model.css = Helper.ParseMultiLine(model.css);
+  if('js' in model) model.js = Helper.ParseMultiLine(model.js);
   //if (modelname in this.Models) throw new Error('Cannot add ' + modelname + '.  The model already exists.')
   var modelbasedir = '';
   if(model.path) modelbasedir = path.dirname(model.path) + '/';
