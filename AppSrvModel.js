@@ -303,6 +303,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, options) {
         link_text = link_text.replace(new RegExp('%%%CAPTION%%%', 'g'), model.caption[1]);
         link_text = link_text.replace(new RegExp('%%%CAPTIONS%%%', 'g'), model.caption[2]);
         var rsltbutton = {
+          'name': button.name,
           'link': link_url,
           'onclick': link_onclick,
           'actions': link_actions,
