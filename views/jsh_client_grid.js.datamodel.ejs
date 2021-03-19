@@ -69,6 +69,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           <%-xejs.iif('preview_on_click' in field.controlparams,'"preview_on_click":'+JSON.stringify(field.controlparams.preview_on_click)+',') %>
           <%-xejs.iif('expand_all' in field.controlparams,'"expand_all":'+JSON.stringify(field.controlparams.expand_all)+',') %>
           <%-xejs.iif('expand_to_selected' in field.controlparams,'"expand_to_selected":'+JSON.stringify(field.controlparams.expand_to_selected)+',') %>
+          <%-xejs.iif('item_dropdown' in field.controlparams,'"item_dropdown":'+JSON.stringify(field.controlparams.item_dropdown)+',') %>
           <%-xejs.iif('lazy_render' in field.controlparams,'"lazy_render":'+JSON.stringify(field.controlparams.lazy_render)+',') %>
           <%-xejs.iif('onmove' in field.controlparams,'"onmove":function(dragval, dropval, anchor, e){'+jslocals+field.controlparams.onmove+'},') %>
           <%-xejs.iif('ondrop' in field.controlparams,'"ondrop":function(dropval, anchor, e){'+jslocals+field.controlparams.ondrop+'},') %>

@@ -509,6 +509,28 @@ BODY
 <%-rootcss%> .xform_ctrl.tree.editable a.tree_item:hover .glyph {
   color:#aaccff;
 }
+<%-rootcss%> .xform_ctrl.tree .tree_item_dropdown_container {
+  display:none;
+  float:right;
+  height:5px;
+}
+<%-rootcss%> .xform_ctrl.tree .tree_item_dropdown {
+  position:relative;
+  top:-3px;
+  border:1px solid #aaa;
+  font-weight:normal;
+  padding:3px 21px 3px 12px;
+  line-height:1;
+  background-image: url(/images/arrow_down_gray.png);
+  background-repeat: no-repeat;
+  background-position: top 7px right -2px;
+}
+<%-rootcss%> .xform_ctrl.tree .tree_item_dropdown:hover {
+  background-color:#ededed;
+}
+<%-rootcss%> .xform_ctrl.tree a.tree_item.selected .tree_item_dropdown_container {
+  display:block;
+}
 <%-rootcss%> .xform_ctrl.tree .icon {
   position:absolute;
   top:4px;
@@ -518,7 +540,7 @@ BODY
   border:0;
 }
 <%-rootcss%> .xform_ctrl.tree span {
-  display:inline-block;
+  display:block;
   padding-left:35px;
   padding-top:3px;
 }

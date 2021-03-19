@@ -1144,10 +1144,18 @@ exports = module.exports = function(jsh){
     //Create Tree
     var has_seq = false;
     var lazy_render = (LOV.length >= 500);
-    if (field && field.controlparams) {
-      if('lazy_render' in field.controlparams) lazy_render = !!field.controlparams.lazy_render;
-      else if (field.controlparams.expand_all) lazy_render = false;
+    var controlparams = _.extend({}, (field && field.controlparams));
+    if('lazy_render' in controlparams) lazy_render = !!controlparams.lazy_render;
+    else if (controlparams.expand_all) lazy_render = false;
+    
+    //Disable item_dropdown if context menu is empty
+    if(controlparams.item_dropdown){
+      if(field && field.name){
+        var jcontextmenu = jsh.$root('._item_context_menu_' + field.name);
+        if(!jcontextmenu.length || !jcontextmenu.children().length) controlparams.item_dropdown = false;
+      }
     }
+
     for (var i = 0; i < LOV.length; i++) {
       var iLOV = LOV[i];
       var node = new XTreeNode();
@@ -1174,7 +1182,7 @@ exports = module.exports = function(jsh){
     
     var body = '';
     for (var i = 0; i < tree.length; i++) {
-      body += XExt.TreeRenderNode(jctrl, tree[i]);
+      body += XExt.TreeRenderNode(jctrl, tree[i], controlparams);
     }
     var treeid = jctrl.data('treeid');
     if(!treeid){
@@ -1193,7 +1201,7 @@ exports = module.exports = function(jsh){
       if(!node) return;
       //Render that node
       var childrenHtml = '';
-      _.each(node.Children, function(child){ childrenHtml += XExt.TreeRenderNode(jctrl, child); });
+      _.each(node.Children, function(child){ childrenHtml += XExt.TreeRenderNode(jctrl, child, controlparams); });
       jthis.removeClass('tree_render_lazy').off('tree_render_lazy');
       jthis.next('.children').append(childrenHtml);
       jthis.next('.children').find('.tree_render_lazy').on('tree_render_lazy', renderLazy);
@@ -1217,14 +1225,12 @@ exports = module.exports = function(jsh){
       }
     });
 
-    if (field && field.controlparams) {
-      if(firstRender){
-        if (field.controlparams.expand_all) XExt.TreeExpandAll(jctrl);
-        else if (field.controlparams.expand_to_selected) XExt.TreeExpandToSelected(jctrl);
-      }
-      if(field.controlparams.ondrop) XExt.TreeEnableDrop(jctrl, field.controlparams.ondrop, field.controlparams.drag_anchor_settings);
-      if(field.controlparams.onmove) XExt.TreeEnableDrag(jctrl, field.controlparams.onmove, field.controlparams.drag_anchor_settings);
+    if(firstRender){
+      if (controlparams.expand_all) XExt.TreeExpandAll(jctrl);
+      else if (controlparams.expand_to_selected) XExt.TreeExpandToSelected(jctrl);
     }
+    if(controlparams.ondrop) XExt.TreeEnableDrop(jctrl, controlparams.ondrop, controlparams.drag_anchor_settings);
+    if(controlparams.onmove) XExt.TreeEnableDrag(jctrl, controlparams.onmove, controlparams.drag_anchor_settings);
   }
 
   //ondrop(dropval, anchor, e)
@@ -1388,15 +1394,19 @@ exports = module.exports = function(jsh){
     });
   }
 
-  XExt.TreeRenderNode = function (ctrl, n) {
+  XExt.TreeRenderNode = function (ctrl, n, controlparams) {
     var children = '';
     if(n.Expanded || !n.LazyRender){
       for (var i = 0; i < n.Children.length; i++) {
-        children += XExt.TreeRenderNode(ctrl, n.Children[i]);
+        children += XExt.TreeRenderNode(ctrl, n.Children[i], controlparams);
       }
     }
+    var item_dropdown_html = '';
+    if(controlparams && controlparams.item_dropdown){
+      item_dropdown_html = '<div class="tree_item_dropdown_container"><div class="tree_item_dropdown"  data-value="<%=n.Value%>" onclick=\'<%-instance%>.XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>,{ top: <%-instance%>.$(this).offset().top+<%-instance%>.$(this).outerHeight()-1, left: <%-instance%>.$(this).offset().left, hideIfOpen: true });event.preventDefault();event.stopPropagation();event.stopImmediatePropagation(); return false;\'>'+XExt.escapeHTML(controlparams.item_dropdown.caption || 'Actions')+'</div></div>';
+    }
     var rslt = jsh.ejs.render('\
-      <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length && (n.LazyRender&&!n.Expanded)?"tree_render_lazy":"")%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>" onclick=\'<%-instance%>.XExt.TreeSelectNode(this,<%-JSON.stringify(n.Value)%>,{ source: "click" }); return false;\' oncontextmenu=\'return <%-instance%>.XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'<%-instance%>.XExt.CancelBubble(arguments[0]); <%-instance%>.XExt.TreeToggleNode(<%-instance%>.$(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><img class="icon" src="<%-jsh._PUBLICURL%>images/icon_<%=n.Icon%>.png"><span><%=n.Text||"\u00A0"%></span></a>\
+      <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length && (n.LazyRender&&!n.Expanded)?"tree_render_lazy":"")%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>" onclick=\'<%-instance%>.XExt.TreeSelectNode(this,<%-JSON.stringify(n.Value)%>,{ source: "click" }); return false;\' oncontextmenu=\'return <%-instance%>.XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'<%-instance%>.XExt.CancelBubble(arguments[0]); <%-instance%>.XExt.TreeToggleNode(<%-instance%>.$(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><img class="icon" src="<%-jsh._PUBLICURL%>images/icon_<%=n.Icon%>.png"><span>'+item_dropdown_html+'<%=n.Text||"\u00A0"%></span></a>\
       <div class="children <%=(n.Expanded?"expanded":"")%> tree_item_<%=n.ID%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>"><%-children%></div>',
       { n: n, children: children, jsh: jsh, instance: jsh.getInstance() }
     );
@@ -1436,7 +1446,7 @@ exports = module.exports = function(jsh){
     return 'return (function(){'+XExt.escapeHTML(XExt.getJSLocals(modelid))+' '+XExt.unescapeEJS(XExt.escapeHTML(code))+'; '+(options.returnFalse?'return false;':'')+' }).call(this);';
   }
 
-  XExt.TreeItemContextMenu = function (ctrl, n) {
+  XExt.TreeItemContextMenu = function (ctrl, n, contextMenuOptions) {
     var jctrl = $(ctrl);
     var jtree = jctrl.closest('.xform_ctrl.tree');
     var fieldname = XExt.getFieldFromObject(ctrl);
@@ -1447,7 +1457,13 @@ exports = module.exports = function(jsh){
       if((frslt === false) || (frslt===true)) return frslt;
     }
     if (jsh.$root(menuid).length) {
-      XExt.ShowContextMenu(menuid, $(ctrl).data('value'), { id:n });
+      if(contextMenuOptions.hideIfOpen){
+        if(jsh.$root(menuid).is(':visible')){
+          XExt.HideContextMenu();
+          return false;
+        }
+      }
+      XExt.ShowContextMenu(menuid, $(ctrl).data('value'), { id:n }, contextMenuOptions);
       return false;
     }
     return true;

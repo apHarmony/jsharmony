@@ -1907,7 +1907,7 @@ exports.ParseEntities = function () {
     var _v_controlparams = [
       'value_true', 'value_false', 'value_hidden', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'base_readonly', 'dateformat', 'panelstyle',
       'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'data_file_prefix', 'sqlparams', '_data_file_has_extension', 'show_thumbnail', 'preview_on_click', 'icon',
-      'image', 'thumbnails', 'expand_all', 'expand_to_selected', 'onmove', 'ondrop', 'drag_anchor_settings', 'item_context_menu', 'insert_link', 'grid_save_before_update', 'update_when_blank', 'htmlarea_config', 'placeholder'
+      'image', 'thumbnails', 'expand_all', 'expand_to_selected', 'onmove', 'ondrop', 'drag_anchor_settings', 'item_context_menu', 'item_dropdown', 'insert_link', 'grid_save_before_update', 'update_when_blank', 'htmlarea_config', 'placeholder'
     ];
     var _v_popuplov = ['target', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
     var _v_lov = ['sql', 'sql2', 'sqlmp', 'code', 'code2', 'code_sys', 'code2_sys', 'code_app', 'code2_app', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db', 'values', 'post_process'];
