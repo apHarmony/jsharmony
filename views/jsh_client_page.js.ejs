@@ -1406,6 +1406,16 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var firstfield = true;
     for(var i=0;i<model.fields.length;i++){
       var field = model.fields[i];
+
+      //Handle field aliases
+      if('newline' in field){
+        if('nl' in field) delete field.newline;
+        else {
+          field.nl = field.newline;
+          delete field.newline;
+        }
+      }
+      
       if(field.name && field.type){
         if(!('locked_by_querystring' in field)) field.locked_by_querystring = true;
         if(!('captioncolon' in field)) field.captioncolon = true;

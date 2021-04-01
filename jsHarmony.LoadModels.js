@@ -304,6 +304,18 @@ exports.ParseModelInheritance = function () {
     for(var modelgroup in _this.Config.model_groups){
       if(_.includes(_this.Config.model_groups[modelgroup],model.id)) model.groups.push(modelgroup);
     }
+
+    //Handle field aliases
+    _.each(model.fields, function(field){
+      if(!field) return;
+      if('newline' in field){
+        if('nl' in field) delete field.newline;
+        else {
+          field.nl = field.newline;
+          delete field.newline;
+        }
+      }
+    });
   });
   while (foundinheritance) {
     foundinheritance = false;
@@ -1303,6 +1315,13 @@ exports.ParseEntities = function () {
         //Apply Custom Controls with Query Expressions
       }
       if (field.name === '') delete field.name;
+      if('newline' in field){
+        if('nl' in field) delete field.newline;
+        else {
+          field.nl = field.newline;
+          delete field.newline;
+        }
+      }
 
       //Apply default actions
       if (!('actions' in field) && field.unbound){
