@@ -1457,7 +1457,7 @@ exports = module.exports = function(jsh){
       if((frslt === false) || (frslt===true)) return frslt;
     }
     if (jsh.$root(menuid).length) {
-      if(contextMenuOptions.hideIfOpen){
+      if(contextMenuOptions && contextMenuOptions.hideIfOpen){
         if(jsh.$root(menuid).is(':visible')){
           XExt.HideContextMenu();
           return false;
