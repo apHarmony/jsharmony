@@ -501,7 +501,10 @@ exports = module.exports = function(jsh){
       oldval = jsh.XFormat.Decode(field.format, oldval);
       var newval = this.GetValue(field);
       if(!XExtXModel.StringEquals(oldval, newval)){
-        console.log(id + " Old: " + oldval); console.log(id + " New: " + newval);
+        if(jsh && jsh._debug){
+          console.log(id + " Old: " + oldval);
+          console.log(id + " New: " + newval);
+        }
         return true;
       }
       return false;

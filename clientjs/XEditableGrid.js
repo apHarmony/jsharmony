@@ -35,7 +35,7 @@ exports = module.exports = function(jsh){
     this.ValidationLevel = options.ValidationLevel;
     this.DialogContainer = options.DialogContainer;
     this.CurrentCell = null;
-    this.Debug = true;
+    this.Debug = jsh && jsh._debug;
     this.OnCellEnter = null; //(obj,e)
     this.OnCellLeave = null; //(oldobj,newobj,e)
     this.OnRowEnter = null; //(rowid)
