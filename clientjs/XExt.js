@@ -2581,6 +2581,39 @@ exports = module.exports = function(jsh){
     if (existingWindow) { existingWindow.location = url; existingWindow.focus(); return existingWindow; }
     else return window.open(url, '_blank', windowstr);
   }
+  XExt.fitWindowScript = function(onComplete){
+    var rsltFunc = function(callback){
+      if (window.opener && window.opener !== window) {
+        var targetX = window.screenX;
+        var targetY = window.screenY;
+        if(window.screen && ('availLeft' in window.screen) && ('availTop' in window.screen)){
+          var needsMove = false;
+          if(targetX < window.screen.availLeft){ targetX = window.screen.availLeft; needsMove = true; }
+          if(targetY < window.screen.availTop){ targetY = window.screen.availTop; needsMove = true; }
+          if(needsMove){
+            window.moveTo(targetX, targetY);
+          }
+        }
+      }
+      return callback();
+    }
+    return '('+rsltFunc.toString()+')(function(){'+onComplete.toString()+'})';
+  }
+  XExt.createWindow = function(url, target, params){
+    var win = window.open(undefined, target, params);
+    var pageBody = 
+      '<script type="text/javascript">'+
+      '(function(){' +
+      'setTimeout(function(){' +
+      XExt.fitWindowScript("window.location.href = "+JSON.stringify(url)+";")+
+      '}, 100);'+
+      '})();</script>';
+    if(url && (url.substr(0,5)=='data:')){
+      pageBody = '<body style="margin:0;padding:0;width:100%;height:100%;box-sizing:border-box;">'+pageBody+'<iframe src="' + XExt.escapeHTML(url) + '" frameBorder="0" style="width:100%;height:100%;box-sizing:border-box;"></iframe></body>';
+    }
+    win.document.write(pageBody);
+    return win;
+  }
   XExt.renderCanvasCheckboxes = function () {
     jsh.$root('canvas.checkbox.checked').each(function () {
       var obj = this;
