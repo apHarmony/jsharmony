@@ -20,7 +20,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 exports = module.exports = function(appConfig, installerParams, callback){
   var localParams = appConfig.params.jsharmony || {};
 
-  appConfig.header = "var path = require('path');\r\n";
+  appConfig.header += "var path = require('path');\r\n";
 
   appConfig.body += "\r\n";
   appConfig.body += "  //Server Settings\r\n";
@@ -37,7 +37,7 @@ exports = module.exports = function(appConfig, installerParams, callback){
 
   appConfig.body += (localParams.https_ca) ?
                     "  config.server.https_ca = "+localParams.https_ca+";\r\n" :
-                    "  //config.server.https_ca = 'path/to/hhttps-ca.pem';\r\n";
+                    "  //config.server.https_ca = 'path/to/https-ca.pem';\r\n";
 
   appConfig.body += "  config.frontsalt = "+JSON.stringify(installerParams.xlib.getSalt(60))+";\r\n";
 
