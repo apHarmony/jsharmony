@@ -103,7 +103,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         ValidationLevel: '<%-xejs.iif('validationlevel' in model,model.validationlevel,'row')%>',
         DialogContainer: jsh.XExt.getDialogContainer(grid_placeholder),
       });
-      xeditablegrid.Debug = jsh && jsh._debug;
       xeditablegrid.OnRowEnter = function(rowid){ xform.SetIndex(rowid,false); }
       xeditablegrid.OnControlUpdate = function(obj,e){ xform.Data.OnControlUpdate(obj,e); }
       xeditablegrid.OnValidating = function(rowid,obj){ return xform.CommitRow(); }

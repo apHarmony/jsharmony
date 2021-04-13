@@ -76,6 +76,7 @@ var jsHarmony = function(options){
   this._BASEURL = '/';
   this._PUBLICURL = '/';
   this._debug = false;
+  this._show_system_errors = false;
   this.home_url = '';
   this.uimap = {};
   this._instance = '';

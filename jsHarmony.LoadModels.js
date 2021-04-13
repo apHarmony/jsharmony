@@ -315,6 +315,7 @@ exports.ParseModelInheritance = function () {
           delete field.newline;
         }
       }
+      if(field.value) field.value = Helper.ParseMultiLine(field.value);
     });
   });
   while (foundinheritance) {

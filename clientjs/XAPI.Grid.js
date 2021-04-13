@@ -42,7 +42,7 @@ exports = module.exports = function(jsh){
       return;
     }
     if(('status' in errdata) && (errdata.status == '404')){ jsh.XExt.Alert('(404) The requested page was not found.'); }
-    else if(jsh._debug){
+    else if(jsh._show_system_errors){
       var errmsg = errdata.toString();
       if(errdata.responseText) errmsg = errdata.responseText;
       jsh.XExt.Alert('An error has occurred: ' + errmsg);

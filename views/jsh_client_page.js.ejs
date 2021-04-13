@@ -408,7 +408,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           jsh.init_complete = true;
 
           var loadTime = ((Date.now()-jsh.pageStartTime)/1000).toFixed(2);
-          console.log('Initialization Complete ' + loadTime + 's');
+          if(jsh._debug) console.log('Initialization Complete ' + loadTime + 's');
         });
       });
   }
@@ -1415,6 +1415,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           delete field.newline;
         }
       }
+      if(field.value) field.value = XExt.ParseMultiLine(field.value);
       
       if(field.name && field.type){
         if(!('locked_by_querystring' in field)) field.locked_by_querystring = true;

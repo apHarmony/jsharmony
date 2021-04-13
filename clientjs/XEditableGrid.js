@@ -35,7 +35,6 @@ exports = module.exports = function(jsh){
     this.ValidationLevel = options.ValidationLevel;
     this.DialogContainer = options.DialogContainer;
     this.CurrentCell = null;
-    this.Debug = jsh && jsh._debug;
     this.OnCellEnter = null; //(obj,e)
     this.OnCellLeave = null; //(oldobj,newobj,e)
     this.OnRowEnter = null; //(rowid)
@@ -131,7 +130,7 @@ exports = module.exports = function(jsh){
   }
 
   XEditableGrid.prototype.DebugLog = function (obj) {
-    if (this.Debug) console.log(obj); // eslint-disable-line no-console
+    if (jsh && jsh._debug) console.log(obj); // eslint-disable-line no-console
   }
 
   XEditableGrid.prototype.ControlEnter = function (obj, e, onComplete) {
