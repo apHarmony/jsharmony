@@ -272,12 +272,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
     jsh.Navigated(a);
 
-    if(apath.indexOf(jsh._BASEURL)==0) apath = apath.substr(jsh._BASEURL.length);
+    var abaseURL = XExt.getURLObj(jsh._BASEURL);
+    if(apath.indexOf(abaseURL.pathname)==0) apath = apath.substr(abaseURL.pathname.length);
     else if(apath.indexOf('/') == 0) return true;
     amodelid = apath;
     if((amodelid.length > 0) && (amodelid[amodelid.length-1] == '/')) amodelid = amodelid.substr(0,amodelid.length-1);
 
     if(window.location.host != a.host) return true;
+    if(abaseURL.host != a.host) return true;
     
     //Check for built-in routes
     if(amodelid.indexOf('/') == 0) amodelid = amodelid.substr(1);
@@ -423,7 +425,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     rslt.path = rslt.fullpath;
     rslt.QS = window.location.search;
     rslt.hash = window.location.hash;
-    if(rslt.path.indexOf(jsh._BASEURL)==0) rslt.path = rslt.path.substr(jsh._BASEURL.length);
+    var baseURLPath = XExt.getURLObj(jsh._BASEURL).pathname;
+    if(rslt.path.indexOf(baseURLPath)==0) rslt.path = rslt.path.substr(baseURLPath.length);
     rslt.modelid = rslt.path;
     if((rslt.modelid.length > 0) && (rslt.modelid[rslt.modelid.length-1] == '/')) rslt.modelid = rslt.modelid.substr(0,rslt.modelid.length-1);
     return rslt;
