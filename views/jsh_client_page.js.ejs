@@ -435,9 +435,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   XPage.Reload = function(options) {
-    options = _.extend({ force: false, browserRefresh: false }, options);
+    options = _.extend({ force: false, browserRefresh: false, params: {} }, options);
     var a = XExt.getURLObj(window.location.href);
     var qs = XExt.parseGET(a.search);
+    _.extend(qs, options.params);
     qs.tstmp = Date.now();
     a.search = '?' + $.param(qs);
     if(options.force){
