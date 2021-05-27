@@ -4,6 +4,8 @@
 
 Rapid Application Development (RAD) Platform for Node.js Database Application Development
 
+Explore the Quickstart Tutorials and Documentation at <http://tutorials.jsharmony.com>
+
 ## Installation
 
 npm install jsharmony --save
