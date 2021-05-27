@@ -1910,7 +1910,7 @@ exports.ParseEntities = function () {
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_search', 'default_search', 'grid_static', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'onrowunbind', 'ondestroy', 'onchange', 'getapi',
-      'js', 'jslib', 'ejs', 'header', 'css', 'dberrors', 'tablestyle', 'formstyle', 'popup', 'onloadimmediate', 'sqlwhere', 'sqlwhere_disabled_on_insert', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
+      'js', 'jslib', 'ejs', 'header', 'css', 'dberrors', 'tablestyle', 'tableclass', 'formstyle', 'formclass', 'popup', 'onloadimmediate', 'sqlwhere', 'sqlwhere_disabled_on_insert', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlgetinsertkeys', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
       'path', 'module', 'templates', 'db', 'onecolumn', 'namespace',
       //Report Parameters

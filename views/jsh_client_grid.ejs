@@ -125,7 +125,7 @@ else if(parent && (parent.topmost) && ('tabpos' in parent) && (parent.tabpos=='t
 </div>
 </div><!-- .xbodyhead -->
   <% if(!model.templates.grid){ %>
-  <table class="xtbl xelem<%=model.class%> xform<%=model.class%>" data-id="<%=model.id%>" style="<%=model.tablestyle%>">
+  <table class="xtbl xelem<%=model.class%> xform<%=model.class%> <%=model.tableclass||''%>" data-id="<%=model.id%>" style="<%=model.tablestyle%>">
     <thead>
       <tr>
         <% if(model.inlinepopup){ %><th style="text-align:center;" nowrap>Select</th><% } %>

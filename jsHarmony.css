@@ -1021,7 +1021,6 @@ DIALOG BOXES
 	bottom:0;
   left:0px;
 	z-index:1999999999;
-	text-align:center;
   background-color:rgba(0,0,0,0.1);
   -webkit-transform-style: preserve-3d;
   -moz-transform-style: preserve-3d;
@@ -1035,14 +1034,23 @@ DIALOG BOXES
   /*transform: translate(-50%, -50%);*/
 	background-color:white;
 	border:3px solid #aaa;
-	font-size:15px;
-	font-weight:bold;
-	color:#505050;
   padding:20px;
 	border-radius: 5px;
   -moz-border-radius: 5px;
   overflow:auto;
   max-height: calc(100vh - 66px);
+}
+<%-rootcss%> .xdialogblock .xloadingcontainer,
+<%-rootcss%> .xdialogblock .xalertbox,
+<%-rootcss%> .xdialogblock .xconfirmbox,
+<%-rootcss%> .xdialogblock .xpromptbox,
+<%-rootcss%> .xdialogblock .xtextzoombox,
+<%-rootcss%> .xdialogblock .xhintsbox {
+  font-family: 'Roboto', arial, helvetica, sans-serif;
+  text-align:center;
+  font-size:15px;
+  font-weight:bold;
+  color:#505050;
 }
 <%-rootcss%> .xdialogblock .xdialogoverlay {
   background-color: rgba(0,0,0,0.4);
@@ -1054,34 +1062,33 @@ DIALOG BOXES
   padding-top:2px;
   padding-bottom:17px;
 }
-<%-rootcss%> .xdialogblock .xdialogbox .xform,
 <%-rootcss%> .xdialogblock .xdialogbox .xbodyhead,
 <%-rootcss%> .xdialogblock .xdialogbox .xtbl {
   font-weight:normal;
   font-size:13px;
   text-align:left;
 }
-<%-rootcss%> .xalertbox {
+<%-rootcss%> .xdialogblock .xalertbox {
 	width:370px;
 	min-height:60px;
 	text-align:left;
 }
-<%-rootcss%> .xconfirmbox {
+<%-rootcss%> .xdialogblock .xconfirmbox {
 	width:370px;
 	min-height:60px;
 	text-align:center;
 }
-<%-rootcss%> .xpromptbox {
+<%-rootcss%> .xdialogblock .xpromptbox {
 	width:310px;
 	min-height:60px;
 	text-align:left;
 }
-<%-rootcss%> .xtextzoombox {
+<%-rootcss%> .xdialogblock .xtextzoombox {
 	width:510px;
 	min-height:60px;
 	text-align:left;
 }
-<%-rootcss%> .xhintsbox {
+<%-rootcss%> .xdialogblock .xhintsbox {
 	width:510px;
 	min-height:60px;
 	text-align:left;
