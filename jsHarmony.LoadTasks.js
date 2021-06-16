@@ -51,7 +51,7 @@ exports.ParseTaskValidation = function(obj, desc){
   var _this = this;
   obj.xvalidate = new _this.XValidate();
   _.each(obj.fields, function(field){
-    _.each(_this.getDefaultValidators(field), function(validator){ addFieldValidator(field, validator); });
+    _.each(_this.getDefaultValidators(field, desc), function(validator){ addFieldValidator(field, validator); });
     field.actions = 'U';
   _.each(obj.fields, function(field){ _this.AddValidatorFuncs(obj.xvalidate, field, desc); });
   });

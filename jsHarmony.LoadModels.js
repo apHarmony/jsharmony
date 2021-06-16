@@ -1641,7 +1641,7 @@ exports.ParseEntities = function () {
           }
         }
         if(!has_datatype_validator){
-          var defaultValidators = _this.getDefaultValidators(field);
+          var defaultValidators = _this.getDefaultValidators(field, 'Model ' + model.id);
           _.each(defaultValidators, function(validator){ AddValidation(field, validator); });
         }
       }
@@ -2882,10 +2882,11 @@ exports.ParsePopups = function () {
   });
 };
 
-exports.getDefaultValidators = function(field){
+exports.getDefaultValidators = function(field, desc){
   var _this = this;
   var rslt = [];
   if(!field.type) return rslt;
+  desc = desc || '';
 
   function addDefaultValidator(new_validator, options){
     if(!options) options = { ignore: null };
@@ -2927,8 +2928,8 @@ exports.getDefaultValidators = function(field){
     case 'HASH':
       break;
     case 'FILE':
-      if (!field.controlparams || !field.controlparams.data_folder) { _this.LogInit_ERROR('Model ' + model.id + ' Field ' + (field.name || '') + ' missing field.controlparams.data_folder'); }
-      HelperFS.createFolderIfNotExists(_this.Config.datadir + field.controlparams.data_folder, function () { });
+      if (!field.controlparams || !field.controlparams.data_folder) { _this.LogInit_ERROR(desc + ' Field ' + (field.name || '') + ' missing field.controlparams.data_folder'); }
+      else HelperFS.createFolderIfNotExists(_this.Config.datadir + field.controlparams.data_folder, function () { }); 
       break;
     case 'BINARY':
       var flen = -1;
