@@ -34,14 +34,18 @@ exports.GetToken = function (req, res) {
 };
 
 exports.SubscribeToQueue = function (req, res, next, queueid) {
-  if (!this.jsh.Config.queues) { next(); return; }
-  if (!(queueid in this.jsh.Config.queues)) { return Helper.GenError(req, res, -1, 'Queue not found'); }
-  if (!this.JobProc) { return Helper.GenError(req, res, -1, 'Job Processor not configured'); }
-  if (this.jsh.Config.debug_params.appsrv_requests) this.jsh.Log.info('User subscribing to queue ' + queueid);
-  var queue = this.jsh.Config.queues[queueid];
-  if (!Helper.hasModelAction(req, queue, 'B')) { Helper.GenError(req, res, -11, 'Invalid Access'); return; }
-  //Check if queue has a message, otherwise, add to subscriptions
-  this.JobProc.SubscribeToQueue(req, res, queueid);
+  var _this = this;
+  Helper.triggerAsync(_this.jsh.Config.onQueueSubscribe, function(err){
+    if(err) return Helper.GenError(req, res, -99999, err);
+    if (!_this.jsh.Config.queues) { next(); return; }
+    if (!(queueid in _this.jsh.Config.queues)) { return Helper.GenError(req, res, -1, 'Queue not found'); }
+    if (!_this.JobProc) { return Helper.GenError(req, res, -1, 'Job Processor not configured'); }
+    if (_this.jsh.Config.debug_params.appsrv_requests) _this.jsh.Log.info('User subscribing to queue ' + queueid);
+    var queue = _this.jsh.Config.queues[queueid];
+    if (!Helper.hasModelAction(req, queue, 'B')) { Helper.GenError(req, res, -11, 'Invalid Access'); return; }
+    //Check if queue has a message, otherwise, add to subscriptions
+    _this.JobProc.SubscribeToQueue(req, res, queueid);
+  }, req, res, queueid);
 }
 
 exports.PopQueue = function (req, res, queueid) {
@@ -68,15 +72,17 @@ exports.PopQueue = function (req, res, queueid) {
 
 exports.SendQueue = function (queueid, message) {
   var _this = this;
+  var notifications = 0;
   for (var i = 0; i < this.QueueSubscriptions.length; i++) {
     var queue = this.QueueSubscriptions[i];
     if (!queue.res || queue.res.finished) { this.QueueSubscriptions.splice(i, 1); i--; continue; }
     if (queue.id == queueid) {
+      notifications++;
       if (_this.jsh.Config.debug_params.appsrv_requests) _this.jsh.Log.info('Notifying subscriber ' + queueid);
       try {
         queue.res.send(message);
       } catch (ex) {
-        Helper.GenError(req, res, -99999, ex);
+        _this.jsh.Log.error('Error notifying subscriber to '+queueid+': '+ex.toString());
       }
       queue.res.end();
       //queue.res.set("Connection", "close");
@@ -84,6 +90,7 @@ exports.SendQueue = function (queueid, message) {
       i--;
     }
   }
+  return notifications;
 }
 
 return module.exports;

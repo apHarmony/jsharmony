@@ -227,7 +227,7 @@ function jsHarmonyConfig(config){
   //DB Schema Replacement
   this.schema_replacement = [];
   //Remote Queues
-  this.queues = {};
+  this.queues = {}; //queueid: { "actions": "BIUD", "roles": {"SYSADMIN":"*"} },
   //Model Macros
   this.macros = {};
   //Dynamic Model Bindings
@@ -253,6 +253,8 @@ function jsHarmonyConfig(config){
   this.onConfigLoaded = []; //function(cb, jsh){ return cb(); }
   //When the database drivers are loaded, before the schema is read
   this.onDBDriverLoaded = [];  //function(cb, jsh){ return cb(); }
+  //When a client tries to connect to a jsHarmony queue
+  this.onQueueSubscribe = []; //function(cb, req, res, queueid){ return cb(); }
 
   //Theme CSS files
   this.themes = {
