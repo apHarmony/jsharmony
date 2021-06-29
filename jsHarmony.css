@@ -496,6 +496,9 @@ BODY
 <%-rootcss%> a.tree_item.xdrag .glyph {
   display:none;
 }
+<%-rootcss%> .xdrag .tree_item_dropdown_container {
+  display:none;
+}
 <%-rootcss%> .xform_ctrl.tree .glyph {
   position:absolute;
   top:3px;
