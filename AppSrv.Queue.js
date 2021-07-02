@@ -76,6 +76,7 @@ exports.SendQueue = function (queueid, message) {
   for (var i = 0; i < this.QueueSubscriptions.length; i++) {
     var queue = this.QueueSubscriptions[i];
     if (!queue.res || queue.res.finished) { this.QueueSubscriptions.splice(i, 1); i--; continue; }
+    if (queue.req && (queue.req.aborted)) { this.QueueSubscriptions.splice(i, 1); i--; continue; }
     if (queue.id == queueid) {
       notifications++;
       if (_this.jsh.Config.debug_params.appsrv_requests) _this.jsh.Log.info('Notifying subscriber ' + queueid);
@@ -86,8 +87,10 @@ exports.SendQueue = function (queueid, message) {
       }
       queue.res.end();
       //queue.res.set("Connection", "close");
-      this.QueueSubscriptions.splice(i, 1);
-      i--;
+      if(_.includes(_this.QueueSubscriptions, queue)){
+        this.QueueSubscriptions.splice(i, 1);
+        i--;
+      }
     }
   }
   return notifications;
