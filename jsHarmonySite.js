@@ -112,6 +112,8 @@ function jsHarmonySite(jsh, id, config){
   this.public_apps = [];
   //Private apps (requiring login)
   this.private_apps = [];
+  //Catch-all apps (requiring login, after no matching routes found)
+  this.catchall_apps = [];
   //Datalock value functions
   this.datalock = {
     /* "c_id": function (req) { return req.gdata[jsh.map.client_id]; } */
@@ -138,7 +140,7 @@ jsHarmonySite.prototype.Merge = function(config){
       //Merge objects
       else if(_.includes(['auth', 'datalock','datalocktypes','globalparams'],prop)) this[prop] = _.extend(this[prop],config[prop]);
       //Merge arrays      
-      else if(_.includes(['public_apps','private_apps'],prop)) this[prop] = config[prop].concat(this[prop]);
+      else if(_.includes(['public_apps','private_apps','catchall_apps'],prop)) this[prop] = config[prop].concat(this[prop]);
       //Replace existing objects
       else this[prop] = config[prop];
     }
@@ -159,6 +161,7 @@ jsHarmonySite.prototype.Validate = function(){
   if(!_this.globalparams) _this.globalparams = {};
   if(!_this.public_apps) _this.public_apps = [];
   if(!_this.private_apps) _this.private_apps = [];
+  if(!_this.catchall_apps) _this.catchall_apps = [];
 
   if(_this.auth){
     if(Helper.notset(_this.auth.on_login)) _this.auth.on_login = function(req, jsh, params, cb){ //cb(err, rslt)

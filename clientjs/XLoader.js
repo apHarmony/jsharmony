@@ -30,7 +30,7 @@ exports = module.exports = function(jsh){
     this.onSquashedClick = [];
     this.onMouseDown = [];
     this.onMouseUp = [];
-    this.containerClass = _containerClass || '.xloadingblock';
+    this.containerClass = _containerClass || '.xloadingblock.jsHarmonyElement_'+jsh._instanceClass;
 
     //Check if required elements have been rendered to the page
     if(!jsh.$root(_this.containerClass).length) console.error(_this.containerClass+' not found on page during XLoader initialization');

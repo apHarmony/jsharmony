@@ -161,7 +161,9 @@ var jsHarmony = function(options){
   window.onbeforeunload = function(){ if(_this.XPage.OnExit) return _this.XPage.OnExit(); };
   this.cancelExit = false;
 
+  this._instanceClass = this.XExt.escapeCSSClass(this._instance);
   this.root = $(document);
+  this.dialogBlock = null;
   this.globalsMonitorCache = {};
   this.globalsMonitorTimer = null;
   this.jslocals = '';
@@ -203,6 +205,7 @@ var jsHarmony = function(options){
   this.is_browse = (this._GET['action'] == 'browse');
 
   this.BindEvents();
+  for(var i=0;i<jsHarmony.Instances.length;i++){ if(jsHarmony.Instances[i]._instance == _this._instance) throw new Error('Duplicate jsHarmony Instance ID: '+_this._instance); }
   jsHarmony.Instances.push(this);
 
   if(options.globalScope){
@@ -214,9 +217,8 @@ var jsHarmony = function(options){
   }
 }
 
-jsHarmony.prototype.$root = function(sel){
-  return this.root.find(sel);
-}
+jsHarmony.prototype.$root = function(sel){ return this.root.find(sel); }
+jsHarmony.prototype.$dialogBlock = function(sel){ if(!this.dialogBlock) return $(); return this.dialogBlock.find(sel); }
 
 jsHarmony.prototype.getInstance = function(){
   if(!this._instance) throw new Error('jsHarmony._instance is required');
@@ -321,7 +323,7 @@ jsHarmony.prototype.Init = function(){
   _this.InitControls();
   _this.XMenu.Init();
   if(!this.xLoader) this.xLoader = new this.XLoader();
-  if(!this.xDialogLoader) this.xDialogLoader = new this.XLoader('.xdialogloadingblock');
+  if(!this.xDialogLoader) this.xDialogLoader = new this.XLoader('.xdialogblock.jsHarmonyElement_'+_this._instanceClass+' .xdialogloadingblock');
   this.xLoader.onSquashedClick.push(function(e){ _this.lastSquashedActionTime = Date.now(); });
   this.xDebugConsole = new this.XDebugConsole();
   $(document).mousemove(function (e) {
@@ -431,13 +433,15 @@ jsHarmony.prototype.DefaultErrorHandler = function(num,txt){
 }
 
 jsHarmony.prototype.XDebugInfo = function (txt,clear) {
-  this.$root('.xdebuginfo').show();
-  if (clear) this.$root('.xdebuginfo').empty();
-  this.$root('.xdebuginfo').prepend(txt + '<br/>');
+  var jobj = this.$root('.xdebuginfo.jsHarmonyElement_'+this._instanceClass);
+  jobj.show();
+  if (clear) jobj.empty();
+  jobj.prepend(txt + '<br/>');
 }
 jsHarmony.prototype.InitDialogs = function () {
   var _this = this;
   this.root.append($(ejs.render(XViews['jsh_system'],{ jsh: _this })));
+  this.dialogBlock = this.$root('.xdialogblock.jsHarmonyElement_'+this._instanceClass);
 };
 jsHarmony.prototype.InitControls = function() {
   var _this = this;
@@ -454,10 +458,11 @@ jsHarmony.prototype.XWindowResize = function (source) {
   var pw = ((docw > ww) ? docw : ww);
   var ph = ((doch > wh) ? doch : wh);
   var params = { ww: ww, wh: wh, sleft: sleft, stop: stop, docw: docw, doch: doch, pw: pw, ph: ph };
-  if (this.$root('.xbodyhead').length) {
-    var bodyhead_width = (ww - this.$root('.xbodyhead').offset().left - 10 + sleft);
-    this.$root('.xbodyhead').css('max-width', bodyhead_width + 'px');
-  }
+  this.$root('.xbodyhead').each(function(){
+    var jobj = $(this);
+    var bodyhead_width = (ww - jobj.offset().left - 10 + sleft);
+    jobj.css('max-width', bodyhead_width + 'px');
+  });
   this.$root('.xhead').css('top', (-1 * stop) + 'px');
   this.XDialogResize(source, params);
   this.RefreshLayout();
@@ -467,14 +472,17 @@ jsHarmony.prototype.XWindowResize = function (source) {
   };
 }
 jsHarmony.prototype.XDialogResize = function (source, params) {
-  this.$root('.xdialogblock').css('width', params.pw + 'px');
-  this.$root('.xdialogblock').css('height', params.ph + 'px');
+  if(this.dialogBlock){
+    this.dialogBlock.css('width', params.pw + 'px');
+    this.dialogBlock.css('height', params.ph + 'px');
+  }
 
-  this.$root('.xdebuginfo').css('top', params.stop + 'px');
-  this.$root('.xdebuginfo').css('left', params.sleft + 'px');
-  this.$root('.xdebuginfo').css('width', params.ww + 'px');
+  var jdebugInfo = this.$root('.xdebuginfo.jsHarmonyElement_'+this._instanceClass);
+  jdebugInfo.css('top', params.stop + 'px');
+  jdebugInfo.css('left', params.sleft + 'px');
+  jdebugInfo.css('width', params.ww + 'px');
 
-  this.$root('.xdialogblock .xdialogbox').each(function () {
+  this.$dialogBlock('.xdialogbox').each(function () {
     var jobj = $(this);
     if (!jobj.is(':visible')) return;
     if (document.activeElement && $(document.activeElement).is('input,select,textarea') && $(document.activeElement).parents(jobj).length) {

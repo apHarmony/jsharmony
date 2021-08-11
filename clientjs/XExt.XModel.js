@@ -243,6 +243,7 @@ exports = module.exports = function(jsh){
           val = jsh.XExt.renderEJS(val, modelid, {
             data: _this,
             val: baseval,
+            obj: jctrl[0],
           });
           jctrl.html(val);
           showLabel = !!val;
@@ -259,7 +260,8 @@ exports = module.exports = function(jsh){
       if(val.indexOf('<#') >= 0){
         val = val.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
         val = jsh.XExt.renderEJS(val, modelid, {
-          data: _this
+          data: _this,
+          obj: jctrl[0],
         });
       }
       jctrl.html(val);

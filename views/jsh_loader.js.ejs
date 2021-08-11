@@ -59,7 +59,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //Load jsHarmony
     util.loadScript(_this._baseurl+'js/jsHarmony.js', function(){
 
-      jsh = _this.jsh = window.jshInstance = new jsHarmony(jshParams);
+      jsh = _this.jsh = window[<%-JSON.stringify(req.jshsite.instance)%>] = new jsHarmony(jshParams);
       $ = jsh.$;
       XExt = jsh.XExt;
       async = jsh.async;

@@ -26,8 +26,8 @@ exports = module.exports = function(jsh){
     
     this.loaded = new Array();
     
-    jsh.root.append('<img class="XImageLoader jsHarmonyElement" style="position:absolute;top:0px;left:0px;z-index:0;visibility:hidden;" />');
-    this.loaderimg = jsh.$root('.XImageLoader');
+    jsh.root.append('<img class="XImageLoader jsHarmonyElement jsHarmonyElement_'+jsh._instanceClass+'" style="position:absolute;top:0px;left:0px;z-index:0;visibility:hidden;" />');
+    this.loaderimg = jsh.$root('.XImageLoader.jsHarmonyElement_'+jsh._instanceClass);
     
     this.PrependImages = function(imgarray){
       //Prepend array of images

@@ -25,7 +25,7 @@ module.exports = function (fileName) {
   return through(function write(data){
     rslt += data;
   }, function end(){
-    this.queue('module.exports = exports = '+JSON.stringify(rslt));
+    this.queue('module.exports = exports = '+JSON.stringify(rslt)+';');
     this.queue(null);
   });
 };

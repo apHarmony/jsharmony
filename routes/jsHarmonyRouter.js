@@ -86,7 +86,10 @@ var jsHarmonyRouter = function (jsh, siteid) {
   });
   for (var i = 0; i < siteConfig.public_apps.length; i++) {
     var app = siteConfig.public_apps[i];
-    for (var j in app) router.all(j, app[j].bind(jsh.AppSrv));
+    for (var j in app){
+      if(app[j].route){ router.use(j, app[j]); }
+      else router.all(j, app[j].bind(jsh.AppSrv));
+    }
   }
   for(var stylusName in jsh.Stylus){
     handleStylus(jsh, siteid, router, stylusName, { public: true });
@@ -121,7 +124,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   router.get('/application.js', function (req, res) {
-    HelperFS.outputContent(req, res, jsh.Cache['application.js'], 'text/javascript');
+    HelperFS.outputContent(req, res, Helper.ReplaceAll(jsh.Cache['application.js'],'{req.jshsite.instance}',req.jshsite.instance), 'text/javascript');
   });
   router.get(/^\/js\/jsHarmony.render.js/, function(req, res, next){
     res.end(ejs.render(jsh.getEJS('jsh_render.js'), {
@@ -496,6 +499,13 @@ var jsHarmonyRouter = function (jsh, siteid) {
     }
     return next();
   });
+  for (var i = 0; i < siteConfig.catchall_apps.length; i++) {
+    var app = siteConfig.catchall_apps[i];
+    for (var j in app){
+      if(app[j].route){ router.use(j, app[j]); }
+      else router.all(j, app[j].bind(jsh.AppSrv));
+    }
+  }
   
   return router;
 };

@@ -1747,10 +1747,10 @@ exports = module.exports = function(jsh){
 
   XExt.clearDialogs = function(){
     jsh.xDialog = [];
-    jsh.$root('.xdialogblock').children().hide();
-    jsh.$root('.xdialogblock').hide();
-    jsh.$root('.xdialogblock').off('mousedown.close');
-    jsh.$root('.xdialogblock').off('mouseup.close');
+    jsh.dialogBlock.children().hide();
+    jsh.dialogBlock.hide();
+    jsh.dialogBlock.off('mousedown.close');
+    jsh.dialogBlock.off('mouseup.close');
   }
 
   XExt.dialogButtonFunc = function (dialogClass, oldactive, onComplete, params) {
@@ -1768,9 +1768,9 @@ exports = module.exports = function(jsh){
       }
       //Verify this is the topmost dialog
       if ((jsh.xDialog.length > 0) && (jsh.xDialog[0] != dialogClass)) return;
-      jsh.$root('.xdialogblock ' + dialogClass).hide();
-      jsh.$root('.xdialogblock').off('click' + dialogClass);
-      if (jsh.xDialog.length == 1) { jsh.$root('.xdialogblock').hide(); }
+      jsh.$dialogBlock(dialogClass).hide();
+      jsh.dialogBlock.off('click' + dialogClass);
+      if (jsh.xDialog.length == 1) { jsh.dialogBlock.hide(); }
       if (jsh.xDialog[0] != dialogClass) { alert('ERROR - Invalid Dialog Stack'); console.log(dialogClass); console.log(jsh.xDialog); }
       if (oldactive) oldactive.focus();
       window.setTimeout(function () { jsh.xDialog.shift(); if (onComplete) onComplete(); }, 1);
@@ -1801,22 +1801,23 @@ exports = module.exports = function(jsh){
     }
     //alert(msg);
     jsh.xDialog.unshift('.xalertbox');
-    jsh.$root('.xdialogblock .xalertbox.base').zIndex(jsh.xDialog.length);
+    jsh.$dialogBlock('.xalertbox.base').zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
-    jsh.$root('.xalertmessage').html(msg);
-    jsh.$root('.xalertbox input').off('click');
-    jsh.$root('.xalertbox input').off('keydown');
+    jsh.$dialogBlock('.xalertmessage').html(msg);
+    jsh.$dialogBlock('.xalertbox input').off('click');
+    jsh.$dialogBlock('.xalertbox input').off('keydown');
     var acceptfunc = XExt.dialogButtonFunc('.xalertbox', oldactive, onAccept, { onCompleteImmediate: params.onAcceptImmediate });
-    jsh.$root('.xalertbox input').on('click', acceptfunc);
-    jsh.$root('.xalertbox input').on('keydown', function (e) { if (e.keyCode == 27) { acceptfunc(); } });
+    jsh.$dialogBlock('.xalertbox input').on('click', acceptfunc);
+    jsh.$dialogBlock('.xalertbox input').on('keydown', function (e) { if (e.keyCode == 27) { acceptfunc(); } });
 
-    jsh.$root('.xalertbox').off('acceptDialog').on('acceptDialog', acceptfunc);
+    jsh.$dialogBlock('.xalertbox').off('acceptDialog').on('acceptDialog', acceptfunc);
     
-    jsh.$root('.xdialogblock,.xalertbox.base').show();
+    jsh.$dialogBlock('.xalertbox.base').show();
+    jsh.dialogBlock.show();
     jsh.XWindowResize();
-    if (!XExt.isIOS()) jsh.$root('.xalertbox.base input').focus();
+    if (!XExt.isIOS()) jsh.$dialogBlock('.xalertbox.base input').focus();
   }
 
   XExt.Confirm = function (obj, onYes, onNo, options) {
@@ -1841,33 +1842,34 @@ exports = module.exports = function(jsh){
     //if (window.confirm(msg)) { if (onYes) onYes(); }
     //if (onNo) onNo(); 
     jsh.xDialog.unshift('.xconfirmbox');
-    jsh.$root('.xdialogblock .xconfirmbox.base').zIndex(jsh.xDialog.length);
+    jsh.$dialogBlock('.xconfirmbox.base').zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
-    jsh.$root('.xconfirmmessage').html(msg);
-    jsh.$root('.xconfirmbox input').off('click');
-    jsh.$root('.xconfirmbox input').off('keydown');
+    jsh.$dialogBlock('.xconfirmmessage').html(msg);
+    jsh.$dialogBlock('.xconfirmbox input').off('click');
+    jsh.$dialogBlock('.xconfirmbox input').off('keydown');
     var cancelfunc = XExt.dialogButtonFunc('.xconfirmbox', oldactive, (options.onCancel ? options.onCancel : onNo));
     var acceptfunc = XExt.dialogButtonFunc('.xconfirmbox', oldactive, onYes);
     if(options.onCancel){
-      jsh.$root('.xconfirmbox input.button_cancel').show();
-      jsh.$root('.xconfirmbox input.button_cancel').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, options.onCancel));
+      jsh.$dialogBlock('.xconfirmbox input.button_cancel').show();
+      jsh.$dialogBlock('.xconfirmbox input.button_cancel').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, options.onCancel));
     }
-    else jsh.$root('.xconfirmbox input.button_cancel').hide();
-    if (options.button_ok_caption) jsh.$root('.xconfirmbox input.button_ok').val(options.button_ok_caption);
-    if (options.button_no_caption) jsh.$root('.xconfirmbox input.button_no').val(options.button_no_caption);
-    if (options.button_cancel_caption) jsh.$root('.xconfirmbox input.button_cancel').val(options.button_cancel_caption);
+    else jsh.$dialogBlock('.xconfirmbox input.button_cancel').hide();
+    if (options.button_ok_caption) jsh.$dialogBlock('.xconfirmbox input.button_ok').val(options.button_ok_caption);
+    if (options.button_no_caption) jsh.$dialogBlock('.xconfirmbox input.button_no').val(options.button_no_caption);
+    if (options.button_cancel_caption) jsh.$dialogBlock('.xconfirmbox input.button_cancel').val(options.button_cancel_caption);
 
-    jsh.$root('.xconfirmbox').off('acceptDialog').on('acceptDialog', acceptfunc);
-    jsh.$root('.xconfirmbox').off('cancelDialog').on('cancelDialog', cancelfunc);
+    jsh.$dialogBlock('.xconfirmbox').off('acceptDialog').on('acceptDialog', acceptfunc);
+    jsh.$dialogBlock('.xconfirmbox').off('cancelDialog').on('cancelDialog', cancelfunc);
 
-    jsh.$root('.xconfirmbox input.button_ok').on('click', acceptfunc);
-    jsh.$root('.xconfirmbox input.button_no').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, onNo));
-    jsh.$root('.xconfirmbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    jsh.$root('.xdialogblock,.xconfirmbox.base').show();
+    jsh.$dialogBlock('.xconfirmbox input.button_ok').on('click', acceptfunc);
+    jsh.$dialogBlock('.xconfirmbox input.button_no').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, onNo));
+    jsh.$dialogBlock('.xconfirmbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    jsh.$dialogBlock('.xconfirmbox.base').show();
+    jsh.dialogBlock.show();
     jsh.XWindowResize();
-    if (!XExt.isIOS()) jsh.$root('.xconfirmbox.base input.button_ok').focus();
+    if (!XExt.isIOS()) jsh.$dialogBlock('.xconfirmbox.base input.button_ok').focus();
   }
 
   XExt.stringify = function (origvalue, replacer, space) {
@@ -1906,27 +1908,28 @@ exports = module.exports = function(jsh){
     //If cancel or close, rslt = null
     //if (onComplete) onComplete(rslt);
     jsh.xDialog.unshift('.xpromptbox');
-    jsh.$root('.xdialogblock .xpromptbox.base').zIndex(jsh.xDialog.length);
+    jsh.$dialogBlock('.xpromptbox.base').zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
-    jsh.$root('.xpromptmessage').html(msg);
-    jsh.$root('.xpromptbox input').off('click');
-    jsh.$root('.xpromptbox input').off('keydown');
-    jsh.$root('.xpromptfield').val(dflt);
+    jsh.$dialogBlock('.xpromptmessage').html(msg);
+    jsh.$dialogBlock('.xpromptbox input').off('click');
+    jsh.$dialogBlock('.xpromptbox input').off('keydown');
+    jsh.$dialogBlock('.xpromptfield').val(dflt);
     var cancelfunc = XExt.dialogButtonFunc('.xpromptbox', oldactive, function () { if (onComplete) onComplete(null); });
-    var acceptfunc = XExt.dialogButtonFunc('.xpromptbox', oldactive, function () { if (onComplete) onComplete(jsh.$root('.xpromptfield').val()); });
-    jsh.$root('.xpromptbox input.button_ok').on('click', acceptfunc);
-    jsh.$root('.xpromptbox input.button_cancel').on('click', cancelfunc);
+    var acceptfunc = XExt.dialogButtonFunc('.xpromptbox', oldactive, function () { if (onComplete) onComplete(jsh.$dialogBlock('.xpromptfield').val()); });
+    jsh.$dialogBlock('.xpromptbox input.button_ok').on('click', acceptfunc);
+    jsh.$dialogBlock('.xpromptbox input.button_cancel').on('click', cancelfunc);
 
-    jsh.$root('.xpromptbox').off('acceptDialog').on('acceptDialog', acceptfunc);
-    jsh.$root('.xpromptbox').off('cancelDialog').on('cancelDialog', cancelfunc);
+    jsh.$dialogBlock('.xpromptbox').off('acceptDialog').on('acceptDialog', acceptfunc);
+    jsh.$dialogBlock('.xpromptbox').off('cancelDialog').on('cancelDialog', cancelfunc);
 
-    jsh.$root('.xpromptbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    jsh.$root('.xpromptfield').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
-    jsh.$root('.xdialogblock,.xpromptbox.base').show();
+    jsh.$dialogBlock('.xpromptbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    jsh.$dialogBlock('.xpromptfield').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
+    jsh.$dialogBlock('.xpromptbox.base').show();
+    jsh.dialogBlock.show();
     jsh.XWindowResize();
-    jsh.$root('.xpromptfield').focus();
+    jsh.$dialogBlock('.xpromptfield').focus();
   }
 
   //html - HTML or jQuery object
@@ -1936,25 +1939,25 @@ exports = module.exports = function(jsh){
     else options.specialKeys = _.extend({ enter: true, escape: true }, options.specialKeys);
 
     //Classes - default_focus, button_ok, button_cancel
-    var foundPrevDialog = jsh.$root('.xdialogblock ' + sel).length;
-    if (foundPrevDialog && !options.reuse) jsh.$root('.xdialogblock ' + sel).remove();
-    if (!foundPrevDialog || !options.reuse) jsh.$root('.xdialogblock').append(html);
+    var foundPrevDialog = jsh.$dialogBlock(sel).length;
+    if (foundPrevDialog && !options.reuse) jsh.$dialogBlock(sel).remove();
+    if (!foundPrevDialog || !options.reuse) jsh.dialogBlock.append(html);
     
     //ShowDialog
     jsh.xDialog.unshift(sel);
-    jsh.$root('.xdialogblock ' + sel).zIndex(jsh.xDialog.length);
+    jsh.$dialogBlock(sel).zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
     oldactive = options.restoreFocus ? oldactive : undefined;
     
-    jsh.$root(sel + ' input').off('click');
-    jsh.$root(sel + ' input').off('keydown');
+    jsh.$dialogBlock(sel + ' input').off('click');
+    jsh.$dialogBlock(sel + ' input').off('keydown');
 
     var cancelDialogFunc = XExt.dialogButtonFunc(sel, oldactive, function () {
       if (onClosed) onClosed();
-      if(options.reuse) jsh.$root('.xdialogblock ' + sel).hide();
-      else jsh.$root('.xdialogblock ' + sel).remove();
+      if(options.reuse) jsh.$dialogBlock(sel).hide();
+      else jsh.$dialogBlock(sel).remove();
     }, { onClosing: options.onClosing });
     var cancelfunc = function(options){
       options = _.extend({ force: false }, options);
@@ -1975,23 +1978,23 @@ exports = module.exports = function(jsh){
       else acceptfunc_aftervalidate();
     }
     if (onInit) onInit(acceptfunc, cancelfunc);
-    jsh.$root(sel + ' input.button_ok').on('click', acceptfunc);
-    jsh.$root(sel + ' input.button_cancel').on('click', cancelfunc);
+    jsh.$dialogBlock(sel + ' input.button_ok').on('click', acceptfunc);
+    jsh.$dialogBlock(sel + ' input.button_cancel').on('click', cancelfunc);
 
-    jsh.$root(sel).off('acceptDialog').on('acceptDialog', acceptfunc);
-    jsh.$root(sel).off('cancelDialog').on('cancelDialog', cancelfunc);
+    jsh.$dialogBlock(sel).off('acceptDialog').on('acceptDialog', acceptfunc);
+    jsh.$dialogBlock(sel).off('cancelDialog').on('cancelDialog', cancelfunc);
 
-    jsh.$root(sel + ' input, ' + sel + ' textarea, ' + sel + ' select').on('keydown', function (e) {
+    jsh.$dialogBlock(sel + ' input, ' + sel + ' textarea, ' + sel + ' select').on('keydown', function (e) {
       if (options.specialKeys.escape && (e.keyCode == 27)) { e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); }
     });
-    jsh.$root(sel + ' input:not(:checkbox):not(:button)').on('keydown', function (e) {
+    jsh.$dialogBlock(sel + ' input:not(:checkbox):not(:button)').on('keydown', function (e) {
       if (options.specialKeys.escape && (e.keyCode == 13)) { e.preventDefault(); e.stopImmediatePropagation(); acceptfunc(); }
     });
     if(options.backgroundClose){
-      jsh.$root('.xdialogblock').on('mousedown.close' + sel, function(e){
+      jsh.dialogBlock.on('mousedown.close' + sel, function(e){
         if(!$(e.target).is('.xdialogoverlay,.xdialogblock')) return;
         var mouseDownTime = new Date().getTime();
-        jsh.$root('.xdialogblock').one('mouseup.close', function(e){
+        jsh.dialogBlock.one('mouseup.close', function(e){
           var mouseUpTime = new Date().getTime();
           if((mouseUpTime - mouseDownTime) > 5000) return;
           if(!$(e.target).is('.xdialogoverlay,.xdialogblock')) return;
@@ -1999,13 +2002,14 @@ exports = module.exports = function(jsh){
         });
       });
     }
-    jsh.$root('.xdialogblock,.xdialogblock ' + sel).show();
-    if(jsh.XPage && jsh.XPage.LayoutOneColumn) jsh.XPage.LayoutOneColumn(jsh.$root('.xdialogblock ' + sel)[0], { reset: true });
+    jsh.$dialogBlock(sel).show();
+    jsh.dialogBlock.show();
+    if(jsh.XPage && jsh.XPage.LayoutOneColumn) jsh.XPage.LayoutOneColumn(jsh.$dialogBlock(sel)[0], { reset: true });
     jsh.XWindowResize();
     setTimeout(function(){
       jsh.XWindowResize();
-      if(jsh.$root(sel + ' .default_focus').length) jsh.$root(sel + ' .default_focus').focus();
-      else jsh.$root(sel).find('input:visible,textarea:visible,select:visible').first().focus();
+      if(jsh.$dialogBlock(sel + ' .default_focus').length) jsh.$dialogBlock(sel + ' .default_focus').focus();
+      else jsh.$dialogBlock(sel).find('input:visible,textarea:visible,select:visible').first().focus();
     }, 1);
     
   }
@@ -2025,41 +2029,42 @@ exports = module.exports = function(jsh){
     if(!val) val = '';
     val = val.toString();
     jsh.xDialog.unshift('.xtextzoombox');
-    jsh.$root('.xdialogblock .xtextzoombox').zIndex(jsh.xDialog.length);
+    jsh.$dialogBlock('.xtextzoombox').zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
-    jsh.$root('.xtextzoommessage').html(caption);
-    jsh.$root('.xtextzoombox input').off('click');
-    jsh.$root('.xtextzoombox input').off('keydown');
-    jsh.$root('.xtextzoomfield').val(val);
+    jsh.$dialogBlock('.xtextzoommessage').html(caption);
+    jsh.$dialogBlock('.xtextzoombox input').off('click');
+    jsh.$dialogBlock('.xtextzoombox input').off('keydown');
+    jsh.$dialogBlock('.xtextzoomfield').val(val);
     
-    jsh.$root('.xtextzoomfield').prop('readonly', (options.readonly?true:false));
-    if(options.readonly) jsh.$root('.xtextzoomfield').removeClass('editable').addClass('uneditable');
-    else jsh.$root('.xtextzoomfield').removeClass('uneditable').addClass('editable');
+    jsh.$dialogBlock('.xtextzoomfield').prop('readonly', (options.readonly?true:false));
+    if(options.readonly) jsh.$dialogBlock('.xtextzoomfield').removeClass('editable').addClass('uneditable');
+    else jsh.$dialogBlock('.xtextzoomfield').removeClass('uneditable').addClass('editable');
 
     var cancelfunc = XExt.dialogButtonFunc('.xtextzoombox', oldactive, function () { if (onCancel) onCancel(); });
-    var acceptfunc = XExt.dialogButtonFunc('.xtextzoombox', oldactive, function () { if (onAccept) onAccept(jsh.$root('.xtextzoomfield').val()); });
-    jsh.$root('.xtextzoombox input.button_ok').on('click', acceptfunc);
-    jsh.$root('.xtextzoombox input.button_cancel').on('click', cancelfunc);
-    jsh.$root('.xtextzoombox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    jsh.$root('.xdialogblock,.xtextzoombox').show();
+    var acceptfunc = XExt.dialogButtonFunc('.xtextzoombox', oldactive, function () { if (onAccept) onAccept(jsh.$dialogBlock('.xtextzoomfield').val()); });
+    jsh.$dialogBlock('.xtextzoombox input.button_ok').on('click', acceptfunc);
+    jsh.$dialogBlock('.xtextzoombox input.button_cancel').on('click', cancelfunc);
+    jsh.$dialogBlock('.xtextzoombox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    jsh.$dialogBlock('.xtextzoombox').show();
+    jsh.dialogBlock.show();
     jsh.XWindowResize();
-    jsh.$root('.xtextzoomfield').focus();
+    jsh.$dialogBlock('.xtextzoomfield').focus();
   }
 
   XExt.ShowHints = function (lov, caption, options, onInsert, onCancel) {
     if(!options) options = {};
     if(!lov) lov = [];
     jsh.xDialog.unshift('.xhintsbox');
-    var jdialog = jsh.$root('.xdialogblock .xhintsbox');
+    var jdialog = jsh.$dialogBlock('.xhintsbox');
     jdialog.zIndex(jsh.xDialog.length);
 
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
-    jsh.$root('.xhintsmessage').html(caption);
-    jsh.$root('.xhintsbox input').off('click');
-    jsh.$root('.xhintsbox input').off('keydown');
+    jsh.$dialogBlock('.xhintsmessage').html(caption);
+    jsh.$dialogBlock('.xhintsbox input').off('click');
+    jsh.$dialogBlock('.xhintsbox input').off('keydown');
 
     var tmpl = jdialog.find('.xhints_rowtemplate').html();
     var jlisting = jdialog.find('.xhints_listing');
@@ -2087,7 +2092,8 @@ exports = module.exports = function(jsh){
     });
     jdialog.find('input.button_cancel').on('click', cancelfunc);
     jdialog.find('input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    jsh.$root('.xdialogblock,.xhintsbox').show();
+    jsh.$dialogBlock('.xhintsbox').show();
+    jsh.dialogBlock.show();
     jsh.XWindowResize();
     jdialog.find('input').first().focus();
   }
