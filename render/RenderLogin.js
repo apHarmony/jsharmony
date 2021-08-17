@@ -81,7 +81,7 @@ exports = module.exports = function (req, res, onComplete) {
               function(error, token) { //onAuthenticate
                 if (error) {
                   verrors[''] = error;
-                  return onComplete(RenderPage(req, jsh, account, source, verrors));
+                  return RenderPage(req, jsh, account, source, verrors, onComplete);
                 }
                 else if (token) {
                   var user_id = user_info[jsh.map.user_id];
@@ -102,13 +102,13 @@ exports = module.exports = function (req, res, onComplete) {
                     }
                     else {
                       verrors[''] = 'An unexpected error has occurred';
-                      return onComplete(RenderPage(req, jsh, account, source, verrors));
+                      return RenderPage(req, jsh, account, source, verrors, onComplete);
                     }
                   });
                 }
                 else {
                   verrors[''] = 'An unexpected error has occurred';
-                  return onComplete(RenderPage(req, jsh, account, source, verrors));
+                  return RenderPage(req, jsh, account, source, verrors, onComplete);
                 }
               }
             );
@@ -120,7 +120,7 @@ exports = module.exports = function (req, res, onComplete) {
             if(err) jsh.Log(err);
           }
           verrors[''] = 'Invalid email address or password'; 
-          onComplete(RenderPage(req, jsh, account, source, verrors));
+          return RenderPage(req, jsh, account, source, verrors, onComplete);
         }
       });
     }
@@ -142,22 +142,22 @@ exports = module.exports = function (req, res, onComplete) {
               loginfunc(true);
               return;
             }
-            onComplete(RenderPage(req, jsh, account, source, verrors));
+            return RenderPage(req, jsh, account, source, verrors, onComplete);
           });
         }
         else {
           verrors[''] = 'Invalid email address or password';
-          onComplete(RenderPage(req, jsh, account, source, verrors));
+          return RenderPage(req, jsh, account, source, verrors, onComplete);
         }
       });
     }
     else loginfunc(false);
   }
-  else onComplete(RenderPage(req, jsh, account, source));
+  else return RenderPage(req, jsh, account, source, undefined, onComplete);
 };
 
-function RenderPage(req, jsh, account, source, verrors) {
-  return jsh.RenderView('jsh_login', {
+function RenderPage(req, jsh, account, source, verrors, onComplete) {
+  jsh.RenderViewAsync('jsh_login', {
     'username': account.username,
     'remember': account.remember,
     'source': source,
@@ -166,6 +166,12 @@ function RenderPage(req, jsh, account, source, verrors) {
     'ejsext': ejsext,
     'enable_password_reset': (req.jshsite.auth.on_passwordreset?true:false),
     'req': req
-  });
+  }).then(
+    function(rslt){ return onComplete(rslt); },
+    function(err){
+      jsh.Log.error(err);
+      return onComplete('<div>An unexpected error has occurred</div>');
+    }
+  );
 }
 

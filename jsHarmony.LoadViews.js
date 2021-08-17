@@ -27,7 +27,7 @@ module.exports = exports = {};
 ************************/
 exports.getEJS = function (f, onError) {
   if (!(f in this.EJS)) this.EJS[f] = this.LoadEJS(f, onError);
-  this.EJS[f] = this.LoadEJS(f, onError); //Disable caching
+  //this.EJS[f] = this.LoadEJS(f, onError); //Disable caching
   return this.EJS[f];
 };
 

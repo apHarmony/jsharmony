@@ -114,11 +114,23 @@ exports.RenderView = function(view,ejsparams){
   return this.RenderEJS(_this.getEJS(view),ejsparams);
 };
 
+exports.RenderViewAsync = async function(view,ejsparams){
+  var _this = this;
+  return await this.RenderEJSAsync(_this.getEJS(view),ejsparams);
+}
+
 exports.RenderEJS = function(code,ejsparams){
   if(!code) return '';
   if(!ejsparams) ejsparams = {};
   if(!('ejsparams' in ejsparams)) ejsparams.ejsparams = ejsparams;
   return ejs.render(code,ejsparams);
+};
+
+exports.RenderEJSAsync = async function(code,ejsparams){
+  if(!code) return '';
+  if(!ejsparams) ejsparams = {};
+  if(!('ejsparams' in ejsparams)) ejsparams.ejsparams = ejsparams;
+  return await ejs.render(code,ejsparams,{ async: true });
 };
 
 exports.RouteView = function(ejsname, title, _options, nextRoute){
