@@ -26,10 +26,10 @@ var csv = require('csv');
 module.exports = exports = {};
 
 exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, options) {
+  var _this = this;
   if (!options) options = {};
   var model = this.jsh.getModel(req, fullmodelid);
-  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
-  var _this = this;
+  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
   var filelist = this.getFileFieldNames(req, model.fields, 'B');
   var keylist = this.getKeyNames(model.fields);

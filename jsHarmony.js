@@ -29,6 +29,7 @@ var jsHarmonyExtensions = require('./jsHarmonyExtensions.js');
 var jsHarmonySite = require('./jsHarmonySite.js');
 var jsHarmonyServer = require('./jsHarmonyServer.js');
 var jsHarmonyModule = require('./jsHarmonyModule.js');
+var jsHarmonyLocale = require('./jsHarmonyLocale.js');
 var jsHarmonyMailer = require('./lib/Mailer.js');
 var Logger = require('./lib/Logger.js');
 
@@ -49,6 +50,7 @@ function jsHarmony(config) {
   this.Servers = {};
   this.Log = new Logger(this);
   this.Mailer = undefined;
+  this.Locale = new jsHarmonyLocale('en');
   this.SystemErrors = [];
 
   this.EJS = {};
@@ -199,6 +201,13 @@ jsHarmony.prototype.Init = function(init_cb){
       return cb();
     },
     function(cb){
+      _this.LogInit_PERFORMANCE('Loading Locales '+(Date.now()-_this.Statistics.StartTime));
+      //Preload translations for current locale
+      async.each(_this.Modules, function(module, module_cb){
+        module.translator.loadLanguages([_this.Locale.id], module_cb);
+      }, cb);
+    },
+    function(cb){
       _this.LogInit_PERFORMANCE('Loading DB '+(Date.now()-_this.Statistics.StartTime));
 
       //Load Database Drivers
@@ -229,7 +238,7 @@ jsHarmony.prototype.Init = function(init_cb){
     },
     function(cb){
       //Configure Mailer
-      if(!_this.Mailer) _this.Mailer = jsHarmonyMailer(_this.Config.mailer_settings, _this.Log.info);
+      if(!_this.Mailer && _this.Config.mailer_settings) _this.Mailer = jsHarmonyMailer(_this.Config.mailer_settings, _this.Log.info);
       return cb();
     },
     function(cb){

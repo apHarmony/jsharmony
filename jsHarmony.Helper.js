@@ -23,6 +23,7 @@ var querystring = require('querystring');
 var Helper = require('./lib/Helper.js');
 var ejsext = require('./lib/ejsext.js');
 var moment = require('moment');
+var jsHarmonyLocale = require('./jsHarmonyLocale.js');
 
 var _ERROR = 1;
 var _WARNING = 2;
@@ -767,8 +768,48 @@ exports.SendEmail = function (mparams,callback){
   if(_this.Config.debug_params.disable_email){ _this.Log.console('DEBUG - NO EMAIL SENT '+(mparams.to||'')+' '+(mparams.subject||'')+' '+(mparams.text||mparams.html||'')); return callback(); }
   if (!('from' in mparams)) mparams.from = _this.Config.mailer_email;
   _this.Log.info(mparams);
-  if(!_this.Mailer){ _this.Log.error('ERROR - Mailer not configured'); return callback(); }
+  if(!_this.Mailer){ _this.Log.error('ERROR - Mailer not configured'); return callback(new Error('Email could not be sent - Mailer not configured')); }
   _this.Mailer.sendMail(mparams, callback);
+}
+
+exports.setLocale = function(localeId){
+  this.Locale = new jsHarmonyLocale(localeId);
+}
+
+exports._t = function(msgId, section, pluralIndex){
+  for(var moduleName in this.Modules){
+    var module = this.Modules[moduleName];
+    var msg = module.translator.translate(msgId, section, pluralIndex, { nullOnNotFound: true });
+    if(!Helper.isNullUndefined(msg)) return msg;
+  }
+  return msgId;
+}
+
+exports._tN = function(msgId, cnt, section){
+  for(var moduleName in this.Modules){
+    var module = this.Modules[moduleName];
+    var msg = module.translator.translateN(msgId, cnt, section, { nullOnNotFound: true });
+    if(!Helper.isNullUndefined(msg)) return msg;
+  }
+  return msgId;
+}
+
+exports._tP = function(msgId, params, section, pluralIndex){
+  for(var moduleName in this.Modules){
+    var module = this.Modules[moduleName];
+    var msg = module.translator.translateParams(msgId, params, section, pluralIndex, { nullOnNotFound: true });
+    if(!Helper.isNullUndefined(msg)) return msg;
+  }
+  return Helper.ReplaceParams(msgId, params);
+}
+
+exports._tPN = function(msgId, params, cnt, section){
+  for(var moduleName in this.Modules){
+    var module = this.Modules[moduleName];
+    var msg = module.translator.translateParamsN(msgId, params, cnt, section, { nullOnNotFound: true });
+    if(!Helper.isNullUndefined(msg)) return msg;
+  }
+  return Helper.ReplaceParams(msgId, params);
 }
 
 //Log Initialization Errors / Warnings / Info

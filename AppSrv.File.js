@@ -180,7 +180,7 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
     var model = this.jsh.getModel(req, fullmodelid);
     var db = this.jsh.getModelDB(req, fullmodelid);
     //Verify model access
-    if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+    if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
     if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
     //Get key name
     var keylist = this.getKeyNames(model.fields);

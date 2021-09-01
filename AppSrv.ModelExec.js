@@ -23,9 +23,9 @@ var _ = require('lodash');
 module.exports = exports = {};
 
 exports.getModelExec = function (req, res, fullmodelid, Q, P, form_m) {
-  var model = this.jsh.getModel(req, fullmodelid);
-  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   var _this = this;
+  var model = this.jsh.getModel(req, fullmodelid);
+  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
   var filelist = this.getFileFieldNames(req, model.fields, 'B');
   var keylist = this.getKeyNames(model.fields);
@@ -57,10 +57,11 @@ exports.getModelExec = function (req, res, fullmodelid, Q, P, form_m) {
 
 exports.postModelExec = function (req, res, fullmodelid, Q, P, onComplete) {
   var _this = this;
-  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
-  var model = this.jsh.getModel(req, fullmodelid);
-  if (!Helper.hasModelAction(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
-  var db = _this.jsh.getModelDB(req, fullmodelid);
+  var jsh = this.jsh;
+  if (!jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+  var model = jsh.getModel(req, fullmodelid);
+  if (!Helper.hasModelAction(req, model, 'U')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
+  var db = jsh.getModelDB(req, fullmodelid);
   
   var fieldlist = this.getFieldNames(req, model.fields, 'U');
   
@@ -101,7 +102,7 @@ exports.postModelExec = function (req, res, fullmodelid, Q, P, onComplete) {
   verrors = _.merge(verrors, model.xvalidate.Validate('UK', sql_params));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   
-  var sql = db.sql.postModelExec(_this.jsh, model, param_datalocks, datalockqueries);
+  var sql = db.sql.postModelExec(jsh, model, param_datalocks, datalockqueries);
   
   var dbtasks = {};
   dbtasks[fullmodelid] = function (dbtrans, callback, transtbl) {

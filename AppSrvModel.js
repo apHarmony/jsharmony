@@ -99,7 +99,7 @@ AppSrvModel.prototype.GetModel = function (req, res, fullmodelid) {
   var _this = this;
   var jsh = this.AppSrv.jsh;
   var model = jsh.getModel(req, fullmodelid);
-  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, jsh._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
   req.curtabs = jsh.getTabs(req, model);
   req.TopModel = fullmodelid;
 

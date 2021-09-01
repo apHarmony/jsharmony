@@ -169,5 +169,9 @@ AppSrv.prototype.getSQL = function (model, sqlid, jsh) {
   return DB.ParseSQLBase(sqlid, jsh, db.SQLExt);
 }
 AppSrv.prototype.parseSQL = function(sql, model, jsh){ return this.getSQL(model, sql, jsh); }
+AppSrv.prototype._t = function(){ return this.jsh._t.apply(this.jsh, arguments); }
+AppSrv.prototype._tN = function(){ return this.jsh._tN.apply(this.jsh, arguments); }
+AppSrv.prototype._tP = function(){ return this.jsh._tP.apply(this.jsh, arguments); }
+AppSrv.prototype._tPN = function(){ return this.jsh._tPN.apply(this.jsh, arguments); }
 
 module.exports = AppSrv;

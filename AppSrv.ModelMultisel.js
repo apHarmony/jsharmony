@@ -23,9 +23,9 @@ var _ = require('lodash');
 module.exports = exports = {};
 
 exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
-  var model = this.jsh.getModel(req, fullmodelid);
-  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
   var _this = this;
+  var model = this.jsh.getModel(req, fullmodelid);
+  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
   var keylist = this.getKeyNames(model.fields);
   var foreignkeylist = this.getFieldNames(req, model.fields, 'F');
@@ -134,7 +134,7 @@ exports.postModelMultisel = function (req, res, fullmodelid, Q, P, onComplete) {
   if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
   var _this = this;
   var model = this.jsh.getModel(req, fullmodelid);
-  if (!Helper.hasModelAction(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+  if (!Helper.hasModelAction(req, model, 'U')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
   
   var lovfield = null;
   _.each(model.fields, function (field) {

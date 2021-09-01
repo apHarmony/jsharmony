@@ -24,12 +24,12 @@ var ejsext = require('./lib/ejsext.js');
 module.exports = exports = {};
 
 exports.getTabCode = function (req, res, fullmodelid, onComplete) {
+  var _this = this;
   if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
   var model = this.jsh.getModel(req, fullmodelid);
   if (!(model.tabcode)) throw new Error("Error: Tabcode required for " + fullmodelid + " tabcode lookup.");
   var Q = req.query;
-  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
-  var _this = this;
+  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
   var keylist = this.getKeyNames(model.fields);
   var tabcodelist = [model.tabcode];
   var db = _this.jsh.getModelDB(req, fullmodelid);
@@ -156,11 +156,12 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
 }
 
 exports.getTitle = function (req, res, fullmodelid, targetperm, onComplete) {
+  var _this = this;
   if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
   var model = this.jsh.getModel(req, fullmodelid);
   if (!Helper.hasModelAction(req, model, targetperm)) { 
     targetperm = 'B';
-    if (!Helper.hasModelAction(req, model, targetperm)) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+    if (!Helper.hasModelAction(req, model, targetperm)) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
   }
 
   var dbtasks = {};

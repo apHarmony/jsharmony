@@ -26,10 +26,10 @@ var crypto = require('crypto');
 module.exports = exports = {};
 
 exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
-  var model = this.jsh.getModel(req, fullmodelid);
-  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
-  if (model.unbound && !model._sysconfig.unbound_meta) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   var _this = this;
+  var model = this.jsh.getModel(req, fullmodelid);
+  if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
+  if (model.unbound && !model._sysconfig.unbound_meta) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
   var filelist = this.getFileFieldNames(req, model.fields, 'B');
   var keylist = this.getKeyNames(model.fields);
@@ -122,7 +122,7 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
   }
   
   var keys = [];
-  if (is_insert && !Helper.hasModelAction(req, model, 'I')) { Helper.GenError(req, res, -11, 'Invalid Model Access - ' + model.id + ' Insert'); return; }
+  if (is_insert && !Helper.hasModelAction(req, model, 'I')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
   if (!is_insert && !nokey && !model.unbound) {
     //Add dynamic parameters from query string	
     if (selecttype == 'single') keys = this.getKeys(model.fields);
@@ -237,7 +237,7 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
 exports.putModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
   var _this = this;
   var model = this.jsh.getModel(req, fullmodelid);
-  if (!Helper.hasModelAction(req, model, 'I')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+  if (!Helper.hasModelAction(req, model, 'I')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
   var fieldlist = this.getFieldNames(req, model.fields, 'I');
   var filelist = this.getFileFieldNames(req, model.fields, 'I');
   var encryptedfields = this.getEncryptedFields(req, model.fields, 'I');
@@ -401,7 +401,7 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
   var _this = this;
   if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
   var model = this.jsh.getModel(req, fullmodelid);
-  if (!Helper.hasModelAction(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+  if (!Helper.hasModelAction(req, model, 'U')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
   
   var fieldlist = this.getFieldNames(req, model.fields, 'U');
   var keylist = this.getKeyNames(model.fields);
@@ -567,7 +567,7 @@ exports.deleteModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
   if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
   var _this = this;
   var model = this.jsh.getModel(req, fullmodelid);
-  if (!Helper.hasModelAction(req, model, 'D')) { Helper.GenError(req, res, -11, 'Invalid Model Access for '+fullmodelid); return; }
+  if (!Helper.hasModelAction(req, model, 'D')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
   var keylist = this.getKeyNames(model.fields);
   var fieldlist = this.getFieldNames(req, model.fields, 'D');
   var filelist = this.getFileFieldNames(req, model.fields, '*');

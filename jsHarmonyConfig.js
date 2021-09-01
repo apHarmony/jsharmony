@@ -295,7 +295,7 @@ function jsHarmonyConfig(config){
   this.loadModels = true;
 
   //Mailer settings
-  this.mailer_settings = {
+  this.mailer_settings = null; /*{
     //SMTP
     type: 'smtp',
     host: 'mail.company.com',
@@ -315,7 +315,7 @@ function jsHarmonyConfig(config){
     //accessKeyId: "xxx",
     //secretAccessKey: "xxx",
     //rateLimit: 10 // Messages per second
-  };
+  };*/
 
   //Modules
   this.modules = {};

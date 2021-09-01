@@ -19,10 +19,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 var jsHarmonyConfig = require('./jsHarmonyConfig.js');
 var jsHarmonyModuleTransform = require('./jsHarmonyModuleTransform.js');
+var jsHarmonyTranslator = require('./jsHarmonyTranslator.js');
 var Helper = require('./Helper.js');
 var async = require('async');
 
 function jsHarmonyModule(name){
+  var _this = this;
   this.jsh = null;  //Set to target during jsh.AddModule
   this.name = name||null; //Set to typename if not defined during jsh.AddModule
   this.typename = 'jsHarmonyModule';
@@ -32,6 +34,14 @@ function jsHarmonyModule(name){
     //Array of namespaces to import
   ];
   this.transform = new jsHarmonyModuleTransform(this);
+  this.translator = new jsHarmonyTranslator(this, {
+    getLocale: function(){ return _this.jsh.Locale; },
+    getLanguagePath: function(localeId){ if(!_this.Config.moduledir){ return ''; } return _this.Config.moduledir+'/locale/'+localeId+'.language.json'; },
+  });
+  this._t = function(){ return _this.jsh._t.apply(_this.jsh, arguments); }
+  this._tN = function(){ return _this.jsh._tN.apply(_this.jsh, arguments); }
+  this._tP = function(){ return _this.jsh._tP.apply(_this.jsh, arguments); }
+  this._tPN = function(){ return _this.jsh._tPN.apply(_this.jsh, arguments); }
 
   //Populated in jsh.SetModuleNamespace, if not initially set
   this.schema = null;    //Database schema
@@ -91,6 +101,7 @@ jsHarmonyModule.ApplicationModule = function(jsh){
   this.typename = '';
   this.schema = null;
   this.namespace = '';
+  this.Config.moduledir = jsh.Config.appbasepath;
 };
 jsHarmonyModule.ApplicationModule.prototype = new jsHarmonyModule();
 jsHarmonyModule.ApplicationModule.prototype.getModelPath = function(){
