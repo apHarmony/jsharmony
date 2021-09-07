@@ -128,7 +128,7 @@ else if(parent && (parent.topmost) && ('tabpos' in parent) && (parent.tabpos=='t
   <table class="xtbl xelem<%=model.class%> xform<%=model.class%> <%=model.tableclass||''%>" data-id="<%=model.id%>" style="<%=model.tablestyle%>">
     <thead>
       <tr>
-        <% if(model.inlinepopup){ %><th style="text-align:center;" nowrap>Select</th><% } %>
+        <% if(model.inlinepopup){ %><th class="xgrid_select_item" style="text-align:center;" nowrap>Select</th><% } %>
         <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i];
           if(!('caption' in field)) continue;
           if(('actions' in field)){
@@ -150,7 +150,7 @@ else if(parent && (parent.topmost) && ('tabpos' in parent) && (parent.tabpos=='t
     <script class="xgrid_<%=model.class%>_template" type="text/x-ejs-template" data-target=".xgrid_<%=model.class%>_placeholder">
       <%% for(var j=0;j<datatable.length;j++){ var datarow=datatable[j]; var data = datarow; if((typeof startrowid == 'undefined') || (startrowid === null)) startrowid = j; var rowid = startrowid + j;  %%>
       <tr class="<%%=(rowid%2==1?'even':'odd')%%> <%-model.rowclass%> xrow_<%=model.class%> xrow" style="<%-model.rowstyle%>" data-id="<%%=rowid%%>">
-        <% if(model.inlinepopup){ %><td align="center"><a href="#" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this); return false;">Select</a></td><% } %>
+        <% if(model.inlinepopup){ %><td class="xgrid_select_item" align="center"><a href="#" onclick="<%-instance%>.XExt.popupSelect('<%=model.id%>',this); return false;">Select</a></td><% } %>
         <% for(var i=0;i<model.fields.length;i++){ var field = model.fields[i];
           if(!('caption' in field)) continue;
           if(('actions' in field)){

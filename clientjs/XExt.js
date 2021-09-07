@@ -1449,7 +1449,7 @@ exports = module.exports = function(jsh){
   XExt.TreeItemContextMenu = function (ctrl, n, contextMenuOptions) {
     var jctrl = $(ctrl);
     var jtree = jctrl.closest('.xform_ctrl.tree');
-    var fieldname = XExt.getFieldFromObject(ctrl);
+    var fieldname = XExt.getFieldNameFromObject(ctrl);
     var menuid = '._item_context_menu_' + fieldname;
     if(jtree.data('oncontextmenu')) { 
       var f = (new Function('n', jtree.data('oncontextmenu'))); 
@@ -1472,7 +1472,7 @@ exports = module.exports = function(jsh){
   XExt.TreeDoubleClickNode = function (ctrl, n) {
     var jctrl = $(ctrl);
     var jtree = jctrl.closest('.xform_ctrl.tree');
-    var fieldname = XExt.getFieldFromObject(ctrl);
+    var fieldname = XExt.getFieldNameFromObject(ctrl);
     if(jtree.data('ondoubleclick')) { var rslt = (new Function('n', jtree.data('ondoubleclick'))); rslt.call(ctrl, n); }
   }
 
@@ -1527,7 +1527,7 @@ exports = module.exports = function(jsh){
     }
     
     var xform = XExt.getFormFromObject(ctrl);
-    var fieldname = XExt.getFieldFromObject(ctrl);
+    var fieldname = XExt.getFieldNameFromObject(ctrl);
     var field = undefined;
     if (xform && fieldname) field = xform.Data.Fields[fieldname];
     
@@ -2493,9 +2493,21 @@ exports = module.exports = function(jsh){
     if (modelid) return modelid;
     return undefined;
   }
-  XExt.getFieldFromObject = function (ctrl) {
+  XExt.getFieldNameFromObject = function (ctrl) {
     var jctrl = $(ctrl).closest('.xform_ctrl,.xform_file_upload');
     return jctrl.data('id');
+  }
+  XExt.getFieldFromObject = function(ctrl){
+    var jctrl = $(ctrl).closest('.xform_ctrl,.xform_file_upload');
+    if(!jctrl.length) return undefined;
+    var fieldName = jctrl.data('id');
+    var modelid = XExt.getModelId(jctrl);
+    if(fieldName && modelid){
+      var xmodel = jsh.XModels[modelid];
+      if(xmodel && xmodel.fields && (fieldName in xmodel.fields)){
+        return xmodel.fields[fieldName];
+      }
+    }
   }
   XExt.getFormField = function (xform, fieldname) {
     if (!xform) { XExt.Alert('ERROR: Cannot read field ' + fieldname + ' - Parent form not found.'); return; }

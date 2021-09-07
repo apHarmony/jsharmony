@@ -244,6 +244,7 @@ exports = module.exports = function(jsh){
             data: _this,
             val: baseval,
             obj: jctrl[0],
+            enabled: (jctrl.hasClass('editable') ? true : jctrl.hasClass('uneditable') ? false : null),
           });
           jctrl.html(val);
           showLabel = !!val;
@@ -262,6 +263,7 @@ exports = module.exports = function(jsh){
         val = jsh.XExt.renderEJS(val, modelid, {
           data: _this,
           obj: jctrl[0],
+          enabled: (jctrl.hasClass('editable') ? true : jctrl.hasClass('uneditable') ? false : null),
         });
       }
       jctrl.html(val);
@@ -320,8 +322,8 @@ exports = module.exports = function(jsh){
     if(is_editable && jctrl.hasClass('readonly')) is_editable = false;
     if(is_editable && isGrid && jctrl.closest('tr.xrow').hasClass('readonly')) is_editable = false;
 
-    if (is_editable && !jctrl.hasClass('editable')) { jsh.XPage.Enable(jctrl); }
-    else if (!is_editable && !jctrl.hasClass('uneditable')) { jsh.XPage.Disable(jctrl, show_lookup_when_readonly); }
+    if (is_editable && !jctrl.hasClass('editable')) { jsh.XPage.Enable(jctrl, field); }
+    else if (!is_editable && !jctrl.hasClass('uneditable')) { jsh.XPage.Disable(jctrl, field, show_lookup_when_readonly); }
 
     return jctrl;
   }
@@ -330,7 +332,7 @@ exports = module.exports = function(jsh){
     modelid = jsh.XExt.resolveModelID(modelid);
     return function (obj, e) {
       var jobj = $(obj);
-      var id = jsh.XExt.getFieldFromObject(obj);
+      var id = jsh.XExt.getFieldNameFromObject(obj);
       var _this = this;
       var field = this.Fields[id];
       if(field){

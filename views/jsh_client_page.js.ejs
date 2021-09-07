@@ -1105,11 +1105,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       var fieldselector = '.' + field.name + '.xelem' + xmodel.class;
       if (isGrid) fieldselector = '.' + field.name + '.xelem' + xmodel.class;
       var jctrl = jsh.root.find(fieldselector);
-      if(jctrl.length) XPage.Disable(jctrl);
+      if(jctrl.length) XPage.Disable(jctrl, field);
     });
   }
 
-  XPage.Disable = function(jctrls,show_lookup) {
+  XPage.Disable = function(jctrls,field,show_lookup) {
     XExt.jForEach(jctrls, function(jctrl){
       jctrl.removeClass('editable');
       jctrl.addClass('uneditable');
@@ -1122,10 +1122,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       }
       else jctrl.prop('readonly', true);
       if (!show_lookup && jctrl.next().hasClass('xlookup')) jctrl.next().addClass('uneditable');
+      if(!field && (jctrl.hasClass('xform_ctrl') || jctrl.hasClass('xform_file_upload'))){
+        field = XExt.getFieldFromObject(jctrl);
+      }
+      if(field && field.ondisabled) field.ondisabled(jctrl[0]);
     });
   }
 
-  XPage.Enable = function(jctrls) {
+  XPage.Enable = function(jctrls,field) {
     XExt.jForEach(jctrls, function(jctrl){
       jctrl.removeClass('uneditable');
       jctrl.addClass('editable');
@@ -1138,6 +1142,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       }
       else jctrl.prop('readonly', false);
       if (jctrl.next().hasClass('xlookup')) jctrl.next().removeClass('uneditable');
+      if(!field && (jctrl.hasClass('xform_ctrl') || jctrl.hasClass('xform_file_upload'))){
+        field = XExt.getFieldFromObject(jctrl);
+      }
+      if(field && field.onenabled) field.onenabled(jctrl[0]);
     });
   }
 
