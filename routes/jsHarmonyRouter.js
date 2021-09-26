@@ -99,7 +99,13 @@ var jsHarmonyRouter = function (jsh, siteid) {
     jsh.getSystemCSS(function(systemCSS){
       var rootcss = req.jshsite.rootcss;
       if(req.query.rootcss) rootcss = req.query.rootcss;
-      HelperFS.outputContent(req, res, ejs.render(systemCSS + '\r\n' + jsh.Cache['application.css'], { req: req, rootcss: rootcss, _: _ }),'text/css');
+      var instanceName = req.jshsite.instance;
+      HelperFS.outputContent(req, res, ejs.render(systemCSS + '\r\n' + jsh.Cache['application.css'], {
+        req: req,
+        rootcss: rootcss,
+        jshElementSelector: (instanceName ? '.jsHarmonyElement_'+Helper.escapeCSSClass(instanceName) : ''),
+        _: _,
+      }),'text/css');
     });
   });
   router.all('*', function (req, res, next) {

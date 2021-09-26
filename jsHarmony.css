@@ -864,7 +864,7 @@ CUSTOM CONTROLS
 LOADING ANIMATION
 =================
 */
-<%-rootcss%> .xloadingblock,
+<%-jshElementSelector%>.xloadingblock,
 <%-rootcss%> .xloadingcontainer {
 	display:none;
 	position:fixed;
@@ -874,15 +874,15 @@ LOADING ANIMATION
 	z-index:999999999;
 	text-align:center;
 }
-<%-(rootcss||'body')%>.popup .xloadingblock,
+<%-(rootcss||'body')%>.popup <%-jshElementSelector%>.xloadingblock,
 <%-(rootcss||'body')%>.popup .xloadingcontainer { top:0px; }
-<%-rootcss%> .xloadingblock div,
+<%-jshElementSelector%>.xloadingblock div,
 <%-rootcss%> .xloadingcontainer div {
 	position:absolute;
 	top:50%;
 	left:50%;
 }
-<%-rootcss%> .xloadingblock div .xloadingbox,
+<%-jshElementSelector%>.xloadingblock div .xloadingbox,
 <%-rootcss%> .xloadingcontainer div .xloadingbox {
 	display:none;
 	background-color:white;
@@ -911,21 +911,21 @@ LOADING ANIMATION
 DIALOG BOXES
 ============
 */
-<%-rootcss%> .xdebugconsole .resizer{
+<%-jshElementSelector%>.xdebugconsole .resizer{
   background-color: #aaa;
 }
-<%-rootcss%> .xdebugconsole .res-ns{
+<%-jshElementSelector%>.xdebugconsole .res-ns{
   cursor: row-resize;
   height: 3px;
 }
-<%-rootcss%> .xdebugconsole .res-ew{
+<%-jshElementSelector%>.xdebugconsole .res-ew{
   display: inline-block;
   cursor: col-resize;
   height: 100%;
   width: 3px;
   float: left;
 }
-<%-rootcss%> .xdebuginfo {
+<%-jshElementSelector%>.xdebuginfo {
   position:absolute;
   top:0px;
   left:0px;
@@ -933,7 +933,7 @@ DIALOG BOXES
   background-color:rgba(0,0,0,0.5);
   z-index:1000000000;
 }
-<%-rootcss%> .xdebugconsole .debug-panel {
+<%-jshElementSelector%>.xdebugconsole .debug-panel {
   display:none;
   position: fixed;
   height: 300px;
@@ -942,22 +942,24 @@ DIALOG BOXES
   border-bottom: 3px solid #aaa;
   background-color: #fff;
 }
-<%-rootcss%> .xdebugconsole.bottom .debug-panel {
+<%-jshElementSelector%>.xdebugconsole.bottom .debug-panel {
   bottom: 0;
   right: 0;
 }
-<%-rootcss%> .xdebugconsole.right .debug-panel {
+<%-jshElementSelector%>.xdebugconsole.right .debug-panel {
   width: 600px;
   bottom: 0;
   right: 0;
 }
-<%-rootcss%> .xdebugconsole.right {
+<%-jshElementSelector%>.xdebugconsole.right {
   height:auto !important;
 }
-<%-rootcss%> .xdebugconsole.bottom .res-ew, .xdebugconsole.bottom .dockBottom, .xdebugconsole.right .dockRight {
+<%-jshElementSelector%>.xdebugconsole.bottom .res-ew,
+<%-jshElementSelector%>.xdebugconsole.bottom .dockBottom,
+<%-jshElementSelector%>.xdebugconsole.right .dockRight {
   display: none;
 }
-<%-rootcss%> .xdebugconsole header{
+<%-jshElementSelector%>.xdebugconsole header{
   padding: 7px 16px 5px 19px;
   line-height: 1.1em;
   font-size: 14px;
@@ -965,13 +967,13 @@ DIALOG BOXES
   border-bottom: 1px solid #aaa;
   cursor: auto;
 }
-<%-rootcss%> .xdebugconsole .controls{
+<%-jshElementSelector%>.xdebugconsole .controls{
   float: right;
   display: block;
   position:relative;
   top:-1px;
 }
-<%-rootcss%> .xdebugconsole .debug-settings{
+<%-jshElementSelector%>.xdebugconsole .debug-settings{
   padding: 5px 15px 3px 15px;
   border-bottom: 1px solid #aaa;
   display: none;
@@ -979,35 +981,35 @@ DIALOG BOXES
   z-index: 1;
   background-color: #fff;
 }
-<%-rootcss%> .xdebugconsole.right .debug-settings{
+<%-jshElementSelector%>.xdebugconsole.right .debug-settings{
   margin-left: 3px;
 }
-<%-rootcss%> .xdebugconsole .debug-settings label{
+<%-jshElementSelector%>.xdebugconsole .debug-settings label{
   display: inline-flex;
   margin-right: 12px;
 }
-<%-rootcss%> .xdebugconsole .debug-settings input {
+<%-jshElementSelector%>.xdebugconsole .debug-settings input {
   margin-right: 5px;
 }
-<%-rootcss%> .xdebugconsole .info-message{
+<%-jshElementSelector%>.xdebugconsole .info-message{
   padding: 2px 19px;
   border-bottom: 1px solid #999;
   white-space: pre-wrap;
   font-size: 12px;
   line-height: 15px;
 }
-<%-rootcss%> .xdebugconsole .controls i {
+<%-jshElementSelector%>.xdebugconsole .controls i {
   cursor: pointer;
   font-size:15px;
   margin-left:6px;
 }
-<%-rootcss%> .xdebugconsole .xdebuginfo-body {
+<%-jshElementSelector%>.xdebugconsole .xdebuginfo-body {
   overflow: auto;
 }
-<%-rootcss%> .xdebugconsole.visible.right .xdebuginfo-body {
+<%-jshElementSelector%>.xdebugconsole.visible.right .xdebuginfo-body {
   word-break: break-word;
 }
-<%-rootcss%> .xdebugconsole .debug-panel-minimized{
+<%-jshElementSelector%>.xdebugconsole .debug-panel-minimized{
   position: fixed;
   bottom: 0;
   right: 0;
@@ -1017,7 +1019,7 @@ DIALOG BOXES
   top:2px;
   position:relative;
 }
-<%-rootcss%> .xdialogblock {
+<%-jshElementSelector%>.xdialogblock {
 	position:fixed;
 	top:0px;
 	width:100%;
@@ -1029,7 +1031,7 @@ DIALOG BOXES
   -moz-transform-style: preserve-3d;
   transform-style: preserve-3d;
 }
-<%-rootcss%> .xdialogblock .xdialogbox {
+<%-jshElementSelector%>.xdialogblock .xdialogbox {
   display:none;
 	position:absolute;
 	top:50%;
@@ -1043,55 +1045,55 @@ DIALOG BOXES
   overflow:auto;
   max-height: calc(100vh - 66px);
 }
-<%-rootcss%> .xdialogblock .xloadingcontainer,
-<%-rootcss%> .xdialogblock .xalertbox,
-<%-rootcss%> .xdialogblock .xconfirmbox,
-<%-rootcss%> .xdialogblock .xpromptbox,
-<%-rootcss%> .xdialogblock .xtextzoombox,
-<%-rootcss%> .xdialogblock .xhintsbox {
+<%-jshElementSelector%>.xdialogblock .xloadingcontainer,
+<%-jshElementSelector%>.xdialogblock .xalertbox,
+<%-jshElementSelector%>.xdialogblock .xconfirmbox,
+<%-jshElementSelector%>.xdialogblock .xpromptbox,
+<%-jshElementSelector%>.xdialogblock .xtextzoombox,
+<%-jshElementSelector%>.xdialogblock .xhintsbox {
   font-family: 'Roboto', arial, helvetica, sans-serif;
   text-align:center;
   font-size:15px;
   font-weight:bold;
   color:#505050;
 }
-<%-rootcss%> .xdialogblock .xdialogoverlay {
+<%-jshElementSelector%>.xdialogblock .xdialogoverlay {
   background-color: rgba(0,0,0,0.4);
   position: absolute;
   width: 100%;
   height: 100%;
 }
-<%-rootcss%> .xdialogblock .xdialogbox .xbodyhead .xtitle {
+<%-jshElementSelector%>.xdialogblock .xdialogbox .xbodyhead .xtitle {
   padding-top:2px;
   padding-bottom:17px;
 }
-<%-rootcss%> .xdialogblock .xdialogbox .xbodyhead,
-<%-rootcss%> .xdialogblock .xdialogbox .xtbl {
+<%-jshElementSelector%>.xdialogblock .xdialogbox .xbodyhead,
+<%-jshElementSelector%>.xdialogblock .xdialogbox .xtbl {
   font-weight:normal;
   font-size:13px;
   text-align:left;
 }
-<%-rootcss%> .xdialogblock .xalertbox {
+<%-jshElementSelector%>.xdialogblock .xalertbox {
 	width:370px;
 	min-height:60px;
 	text-align:left;
 }
-<%-rootcss%> .xdialogblock .xconfirmbox {
+<%-jshElementSelector%>.xdialogblock .xconfirmbox {
 	width:370px;
 	min-height:60px;
 	text-align:center;
 }
-<%-rootcss%> .xdialogblock .xpromptbox {
+<%-jshElementSelector%>.xdialogblock .xpromptbox {
 	width:310px;
 	min-height:60px;
 	text-align:left;
 }
-<%-rootcss%> .xdialogblock .xtextzoombox {
+<%-jshElementSelector%>.xdialogblock .xtextzoombox {
 	width:510px;
 	min-height:60px;
 	text-align:left;
 }
-<%-rootcss%> .xdialogblock .xhintsbox {
+<%-jshElementSelector%>.xdialogblock .xhintsbox {
 	width:510px;
 	min-height:60px;
 	text-align:left;

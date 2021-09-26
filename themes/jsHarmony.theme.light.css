@@ -284,13 +284,13 @@ BODY
   background-color:#fffedf;
 }
 
-<%-rootcss%> .xloadingblock div .xloadingbox,
+<%-jshElementSelector%>.xloadingblock div .xloadingbox,
 <%-rootcss%> .xloadingcontainer div .xloadingbox {
   border:1px solid #ddd;
   font-weight:400;
   color:#777;
 }
-<%-rootcss%> .xdialogblock .xdialogbox {
+<%-jshElementSelector%>.xdialogblock .xdialogbox {
   border:1px solid #bbb;
   font-weight:normal;
   line-height:20px;
@@ -310,9 +310,9 @@ BODY
 <%-rootcss%> .xform_ctrl.tree a.tree_item { color: #333; }
 <%-rootcss%> .xform_ctrl.tree { border-color: #ddd; }
 <%-rootcss%> .xform_ctrl.tree a.tree_item.selected { background-color:#f8f8f8; }
-<%-rootcss%> .xdebugconsole .res-ns{ height: 1px; }
-<%-rootcss%> .xdebugconsole .res-ew{ width: 1px; }
-<%-rootcss%> .xdebugconsole header{ background-color:#f2f2f2; }
+<%-jshElementSelector%>.xdebugconsole .res-ns{ height: 1px; }
+<%-jshElementSelector%>.xdebugconsole .res-ew{ width: 1px; }
+<%-jshElementSelector%>.xdebugconsole header{ background-color:#f2f2f2; }
 /***************************
 CUSTOM CONTROL STYLES
 ***************************/

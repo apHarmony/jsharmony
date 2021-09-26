@@ -80,6 +80,7 @@ var jsHarmony = function(options){
   this.home_url = '';
   this.uimap = {};
   this._instance = '';
+  this._baseClass = '';
   this.google_api_key = '';
   this.isAuthenticated = false;
   this.urlrouting = true;
@@ -455,8 +456,8 @@ jsHarmony.prototype.XWindowResize = function (source) {
   var stop = $(window).scrollTop();
   var docw = $(document).width();
   var doch = $(document).height();
-  var pw = ((docw > ww) ? docw : ww);
-  var ph = ((doch > wh) ? doch : wh);
+  var pw = ((docw > ww) ? docw : ww); //Page width = greater of document or window width
+  var ph = ((doch > wh) ? doch : wh); //Page height = greater of document or window height
   var params = { ww: ww, wh: wh, sleft: sleft, stop: stop, docw: docw, doch: doch, pw: pw, ph: ph };
   this.$root('.xbodyhead').each(function(){
     var jobj = $(this);

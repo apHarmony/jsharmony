@@ -396,17 +396,18 @@ exports.ParseModelInheritance = function () {
             }
           }
         }
+        model = _this.Models[model.id];
+      }
+      //Apply Transforms
+      if(model._transforms){
+        while(model._transforms.length){
+          var transform = model._transforms.shift();
+          _this.ApplyModelTransform(model, transform);
+        }
+        delete _this.Models[model.id]._transforms;
       }
     });
   }
-  //Apply Transforms
-  _.forOwn(this.Models, function (model) {
-    while(model._transforms && model._transforms.length){
-      var transform = model._transforms.shift();
-      _this.ApplyModelTransform(model, transform);
-    }
-    delete _this.Models[model.id]._transforms;
-  });
 };
 
 exports.ApplyModelTransform = function(model, transform){

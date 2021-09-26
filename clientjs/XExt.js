@@ -2859,8 +2859,9 @@ exports = module.exports = function(jsh){
     var jtabbuttons = jobj.children('.xtab');
     if(!jtabbuttons.length) jtabbuttons = jobj.children('.xtabs').children('.xtab');
     var jtabpanels = jobj.children('.xpanel').children('.xtabbody');
-    jtabbuttons.on('click', function(){
+    jtabbuttons.on('click', function(e){
       var jtabbutton = $(this);
+      e.preventDefault();
       if(jtabbutton.hasClass('selected')) return;
       var tabFor = jtabbutton.attr('for');
       jtabbuttons.removeClass('selected');
