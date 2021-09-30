@@ -234,10 +234,12 @@ BODY
 <%-rootcss%> .xform .xtbl .htmlarea_container {
   margin:auto;
 }
+<%-rootcss%> .htmlarea_container,
 <%-rootcss%> .xform .htmlarea_container {
   border:1px solid #999;
   display:inline-block;
 }
+<%-rootcss%> .htmlarea_container textarea,
 <%-rootcss%> .xform .htmlarea_container textarea {
   margin:0;
 }
@@ -554,9 +556,11 @@ BODY
 <%-rootcss%> .xtbl .xform_ctrl.checkbox {
   top:2px;
 }
+<%-rootcss%> .xform_ctrl.checkbox,
 <%-rootcss%> .xform .xform_ctrl.checkbox {
   margin-right: 0px;
 }
+<%-rootcss%> .checkbox_container,
 <%-rootcss%> .xform .checkbox_container {
   margin-right: 10px;
 }
@@ -576,8 +580,11 @@ BODY
   display:none;
 }
 <%-rootcss%> .xform .xlookup.icon,
+<%-rootcss%> .xlookup.icon,
 <%-rootcss%> .xform .xhints.icon,
-<%-rootcss%> .xform .xtextzoom.icon {
+<%-rootcss%> .xhints.icon,
+<%-rootcss%> .xform .xtextzoom.icon,
+<%-rootcss%> .xtextzoom.icon {
   top:6px;
 }
 <%-rootcss%> .xrow .xlookup.icon,

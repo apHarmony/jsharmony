@@ -814,18 +814,22 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         jform.find('.leading').each(function(){ 
           var jobj = $(this);
           if(jobj.closest('.xform')[0]!=jform[0]) return;
+          if(jobj.hasClass('hidden')) return;
           jobj.css('width','auto');
         });
       }
       jform.find('.leading').each(function(){ 
         var jobj = $(this);
         if(jobj.closest('.xform')[0]!=jform[0]) return;
-        var width = jobj.width(); 
+        if(jobj.hasClass('hidden')) return;
+        var width = jobj.width();
+        if(width) width++; //Add 1 to handle fractional widths
         if(width > max_width) max_width = width;
       });
       jform.find('.leading').each(function(){ 
         var jobj = $(this);
         if(jobj.closest('.xform')[0]!=jform[0]) return;
+        if(jobj.hasClass('hidden')) return;
         jobj.width(max_width);
         if(jobj.is(':visible')) jobj.toggle((max_width>0));
       });
