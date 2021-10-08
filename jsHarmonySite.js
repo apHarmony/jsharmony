@@ -110,6 +110,8 @@ function jsHarmonySite(jsh, id, config){
   this.onLoad = function (jsh) { };
   //Public apps (not requiring login)
   this.public_apps = [];
+  //Private-optional apps (working for both logged-in and guest users)
+  this.privateoptional_apps = [];
   //Private apps (requiring login)
   this.private_apps = [];
   //Catch-all apps (requiring login, after no matching routes found)

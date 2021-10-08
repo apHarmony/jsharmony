@@ -42,6 +42,21 @@ var jsHarmonyRouter = function (jsh, siteid) {
   router.jshsite = siteConfig;
   if(!siteConfig.router) siteConfig.router = router;
   if (siteConfig.onLoad) siteConfig.onLoad(jsh, router);
+
+  function bindApps(apps){
+    if(!apps) return;
+    for (var i = 0; i < apps.length; i++) {
+      var app = apps[i];
+      for (var j in app){
+        var pathExp = j;
+        if(j.toString().substr(0,6)=='regex:'){
+          pathExp = new RegExp(j.substr(6));
+        }
+        if(app[j].route){ router.use(pathExp, app[j]); }
+        else router.all(pathExp, app[j].bind(jsh.AppSrv));
+      }
+    }
+  }
   
   /* GET home page. */
   router.all('*', function (req, res, next) {
@@ -84,13 +99,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
       if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Reset Password', body: rslt, menudata: {}, selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
-  for (var i = 0; i < siteConfig.public_apps.length; i++) {
-    var app = siteConfig.public_apps[i];
-    for (var j in app){
-      if(app[j].route){ router.use(j, app[j]); }
-      else router.all(j, app[j].bind(jsh.AppSrv));
-    }
-  }
+  bindApps(siteConfig.public_apps);
   for(var stylusName in jsh.Stylus){
     handleStylus(jsh, siteid, router, stylusName, { public: true });
   }
@@ -118,10 +127,18 @@ var jsHarmonyRouter = function (jsh, siteid) {
         return Helper.GenError(req, res, errno, msg);
       }
       else {
-        var loginurl = req.baseurl + 'login?' + querystring.stringify({ 'source': req.originalUrl });
-        jsh.Redirect302(res, loginurl);
+        req.isAuthenticated = false;
+        return next();
       }
     });
+  });
+  bindApps(siteConfig.privateoptional_apps);
+  router.all('*', function(req, res, next){
+    if(!req.isAuthenticated){
+      var loginurl = req.baseurl + 'login?' + querystring.stringify({ 'source': req.originalUrl });
+      jsh.Redirect302(res, loginurl);
+    }
+    else return next();
   });
   router.get('/logout', function (req, res, next) {
     if(!siteConfig.auth){ jsh.Log.error('Auth not configured in config'); return next(); }
@@ -149,10 +166,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
       _: _
     }));
   });
-  for (var i = 0; i < siteConfig.private_apps.length; i++) {
-    var app = siteConfig.private_apps[i];
-    for (var j in app) router.all(j, app[j].bind(jsh.AppSrv));
-  }
+  bindApps(siteConfig.private_apps);
   for(var stylusName in jsh.Stylus){
     handleStylus(jsh, siteid, router, stylusName, { public: false });
   }
@@ -505,13 +519,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     }
     return next();
   });
-  for (var i = 0; i < siteConfig.catchall_apps.length; i++) {
-    var app = siteConfig.catchall_apps[i];
-    for (var j in app){
-      if(app[j].route){ router.use(j, app[j]); }
-      else router.all(j, app[j].bind(jsh.AppSrv));
-    }
-  }
+  bindApps(siteConfig.catchall_apps);
   
   return router;
 };
