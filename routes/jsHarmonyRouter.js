@@ -81,6 +81,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     if(jsh && jsh.Config && jsh.Config.debug_params && jsh.Config.debug_params.delay_requests) setTimeout(next, jsh.Config.debug_params.delay_requests);
     else next();
   });
+  bindApps(siteConfig.public_apps);
   router.route('/login').all(function (req, res, next) {
     if(!siteConfig.auth){ jsh.Log.error('Auth not configured in config'); return next(); }
     (siteConfig.auth.onRenderLogin || jsh.RenderLogin).call(jsh, req, res, function (rslt) {
@@ -99,7 +100,6 @@ var jsHarmonyRouter = function (jsh, siteid) {
       if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Reset Password', body: rslt, menudata: {}, selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
-  bindApps(siteConfig.public_apps);
   for(var stylusName in jsh.Stylus){
     handleStylus(jsh, siteid, router, stylusName, { public: true });
   }

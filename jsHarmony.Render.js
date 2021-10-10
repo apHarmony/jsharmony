@@ -295,6 +295,7 @@ exports.Gen404 = function (req, res, options) {
   res.type('txt').send('Not found');
 };
 
+exports.Redirect301 = Helper.Redirect301;
 exports.Redirect302 = Helper.Redirect302;
 exports.RenderLogin = require('./render/RenderLogin.js');
 exports.RenderLoginForgotPassword = require('./render/RenderLoginForgotPassword.js');
