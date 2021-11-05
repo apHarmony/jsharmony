@@ -307,6 +307,7 @@ jsHarmony.prototype.BindEvents = function(){
 jsHarmony.prototype.Init = function(){
   var _this = this;
   if(_this.root.find('body').length) _this.root = _this.root.find('body');
+  if(_this.XExt.isMobile()) _this.root.find('.xmain').addClass('xmain_mobile');
   _this.InitFileUpload();
   this.imageLoader = new this.XImageLoader();
 	this.imageLoader.loadqueue = new Array(

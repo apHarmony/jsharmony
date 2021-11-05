@@ -1413,6 +1413,12 @@ exports = module.exports = function(jsh){
     return rslt;
   }
 
+  XExt.isMobile = function(userAgent){
+    if(typeof userAgent == 'undefined') userAgent = navigator.userAgent;
+    userAgent = (userAgent||'').toLowerCase();
+    return (/android|iphone|ipad|ipod|blackberry|iemobile|opera mini|webos|mobi/i.test(userAgent));
+  }
+
   XExt.getJSLocals = function(modelid){
     modelid = XExt.resolveModelID(modelid);
     var rslt = jsh.jslocals;

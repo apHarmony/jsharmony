@@ -401,8 +401,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     return jsh.RenderEJS(jsh.GetEJS(view),ejsparams);
   }
 
-  jsh.RenderViewAsync = async function(view,ejsparams){
-    return await jsh.RenderEJSAsync(jsh.GetEJS(view),ejsparams);
+  jsh.RenderViewAsync = function(view,ejsparams){
+    return jsh.RenderEJSAsync(jsh.GetEJS(view),ejsparams);
   }
 
   jsh.RenderEJS = function(code,ejsparams){
@@ -410,9 +410,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     return jsh.ejs.render(code,ejsparams);
   }
 
-  jsh.RenderEJSAsync = async function(code,ejsparams){
-    if(!code) return '';
-    return await jsh.ejs.render(code,ejsparams, { async: true });
+  jsh.RenderEJSAsync = function(code,ejsparams){
+    if(!code) return Promise.resolve('');
+    return jsh.ejs.render(code,ejsparams, { async: true });
   }
 
   jsh.GetModel = function(modelid,d,onComplete,onFail){

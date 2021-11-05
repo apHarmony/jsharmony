@@ -49,9 +49,10 @@ MAIN ELEMENTS
 <%-rootcss%> h1{
 	font-family: 'PT Sans', arial, helvetica, sans-serif;
 	color:#555;
-	font-size:24px;
-	margin:0;
-	padding:0 0 19px 0;
+  font-size:24px;
+  line-height:1.2;
+	margin:-5px 0 0 0;
+	padding:0 0 14px 0;
 	font-weight:normal;
 }
 <%-rootcss%> h2{
@@ -113,7 +114,7 @@ HEADER AND TOP BUTTONS
 */
 <%-rootcss%> .xmain{
   width:100%;
-	min-width:1024px;
+	min-width:360px;
   position:relative;
   display:inline-block;
 }
@@ -518,6 +519,42 @@ MENU STYLES
 <%-rootcss%> .xhead .xtoplinks:before{
   border-top-color:#1d4b87;
 }
+
+
+/*
+==========
+RESPONSIVE
+==========
+*/
+@media screen and (max-width: 500px) {
+  <%-rootcss%> .xhead {
+    margin-top:23px;
+  }
+  <%-rootcss%> .xbody {
+    margin-top:23px;
+  }
+  <%-rootcss%> .xhead .xtoplinks {
+    margin-top:-23px;
+    width:100%;
+    text-align:right;
+  }
+  <%-rootcss%> .xhead .xtoplinks:before {
+    content:none;
+  }
+  <%-rootcss%> .xhead .xtoplinks_corner,
+  <%-rootcss%> .xhead .xtoplinks_desc_app {
+    display:none;
+  }
+  <%-rootcss%> .xmenuhorizontal .xmenu_more_bg {
+    padding-top:54px;
+    padding-bottom:19px;
+  }
+  <%-rootcss%> .xmenuhorizontal .xmenu a.xmenu_more {
+    background-position-y: 59px;
+    border-left:0;
+  }
+}
+
 
 /*
 ================

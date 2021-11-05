@@ -33,6 +33,11 @@ for(var i=0;i<model.fields.length;i++){
   if(field.block){ %><div class="xform_block <%=field.blockclass%>" style="<%=field.blockstyle%>"><% }
   var controlclass = (field.controlclass||'');
   if(field.focus) controlclass += ' xforcefocus';
+  var addNoWrap = !!field.nowrap;
+  if((typeof field.nowrap == 'undefined') || (field.nowrap=='auto')){
+    addNoWrap = ((field.control!='subform') && (field.control!='hidden')) && (field.control != 'html') && ((('caption' in field) && (field.caption)) || (model.onecolumn && leadingfield));
+  }
+  if(addNoWrap){ %><span class="xform_nowrap"><% }
   if((field.control!='subform') && (field.control!='hidden')){
     var captionclass = 'xform_caption '+(field.captionclass||'');
     if((field.control=='textarea')||(field.control=='textzoom')) captionclass += ' xform_caption_textarea';
@@ -40,7 +45,7 @@ for(var i=0;i<model.fields.length;i++){
     else if(field.control=='image') captionclass += ' xform_caption_image';
     else if(field.control=='checkbox') captionclass += ' xform_caption_checkbox';
     else if(field.control=='tagbox') captionclass += ' xform_caption_tagbox';
-    if(('caption' in field) && (field.caption)) { 
+    if(('caption' in field) && (field.caption)) {
       var caption_onclick = '';
       var captioncolon = '';
       if(field.captioncolon){
@@ -170,6 +175,7 @@ for(var i=0;i<model.fields.length;i++){
     <%
   }
   if(field.hints){ %><a href="#" data-id="<%=field.name%>_xhints" class="<%=field.name%>_xhints xform_ctrl xhints icon" data-model="<%=model.id%>" onclick="(function(){<%-jslocals%> var jctrl = <%-instance%>.$(this).prev('.<%=field.name%>'); <%-instance%>.XExt.ShowHints(xmodel.controller.getLOV('<%=field.name%>'),'<%=(field.hints&&field.hints.caption)||('Add '+(field.caption_ext||field.caption))%>',{readonly:!jctrl.hasClass('editable')},function(rslt){ if(!rslt || !rslt.length) return; var prevval = jctrl.val().trim();  if(prevval) rslt.unshift(jctrl.val()); <%-instance%>.XExt.setFormControl(<%-instance%>.XExt.getForm('<%=model.id%>'),'<%=field.name%>',rslt.join('<%=field.hints.separator%>')); jctrl.focus(); }); }).call(this); return false;"><img src="<%-jsh._PUBLICURL%>images/icon_wand.png" /></a> <% }
+  if(addNoWrap){ %></span><% }
   if(field.block){ %></div><% }
   prev_block = !!field.block;
   if(field.eol){ %><br/><% }

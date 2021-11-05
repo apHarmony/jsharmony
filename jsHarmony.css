@@ -44,7 +44,12 @@ BODY
 */
 <%-rootcss%> .xbody {
 	position:relative;
-	display:inline-block;
+  display:inline-block;
+}
+<%-rootcss%> .xmain_mobile .xbody {
+  box-sizing:border-box;
+  max-width:100vw;
+  overflow-x:scroll;
 }
 <%-(rootcss||'body')%>.popup .xbody {
   display:block;
@@ -62,7 +67,8 @@ BODY
 	padding-bottom:0px;
 	top:-5px;
 	right:0px;
-	float:right;
+  float:right;
+  max-width: 100%;
 /*	left:638px;*/
 }
 <%-rootcss%> .xactions.auxtop {
@@ -172,6 +178,9 @@ BODY
 }
 <%-rootcss%> .xtabcontrol {
 	display:block;
+}
+<%-rootcss%> .xform_nowrap {
+  white-space:nowrap;
 }
 <%-rootcss%> .xform_caption {
   display:inline-block;
@@ -1254,14 +1263,36 @@ NOTIFICATION BOXES
 <%-rootcss%> .uie8 .notification { font-family: 'Open Sans Bold', sans-serif; }
 
 /*
-================
-PRINT STYLESHEET
-================
+==========
+RESPONSIVE
+==========
+*/
+@media screen and (max-width: 500px) {
+  <%-rootcss%> .xactions.top,
+  <%-rootcss%> .xactions.auxtop,
+  <%-rootcss%> .xactions.secondaryform,
+  <%-rootcss%> .xactions.secondarygrid {
+    float:none;
+    right:auto;
+    display:block;
+    padding-left:4px;
+    padding-bottom:5px;
+  }
+  <%-rootcss%> .xactions a {
+    margin-left:0;
+    margin-right:15px;
+  }
+}
+
+/*
+=====
+PRINT
+=====
 */
 @media print {
   <%-rootcss%> .xactions { display:none !important; visibility:hidden !important; }
   <%-rootcss%> .xhead { display:none; }
   <%-rootcss%> .xbody,
   <%-rootcss%> .xmain { display:block !important; }
-  <%-rootcss%> .xbody { margin-top:0px !important; }
+  <%-rootcss%> .xbody { top:0px !important; margin-top:0px !important; }
 }

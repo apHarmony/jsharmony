@@ -84,7 +84,7 @@ HEADER AND TOP BUTTONS
 */
 <%-rootcss%> .xmain{
   width:100%;
-	min-width:1024px;
+	min-width:360px;
   position:relative;
   display:inline-block;
 }
