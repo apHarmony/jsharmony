@@ -404,6 +404,7 @@ jsHarmony.prototype.requireFolder = function(fpath,desc){
   }
 };
 
+jsHarmony.prototype.getPrototype = function(){ return jsHarmony; };
 jsHarmony.prototype.Auth = require('./lib/Auth.js');
 jsHarmony.prototype.AppSrvClass = AppSrv;
 jsHarmony.Auth = jsHarmony.prototype.Auth;

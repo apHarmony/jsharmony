@@ -759,8 +759,17 @@ exports.SendBaseEmail = function (dbcontext, email_subject, email_text, email_ht
   catch (e) {
     return callback(e);
   }
-  mparams.subject = ejs.render(mparams.subject, { data: params, _: _ });
+  mparams.subject = ejs.render(mparams.subject, { data: params, _: _, moment: moment });
   _this.SendEmail(mparams, callback);
+}
+
+exports.createFunction = function (script, args, desc){
+  try {
+    return Function.prototype.bind.apply(Function, [null].concat(args||[]).concat([script]))();
+  }
+  catch(ex){
+    throw new Error('Error creating function '+desc+': '+ex.toString()+'\n:: in ::\n'+script);
+  }
 }
 
 exports.SendEmail = function (mparams,callback){

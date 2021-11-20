@@ -36,12 +36,22 @@ exports.getReport = function (req, res, fullmodelid, Q, P, callback) {
     HelperFS.getFileStats(req, res, tmppath, function (err, stat) {
       if (err != null) return dispose();
       var fsize = stat.size;
-      //Get MIME type
-      res.writeHead(200, {
-        'Content-Type': 'application/pdf',
-        'Content-Length': stat.size,
-        'Content-Disposition': 'filename = ' + encodeURIComponent(fullmodelid + '.pdf')
-      });
+      var model = _this.jsh.getModel(req, fullmodelid);
+      //Send MIME type
+      if(model.format=='xlsx'){
+        res.writeHead(200, {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Length': fsize,
+          'Content-Disposition': 'filename = ' + encodeURIComponent(fullmodelid + '.xlsx')
+        });
+      }
+      else {
+        res.writeHead(200, {
+          'Content-Type': 'application/pdf',
+          'Content-Length': fsize,
+          'Content-Disposition': 'filename = ' + encodeURIComponent(fullmodelid + '.pdf')
+        });
+      }
       var rs = fs.createReadStream(tmppath);
       rs.pipe(res).on('finish', function () { dispose(); });
     });

@@ -282,7 +282,7 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir, modu
     prependPropFile('onroute',modelpathbase + '.onroute.js');
   }
   if (!('helpid' in model) && !('inherits' in model)) model.helpid = modelname;
-  if ('onroute' in model) model.onroute = (new Function('routetype', 'req', 'res', 'callback', 'require', 'jsh', 'modelid', 'params', model.onroute));
+  if ('onroute' in model) model.onroute = _this.createFunction(model.onroute, ['routetype', 'req', 'res', 'callback', 'require', 'jsh', 'modelid', 'params'], model.id+' model.onroute');
   //Check if model inherits self - if so, add to _transforms
   if((modelname in this.Models) && model.inherits){
     var parentModel = _this.getModel(null,model.inherits,model);
@@ -1046,6 +1046,12 @@ exports.ParseEntities = function () {
         else if((model.layout == 'grid') || (model.layout == 'multisel')) model.title = model.caption[2];
         else model.title = model.caption[1];
       }
+    }
+    if(model.layout=='report'){
+      if(!('format' in model)) model.format = 'pdf';
+      if(!_.includes(['pdf','xlsx'], model.format)) _this.LogInit_ERROR(model.id + ': Unsupported report format: ' + model.format);
+      if('onrender' in model) model.onrender = _this.createFunction(model.onrender, ['report', 'callback', 'require', 'jsh', 'modelid'], model.id+' model.onrender');
+      if('onrendered' in model) model.onrendered = _this.createFunction(model.onrendered, ['report', 'callback', 'require', 'jsh', 'modelid'], model.id+' model.onrendered');
     }
     if (!('ejs' in model)) model.ejs = '';
     if (!('header' in model)) model.header = '';
@@ -1907,10 +1913,10 @@ exports.ParseEntities = function () {
     var _v_model = [
       'comment', 'layout', 'title', 'table', 'actions', 'roles', 'caption', 'sort', 'dev', 'sites', 'class', 'using',
       'samplerepeat', 'menu', 'id', 'idmd5', '_inherits', '_transforms', '_referencedby', '_parentbindings', '_childbindings', '_parentmodels', '_auto', '_sysconfig', '_dbdef', 'groups', 'helpid', 'querystring', 'buttons', 'xvalidate', 'task', 'source_files_prefix',
-      'pagesettings', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
+      'pagesettings', 'format', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_search', 'default_search', 'grid_static', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
-      'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'onrowunbind', 'ondestroy', 'onchange', 'getapi',
+      'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'onrowunbind', 'ondestroy', 'onchange', 'getapi', 'onrender', 'onrendered',
       'js', 'jslib', 'ejs', 'header', 'css', 'dberrors', 'tablestyle', 'tableclass', 'formstyle', 'formclass', 'popup', 'onloadimmediate', 'sqlwhere', 'sqlwhere_disabled_on_insert', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlgetinsertkeys', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
       'path', 'module', 'templates', 'db', 'onecolumn', 'namespace',

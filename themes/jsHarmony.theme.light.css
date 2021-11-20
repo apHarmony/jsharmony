@@ -392,7 +392,7 @@ MENU STYLES
   border-left:1px solid #00000033;
 }
 <%-rootcss%> .xmenuhorizontal .xmenu_more_bg {
-  padding:43px 22px 20px 28px;
+  padding:43px 20px 20px 26px;
   background-position-y:-5px;
   background-repeat:repeat-x;
 }
@@ -475,10 +475,11 @@ MENU STYLES
   display:block;
   top:-8px;
   right:0px;
-  padding:7px 29px 0 29px;
+  padding:6px 29px 0 30px;
   background-color:#f5f5f5;
   border-left:1px solid #ccc;
-  border-right:1px solid #ccc;
+  border-top:1px solid #ddd;
+  border-bottom:1px solid #ddd;
   height:23px;
   z-index:2;
 }
@@ -547,7 +548,7 @@ RESPONSIVE
   }
   <%-rootcss%> .xmenuhorizontal .xmenu_more_bg {
     padding-top:54px;
-    padding-bottom:19px;
+    padding-bottom:9px;
   }
   <%-rootcss%> .xmenuhorizontal .xmenu a.xmenu_more {
     background-position-y: 59px;

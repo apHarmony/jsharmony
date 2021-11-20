@@ -123,6 +123,7 @@ AppSrvRpt.prototype.batchReport = function (req, res, db, dbcontext, model, sql_
   var jsh = thisapp.jsh;
   var _this = this;
   if(!model.batch || !model.batch.sql) return errorHandler(-6, 'Batch reports require model.batch.sql');
+  if(model.format != 'pdf') return errorHandler(-6, 'Batch reports requires model.format "pdf"');
 
   //Parameters should already be validated
 
@@ -389,6 +390,355 @@ AppSrvRpt.prototype.genReportContent = function(req, res, fullmodelid, params, d
   return rslt;
 }
 
+AppSrvRpt.prototype.genReportPdf = function (req, res, fullmodelid, params, data, tmppath, callback) {
+  var _this = this;
+  var jsh = _this.AppSrv.jsh;
+  var model = jsh.getModel(req, fullmodelid);
+  if(!model) throw new Error('Model '+fullmodelid+' not found');
+  if (model.layout !== 'report') throw new Error('Model '+fullmodelid+' is not a report');
+
+  _this.getBrowser(function (err, browser) {
+    var page = null;
+
+    function genReportError(err, source){
+      var rpterr = Helper.NewError("Error occurred during report generation"+(source ? ' - ' + source: '')+" (" + err.toString() + ')', -99999);
+      if (page != null){
+        return page.close()
+          .then(function(){ return callback(rpterr, null); })
+          .catch(function (err) { jsh.Log.error(err); return callback(rpterr, null); });
+      }
+      else return callback(rpterr, null);
+    }
+
+    if(err) return genReportError(err, 'getBrowser');
+
+    try {
+      browser.newPage().then(function (_page) {
+        
+        var tmppdfpath = tmppath + '.pdf';
+        var tmphtmlpath = tmppath + '.html';
+        page = _page;
+        var pagesettings = {
+          format: 'Letter',
+          landscape: false,
+          printBrackground: true,
+          margin: {
+            top: '1cm',
+            bottom: '1cm',
+            left: '1cm',
+            right: '1cm',
+          }
+        };
+        var rptcontent = {};
+        var contentWidth = 0;
+        var contentHeight = 0;
+        var font_css = '';
+        var font_render = [];
+
+        var cancelRender = false;
+        async.waterfall([
+          //model.onrender
+          function(rpt_cb){
+            if(!model.onrender) return rpt_cb();
+            model.onrender({ workbook: workbook, data: data, params: params }, function(err, _cancelRender){
+              cancelRender = _cancelRender;
+              return rpt_cb(err);
+            }, require, jsh, fullmodelid);
+          },
+          //Initialize report
+          function(rpt_cb){
+            if(cancelRender) return rpt_cb();
+
+            rptcontent = _this.genReportContent(req, res, fullmodelid, params, data);
+
+            if ('pagesettings' in model){
+              if(model.pagesettings.width && model.pagesettings.height) delete pagesettings.format;
+              pagesettings = _.extend(pagesettings, model.pagesettings);
+            }
+            pagesettings.path = tmppdfpath;
+
+            var dpi = 96;
+            var default_header = '1cm';//Math.floor(0.4 * dpi) + 'px';
+
+            var headerheight = 0;
+            var footerheight = 0;
+            if(rptcontent.header){
+              pagesettings.displayHeaderFooter = true;
+              pagesettings.headerTemplate = rptcontent.header;
+              headerheight = default_header;
+              if ('headerheight' in model) headerheight = model.headerheight;
+            }
+            if(rptcontent.footer){
+              pagesettings.displayHeaderFooter = true;
+              pagesettings.footerTemplate = rptcontent.footer;
+              footerheight = default_header;
+              if ('footerheight' in model) footerheight = model.footerheight;
+            }
+            if(pagesettings.displayHeaderFooter) pagesettings.footerTemplate = pagesettings.footerTemplate || ' ';
+
+            //page.set('viewportSize',{width:700,height:800},function(){
+            
+            //Calculate page width
+            var marginLeft = 0;
+            var marginRight = 0;
+            var marginTop = 0;
+            var marginBottom = 0;
+            var pageWidth = 1; //px
+            var pageHeight = 1; //px
+            var headerHeightPx = 0;
+            var footerHeightPx = 0;
+            if(pagesettings.margin){
+              var basemargin = pagesettings.margin;
+              if(!basemargin) basemargin = 0;
+              if(_.isString(basemargin)) basemargin = parseUnitsPx(basemargin,dpi);
+              if(_.isNumber(basemargin)){
+                marginLeft = basemargin;
+                marginRight = basemargin;
+                marginTop = basemargin;
+                marginBottom = basemargin;
+              }
+              else {
+                if(basemargin.left) marginLeft = parseUnitsPx(basemargin.left,dpi);
+                if(basemargin.right) marginRight = parseUnitsPx(basemargin.right,dpi);
+                if(basemargin.top) marginTop = parseUnitsPx(basemargin.top,dpi);
+                if(basemargin.bottom) marginBottom = parseUnitsPx(basemargin.bottom,dpi);
+              }
+            }
+            if(pagesettings.format){
+              var fmt = pagesettings.format.toLowerCase();
+              var w = 1;
+              var h = 1;
+              //Width and height in millimeters
+              if(fmt=='a0'){ w = 841; h=1189; }
+              if(fmt=='a1'){ w = 594; h=841; }
+              if(fmt=='a2'){ w = 420; h=594; }
+              if(fmt=='a3'){ w = 297; h=420; }
+              else if(fmt=='a4'){ w=210; h=297; }
+              else if(fmt=='a5'){ w=148; h=210; }
+              else if(fmt=='a6'){ w=105; h=148; }
+              else if(fmt=='a7'){ w=74; h=105; }
+              else if(fmt=='legal'){ w=215.9; h=355.6; }
+              else if(fmt=='letter'){ w=215.9; h=279.4; }
+              else if(fmt=='tabloid'){ w=279.4; h=431.8; }
+              else if(fmt=='ledger'){ w=279.4; h=431.8; }
+              else return jsh.Log.error('Invalid report format: '+pagesettings.format)
+              if(pagesettings.landscape){
+                _w = w;
+                w = h;
+                h = _w;
+              }
+              //Width and height in pixels
+              pageWidth = (w / (25.4)) * dpi;
+              pageHeight = (h / (25.4)) * dpi;
+            }
+            if(pagesettings.width) pageWidth = parseUnitsPx(pagesettings.width,dpi);
+            if(pagesettings.height) pageHeight = parseUnitsPx(pagesettings.height,dpi);
+            if(headerheight) headerHeightPx = parseUnitsPx(headerheight,dpi);
+            if(footerheight) footerHeightPx = parseUnitsPx(footerheight,dpi);
+
+            contentWidth = pageWidth - marginLeft - marginRight;
+            contentHeight = pageHeight - marginTop - marginBottom - headerHeightPx - footerHeightPx;
+            if (jsh.Config.debug_params.report_debug) { jsh.Log.debug('Calculated Page Size: '+contentHeight + 'x'+contentWidth); }
+
+            pagesettings.margin = {
+              top: (marginTop+headerHeightPx)+'px',
+              right: marginRight+'px',
+              bottom: (marginBottom+footerHeightPx)+'px',
+              left: marginLeft+'px',
+            }
+            if(pagesettings.headerTemplate){
+              pagesettings.headerTemplate = '<style type="text/css">#header{ padding:'+Math.round(marginTop*_HEADER_ZOOM)+'px '+Math.round(marginRight*_HEADER_ZOOM)+'px '+Math.round(marginBottom*_HEADER_ZOOM)+'px '+Math.round(marginLeft*_HEADER_ZOOM)+'px; -webkit-print-color-adjust: exact; }</style><div style="position:absolute;width:'+(contentWidth)+'px;font-size:12px;transform: scale('+_HEADER_ZOOM+'); transform-origin: top left;">'+pagesettings.headerTemplate+'</div>';
+            }
+            if(pagesettings.footerTemplate){
+              pagesettings.footerTemplate = '<style type="text/css">#footer{ padding:'+Math.round(marginTop*_HEADER_ZOOM)+'px '+Math.round(marginRight*_HEADER_ZOOM)+'px '+Math.round(marginBottom*_HEADER_ZOOM)+'px '+Math.round(marginLeft*_HEADER_ZOOM)+'px; -webkit-print-color-adjust: exact; }</style><div style="position:absolute;width:'+(contentWidth)+'px;font-size:12px;transform: scale('+_HEADER_ZOOM+'); transform-origin: bottom left;">'+pagesettings.footerTemplate+'</div>';
+            }
+            return rpt_cb();
+          },
+          //Load fonts
+          function(rpt_cb){
+            if(cancelRender) return rpt_cb();
+            var report_fonts = [].concat(jsh.Config.default_report_fonts||[]).concat(model.fonts||[]);
+            jsh.loadFonts(report_fonts, function(err, _font_css){
+              if(err) return jsh.Log.error(err);
+              font_css = _font_css;
+              for(var i=0;i<report_fonts.length;i++){
+                var font = report_fonts[i];
+                var font_str = '';
+                if(font['font-family']) font_str += "font-family:'"+Helper.escapeCSS(font['font-family'].toString())+"';";
+                if(font['font-style']) font_str += "font-style:"+font['font-style'].toString()+";";
+                if(font['font-weight']) font_str += "font-weight:"+font['font-weight'].toString()+";";
+                if(font_str) font_render.push(font_str);
+              }
+              if(font_css){
+                if(pagesettings.headerTemplate) pagesettings.headerTemplate = '<style type="text/css">'+font_css+'</style>' + pagesettings.headerTemplate;
+                if(pagesettings.footerTemplate) pagesettings.footerTemplate = '<style type="text/css">'+font_css+'</style>' + pagesettings.footerTemplate;
+              }
+              return rpt_cb();
+            });
+          },
+          //model.onrendered
+          function(rpt_cb){
+            if(!model.onrendered) return rpt_cb();
+            model.onrendered({ page: page, content: rptcontent, data: data, params: params }, function(err){
+              if(err) return genReportError(err, 'onrendered');
+              return rpt_cb();
+            }, require, jsh, fullmodelid);
+          },
+          //Render
+          function(rpt_cb){
+            if(cancelRender) return rpt_cb();
+
+            //Sets styles and returns document width
+            var onPageLoad = function(font_render,font_css){
+              if(!document||!document.body) return 0;
+              //Load CSS in header
+              var head = document.getElementsByTagName('head');
+              if(head.length) head = head[0];
+              if(head){
+                var css = document.createElement('style');
+                css.type='text/css';
+                css.innerHTML = font_css;
+                head.appendChild(css);
+              }
+              //Add fonts to body (otherwise using them in the page header / footer will cause a Page Crash)
+              if(font_render) for(var i=0;i<font_render.length;i++){
+                var fontElement = document.createElement('div');
+                fontElement.innerHTML = '&nbsp;';
+                fontElement.setAttribute('style', font_render[i]+'visibility:hidden;position:absolute;top:0px;left:0px;');
+                document.body.appendChild(fontElement);
+              }
+              document.body.style['-webkit-print-color-adjust'] = 'exact'; 
+              return document.body.clientWidth; 
+            };
+
+            fs.writeFile(tmphtmlpath, rptcontent.body||'','utf8',function(err){
+              if(err) return jsh.Log.error(err);
+              page.goto('file://'+tmphtmlpath, { timeout: jsh.Config.report_timeout, waitUntil: 'networkidle0' })
+              .then(function(){
+                page.evaluate(onPageLoad, font_render, font_css).then(function(documentWidth){
+                  if(documentWidth && !pagesettings.scale){
+                    var scale = contentWidth * 0.998 / documentWidth;
+                    if(scale < 0.1) scale = 0.1;
+                    if(scale > 1) scale = 1;
+                    pagesettings.scale = scale;
+                  }
+                  return rpt_cb();
+                }).catch(function (err) { genReportError(err, 'onPageLoad'); });
+              }).catch(function (err) { genReportError(err, 'page.goto'); });
+            });
+          },
+          //Save to PDF
+          function(rpt_cb){
+            setTimeout(function(){
+              page.pdf(pagesettings).then(function () {
+                page.close().then(function () {
+                  page = null;
+                  return rpt_cb();
+                }).catch(function (err) { jsh.Log.error(err); return rpt_cb(); });
+              }).catch(function (err) { genReportError(err, 'page.pdf'); });
+            }, (jsh.Config.debug_params.report_interactive ? 500000 : 0));
+          }
+        ], function(err){
+          if(err) return genReportError(err);
+          return callback(null, tmppdfpath);
+        });
+      }).catch(function (err) { genReportError(err, 'browser.newPage'); });
+    } catch (err) {
+      genReportError(err);
+    }
+  }); //, { dnodeOpts: { weak: false } }
+}
+
+AppSrvRpt.prototype.genReportXlsx = function (req, res, fullmodelid, params, data, tmppath, callback) {
+  var _this = this;
+  var jsh = _this.AppSrv.jsh;
+  var model = jsh.getModel(req, fullmodelid);
+  if(!model) throw new Error('Model '+fullmodelid+' not found');
+  if (model.layout !== 'report') throw new Error('Model '+fullmodelid+' is not a report');
+
+  function genReportError(err, source){
+    var rpterr = Helper.NewError("Error occurred during report generation"+(source ? ' - ' + source: '')+" (" + err.toString() + ')', -99999);
+    jsh.Log.error(rpterr);
+    return callback(rpterr, null);
+  }
+
+  var rsltpath = tmppath + '.xlsx';
+  jsh.Extensions.report.getExcelJS(function(err, excelJS){
+    if(err) return genReportError(err);
+    try{
+      //Create workbook
+      var cancelRender = false;
+      var workbook = new excelJS.Workbook();
+      async.waterfall([
+        //model.onrender
+        function(rpt_cb){
+          if(!model.onrender) return rpt_cb();
+          model.onrender({ workbook: workbook, data: data, params: params }, function(err, _cancelRender){
+            cancelRender = _cancelRender;
+            return rpt_cb(err);
+          }, require, jsh, fullmodelid);
+        },
+        //Generate worksheets
+        function(rpt_cb){
+          if(cancelRender) return rpt_cb();
+          async.eachOfSeries(data, function(rsData, rsName, rs_cb){
+            try{
+              //Create worksheet
+              var worksheet = workbook.addWorksheet(rsName);
+              //Add Data
+              if(rsData && rsData.length){
+                var cols = _.keys(rsData[0]);
+                worksheet.addRow(cols);
+                _.each(rsData, function(row){ worksheet.addRow(_.values(row)); });
+                if(cols.length){
+                  //AutoFilter
+                  worksheet.autoFilter = {
+                    from: { row: 1, column: 1 },
+                    to: { row: 1, column: cols.length },
+                  };
+                }
+              }
+              //AutoSize
+              _.each(worksheet.columns, function(col){
+                var maxlen = 10;
+                col.eachCell({ includeEmpty: true }, function(cell){
+                  var len = 0;
+                  if(_.isDate(cell.value)) len = 15;
+                  else len = (cell.value||'').toString().length + 3;
+                  if(len > 100) len = 100;
+                  if(len > maxlen) maxlen = len;
+                });
+                col.width = maxlen;
+              });
+            }
+            catch(ex){
+              return genReportError(ex, "Sheet "+rsName);
+            }
+            return rs_cb();
+          }, rpt_cb);
+        },
+        //model.onrendered
+        function(rpt_cb){
+          if(!model.onrendered) return rpt_cb();
+          model.onrendered({ workbook: workbook, data: data, params: params }, rpt_cb, require, jsh, fullmodelid);
+        },
+        //Save to disk
+        function(rpt_cb){
+          workbook.xlsx.writeFile(rsltpath)
+            .then(function(){ return rpt_cb(); })
+            .catch(function(err){ return rpt_cb(err); });
+        },
+      ], function(err){
+        if(err) return genReportError(ex);
+        return callback(null, rsltpath);
+      });
+    }
+    catch(ex){
+      return genReportError(ex);
+    }
+  });
+}
+
 AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, done) {
   var _this = this;
   var jsh = _this.AppSrv.jsh;
@@ -402,220 +752,20 @@ AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, d
     HelperFS.clearFiles(report_folder, jsh.Config.public_temp_expiration, -1, function () {
       tmp.file({ dir: report_folder }, function (tmperr, tmppath, tmpfd) {
         if (tmperr) throw tmperr;
-        _this.getBrowser(function (err, browser) {
-          var page = null;
-
-          function genReportError(err, source){
-            var rpterr = Helper.NewError("Error occurred during report generation"+(source ? ' - ' + source: '')+" (" + err.toString() + ')', -99999);
-            if (page != null){
-              return page.close()
-                .then(function(){ return done(rpterr, null); })
-                .catch(function (err) { jsh.Log.error(err); return done(rpterr, null); });
-            }
-            else return done(rpterr, null);
-          }
-
-          if(err) return genReportError(err, 'getBrowser');
-
-          try {
-            browser.newPage().then(function (_page) {
-              var tmppdfpath = tmppath + '.pdf';
-              var tmphtmlpath = tmppath + '.html';
-              page = _page;
-
-              var rptcontent = _this.genReportContent(req, res, fullmodelid, params, data);
-
-              var pagesettings = {
-                format: 'Letter',
-                landscape: false,
-                printBrackground: true,
-                margin: {
-                  top: '1cm',
-                  bottom: '1cm',
-                  left: '1cm',
-                  right: '1cm',
-                }
-              };
-              if ('pagesettings' in model){
-                if(model.pagesettings.width && model.pagesettings.height) delete pagesettings.format;
-                pagesettings = _.extend(pagesettings, model.pagesettings);
-              }
-              pagesettings.path = tmppdfpath;
-
-              var dpi = 96;
-              var default_header = '1cm';//Math.floor(0.4 * dpi) + 'px';
-
-              var headerheight = 0;
-              var footerheight = 0;
-              if(rptcontent.header){
-                pagesettings.displayHeaderFooter = true;
-                pagesettings.headerTemplate = rptcontent.header;
-                headerheight = default_header;
-                if ('headerheight' in model) headerheight = model.headerheight;
-              }
-              if(rptcontent.footer){
-                pagesettings.displayHeaderFooter = true;
-                pagesettings.footerTemplate = rptcontent.footer;
-                footerheight = default_header;
-                if ('footerheight' in model) footerheight = model.footerheight;
-              }
-              if(pagesettings.displayHeaderFooter) pagesettings.footerTemplate = pagesettings.footerTemplate || ' ';
-
-              //page.set('viewportSize',{width:700,height:800},function(){
-              
-              //Calculate page width
-              var marginLeft = 0;
-              var marginRight = 0;
-              var marginTop = 0;
-              var marginBottom = 0;
-              var pageWidth = 1; //px
-              var pageHeight = 1; //px
-              var headerHeightPx = 0;
-              var footerHeightPx = 0;
-              if(pagesettings.margin){
-                var basemargin = pagesettings.margin;
-                if(!basemargin) basemargin = 0;
-                if(_.isString(basemargin)) basemargin = parseUnitsPx(basemargin,dpi);
-                if(_.isNumber(basemargin)){
-                  marginLeft = basemargin;
-                  marginRight = basemargin;
-                  marginTop = basemargin;
-                  marginBottom = basemargin;
-                }
-                else {
-                  if(basemargin.left) marginLeft = parseUnitsPx(basemargin.left,dpi);
-                  if(basemargin.right) marginRight = parseUnitsPx(basemargin.right,dpi);
-                  if(basemargin.top) marginTop = parseUnitsPx(basemargin.top,dpi);
-                  if(basemargin.bottom) marginBottom = parseUnitsPx(basemargin.bottom,dpi);
-                }
-              }
-              if(pagesettings.format){
-                var fmt = pagesettings.format.toLowerCase();
-                var w = 1;
-                var h = 1;
-                //Width and height in millimeters
-                if(fmt=='a0'){ w = 841; h=1189; }
-                if(fmt=='a1'){ w = 594; h=841; }
-                if(fmt=='a2'){ w = 420; h=594; }
-                if(fmt=='a3'){ w = 297; h=420; }
-                else if(fmt=='a4'){ w=210; h=297; }
-                else if(fmt=='a5'){ w=148; h=210; }
-                else if(fmt=='a6'){ w=105; h=148; }
-                else if(fmt=='a7'){ w=74; h=105; }
-                else if(fmt=='legal'){ w=215.9; h=355.6; }
-                else if(fmt=='letter'){ w=215.9; h=279.4; }
-                else if(fmt=='tabloid'){ w=279.4; h=431.8; }
-                else if(fmt=='ledger'){ w=279.4; h=431.8; }
-                else return jsh.Log.error('Invalid report format: '+pagesettings.format)
-                if(pagesettings.landscape){
-                  _w = w;
-                  w = h;
-                  h = _w;
-                }
-                //Width and height in pixels
-                pageWidth = (w / (25.4)) * dpi;
-                pageHeight = (h / (25.4)) * dpi;
-              }
-              if(pagesettings.width) pageWidth = parseUnitsPx(pagesettings.width,dpi);
-              if(pagesettings.height) pageHeight = parseUnitsPx(pagesettings.height,dpi);
-              if(headerheight) headerHeightPx = parseUnitsPx(headerheight,dpi);
-              if(footerheight) footerHeightPx = parseUnitsPx(footerheight,dpi);
-
-              var contentWidth = pageWidth - marginLeft - marginRight;
-              var contentHeight = pageHeight - marginTop - marginBottom - headerHeightPx - footerHeightPx;
-              if (jsh.Config.debug_params.report_debug) { jsh.Log.debug('Calculated Page Size: '+contentHeight + 'x'+contentWidth); }
-
-              pagesettings.margin = {
-                top: (marginTop+headerHeightPx)+'px',
-                right: marginRight+'px',
-                bottom: (marginBottom+footerHeightPx)+'px',
-                left: marginLeft+'px',
-              }
-              if(pagesettings.headerTemplate){
-                pagesettings.headerTemplate = '<style type="text/css">#header{ padding:'+Math.round(marginTop*_HEADER_ZOOM)+'px '+Math.round(marginRight*_HEADER_ZOOM)+'px '+Math.round(marginBottom*_HEADER_ZOOM)+'px '+Math.round(marginLeft*_HEADER_ZOOM)+'px; -webkit-print-color-adjust: exact; }</style><div style="position:absolute;width:'+(contentWidth)+'px;font-size:12px;transform: scale('+_HEADER_ZOOM+'); transform-origin: top left;">'+pagesettings.headerTemplate+'</div>';
-              }
-              if(pagesettings.footerTemplate){
-                pagesettings.footerTemplate = '<style type="text/css">#footer{ padding:'+Math.round(marginTop*_HEADER_ZOOM)+'px '+Math.round(marginRight*_HEADER_ZOOM)+'px '+Math.round(marginBottom*_HEADER_ZOOM)+'px '+Math.round(marginLeft*_HEADER_ZOOM)+'px; -webkit-print-color-adjust: exact; }</style><div style="position:absolute;width:'+(contentWidth)+'px;font-size:12px;transform: scale('+_HEADER_ZOOM+'); transform-origin: bottom left;">'+pagesettings.footerTemplate+'</div>';
-              }
-
-              var report_fonts = [].concat(jsh.Config.default_report_fonts||[]).concat(model.fonts||[]);
-              jsh.loadFonts(report_fonts, function(err, font_css){
-                if(err) return jsh.Log.error(err);
-                var font_render = [];
-                for(var i=0;i<report_fonts.length;i++){
-                  var font = report_fonts[i];
-                  var font_str = '';
-                  if(font['font-family']) font_str += "font-family:'"+Helper.escapeCSS(font['font-family'].toString())+"';";
-                  if(font['font-style']) font_str += "font-style:"+font['font-style'].toString()+";";
-                  if(font['font-weight']) font_str += "font-weight:"+font['font-weight'].toString()+";";
-                  if(font_str) font_render.push(font_str);
-                }
-                if(font_css){
-                  if(pagesettings.headerTemplate) pagesettings.headerTemplate = '<style type="text/css">'+font_css+'</style>' + pagesettings.headerTemplate;
-                  if(pagesettings.footerTemplate) pagesettings.footerTemplate = '<style type="text/css">'+font_css+'</style>' + pagesettings.footerTemplate;
-                }
-
-                //Sets styles and returns document width
-                var onPageLoad = function(font_render,font_css){ 
-                  if(!document||!document.body) return 0;
-                  //Load CSS in header
-                  var head = document.getElementsByTagName('head');
-                  if(head.length) head = head[0];
-                  if(head){
-                    var css = document.createElement('style');
-                    css.type='text/css';
-                    css.innerHTML = font_css;
-                    head.appendChild(css);
-                  }
-                  //Add fonts to body (otherwise using them in the page header / footer will cause a Page Crash)
-                  if(font_render) for(var i=0;i<font_render.length;i++){
-                    var fontElement = document.createElement('div');
-                    fontElement.innerHTML = '&nbsp;';
-                    fontElement.setAttribute('style', font_render[i]+'visibility:hidden;position:absolute;top:0px;left:0px;');
-                    document.body.appendChild(fontElement);
-                  }
-                  document.body.style['-webkit-print-color-adjust'] = 'exact'; 
-                  return document.body.clientWidth; 
-                };
-
-                fs.writeFile(tmphtmlpath, rptcontent.body||'','utf8',function(err){
-                  if(err) return jsh.Log.error(err);
-                  page.goto('file://'+tmphtmlpath, { timeout: jsh.Config.report_timeout, waitUntil: 'networkidle0' })
-                  .then(function(){
-                    page.evaluate(onPageLoad, font_render, font_css).then(function(documentWidth){
-                      if(documentWidth && !pagesettings.scale){
-                        var scale = contentWidth * 0.998 / documentWidth;
-                        if(scale < 0.1) scale = 0.1;
-                        if(scale > 1) scale = 1;
-                        pagesettings.scale = scale;
-                      }
-                      setTimeout(function(){
-                        page.pdf(pagesettings).then(function () {
-                          // *** Be sure to call dispose independently of the callback, because dispose may fail, but it should not be treated as a critical failure
-                          var dispose = function (disposedone) {
-                            page.close().then(function () {
-                              page = null;
-                              fs.close(tmpfd, function () {
-                                fs.unlink(tmphtmlpath, function (err) {
-                                  fs.unlink(tmppath, function (err) {
-                                    if (disposedone) disposedone();
-                                  });
-                                });
-                              });
-                            }).catch(function (err) { jsh.Log.error(err); if (disposedone) disposedone(); });
-                          };
-                          done(null, tmppdfpath, dispose, data);
-                        }).catch(function (err) { genReportError(err, 'page.pdf'); });
-                      }, (jsh.Config.debug_params.report_interactive ? 500000 : 0));
-                    }).catch(function (err) { genReportError(err, 'onPageLoad'); });
-                  }).catch(function (err) { genReportError(err, 'page.goto'); });
+        var reportFunc = (model.format == 'xlsx' ? _this.genReportXlsx : _this.genReportPdf);
+        reportFunc.call(_this, req, res, fullmodelid, params, data, tmppath, function(err, rsltpath){
+          if(err) return done(err, null);
+          var dispose = function (disposedone) {
+            fs.close(tmpfd, function () {
+              fs.unlink(rsltpath, function (err) {
+                fs.unlink(tmppath, function (err) {
+                  if (disposedone) disposedone();
                 });
               });
-            }).catch(function (err) { genReportError(err, 'browser.newPage'); });
-          } catch (err) {
-            genReportError(err);
-          }
-        }); //, { dnodeOpts: { weak: false } }
+            });
+          };
+          return done(null, rsltpath, dispose, data);
+        });
       });
     });
   });

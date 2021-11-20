@@ -33,6 +33,8 @@ function jsHarmonyExtensions(){
   this.report = {
     type: '',
     init: function(callback){ return callback(new Error("Report Extensions have not been enabled.  Please configure jsh.Extensions.report")); },
+    excelJS: function(){ throw new Error("Report Extensions have not been enabled.  Please configure jsh.Extensions.report"); },
+    getExcelJS: function(callback){ return callback(new Error("Report Extensions have not been enabled.  Please configure jsh.Extensions.report")); },
     pdfMerge: function(){ throw new Error("Report Extensions have not been enabled.  Please configure jsh.Extensions.report"); },
     getPdfMerge: function(callback){ return callback(new Error("Report Extensions have not been enabled.  Please configure jsh.Extensions.report")); },
     puppeteer: function(){ throw new Error("Report Extensions have not been enabled.  Please configure jsh.Extensions.report"); },
