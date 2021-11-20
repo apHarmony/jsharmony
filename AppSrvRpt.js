@@ -681,7 +681,10 @@ AppSrvRpt.prototype.genReportXlsx = function (req, res, fullmodelid, params, dat
         //Generate worksheets
         function(rpt_cb){
           if(cancelRender) return rpt_cb();
-          async.eachOfSeries(data, function(rsData, rsName, rs_cb){
+          var sheetNames = [];
+          if(data) sheetNames = _.keys(data).reverse();
+          async.eachSeries(sheetNames, function(rsName, rs_cb){
+            var rsData = data[rsName];
             try{
               //Create worksheet
               var worksheet = workbook.addWorksheet(rsName);
