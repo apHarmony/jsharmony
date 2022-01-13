@@ -39,6 +39,7 @@ function jsHarmonyServer(serverConfig, jsh){
   this.serverConfig = serverConfig||{};
   this.servers = [];
   if(!('add_default_routes' in serverConfig)) serverConfig.add_default_routes = true;
+  this.redirectRouter = null; //Express router for redirect HTTP server
   /*
   serverConfig: {
     add_default_routes: true,
@@ -419,6 +420,8 @@ jsHarmonyServer.prototype.Run = function(cb){
     if(!http_redirect) start_https_server(cb);
     else {
       var redirect_app = express();
+      _this.redirectRouter = express.Router();
+      redirect_app.use(_this.redirectRouter);
       redirect_app.get('*', function (req, res) {
         var hostname = Helper.GetIP(req);
         if(req.headers && req.headers.host){
