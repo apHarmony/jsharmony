@@ -1752,7 +1752,7 @@ exports.ParseEntities = function () {
     }
     
     //Convert mutli-line variables to single string
-    ParseMultiLineProperties(model, ['js', 'jslib', 'sqlselect', 'sqldownloadselect', 'sqlinsert', 'sqlinsertencrypt', 'sqlupdate', 'sqldelete', 'sqlexec', 'sqlwhere', 'sqlgetinsertkeys', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onvalidate', 'onupdate', 'ondestroy', 'oncommit', 'onchange']);
+    ParseMultiLineProperties(model, ['js', 'jslib', 'sqlselect', 'sqldownloadselect', 'sqlinsert', 'sqlinsertencrypt', 'sqlupdate', 'sqldelete', 'sqlexec', 'sqlwhere', 'sqlgetinsertkeys', 'ongetfilename', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onvalidate', 'onupdate', 'ondestroy', 'oncommit', 'onchange']);
     if (model.breadcrumbs) ParseMultiLineProperties(model.breadcrumbs, ['sql']);
     if (model.fields) _.each(model.fields, function (field) {
       ParseMultiLineProperties(field, ['onchange', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlwhere', 'sqlsort', 'sqlsearch', 'sqlsearchsound', 'value']);
@@ -1908,6 +1908,8 @@ exports.ParseEntities = function () {
       });
     }
     _this.validateDisplayLayouts(model);
+    if(model.ongetfilename) model.ongetfilename = _this.createFunction(model.ongetfilename, ['callback', 'xmodel', 'Q', 'P', 'req', 'dbdata'], model.id+' model.ongetfilename');
+
 
     //Validate Model and Field Parameters
     var _v_model = [
@@ -1917,7 +1919,7 @@ exports.ParseEntities = function () {
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_search', 'default_search', 'grid_static', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'onrowunbind', 'ondestroy', 'onchange', 'getapi', 'onrender', 'onrendered',
-      'js', 'jslib', 'ejs', 'header', 'css', 'dberrors', 'tablestyle', 'tableclass', 'formstyle', 'formclass', 'popup', 'onloadimmediate', 'sqlwhere', 'sqlwhere_disabled_on_insert', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
+      'js', 'jslib', 'ejs', 'header', 'css', 'dberrors', 'tablestyle', 'tableclass', 'formstyle', 'formclass', 'popup', 'ongetfilename', 'onloadimmediate', 'sqlwhere', 'sqlwhere_disabled_on_insert', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlgetinsertkeys', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
       'path', 'module', 'templates', 'db', 'onecolumn', 'namespace',
       //Report Parameters

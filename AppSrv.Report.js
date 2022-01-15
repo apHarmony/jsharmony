@@ -29,7 +29,7 @@ exports.getReport = function (req, res, fullmodelid, Q, P, callback) {
   var _this = this;
   if (typeof Q == 'undefined') Q = req.query;
   if (typeof P == 'undefined') P = req.body;
-  if (typeof callback == 'undefined') callback = function (err, tmppath, dispose) {
+  if (typeof callback == 'undefined') callback = function (err, tmppath, dispose, dbdata) {
     if(err){ Helper.GenError(req, res, -99999, err.toString()); return; }
 
     /* Report Done */ 
@@ -37,23 +37,34 @@ exports.getReport = function (req, res, fullmodelid, Q, P, callback) {
       if (err != null) return dispose();
       var fsize = stat.size;
       var model = _this.jsh.getModel(req, fullmodelid);
-      //Send MIME type
-      if(model.format=='xlsx'){
-        res.writeHead(200, {
-          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'Content-Length': fsize,
-          'Content-Disposition': 'filename = ' + encodeURIComponent(fullmodelid + '.xlsx')
-        });
-      }
-      else {
-        res.writeHead(200, {
-          'Content-Type': 'application/pdf',
-          'Content-Length': fsize,
-          'Content-Disposition': 'filename = ' + encodeURIComponent(fullmodelid + '.pdf')
-        });
-      }
-      var rs = fs.createReadStream(tmppath);
-      rs.pipe(res).on('finish', function () { dispose(); });
+      var filename = fullmodelid + (model.format == 'xlsx' ? '.xlsx' : '.pdf');
+      Helper.execif(model.ongetfilename,
+        function(done){
+          model.ongetfilename(function(rslt){
+            if(rslt) filename = rslt.toString();
+            return done();
+          }, model, Q, P, req, dbdata);
+        },
+        function(){
+          //Send MIME type
+          if(model.format=='xlsx'){
+            res.writeHead(200, {
+              'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              'Content-Length': fsize,
+              'Content-Disposition': 'filename = ' + encodeURIComponent(filename)
+            });
+          }
+          else {
+            res.writeHead(200, {
+              'Content-Type': 'application/pdf',
+              'Content-Length': fsize,
+              'Content-Disposition': 'filename = ' + encodeURIComponent(filename)
+            });
+          }
+          var rs = fs.createReadStream(tmppath);
+          rs.pipe(res).on('finish', function () { dispose(); });
+        }
+      );
     });
   }
   
