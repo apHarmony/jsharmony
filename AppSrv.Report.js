@@ -58,7 +58,8 @@ exports.getReport = function (req, res, fullmodelid, Q, P, callback) {
             res.writeHead(200, {
               'Content-Type': 'application/pdf',
               'Content-Length': fsize,
-              'Content-Disposition': 'filename = ' + encodeURIComponent(filename)
+              'Content-Disposition': 'filename = ' + encodeURIComponent(filename),
+              'Cache-Control': 'no-cache',
             });
           }
           var rs = fs.createReadStream(tmppath);
