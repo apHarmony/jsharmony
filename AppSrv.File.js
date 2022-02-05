@@ -202,7 +202,7 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
     var datalockqueries = [];
     var fields = _this.getFieldsByName(model.fields, fieldlist);
     
-    //Add DataLock parameters to SQL 
+    //Add DataLock parameters to SQL
     this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
     //Add keys as SQL parameters
     var keyfield = keys[0];
@@ -371,8 +371,6 @@ exports.ProcessFileOperations = function (keyval, fileops, rslt, stats, callback
     var filedest = '';
     if (fileop.src) filesrc = Helper.ReplaceAll(fileop.src, '%%%KEY%%%', keyval);
     if (fileop.dest) filedest = Helper.ReplaceAll(fileop.dest, '%%%KEY%%%', keyval);
-
-    var allfiles = [];
 
     async.waterfall([
       function(filehandlercb){

@@ -37,7 +37,7 @@ function jsHarmonyModuleTransform(module){
   if(!this.ignore_errors.value) this.ignore_errors.value = {};
 
   this.updateMapping();
-};
+}
 
 jsHarmonyModuleTransform.prototype.hasTransforms = function(){
   if(!_.isEmpty(this.tables)) return true;
@@ -45,7 +45,7 @@ jsHarmonyModuleTransform.prototype.hasTransforms = function(){
   if(!_.isEmpty(this.models)) return true;
   if(!_.isEmpty(this.sql)) return true;
   return false;
-}
+};
 
 jsHarmonyModuleTransform.prototype.Validate = function(){
   var _this = this;
@@ -53,12 +53,12 @@ jsHarmonyModuleTransform.prototype.Validate = function(){
 
   //Check for conflicts on keys
   var allkeys = {};
-  for(var key in _this.sql) allkeys[key] = 'sql';
-  for(var key in _this.fields){
+  for(let key in _this.sql) allkeys[key] = 'sql';
+  for(let key in _this.fields){
     if(!_this.ignore_errors.key[key] && (key in allkeys) && (_this[allkeys[key]][key] != _this.fields[key])){ _this.module.jsh.Log.error('Conflict on key '+key+' between fields and '+allkeys[key]); }
     allkeys[key] = 'fields';
   }
-  for(var key in _this.tables){
+  for(let key in _this.tables){
     if(_this.ignore_errors.key[key]) continue;
     if(!_this.ignore_errors.key[key] && (key in allkeys) && (_this[allkeys[key]][key] != _this.tables[key])){ _this.module.jsh.Log.error('Conflict on key '+key+' between tables and '+allkeys[key]); }
     allkeys[key] = 'table';
@@ -82,7 +82,7 @@ jsHarmonyModuleTransform.prototype.Validate = function(){
     allvalues[val] = 'tables'; 
     allvaluekeys[val] = key;
   });
-}
+};
 
 jsHarmonyModuleTransform.prototype.Add = function(transform, options){
   var _this = this;
@@ -106,7 +106,7 @@ jsHarmonyModuleTransform.prototype.Add = function(transform, options){
     _this.ignore_errors.value = _.extend(_this.ignore_errors.value, transform.ignore_errors.value);
   }
   _this.updateMapping();
-}
+};
 
 jsHarmonyModuleTransform.prototype.updateMapping = function(){
   var mapping = {};
@@ -120,13 +120,13 @@ jsHarmonyModuleTransform.prototype.updateMapping = function(){
       if((key in mapping) && (mapping[key] != _this[elem][key])){
         var errmsg = 'Error: Duplicate key '+key+' in '+_this.module.schema+' transform';
         if(_this.module.jsh) _this.module.jsh.Log.error(errmsg);
-        else console.log(errmsg);
+        else console.log(errmsg); // eslint-disable-line no-console
       }
       mapping[key] = _this[elem][key];
     }
   });
   this.mapping = mapping;
-}
+};
 
 jsHarmonyModuleTransform.prototype.Apply = function(txt, desc){
   var _this = this;
@@ -139,6 +139,6 @@ jsHarmonyModuleTransform.prototype.Apply = function(txt, desc){
   _this.transformTime += (Date.now() - startTime);
   //console.log(_this.transformCount + ' ' + _this.transformTime + ' ' + desc);
   return rslt;
-}
+};
 
 exports = module.exports = jsHarmonyModuleTransform;

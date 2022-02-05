@@ -18,7 +18,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 var _ = require('lodash');
 var ejs = require('ejs');
-var url = require('url');
 var querystring = require('querystring');
 var Helper = require('./lib/Helper.js');
 var ejsext = require('./lib/ejsext.js');
@@ -46,12 +45,12 @@ exports.parseButtons = function (buttons) {
     }
     rsltbtn = _.merge(rsltbtn, button);
     if(!('icon' in rsltbtn) && !('text' in rsltbtn)) rsltbtn.icon = 'ok';
-    if(!rsltbtn.icon) rsltbtn.icon = "ok";
+    if(!rsltbtn.icon) rsltbtn.icon = 'ok';
     if(!('hide_when_target_inaccessible' in rsltbtn)) rsltbtn.hide_when_target_inaccessible = true;
     rslt.push(rsltbtn);
   });
   return rslt;
-}
+};
 
 exports.parseLink = function (target) {
   var action = '';
@@ -131,7 +130,7 @@ exports.parseLink = function (target) {
   }
 
   return { action: action, actionParams: actionParams, modelid: modelid, keys: keys, tabs: tabs, url: url };
-}
+};
 
 exports.parseFieldExpression = function(field, exp, params, options){
   if(!params) params = {};
@@ -158,7 +157,7 @@ exports.parseFieldExpression = function(field, exp, params, options){
   }
 
   return rslt;
-}
+};
 
 // getURL :: Generate a URL for a link, based on the "target" string
 //Button Links
@@ -193,7 +192,7 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
   var tmodel = this.getModel(req, modelid, srcmodel);
   if(!tmodel) throw new Error('Model ' + modelid + ' not found');
   var fullmodelid = tmodel.id;
-  if (!Helper.hasModelAction(req, tmodel, 'BIU')) return "";
+  if (!Helper.hasModelAction(req, tmodel, 'BIU')) return '';
   tabs = typeof tabs !== 'undefined' ? tabs : new Object();
   var rslt = req.baseurl + fullmodelid;
   if(req.curtabs) for(var xmodelid in req.curtabs){
@@ -231,7 +230,7 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
     if (typeof fields !== 'undefined') {
       if (_.size(ptarget.keys) > 0) {
         //Set keyfield, fieldname based on link parameters
-        var ptargetkeys = _.keys(ptarget.keys);
+        let ptargetkeys = _.keys(ptarget.keys);
         if(ptargetkeys.length > 1) throw new Error('Error parsing link target "' + target + '".  Multiple keys not currently supported for file downloads.');
         fieldname = ptargetkeys[0];
         keyfield = ptarget.keys[fieldname];
@@ -259,11 +258,11 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
   if ((action == 'update') || (action == 'insert') || (action == 'browse') || (action == 'select') || (action == 'savenew')) {
     if (action == 'select') { rsltoverride = '#select'; }
     if (_.size(ptarget.keys) > 0) {
-      var ptargetkeys = _.keys(ptarget.keys);
+      let ptargetkeys = _.keys(ptarget.keys);
       for (var i = 0; i < ptargetkeys.length; i++) {
         delete q[ptargetkeys[i]];
         var keyval = ptarget.keys[ptargetkeys[i]];
-        if (!isNaN(keyval)) {}
+        if (!isNaN(keyval)) { /* Do nothing */ }
         else if(keyval && (keyval[0]=="'")){
           keyval = keyval.trim();
           keyval = Helper.escapeHTML(keyval.substr(1,keyval.length-2));
@@ -326,32 +325,31 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
     rslt += '?' + rsltparams;
   }
   return rslt;
-}
+};
 
 //Generates the "onclick" event for a link, based on the field.link property
 exports.getURL_onclick = function (req, model, link) {
-  var seturl = "var url = "+req.jshsite.instance+".$(this).attr('data-url'); if(!url) url = "+req.jshsite.instance+".$(this).attr('href'); if(url=='#') url = ''; if(!url || (url=='mailto:')) return false;";
-  var rslt = req.jshsite.instance+".XExt.navTo(url); return false;";
+  var seturl = 'var url = '+req.jshsite.instance+".$(this).attr('data-url'); if(!url) url = "+req.jshsite.instance+".$(this).attr('href'); if(url=='#') url = ''; if(!url || (url=='mailto:')) return false;";
+  var rslt = req.jshsite.instance+'.XExt.navTo(url); return false;';
   var windowtarget = '_self';
   if (typeof link != 'undefined') {
-    var link = link;
     var ptarget = this.parseLink(link);
     var tmodel = null;
     if(ptarget.url){ /* Do nothing */ }
     else {
       tmodel = this.getModel(req, ptarget.modelid||req.TopModel, model);
-      if (!tmodel) throw new Error("Link Model " + ptarget.modelid + " not found.");
+      if (!tmodel) throw new Error('Link Model ' + ptarget.modelid + ' not found.');
       if (!Helper.hasModelAction(req, tmodel, 'BIU')) return req.jshsite.instance+".XExt.Alert('You do not have access to this form.');return false;";
     }
     if(model && model.layout){
       if ((model.layout == 'form') || (model.layout == 'form-m') || (model.layout == 'exec') || (model.layout == 'report')) {
-        seturl += "var jsh="+req.jshsite.instance+"; var modelid='" + Helper.escapeJS(model.id) + "'; var xmodel=jsh.XModels[modelid]; var xform = xmodel.controller.form; if(xform && xform.Data && !xform.Data.Commit()) return false; url = jsh.XPage.ParseEJS(url,modelid); if(!url || (url=='mailto:')) return false;";
+        seturl += 'var jsh='+req.jshsite.instance+"; var modelid='" + Helper.escapeJS(model.id) + "'; var xmodel=jsh.XModels[modelid]; var xform = xmodel.controller.form; if(xform && xform.Data && !xform.Data.Commit()) return false; url = jsh.XPage.ParseEJS(url,modelid); if(!url || (url=='mailto:')) return false;";
       }
       else if (model.layout == 'grid'){
-        seturl += "var jsh="+req.jshsite.instance+"; var modelid='" + Helper.escapeJS(model.id) + "'; var xmodel=jsh.XModels[modelid]; var xgrid = xmodel.controller.grid; var xform = xmodel.controller.form; var xeditablegrid = xmodel.controller.editablegrid; ";
-        seturl += "if(xeditablegrid && xeditablegrid.CurrentCell && !xform.CommitRow()) return false; ";
-        seturl += "if(xform && xform.Data && !xform.Data.Commit()) return false; ";
-        seturl += "var rowid = jsh.XExt.XModel.GetRowID(modelid, this); ";
+        seturl += 'var jsh='+req.jshsite.instance+"; var modelid='" + Helper.escapeJS(model.id) + "'; var xmodel=jsh.XModels[modelid]; var xgrid = xmodel.controller.grid; var xform = xmodel.controller.form; var xeditablegrid = xmodel.controller.editablegrid; ";
+        seturl += 'if(xeditablegrid && xeditablegrid.CurrentCell && !xform.CommitRow()) return false; ';
+        seturl += 'if(xform && xform.Data && !xform.Data.Commit()) return false; ';
+        seturl += 'var rowid = jsh.XExt.XModel.GetRowID(modelid, this); ';
         seturl += "url = jsh.XPage.ParseEJS(url, modelid, undefined, xform.DataSet[rowid]); if(!url || (url=='mailto:')) return false;";
       }
     }
@@ -362,7 +360,7 @@ exports.getURL_onclick = function (req, model, link) {
       var params = {
         resizable: 1,
         scrollbars: 1
-      }
+      };
       if(tmodel && ('popup' in tmodel)){
         params.width = tmodel['popup'][0];
         params.height = tmodel['popup'][1];
@@ -376,10 +374,10 @@ exports.getURL_onclick = function (req, model, link) {
     }
   }
   if(ptarget.action=='savenew'){
-    rslt = req.jshsite.instance+".XPage.SaveNew(function(){" + rslt + "}, { abortRefresh: " + (windowtarget=='_self'?'true':'false') + " });return false;";
+    rslt = req.jshsite.instance+'.XPage.SaveNew(function(){' + rslt + '}, { abortRefresh: ' + (windowtarget=='_self'?'true':'false') + ' });return false;';
   }
   return seturl + rslt;
-}
+};
 
 exports.getModelClone = function(req, fullmodelid, options){
   if(!options) options = {};
@@ -389,21 +387,21 @@ exports.getModelClone = function(req, fullmodelid, options){
 
   if(!model) return model;
   return _.cloneDeep(model);
-}
+};
 
 exports.getBaseModelName = function(modelid){
   if(!modelid) return modelid;
   if(modelid.indexOf('/')<0) return modelid;
   modelid = modelid.substr(modelid.lastIndexOf('/')+1);
   return modelid;
-}
+};
 
 exports.getNamespace = function(modelid){
   if(modelid.indexOf('/')>=0){
     return modelid.substr(0,modelid.lastIndexOf('/')+1);
   }
   else return '';
-}
+};
 
 exports.getCanonicalNamespace = function(namespace, parentNamespace){
   namespace = namespace || '';
@@ -421,7 +419,7 @@ exports.getCanonicalNamespace = function(namespace, parentNamespace){
   }
   if(namespace && (namespace[0]=='/')) namespace = namespace.substr(1);
   return namespace;
-}
+};
 
 exports.resolveModelID = function(modelid, sourceModel, options /* { ignore: [] } */){
 
@@ -433,21 +431,21 @@ exports.resolveModelID = function(modelid, sourceModel, options /* { ignore: [] 
   if(!modelid) return undefined;
   //Absolute
   if(modelid.substr(0,1)=='/'){
-    var testmodel = modelid.substr(1);
+    let testmodel = modelid.substr(1);
     if(!ignoreModel(testmodel)) return modelid.substr(1);
     return undefined;
   }
   if(!sourceModel) return modelid;
   //Relative to namespace
   if(sourceModel.namespace){
-    var testmodel = sourceModel.namespace+modelid;
+    let testmodel = sourceModel.namespace+modelid;
     if((testmodel in this.Models) && !ignoreModel(testmodel)) return testmodel;
   }
   //Model Using
   if(sourceModel.using){
-    for(var i=0;i<sourceModel.using.length;i++){
-      var namespace = sourceModel.using[i];
-      var testmodel = namespace+modelid;
+    for(let i=0;i<sourceModel.using.length;i++){
+      let namespace = sourceModel.using[i];
+      let testmodel = namespace+modelid;
       if(testmodel.substr(0,1)=='/') testmodel = testmodel.substr(1);
       if((testmodel in this.Models) && !ignoreModel(testmodel)) return testmodel;
     }
@@ -456,9 +454,9 @@ exports.resolveModelID = function(modelid, sourceModel, options /* { ignore: [] 
   if(sourceModel.module){
     var module = this.Modules[sourceModel.module];
     if(module.using){
-      for(var i=0;i<module.using.length;i++){
-        var namespace = module.using[i];
-        var testmodel = namespace+modelid;
+      for(let i=0;i<module.using.length;i++){
+        let namespace = module.using[i];
+        let testmodel = namespace+modelid;
         if(testmodel.substr(0,1)=='/') testmodel = testmodel.substr(1);
         if((testmodel in this.Models) && !ignoreModel(testmodel)) return testmodel;
       }
@@ -466,7 +464,7 @@ exports.resolveModelID = function(modelid, sourceModel, options /* { ignore: [] 
   }
   if(!ignoreModel(modelid)) return modelid;
   return undefined;
-}
+};
 
 exports.getModel = function(req, modelid, sourceModel, options /* { ignore: [] } */) {
   modelid = this.resolveModelID(modelid, sourceModel, options);
@@ -481,25 +479,25 @@ exports.getModel = function(req, modelid, sourceModel, options /* { ignore: [] }
     }
   }
   return this.Models[modelid];
-}
+};
 
 exports.getModelDB = function(req, fullmodelid) {
   var model = this.getModel(req, fullmodelid);
   var dbid = '';
   if(model.db) dbid = model.db;
   return this.getDB(dbid);
-}
+};
 
 exports.getDB = function(dbid){
   if(!dbid) dbid = 'default';
   if(!(dbid in this.DB)) throw new Error('Database connection '+dbid+' not found');
   return this.DB[dbid];
-}
+};
 
 exports.hasModel = function(req, modelid, sourceModel){
   var model = this.getModel(undefined, modelid, sourceModel);
   return !!model;
-}
+};
 
 exports.getTabs = function (req, model) {
   var curtabs = {};
@@ -520,7 +518,7 @@ exports.getStaticBinding = function(str){
   else if ((str.length >= 2) && (str[0] == "'") && (str[str.length - 1] == "'")) return str.substr(1, str.length - 2);
   else if(str.trim().toLowerCase()=='null') return null;
   return undefined;
-}
+};
 
 //Get custom formatters for client-side formatting
 exports.getCustomFormatters = function(){
@@ -530,7 +528,7 @@ exports.getCustomFormatters = function(){
     rslt[fname] = _this.CustomFormatters[fname].toString();
   }
   return rslt;
-}
+};
 
 //Generate client-side validators
 exports.GetClientValidator = function (req, model, field, actions) {
@@ -560,7 +558,7 @@ exports.GetClientValidator = function (req, model, field, actions) {
       }
     }
     //Parse validator actions
-    var vactions = ('actions' in validator)?validator.actions:(field.always_editable?ejsext.getActions(req, model, "BIU"):actions);
+    var vactions = ('actions' in validator)?validator.actions:(field.always_editable?ejsext.getActions(req, model, 'BIU'):actions);
     var vcaption = ('caption' in validator)?validator.caption:(field.caption_ext||field.caption);
     var client_validator = {
       actions: vactions,
@@ -574,7 +572,7 @@ exports.GetClientValidator = function (req, model, field, actions) {
 };
 
 exports.generateLOVTree = function (values, options) {
-  options = _.extend({ separator: '/', root_txt: '(Root)', default_root: true, new_code_val: function(patharr){ return patharr.join("/"); } }, options);
+  options = _.extend({ separator: '/', root_txt: '(Root)', default_root: true, new_code_val: function(patharr){ return patharr.join('/'); } }, options);
   var separator = options.separator || '/';
   
   var jsh = this;
@@ -583,7 +581,7 @@ exports.generateLOVTree = function (values, options) {
   var paths = {};
 
   function mapCode(code){
-    var rslt = {}
+    var rslt = {};
     rslt[map.code_id] = code.code_id;
     rslt[map.code_parent_id] = code.code_parent_id;
     rslt[map.code_val] = code.code_val;
@@ -593,8 +591,8 @@ exports.generateLOVTree = function (values, options) {
   }
 
   //Normalize paths
-  for(var i=0;i<values.length;i++){
-    var path = values[i][map.code_val];
+  for(let i=0;i<values.length;i++){
+    let path = values[i][map.code_val];
     while(path.indexOf(separator+separator)>=0) path = Helper.ReplaceAll(path, separator+separator, separator);
     if(path.indexOf(separator)==0) path = path.substr(separator.length);
     if(path.lastIndexOf(separator)==path.length-separator.length) path = path.substr(0,path.length-separator.length);
@@ -606,21 +604,21 @@ exports.generateLOVTree = function (values, options) {
   }
 
   //Add missing parents to array
-  for(var path in paths){
+  for(let path in paths){
     var patharr = path.split(separator);
-    for(var i=0;i<(patharr.length-1);i++){
+    for(let i=0;i<(patharr.length-1);i++){
       var subpath = patharr.slice(0,i+1).join(separator);
 
       //Add root node, if necessary
       if(!('' in paths)){
-        var new_code_val = options.new_code_val(['']);
+        let new_code_val = options.new_code_val(['']);
         if(_.isObject(options.default_root)) paths[''] = mapCode(options.default_root);
         else paths[''] = mapCode({ code_id: '', code_parent_id: null, code_val: new_code_val, code_txt: options.root_txt, code_icon: paths[path][map.code_icon] });
       }
 
       //Add parent path
       if(!(subpath in paths)){
-        var new_code_val = options.new_code_val(patharr.slice(0,i+1));
+        let new_code_val = options.new_code_val(patharr.slice(0,i+1));
         paths[subpath] = mapCode({ code_id: subpath, code_parent_id: null, code_val: new_code_val, code_txt: patharr[i], code_icon: paths[path][map.code_icon] });
       }
     }
@@ -630,14 +628,13 @@ exports.generateLOVTree = function (values, options) {
 
   //Add root node, if necessary
   if(options.default_root && !('' in paths)){
-    var new_code_val = options.new_code_val(['']);
+    let new_code_val = options.new_code_val(['']);
     if(_.isObject(options.default_root)) paths[''] = mapCode(options.default_root);
     else paths[''] = mapCode({ code_id: '', code_parent_id: null, code_val: new_code_val, code_txt: options.root_txt, code_icon: 'folder' });
   }
 
   //Sort by path
-  var rslt = [];
-  for(var path in paths) rslt.push(paths[path]);
+  for(let path in paths) rslt.push(paths[path]);
   rslt.sort(function(a,b){
     var alower = (a[map.code_id]||'').toLowerCase();
     var blower = (b[map.code_id]||'').toLowerCase();
@@ -647,7 +644,7 @@ exports.generateLOVTree = function (values, options) {
   });
 
   //Add code_id, code_parent_id
-  var i=1;
+  let j=1;
   _.each(rslt, function(val){
     var parentpath = val[map.code_id].split(separator);
     if(parentpath.length > 1){
@@ -659,14 +656,14 @@ exports.generateLOVTree = function (values, options) {
       if(paths['']) val[map.code_parent_id] = paths[''][map.code_id];
     }
     //Find parent node and add missing nodes
-    val[map.code_id] = i;
-    i++;
+    val[map.code_id] = j;
+    j++;
   });
 
   //Update values array
   while(values.length) values.pop();
-  for(var i=0;i<rslt.length;i++) values.push(rslt[i]);
-}
+  for(let i=0;i<rslt.length;i++) values.push(rslt[i]);
+};
 
 //Add server-side validators for models and tasks
 exports.AddValidatorFuncs = function (xvalidate, field, desc) {
@@ -712,7 +709,7 @@ exports.SendTXTEmail = function (dbcontext, txt_attrib, email_to, email_cc, emai
   var _this = this;
   //Pull TXT data from database
   var dbtypes = _this.AppSrv.DB.types;
-  _this.AppSrv.ExecRecordset(dbcontext, "Helper_SendTXTEmail", [dbtypes.VarChar(32)], { 'txt_attrib': txt_attrib }, function (err, rslt) {
+  _this.AppSrv.ExecRecordset(dbcontext, 'Helper_SendTXTEmail', [dbtypes.VarChar(32)], { 'txt_attrib': txt_attrib }, function (err, rslt) {
     if ((rslt != null) && (rslt.length == 1) && (rslt[0].length == 1)) {
       var TXT = rslt[0][0];
       var new_bcc = email_bcc;
@@ -725,7 +722,7 @@ exports.SendTXTEmail = function (dbcontext, txt_attrib, email_to, email_cc, emai
       var email_body = TXT[_this.map.txt_body];
       if (email_body && (TXT[_this.map.txt_type].toUpperCase()=='HTML')) email_html = email_body;
       else email_text = email_body;
-      _this.SendBaseEmail(dbcontext, TXT[_this.map.txt_title], email_text, email_html, email_to, email_cc, new_bcc, email_attachments, params, callback)
+      _this.SendBaseEmail(dbcontext, TXT[_this.map.txt_title], email_text, email_html, email_to, email_cc, new_bcc, email_attachments, params, callback);
     }
     else return callback(new Error('Email ' + txt_attrib + ' not found.'));
   });
@@ -761,7 +758,7 @@ exports.SendBaseEmail = function (dbcontext, email_subject, email_text, email_ht
   }
   mparams.subject = ejs.render(mparams.subject, { data: params, _: _, moment: moment });
   _this.SendEmail(mparams, callback);
-}
+};
 
 exports.createFunction = function (script, args, desc){
   try {
@@ -770,7 +767,7 @@ exports.createFunction = function (script, args, desc){
   catch(ex){
     throw new Error('Error creating function '+desc+': '+ex.toString()+'\n:: in ::\n'+script);
   }
-}
+};
 
 exports.SendEmail = function (mparams,callback){
   var _this = this;
@@ -779,11 +776,11 @@ exports.SendEmail = function (mparams,callback){
   _this.Log.info(mparams);
   if(!_this.Mailer){ _this.Log.error('ERROR - Mailer not configured'); return callback(new Error('Email could not be sent - Mailer not configured')); }
   _this.Mailer.sendMail(mparams, callback);
-}
+};
 
 exports.setLocale = function(localeId){
   this.Locale = new jsHarmonyLocale(localeId);
-}
+};
 
 exports._t = function(msgId, section, pluralIndex){
   for(var moduleName in this.Modules){
@@ -792,7 +789,7 @@ exports._t = function(msgId, section, pluralIndex){
     if(!Helper.isNullUndefined(msg)) return msg;
   }
   return msgId;
-}
+};
 
 exports._tN = function(msgId, cnt, section){
   for(var moduleName in this.Modules){
@@ -801,7 +798,7 @@ exports._tN = function(msgId, cnt, section){
     if(!Helper.isNullUndefined(msg)) return msg;
   }
   return msgId;
-}
+};
 
 exports._tP = function(msgId, params, section, pluralIndex){
   for(var moduleName in this.Modules){
@@ -810,7 +807,7 @@ exports._tP = function(msgId, params, section, pluralIndex){
     if(!Helper.isNullUndefined(msg)) return msg;
   }
   return Helper.ReplaceParams(msgId, params);
-}
+};
 
 exports._tPN = function(msgId, params, cnt, section){
   for(var moduleName in this.Modules){
@@ -819,20 +816,28 @@ exports._tPN = function(msgId, params, cnt, section){
     if(!Helper.isNullUndefined(msg)) return msg;
   }
   return Helper.ReplaceParams(msgId, params);
-}
+};
 
 //Log Initialization Errors / Warnings / Info
 exports.LogInit = function(severity, msg) {
   var _this = this;
   if ((this.Config.debug_params.jsh_error_level & severity) > 0) {
     switch (severity) {
-      case _ERROR:{ _this.Statistics.Counts.InitErrors++; if(!_this.isConfigLoaded || !_this.Config.silentStart) console.log("ERROR: " + msg); this.SystemErrors.push(msg); break; }
-      case _WARNING:{  _this.Statistics.Counts.InitWarnings++; if(!_this.Config.silentStart) console.log("WARNING: " + msg); this.SystemErrors.push(msg); break; }
+      case _ERROR:{
+        _this.Statistics.Counts.InitErrors++;
+        if(!_this.isConfigLoaded || !_this.Config.silentStart) console.log('ERROR: ' + msg); // eslint-disable-line no-console
+        this.SystemErrors.push(msg); break;
+      }
+      case _WARNING:{
+        _this.Statistics.Counts.InitWarnings++;
+        if(!_this.Config.silentStart) console.log('WARNING: ' + msg); // eslint-disable-line no-console
+        this.SystemErrors.push(msg); break;
+      }
       default: if(!_this.Config.silentStart) _this.Log.info(msg); break;
     }
   }
-}
-exports.LogInit_ERROR = function(msg){ return this.LogInit(_ERROR, msg); }
-exports.LogInit_WARNING = function(msg){ return this.LogInit(_WARNING, msg); }
-exports.LogInit_INFO = function(msg){ return this.LogInit(_INFO, msg); }
-exports.LogInit_PERFORMANCE = function(msg){ return this.LogInit(_PERFORMANCE, msg); }
+};
+exports.LogInit_ERROR = function(msg){ return this.LogInit(_ERROR, msg); };
+exports.LogInit_WARNING = function(msg){ return this.LogInit(_WARNING, msg); };
+exports.LogInit_INFO = function(msg){ return this.LogInit(_INFO, msg); };
+exports.LogInit_PERFORMANCE = function(msg){ return this.LogInit(_PERFORMANCE, msg); };

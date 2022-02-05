@@ -455,18 +455,16 @@ jsHarmonyServer.prototype.getURLFromReq = function(req){
     if(hostname.indexOf(':')>=0) hostname = hostname.split(':')[0];
   }
   return this.getURL(hostname);
-}
+};
 
 jsHarmonyServer.prototype.getURL = function(hostname){
   var _this = this;
   var https_server = false;
-  var http_redirect = false;
   var http_server = false;
 
   if('https_port' in _this.serverConfig) https_server = true;
   if('http_port' in _this.serverConfig){
-    if(https_server) http_redirect = true;
-    else http_server = true;
+    if(!https_server) http_server = true; //If https_server is enabled, the http_server is only used for redirects
   }
 
   var server_txt = '';
@@ -474,14 +472,14 @@ jsHarmonyServer.prototype.getURL = function(hostname){
   var server_scheme = 'https://';
   if(http_server){
     server_txt = _this.serverConfig.http_ip;
-    for(var i=0;i<_this.servers.length;i++){
+    for(let i=0;i<_this.servers.length;i++){
       if(_this.servers[i] instanceof http.Server){ server_port = _this.servers[i].address().port; break; }
     }
     if(!https_server) server_scheme = 'http://';
   }
   if(https_server){
     server_txt = _this.serverConfig.https_ip;
-    for(var i=0;i<_this.servers.length;i++){
+    for(let i=0;i<_this.servers.length;i++){
       if(_this.servers[i] instanceof https.Server){ server_port = _this.servers[i].address().port; break; }
     }
   }
@@ -491,7 +489,7 @@ jsHarmonyServer.prototype.getURL = function(hostname){
   if(server_txt == '0.0.0.0') server_txt = os.hostname().toLowerCase();
   if(server_txt && server_port) return server_scheme+server_txt+':'+server_port;
   return '';
-}
+};
 
 jsHarmonyServer.prototype.Close = function(cb){
   var _this = this;

@@ -86,7 +86,7 @@ function jsHarmony(config) {
       InitWarnings: 0,
       InitDeprecated: 0
     }
-  }
+  };
 
   //Add jsHarmony Module
   this.Modules['jsharmony'] = new jsHarmonyModule.jsHarmonySystemModule(this);

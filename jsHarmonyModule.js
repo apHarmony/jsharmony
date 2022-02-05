@@ -21,7 +21,6 @@ var jsHarmonyConfig = require('./jsHarmonyConfig.js');
 var jsHarmonyModuleTransform = require('./jsHarmonyModuleTransform.js');
 var jsHarmonyTranslator = require('./jsHarmonyTranslator.js');
 var Helper = require('./Helper.js');
-var async = require('async');
 
 function jsHarmonyModule(name){
   var _this = this;
@@ -38,10 +37,10 @@ function jsHarmonyModule(name){
     getLocale: function(){ return _this.jsh.Locale; },
     getLanguagePath: function(localeId){ if(!_this.Config.moduledir){ return ''; } return _this.Config.moduledir+'/locale/'+localeId+'.language.json'; },
   });
-  this._t = function(){ return _this.jsh._t.apply(_this.jsh, arguments); }
-  this._tN = function(){ return _this.jsh._tN.apply(_this.jsh, arguments); }
-  this._tP = function(){ return _this.jsh._tP.apply(_this.jsh, arguments); }
-  this._tPN = function(){ return _this.jsh._tPN.apply(_this.jsh, arguments); }
+  this._t = function(){ return _this.jsh._t.apply(_this.jsh, arguments); };
+  this._tN = function(){ return _this.jsh._tN.apply(_this.jsh, arguments); };
+  this._tP = function(){ return _this.jsh._tP.apply(_this.jsh, arguments); };
+  this._tPN = function(){ return _this.jsh._tPN.apply(_this.jsh, arguments); };
 
   //Populated in jsh.SetModuleNamespace, if not initially set
   this.schema = null;    //Database schema
@@ -50,7 +49,7 @@ function jsHarmonyModule(name){
 
   //Events
   this.onFilterSQLScripts = null; //function(fileObj){ return true / false; }  Run for each SQL script, to decide whether to load it into memory
-                                  // fileObj:: { name, path, type ("file" or "folder") }
+  // fileObj:: { name, path, type ("file" or "folder") }
 }
 jsHarmonyModule.prototype.getModelPath = function(){
   if(this.Config.moduledir) return this.Config.moduledir+'/models/';

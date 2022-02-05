@@ -75,7 +75,7 @@ AppSrvModel.prototype.loadEJS = function () {
     'jsh_exec.js.datamodel': jsh.getEJS('jsh_client_exec.js.datamodel'),
     'jsh_buttons': jsh.getEJS('jsh_client_buttons'),
   };
-}
+};
 
 AppSrvModel.prototype.getSrcFiles = function(){
   for (var sname in this.srcfiles) {
@@ -85,15 +85,15 @@ AppSrvModel.prototype.getSrcFiles = function(){
     }
   }
   return this.srcfiles;
-}
+};
 
 AppSrvModel.prototype.removeEmptyBytes = function(str){
   //var rslt = str.replace(/div/g, "");
   //var rslt = str.replace(/\p{65279}/g, "");
   if(str === null || (typeof str == 'undefined')) str = '';
-  var rslt = str.toString().replace(/\uFEFF/g, "");
+  var rslt = str.toString().replace(/\uFEFF/g, '');
   return rslt;
-}
+};
 
 AppSrvModel.prototype.GetModel = function (req, res, fullmodelid) {
   var _this = this;
@@ -149,7 +149,7 @@ AppSrvModel.prototype.GetChildModel = function (req, res, modelid, options) {
       _this.genClientModel(req, res, modelid, options);
     }
   );
-}
+};
 
 AppSrvModel.prototype.genClientModel = function (req, res, modelid, options) {
   options = _.extend({
@@ -179,7 +179,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, options) {
       else if (req.query.action == 'browse') targetperm = 'B';
       else return onComplete('Invalid "action" in querystring');
     }
-    if (!Helper.hasModelAction(req, model, 'B'+targetperm)) { return onComplete("<div>***NO_ACCESS*** You do not have access to this form.</div>"); }
+    if (!Helper.hasModelAction(req, model, 'B'+targetperm)) { return onComplete('<div>***NO_ACCESS*** You do not have access to this form.</div>'); }
   }
   
   //Check if the bindings are based on the key value
@@ -190,9 +190,9 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, options) {
   //If insert, and the model has any dynamic bindings, show message that the user needs to save first to edit the data
   if((targetperm=='I') && !Helper.hasModelAction(req, model, 'I')){
     if(!allConstantBindings) {
-      if(!options.topmost && _.includes(['exec','report','multisel'], model.layout)){ }
+      if(!options.topmost && _.includes(['exec','report','multisel'], model.layout)){ /* Do nothing */ }
       else {
-        return onComplete("<div>Please save to manage "+model.caption[1]+" data.</div>");
+        return onComplete('<div>Please save to manage '+model.caption[1]+' data.</div>');
       }
     }
   }
@@ -202,7 +202,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, options) {
       if(!model.nokey && !model.unbound){
         var keys = _this.AppSrv.getKeys(model.fields);
         if(keys && keys.length){ 
-          return onComplete(jsh.RenderFormStarter(req, fullmodelid))
+          return onComplete(jsh.RenderFormStarter(req, fullmodelid));
         }
       }
     }
@@ -245,7 +245,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, options) {
         'breadcrumbs': ejsext.BreadCrumbs(req, jsh, fullmodelid),
         'module_namespace': module_namespace,
         'module': model.module,
-      }
+      };
     },
     //Generate Buttons
     function () {
@@ -354,11 +354,10 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, options) {
         
         var showtabs = [];
         var showmodels = [];
-        var modeltabids = [];
 
-        for(var i=0; i<model.tabs.length;i++){
-          var tab = model.tabs[i];
-          var tabname = tab.name;
+        for(let i=0; i<model.tabs.length;i++){
+          let tab = model.tabs[i];
+          let tabname = tab.name;
           //Initially, thought to disable hiding based on role, because
           //  a. Roles should define effective permissions
           //  b. "Hiding" based on roles is confusing to the developer and user.
@@ -393,8 +392,8 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, options) {
         }
         if (!(model.id in req.curtabs) || !(_.includes(showmodels, req.curtabs[model.id]))) req.curtabs[model.id] = showmodels[0];
 
-        for(var i=0; i<model.tabs.length;i++){
-          var tab = model.tabs[i];
+        for(let i=0; i<model.tabs.length;i++){
+          let tab = model.tabs[i];
           if (req.curtabs[model.id] == tab.target) {
             tabbindings = tab.bindings;
             break;
@@ -410,9 +409,9 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, options) {
         }
 
         var rslttabs = [];
-        for(var i=0; i<model.tabs.length;i++){
-          var tab = model.tabs[i];
-          var tabname = tab.name;
+        for(let i=0; i<model.tabs.length;i++){
+          let tab = model.tabs[i];
+          let tabname = tab.name;
           if (!_.includes(showtabs, tabname)) continue;
           var acss = 'xtab xtab' + model.class;
           if (i == (model.tabs.length-1)) acss += ' last';
@@ -478,11 +477,11 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, options) {
               var duplicateparams = {
                 resizable: 1,
                 scrollbars: 1
-              }
+              };
               if(ptarget.url){ /* Do nothing */ }
               else {
                 var link_model = jsh.getModel(req, ptarget.modelid, model);
-                if (!link_model) throw new Error("Link Model " + ptarget.modelid + " not found.");
+                if (!link_model) throw new Error('Link Model ' + ptarget.modelid + ' not found.');
                 
                 if('popup' in link_model){
                   duplicateparams.width = link_model['popup'][0];
@@ -565,7 +564,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, options) {
           if(model.display_layouts){
             rslt.display_layouts = {};
             for(var display_layout_name in model.display_layouts){
-              var rslt_display_layout = { columns: [] }
+              var rslt_display_layout = { columns: [] };
               var display_layout = model.display_layouts[display_layout_name];
               rslt_display_layout.title = ('title' in display_layout) ? display_layout.title : display_layout_name;
               //Add only the fields that are in the rslt.fields array
@@ -582,32 +581,32 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, options) {
           else { //Generate a "standard" current_display_layout_name
             var default_columns = [];
             _.each(rslt.fields,function(field){
-              if(Helper.hasAction(field.actions,"B") && (field.control !== "hidden")) default_columns.push({"name":field.name});
+              if(Helper.hasAction(field.actions,'B') && (field.control !== 'hidden')) default_columns.push({'name':field.name});
             });
             rslt.display_layouts = {
-              "standard": {
-                "title": "Standard",
-                "columns": default_columns
+              'standard': {
+                'title': 'Standard',
+                'columns': default_columns
               }
-            }
-            rslt.current_display_layout_name = "standard";
+            };
+            rslt.current_display_layout_name = 'standard';
           }
         }
       }
       return cb();
     },
 
-    ],function(err){
-        if(!rslt.fields) rslt.fields = [];
-        //Return result
-        if(onComplete) onComplete(rslt);
-      });
-}
+  ],function(err){
+    if(!rslt.fields) rslt.fields = [];
+    //Return result
+    if(onComplete) onComplete(rslt);
+  });
+};
 
 AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, targetperm, onComplete) {
   var jsh = this.AppSrv.jsh;
   var model = srcobj;
-  var rslt = [];
+  var rsltfields = [];
   var firstsort = (('sort' in model)?model['sort'][0].substring(1):'');
   var _this = this;
   async.eachOfSeries(srcobj.fields, function(srcfield,i,cb){
@@ -724,16 +723,16 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
           if(!ejsext.hasAction(req, subformmodel, subformtargetperm)) return cb();
         }
         dstfield.model = subform;
-        rslt.push(dstfield);
+        rsltfields.push(dstfield);
         return cb();
       } });
     }
     else {
-      rslt.push(dstfield);
+      rsltfields.push(dstfield);
       return cb();
     }
   }, function(err){
-    if(onComplete) onComplete(rslt);
+    if(onComplete) onComplete(rsltfields);
   });
 };
 

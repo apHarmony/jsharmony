@@ -18,7 +18,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var _ = require('lodash');
-var path = require('path');
 var fs = require('fs');
 var tmp = require('tmp');
 var async = require('async');
@@ -45,7 +44,7 @@ AppSrvRpt.prototype.InitReportQueue = function () {
   this.browserqueue = async.queue(function (task, done) {
     _this.genReport(task.req, task.res, task.modelid, task.params, task.data, done);
   }, 1);
-}
+};
 
 AppSrvRpt.prototype.queueReport = function (req, res, fullmodelid, Q, P, params, onComplete) {
   if(!params) params = {};
@@ -71,7 +70,7 @@ AppSrvRpt.prototype.queueReport = function (req, res, fullmodelid, Q, P, params,
   if (!thisapp.ParamCheck('Q', Q, _.map(fieldlist, function (field) { return '&' + field; }).concat(_.map((req?_.keys(req.jshsite.datalock):[]), function(field) { return '|' + field; })))) { return errorHandler(-4, 'Invalid Parameters'); }
   if (!thisapp.ParamCheck('P', P, [])) { return errorHandler(-4, 'Invalid Parameters'); }
   
-  if(req && !params.fromBatch) jsh.Log.info("REPORT: " + req.originalUrl + " " + (req.user_id || '') + " " + (req.user_name || ''));
+  if(req && !params.fromBatch) jsh.Log.info('REPORT: ' + req.originalUrl + ' ' + (req.user_id || '') + ' ' + (req.user_name || ''));
   
   var sql_ptypes = [];
   var sql_params = {};
@@ -121,7 +120,6 @@ AppSrvRpt.prototype.queueReport = function (req, res, fullmodelid, Q, P, params,
 AppSrvRpt.prototype.batchReport = function (req, res, db, dbcontext, model, sql_ptypes, sql_params, verrors, errorHandler, Q, params, onComplete) {
   var thisapp = this.AppSrv;
   var jsh = thisapp.jsh;
-  var _this = this;
   if(!model.batch || !model.batch.sql) return errorHandler(-6, 'Batch reports require model.batch.sql');
   if(model.format != 'pdf') return errorHandler(-6, 'Batch reports requires model.format "pdf"');
 
@@ -145,12 +143,11 @@ AppSrvRpt.prototype.batchReport = function (req, res, db, dbcontext, model, sql_
       if (stats) stats.model = model;
       callback(err, rslt, stats);
     });
-  }
+  };
   
   db.ExecTasks(dbtasks, function (err, rslt, stats) {
     if (err) { return thisapp.AppDBError(req, res, err, stats, errorHandler); }
     if (rslt == null) rslt = {};
-    var jobtasks = {};
     if(params.output=='html'){
       //Generate Batch HTML
       var rptrslt = [];
@@ -161,7 +158,7 @@ AppSrvRpt.prototype.batchReport = function (req, res, db, dbcontext, model, sql_
           rptrslt.push(rptcontent);
           return cb();
         });
-      }, function(err){;
+      }, function(err){
         if(err) return errorHandler(-99999, err);
         return onComplete(null, rptrslt);
       });
@@ -206,7 +203,7 @@ AppSrvRpt.prototype.batchReport = function (req, res, db, dbcontext, model, sql_
                     if(disposedone) disposedone();
                   });
                 });
-              }
+              };
               if(err) return errorHandler(-99999, err);
               return onComplete(null, batchtmppdfpath, dispose, batchdbdata);
             });
@@ -216,7 +213,7 @@ AppSrvRpt.prototype.batchReport = function (req, res, db, dbcontext, model, sql_
       });
     }
   });
-}
+};
 
 AppSrvRpt.prototype.parseReportSQLData = function (req, db, dbcontext, model, sql_ptypes, sql_params, verrors, dbtasks, rdata) {
   var thisapp = this.AppSrv;
@@ -237,8 +234,8 @@ AppSrvRpt.prototype.parseReportSQLData = function (req, db, dbcontext, model, sq
       thisapp.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, dparams.nodatalock);
       skipdatalock = false;
       if ('nodatalock' in dparams) {
-        var skipdatalock = true;
-        for (datalockid in req.jshsite.datalock) {
+        skipdatalock = true;
+        for (var datalockid in req.jshsite.datalock) {
           if (Helper.arrayIndexOf(dparams.nodatalock,datalockid,{caseInsensitive:jsh.Config.system_settings.case_insensitive_datalocks}) < 0) skipdatalock = false;
         }
       }
@@ -255,11 +252,11 @@ AppSrvRpt.prototype.parseReportSQLData = function (req, db, dbcontext, model, sq
         if (stats) stats.model = model;
         callback(err, rslt, stats);
       });
-    }
+    };
     
     if ('children' in dparams) _this.parseReportSQLData(req, db, dbcontext, model, sql_ptypes, sql_params, verrors, dbtasks, dparams.children);
   });
-}
+};
 
 AppSrvRpt.prototype.MergeReportData = function (data, tree, parent) {
   var _this = this;
@@ -304,19 +301,7 @@ AppSrvRpt.prototype.MergeReportData = function (data, tree, parent) {
   //    Create array of CHILDNAME
   //      Add all records matching binding into CHILDNAME
   //  Delete leaf
-}
-
-function stringToAscii(s) {
-  var ascii = "";
-  if (s.length > 0)
-    for (i = 0; i < s.length; i++) {
-      var c = "" + s.charCodeAt(i);
-      while (c.length < 3)
-        c = "0" + c;
-      ascii += c;
-    }
-  return (ascii);
-}
+};
 
 AppSrvRpt.prototype.genReportContent = function(req, res, fullmodelid, params, data){
   var rslt = { header: '', body: '', footer: '' };
@@ -388,7 +373,7 @@ AppSrvRpt.prototype.genReportContent = function(req, res, fullmodelid, params, d
   }
 
   return rslt;
-}
+};
 
 AppSrvRpt.prototype.genReportPdf = function (req, res, fullmodelid, params, data, tmppath, callback) {
   var _this = this;
@@ -401,7 +386,7 @@ AppSrvRpt.prototype.genReportPdf = function (req, res, fullmodelid, params, data
     var page = null;
 
     function genReportError(err, source){
-      var rpterr = Helper.NewError("Error occurred during report generation"+(source ? ' - ' + source: '')+" (" + err.toString() + ')', -99999);
+      var rpterr = Helper.NewError('Error occurred during report generation'+(source ? ' - ' + source: '')+' (' + err.toString() + ')', -99999);
       if (page != null){
         return page.close()
           .then(function(){ return callback(rpterr, null); })
@@ -429,7 +414,7 @@ AppSrvRpt.prototype.genReportPdf = function (req, res, fullmodelid, params, data
             right: '1cm',
           }
         };
-        var rptcontent = {};
+        var rptcontent = { header: '', body: '', footer: '' };
         var contentWidth = 0;
         var contentHeight = 0;
         var font_css = '';
@@ -440,7 +425,7 @@ AppSrvRpt.prototype.genReportPdf = function (req, res, fullmodelid, params, data
           //model.onrender
           function(rpt_cb){
             if(!model.onrender) return rpt_cb();
-            model.onrender({ workbook: workbook, data: data, params: params }, function(err, _cancelRender){
+            model.onrender({ page: page, content: rptcontent, data: data, params: params }, function(err, _cancelRender){
               cancelRender = _cancelRender;
               return rpt_cb(err);
             }, require, jsh, fullmodelid);
@@ -521,9 +506,9 @@ AppSrvRpt.prototype.genReportPdf = function (req, res, fullmodelid, params, data
               else if(fmt=='letter'){ w=215.9; h=279.4; }
               else if(fmt=='tabloid'){ w=279.4; h=431.8; }
               else if(fmt=='ledger'){ w=279.4; h=431.8; }
-              else return jsh.Log.error('Invalid report format: '+pagesettings.format)
+              else return jsh.Log.error('Invalid report format: '+pagesettings.format);
               if(pagesettings.landscape){
-                _w = w;
+                var _w = w;
                 w = h;
                 h = _w;
               }
@@ -545,7 +530,7 @@ AppSrvRpt.prototype.genReportPdf = function (req, res, fullmodelid, params, data
               right: marginRight+'px',
               bottom: (marginBottom+footerHeightPx)+'px',
               left: marginLeft+'px',
-            }
+            };
             if(pagesettings.headerTemplate){
               pagesettings.headerTemplate = '<style type="text/css">#header{ padding:'+Math.round(marginTop*_HEADER_ZOOM)+'px '+Math.round(marginRight*_HEADER_ZOOM)+'px '+Math.round(marginBottom*_HEADER_ZOOM)+'px '+Math.round(marginLeft*_HEADER_ZOOM)+'px; -webkit-print-color-adjust: exact; }</style><div style="position:absolute;width:'+(contentWidth)+'px;font-size:12px;transform: scale('+_HEADER_ZOOM+'); transform-origin: top left;">'+pagesettings.headerTemplate+'</div>';
             }
@@ -565,8 +550,8 @@ AppSrvRpt.prototype.genReportPdf = function (req, res, fullmodelid, params, data
                 var font = report_fonts[i];
                 var font_str = '';
                 if(font['font-family']) font_str += "font-family:'"+Helper.escapeCSS(font['font-family'].toString())+"';";
-                if(font['font-style']) font_str += "font-style:"+font['font-style'].toString()+";";
-                if(font['font-weight']) font_str += "font-weight:"+font['font-weight'].toString()+";";
+                if(font['font-style']) font_str += 'font-style:'+font['font-style'].toString()+';';
+                if(font['font-weight']) font_str += 'font-weight:'+font['font-weight'].toString()+';';
                 if(font_str) font_render.push(font_str);
               }
               if(font_css){
@@ -614,17 +599,17 @@ AppSrvRpt.prototype.genReportPdf = function (req, res, fullmodelid, params, data
             fs.writeFile(tmphtmlpath, rptcontent.body||'','utf8',function(err){
               if(err) return jsh.Log.error(err);
               page.goto('file://'+tmphtmlpath, { timeout: jsh.Config.report_timeout, waitUntil: 'networkidle0' })
-              .then(function(){
-                page.evaluate(onPageLoad, font_render, font_css).then(function(documentWidth){
-                  if(documentWidth && !pagesettings.scale){
-                    var scale = contentWidth * 0.998 / documentWidth;
-                    if(scale < 0.1) scale = 0.1;
-                    if(scale > 1) scale = 1;
-                    pagesettings.scale = scale;
-                  }
-                  return rpt_cb();
-                }).catch(function (err) { genReportError(err, 'onPageLoad'); });
-              }).catch(function (err) { genReportError(err, 'page.goto'); });
+                .then(function(){
+                  page.evaluate(onPageLoad, font_render, font_css).then(function(documentWidth){
+                    if(documentWidth && !pagesettings.scale){
+                      var scale = contentWidth * 0.998 / documentWidth;
+                      if(scale < 0.1) scale = 0.1;
+                      if(scale > 1) scale = 1;
+                      pagesettings.scale = scale;
+                    }
+                    return rpt_cb();
+                  }).catch(function (err) { genReportError(err, 'onPageLoad'); });
+                }).catch(function (err) { genReportError(err, 'page.goto'); });
             });
           },
           //Save to PDF
@@ -647,7 +632,7 @@ AppSrvRpt.prototype.genReportPdf = function (req, res, fullmodelid, params, data
       genReportError(err);
     }
   }); //, { dnodeOpts: { weak: false } }
-}
+};
 
 AppSrvRpt.prototype.genReportXlsx = function (req, res, fullmodelid, params, data, tmppath, callback) {
   var _this = this;
@@ -657,7 +642,7 @@ AppSrvRpt.prototype.genReportXlsx = function (req, res, fullmodelid, params, dat
   if (model.layout !== 'report') throw new Error('Model '+fullmodelid+' is not a report');
 
   function genReportError(err, source){
-    var rpterr = Helper.NewError("Error occurred during report generation"+(source ? ' - ' + source: '')+" (" + err.toString() + ')', -99999);
+    var rpterr = Helper.NewError('Error occurred during report generation'+(source ? ' - ' + source: '')+' (' + err.toString() + ')', -99999);
     jsh.Log.error(rpterr);
     return callback(rpterr, null);
   }
@@ -715,7 +700,7 @@ AppSrvRpt.prototype.genReportXlsx = function (req, res, fullmodelid, params, dat
               });
             }
             catch(ex){
-              return genReportError(ex, "Sheet "+rsName);
+              return genReportError(ex, 'Sheet '+rsName);
             }
             return rs_cb();
           }, rpt_cb);
@@ -732,7 +717,7 @@ AppSrvRpt.prototype.genReportXlsx = function (req, res, fullmodelid, params, dat
             .catch(function(err){ return rpt_cb(err); });
         },
       ], function(err){
-        if(err) return genReportError(ex);
+        if(err) return genReportError(err);
         return callback(null, rsltpath);
       });
     }
@@ -740,7 +725,7 @@ AppSrvRpt.prototype.genReportXlsx = function (req, res, fullmodelid, params, dat
       return genReportError(ex);
     }
   });
-}
+};
 
 AppSrvRpt.prototype.genReport = function (req, res, fullmodelid, params, data, done) {
   var _this = this;
@@ -789,7 +774,7 @@ function parseUnitsPx(val,dpi){
 
 AppSrvRpt.prototype.RenderEJS = function (ejssrc, ejsdata) {
   return ejs.render(ejssrc, _.extend(ejsdata, { _: _, ejsext: ejsext }));
-}
+};
 
 AppSrvRpt.prototype.getBrowser = function (callback) {
   var _this = this;
@@ -810,7 +795,7 @@ AppSrvRpt.prototype.getBrowser = function (callback) {
   jsh.Log.info('Launching Report Renderer');
   jsh.Extensions.report.getPuppeteer(function(err, puppeteer){
     if(err){ jsh.Log.error(err.toString()); return callback(new Error(err.toString())); }
-    var launchParams = { ignoreHTTPSErrors: true }
+    var launchParams = { ignoreHTTPSErrors: true };
     if(jsh.Config.debug_params.report_interactive) launchParams.headless = false;
     puppeteer.launch(launchParams)
       .then(function(rslt){
@@ -823,12 +808,11 @@ AppSrvRpt.prototype.getBrowser = function (callback) {
       })
       .catch(function(err){ jsh.Log.error(err); return callback(err); });
   });
-}
+};
 
 AppSrvRpt.prototype.runReportJob = function (req, res, fullmodelid, Q, P, onComplete) {
   var thisapp = this.AppSrv;
   var jsh = thisapp.jsh;
-  var _this = this;
   var model = jsh.getModel(req, fullmodelid);
   if(!model) throw new Error('Model '+fullmodelid+' not found');
   if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, jsh._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
@@ -878,17 +862,17 @@ AppSrvRpt.prototype.runReportJob = function (req, res, fullmodelid, Q, P, onComp
       if (stats) stats.model = model;
       callback(err, rslt, stats);
     });
-  }
+  };
   
   db.ExecTasks(dbtasks, function (err, rslt, stats) {
     if (err != null) { thisapp.AppDBError(req, res, err, stats); return; }
     if (rslt == null) rslt = {};
     if (('_test' in Q) && (Q._test == 1)) {
-      for (var i = 0; i < rslt.jobqueue.length; i++) {
+      for (let i = 0; i < rslt.jobqueue.length; i++) {
         var reporturl = req.baseurl + '_d/_report/' + model.id + '/?';
-        var jrow = rslt.jobqueue[i];
-        var rparams = {};
-        var verrors = {};
+        let jrow = rslt.jobqueue[i];
+        let rparams = {};
+        let verrors = {};
         //Add each parameter to url
         _.each(fields, function (field) {
           var fname = field.name;
@@ -906,10 +890,10 @@ AppSrvRpt.prototype.runReportJob = function (req, res, fullmodelid, Q, P, onComp
     }
     else {
       var jobtasks = {};
-      for (var i = 0; i < rslt.jobqueue.length; i++) {
-        var jrow = rslt.jobqueue[i];
-        var rparams = {};
-        var verrors = {};
+      for (let i = 0; i < rslt.jobqueue.length; i++) {
+        let jrow = rslt.jobqueue[i];
+        let rparams = {};
+        let verrors = {};
         //Add each parameter to url
         _.each(fields, function (field) {
           var fname = field.name;

@@ -60,7 +60,7 @@ exports.ExecScalar = function (context, sql, ptypes, params, callback, dbconfig,
 
 exports.GetDBErrorMessage = function(dberrors, errmsg){
   if(!dberrors) return null;
-  var errmsg = (errmsg||'').toString().toLowerCase();
+  errmsg = (errmsg||'').toString().toLowerCase();
   for (var i = 0; i < dberrors.length; i++) {
     var dberr = dberrors[i];
     var erex = dberr[0].toString().toLowerCase();
@@ -72,7 +72,7 @@ exports.GetDBErrorMessage = function(dberrors, errmsg){
     else if (errmsg.indexOf(erex) >= 0) { return etxt; }
   }
   return null;
-}
+};
 
 exports.AppDBError = function (req, res, err, stats, errorHandler) {
   if(err.stats) stats = err.stats;

@@ -24,7 +24,7 @@ var fs = require('fs');
 var async = require('async');
 var path = require('path');
 var csv = require('csv');
-var spawn = require("child_process").spawn;
+var spawn = require('child_process').spawn;
 
 //Task Logger
 function AppSrvTaskLogger(jsh) {
@@ -34,10 +34,10 @@ function AppSrvTaskLogger(jsh) {
   this.isSendingEmail = false;
 
   var rslt = function(model, loglevel, msg){ return _this.log(model, loglevel, msg); };
-  rslt.debug = function(model, msg){ _this.log(model, 'debug', msg); }
-  rslt.info = function(model, msg){ _this.log(model, 'info', msg); }
-  rslt.warning = function(model, msg){ _this.log(model, 'warning', msg); }
-  rslt.error = function(model, msg){ _this.log(model, 'error', msg); }
+  rslt.debug = function(model, msg){ _this.log(model, 'debug', msg); };
+  rslt.info = function(model, msg){ _this.log(model, 'info', msg); };
+  rslt.warning = function(model, msg){ _this.log(model, 'warning', msg); };
+  rslt.error = function(model, msg){ _this.log(model, 'error', msg); };
 
   return rslt;
 }
@@ -80,7 +80,7 @@ AppSrvTaskLogger.prototype.log = function(model, loglevel, msg){
       });
     }
   }
-}
+};
 
 AppSrvTaskLogger.prototype.sendErrorEmail = function(model, email_params, txt){
   var _this = this;
@@ -103,7 +103,7 @@ AppSrvTaskLogger.prototype.sendErrorEmail = function(model, email_params, txt){
   _this.jsh.SendEmail(mparams, function(){
     _this.isSendingEmail = false;
   });
-}
+};
 
 //Task Server
 function AppSrvTask(appsrv) {
@@ -125,7 +125,7 @@ AppSrvTask.prototype.getParamType = function(fields, key, value){
   }
   //Return type based on value
   return _this.AppSrv.DB.types.fromValue(value);
-}
+};
 
 AppSrvTask.prototype.getParamValues = function(params){
   var rslt = {};
@@ -133,7 +133,7 @@ AppSrvTask.prototype.getParamValues = function(params){
     rslt[pname] = params[pname].value;
   }
   return rslt;
-}
+};
 
 AppSrvTask.prototype.getParamTypes = function(params){
   var rslt = [];
@@ -141,17 +141,17 @@ AppSrvTask.prototype.getParamTypes = function(params){
     rslt.push(params[pname].type);
   }
   return rslt;
-}
+};
 
 AppSrvTask.prototype.addParam = function(params, fields, key, value){
   if(key in params) throw new Error('Parameter already defined: ' + key);
   params[key] = { name: key, value: value, type: this.getParamType(fields, key, value) };
-}
+};
 
 AppSrvTask.prototype.logParams = function(model, params){
   var rslt = JSON.stringify(this.getParamValues(params),null,4);
   this.log.debug(model, model.id + ': Params ' + rslt);
-}
+};
 
 AppSrvTask.prototype.exec = function (req, res, dbcontext, modelid, taskparams, taskcallback) {
   taskparams = taskparams || {};
@@ -165,9 +165,9 @@ AppSrvTask.prototype.exec = function (req, res, dbcontext, modelid, taskparams, 
       return taskcallback(err);
     }
     return taskcallback(null, rslt);
-  }
+  };
 
-  if (!this.jsh.hasTask(req, modelid)) return callback(new Error("Error: Task Model " + modelid + " is not defined."));
+  if (!this.jsh.hasTask(req, modelid)) return callback(new Error('Error: Task Model ' + modelid + ' is not defined.'));
   model = this.jsh.getModel(req, modelid);
   var task = model.task;
 
@@ -184,10 +184,10 @@ AppSrvTask.prototype.exec = function (req, res, dbcontext, modelid, taskparams, 
   var options = {
     trans: { },
     exec_counter: [],
-  }
+  };
 
   this.exec_commands(model, task.commands, params, options, callback);
-}
+};
 
 AppSrvTask.prototype.exec_commands = function (model, commands, params, options, callback) {
   var _this = this;
@@ -218,14 +218,14 @@ AppSrvTask.prototype.exec_commands = function (model, commands, params, options,
     options.exec_counter.pop();
     callback(err, rslt);
   });
-}
+};
 
 AppSrvTask.prototype.validateFields = function(obj, values){
   if(!obj.xvalidate) return '';
   var verrors = _.merge({}, obj.xvalidate.Validate('U', values||{}));
   if (!_.isEmpty(verrors)) { return verrors[''].join('\n'); }
   return '';
-}
+};
 
 AppSrvTask.prototype.replaceParams = function(params, val){
   if(!val) return val;
@@ -253,7 +253,7 @@ AppSrvTask.prototype.replaceParams = function(params, val){
     val[key] = _this.replaceParams(params, val[key]);
   }
   return val;
-}
+};
 
 AppSrvTask.prototype.exec_sqltrans = function(model, command, params, options, command_cb){
   //sqltrans (db, for)
@@ -279,11 +279,11 @@ AppSrvTask.prototype.exec_sqltrans = function(model, command, params, options, c
     _this.exec_commands(model, command.for, params, transOptions, function(err){
       return callback(err);
     });
-  }
+  };
   db.ExecTransTasks(dbtasks, function (err, rslt, stats) {
     return command_cb(err);
   });
-}
+};
 
 AppSrvTask.prototype.exec_sql = function(model, command, params, options, command_cb){
   //sql (sql, db, into, foreach_row)
@@ -353,11 +353,11 @@ AppSrvTask.prototype.exec_sql = function(model, command, params, options, comman
         }
       );
     });
-  }
+  };
   db.ExecTasks(dbtasks, function (err, rslt, stats) {
     return command_cb(err);
   });
-}
+};
 
 AppSrvTask.prototype.exec_create_folder = function(model, command, params, options, command_cb){
   //create_folder (path)
@@ -370,7 +370,7 @@ AppSrvTask.prototype.exec_create_folder = function(model, command, params, optio
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
   HelperFS.createFolderIfNotExists(fpath, command_cb);
-}
+};
 
 AppSrvTask.prototype.exec_move_folder = function(model, command, params, options, command_cb){
   //move_folder (path, dest)
@@ -402,7 +402,7 @@ AppSrvTask.prototype.exec_move_folder = function(model, command, params, options
       });
     });
   });
-}
+};
 
 AppSrvTask.prototype.exec_delete_folder = function(model, command, params, options, command_cb){
   //delete_folder (path, recursive)
@@ -424,7 +424,7 @@ AppSrvTask.prototype.exec_delete_folder = function(model, command, params, optio
       fs.unlink(fpath, command_cb);
     }
   });
-}
+};
 
 AppSrvTask.prototype.exec_list_files = function(model, command, params, options, command_cb){
   //list_files (path, matching, into, foreach_file) *** matching can be exact match, wildcard, or /regex/
@@ -449,14 +449,13 @@ AppSrvTask.prototype.exec_list_files = function(model, command, params, options,
         for(var i=0;i<command.matching.length;i++){
           var matchexpr = (command.matching[i]||'').toString();
           if(!matchexpr) continue;
-          var matchrex = null;
           if(matchexpr[0]=='/'){
             //Regex match
             var endofrx = matchexpr.lastIndexOf('/');
             if(endofrx == 0) endofrx = matchexpr.length;
             var rxpattern = matchexpr.substr(1, endofrx - 1);
             var rxflags = matchexpr.substr(endofrx+1);
-            var rx=RegExp(rxpattern, rxflags);
+            let rx=RegExp(rxpattern, rxflags);
             if(filename.match(rx)) foundmatch = true;
           }
           else if(matchexpr.indexOf('*')>=0){
@@ -467,12 +466,12 @@ AppSrvTask.prototype.exec_list_files = function(model, command, params, options,
               rxstr += Helper.escapeRegEx(wildpart) + '.*';
             });
             rxstr += '$';
-            var rx=RegExp(rxstr);
+            let rx=RegExp(rxstr);
             if(filename.match(rx)) foundmatch = true;
           }
           else {
             //Equality
-            if(filename == match) foundmatch = true;
+            if(filename == matchexpr) foundmatch = true;
           }
           if(foundmatch) break;
         }
@@ -499,7 +498,7 @@ AppSrvTask.prototype.exec_list_files = function(model, command, params, options,
       return command_cb(err);
     });
   });
-}
+};
 
 AppSrvTask.prototype.exec_delete_file = function(model, command, params, options, command_cb){
   //delete_file (path)
@@ -520,7 +519,7 @@ AppSrvTask.prototype.exec_delete_file = function(model, command, params, options
       return command_cb(err);
     });
   });
-}
+};
 
 AppSrvTask.prototype.exec_copy_file = function(model, command, params, options, command_cb){
   //copy_file (path, dest, overwrite)
@@ -553,7 +552,7 @@ AppSrvTask.prototype.exec_copy_file = function(model, command, params, options, 
       });
     });
   });
-}
+};
 
 AppSrvTask.prototype.exec_move_file = function(model, command, params, options, command_cb){
   //move_file (path, dest, overwrite)
@@ -586,7 +585,7 @@ AppSrvTask.prototype.exec_move_file = function(model, command, params, options, 
       });
     });
   });
-}
+};
 
 AppSrvTask.prototype.exec_write_file = function(task, command, params, options, command_cb){
   //write_file (path, text, overwrite)
@@ -612,7 +611,7 @@ AppSrvTask.prototype.exec_write_file = function(task, command, params, options, 
       return command_cb(err);
     });
   });
-}
+};
 
 AppSrvTask.prototype.exec_append_file = function(model, command, params, options, command_cb){
   //append_file (path, text)
@@ -639,7 +638,7 @@ AppSrvTask.prototype.exec_append_file = function(model, command, params, options
       return command_cb(err);
     });
   });
-}
+};
 
 AppSrvTask.prototype.exec_read_file = function(model, command, params, options, command_cb){
   //read_file (path, into, foreach_line)
@@ -681,7 +680,7 @@ AppSrvTask.prototype.exec_read_file = function(model, command, params, options, 
       var nextLine = dataBuffer.indexOf('\n');
       var hasCR = false;
       if(nextLine >= 0){
-        var line = '';
+        let line = '';
         if((nextLine >= 1) && (dataBuffer[nextLine-1]=='\r')) hasCR = true;
         if(hasCR) line = dataBuffer.substr(0, nextLine - 1);
         else line = dataBuffer.substr(0, nextLine);
@@ -699,7 +698,7 @@ AppSrvTask.prototype.exec_read_file = function(model, command, params, options, 
         return true;
       }
       //Lines remaining in databuffer
-      var line = dataBuffer;
+      let line = dataBuffer;
       dataBuffer = null;
       processLine(line, data_cb);
       return;
@@ -737,7 +736,7 @@ AppSrvTask.prototype.exec_read_file = function(model, command, params, options, 
       processData(processDataHandler);
     }
   });
-}
+};
 
 AppSrvTask.prototype.getCSVSQLData = function(model, command, params, options, onrow, callback){
   var _this = this;
@@ -768,11 +767,11 @@ AppSrvTask.prototype.getCSVSQLData = function(model, command, params, options, o
       });
       return callback(err, rslt, stats);
     });
-  }
+  };
   db.ExecTasks(dbtasks, function (err, rslt, stats) {
     return callback(err);
   });
-}
+};
 
 AppSrvTask.prototype.exec_write_csv = function(model, command, params, options, command_cb){
   //write_csv (path, db, data, sql, overwrite, headers)
@@ -817,7 +816,7 @@ AppSrvTask.prototype.exec_write_csv = function(model, command, params, options, 
     var csv_options = { quotedString: true };
     if(command.headers) csv_options.header = true;
     if(command.fields){
-      var columns = _.map(command.fields, function(field){ if(_.isString(field)) return field; return field.name });
+      var columns = _.map(command.fields, function(field){ if(_.isString(field)) return field; return field.name; });
       if(!_.isEmpty(columns)) command.columns = columns;
     }
     var csvwriter = csv.stringify(csv_options);
@@ -844,7 +843,7 @@ AppSrvTask.prototype.exec_write_csv = function(model, command, params, options, 
       csvwriter.end();
     }
   });
-}
+};
 
 AppSrvTask.prototype.exec_append_csv = function(model, command, params, options, command_cb){
   //append_csv (path, db, data, sql)
@@ -886,7 +885,7 @@ AppSrvTask.prototype.exec_append_csv = function(model, command, params, options,
     var csv_options = { quotedString: true };
     if(command.headers) csv_options.header = true;
     if(command.fields){
-      var columns = _.map(command.fields, function(field){ if(_.isString(field)) return field; return field.name });
+      var columns = _.map(command.fields, function(field){ if(_.isString(field)) return field; return field.name; });
       if(!_.isEmpty(columns)) command.columns = columns;
     }
     var csvwriter = csv.stringify(csv_options);
@@ -913,7 +912,7 @@ AppSrvTask.prototype.exec_append_csv = function(model, command, params, options,
       csvwriter.end();
     }
   });
-}
+};
 
 AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, command_cb){
   //read_csv (path, into, foreach_row, fields, headers, pipe, csv_options)
@@ -931,7 +930,7 @@ AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, c
   var column_headers = false;
   if(command.headers) column_headers = true;
   if(command.fields){
-    column_headers = _.map(command.fields, function(field){ if(_.isString(field)) return field; return field.name });
+    column_headers = _.map(command.fields, function(field){ if(_.isString(field)) return field; return field.name; });
   }
   var csv_options = command.csv_options || {};
   var csvparser = csv.parse(_.extend({ columns: column_headers, relax_column_count: true }, csv_options));
@@ -1019,7 +1018,7 @@ AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, c
     }
   });
   f.pipe(csvparser);
-}
+};
 
 AppSrvTask.prototype.exec_js = function(model, command, params, options, command_cb){
   //js (js, into, foreach)
@@ -1046,7 +1045,7 @@ AppSrvTask.prototype.exec_js = function(model, command, params, options, command
     },
     function(){
       if(command.foreach){
-        if((jsrslt === null) || (typeof jsrslt == 'undefined')){ }
+        if((jsrslt === null) || (typeof jsrslt == 'undefined')){ /* Do nothing */ }
         else{
           if(!_.isArray(jsrslt)) jsrslt = [jsrslt];
     
@@ -1074,7 +1073,7 @@ AppSrvTask.prototype.exec_js = function(model, command, params, options, command
   );
 
   
-}
+};
 
 AppSrvTask.prototype.exec_shell = function(model, command, params, options, command_cb){
   //shell (path, params, cwd)
@@ -1107,7 +1106,7 @@ AppSrvTask.prototype.exec_shell = function(model, command, params, options, comm
     if(hasError) return;
     return command_cb();
   });
-}
+};
 
 AppSrvTask.prototype.exec_email = function(model, command, params, options, command_cb){
   //email (to, cc, bcc, subject, text, html, attachments)
@@ -1117,7 +1116,7 @@ AppSrvTask.prototype.exec_email = function(model, command, params, options, comm
   if((!command.email && !command.jsharmony_txt) || (command.email && command.jsharmony_txt)) return command_cb(new Error('email command requires either "email" or "jsharmony_txt" property'));
 
   if(command.email){
-    var emailparams = _this.replaceParams(params, command.email);
+    let emailparams = _this.replaceParams(params, command.email);
 
     //Make sure to and subject exists
     if(!emailparams.to) return command_cb(new Error('email command missing "email.to" property'));
@@ -1125,8 +1124,8 @@ AppSrvTask.prototype.exec_email = function(model, command, params, options, comm
 
     //Add path to attachments
     if(emailparams && emailparams.attachments && emailparams.attachments.length){
-      for(var i=0;i<emailparams.attachments.length;i++){
-        var attachment = emailparams.attachments[i];
+      for(let i=0;i<emailparams.attachments.length;i++){
+        let attachment = emailparams.attachments[i];
         if(attachment && attachment.path){
           if(!path.isAbsolute(attachment.path)) attachment.path = path.join(_this.jsh.Config.datadir, attachment.path);
         }
@@ -1140,7 +1139,7 @@ AppSrvTask.prototype.exec_email = function(model, command, params, options, comm
     });
   }
   else if(command.jsharmony_txt){
-    var emailparams = _this.replaceParams(params, command.jsharmony_txt);
+    let emailparams = _this.replaceParams(params, command.jsharmony_txt);
 
     //Make sure to and subject exists
     if(!emailparams.txt_attrib) return command_cb(new Error('email command missing "jsharmony_txt.txt_attrib" property'));
@@ -1148,8 +1147,8 @@ AppSrvTask.prototype.exec_email = function(model, command, params, options, comm
 
     //Add path to attachments
     if(emailparams && emailparams.attachments && emailparams.attachments.length){
-      for(var i=0;i<emailparams.attachments.length;i++){
-        var attachment = emailparams.attachments[i];
+      for(let i=0;i<emailparams.attachments.length;i++){
+        let attachment = emailparams.attachments[i];
         if(attachment && attachment.path){
           if(!path.isAbsolute(attachment.path)) attachment.path = path.join(_this.jsh.Config.datadir, attachment.path);
         }
@@ -1164,6 +1163,6 @@ AppSrvTask.prototype.exec_email = function(model, command, params, options, comm
       if(command_cb) command_cb();
     });
   }
-}
+};
 
 module.exports = exports = AppSrvTask;

@@ -20,25 +20,25 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 function jsHarmonyExtensions(){
   this.image = {
     type: '',
-    init: function(callback){ return callback(new Error("Image Extensions have not been enabled.  Please configure jsh.Extensions.image")); },
-    driver: function(){ throw new Error("Image Extensions have not been enabled.  Please configure jsh.Extensions.image"); },
-    getDriver: function(callback){ return callback(new Error("Image Extensions have not been enabled.  Please configure jsh.Extensions.image")); },
-    resample: function(src, dest, format, callback){ return callback(new Error("Image Extensions have not been enabled - cannot resample.  Please configure jsh.Extensions.image")); },
-    size: function(src, callback){ return callback(new Error("Image Extensions have not been enabled - cannot get size.  Please configure jsh.Extensions.image")); },
-    crop: function(src, dest, destsize, format, callback){ return callback(new Error("Image Extensions have not been enabled - cannot crop.  Please configure jsh.Extensions.image")); },
-    resize: function(src, dest, destsize, format, callback){ return callback(new Error("Image Extensions have not been enabled - cannot resize.  Please configure jsh.Extensions.image")); },
-    compare: function(src1, src2, dest, options, callback){ return callback(new Error("Image Extensions have not been enabled - cannot compare.  Please configure jsh.Extensions.image")); },
+    init: function(callback){ return callback(new Error('Image Extensions have not been enabled.  Please configure jsh.Extensions.image')); },
+    driver: function(){ throw new Error('Image Extensions have not been enabled.  Please configure jsh.Extensions.image'); },
+    getDriver: function(callback){ return callback(new Error('Image Extensions have not been enabled.  Please configure jsh.Extensions.image')); },
+    resample: function(src, dest, format, callback){ return callback(new Error('Image Extensions have not been enabled - cannot resample.  Please configure jsh.Extensions.image')); },
+    size: function(src, callback){ return callback(new Error('Image Extensions have not been enabled - cannot get size.  Please configure jsh.Extensions.image')); },
+    crop: function(src, dest, destsize, format, callback){ return callback(new Error('Image Extensions have not been enabled - cannot crop.  Please configure jsh.Extensions.image')); },
+    resize: function(src, dest, destsize, format, callback){ return callback(new Error('Image Extensions have not been enabled - cannot resize.  Please configure jsh.Extensions.image')); },
+    compare: function(src1, src2, dest, options, callback){ return callback(new Error('Image Extensions have not been enabled - cannot compare.  Please configure jsh.Extensions.image')); },
   };
 
   this.report = {
     type: '',
-    init: function(callback){ return callback(new Error("Report Extensions have not been enabled.  Please configure jsh.Extensions.report")); },
-    excelJS: function(){ throw new Error("Report Extensions have not been enabled.  Please configure jsh.Extensions.report"); },
-    getExcelJS: function(callback){ return callback(new Error("Report Extensions have not been enabled.  Please configure jsh.Extensions.report")); },
-    pdfMerge: function(){ throw new Error("Report Extensions have not been enabled.  Please configure jsh.Extensions.report"); },
-    getPdfMerge: function(callback){ return callback(new Error("Report Extensions have not been enabled.  Please configure jsh.Extensions.report")); },
-    puppeteer: function(){ throw new Error("Report Extensions have not been enabled.  Please configure jsh.Extensions.report"); },
-    getPuppeteer: function(callback){ return callback(new Error("Report Extensions have not been enabled.  Please configure jsh.Extensions.report")); },
+    init: function(callback){ return callback(new Error('Report Extensions have not been enabled.  Please configure jsh.Extensions.report')); },
+    excelJS: function(){ throw new Error('Report Extensions have not been enabled.  Please configure jsh.Extensions.report'); },
+    getExcelJS: function(callback){ return callback(new Error('Report Extensions have not been enabled.  Please configure jsh.Extensions.report')); },
+    pdfMerge: function(){ throw new Error('Report Extensions have not been enabled.  Please configure jsh.Extensions.report'); },
+    getPdfMerge: function(callback){ return callback(new Error('Report Extensions have not been enabled.  Please configure jsh.Extensions.report')); },
+    puppeteer: function(){ throw new Error('Report Extensions have not been enabled.  Please configure jsh.Extensions.report'); },
+    getPuppeteer: function(callback){ return callback(new Error('Report Extensions have not been enabled.  Please configure jsh.Extensions.report')); },
   };
 
   this.dependencies = {};
@@ -46,7 +46,7 @@ function jsHarmonyExtensions(){
   this.logDependency = function(extension, desc){
     if(!this.dependencies[extension]) this.dependencies[extension] = [];
     this.dependencies[extension].push(desc);
-  }
+  };
 }
 
 exports = module.exports = jsHarmonyExtensions;

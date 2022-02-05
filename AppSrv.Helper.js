@@ -24,7 +24,7 @@ module.exports = exports = {};
 
 exports.getFieldNames = function (req, fields, perm, fcond) {
   return _.map(exports.getFields(req, fields, perm, fcond), 'name');
-}
+};
 
 exports.getFields = function (req, fields, perm, fcond) {
   var rslt = [];
@@ -37,11 +37,11 @@ exports.getFields = function (req, fields, perm, fcond) {
     }
   });
   return rslt;
-}
+};
 
 exports.getFieldNamesWithProp = function (fields, prop) {
   return _.map(exports.getFieldsWithProp(fields, prop), 'name');
-}
+};
 
 exports.getFieldsWithProp = function (fields, prop) {
   var rslt = [];
@@ -52,7 +52,7 @@ exports.getFieldsWithProp = function (fields, prop) {
     }
   });
   return rslt;
-}
+};
 
 exports.getFieldsByName = function (fields, fieldnames, fcond) {
   var rslt = [];
@@ -62,7 +62,7 @@ exports.getFieldsByName = function (fields, fieldnames, fcond) {
     var field = fields[i];
     if (_.includes(fieldnames, field.name)){
       for(var j=0;j<fieldnames_missing.length;j++){
-        if(fieldnames_missing[j]==field.name){ 
+        if(fieldnames_missing[j]==field.name){
           fieldnames_missing.splice(j,1);
           j--;
         }
@@ -74,7 +74,7 @@ exports.getFieldsByName = function (fields, fieldnames, fcond) {
   if(fieldnames_missing.length > 0){ this.jsh.Log.warning('Fields not found: ' + fieldnames_missing.join(', ')); }
   
   return rslt;
-}
+};
 
 //Static function
 exports.getFieldByName = function (fields, fieldname) {
@@ -82,18 +82,18 @@ exports.getFieldByName = function (fields, fieldname) {
     if (fields[i].name == fieldname) return fields[i];
   }
   return;
-}
+};
 
 exports.getKeyNames = function (fields) {
   return _.map(exports.getKeys(fields), 'name');
-}
+};
 
 exports.getKeys = function (fields) {
   return _.filter(fields, function (field) {
     if (field.key) return true;
     return false;
   });
-}
+};
 
 exports.getEncryptedFields = function (req, fields, perm) {
   var rslt = [];

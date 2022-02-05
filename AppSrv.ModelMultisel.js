@@ -27,7 +27,6 @@ exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
   var model = this.jsh.getModel(req, fullmodelid);
   if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
   var fieldlist = this.getFieldNames(req, model.fields, 'B');
-  var keylist = this.getKeyNames(model.fields);
   var foreignkeylist = this.getFieldNames(req, model.fields, 'F');
   var lovkeylist = this.getFieldNamesWithProp(model.fields, 'lovkey');
   var lovfield = null;
@@ -70,7 +69,6 @@ exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
   
   var lov = lovfield.lov;
   if ('sql' in lov) {
-    var datalockstr = '';
     _this.getDataLockSQL(req, model, [lov], sql_ptypes, sql_params, verrors, function (datalockquery) {
       lov_datalockqueries.push(datalockquery);
     }, null, fullmodelid + '_lov');
@@ -78,7 +76,7 @@ exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
     //Add LOV parameters
     if ('sql_params' in lov) {
       var lov_pfields = _this.getFieldsByName(model.fields, lov.sql_params);
-      for (var i = 0; i < lov_pfields.length; i++) {
+      for (let i = 0; i < lov_pfields.length; i++) {
         var lov_pfield = lov_pfields[i];
         var lov_pname = lov_pfield.name;
         if (!(lov_pname in Q)) {
@@ -94,7 +92,7 @@ exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
   var keys = [];
   if (is_insert) keys = this.getFieldsByName(model.fields, lovkeylist);
   else keys = this.getFieldsByName(model.fields, foreignkeylist);
-  for (var i = 0; i < keys.length; i++) {
+  for (let i = 0; i < keys.length; i++) {
     var field = keys[i];
     var fname = field.name;
     if (fname in Q) {
@@ -105,7 +103,7 @@ exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
         if (dfield != field) return false;
         param_datalocks.push({ pname: fname, datalockquery: datalockquery, field: dfield });
         return true;
-      }, null, fullmodelid + "_key");
+      }, null, fullmodelid + '_key');
     }
     else { if (is_insert) continue; _this.jsh.Log.warning('Missing parameter ' + fname); Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   }
@@ -123,7 +121,7 @@ exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
       if (stats) stats.model = model;
       callback(err, rslt, stats);
     });
-  }
+  };
   //Title Tasks
   if(_this.addTitleTasks(req, res, model, Q, dbtasks, (is_insert?'I':(is_browse?'B':'U')))===false) return;
   
@@ -131,7 +129,7 @@ exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
 };
 
 exports.postModelMultisel = function (req, res, fullmodelid, Q, P, onComplete) {
-  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error('Error: Model ' + fullmodelid + ' not found in collection.');
   var _this = this;
   var model = this.jsh.getModel(req, fullmodelid);
   if (!Helper.hasModelAction(req, model, 'U')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
@@ -153,7 +151,7 @@ exports.postModelMultisel = function (req, res, fullmodelid, Q, P, onComplete) {
   
   var lovvals = JSON.parse(P[lovfield.name]);
   if (!_.isArray(lovvals)) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
-  for (var i = 0; i < lovvals.length; i++) {
+  for (let i = 0; i < lovvals.length; i++) {
     if (!_.isString(lovvals[i])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
     lovvals[i] = lovvals[i].toString();
   }
@@ -167,7 +165,7 @@ exports.postModelMultisel = function (req, res, fullmodelid, Q, P, onComplete) {
   
   var subs = [];
   //Add key from query string	
-  for (var i = 0; i < lovvals.length; i++) {
+  for (let i = 0; i < lovvals.length; i++) {
     var lovval = lovvals[i];
     var fname = 'multisel' + i;
     var dbtype = _this.getDBType(lovfield);
@@ -196,7 +194,6 @@ exports.postModelMultisel = function (req, res, fullmodelid, Q, P, onComplete) {
   });
   
   //Add DataLock parameters to SQL 
-  var datalockstr = '';
   _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
     if ('lovkey' in dfield) return false; //DATALOCK lovkey validation not necessary here, this only checks existing data
     datalockqueries.push(datalockquery);
@@ -209,7 +206,7 @@ exports.postModelMultisel = function (req, res, fullmodelid, Q, P, onComplete) {
     
     if ('sql_params' in lov) {
       var lov_pfields = _this.getFieldsByName(model.fields, lov.sql_params);
-      for (var i = 0; i < lov_pfields.length; i++) {
+      for (let i = 0; i < lov_pfields.length; i++) {
         var lov_pfield = lov_pfields[i];
         var lov_pname = lov_pfield.name;
         if (!(lov_pname in Q)) {
@@ -238,6 +235,6 @@ exports.postModelMultisel = function (req, res, fullmodelid, Q, P, onComplete) {
     });
   };
   return onComplete(null, dbtasks);
-}
+};
 
 return module.exports;

@@ -85,14 +85,14 @@ function jsHarmonySite(jsh, id, config){
     on_loginsuccess: function(req, jsh, params, cb){ /*cb(err, rslt)* / },
     on_superlogin: function(req, jsh, params, cb){ /*cb(err, rslt)* / },
     on_passwordreset: function(req, jsh, params, cb){ /*cb(err, rslt)* / }
-  } 
+  }
   */
   //Site menu generator
-  this.menu = function(req,res,jsh,params,onComplete){ 
-    params.showlisting = true; 
+  this.menu = function(req,res,jsh,params,onComplete){
+    params.showlisting = true;
     params.startmodel = null;
-    params.menudata = { MainMenu:[], SubMenus:{}  }; 
-    onComplete(); 
+    params.menudata = { MainMenu:[], SubMenus:{}  };
+    onComplete();
   };
   //Help System
   this.help = function(req, res, jsh, helpid, onComplete){
@@ -141,7 +141,7 @@ jsHarmonySite.prototype.Merge = function(config){
       else if((prop=='auth') && (config[prop] === false)) this[prop] = false;
       //Merge objects
       else if(_.includes(['auth', 'datalock','datalocktypes','globalparams'],prop)) this[prop] = _.extend(this[prop],config[prop]);
-      //Merge arrays      
+      //Merge arrays
       else if(_.includes(['public_apps','private_apps','catchall_apps'],prop)) this[prop] = config[prop].concat(this[prop]);
       //Replace existing objects
       else this[prop] = config[prop];
@@ -201,7 +201,7 @@ jsHarmonySite.prototype.Validate = function(){
         }
       }
       return cb('Invalid email address or password');
-    }
+    };
     if(Helper.notset(_this.auth.validateSuperPassword)) _this.auth.validateSuperPassword = function(req, jsh, admin_info, password, cb){ //cb(err, token)
       var prehash = crypto.createHash('sha1').update(admin_info[jsh.map.user_id] + password + req.jshsite.auth.supersalt).digest('hex');
       if ((admin_info[jsh.map.user_hash] != null) && (admin_info[jsh.map.user_hash].toString('hex') == prehash)) {
@@ -209,11 +209,11 @@ jsHarmonySite.prototype.Validate = function(){
         return;
       }
       else { cb('Invalid email address or password'); }
-    }
+    };
     if(Helper.notset(_this.auth.getTrustedToken)) _this.auth.getTrustedToken = function(req, jsh, user_info, cb){ //cb(err, token)
       var dbhash = user_info[jsh.map.user_hash].toString('hex');
       cb(null, dbhash);
-    }
+    };
   }
 
   if(!_this.cookie_samesite) _this.cookie_samesite = 'lax';

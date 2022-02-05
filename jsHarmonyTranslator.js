@@ -23,7 +23,7 @@ var process = require('process');
 var fs = require('fs');
 var Helper = require('./lib/Helper.js');
 var HelperFS = require('./lib/HelperFS.js');
-var jsHarmonyLocale = require('./jsHarmonyLocale.js')
+var jsHarmonyLocale = require('./jsHarmonyLocale.js');
 
 function jsHarmonyTranslator(obj, config){
   var _this = this;
@@ -36,7 +36,7 @@ function jsHarmonyTranslator(obj, config){
   }, config);
   if(!_this.config.getLocale){
     var defaultLocale = new jsHarmonyLocale('en');
-    _this.config.getLocale = function(){ return defaultLocale; }
+    _this.config.getLocale = function(){ return defaultLocale; };
   }
 
   this.loadLanguages = function(localeIds, cb){
@@ -44,7 +44,7 @@ function jsHarmonyTranslator(obj, config){
     async.each(localeIds, function(localeId, locale_cb){
       _this.loadLanguage(localeId, {}, locale_cb);
     }, cb);
-  }
+  };
 
   this.loadLanguage = function(localeId, options, cb){
     options = _.extend({ async: true }, options);
@@ -56,7 +56,7 @@ function jsHarmonyTranslator(obj, config){
       languagePath = _this.config.getLanguagePath(localeId);
     }
     catch(ex){
-      console.error('Error getting language path for '+localeId+': '+ex.toString());
+      console.error('Error getting language path for '+localeId+': '+ex.toString()); // eslint-disable-line no-console
     }
 
     var readFile = options.async ?
@@ -78,32 +78,32 @@ function jsHarmonyTranslator(obj, config){
 
     readFile(function(err, languageFile){
       if(err){
-        if(HelperFS.fileNotFound(err)){}
-        else console.error('Error loading '+languagePath+': '+err.toString());
+        if(HelperFS.fileNotFound(err)){ /* Do nothing */ }
+        else console.error('Error loading '+languagePath+': '+err.toString()); // eslint-disable-line no-console
       }
       languageFile = languageFile || '{}';
       try{
         languageJson = JSON.parse(languageFile);
       }
       catch(ex){
-        console.error('Error parsing '+languagePath+': '+ex.toString());
+        console.error('Error parsing '+languagePath+': '+ex.toString()); // eslint-disable-line no-console
       }
       _this.language[localeId] = languageJson || {};
       if(!('*' in _this.language[localeId])) _this.language[localeId]['*'] = {};
       return cb();
     });
-  }
+  };
 
   this.translateParams = function(msgId, params, section, pluralIndex, options){
     var msg = _this.translate(msgId, section, pluralIndex, options);
     if(!msg) return msg;
     return Helper.ReplaceParams(msg, params);
-  }
+  };
 
   this.translateParamsN = function(msgId, params, cnt, section, options){
     var pluralIndex = _this.config.getLocale().getPluralIndex(cnt);
     return _this.translateParams(msgId, params, section, pluralIndex, options);
-  }
+  };
 
   this.translate = function(msgId, section, pluralIndex, options){
     if(!msgId) return '';
@@ -141,11 +141,11 @@ function jsHarmonyTranslator(obj, config){
     }
     if(options.nullOnNotFound) return null;
     return msgId;
-  }
+  };
   this.translateN = function(msgId, cnt, section, options){
     var pluralIndex = _this.config.getLocale().getPluralIndex(cnt);
     return _this.translate(msgId, section, pluralIndex, options);
-  }
+  };
 }
 
 exports = module.exports = jsHarmonyTranslator;

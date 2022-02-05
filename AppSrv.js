@@ -25,7 +25,6 @@ var AppSrvTask = require('./AppSrvTask.js');
 var AppSrvModel = require('./AppSrvModel.js');
 
 function AppSrv(_jsh) {
-  var _this = this;
   this.jsh = _jsh;
   this.DB = DB;
   this.rptsrv = new AppSrvRpt(this);
@@ -40,7 +39,7 @@ AppSrv.prototype.SQL_TERMINATORS = "(),.+-*/%<>=&|!@$?:~#; \t\r\n\f^`[]{}\\|'\""
 GET OPERATION / SELECT
 *********************/
 AppSrv.prototype.getModel = function (req, res, fullmodelid, noexecute, Q, P) {
-  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error('Error: Model ' + fullmodelid + ' not found in collection.');
   var model = this.jsh.getModel(req, fullmodelid);
   if (model.unbound && !model._sysconfig.unbound_meta) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   if (typeof Q == 'undefined') Q = req.query;
@@ -57,13 +56,13 @@ AppSrv.prototype.getModel = function (req, res, fullmodelid, noexecute, Q, P) {
   if (_.isUndefined(dbtasks)) return;
   if ((typeof noexecute != 'undefined') && noexecute) return dbtasks;
   this.ExecTasks(req, res, dbtasks, false);
-}
+};
 
 /*********************
 PUT OPERATION / INSERT
 *********************/
 AppSrv.prototype.putModel = function (req, res, fullmodelid, noexecute, Q, P, onComplete) {
-  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error('Error: Model ' + fullmodelid + ' not found in collection.');
   var model = this.jsh.getModel(req, fullmodelid);
   if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   var _this = this;
@@ -78,19 +77,19 @@ AppSrv.prototype.putModel = function (req, res, fullmodelid, noexecute, Q, P, on
     if ((typeof noexecute != 'undefined') && noexecute) return onComplete(null, dbtasks);
     //If noexecute set to false, just execute the result and ignore onComplete
     _this.ExecTasks(req, res, dbtasks, false, onComplete);
-  }
+  };
   
   if (model.layout == 'form') this.putModelForm(req, res, fullmodelid, Q, P, fdone);
   else if (model.layout == 'form-m') this.putModelForm(req, res, fullmodelid, Q, P, fdone);
   else if ((model.layout == 'grid') && (model.commitlevel) && (model.commitlevel != 'none')) this.putModelForm(req, res, fullmodelid, Q, P, fdone);
   else throw new Error('Model ' + fullmodelid + ' operation not supported');
-}
+};
 
 /**********************
 POST OPERATION / UPDATE
 **********************/
 AppSrv.prototype.postModel = function (req, res, fullmodelid, noexecute, Q, P, onComplete) {
-  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error('Error: Model ' + fullmodelid + ' not found in collection.');
   var model = this.jsh.getModel(req, fullmodelid);
   if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   var _this = this;
@@ -104,7 +103,7 @@ AppSrv.prototype.postModel = function (req, res, fullmodelid, noexecute, Q, P, o
     if (_.isUndefined(dbtasks)) { return onComplete(null, undefined); /* Some error has been returned from execution */ }
     if ((typeof noexecute != 'undefined') && noexecute) return onComplete(null, dbtasks);
     _this.ExecTasks(req, res, dbtasks, false, onComplete);
-  }
+  };
   
   if (model.layout == 'form') _this.postModelForm(req, res, fullmodelid, Q, P, fdone);
   else if (model.layout == 'form-m') this.postModelForm(req, res, fullmodelid, Q, P, fdone);
@@ -112,13 +111,13 @@ AppSrv.prototype.postModel = function (req, res, fullmodelid, noexecute, Q, P, o
   else if (model.layout == 'multisel') this.postModelMultisel(req, res, fullmodelid, Q, P, fdone);
   else if (model.layout == 'exec') this.postModelExec(req, res, fullmodelid, Q, P, fdone);
   else throw new Error('Model ' + fullmodelid + ' operation not supported');
-}
+};
 
 /************************
 DELETE OPERATION / DELETE
 ************************/
 AppSrv.prototype.deleteModel = function (req, res, fullmodelid, noexecute, Q, P, onComplete) {
-  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error('Error: Model ' + fullmodelid + ' not found in collection.');
   var model = this.jsh.getModel(req, fullmodelid);
   if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
   var _this = this;
@@ -132,13 +131,13 @@ AppSrv.prototype.deleteModel = function (req, res, fullmodelid, noexecute, Q, P,
     if (_.isUndefined(dbtasks)) { return onComplete(null, undefined); /* Some error has been returned from execution */ }
     if ((typeof noexecute != 'undefined') && noexecute) return onComplete(null, dbtasks);
     _this.ExecTasks(req, res, dbtasks, false, onComplete);
-  }
+  };
   
-  if (model.layout == 'form') dbtasks = this.deleteModelForm(req, res, fullmodelid, Q, P, fdone);
-  else if (model.layout == 'form-m') dbtasks = this.deleteModelForm(req, res, fullmodelid, Q, P, fdone);
+  if (model.layout == 'form') this.deleteModelForm(req, res, fullmodelid, Q, P, fdone);
+  else if (model.layout == 'form-m') this.deleteModelForm(req, res, fullmodelid, Q, P, fdone);
   else if ((model.layout == 'grid') && (model.commitlevel) && (model.commitlevel != 'none')) this.deleteModelForm(req, res, fullmodelid, Q, P, fdone);
   else throw new Error('Model ' + fullmodelid + ' operation not supported');
-}
+};
 
 /***************
 HELPER FUNCTIONS
@@ -147,7 +146,7 @@ AppSrv.prototype.ParamCheck = function(desc, col, params, show_errors){
   var log = this.jsh.Log;
   if(!show_errors && (typeof show_errors !== 'undefined')) log = false;
   return Helper.ParamCheck(desc, col, params, log);
-}
+};
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.ModelGrid.js'));
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.ModelForm.js'));
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.ModelMultisel.js'));
@@ -167,11 +166,11 @@ AppSrv.prototype.getSQL = function (model, sqlid, jsh) {
   else db = jsh.DB['default'];
 
   return DB.ParseSQLBase(sqlid, jsh, db.SQLExt);
-}
-AppSrv.prototype.parseSQL = function(sql, model, jsh){ return this.getSQL(model, sql, jsh); }
-AppSrv.prototype._t = function(){ return this.jsh._t.apply(this.jsh, arguments); }
-AppSrv.prototype._tN = function(){ return this.jsh._tN.apply(this.jsh, arguments); }
-AppSrv.prototype._tP = function(){ return this.jsh._tP.apply(this.jsh, arguments); }
-AppSrv.prototype._tPN = function(){ return this.jsh._tPN.apply(this.jsh, arguments); }
+};
+AppSrv.prototype.parseSQL = function(sql, model, jsh){ return this.getSQL(model, sql, jsh); };
+AppSrv.prototype._t = function(){ return this.jsh._t.apply(this.jsh, arguments); };
+AppSrv.prototype._tN = function(){ return this.jsh._tN.apply(this.jsh, arguments); };
+AppSrv.prototype._tP = function(){ return this.jsh._tP.apply(this.jsh, arguments); };
+AppSrv.prototype._tPN = function(){ return this.jsh._tPN.apply(this.jsh, arguments); };
 
 module.exports = AppSrv;

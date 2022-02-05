@@ -111,8 +111,8 @@ exports.ParseJSON = function(fname, moduleName, desc, cb, options){
   if(!options) options = { fatalError: true };
   var _this = this;
   var fread = null;
-  if(cb) fread = function(fread_cb){ fs.readFile(fname, 'utf8', fread_cb); }
-  else fread = function(fread_cb){ return fread_cb(null, fs.readFileSync(fname, 'utf8'));  }
+  if(cb) fread = function(fread_cb){ fs.readFile(fname, 'utf8', fread_cb); };
+  else fread = function(fread_cb){ return fread_cb(null, fs.readFileSync(fname, 'utf8'));  };
   return fread(function(err, data){
     if(err){
       if(cb) return cb(err);
@@ -357,7 +357,7 @@ exports.ParseModelInheritance = function () {
         if(model.buttons && parentmodel.buttons){
           if(_this.Config.system_settings.deprecated.disable_button_inheritance[model.module]){
             //If button inheritance is disabled, remove all inherited buttons prior to parsing
-            if(_.isArray(model.buttons)) model.buttons.unshift({ "__REMOVEALL__": true });
+            if(_.isArray(model.buttons)) model.buttons.unshift({ '__REMOVEALL__': true });
           }
           else {
             //Check if child model has zero-length buttons
@@ -391,7 +391,7 @@ exports.ParseModelInheritance = function () {
         if(model.buttons && parentmodel.buttons){
           if(!_this.Config.system_settings.deprecated.disable_button_inheritance[model.module]){
             //Check if named buttons are used in both model and parent model
-            if(!!_.filter(_this.Models[model.id].buttons, function(button){ return !button.name; }).length){
+            if(_.filter(_this.Models[model.id].buttons, function(button){ return !button.name; }).length){
               _this.LogInit_WARNING('Model ' + model.id + ' buttons may conflict with parent model '+parentmodel.id+' buttons.  Use button.name on all buttons to prevent conflicts in inherited models');
             }
           }
@@ -420,7 +420,7 @@ exports.ApplyModelTransform = function(model, transform){
   });
   this.MergeModelTransform(model, transform);
   this.CleanTransform(model);
-}
+};
 
 exports.CleanTransform = function(obj){
   if(!obj) return;
@@ -445,7 +445,7 @@ exports.CleanTransform = function(obj){
       }
     }
   }
-}
+};
 
 exports.TransformArrayMatch = function(arr, query, transform){
   //Search through arr for query
@@ -490,7 +490,7 @@ exports.TransformArrayMatch = function(arr, query, transform){
     }
   }
   return found;
-}
+};
 
 exports.MergeModelTransform = function(base, transform){
   if(!base || !transform) return;
@@ -557,7 +557,7 @@ exports.MergeModelTransform = function(base, transform){
     }
     else base[key] = tval;
   }
-}
+};
 
 function EntityPropMerge(mergedprops, prop, model, parent, mergefunc) {
   if ((prop in model) && (prop in parent)) mergedprops[prop] = mergefunc(model[prop], parent[prop]);
@@ -629,11 +629,11 @@ function SortModelArray(arr){
         else if(elem['__AFTER__']=='__END__') newidx = arr.length;
         else if(_.isString(elem['__AFTER__'])){
           if(elem['__AFTER__'].indexOf(':')>=0){
-            elemQuery = elem['__AFTER__'].split(':');
+            var elemQuery = elem['__AFTER__'].split(':');
             if(elemQuery.length == 2){
               var qField = elemQuery[0];
               var qVal = elemQuery[1];
-              for(var j = 0; j < arr.length; j++){
+              for(let j = 0; j < arr.length; j++){
                 if(qField in arr[j]){
                   if((qVal=='*') || (arr[j][qField] === qVal)){ 
                     newidx = j + 1;
@@ -645,7 +645,7 @@ function SortModelArray(arr){
             }
           }
           if(newidx == -1){
-            for(var j = 0; j < arr.length; j++){
+            for(let j = 0; j < arr.length; j++){
               if(arr[j].name == elem['__AFTER__']){ 
                 newidx = j + 1;
                 //if(newidx > i) newidx--; /* if moving forward, subtract 1 */
@@ -702,7 +702,7 @@ exports.TestReportExtension  = function(cb){
   errMsg += '       npm install jsharmony-report\n';
   errMsg += '    2. Add the extension to app.config.js / app.config.local.js:\n';
   errMsg += "       jsh.Extensions.report = require('jsharmony-report');";
-  if(!_this.Extensions.report) return cb(err && errMsg);
+  if(!_this.Extensions.report) return cb(errMsg);
   _this.Extensions.report.init(function(err){ return cb(err && errMsg); });
 };
 
@@ -874,14 +874,14 @@ exports.validateDisplayLayouts = function(model){
       var column_names = {};
       display_layout.columns = _.reduce(display_layout['columns'],function(rslt,column){
         if(_.isString(column)){
-          var column_name = column;
+          let column_name = column;
           if(!(column_name in field_names)){ _this.LogInit_ERROR('Display layout column not found: '+model.id+'::'+display_layout_name+'::'+column_name); return rslt; }
           if(column_name in column_names){ _this.LogInit_ERROR('Duplicate display layout column: '+model.id+'::'+display_layout_name+'::'+column_name); return rslt; }
           rslt.push({name: column_name});
           column_names[column_name] = 1;
         }
         else if(column){
-          var column_name = column.name;
+          let column_name = column.name;
           if(!column_name){ _this.LogInit_ERROR('Display layout column missing "name" property: '+model.id+'::'+display_layout_name+' '+JSON.stringify(column)); return rslt; }
           if(!(column_name in field_names)){ _this.LogInit_ERROR('Display layout column not found: '+model.id+'::'+display_layout_name+'::'+column_name); return rslt; }
           if(column_name in column_names){ _this.LogInit_ERROR('Duplicate display layout column: '+model.id+'::'+display_layout_name+'::'+column_name); return rslt; }
@@ -892,7 +892,7 @@ exports.validateDisplayLayouts = function(model){
       },[]);
     }
   }
-}
+};
 
 exports.ParseEntities = function () {
   var _this = this;
@@ -1450,10 +1450,10 @@ exports.ParseEntities = function () {
         }
       }
       if((field.type=='date') && !('format' in field) && (((model.layout=='grid') && !field.control) || (field.control=='label'))){
-        field.format = ["date","YYYY-MM-DD"]; 
+        field.format = ['date','YYYY-MM-DD']; 
       }
       if((field.type=='time') && !('format' in field) && (((model.layout=='grid') && !field.control) || (field.control=='label'))){
-        field.format = ["time","HH:mm:ss"]; 
+        field.format = ['time','HH:mm:ss']; 
       }
       if(!('caption' in field)){
         if(_.includes(['subform','html','hidden'],field.control)) field.caption = '';
@@ -1596,7 +1596,7 @@ exports.ParseEntities = function () {
 
       //Add validation to password control
       if((field.control=='password')&&!field.unbound&&!('validate' in field)){
-        field.validate = [{"function":"Required","actions":((field.controlparams && field.controlparams.update_when_blank)?"BIU":"I")}, "MinLength:8"];
+        field.validate = [{'function':'Required','actions':((field.controlparams && field.controlparams.update_when_blank)?'BIU':'I')}, 'MinLength:8'];
       }
 
       //Apply "enable_search" property
@@ -1682,7 +1682,7 @@ exports.ParseEntities = function () {
 
       //Add dateformat
       if(field.control=='date'){
-        if(!('format' in field)) field.format = ["date","YYYY-MM-DD"];
+        if(!('format' in field)) field.format = ['date','YYYY-MM-DD'];
         if((field.control=='date') && (!field.controlparams || !('dateformat' in field.controlparams))){
           if(('format' in field) && _.isArray(field.format) && (field.format.length>=2) && (field.format[0]=='date')){
             if(!field.controlparams) field.controlparams = {};
@@ -2281,7 +2281,7 @@ exports.InitExtensions = function(cb){
   ], function(err){
     return cb(err);
   });
-}
+};
 
 function ParseMultiLineProperties(obj, arr) {
   _.each(arr, function (p) { if (p in obj) obj[p] = Helper.ParseMultiLine(obj[p]); });
@@ -2524,7 +2524,7 @@ exports.AddFieldIfNotExists = function(model, fieldname, modelsExt, actions){
     return true;
   }
   return false;
-}
+};
 
 exports.AddBindingFields = function(model, element, elementname, modelsExt){
   var _this = this;
@@ -2694,14 +2694,14 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
         });
         _.each(tmodel.fields, function(tfield){
           if(tfield.name==field.popuplov.code_val) found_code_val = true; 
-          for(var key in found_child_popup_copy_results) if(tfield.name==key) found_child_popup_copy_results[key] = true;
+          for(let key in found_child_popup_copy_results) if(tfield.name==key) found_child_popup_copy_results[key] = true;
         });
         _.each(model.fields, function(pfield){
-          for(var key in found_parent_popup_copy_results) if(pfield.name==key) found_parent_popup_copy_results[key] = true;
+          for(let key in found_parent_popup_copy_results) if(pfield.name==key) found_parent_popup_copy_results[key] = true;
         });
         if(field.popuplov.code_val && !found_code_val) _this.LogInit_WARNING(model.id + ' > Popup LOV ' + field.name + ': popuplov.code_val "' + field.popuplov.code_val + '" not found in target model');
-        for(var key in found_child_popup_copy_results) if(!found_child_popup_copy_results[key]) _this.LogInit_WARNING(model.id + ' > Popup LOV ' + field.name + ': popuplov.popup_copy_results - Target field "' + key + '" not found in target model');
-        for(var key in found_parent_popup_copy_results) if(!found_parent_popup_copy_results[key]) _this.LogInit_WARNING(model.id + ' > Popup LOV ' + field.name + ': popuplov.popup_copy_results - Parent field "' + key + '" not found in model');
+        for(let key in found_child_popup_copy_results) if(!found_child_popup_copy_results[key]) _this.LogInit_WARNING(model.id + ' > Popup LOV ' + field.name + ': popuplov.popup_copy_results - Target field "' + key + '" not found in target model');
+        for(let key in found_parent_popup_copy_results) if(!found_parent_popup_copy_results[key]) _this.LogInit_WARNING(model.id + ' > Popup LOV ' + field.name + ': popuplov.popup_copy_results - Parent field "' + key + '" not found in model');
       }
       ParseModelRoles(jsh, tmodel, srcmodelid, srcactions);
       if(field.control=='subform'){
@@ -2878,7 +2878,7 @@ exports.getDatepickerFormat = function(fstr, fdesc){
     this.LogInit_ERROR(fdesc + ': Unsupported date format for date control: "' + fstr + '", please use only D/DD/DDD/DDDD/ddd/dddd/M/MM/MMM/MMMM/YY/YYYY/X');
   }
   return rslt;
-}
+};
 
 exports.ParsePopups = function () {
   var _this = this;
@@ -2947,7 +2947,7 @@ exports.getDefaultValidators = function(field, desc){
       break;
   }
   return rslt;
-}
+};
 
 function AddValidation(field, new_validator, options) {
   if(!options) options = { ignore: null };

@@ -309,7 +309,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
   router.delete('/_queue/:queueid', function (req, res, next) {
     var queueid = req.params.queueid;
     if (typeof queueid === 'undefined') { next(); return; }
-    jsh.AppSrv.PopQueue(req, res, queueid);
+    jsh.AppSrv.PopQueue(req, res, next, queueid);
   });
   router.route(/^\/\_d\/(.*)/)
 		.all(function (req, res, next) {

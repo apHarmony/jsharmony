@@ -42,6 +42,7 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
   if ((encryptedfields.length > 0) && !(req.secure) && (!_this.jsh.Config.system_settings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted fields require HTTPS connection'); return; }
   
 
+
   var is_insert = false;
   var is_browse = false;
   var selecttype = 'single';
@@ -54,11 +55,11 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
     else if (_this.ParamCheck('Q', Q, _.union(_.map(foreignkeylist, function (field) { return '|' + field; }), ['|_action']), false)) {
       selecttype = 'multiple';
     }
-    else { 
+    else {
       //Display missing keys
       _this.ParamCheck('Q', Q, _.map(keylist, function (key) { return '&' + key; }), true);
       Helper.GenError(req, res, -4, 'Invalid Parameters');
-      return; 
+      return;
     }
   }
   else {
@@ -124,7 +125,7 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
   var keys = [];
   if (is_insert && !Helper.hasModelAction(req, model, 'I')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
   if (!is_insert && !nokey && !model.unbound) {
-    //Add dynamic parameters from query string	
+    //Add dynamic parameters from query string
     if (selecttype == 'single') keys = this.getKeys(model.fields);
     else if (selecttype == 'multiple') keys = this.getFields(req, model.fields, 'F');
     for (var i = 0; i < keys.length; i++) {
@@ -205,7 +206,7 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
       }
       callback(err, rslt, stats);
     });
-  }
+  };
   else if (is_insert && (selecttype == 'multiple')) {
     dbtasks[0][fullmodelid] = function (dbtrans, callback) {
       var rslt = [];
@@ -232,7 +233,7 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
   if(_this.addLOVTasks(req, res, model, Q, dbtasks[1], { action: targetperm })===false) return;
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   return dbtasks;
-}
+};
 
 exports.putModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
   var _this = this;
@@ -303,7 +304,7 @@ exports.putModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
         }
         else throw new Error('Missing parameter ' + fname);
       });
-      //Add DataLock parameters to Encryption SQL 
+      //Add DataLock parameters to Encryption SQL
       _this.getDataLockSQL(req, model, model.fields, enc_sql_ptypes, enc_sql_params, verrors, function (datalockquery) { enc_datalockqueries.push(datalockquery); });
     }
     
@@ -330,7 +331,7 @@ exports.putModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
       else throw new Error('Missing parameter ' + fname);
     });
 
-    var ignore_subs = _.map(subs, function(val){ return '_obj.'+val });
+    var ignore_subs = _.map(subs, function(val){ return '_obj.'+val; });
     verrors = _.merge(verrors, model.xvalidate.Validate('I', _.merge(vfiles, enc_sql_params, sql_params), '', ignore_subs));
     if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
     
@@ -392,14 +393,14 @@ exports.putModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
     }
     if (fileops.length > 0) dbtasks['_POSTPROCESS'] = function (callback) {
       _this.ProcessFileOperationsDone(fileops, callback);
-    }
+    };
     return onComplete(null, dbtasks);
   });
-}
+};
 
 exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
   var _this = this;
-  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error('Error: Model ' + fullmodelid + ' not found in collection.');
   var model = this.jsh.getModel(req, fullmodelid);
   if (!Helper.hasModelAction(req, model, 'U')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
   
@@ -434,14 +435,14 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
     _.each(encryptedfields, function (field) {
       if (field.type == 'encascii') {
         if ('hash' in field) {
-          var hashfield = _.find(model.fields, function (xfield) { return xfield.name == field.hash; });
+          let hashfield = _.find(model.fields, function (xfield) { return xfield.name == field.hash; });
           if (typeof hashfield == 'undefined') throw new Error('Field ' + field.name + ' hash is not defined.');
           hashfields[field.name] = hashfield;
         }
       }
     });
     
-    //Add key from query string	
+    //Add key from query string
     var keys = _this.getKeys(model.fields);
     _.each(keys, function (field) {
       var fname = field.name;
@@ -485,7 +486,7 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
         else throw new Error('Missing parameter ' + fname);
       });
       
-      //Add DataLock parameters to SQL 
+      //Add DataLock parameters to SQL
       _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
       
       verrors = _.merge(verrors, model.xvalidate.Validate('UK', _.merge(vfiles, sql_params), '', vignorefiles, req._roles));
@@ -501,7 +502,7 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
           if (clearval.length == 0) {
             sql_params[field.name] = null;
             if ('hash' in field) {
-              var hashfield = hashfields[field.name];
+              let hashfield = hashfields[field.name];
               sql_ptypes.push(_this.getDBType(hashfield));
               sql_params[hashfield.name] = null;
             }
@@ -513,10 +514,10 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
               cipher.update(clearval, 'ascii');
               sql_params[field.name] = cipher.final();
               if ('hash' in field) {
-                var hashfield = hashfields[field.name];
+                let hashfield = hashfields[field.name];
                 if (!(hashfield.salt in _this.jsh.Config.salts)) throw new Error('Hash salt not defined.');
                 sql_ptypes.push(_this.getDBType(hashfield));
-                sql_params[hashfield.name] = crypto.createHash('sha1').update(clearval + _this.jsh.Config.salts[hashfield.salt]).digest();;
+                sql_params[hashfield.name] = crypto.createHash('sha1').update(clearval + _this.jsh.Config.salts[hashfield.salt]).digest();
               }
             }
           }
@@ -557,14 +558,14 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
 
     if (fileops.length > 0) dbtasks['_POSTPROCESS'] = function (callback) {
       _this.ProcessFileOperationsDone(fileops, callback);
-    }
+    };
 
     return onComplete(null, dbtasks);
   });
-}
+};
 
 exports.deleteModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
-  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+  if (!this.jsh.hasModel(req, fullmodelid)) throw new Error('Error: Model ' + fullmodelid + ' not found in collection.');
   var _this = this;
   var model = this.jsh.getModel(req, fullmodelid);
   if (!Helper.hasModelAction(req, model, 'D')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
@@ -595,7 +596,7 @@ exports.deleteModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
     else throw new Error('Missing parameter ' + fname);
   });
   
-  //Add DataLock parameters to SQL 
+  //Add DataLock parameters to SQL
   _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
   
   verrors = _.merge(verrors, model.xvalidate.Validate('K', sql_params));
@@ -614,9 +615,10 @@ exports.deleteModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
   };
   //Add post-processing task to delete any files
   if (filelist.length > 0) {
+    var keyval = '';
     if (keys.length == 1) keyval = sql_params[keys[0].name];
     else throw new Error('File uploads require one key');
-    if ((typeof keyval == 'undefined') || !keyval) return callback(Helper.NewError('Invalid file key', -13), null);
+    if ((typeof keyval == 'undefined') || !keyval) return Helper.GenError(req, res, -13, 'Invalid file key');
     
     var fileops = [];
     _.each(filelist, function (file) {
@@ -630,9 +632,9 @@ exports.deleteModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
     });
     dbtasks['_POSTPROCESS'] = function (callback) {
       _this.ProcessFileOperationsDone(fileops, callback);
-    }
+    };
   }
   return onComplete(null, dbtasks);
-}
+};
 
 return module.exports;

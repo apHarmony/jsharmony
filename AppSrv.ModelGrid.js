@@ -40,7 +40,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   searchlist = _.union(keylist, searchlist);
   var encryptedfields = this.getFields(req, model.fields, '*', function(field){ return field.type=='encascii'; });
   if (encryptedfields.length > 0) throw new Error('Encrypted fields not supported on GRID (field.type=encascii)');
-  var encryptedfields = this.getEncryptedFields(req, model.fields, 'S');
+  encryptedfields = this.getEncryptedFields(req, model.fields, 'S'); //Encrypted fields can be used for search
   if ((encryptedfields.length > 0) && !(req.secure) && (!_this.jsh.Config.system_settings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted / hash fields require HTTPS connection'); return; }
   var db = _this.jsh.getModelDB(req, fullmodelid);
   if ('d' in Q) P = JSON.parse(Q.d);
@@ -80,7 +80,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
     var sortfield = val.substring(1);
     var lovtxtfield = '';
     if(sortfield.indexOf('__'+_this.jsh.map.code_txt+'__')==0){
-      var lovtxtfield = sortfield;
+      lovtxtfield = sortfield;
       sortfield = sortfield.substr(_this.jsh.map.code_txt.length + 4);
     }
     var sortdir = val[0];
@@ -89,7 +89,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
     else throw new Error('Invalid sort string');
     if (!_.includes(availablesortfieldslist, sortfield)) throw new Error('Invalid sort field ' + sortfield);
     
-    var field = _this.getFieldByName(model.fields, sortfield);
+    let field = _this.getFieldByName(model.fields, sortfield);
     var sortfieldname = sortfield;
     if(lovtxtfield && field.lov && !field.lov.showcode) sortfieldname = lovtxtfield;
     sortfields.push({ 'field': sortfieldname, 'dir': sortdir, 'sql': (field.sqlsort || '') });
@@ -105,7 +105,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
     var search_items = JSON.parse(Q.searchjson);
     var search_join = 'and';
     if (_.isArray(search_items) && (search_items.length > 0)) {
-      for (var i = 0; i < search_items.length; i++) {
+      for (let i = 0; i < search_items.length; i++) {
         var search_column = search_items[i].Column;
         var search_value = search_items[i].Value;
         var search_comparison = 'contains';
@@ -129,7 +129,6 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
         if (search_column == 'ALL') {
           if (searchlist.length == 0) continue;
           var searchall = [];
-          var firstSearchItem = true;
           var searchlistfields = this.getFieldsByName(model.fields, searchlist);
           _.each(searchlistfields, function (field) {
             if(field.disable_search_all) return;
@@ -146,7 +145,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
           }
         }
         else {
-          var field = this.getFieldByName(model.fields, search_column);
+          let field = this.getFieldByName(model.fields, search_column);
           var searchtermsql = this.addSearchTerm(req, model, field, i, search_value, search_comparison, sql_ptypes, sql_params, verrors);
           if (searchtermsql) {
             if (searchparams.length) searchparams.push(search_join);
@@ -177,8 +176,8 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   }
   
   var keys = searchfields;
-  for (var i = 0; i < keys.length; i++) {
-    var field = keys[i];
+  for (let i = 0; i < keys.length; i++) {
+    let field = keys[i];
     var fname = field.name;
     if ((fname in P) && !(fname in sql_params)) {
       var dbtype = _this.getDBType(field);
@@ -186,15 +185,15 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
       sql_params[fname] = _this.DeformatParam(field, P[fname], verrors);
     }
   }
-  for (var i = 0; i < model.fields.length; i++){
-    var field = model.fields[i];
+  for (let i = 0; i < model.fields.length; i++){
+    let field = model.fields[i];
     if(field.lov && field.lov.sqlselect && field.lov.sqlselect_params){
       for(var j = 0; j < field.lov.sqlselect_params.length; j++){
         if(!(field.lov.sqlselect_params[j] in P)){ Helper.GenError(req, res, -99999, model.id + ' > ' + field.name + ': Missing lov.sqlselect parameter @'+field.lov.sqlselect_params[j] + ' - grid parameters must be passed in the querystring or bindings.  The lov.sqlselect is inserted into the grid select statement; if this is a per-record lookup, use the expression LOVSQLTABLE.FIELD = MODELTABLE.FIELD'); return; }
       }
     }
   }
-  //Add DataLock parameters to SQL 
+  //Add DataLock parameters to SQL
   this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, fullmodelid);
   verrors = _.merge(verrors, model.xvalidate.Validate('BFK', sql_params, undefined, undefined, undefined, { ignoreUndefined: true }));
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
@@ -283,7 +282,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
     if(_this.addTitleTasks(req, res, model, P, dbtasks, (is_browse?'B':'U'))===false) return;
   }
   return dbtasks;
-}
+};
 
 exports.exportCSV = function (req, res, dbtasks, fullmodelid, options) {
   var _this = this;
@@ -315,17 +314,17 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid, options) {
   dbtasks = _.reduce(dbtasks, function (rslt, dbtask, key) { rslt[key] = async.apply(dbtask, undefined); return rslt; }, {});
   db.ExecTasks(dbtasks, function (err, rslt, stats) {
     if (err != null) { _this.AppDBError(req, res, err, stats); return; }
-    if (!fullmodelid in rslt) throw new Error('DB result missing model.');
+    if (!(fullmodelid in rslt)) throw new Error('DB result missing model.');
     var eof = false;
     if (_.isArray(rslt[fullmodelid]) && (_.isObject(rslt[fullmodelid][rslt[fullmodelid].length - 1])) && ('_eof' in rslt[fullmodelid][rslt[fullmodelid].length - 1])) {
-      var eof = rslt[fullmodelid].pop();
-      eof = eof._eof;
+      var rslt_eof = rslt[fullmodelid].pop();
+      eof = rslt_eof._eof;
     }
     //Add header
     if (rslt[fullmodelid].length > 0) {
       var header = {};
       var frow = _.extend({}, rslt[fullmodelid][0]);
-      for (var fcol in frow) {
+      for (let fcol in frow) {
         //Ignore columns that should not be exported
         if(!_.includes(exportColumns, fcol)){ delete frow[fcol]; continue; }
         var field = _this.getFieldByName(model.fields, fcol);
@@ -342,10 +341,10 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid, options) {
       //If data was truncated, add notification row
       if (!eof) {
         var eofrow = {};
-        for (var fcol in frow) {
+        for (let fcol in frow) {
           eofrow[fcol] = '';
         }
-        for (var fcol in frow) {
+        for (let fcol in frow) {
           eofrow[fcol] = 'Data exceeded limit of ' + _this.jsh.Config.export_rowlimit + ' rows, data has been truncated.';
           break;
         }
@@ -355,7 +354,7 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid, options) {
       //Process data
       for (var i = dataidx; i < rslt[fullmodelid].length; i++) {
         var crow = rslt[fullmodelid][i];
-        for (ccol in crow) {
+        for (let ccol in crow) {
           if(!ccol) continue;
           //Overwrite code_val with code_txt
           if(Helper.beginsWith(ccol, '__'+jsh.map.code_txt+'__')){
@@ -367,7 +366,7 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid, options) {
             crow[ccol] = crow[ccol].toISOString();//.replace('T', ' ').replace('Z', '');
           }
         }
-        for (ccol in crow) {
+        for (let ccol in crow) {
           if(!_.includes(exportColumns, ccol)){ delete crow[ccol]; continue; }
         }
       }
@@ -380,6 +379,6 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid, options) {
     });
     csv.stringify(rslt[fullmodelid], { quotedString: true }).pipe(res);
   });
-}
+};
 
 return module.exports;

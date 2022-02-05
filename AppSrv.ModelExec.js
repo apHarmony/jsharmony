@@ -26,9 +26,6 @@ exports.getModelExec = function (req, res, fullmodelid, Q, P, form_m) {
   var _this = this;
   var model = this.jsh.getModel(req, fullmodelid);
   if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
-  var fieldlist = this.getFieldNames(req, model.fields, 'B');
-  var filelist = this.getFileFieldNames(req, model.fields, 'B');
-  var keylist = this.getKeyNames(model.fields);
   var crumbfieldlist = this.getFieldNames(req, model.fields, 'C');
   
   if (!_this.ParamCheck('Q', Q, _.union(_.map(crumbfieldlist, function (field) { return '|' + field; }), ['|_action']), false)) {
@@ -36,7 +33,6 @@ exports.getModelExec = function (req, res, fullmodelid, Q, P, form_m) {
   }
   if (!_this.ParamCheck('P', P, [])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   
-  var nokey = (('nokey' in model) && (model.nokey));
   var is_browse = (('_action' in Q) && (Q['_action'] == 'browse'));
   
   //Return applicable drop-down lists
@@ -53,12 +49,12 @@ exports.getModelExec = function (req, res, fullmodelid, Q, P, form_m) {
   if(_this.addLOVTasks(req, res, model, Q, dbtasks)===false) return;
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   return dbtasks;
-}
+};
 
 exports.postModelExec = function (req, res, fullmodelid, Q, P, onComplete) {
   var _this = this;
   var jsh = this.jsh;
-  if (!jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+  if (!jsh.hasModel(req, fullmodelid)) throw new Error('Error: Model ' + fullmodelid + ' not found in collection.');
   var model = jsh.getModel(req, fullmodelid);
   if (!Helper.hasModelAction(req, model, 'U')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
   var db = jsh.getModelDB(req, fullmodelid);
@@ -69,14 +65,14 @@ exports.postModelExec = function (req, res, fullmodelid, Q, P, onComplete) {
   if (!_this.ParamCheck('Q', Q, [])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   if (!_this.ParamCheck('P', P, Pcheck)) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   
-  if (!('sqlexec' in model)) throw new Error("Error: Model " + fullmodelid + " missing sqlexec.");
+  if (!('sqlexec' in model)) throw new Error('Error: Model ' + fullmodelid + ' missing sqlexec.');
   var sql_ptypes = [];
   var sql_params = {};
   var verrors = {};
   var param_datalocks = [];
   var datalockqueries = [];
   
-  //Add fields from post	
+  //Add fields from post
   var fields = _this.getFieldsByName(model.fields, fieldlist);
   _.each(fields, function (field) {
     var fname = field.name;
@@ -96,7 +92,7 @@ exports.postModelExec = function (req, res, fullmodelid, Q, P, onComplete) {
     else throw new Error('Missing parameter ' + fname);
   });
   
-  //Add DataLock parameters to SQL 
+  //Add DataLock parameters to SQL
   _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
   
   verrors = _.merge(verrors, model.xvalidate.Validate('UK', sql_params));
@@ -116,6 +112,6 @@ exports.postModelExec = function (req, res, fullmodelid, Q, P, onComplete) {
     });
   };
   return onComplete(null, dbtasks);
-}
+};
 
 return module.exports;

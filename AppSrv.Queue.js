@@ -46,9 +46,9 @@ exports.SubscribeToQueue = function (req, res, next, queueid) {
     //Check if queue has a message, otherwise, add to subscriptions
     _this.JobProc.SubscribeToQueue(req, res, queueid);
   }, req, res, queueid);
-}
+};
 
-exports.PopQueue = function (req, res, queueid) {
+exports.PopQueue = function (req, res, next, queueid) {
   var _this = this;
   if (!this.jsh.Config.queues) { next(); return; }
   if (!(queueid in this.jsh.Config.queues)) { return Helper.GenError(req, res, -1, 'Queue not found'); }
@@ -68,7 +68,7 @@ exports.PopQueue = function (req, res, queueid) {
   
   if (!Helper.hasModelAction(req, queue, 'D')) { return Helper.GenError(req, res, -11, 'Invalid Access'); }
   this.JobProc.PopQueue(req, res, queueid, P, function () { res.end(JSON.stringify({ '_success': 1 })); });
-}
+};
 
 exports.SendQueue = function (queueid, message) {
   var _this = this;
@@ -94,6 +94,6 @@ exports.SendQueue = function (queueid, message) {
     }
   }
   return notifications;
-}
+};
 
 return module.exports;

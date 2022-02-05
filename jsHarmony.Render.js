@@ -117,7 +117,7 @@ exports.RenderView = function(view,ejsparams){
 exports.RenderViewAsync = async function(view,ejsparams){
   var _this = this;
   return await this.RenderEJSAsync(_this.getEJS(view),ejsparams);
-}
+};
 
 exports.RenderEJS = function(code,ejsparams){
   if(!code) return '';
@@ -141,7 +141,7 @@ exports.RouteView = function(ejsname, title, _options, nextRoute){
     if(nextRoute) return nextRoute(req, res, next);
     return next();
   };
-}
+};
 
 exports.getSystemCSS = function(cb){
   var _this = this;
@@ -154,13 +154,13 @@ exports.getSystemCSS = function(cb){
         _this.Cache['jsHarmony.css'] = data;
         _this.LoadFilesToString(_this.Config.css_extensions, function(err,extdata){
           if(err) _this.Log.error(err);
-          _this.Cache['jsHarmony.css'] += "\r\n" + extdata;
+          _this.Cache['jsHarmony.css'] += '\r\n' + extdata;
           return cb(_this.Cache['jsHarmony.css']);
         });
       }
     });
   }
-}
+};
 
 exports.getStylusCSS = function(stylusName, callback){
   var _this = this;

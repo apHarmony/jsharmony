@@ -17,12 +17,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 var _ = require('lodash');
-var async = require('async');
-var fs = require('fs');
-var path = require('path');
 var Helper = require('./lib/Helper.js');
-var DB = require('jsharmony-db');
-var jsHarmonyCodeGen = require('./lib/CodeGen.js');
 
 module.exports = exports = {};
 
@@ -45,7 +40,7 @@ exports.ParseTask = function(model){
   if(!('commands' in task)){ _this.LogInit_ERROR('Error loading' + model.id + ' task: Missing task.commands property'); return; }
   _.each(task.commands, function(command){ _this.ParseTaskCommand(model, command, params); });
 
-}
+};
 
 exports.ParseTaskValidation = function(obj, desc){
   var _this = this;
@@ -53,15 +48,15 @@ exports.ParseTaskValidation = function(obj, desc){
   _.each(obj.fields, function(field){
     _.each(_this.getDefaultValidators(field, desc), function(validator){ addFieldValidator(field, validator); });
     field.actions = 'U';
-  _.each(obj.fields, function(field){ _this.AddValidatorFuncs(obj.xvalidate, field, desc); });
+    _.each(obj.fields, function(field){ _this.AddValidatorFuncs(obj.xvalidate, field, desc); });
   });
-}
+};
 
 exports.getTaskCommandDesc = function(command, options){
   var rslt = JSON.stringify(_.pick(command,['exec','db','sql','path','into','overwrite','dest','sqldata','headers','cmd','subject','to','bcc','cc']));
   if(options && options.exec_counter) rslt += ' #' + options.exec_counter.join('-');
   return rslt;
-}
+};
 
 exports.ParseTaskCommand = function(model, command, params){
   var _this = this;
@@ -160,18 +155,18 @@ exports.ParseTaskCommand = function(model, command, params){
   }
   else if(command.exec == 'email'){
     validateCommandProperties(['email','jsharmony_txt']);
-    if(command.email) for(var key in command.email){
+    if(command.email) for(let key in command.email){
       if(!_.includes(['to','cc','bcc','subject','text','html','attachments'], key)) _this.LogInit_ERROR('Invalid email command property: email.' + key + ' in command ' + _this.getTaskCommandDesc(command));
     }
-    if(command.txt) for(var key in command.jsharmony_txt){
+    if(command.txt) for(let key in command.jsharmony_txt){
       if(!_.includes(['txt_attrib','to','cc','bcc','attachments'], key)) _this.LogInit_ERROR('Invalid email command property: txt.' + key + ' in command ' + _this.getTaskCommandDesc(command));
     }
   }
   else _this.LogInit_ERROR('Error loading task ' + model.id + ': Invalid command.exec "'+command.exec+'"');
-}
+};
 
 exports.hasTask = function(req, modelid){
   var model = this.getModel(req, modelid);
   if(!model) return false;
   return !!model.task;
-}
+};

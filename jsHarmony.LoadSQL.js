@@ -55,16 +55,13 @@ exports.InitDB = function(dbid, cb){
   var modeldirs = this.getModelDirs();
   for (let i = 0; i < modeldirs.length; i++) {
     var modeldir = modeldirs[i];
-    var module = this.Modules[modeldir.module];
     var fpath = modeldir.path;
     if(modeldir.module=='jsharmony') fpath = path.normalize(modeldir.path + '../');
-    var hasSQL = false;
     _.each([
       fpath + 'sql/',
       fpath + 'sql/'+dbid+'/'
     ], function(dir){
       if(fs.existsSync(dir)){
-        hasSQL = true;
         _this.LogInit_PERFORMANCE('Loading SQL from '+dir+' '+(Date.now()-_this.Statistics.StartTime));
         _this.LoadSQL(db, dir, driverName, modeldir.module);
       }
@@ -195,10 +192,9 @@ exports.LoadSQLObjects = function(dir, module, options){
   }
 
   return rslt;
-}
+};
 
 exports.AddSQLObject = function(module, objname, obj, fpath){
-  var _this = this;
   if(!('name' in obj)) obj.name = objname;
   obj.path = fpath;
   if(obj.name.indexOf('.')<0){
@@ -207,7 +203,7 @@ exports.AddSQLObject = function(module, objname, obj, fpath){
   if(module) obj.modulename = module.name;
   
   return obj;
-}
+};
 
 exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
 
@@ -291,9 +287,8 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
   //Load SQL Scripts
   _this.LogInit_PERFORMANCE('Loading SQL Scripts '+(Date.now()-_this.Statistics.StartTime));
   var scriptsdir = dir+'scripts/';
-  var d = _this.LoadSQLFiles(module, scriptsdir, { ignoreDirectories: false, filterType: type });
+  d = _this.LoadSQLFiles(module, scriptsdir, { ignoreDirectories: false, filterType: type });
   if(module && (d.length > 0)){
-    var module = _this.Modules[moduleName];
     var scripts = {};
 
     //Process folders
@@ -329,8 +324,7 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
 
   //Load SQL Objects
   _this.LogInit_PERFORMANCE('Loading SQL Objects '+(Date.now()-_this.Statistics.StartTime));
-  if(moduleName){
-    var module = _this.Modules[moduleName];
+  if(module){
     var objectsdir = dir+'objects/';
     rslt.Objects[moduleName] = _this.LoadSQLObjects(objectsdir, module, { dbtype: type });
     if(rslt.Objects[moduleName].length){
@@ -347,7 +341,7 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
         },
         'sample_data': { '00_SQLOBJECT': 'object:sample_data' },
         'drop': { '00_SQLOBJECT': 'object:drop' },
-      }
+      };
       if(!rslt.Scripts[moduleName]) rslt.Scripts[moduleName] = {};
       rslt.Scripts[moduleName] = _.merge(rslt.Scripts[moduleName], objScripts);
     }
@@ -642,8 +636,6 @@ exports.ParseSQLObjects = function(){
   _.each(_this.DB, function(db, dbid){
     if(!db || !db.SQLExt || !db.SQLExt.Objects) return;
 
-    var sqlObjects = {};
-    var sqlObjectQueue = {};
     _.each(db.SQLExt.Objects, function(moduleObjects, modulename){
       var module = _this.Modules[modulename];
       _.each(moduleObjects, function(obj){
@@ -691,7 +683,7 @@ exports.ParseSQLObjects = function(){
         }
         else if(obj.type=='view'){
           var resolvedTables = {};
-          if(obj.tables) for(var tblname in obj.tables){
+          if(obj.tables) for(let tblname in obj.tables){
             if(module.schema && ((tblname.indexOf('.')<0)) && !obj.tables[tblname].sql){
               resolvedTables[module.schema + '.' + tblname] = obj.tables[tblname];
             }
@@ -701,7 +693,7 @@ exports.ParseSQLObjects = function(){
           }
           obj.tables = resolvedTables;
           obj._tables = {};
-          for(var tblname in obj.tables){
+          for(let tblname in obj.tables){
             obj._tables[tblname] = tblname;
             var tbl = obj.tables[tblname];
             if(tbl.columns) for(var i=0;i<tbl.columns.length;i++){
