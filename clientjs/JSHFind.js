@@ -51,7 +51,7 @@ exports.parse = function (_q, options) {
     else q = new RegExp(exp,'ig');
   }
   return q;
-}
+};
 
 exports.search = function (data, q, fpath){
   //Search file for text
@@ -105,23 +105,23 @@ exports.search = function (data, q, fpath){
     }
   }
   return rslt;
-}
+};
 
 exports.replace = function (data, q, val) {
   //Search file for text
   if (!(q instanceof RegExp)) q = exports.parse(q);
   return data.replace(q, val);
-}
+};
 
 exports.numMatches = function (data, q) {
   if (!(q instanceof RegExp)) q = exports.parse(q);
   return (data.match(q) || []).length;
-}
+};
 
 function ReplaceAll(val, find, replace) {
   return val.split(find).join(replace);
 }
 
 exports.escape = function(q) {
-  return q.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-}
+  return q.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&');
+};

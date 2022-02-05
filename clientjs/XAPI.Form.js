@@ -22,17 +22,17 @@ var _ = require('lodash');
 
 exports = module.exports = function(jsh){
 
-  var XAPIForm = function(){ }
+  var XAPIForm = function(){ };
 
   //----------------
   //Shared Functions
   //----------------
-  XAPIForm.base = function(){ }
+  XAPIForm.base = function(){ };
 
   XAPIForm.base.prototype.ExecuteURL = function(ExecParams, callback){
     if((ExecParams.model.indexOf('?')<=0) && (ExecParams.url[ExecParams.url.length-1] != '/')) ExecParams.url += '/';
 
-    if(!callback) callback = function(errdata, rslt){}
+    if(!callback) callback = function(errdata, rslt){};
 
     var _this = this;
     var url = ExecParams.url;
@@ -52,14 +52,14 @@ exports = module.exports = function(jsh){
       },
       success:function(rslt){
         if(loader) loader.StopLoading(_this);
-        callback(null, rslt)
+        callback(null, rslt);
       },
       error:function(errdata){
         if(loader) loader.StopLoading(_this);
         callback(errdata, null);
       }
     });
-  }
+  };
   
   //--------------
   //Static Adapter
@@ -68,11 +68,11 @@ exports = module.exports = function(jsh){
     this.modelid = jsh.XExt.resolveModelID(modelid);
     this.dataset = dataset;
 
-    this.onSelect = function(action, actionrslt, keys){} //If return value is false, stop processing
-    this.onInsert = function(action, actionrslt, newrow){} //If return value is false, stop processing
-    this.onUpdate = function(action, actionrslt, keys, newdata){} //If return value is false, stop processing
-    this.onDelete = function(action, actionrslt, keys){} //If return value is false, stop processing
-  }
+    this.onSelect = function(action, actionrslt, keys){}; //If return value is false, stop processing
+    this.onInsert = function(action, actionrslt, newrow){}; //If return value is false, stop processing
+    this.onUpdate = function(action, actionrslt, keys, newdata){}; //If return value is false, stop processing
+    this.onDelete = function(action, actionrslt, keys){}; //If return value is false, stop processing
+  };
 
   XAPIForm.Static.prototype = new XAPIForm.base();
 
@@ -95,7 +95,7 @@ exports = module.exports = function(jsh){
     if(rslt.length > 1) throw new Error('Multiple rows ('+rslt.length+') match target key');
     else if(rslt.length == 0) throw new Error('No rows match target key');
     else return rslt[0];
-  }
+  };
 
   XAPIForm.Static.prototype.Execute = function(ExecParams, callback){
     var _this = this;
@@ -110,7 +110,7 @@ exports = module.exports = function(jsh){
     //Parse post data
     function parsePost(data){
       var rslt = {};
-      if(data && !_.isString(data)) return data
+      if(data && !_.isString(data)) return data;
       if(data) rslt = jsh.XExt.parseGET(data);
       return rslt;
     }
@@ -192,7 +192,7 @@ exports = module.exports = function(jsh){
           //Generate result
           actionrslt = {
             _stats: {}
-          }
+          };
           actionrslt[_this.modelid] = null;
           actionrslt._stats[_this.modelid] = { warnings: [], notices: [] };
 
@@ -215,7 +215,7 @@ exports = module.exports = function(jsh){
           //Generate result
           actionrslt = {
             _stats: {}
-          }
+          };
           actionrslt[_this.modelid] = null;
           actionrslt._stats[_this.modelid] = { warnings: [], notices: [] };
 
@@ -243,7 +243,7 @@ exports = module.exports = function(jsh){
           //Generate result
           actionrslt = {
             _stats: {}
-          }
+          };
           actionrslt[_this.modelid] = null;
           actionrslt._stats[_this.modelid] = { warnings: [], notices: [] };
 
@@ -293,14 +293,14 @@ exports = module.exports = function(jsh){
     setTimeout(function(){
       callback(null, rslt);
     }, 1);
-  }
+  };
 
   //-----------------
   //jsHarmony Adapter
   //-----------------
   XAPIForm.jsHarmony = function(modelid){
     this.modelid = jsh.XExt.resolveModelID(modelid);
-  }
+  };
 
   XAPIForm.jsHarmony.prototype = new XAPIForm.base();
 
@@ -309,7 +309,7 @@ exports = module.exports = function(jsh){
       ExecParams.url = jsh._BASEURL + '_d/' + ExecParams.model;
     }
     return this.ExecuteURL(ExecParams, callback);
-  }
+  };
 
   return XAPIForm;
-}
+};

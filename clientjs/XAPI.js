@@ -19,9 +19,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 exports = module.exports = function(jsh){
 
-  var XAPI = function(){ }
+  var XAPI = function(){ };
   XAPI.Form = require('./XAPI.Form.js')(jsh);
   XAPI.Grid = require('./XAPI.Grid.js')(jsh);
 
   return XAPI;
-}
+};

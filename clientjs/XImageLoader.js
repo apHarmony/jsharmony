@@ -82,4 +82,4 @@ exports = module.exports = function(jsh){
   }
 
   return XImageLoader;
-}
+};

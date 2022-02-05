@@ -33,7 +33,9 @@ exports = module.exports = function(jsh){
     this.containerClass = _containerClass || '.xloadingblock.jsHarmonyElement_'+jsh._instanceClass;
 
     //Check if required elements have been rendered to the page
-    if(!jsh.$root(_this.containerClass).length) console.error(_this.containerClass+' not found on page during XLoader initialization');
+    if(!jsh.$root(_this.containerClass).length){
+      console.error(_this.containerClass+' not found on page during XLoader initialization'); // eslint-disable-line no-console
+    }
 
     //Keep counter to match mousedown / mouseup events, to detect squashed clicks (clicks blocked by the transparent loading background)
     jsh.$root(_this.containerClass).on('mousedown', function(e){
@@ -61,13 +63,13 @@ exports = module.exports = function(jsh){
     jsh.$root(_this.containerClass+' .xloadingbox').stop().fadeTo(0,0);
     jsh.$root(_this.containerClass).show();
     jsh.$root(_this.containerClass+' .xloadingbox').fadeTo(2000,1);
-  }
+  };
 
   XLoader.prototype.StopLoading = function (obj){
     _.remove(this.LoadQueue, function (val) { return obj == val; });
     if(this.LoadQueue.length != 0) return;
     this.StopLoadingBase();
-  }
+  };
 
   XLoader.prototype.ClearLoading = function () {
     this.LoadQueue = [];
@@ -81,7 +83,7 @@ exports = module.exports = function(jsh){
     var curfade = GetOpacity(jsh.$root(_this.containerClass+' .xloadingbox')[0]);
     jsh.$root(_this.containerClass+' .xloadingbox').fadeTo(500 * curfade, 0, function () { if (!this.IsLoading) { jsh.$root(_this.containerClass).hide(); } });
     jsh.root.css('cursor', '');
-  }
+  };
 
   function GetOpacity(elem) {
     var ori = $(elem).css('opacity');
@@ -96,4 +98,4 @@ exports = module.exports = function(jsh){
   }
 
   return XLoader;
-}
+};

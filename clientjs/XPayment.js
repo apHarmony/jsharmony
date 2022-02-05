@@ -17,7 +17,6 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var $ = require('./jquery-1.11.2');
 var _ = require('lodash');
 
 exports = module.exports = function(jsh){
@@ -49,7 +48,7 @@ exports = module.exports = function(jsh){
       <div class="xpaymentformcontainer" style="position:absolute;top:0px;left:0px;width:1px;height:1px;overflow:hidden;"></div>\
     ');
     this.Initialized = true;
-  }
+  };
   XPayment.prototype.Submit = function(fp_data, payment_data, _payment_result_url, onComplete, onFail) {
     this.payment_id = fp_data.payment_id;
     this.payment_result_url = _payment_result_url;
@@ -93,7 +92,7 @@ exports = module.exports = function(jsh){
     jsh.$root('.xpaymentform').attr('action', fp_data.fp_url);
     jsh.xLoader.StartLoading(this.Loader);
     jsh.$root('.xpaymentform').submit();
-  }
+  };
   XPayment.prototype.Result = function() {
     var _this = this;
     //Verify Payment Result
@@ -113,7 +112,7 @@ exports = module.exports = function(jsh){
         }
       }
     });
-  }
+  };
 
   return XPayment;
-}
+};

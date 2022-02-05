@@ -18,11 +18,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var $ = require('./jquery-1.11.2');
+$.fn.$find = function(){ return $.fn.find.apply(this, arguments); };
 var _ = require('lodash');
 
 exports = module.exports = function(jsh){
 
-  var XSearch = function(){ }
+  var XSearch = function(){ };
 
   //-----------
   //SEARCHQUERY
@@ -43,7 +44,7 @@ exports = module.exports = function(jsh){
             else if (_.includes(['datetime', 'date'], field.type)) comparison_type = 'date';
             else if (_.includes(['hash', 'boolean'], field.type)) comparison_type = 'object';
           }
-          var sfield = { "name": field.name, "caption": field.caption, "comparison_type": comparison_type };
+          var sfield = { 'name': field.name, 'caption': field.caption, 'comparison_type': comparison_type };
           if (field.search_sound) sfield.search_sound = 1;
           _this.Fields.push(sfield);
         }
@@ -58,10 +59,10 @@ exports = module.exports = function(jsh){
     var jSearchExpressions = jsh.$root(_PlaceholderID + ' div.xsearch_expression');
     for(var i=0;i<jSearchExpressions.length;i++){
       var jobj = $(jSearchExpressions[i]);
-      var v_column = jobj.find('select.xsearch_column').val();
-      var v_value = jobj.find('input.xsearch_value').val();
-      var v_join = ((i==0) ? undefined : $(jSearchExpressions[i-1]).find('select.xsearch_join').val());
-      var v_comparison = jobj.find('select.xsearch_comparison').val();
+      var v_column = jobj.$find('select.xsearch_column').val();
+      var v_value = jobj.$find('input.xsearch_value').val();
+      var v_join = ((i==0) ? undefined : $(jSearchExpressions[i-1]).$find('select.xsearch_join').val());
+      var v_comparison = jobj.$find('select.xsearch_comparison').val();
       if ((v_column==='ALL') || !v_comparison) v_comparison = 'contains';
       _this.Items.push(new SearchItem(v_column, v_value, v_join, v_comparison));
     }
@@ -70,10 +71,10 @@ exports = module.exports = function(jsh){
     var _this = this;
     var newitems = [];
     jsh.$root(_PlaceholderID + ' div').each(function (i, obj) {
-      var v_value = $(obj).find('input.xsearch_value').val();
-      var v_join = $(obj).find('input.xsearch_join').val();
-      var v_comparison = $(obj).find('select.xsearch_comparison').val();
-      newitems.push(new SearchItem($(obj).find('select.xsearch_column').val(), v_value, v_join, v_comparison));
+      var v_value = $(obj).$find('input.xsearch_value').val();
+      var v_join = $(obj).$find('input.xsearch_join').val();
+      var v_comparison = $(obj).$find('select.xsearch_comparison').val();
+      newitems.push(new SearchItem($(obj).$find('select.xsearch_column').val(), v_value, v_join, v_comparison));
     });
     if (newitems.length != _this.Items.length) return true;
     for (var i = 0; i < newitems.length; i++) {
@@ -90,10 +91,10 @@ exports = module.exports = function(jsh){
     this.Value = _Value;
     this.Join = _Join;
     this.Comparison = _Comparison;
-  };
+  }
 
   XSearch.SearchQuery = SearchQuery;
   XSearch.SearchItem = SearchItem;
 
   return XSearch;
-}
+};

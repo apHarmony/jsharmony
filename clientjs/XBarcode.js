@@ -53,14 +53,14 @@ exports = module.exports = function(jsh){
     jsh.xLoader.StartLoading(jsh.xfileuploadLoader);
     $.ajax({
       cache: false,
-      url: url,      
+      url: url,
       jsonp: 'callback',
       dataType: 'jsonp',
       complete: function (data) {
         XBarcode_ClearLoadEvents();
         var jdata = data.responseJSON;
         if ((jdata instanceof Object) && ('_error' in jdata)) {
-          if (jsh.DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { }
+          if (jsh.DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { /* Do nothing */ }
           else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { jsh.XExt.Alert(jdata._error.Message); }
           else { jsh.XExt.Alert('Error #' + jdata._error.Number + ': ' + jdata._error.Message); }
           return;
@@ -74,7 +74,7 @@ exports = module.exports = function(jsh){
       },
       error: function (err) { XBarcode_Timeout(onFail); }
     });
-  }
+  };
 
   XBarcode.EnableScanner = function (jobj, onSuccess){
     if (typeof jobj.data('keydown_focus') !== 'undefined') return;
@@ -91,7 +91,7 @@ exports = module.exports = function(jsh){
     jobj.keyup(function (e) {
       if (jobj.data('keydown_focus') != '1') return;
     });
-  }
+  };
 
   return XBarcode;
-}
+};

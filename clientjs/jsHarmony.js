@@ -58,16 +58,16 @@ var jsHarmony = function(options){
 
   //Events
   this.onRefreshLayout = [];
-  this.RefreshLayout = function(){ _this.XExt.trigger(_this.onRefreshLayout); }
+  this.RefreshLayout = function(){ _this.XExt.trigger(_this.onRefreshLayout); };
 
   this.onNavigated = [];
-  this.Navigated = function(obj){ _this.XExt.trigger(_this.onNavigated, obj); }
+  this.Navigated = function(obj){ _this.XExt.trigger(_this.onNavigated, obj); };
 
   this.onMessage = [];
   this.Message = function(data){
     _this.XExt.trigger(_this.onMessage, data);
     _this.trigger('jsh_message', data);
-  }
+  };
 
   this.onInit = null; //function(){};
 
@@ -216,20 +216,20 @@ var jsHarmony = function(options){
     window.jsh = this;
     if(!_instance) _instance = 'jsh';
   }
-}
+};
 
-jsHarmony.prototype.$root = function(sel){ return this.root.find(sel); }
-jsHarmony.prototype.$dialogBlock = function(sel){ if(!this.dialogBlock) return $(); return this.dialogBlock.find(sel); }
+jsHarmony.prototype.$root = function(sel){ return this.root.find(sel); };
+jsHarmony.prototype.$dialogBlock = function(sel){ if(!this.dialogBlock) return $(); return this.dialogBlock.find(sel); };
 
 jsHarmony.prototype.getInstance = function(){
   if(!this._instance) throw new Error('jsHarmony._instance is required');
   return this._instance;
-}
+};
 
 jsHarmony.prototype.getFileProxy = function(){
   var _this = this;
   return _this.$root('#'+_this.getInstance()+'_xfileproxy');
-}
+};
 
 jsHarmony.prototype.postFileProxy = function(url, params){
   var _this = this;
@@ -246,7 +246,7 @@ jsHarmony.prototype.postFileProxy = function(url, params){
     jform.append(jinput);
   }
   jform.submit().remove();
-}
+};
 
 jsHarmony.prototype.loadScript = function(url, cb){
   var _this = this;
@@ -260,15 +260,15 @@ jsHarmony.prototype.loadScript = function(url, cb){
     var funcs = _this.scriptLoader[url];
     _this.scriptLoader[url] = null;
     _.each(funcs, function(func){ func(); });
-  }
+  };
   script.onerror = function (err) {
     console.log(err);
     _this.XExt.Alert('Error loading script: '+err.toString());
-  }
+  };
   script.src = url;
   script.async = true;
   document.head.appendChild(script);
-}
+};
 
 jsHarmony.prototype.BindEvents = function(){
   var _this = this;
@@ -301,8 +301,8 @@ jsHarmony.prototype.BindEvents = function(){
       e.preventDefault();
       e.stopImmediatePropagation();
     }
-  })
-}
+  });
+};
 
 jsHarmony.prototype.Init = function(){
   var _this = this;
@@ -310,12 +310,12 @@ jsHarmony.prototype.Init = function(){
   if(_this.XExt.isMobile()) _this.root.find('.xmain').addClass('xmain_mobile');
   _this.InitFileUpload();
   this.imageLoader = new this.XImageLoader();
-	this.imageLoader.loadqueue = new Array(
-		_this._PUBLICURL+'images/loading.gif',
-		_this._PUBLICURL+'images/arrow_down.png',
-		_this._PUBLICURL+'images/arrow_down_over.png',
-		_this._PUBLICURL+'images/arrow_up.png',
-		_this._PUBLICURL+'images/arrow_up_over.png'
+  this.imageLoader.loadqueue = new Array(
+    _this._PUBLICURL+'images/loading.gif',
+    _this._PUBLICURL+'images/arrow_down.png',
+    _this._PUBLICURL+'images/arrow_down_over.png',
+    _this._PUBLICURL+'images/arrow_up.png',
+    _this._PUBLICURL+'images/arrow_up_over.png'
   );
   this.imageLoader.StartLoad();
   $('html').click(function () {
@@ -354,7 +354,7 @@ jsHarmony.prototype.Init = function(){
   }
   if(this.Config.debug_params.monitor_globals) this.runGlobalsMonitor();
   if(_this.onInit) _this.onInit();
-}
+};
 
 jsHarmony.prototype.mouseDragBegin = function(mouseDragObj, mouseCanDrop, e){
   var _this = this;
@@ -373,7 +373,7 @@ jsHarmony.prototype.mouseDragBegin = function(mouseDragObj, mouseCanDrop, e){
   _this.root.prepend(jclone);
 
   _this.trigger('jsh_mouseDragBegin', [mouseDragObj, e]);
-}
+};
 
 jsHarmony.prototype.mouseDrag = function(mouseDragObj, e){
   var _this = this;
@@ -388,11 +388,11 @@ jsHarmony.prototype.mouseDrag = function(mouseDragObj, e){
       if(!_this.mouseCanDrop || _this.mouseCanDrop(this)){
         if(!targetObj || $.contains(targetObj, this)) targetObj = this;
 	    }
-	  } 
+	  }
   });
 
   _this.trigger('jsh_mouseDrag', [mouseDragObj, targetObj, e]);
-}
+};
 
 jsHarmony.prototype.mouseDragEnd = function(mouseDragObj, e){
   var _this = this;
@@ -404,10 +404,10 @@ jsHarmony.prototype.mouseDragEnd = function(mouseDragObj, e){
       if(!_this.mouseCanDrop || _this.mouseCanDrop(this)){
         if(!targetObj || $.contains(targetObj, this)) targetObj = this;
       }
-    } 
+    }
   });
   _this.trigger('jsh_mouseDragEnd', [mouseDragObj, targetObj, e]);
-}
+};
 
 jsHarmony.prototype.hideContextMenu = function(){
   if (this.xContextMenuVisible) {
@@ -416,30 +416,30 @@ jsHarmony.prototype.hideContextMenu = function(){
     this.xContextMenuItemData = undefined;
     this.$root('.xcontext_menu').hide();
   }
-}
+};
 
 jsHarmony.prototype.DefaultErrorHandler = function(num,txt){
-	if(num == -9) { 
-		//Custom Error Message
+  if(num == -9) {
+    //Custom Error Message
     this.XExt.Alert(txt);
-    return true; 
-	}
-	else if(num == -10) { 
-		//User not logged in
+    return true;
+  }
+  else if(num == -10) {
+    //User not logged in
     this.XExt.Confirm('Your session has timed out or you have logged out of the system.  Proceed to login page?  You will lose any pending changes.', function () {
       location.reload(true);
     });
-		return true; 
-	}
-	return false;
-}
+    return true;
+  }
+  return false;
+};
 
 jsHarmony.prototype.XDebugInfo = function (txt,clear) {
   var jobj = this.$root('.xdebuginfo.jsHarmonyElement_'+this._instanceClass);
   jobj.show();
   if (clear) jobj.empty();
   jobj.prepend(txt + '<br/>');
-}
+};
 jsHarmony.prototype.InitDialogs = function () {
   var _this = this;
   this.root.append($(ejs.render(XViews['jsh_system'],{ jsh: _this })));
@@ -449,7 +449,7 @@ jsHarmony.prototype.InitControls = function() {
   var _this = this;
   $('.xtabcontrol').not('.initialized').each(function(){ _this.XExt.bindTabControl(this); });
   $('.xaccordiontab').not('.initialized').each(function(){ _this.XExt.bindAccordion(this); });
-}
+};
 jsHarmony.prototype.XWindowResize = function (source) {
   var ww = $(window).width();
   var wh = $(window).height();
@@ -472,7 +472,7 @@ jsHarmony.prototype.XWindowResize = function (source) {
     width: ww,
     height: wh,
   };
-}
+};
 jsHarmony.prototype.XDialogResize = function (source, params) {
   if(this.dialogBlock){
     this.dialogBlock.css('width', params.pw + 'px');
@@ -510,7 +510,7 @@ jsHarmony.prototype.XDialogResize = function (source, params) {
     jobj.css('top', dtop + 'px');
     jobj.css('max-width', (params.docw - dpadleft - dpadright - dborderleft - dborderright) + 'px');
   });
-}
+};
 
 jsHarmony.prototype.addFocusHandler = function (dialogContainer, handler) {
   if(!dialogContainer) dialogContainer = window;
@@ -521,19 +521,19 @@ jsHarmony.prototype.addFocusHandler = function (dialogContainer, handler) {
     handlerIdx = this.focusHandlerIndex.length - 1;
   }
   this.focusHandler[handlerIdx].push(handler);
-}
+};
 
 jsHarmony.prototype.getFocusHandlers = function (dialogContainer) {
   if(!dialogContainer) return [];
   var handlerIdx = this.focusHandlerIndex.indexOf(dialogContainer);
   if(handlerIdx < 0) return [];
   return this.focusHandler[handlerIdx]||[];
-}
+};
 
 jsHarmony.prototype.getTopDialogContainer = function () {
   if(!this.xDialog.length) return window;
   return $(this.xDialog[0])[0];
-}
+};
 
 jsHarmony.prototype.InitFileUpload = function () {
   if (this.xfileuploadLoader != null) return;
@@ -576,19 +576,19 @@ jsHarmony.prototype.requireHTML5 = function(){
         </div>\
       </div>\
       ';
-      $.colorbox({ 
-        html: content, 
-        closeButton: false, 
-        arrowKey: false, 
-        preloading: false, 
-        overlayClose: false, 
+      $.colorbox({
+        html: content,
+        closeButton: false,
+        arrowKey: false,
+        preloading: false,
+        overlayClose: false,
         escKey: false,
-        opacity: 0.5, 
-        title: 'Did you know that your browser is out of date?' 
+        opacity: 0.5,
+        title: 'Did you know that your browser is out of date?'
       });
     }
   });
-}
+};
 
 jsHarmony.prototype.runGlobalsMonitor = function(){
   var _this = this;
@@ -611,11 +611,11 @@ jsHarmony.prototype.runGlobalsMonitor = function(){
     }
     _this.runGlobalsMonitor();
   },1000);
-}
+};
 
-jsHarmony.prototype.on = function(){ $(this).on.apply($(this), arguments); }
-jsHarmony.prototype.off = function(){ $(this).off.apply($(this), arguments); }
-jsHarmony.prototype.trigger = function(){ $(this).trigger.apply($(this), arguments); }
+jsHarmony.prototype.on = function(){ $(this).on.apply($(this), arguments); };
+jsHarmony.prototype.off = function(){ $(this).off.apply($(this), arguments); };
+jsHarmony.prototype.trigger = function(){ $(this).trigger.apply($(this), arguments); };
 
 var jsHarmonyGlobal = { };
 

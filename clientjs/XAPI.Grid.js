@@ -22,12 +22,12 @@ var _ = require('lodash');
 
 exports = module.exports = function(jsh){
 
-  var XAPIGrid = function(){ }
+  var XAPIGrid = function(){ };
 
   //----------------
   //Shared Functions
   //----------------
-  XAPIGrid.base = function(){ }
+  XAPIGrid.base = function(){ };
 
   XAPIGrid.base.HandleGenericError = function(errdata){
     //Error
@@ -48,7 +48,7 @@ exports = module.exports = function(jsh){
       jsh.XExt.Alert('An error has occurred: ' + errmsg);
     }
     else jsh.XExt.Alert('An error has occurred.  If the problem continues, please contact the system administrator for assistance.');
-  }
+  };
   
   //--------------
   //Static Adapter
@@ -56,7 +56,7 @@ exports = module.exports = function(jsh){
   XAPIGrid.Static = function(modelid, dataset){
     this.modelid = jsh.XExt.resolveModelID(modelid);
     this.dataset = dataset||[];
-  }
+  };
 
   XAPIGrid.Static.prototype = new XAPIGrid.base();
 
@@ -69,7 +69,7 @@ exports = module.exports = function(jsh){
       if(row[key].toString().toUpperCase() != d[key].toString().toUpperCase()) return false;
     }
     return true;
-  }
+  };
 
   XAPIGrid.rowSearchMatch = function(model, row, searchjson){
     if(!row) return false;
@@ -86,7 +86,7 @@ exports = module.exports = function(jsh){
       if(exp.Column=='ALL'){
         vals = [];
         var keys = [];
-        if(model) keys = _.map(model.fields, function(field){ return field.name })||[];
+        if(model) keys = _.map(model.fields, function(field){ return field.name; })||[];
         else keys = _.keys(jsh.XExt.XModel.GetOwnFields(row));
 
         _.each(keys, function(key){
@@ -193,7 +193,7 @@ exports = module.exports = function(jsh){
       if(exprslt[i]===true) return true;
     }
     return false;
-  }
+  };
 
   XAPIGrid.rowSort = function(model, _sort){
     //-1 if #1 is first
@@ -239,8 +239,8 @@ exports = module.exports = function(jsh){
       }
 
       return 0;
-    }
-  }
+    };
+  };
 
   XAPIGrid.Static.prototype.Select = function(params, callback){
     params = _.extend({
@@ -339,18 +339,18 @@ exports = module.exports = function(jsh){
     }
     
     return callback(null, rslt);
-  }
+  };
 
   XAPIGrid.Static.prototype.ExportCSV = function(params, callback){
     jsh.XExt.Alert('Static Grid Data Adapter does not support CSV export');
-  }
+  };
 
   //-----------------
   //jsHarmony Adapter
   //-----------------
   XAPIGrid.jsHarmony = function(modelid){
     this.modelid = jsh.XExt.resolveModelID(modelid);
-  }
+  };
 
   XAPIGrid.jsHarmony.prototype = new XAPIGrid.base();
 
@@ -367,7 +367,7 @@ exports = module.exports = function(jsh){
     if(!callback) callback = function(err, rslt){ };
 
     $.ajax({
-      type:"GET",
+      type:'GET',
       cache: false,
       url:jsh._BASEURL+'_d/'+this.modelid+'/',
       data: params,
@@ -375,13 +375,13 @@ exports = module.exports = function(jsh){
       success: function(data){ callback(null, data); },
       error: function (data) { callback(data||{}, null); },
     });
-  }
+  };
 
   XAPIGrid.jsHarmony.prototype.ExportCSV = function(params, callback){
     var url = jsh._BASEURL + '_csv/' + this.modelid + '/?'+$.param(params);
     jsh.getFileProxy().prop('src', url);
     if(callback) callback();
-  }
+  };
 
   return XAPIGrid;
-}
+};

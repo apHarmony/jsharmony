@@ -42,19 +42,19 @@ exports = module.exports = function(jsh){
     this.ColSpan = jsh.$root(this.PlaceholderID).parent().find('thead th').length;
     this.modelid = options.modelid;
     
-    if(typeof options.CustomScroll == 'undefined') this.CustomScroll = ''; 
+    if(typeof options.CustomScroll == 'undefined') this.CustomScroll = '';
     else {
       if(lteIE7()){
         this.CustomScroll = '';
         options.ScrollControl = options.CustomScroll;
         jsh.$(options.CustomScroll).css('overflow','auto');
       }
-      else this.CustomScroll = options.CustomScroll
+      else this.CustomScroll = options.CustomScroll;
     }
     
     if(options.Paging === undefined) this.Paging = true;
     else this.Paging = options.Paging;
-    if(options.ScrollControl === undefined) this.ScrollControl = window; 
+    if(options.ScrollControl === undefined) this.ScrollControl = window;
     else this.ScrollControl = options.ScrollControl;
     this.Sort = new Array();
     this.Search = '';
@@ -182,7 +182,7 @@ exports = module.exports = function(jsh){
       jsh.$root(_this.PlaceholderID).find('tr.xtbl_loadmore').remove();
     }
     var renderData = false;
-    var ejssource = "";
+    var ejssource = '';
     if ((data instanceof Object) && ('_error' in data)) {
       if (jsh.DefaultErrorHandler(data['_error'].Number, data['_error'].Message)) { }
       else if ((data._error.Number == -9) || (data._error.Number == -5)) { jsh.XExt.Alert(data._error.Message); }
@@ -265,7 +265,7 @@ exports = module.exports = function(jsh){
             });
           }
           if (_this.CustomScroll != '') {
-            jsh.$(_this.CustomScroll).mCustomScrollbar("update");
+            jsh.$(_this.CustomScroll).mCustomScrollbar('update');
           }
         }
         if(loader) loader.StopLoading(_this);
@@ -274,7 +274,7 @@ exports = module.exports = function(jsh){
         if(onComplete) onComplete();
       }
     );
-  }
+  };
   XGrid.prototype.RenderNoResultsMessage = function(options){
     if(!options) options = { search: false };
     var _this = this;
@@ -282,16 +282,16 @@ exports = module.exports = function(jsh){
     if (_this.RequireSearch && !options.search) noresultsmessage = _this.RequireSearchMessage;
     else if (!options.search && _this.NoDataMessage) noresultsmessage = _this.NoDataMessage;
     jsh.$root(_this.PlaceholderID).html('<tr class="xtbl_noresults"><td colspan="' + _this.ColSpan + '" align="center" class="xtbl_noresults">' + noresultsmessage + '</td></tr>');
-  }
+  };
   XGrid.prototype.ResetSortGlyphs = function (tblobj){
     var xhtml_thead = tblobj.find('thead tr');
-    xhtml_thead.find("th").removeClass('sortAsc').removeClass('sortDesc');
+    xhtml_thead.find('th').removeClass('sortAsc').removeClass('sortDesc');
     if (!this.Sort || (this.Sort.length == 0)) return;
     
     var xhtml_th = tblobj.find('.thead' + this.Sort[0].substring(1));
     if (this.Sort[0][0] == '^') { xhtml_th.addClass('sortAsc'); }
     else { xhtml_th.addClass('sortDesc'); }
-  }
+  };
   XGrid.prototype.AddSort = function(obj,col){
     var newdir = '^';
     for(var i = 0; i < this.Sort.length; i++){
@@ -306,22 +306,22 @@ exports = module.exports = function(jsh){
     }
     var xhtml_th = $(obj).parent();
     var xhtml_thead = xhtml_th.parent();
-    if(newdir == '^'){ xhtml_thead.find("th").removeClass('sortAsc').removeClass('sortDesc'); xhtml_th.addClass('sortAsc'); }
-    else{ xhtml_thead.find("th").removeClass('sortAsc').removeClass('sortDesc'); xhtml_th.addClass('sortDesc'); }
+    if(newdir == '^'){ xhtml_thead.find('th').removeClass('sortAsc').removeClass('sortDesc'); xhtml_th.addClass('sortAsc'); }
+    else{ xhtml_thead.find('th').removeClass('sortAsc').removeClass('sortDesc'); xhtml_th.addClass('sortDesc'); }
     this.Sort.unshift(newdir+col);
     this.Load();
     return false;
-  }
+  };
   XGrid.prototype.NewSearch = function(txt){
     this.Search = txt;
     this.Load();
     return false;
-  }
+  };
   XGrid.prototype.NewSearchJSON = function(txt, cb){
     this.SearchJSON = txt;
     this.Load(undefined,undefined,cb);
     return false;
-  }
+  };
   XGrid.prototype._WindowOnScrollBottom = function(callback){
     var _this = this;
     _this.scrollFunc = function(){
@@ -340,14 +340,14 @@ exports = module.exports = function(jsh){
       _this.scrollPrevious = $(window).scrollTop();
     };
     jsh.$(_this.ScrollControl).scroll(_this.scrollFunc);
-  }
+  };
   XGrid.prototype._getDocumentHeight = function() {
     return Math.max(
-        Math.max(document.body.scrollHeight, document.documentElement.scrollHeight),
-        Math.max(document.body.offsetHeight, document.documentElement.offsetHeight),
-        Math.max(document.body.clientHeight, document.documentElement.clientHeight)
+      Math.max(document.body.scrollHeight, document.documentElement.scrollHeight),
+      Math.max(document.body.offsetHeight, document.documentElement.offsetHeight),
+      Math.max(document.body.clientHeight, document.documentElement.clientHeight)
     );
-  }
+  };
   XGrid.prototype._ControlOnScrollBottom = function(callback){
     var _this = this;
     _this.scrollFunc = function () {
@@ -361,7 +361,7 @@ exports = module.exports = function(jsh){
       _this.scrollPrevious = jsh.$(_this.ScrollControl).scrollTop();
     };
     jsh.$(_this.ScrollControl).scroll(_this.scrollFunc);
-  }
+  };
   XGrid.prototype.EnableScrollUpdate = function() {
     var _this = this;
     var updateFunc = function(){
@@ -373,7 +373,7 @@ exports = module.exports = function(jsh){
     };
     if(_this.CustomScroll != ''){
       jsh.$(_this.CustomScroll).mCustomScrollbar({
-        theme:"dark",
+        theme:'dark',
         autoScrollOnFocus: false,
         scrollButtons:{ enable:true },
         scrollInertia:0,
@@ -384,12 +384,12 @@ exports = module.exports = function(jsh){
     }
     else if(this.ScrollControl == window) this._WindowOnScrollBottom(updateFunc);
     else this._ControlOnScrollBottom(updateFunc);
-  }
+  };
   XGrid.prototype.Destroy = function (){
     var _this = this;
-    if (_this.CustomScroll != '') { jsh.$(_this.CustomScroll).mCustomScrollbar("destroy"); }
+    if (_this.CustomScroll != '') { jsh.$(_this.CustomScroll).mCustomScrollbar('destroy'); }
     else { jsh.$(_this.ScrollControl).unbind('scroll', _this.scrollFunc); }
-  }
+  };
 
   return XGrid;
-}
+};

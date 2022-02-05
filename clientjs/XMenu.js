@@ -25,7 +25,7 @@ exports = module.exports = function(jsh){
   //------------------------
   //XMenu :: Menu Controller
   //------------------------
-  var XMenu = function(){ }
+  var XMenu = function(){ };
   XMenu.Menus = {};      //Menu Instances
   XMenu.Interfaces = {}; //Menu Interfaces (ex. horizontal)
   XMenu.Init = function(){
@@ -40,20 +40,20 @@ exports = module.exports = function(jsh){
         _this.Menus[menuType] = object;
       }
     }
-  }
+  };
   XMenu.Select = function(selectedmenu){
     var _this = this;
     for(var menuType in _this.Menus){
       _this.Menus[menuType].Select(selectedmenu);
     }
-  }
+  };
 
   //-----------------------------
   //XMenuBase :: Menu Base Object
   //-----------------------------
   var XMenuBase = function(){
     this.isInitialized = false;
-  }
+  };
   XMenuBase.prototype.Init = function(){
     var _this = this;
     if(this.isInitialized) return false;
@@ -65,11 +65,11 @@ exports = module.exports = function(jsh){
 
     this.isInitialized = true;
     return true;
-  }
-  XMenuBase.prototype.Select = function(selectedmenu){ }
-  XMenuBase.isActive = function(){ return false; }   //Must be implemented for each Menu Type - not a prototype function
-  XMenuBase.prototype.RefreshLayout = function(){ }
-  XMenuBase.prototype.Navigated = function(obj){ }
+  };
+  XMenuBase.prototype.Select = function(selectedmenu){ };
+  XMenuBase.isActive = function(){ return false; };   //Must be implemented for each Menu Type - not a prototype function
+  XMenuBase.prototype.RefreshLayout = function(){ };
+  XMenuBase.prototype.Navigated = function(obj){ };
 
   //-----------------------------------------------------------------
   //XMenuHorizontal :: Menu Implementation for Horizontal Menu System
@@ -87,11 +87,11 @@ exports = module.exports = function(jsh){
 
     this.menuid = '';          //Currently selected Menu ID
     this.submenuid = '';       //Currently selected SubMenu ID
-  }
+  };
 
   XMenuHorizontal.prototype = new XMenuBase();
 
-  XMenuHorizontal.isActive = function(){ return jsh.$root('.xmenuhorizontal').length; }
+  XMenuHorizontal.isActive = function(){ return jsh.$root('.xmenuhorizontal').length; };
 
   XMenuHorizontal.prototype.Init = function(){
     var _this = this;
@@ -108,7 +108,7 @@ exports = module.exports = function(jsh){
       jsh.$root('.xmenu_more').click(function () {
         var xmenuside = jsh.$root('.xmenuside');
         jsh.$root('.xsubmenuside').hide();
-        if (!xmenuside.is(":visible")) xmenuside.show();
+        if (!xmenuside.is(':visible')) xmenuside.show();
         else xmenuside.hide();
         return false;
       });
@@ -128,7 +128,7 @@ exports = module.exports = function(jsh){
       }
     }
 
-  }
+  };
 
   XMenuHorizontal.prototype.RenderPaddle = function(newDimensions){
     var _this = this;
@@ -189,7 +189,7 @@ exports = module.exports = function(jsh){
       //console.log('Animating '+ JSON.stringify(animateParams));
       jpaddle.stop(true).animate(animateParams, 250, function(){ _this.paddleAnimation = null; });
     }
-  }
+  };
 
   //Update the currently selected menu item
   XMenuHorizontal.prototype.Select = function(selectedmenu){
@@ -246,7 +246,7 @@ exports = module.exports = function(jsh){
     if (jsubmenusideitem && !jsubmenusideitem.hasClass('selected')) jsubmenusideitem.addClass('selected');
 
     this.RenderPaddle();
-  }
+  };
 
   XMenuHorizontal.prototype.RefreshLayout = function(){
     var _this = this;
@@ -267,12 +267,12 @@ exports = module.exports = function(jsh){
     var jmore = jsh.$root('.xmenu_more');
     if (jmore.size() > 0) {
       if (showmore) {
-        if (!jmore.is(":visible")) jmore.show();
+        if (!jmore.is(':visible')) jmore.show();
         if (_this.MenuMoreWidth <= 0) { _this.MenuMoreWidth = jmore.outerWidth(true); }
         maxw -= _this.MenuMoreWidth;
       }
       else {
-        if (jmore.is(":visible")) { jmore.hide(); jsh.$root('.xmenuside').hide(); }
+        if (jmore.is(':visible')) { jmore.hide(); jsh.$root('.xmenuside').hide(); }
       }
     }
     
@@ -281,15 +281,15 @@ exports = module.exports = function(jsh){
       var xmenuitem = _this.MenuItems[i];
       curleft += xmenuitem.data('width');
       if (curleft > maxw) {
-        if (xmenuitem.is(":visible")) xmenuitem.hide();
+        if (xmenuitem.is(':visible')) xmenuitem.hide();
       }
       else {
-        if (!xmenuitem.is(":visible")) xmenuitem.show();
+        if (!xmenuitem.is(':visible')) xmenuitem.show();
       }
     }
     this.RefreshSubmenuLayout();
     this.RenderPaddle(newDimensions);
-  }
+  };
 
   XMenuHorizontal.prototype.RefreshSubmenuLayout = function(){
     var _this = this;
@@ -313,12 +313,12 @@ exports = module.exports = function(jsh){
     var jmore = jSubMenu.find('.xsubmenu_more');
     if (jmore.size() > 0) {
       if (showmore) {
-        if (!jmore.is(":visible")) jmore.show();
+        if (!jmore.is(':visible')) jmore.show();
         if (_this.SubMenuMoreWidth <= 0) { _this.SubMenuMoreWidth = jmore.outerWidth(true); }
         maxw -= _this.SubMenuMoreWidth;
       }
       else {
-        if (jmore.is(":visible")) { jmore.hide(); jSubMenu.find('.xsubmenu_more').hide(); }
+        if (jmore.is(':visible')) { jmore.hide(); jSubMenu.find('.xsubmenu_more').hide(); }
       }
     }
     
@@ -327,19 +327,19 @@ exports = module.exports = function(jsh){
       var xsubmenuitem = _this.SubMenuItems[i];
       curleft += xsubmenuitem.data('width');
       if (curleft > maxw) {
-        if (xsubmenuitem.is(":visible")) xsubmenuitem.hide();
+        if (xsubmenuitem.is(':visible')) xsubmenuitem.hide();
       }
       else {
-        if (!xsubmenuitem.is(":visible")) xsubmenuitem.show();
+        if (!xsubmenuitem.is(':visible')) xsubmenuitem.show();
       }
     }
-  }
+  };
 
   XMenuHorizontal.prototype.getSubmenu = function(menuid){
     var _this = this;
     if(!menuid) menuid = _this.menuid;
     return jsh.$root('.xsubmenu_' + String(menuid).toUpperCase());
-  }
+  };
 
   XMenuHorizontal.prototype.RenderSubmenu = function(){
     var _this = this;
@@ -363,7 +363,7 @@ exports = module.exports = function(jsh){
       jSubMenu.find('.xsubmenu_more').off('click');
       jSubMenu.find('.xsubmenu_more').on('click', function () {
         var xsubmenuside = jsh.$root('.xsubmenuside');
-        if (!xsubmenuside.is(":visible")) xsubmenuside.show();
+        if (!xsubmenuside.is(':visible')) xsubmenuside.show();
         else xsubmenuside.hide();
         return false;
       });
@@ -384,7 +384,7 @@ exports = module.exports = function(jsh){
       }
     }
     _this.RefreshLayout();
-  }
+  };
 
   XMenuHorizontal.prototype.CalcDimensions = function(force){
     var _this = this;
@@ -400,7 +400,7 @@ exports = module.exports = function(jsh){
     _this.MenuOverhang = jsh.$root('.xmenu').offset().left + parseInt(jsh.$root('.xmenu').css('padding-left').replace(/\D/g, ''));
     if (isNaN(_this.MenuOverhang)) _this.MenuOverhang = 0;
     return true;
-  }
+  };
 
   XMenuHorizontal.prototype.CalcSubmenuDimensions = function(force){
     var _this = this;
@@ -416,7 +416,7 @@ exports = module.exports = function(jsh){
     }
     _this.SubMenuOverhang = jSubMenu.offset().left + parseInt(jSubMenu.css('padding-left').replace(/\D/g, ''));
     if (isNaN(_this.SubMenuOverhang)) _this.SubMenuOverhang = 0;
-  }
+  };
 
   XMenuHorizontal.prototype.Navigated = function(obj){
     var jobj = $(obj);
@@ -425,11 +425,11 @@ exports = module.exports = function(jsh){
 
     if(!jobj.hasClass('xmenu_more')) jmenuside.hide();
     if(!jobj.hasClass('xsubmenu_more')) jsubmenuside.hide();
-  }
+  };
 
 
   XMenu.Base = XMenuBase;
   XMenu.Interfaces['horizontal'] = XMenuHorizontal;
 
   return XMenu;
-}
+};

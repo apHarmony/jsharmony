@@ -54,33 +54,33 @@ exports = module.exports = function(jsh){
     this.DebugLog('Enter Cell ' + $(obj).data('id'));
     this.CurrentCell = obj;
     if (this.OnCellEnter) this.OnCellEnter(obj, e);
-  }
+  };
 
   XEditableGrid.prototype.CellLeave = function (oldobj, newobj, e) {
     this.DebugLog('Leave Cell ' + $(oldobj).data('id'));
     if (this.OnCellLeave) this.OnCellLeave(obj, e);
-  }
+  };
 
   XEditableGrid.prototype.RowEnter = function (rowid) {
     this.DebugLog('Enter Row ' + rowid);
     if (this.OnRowEnter) this.OnRowEnter(rowid);
-  }
+  };
 
   XEditableGrid.prototype.RowLeave = function (rowid) {
     this.DebugLog('Leave Row ' + rowid);
     if (this.OnRowLeave) this.OnRowLeave(rowid);
-  }
+  };
 
   XEditableGrid.prototype.GridEnter = function () {
     this.DebugLog('Enter Grid');
     if (this.OnGridEnter) this.OnGridEnter();
-  }
+  };
 
   XEditableGrid.prototype.GridLeave = function (oldobj) {
     this.DebugLog('Leave Grid');
     this.CurrentCell = undefined;
     if (this.OnGridLeave) this.OnGridLeave(oldobj);
-  }
+  };
 
   XEditableGrid.prototype.CellChange = function (oldobj, newobj, e) {
     var oldrowid = -1;
@@ -103,7 +103,7 @@ exports = module.exports = function(jsh){
     if (newobj) {
       this.CellEnter(newobj, e);
     }
-  }
+  };
 
   XEditableGrid.prototype.Init = function () {
     //Global Focus Change
@@ -127,11 +127,11 @@ exports = module.exports = function(jsh){
         _this.CellChange(_this.CurrentCell);
       });
     });
-  }
+  };
 
   XEditableGrid.prototype.DebugLog = function (obj) {
     if (jsh && jsh._debug) console.log(obj); // eslint-disable-line no-console
-  }
+  };
 
   XEditableGrid.prototype.ControlEnter = function (obj, e, onComplete) {
     var _this = this;
@@ -159,7 +159,7 @@ exports = module.exports = function(jsh){
       window.setTimeout(function () { $(obj).blur(); }, 1);
     }
     return;
-  }
+  };
 
   XEditableGrid.prototype.CheckboxUpdate = function (obj, e) {
     var _this = this;
@@ -192,7 +192,7 @@ exports = module.exports = function(jsh){
       e.preventDefault();
       e.stopPropagation();
     }
-  }
+  };
   //----------------
   //OnControlLeaving
   //----------------
@@ -204,11 +204,11 @@ exports = module.exports = function(jsh){
     if (rslt === true) return true;
     else if (rslt === false) return true;
     return false;
-  }
+  };
   XEditableGrid.prototype.ControlUpdate = function (obj, e) {
     this.DebugLog('Update ' + $(obj).data('id'));
     if (this.OnControlUpdate) this.OnControlUpdate(obj, e);
-  }
+  };
   XEditableGrid.prototype.ControlKeyDown = function (obj, e) {
     if (e.keyCode == 27) { //Escape key pressed
       //Get current Rowid
@@ -218,7 +218,7 @@ exports = module.exports = function(jsh){
       if (rowid < 0) return;
       if (this.OnCancelEdit) this.OnCancelEdit(rowid, obj);
     }
-  }
+  };
 
   XEditableGrid.prototype.CellLeaving = function (oldobj, newobj, e, onsuccess, oncancel) {
     if(!onsuccess) onsuccess = function(){};
@@ -267,10 +267,10 @@ exports = module.exports = function(jsh){
     
     //Commit Cell/Row
     if (this.IsDirty && this.IsDirty() && this.OnCommit && (
-      (this.CommitLevel == 'cell') || 
-      ((this.CommitLevel == 'cell') && ((newrowid>=0) && newobj && $(newobj).is(':checkbox'))) || 
+      (this.CommitLevel == 'cell') ||
+      ((this.CommitLevel == 'cell') && ((newrowid>=0) && newobj && $(newobj).is(':checkbox'))) ||
       (rowchange && (this.CommitLevel == 'row'))
-      )) {
+    )) {
       if (newobj){ jsh.queuedInputAction = new jsh.XExt.XInputAction(newobj); }
       else if (jsh.queuedInputAction && !jsh.queuedInputAction.IsExpired()) { }
       else jsh.queuedInputAction = null;
@@ -304,18 +304,18 @@ exports = module.exports = function(jsh){
           }
           jsh.queuedInputAction = null;
         }
-      }
+      };
       
       if (!this.OnCommit(oldrowid, oldobj, onsuccess_override, oncancel)) return false;
     }
     
     onsuccess();
     return true;
-  }
+  };
 
   XEditableGrid.prototype.IsContainerActive = function () {
     return (this.DialogContainer == jsh.getTopDialogContainer());
-  }
+  };
 
   //obj must be a DOM element - not a jQuery object
   //Leave e to null if not calling from a focus event handler
@@ -340,7 +340,7 @@ exports = module.exports = function(jsh){
       if (!e && document.hasFocus && document.hasFocus()) $(obj).focus();
       if(onComplete) onComplete();
     });
-  }
+  };
 
   XEditableGrid.prototype.BindRow = function (jobj, datarow) {
     var _this = this;
@@ -402,10 +402,10 @@ exports = module.exports = function(jsh){
       });
       */
     });
-    jobj.find('.xelem' + xmodel.class + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e) })
+    jobj.find('.xelem' + xmodel.class + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e); });
     jobj.find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; return _this.SetFocus(ctrl, e); });
     if(datarow && datarow._is_insert){
-      jobj.find('.xelem' + xmodel.class).each(function(){ 
+      jobj.find('.xelem' + xmodel.class).each(function(){
         var jobj = $(this);
         if (!jobj.hasClass('editable')) return;
         jobj.addClass('updated');
@@ -413,7 +413,7 @@ exports = module.exports = function(jsh){
         if(jobj.hasClass('xtagbox_base')) jobj.prev().addClass('updated');
       });
     }
-  }
+  };
 
   return XEditableGrid;
-}
+};

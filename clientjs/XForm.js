@@ -49,7 +49,7 @@ exports = module.exports = function(jsh){
     this.GetUpdateParams = function(){ return this.GetFieldParams('U'); };
     this.GetInsertParams = function(){ return this.GetFieldParams('I'); };
     this.GetDeleteParams = function(){ return this.GetKeys(); };
-    this.GetKeys = function(){ return {}; }
+    this.GetKeys = function(){ return {}; };
     this.async = true;
     this.Index = 0;
     this.xData = null;
@@ -107,13 +107,13 @@ exports = module.exports = function(jsh){
     var parentobj = undefined;
     if (this.xData) parentobj = this.Data._jrow;
     return validator.ValidateControls(perms,obj,'',parentobj);
-  }
+  };
   XForm.prototype.ResetValidation = function(obj){
     obj = obj || (this.Index>=0?this.Data:undefined);
     if(!obj) return;
     if(!obj.xvalidate) return;
     return obj.xvalidate.ResetValidation();
-  }
+  };
   XForm.prototype.RecheckDirty = function () {
     var rsltDirty = false;
     if (this.DeleteSet.length > 0) rsltDirty = true;
@@ -126,7 +126,7 @@ exports = module.exports = function(jsh){
       if(this.Data._is_insert) rsltDirty = true;
     }
     this.IsDirty = rsltDirty;
-  }
+  };
   XForm.prototype.ResetDirty = function () {
     if (_.isArray(this.DataSet)) {
       this.DeleteSet = [];
@@ -145,31 +145,31 @@ exports = module.exports = function(jsh){
       jsh.$root(this.xData.PlaceholderID).find('.xform_ctrl.updated').removeClass('updated');
     }
     this.IsDirty = false;
-  }
+  };
   XForm.prototype.Count = function(){
     if(!_.isArray(this.DataSet)) return 1;
     return this.DataSet.length;
-  }
+  };
   XForm.prototype.NavNext = function(){
     if(this.Count() == 0) return;
     if(this.Index == (this.Count()-1)) return;
     this.NavTo(this.Index+1);
-  }
+  };
   XForm.prototype.NavPrev = function(){
     if(this.Count() == 0) return;
     if(this.Index == 0) return;
     this.NavTo(this.Index-1);
-  }
+  };
   XForm.prototype.NavFirst = function(){
     if(this.Count() == 0) return;
     if(this.Index == 0) return;
     this.NavTo(0);
-  }
+  };
   XForm.prototype.NavLast = function(){
     if(this.Count() == 0) return;
     if(this.Index == (this.Count()-1)) return;
     this.NavTo(this.Count()-1);
-  }
+  };
   XForm.prototype.SetIndex = function (_index, saveold, jrow) {
     if (typeof saveold == 'undefined') saveold = true;
     if (_index > this.Count()) { jsh.XExt.Alert('Cannot navigate - Index greater than size of collection'); return false; }
@@ -192,18 +192,18 @@ exports = module.exports = function(jsh){
       else this.Data._jrow = jsh.$root(this.xData.PlaceholderID).find("tr[data-id='" + this.Index + "']");
     }
     return true;
-  }
+  };
   XForm.prototype.NavTo = function (_index, saveold, onComplete){
     if (!this.SetIndex(_index, saveold)) return;
     this.Render();
     if(onComplete) onComplete();
-  }
+  };
   XForm.prototype.NavAdd = function(){
     if(!this.Data.Commit()) return;
     this.NewRow();
     if(this.Index==-1){ this.NavTo(0,false); }
     else this.NavLast();
-  }
+  };
   XForm.prototype.NavDelete = function(){
     if(this.Count() == 0) return;
     this.DataSet[this.Index] = _.extend(this.DataSet[this.Index],this.Data);
@@ -217,7 +217,7 @@ exports = module.exports = function(jsh){
       if(this.Index >= this.Count()) this.Index--;
       this.NavTo(this.Index,false);
     }
-  }
+  };
   XForm.prototype.NewRow = function (options){
     if(!options) options = { unbound: false };
     var rslt = new this.DataType();
@@ -230,7 +230,7 @@ exports = module.exports = function(jsh){
       this.IsDirty = true;
     }
     return rslt;
-  }
+  };
   XForm.prototype.Select = function(onComplete, onFailure){
     var _this = this;
 
@@ -290,7 +290,7 @@ exports = module.exports = function(jsh){
       if (_this.DataSet == null) _this.Render();
       if(onComplete) onComplete(rslt);
     }, onFailure));
-  }
+  };
   XForm.prototype.Reset = function(){
     var _this = this;
     if(_this.Data && _this.Data.Fields){
@@ -299,7 +299,7 @@ exports = module.exports = function(jsh){
     _this.ApplyDefaults(_this.Data);
     _this.ApplyUnboundDefaults(_this.Data);
     _this.Render();
-  }
+  };
   XForm.prototype.ResetDataset = function(){
     if(this.Data){
       if(this.Data._orig) this.Data = _.extend(this.Data, this.Data._orig);
@@ -320,7 +320,7 @@ exports = module.exports = function(jsh){
       }
     }
     this.DeleteSet = [];
-  }
+  };
   XForm.prototype.ApplyDefaults = function(data){
     var _this = this;
     var xmodel = _this.GetModel();
@@ -351,13 +351,13 @@ exports = module.exports = function(jsh){
       });
     }
     return rslt;
-  }
+  };
   XForm.prototype.GetModel = function(){
     var _this = this;
     if(!jsh) return;
     if(!_this.modelid) return;
     return jsh.XModels[_this.modelid];
-  }
+  };
   XForm.prototype.ApplyUnboundDefaults = function(data){
     var _this = this;
     var xmodel = _this.GetModel();
@@ -375,9 +375,9 @@ exports = module.exports = function(jsh){
         data[field.name] = jsh.XFormat.Decode(field.format, field.getDefault(data));
       }
     });
-  }
+  };
   XForm.prototype.PrepExecute = function(_method,_model,_query,_post,onComplete,onFail){
-    var rslt = { 
+    var rslt = {
       'method':_method,
       'model':_model,
       'query':_query,
@@ -390,13 +390,13 @@ exports = module.exports = function(jsh){
       rslt.query = {};
     }
     return rslt;
-  }
+  };
   XForm.prototype.CommitRow = function (){
     if (!this.Data.Commit()) return false;
     this.DataSet[this.Index] = _.extend(this.DataSet[this.Index], this.Data);
     if (this.Data._is_dirty){ this.IsDirty = true; }
     return true;
-  }
+  };
   XForm.prototype.PrepSaveDataSet = function(ignorecommit){
     if(!ignorecommit && !this.CommitRow()) return;
     
@@ -428,22 +428,22 @@ exports = module.exports = function(jsh){
     
     this.Data = curdata;
     return dbtasks;
-  }
-  XForm.prototype.PrepUpdate = function(onComplete,onFail){ 
-    return this.PrepExecute('post',this.url,this.GetKeys(),this.GetUpdateParams(),onComplete,onFail); 
-  }
-  XForm.prototype.Update = function(onComplete,onFail){ this.qExecute(this.PrepUpdate(onComplete,onFail)); }
-  XForm.prototype.PrepInsert = function(onComplete,onFail){ 
-    return this.PrepExecute('put',this.url,{},this.GetInsertParams(),onComplete,onFail); 
-  }
-  XForm.prototype.Insert = function(onComplete,onFail){ this.qExecute(this.PrepInsert(onComplete,onFail)); }
-  XForm.prototype.PrepDelete = function(onComplete,onFail){ 
-    return this.PrepExecute('delete',this.url,this.GetDeleteParams(),{},onComplete,onFail); 
-  }
-  XForm.prototype.Delete = function(onComplete,onFail){ this.qExecute(this.PrepDelete(onComplete,onFail)); }
-  XForm.prototype.Execute = function(onComplete,onFail){ 
-    this.qExecute(this.PrepExecute('get',this.url,this.Data,{},onComplete,onFail)); 
-  }
+  };
+  XForm.prototype.PrepUpdate = function(onComplete,onFail){
+    return this.PrepExecute('post',this.url,this.GetKeys(),this.GetUpdateParams(),onComplete,onFail);
+  };
+  XForm.prototype.Update = function(onComplete,onFail){ this.qExecute(this.PrepUpdate(onComplete,onFail)); };
+  XForm.prototype.PrepInsert = function(onComplete,onFail){
+    return this.PrepExecute('put',this.url,{},this.GetInsertParams(),onComplete,onFail);
+  };
+  XForm.prototype.Insert = function(onComplete,onFail){ this.qExecute(this.PrepInsert(onComplete,onFail)); };
+  XForm.prototype.PrepDelete = function(onComplete,onFail){
+    return this.PrepExecute('delete',this.url,this.GetDeleteParams(),{},onComplete,onFail);
+  };
+  XForm.prototype.Delete = function(onComplete,onFail){ this.qExecute(this.PrepDelete(onComplete,onFail)); };
+  XForm.prototype.Execute = function(onComplete,onFail){
+    this.qExecute(this.PrepExecute('get',this.url,this.Data,{},onComplete,onFail));
+  };
   XForm.prototype.ExecuteTrans = function (DBTasks, onComplete, onFail) {
     var execdata = [];
     for (var i = 0; i < DBTasks.length; i++) {
@@ -461,7 +461,7 @@ exports = module.exports = function(jsh){
         if (dbtask.onComplete) dbtask.onComplete(rslt);
       }
       if (onComplete) onComplete(rslt);
-    }
+    };
     var execparams = {
       'method': 'post',
       'model': '_transaction',
@@ -471,7 +471,7 @@ exports = module.exports = function(jsh){
     };
     if (onFail) execparams.onFail = onFail;
     this.qExecute(execparams);
-  }
+  };
   XForm.prototype.qExecute = function (ExecParams) {
     var _this = this;
     if(ExecParams.model){
@@ -542,7 +542,7 @@ exports = module.exports = function(jsh){
         }
       }
     });
-  }
+  };
   XForm.prototype.FormatError = function(err){
     if(!err) return '';
     var rslt = '';
@@ -550,27 +550,27 @@ exports = module.exports = function(jsh){
     if(err.Message) rslt += err.Message;
     if(!err) rslt = JSON.stringify(err);
     return rslt;
-  }
+  };
   XForm.prototype.OnDBStats = function(dbstats){
     var _this = this;
     var rslt = true;
     if(dbstats){
-      if(('warnings' in dbstats) && _.isArray(dbstats.warnings)) dbstats = [dbstats]
-      else if(('notices' in dbstats) && _.isArray(dbstats.notices)) dbstats = [dbstats]
+      if(('warnings' in dbstats) && _.isArray(dbstats.warnings)) dbstats = [dbstats];
+      else if(('notices' in dbstats) && _.isArray(dbstats.notices)) dbstats = [dbstats];
       _.each(dbstats, function(stats){
         _.each(stats.warnings, function(warning){ rslt = rslt && _this.OnDBMessage(warning); });
         _.each(stats.notices, function(notice){ rslt = rslt && _this.OnDBMessage(notice); });
       });
     }
     return rslt;
-  }
+  };
   XForm.prototype.OnDBMessage = function (exception){
     if(exception && exception.Message) exception = exception.Message;
     exception = (exception||'').toString();
     var xmodel = this.GetModel();
     if(xmodel) exception = jsh.XExt.renderEJS(exception, xmodel.id);
-    if (jsh.XExt.beginsWith(exception, "Execute Form - ")) {
-      var dbaction = exception.substr(("Execute Form - ").length);
+    if (jsh.XExt.beginsWith(exception, 'Execute Form - ')) {
+      var dbaction = exception.substr(('Execute Form - ').length);
       var dbmessage = dbaction.substr(0, dbaction.indexOf('//')).trim();
       var url = dbaction.substr(dbaction.indexOf('//')+2);
       if (url.indexOf(' - ') >= 0) url = url.substr(0, url.indexOf(' - '));
@@ -588,11 +588,11 @@ exports = module.exports = function(jsh){
       });
       return false;
     }
-    else if(jsh.XExt.beginsWith(exception, "Application Error - ")){
+    else if(jsh.XExt.beginsWith(exception, 'Application Error - ')){
       jsh.XExt.Alert(exception);
       return false;
     }
-    else if(jsh.XExt.beginsWith(exception, "Application Warning - ")){
+    else if(jsh.XExt.beginsWith(exception, 'Application Warning - ')){
       jsh.XExt.Alert(exception);
       return false;
     }
@@ -620,8 +620,8 @@ exports = module.exports = function(jsh){
   };
   XForm.prototype.OnUndefined = function(data){
     if(this.Data && (this.Data.OnUndefined)) this.Data.OnUndefined(data);
-    else jsh.XExt.Alert("Undefined: " + JSON.stringify(data));
-  }
+    else jsh.XExt.Alert('Undefined: ' + JSON.stringify(data));
+  };
   XForm.prototype.GetFieldParams = function(action){
     var _this = this;
     var rslt = {};
@@ -644,59 +644,59 @@ exports = module.exports = function(jsh){
       }
     });
     return rslt;
-  }
+  };
 
   XForm.prototype.XExecute = function(url,d,onComplete,onFail){
     var xform = new XForm(url);
     xform.Data = d;
     xform.Execute(onComplete,onFail);
-  }
+  };
 
   XForm.prototype.XExecuteBlock = function(url,d,onComplete,onFail){
     var xform = new XForm(url);
     xform.Data = d;
     xform.async = false;
     xform.Execute(onComplete,onFail);
-  }
+  };
 
   XForm.prototype.XExecutePost = function (url, d, onComplete, onFail, options){
     if(!options) options = {};
     var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
-    xform.qExecute(xform.PrepExecute('post', xform.url, {}, d, onComplete, onFail)); 
-  }
+    xform.qExecute(xform.PrepExecute('post', xform.url, {}, d, onComplete, onFail));
+  };
 
   XForm.prototype.reqGet = function (url, q, d, onComplete, onFail, options){
     if(!options) options = {};
     var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
     if(options.async === false) xform.async = false;
-    xform.qExecute(xform.PrepExecute('get', xform.url, q, d, onComplete, onFail)); 
-  }
+    xform.qExecute(xform.PrepExecute('get', xform.url, q, d, onComplete, onFail));
+  };
 
   XForm.prototype.reqPost = function (url, q, d, onComplete, onFail, options){
     if(!options) options = {};
     var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
     if(options.async === false) xform.async = false;
-    xform.qExecute(xform.PrepExecute('post', xform.url, q, d, onComplete, onFail)); 
-  }
+    xform.qExecute(xform.PrepExecute('post', xform.url, q, d, onComplete, onFail));
+  };
 
   XForm.prototype.reqPut = function (url, q, d, onComplete, onFail, options){
     if(!options) options = {};
     var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
     if(options.async === false) xform.async = false;
-    xform.qExecute(xform.PrepExecute('put', xform.url, q, d, onComplete, onFail)); 
-  }
+    xform.qExecute(xform.PrepExecute('put', xform.url, q, d, onComplete, onFail));
+  };
 
   XForm.prototype.reqDelete = function (url, q, d, onComplete, onFail, options){
     if(!options) options = {};
     var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
     if(options.async === false) xform.async = false;
-    xform.qExecute(xform.PrepExecute('delete', xform.url, q, d, onComplete, onFail)); 
-  }
+    xform.qExecute(xform.PrepExecute('delete', xform.url, q, d, onComplete, onFail));
+  };
 
   XForm.Post = XForm.prototype.reqPost;
   XForm.Put = XForm.prototype.reqPut;
@@ -705,4 +705,4 @@ exports = module.exports = function(jsh){
   XForm.RequestSync = XForm.prototype.XExecuteBlock;
 
   return XForm;
-}
+};

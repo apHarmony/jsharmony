@@ -23,7 +23,7 @@ var _ = require('lodash');
 exports = module.exports = function(jsh){
   var XValidate = jsh.XValidate;
 
-  var XExt = function(){ }
+  var XExt = function(){ };
 
   XExt.XModel = require('./XExt.XModel.js')(jsh);
   XExt.COOKIE_MAX_EXPIRATION = 2147483647;
@@ -32,16 +32,16 @@ exports = module.exports = function(jsh){
 
   XExt.parseGET = function (qs) {
     if (typeof qs == 'undefined') qs = window.location.search;
-    if (qs == "" || qs.length == 1) return {};
+    if (qs == '' || qs.length == 1) return {};
     if (qs[0] == '?' || qs[0] == '#') qs = qs.substr(1);
     var qsa = qs.split('&');
     var b = {};
     for (var i = 0; i < qsa.length; i++) {
       var p = qsa[i].split('=', 2);
       if (p.length == 1)
-        b[p[0]] = "";
+        b[p[0]] = '';
       else
-        b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
+        b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, ' '));
     }
     return b;
   };
@@ -52,9 +52,9 @@ exports = module.exports = function(jsh){
       <% for(var i=0;i<data.length;i++){ %>\
       <option value="<%=data[i][jsh.uimap.code_val]%>"><%=data[i][jsh.uimap.code_txt]%></option>\
       <% } %>'
-      , { data: LOV, jsh: jsh }
+    , { data: LOV, jsh: jsh }
     ));
-  }
+  };
 
   XExt.RenderParentLOV = function (_data, ctrl, parentvals, LOV, field, plural) {
     //Get Previous Value
@@ -89,17 +89,17 @@ exports = module.exports = function(jsh){
       <% for(var i=0;i<data.length;i++){ %>\
       <option value="<%=data[i][jsh.uimap.code_val]%>"><%=data[i][jsh.uimap.code_txt]%></option>\
       <% } %>'
-      , { data: cLOV, jsh: jsh }
+    , { data: cLOV, jsh: jsh }
     ));
     //Apply prevval
     var lov_matches = ctrl.children('option').filter(function () { return String($(this).val()).toUpperCase() == String(prevval).toUpperCase(); }).length;
     if (lov_matches > 0) ctrl.val(prevval);
-  }
+  };
 
   XExt.TagBox_Refresh = function(jctrl, jbaseinputctrl){
     jctrl.find('span').remove();
     XExt.TagBox_AddTags(jctrl, jbaseinputctrl, jbaseinputctrl.val().split(','));
-  }
+  };
 
   XExt.TagBox_Save = function(jctrl, jbaseinputctrl){
     var tags = [];
@@ -109,7 +109,7 @@ exports = module.exports = function(jsh){
     var prevval = jbaseinputctrl.val();
     jbaseinputctrl.val(tags.join(', '));
     if(jbaseinputctrl.val()!=prevval) jbaseinputctrl.trigger('input');
-  }
+  };
 
   XExt.TagBox_Focus = function(jctrl, onFocus){
     jctrl.on('click_remove', function(tmp_e, e){
@@ -121,7 +121,7 @@ exports = module.exports = function(jsh){
     jctrl.on('click', function(e){
       onFocus.call(this, e);
     });
-  }
+  };
 
   XExt.TagBox_AddTags = function(jctrl, jbaseinputctrl, new_tags){
 
@@ -129,7 +129,7 @@ exports = module.exports = function(jsh){
       val = val.trim();
       if(!val.length) return;
       var jnew = $('<span class="notextselect">'+XExt.escapeHTML(val)+'	&#8203;<div class="xtag_remove xtag_focusable">✕</div></span>');
-      jnew.data('val', val)
+      jnew.data('val', val);
       jctrl.find('.xtag_input').before(jnew);
 
       jnew.find('.xtag_remove').on('click', function(e){
@@ -140,11 +140,11 @@ exports = module.exports = function(jsh){
         $(this).closest('span').remove();
         XExt.TagBox_Save(jctrl, jbaseinputctrl);
       });
-    }
+    };
 
     _.each(new_tags, function(tag){ addTag(tag); });
     XExt.TagBox_Save(jctrl, jbaseinputctrl);
-  }
+  };
 
   XExt.TagBox_Render = function(jctrl, jbaseinputctrl){
     jbaseinputctrl.hide();
@@ -240,18 +240,18 @@ exports = module.exports = function(jsh){
       }
       $(this).addClass('inactive');
     });
-  }
+  };
 
   XExt.CancelBubble = function (e) {
     if (!e) e = window.event;
     if (e.stopPropagation) e.stopPropagation();
     else e.cancelBubble = true;
     if(e.preventDefault) e.preventDefault();
-  }
+  };
 
   XExt.HideContextMenu = function () {
     jsh.$root('.xcontext_menu').hide();
-  }
+  };
 
   XExt.ShowContextMenu = function (selector, context_item, data, options){
     options = _.extend({ top: jsh.mouseY, left: jsh.mouseX }, options);
@@ -279,7 +279,7 @@ exports = module.exports = function(jsh){
       var obj = this;
       var onrender = $(obj).data('onrender');
       if(onrender){
-        var f = (new Function('context_item', 'data', onrender)); 
+        var f = (new Function('context_item', 'data', onrender));
         var frslt = f.call(obj, context_item, data);
         $(this).toggle(frslt !== false);
       }
@@ -292,7 +292,7 @@ exports = module.exports = function(jsh){
       jsh.xContextMenuItem = context_item;
       jsh.xContextMenuItemData = data;
     }
-  }
+  };
 
   XExt.jForEach = function(jctrls, f){
     if(!jctrls || !jctrls.length) return;
@@ -300,7 +300,7 @@ exports = module.exports = function(jsh){
     else {
       for(var i=0;i<jctrls.length;i++) f($(jctrls[i]));
     }
-  }
+  };
 
   XExt.CallAppFunc = function (url, method, d, onComplete, onFail, options){
     if(!jsh) throw new Error('XExt requires jsHarmony instance to run CallAppFunc');
@@ -332,9 +332,9 @@ exports = module.exports = function(jsh){
           else XExt.Alert('Operation completed successfully.');
         }
       }, onFail));
-    }
+    };
     getVars();
-  }
+  };
 
   XExt.InputValue = function (_Caption, _Validation, _Default, _PostProcess){
     this.Caption = _Caption;
@@ -342,7 +342,7 @@ exports = module.exports = function(jsh){
     this.Default = (_Default ? _Default : '');
     this.PostProcess = _PostProcess;
     this.Value = undefined;
-  }
+  };
   XExt.InputValue.prototype.Prompt = function (onComplete) {
     var _this = this;
     XExt.Prompt(_this.Caption, _this.Default, function (rslt) {
@@ -366,25 +366,25 @@ exports = module.exports = function(jsh){
         if (onComplete) onComplete(rslt);
       }
     });
-  }
+  };
   XExt.getLOVTxt = function (LOV, val) {
     var lov = XExt.getLOV(LOV, val);
     if(lov) return lov[jsh.uimap.code_txt];
     return undefined;
-  }
+  };
   XExt.getLOV = function (LOV, val) {
     if (val) val = val.toString();
     for (var i = 0; i < LOV.length; i++) {
       if (LOV[i][jsh.uimap.code_val] == val) return LOV[i];
     }
     return undefined;
-  }
+  };
   XExt.pushLOV = function (LOV, val, txt) {
     var newlov = {};
     newlov[jsh.uimap.code_val] = val;
     newlov[jsh.uimap.code_txt] = txt;
     LOV.push(newlov);
-  }
+  };
   XExt.parseLOV = function (LOV) {
     var rslt = LOV;
     if(_.isArray(LOV)){
@@ -408,14 +408,14 @@ exports = module.exports = function(jsh){
       }
     }
     return rslt;
-  }
+  };
 
   XExt.endsWith = function (str, suffix) {
-    return (str||'').toString().match(suffix + "$") == suffix;
-  }
+    return (str||'').toString().match(suffix + '$') == suffix;
+  };
   XExt.beginsWith = function (str, prefix) {
     return (str||'').toString().indexOf(prefix) === 0;
-  }
+  };
 
   XExt.hasAction = function (actions, perm) {
     if (actions === undefined) return false;
@@ -428,11 +428,11 @@ exports = module.exports = function(jsh){
   XExt.UndefinedBlank = function (val) {
     if (typeof val == 'undefined') return '';
     return val;
-  }
+  };
 
   XExt.ReplaceAll = function (val, find, replace) {
     return val.split(find).join(replace);
-  }
+  };
 
   XExt.trim = function(str,chr,dir){
     if(!chr) chr = ' \t\n\r\v\f';
@@ -460,34 +460,34 @@ exports = module.exports = function(jsh){
       }
     }
     return rslt;
-  }
+  };
 
   XExt.trimRight = function(str, chr){
     return XExt.trim(str, chr, 1);
-  }
+  };
 
   XExt.trimLeft = function(str, chr){
     return XExt.trim(str, chr, -1);
-  }
+  };
 
   XExt.AddHistory = function (url, obj, title) {
     if (jsh && !jsh.isHTML5) return;
     if (typeof obj == 'undefined') obj = {};
     if (typeof title == 'undefined') title = document.title;
     window.history.pushState(obj, title, url);
-  }
+  };
 
   XExt.ReplaceHistory = function (url, obj, title) {
     if (jsh && !jsh.isHTML5) return;
     if (typeof obj == 'undefined') obj = {};
     if (typeof title == 'undefined') title = document.title;
     window.history.replaceState(obj, title, url);
-  }
+  };
 
   XExt.clearFileInput = function (obj) {
     var oldInput = obj;
-    var newInput = document.createElement("input");
-    newInput.type = "file";
+    var newInput = document.createElement('input');
+    newInput.type = 'file';
     newInput.id = oldInput.id;
     newInput.name = oldInput.name;
     newInput.className = oldInput.className;
@@ -505,19 +505,19 @@ exports = module.exports = function(jsh){
       var jobj = $(obj);
       if (jobj.html() == tabname) jobj.hide();
     });
-  }
+  };
 
   //Escape JavaScript string
   XExt.escapeJS = function (q) {
     if(!q) return '';
-    return q.replace(/[\\'"]/g, "\\$&");
-  }
+    return q.replace(/[\\'"]/g, '\\$&');
+  };
 
   //Escape just quotes (for XML/HTML key-value pairs)
   XExt.escapeHTMLQ = function (q) {
     if(!q) return '';
-    return q.replace(/["]/g, "&quot;");
-  }
+    return q.replace(/["]/g, '&quot;');
+  };
 
   //Escape while enabling escape characters in a string
   XExt.escapeHTMLN = function (val) {
@@ -525,34 +525,34 @@ exports = module.exports = function(jsh){
     return String(val).replace(/&amp;([\w]+);/g, function (s,p1) {
       return '&'+p1+';';
     });
-  }
+  };
 
   //Escape all HTML
   XExt.escapeHTML = function (val) {
     var entityMap = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
       '"': '&quot;',
       "'": '&#39;',
-      "/": '&#x2F;',
+      '/': '&#x2F;',
       '\u00A0':'&#xa0;'
     };
     
     return String(val).replace(/[\u00A0&<>"'\/]/g, function (s) {
       return entityMap[s];
     });
-  }
+  };
   //Escape HTML and replace line breaks with HTML line breaks
   XExt.escapeHTMLBR = function (val) {
     if((typeof val=='undefined')||(val===null)) return val;
     return XExt.ReplaceAll(XExt.ReplaceAll(XExt.escapeHTML(val.toString()), '\n', '<br/>'), '\r', '');
-  }
+  };
   //Escape HTML and replace line breaks with spaces
   XExt.escapeBRSpace = function (val) {
     if((typeof val=='undefined')||(val===null)) return val;
     return XExt.ReplaceAll(XExt.ReplaceAll(val.toString(), '\n', ' '), '\r', '');
-  }
+  };
   //Escape string for regular expression matching
   XExt.escapeRegEx = function (q, options) {
     options = _.extend({ ignore: '' }, options);
@@ -580,8 +580,8 @@ exports = module.exports = function(jsh){
     for(var key in chars){
       if(!options.ignore || (options.ignore.indexOf(key)<0)) rxstr += chars[key];
     }
-    return q.replace(new RegExp('['+rxstr+'\\s]','g'), "\\$&");
-  }
+    return q.replace(new RegExp('['+rxstr+'\\s]','g'), '\\$&');
+  };
   //Escape string for CSS
   XExt.escapeCSSClass = function(val, options){
     //options { nodash: true }
@@ -606,12 +606,12 @@ exports = module.exports = function(jsh){
     if(val === null) return '';
     if(typeof val == 'undefined') return '';
     return encodeURI(val);
-  }
+  };
   XExt.pad = function (val, padding, length) {
     var rslt = val.toString();
     while (rslt.length < length) rslt = padding + rslt;
     return rslt;
-  }
+  };
   XExt.getMargin = function(jctrl){
     return {
       top: parseInt(jctrl.css('margin-top')),
@@ -619,7 +619,7 @@ exports = module.exports = function(jsh){
       bottom: parseInt(jctrl.css('margin-bottom')),
       left: parseInt(jctrl.css('margin-left'))
     };
-  }
+  };
   XExt.getPadding = function(jctrl){
     return {
       top: parseInt(jctrl.css('padding-top')),
@@ -627,7 +627,7 @@ exports = module.exports = function(jsh){
       bottom: parseInt(jctrl.css('padding-bottom')),
       left: parseInt(jctrl.css('padding-left'))
     };
-  }
+  };
   XExt.getBorder = function(jctrl){
     return {
       top: parseInt(jctrl.css('border-top-width')),
@@ -635,7 +635,7 @@ exports = module.exports = function(jsh){
       bottom: parseInt(jctrl.css('border-bottom-width')),
       left: parseInt(jctrl.css('border-left-width'))
     };
-  }
+  };
   XExt.xejs = {
     'escapeJS': function(val){ return XExt.escapeJS(val); },
     'escapeHTML': function(val){ return XExt.escapeHTML(val); },
@@ -803,7 +803,7 @@ exports = module.exports = function(jsh){
     window.CKEDITOR.replace(id, _.extend({ height: orig_height },config));
     if(cb) cb();
     return;
-  }
+  };
   XExt.TinyMCE = function (id, config, cb) {
     if (!window.tinymce){
       //Dynamically load TinyMCE script, and rerun function when finished
@@ -828,7 +828,7 @@ exports = module.exports = function(jsh){
     config.init_instance_callback  = function(instance){
       if(prev_init_instance_callback) prev_init_instance_callback(instance);
       if(cb) cb();
-    }
+    };
     config = _.extend({ height: orig_height }, config);
     window.tinymce.init(config);
   };
@@ -844,13 +844,13 @@ exports = module.exports = function(jsh){
       });
       if(hasCapabilities) return pjsh;
     }
-  }
+  };
   XExt.notifyPopupComplete = function (id, rslt) {
     var jshOpener = XExt.getOpenerJSH(['PopupComplete']);
     if (jshOpener) {
       jshOpener.XPage.PopupComplete(id, rslt);
     }
-  }
+  };
   XExt.unescapeEJS = function (ejssrc) {
     if (!ejssrc) return '';
     var rslt = ejssrc;
@@ -859,7 +859,7 @@ exports = module.exports = function(jsh){
     rslt = XExt.ReplaceAll(rslt, '&lt;%', '<%');
     rslt = XExt.ReplaceAll(rslt, '%&gt;', '%>');
     return rslt;
-  }
+  };
   XExt.renderEJS = function(ejssource, modelid, params){
     if(!ejssource) return '';
     modelid = XExt.resolveModelID(modelid);
@@ -881,21 +881,21 @@ exports = module.exports = function(jsh){
     ejsparams = _.extend(ejsparams, params);
     if(!('ejsparams' in ejsparams)) ejsparams.ejsparams = ejsparams;
     return jsh.ejs.render(ejssource, ejsparams);
-  }
+  };
   XExt.replaceTempEJSTags = function(ejssrc){
     if(!ejssrc) return '';
     if(ejssrc.indexOf('<#')<0) return ejssrc;
     ejssrc = ejssrc.replace(/<#/g, '<%').replace(/#>/g, '%>');
     return ejssrc;
-  }
+  };
   XExt.renderClientEJS = function(ejssrc,ejsparams){
     if(!ejssrc) return '';
     return jsh.ejs.render(XExt.replaceTempEJSTags(ejssrc),ejsparams);
-  }
+  };
   XExt.isSinglePage = function () {
     if (jsh.singlepage) return true;
     return false;
-  }
+  };
   XExt.navTo = function (url, options) {
     options = _.extend({ force: false }, options);
     if (XExt.isSinglePage()) {
@@ -908,7 +908,7 @@ exports = module.exports = function(jsh){
     }
     window.location.href = url;
     return false;
-  }
+  };
   XExt.jumpAnchor = function (name) {
     if (!name) return;
     if (name[0] == '#') name = name.substring(1);
@@ -917,53 +917,53 @@ exports = module.exports = function(jsh){
     var elem = jobj.get(0);
     var elemoff = $(elem).offset();
     window.scrollTo(0, elemoff.top);
-  }
+  };
   XExt.getURLObj = function (url) {
     var a = document.createElement('a');
     a.href = url;
     return a;
   };
   XExt.aPhoneCheck = function (jobj, caption) {
-    var val = jobj.val()
+    var val = jobj.val();
     if (val && (val == '1' || !val.match(/[0123456789]/))) {
       jobj.addClass('xinputerror');
       XExt.Alert('Invalid ' + caption);
       return false;
     }
     return true;
-  }
+  };
   XExt.StripTags = function (val, ignore, options) {
     if (!val) return val;
 
     options = _.extend({ addSpaces: false }, options);
     
-    ignore = (((ignore || '') + '').toLowerCase().match(/<[a-z][a-z0-9]*>/g) || []).join('')
-    var clienttags = /<\/?([a-z][a-z0-9]*)\b[^>]*>/gi
-    var servertags = /<!--[\s\S]*?-->|<\?(?:php)?[\s\S]*?\?>/gi
+    ignore = (((ignore || '') + '').toLowerCase().match(/<[a-z][a-z0-9]*>/g) || []).join('');
+    var clienttags = /<\/?([a-z][a-z0-9]*)\b[^>]*>/gi;
+    var servertags = /<!--[\s\S]*?-->|<\?(?:php)?[\s\S]*?\?>/gi;
     var replaceStr = (options.addSpaces ? ' ' : '');
     
     var rslt = XExt.unescapeHTMLEntity(val.replace(servertags, replaceStr).replace(clienttags, function ($0, $1) {
-      return ignore.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : replaceStr
+      return ignore.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : replaceStr;
     }));
   
     if(options.addSpaces){
       //Trim double-spaces
-      while(rslt.indexOf('  ')>=0) rslt = rslt.replace(/  /gi,' ');
+      while(rslt.indexOf('  ')>=0) rslt = rslt.replace(/ {2}/gi,' ');
       rslt = rslt.trim();
     }
   
     return rslt;
-  }
+  };
   XExt.unescapeHTMLEntity = function(val){
-    var obj = document.createElement("textarea");
+    var obj = document.createElement('textarea');
     obj.innerHTML = val;
     return obj.value;
-  }
+  };
   XExt.ParseMultiLine = function (val){
     if (!val) return val;
     if (_.isArray(val)) return val.join(' ');
     return val.toString();
-  }
+  };
 
   XExt.makeResizableDiv = function(selector, children, options) {
     if(!options) options = { onDrag: null, onDragEnd: null };
@@ -984,7 +984,7 @@ exports = module.exports = function(jsh){
     for (var i = 0;i < resizers.length; i++) {
       const currentResizer = resizers[i];
       currentResizer.addEventListener('mousedown', function(e) {
-        e.preventDefault()
+        e.preventDefault();
         original_width = parseFloat(getComputedStyle(obj, null).getPropertyValue('width').replace('px', ''));
         original_height = parseFloat(getComputedStyle(obj, null).getPropertyValue('height').replace('px', ''));
         original_x = obj.getBoundingClientRect().left;
@@ -1020,7 +1020,7 @@ exports = module.exports = function(jsh){
               var correction_y = children[i].correction_y;
               if(_.isFunction(correction_y)) correction_y = correction_y();
               children[i].obj.style.height = (height + correction_y) + 'px';
-              children[i].obj.style.top = original_y + (e.pageY - original_mouse_y - correction_y) + 'px'
+              children[i].obj.style.top = original_y + (e.pageY - original_mouse_y - correction_y) + 'px';
             }
           }
         }
@@ -1029,24 +1029,24 @@ exports = module.exports = function(jsh){
 
       function stopResize() {
         window.removeEventListener('mousemove', resize);
-        window.removeEventListener('mouseup', stopResize)
+        window.removeEventListener('mouseup', stopResize);
         if(options.onDragEnd) options.onDragEnd();
       }
     }
-  }
+  };
 
   XExt.readCookie = function(id){
     var rslt = [];
     var cookies = document.cookie.split(';');
-    var rx=RegExp("^\\s*"+XExt.escapeRegEx(id)+"=\\s*(.*?)\\s*$");
+    var rx=RegExp('^\\s*'+XExt.escapeRegEx(id)+'=\\s*(.*?)\\s*$');
     for(var i=0;i<cookies.length;i++){
       var m = cookies[i].match(rx);
       if(m) rslt.push(m[1]);
     }
     return rslt;
-  }
+  };
 
-  XExt.GetCookieNameWithSuffix = function(cname){return cname+jsh.cookie_suffix}
+  XExt.GetCookieNameWithSuffix = function(cname){return cname+jsh.cookie_suffix;};
   XExt.GetCookie = function(cname){
     cname= XExt.GetCookieNameWithSuffix(cname);
     var rslt = [];
@@ -1057,7 +1057,7 @@ exports = module.exports = function(jsh){
       }
     }
     return rslt;
-  }
+  };
   XExt.SetCookie = function(cname,cvalue,exmin,options){
     cname= XExt.GetCookieNameWithSuffix(cname);
     if(!options) options = {};
@@ -1067,16 +1067,16 @@ exports = module.exports = function(jsh){
     if (exmin !== 0){
       var d = new Date();
       d.setTime(d.getTime() + (exmin*60*1000));
-      expires = ";expires="+ d.toUTCString();
+      expires = ';expires='+ d.toUTCString();
     }
-    var cookieval = cname + "=" + encodeURIComponent(cvalue) + expires + ";path="+jsh._BASEURL;
+    var cookieval = cname + '=' + encodeURIComponent(cvalue) + expires + ';path='+jsh._BASEURL;
     if('samesite' in options) cookieval += ';samesite=' + options.samesite.toString().toLowerCase();
     if(options.secure) cookieval += ';secure';
     document.cookie = cookieval;
-  }
+  };
   XExt.ClearCookie = function(cname){
     return XExt.SetCookie(cname,'',-100000);
-  }
+  };
   XExt.GetSettingsCookie = function(module_name){
     var settings = {};
     try{
@@ -1088,29 +1088,29 @@ exports = module.exports = function(jsh){
       if (settings.hasOwnProperty(module_name)){
         settings = settings[module_name];
       }else {
-        settings = {}
+        settings = {};
       }
     }
     return settings;
-  }
+  };
   XExt.SetSettingsCookie = function(module_name,cvalue){
-    if (typeof module_name === "undefined" || module_name.length <=0){
-      throw "Please provide module name!";
+    if (typeof module_name === 'undefined' || module_name.length <=0){
+      throw 'Please provide module name!';
     }
     var settings = XExt.GetSettingsCookie();
     settings[module_name]=cvalue;
     return XExt.SetCookie('settings',JSON.stringify(settings),XExt.COOKIE_MAX_EXPIRATION);
-  }
+  };
   XExt.ClearSettingsCookie = function(){
     return XExt.ClearCookie('settings');
-  }
+  };
 
   XExt.currentURL = function(){
     var rslt = window.location.href.toString().split(window.location.host)[1];
     rslt = rslt.split('?')[0];
     rslt = rslt.split('#')[0];
     return rslt;
-  }
+  };
 
 
   /******************
@@ -1231,7 +1231,7 @@ exports = module.exports = function(jsh){
     }
     if(controlparams.ondrop) XExt.TreeEnableDrop(jctrl, controlparams.ondrop, controlparams.drag_anchor_settings);
     if(controlparams.onmove) XExt.TreeEnableDrag(jctrl, controlparams.onmove, controlparams.drag_anchor_settings);
-  }
+  };
 
   //ondrop(dropval, anchor, e)
   XExt.TreeEnableDrop = function (jctrl, ondrop, drag_anchor_settings) {
@@ -1283,7 +1283,7 @@ exports = module.exports = function(jsh){
       e.preventDefault();
       e.stopPropagation();
     });
-  }
+  };
 
   //onmove(dragval, dropval, anchor, e)
   XExt.TreeEnableDrag = function (jctrl, onmove, drag_anchor_settings) {
@@ -1364,7 +1364,7 @@ exports = module.exports = function(jsh){
 
       if(!targetObj) return;
       if($(targetObj).data('id')==$(mouseDragObj).data('id')) return;
-      jsh.$root('.xdrag').css('visibility','visible'); 
+      jsh.$root('.xdrag').css('visibility','visible');
 
       var targetAnchor = XExt.getObjectAnchors(targetObj, jsh.mouseX, jsh.mouseY, drag_anchor_settings);
       $(targetObj).addClass('xdragtarget');
@@ -1392,7 +1392,7 @@ exports = module.exports = function(jsh){
 
       if(onmove) onmove(mouseDragObjVal, targetObjVal, targetAnchor, origEvent);
     });
-  }
+  };
 
   XExt.TreeRenderNode = function (ctrl, n, controlparams) {
     var children = '';
@@ -1408,29 +1408,29 @@ exports = module.exports = function(jsh){
     var rslt = jsh.ejs.render('\
       <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length && (n.LazyRender&&!n.Expanded)?"tree_render_lazy":"")%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>" onclick=\'<%-instance%>.XExt.TreeSelectNode(this,<%-JSON.stringify(n.Value)%>,{ source: "click" }); return false;\' oncontextmenu=\'return <%-instance%>.XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'<%-instance%>.XExt.CancelBubble(arguments[0]); <%-instance%>.XExt.TreeToggleNode(<%-instance%>.$(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><img class="icon" src="<%-jsh._PUBLICURL%>images/icon_<%=n.Icon%>.png"><span>'+item_dropdown_html+'<%=n.Text||"\u00A0"%></span></a>\
       <div class="children <%=(n.Expanded?"expanded":"")%> tree_item_<%=n.ID%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>"><%-children%></div>',
-      { n: n, children: children, jsh: jsh, instance: jsh.getInstance() }
+    { n: n, children: children, jsh: jsh, instance: jsh.getInstance() }
     );
     return rslt;
-  }
+  };
 
   XExt.isMobile = function(userAgent){
     if(typeof userAgent == 'undefined') userAgent = navigator.userAgent;
     userAgent = (userAgent||'').toLowerCase();
     return (/android|iphone|ipad|ipod|blackberry|iemobile|opera mini|webos|mobi/i.test(userAgent));
-  }
+  };
 
   XExt.getJSLocals = function(modelid){
     modelid = XExt.resolveModelID(modelid);
     var rslt = jsh.jslocals;
     if(modelid) rslt += "var modelid = '"+modelid+"'; var _this = jsh.App[modelid]; var xmodel = jsh.XModels[modelid]; ";
     return rslt;
-  }
+  };
 
   XExt.getJSApp = function(modelid,quotechar){
     modelid = XExt.resolveModelID(modelid);
     if(typeof quotechar=='undefined') quotechar = '\'';
     return jsh._instance + '.App[' + quotechar + modelid + quotechar + ']';
-  }
+  };
 
   XExt.JSEval = function(str,_thisobj,params){
     if(!_thisobj) _thisobj = jsh;
@@ -1444,21 +1444,21 @@ exports = module.exports = function(jsh){
     }
     var jscmd = '(function(){'+XExt.getJSLocals(params.modelid)+paramstr+'return (function(){'+str+'})();}).call(_thisobj)';
     return eval(jscmd);
-  }
+  };
 
   XExt.wrapJS = function(code,modelid,options){
     modelid = XExt.resolveModelID(modelid);
     options = _.extend({ returnFalse: true }, options);
     return 'return (function(){'+XExt.escapeHTML(XExt.getJSLocals(modelid))+' '+XExt.unescapeEJS(XExt.escapeHTML(code))+'; '+(options.returnFalse?'return false;':'')+' }).call(this);';
-  }
+  };
 
   XExt.TreeItemContextMenu = function (ctrl, n, contextMenuOptions) {
     var jctrl = $(ctrl);
     var jtree = jctrl.closest('.xform_ctrl.tree');
     var fieldname = XExt.getFieldNameFromObject(ctrl);
     var menuid = '._item_context_menu_' + fieldname;
-    if(jtree.data('oncontextmenu')) { 
-      var f = (new Function('n', jtree.data('oncontextmenu'))); 
+    if(jtree.data('oncontextmenu')) {
+      var f = (new Function('n', jtree.data('oncontextmenu')));
       var frslt = f.call(ctrl, n);
       if((frslt === false) || (frslt===true)) return frslt;
     }
@@ -1473,14 +1473,14 @@ exports = module.exports = function(jsh){
       return false;
     }
     return true;
-  }
+  };
 
   XExt.TreeDoubleClickNode = function (ctrl, n) {
     var jctrl = $(ctrl);
     var jtree = jctrl.closest('.xform_ctrl.tree');
     var fieldname = XExt.getFieldNameFromObject(ctrl);
     if(jtree.data('ondoubleclick')) { var rslt = (new Function('n', jtree.data('ondoubleclick'))); rslt.call(ctrl, n); }
-  }
+  };
 
   XExt.TreeGetSelectedNodes = function (ctrl) {
     var rslt = [];
@@ -1489,7 +1489,7 @@ exports = module.exports = function(jsh){
       if (val) rslt.push(val.toString());
     });
     return rslt;
-  }
+  };
 
   XExt.TreeGetExpandedNodes = function (ctrl) {
     var rslt = [];
@@ -1498,7 +1498,7 @@ exports = module.exports = function(jsh){
       if (val) rslt.push(val.toString());
     });
     return rslt;
-  }
+  };
 
   XExt.TreeSelectNode = function (ctrl, nodevalue, options) {
     if(!options) options = { triggerChange: true, source: '' };
@@ -1571,7 +1571,7 @@ exports = module.exports = function(jsh){
       if(xform && xform.Data && options.triggerChange) xform.Data.OnControlUpdate(ctrl);
     }
     if((typeof nodeid !== 'undefined') && jtree.data('onselected')) { var rslt = (new Function('nodeid', jtree.data('onselected'))); rslt.call(ctrl, nodeid); }
-  }
+  };
 
   XExt.TreeToggleNode = function (jctrl, nodeid) {
     var jctrl = jctrl.closest('.xform_ctrl.tree');
@@ -1579,13 +1579,13 @@ exports = module.exports = function(jsh){
       XExt.TreeCollapseNode(jctrl, nodeid);
     else
       XExt.TreeExpandNode(jctrl, nodeid);
-  }
+  };
 
   XExt.TreeCollapseNode = function (jctrl, nodeid) {
     var jctrl = jctrl.closest('.xform_ctrl.tree');
     jctrl.find('.tree_item_' + nodeid).removeClass('expanded');
     jctrl.find('.tree_item.tree_item_' + nodeid + ' > .glyph').html('&#x25b7;');
-  }
+  };
 
   XExt.TreeExpandNode = function (jctrl, nodeid) {
     var jctrl = jctrl.closest('.xform_ctrl.tree');
@@ -1593,7 +1593,7 @@ exports = module.exports = function(jsh){
     if(jtreenode.hasClass('tree_render_lazy')) jtreenode.trigger('tree_render_lazy');
     jtreenode.addClass('expanded');
     jctrl.find('.tree_item.tree_item_' + nodeid + ' > .glyph').html('&#x25e2;');
-  }
+  };
 
   XExt.TreeExpandToSelected = function (ctrl) {
     var toptree = $(ctrl).closest('.xform_ctrl.tree');
@@ -1607,7 +1607,7 @@ exports = module.exports = function(jsh){
       }
     });
     return rslt;
-  }
+  };
   XExt.TreeExpandAll = function (ctrl) {
     var jctrl = $(ctrl).closest('.xform_ctrl.tree');
     if(!jctrl.find('.tree_render_lazy').length){
@@ -1625,7 +1625,7 @@ exports = module.exports = function(jsh){
         unexpanded = jctrl.find('.tree_item').not('.expanded');
       }
     }
-  }
+  };
 
   /*********************
    * GENERAL FUNCTIONS *
@@ -1659,7 +1659,7 @@ exports = module.exports = function(jsh){
 
     }
     return rslt;
-  }
+  };
 
   XExt.getTypedFieldValue = function (field, value){
     if(!field || !field.type) return value;
@@ -1679,7 +1679,7 @@ exports = module.exports = function(jsh){
     }
     else if (field.type == 'boolean') return jsh.XFormat.bool_decode(value);
     return value;
-  }
+  };
 
   XExt.getFieldByName = function (model, fieldname){
     if(!model || !model.fields) return null;
@@ -1692,7 +1692,7 @@ exports = module.exports = function(jsh){
       if(fieldname in model.fields) return model.fields[fieldname];
     }
     return null;
-  }
+  };
 
   XExt.XInputAction = function (_obj, _overrideFunc) {
     if (_obj && (_obj instanceof $) && (_obj.length)) this.obj = _obj[0];
@@ -1702,7 +1702,7 @@ exports = module.exports = function(jsh){
     this.mouseY = jsh.mouseY;
     this.mouseDown = jsh.mouseDown;
     this.overrideFunc = _overrideFunc;
-  }
+  };
 
   XExt.XInputAction.prototype.Exec = function () {
     var _this = this;
@@ -1711,45 +1711,45 @@ exports = module.exports = function(jsh){
     else if (_this.obj && _this.mouseDown) {
       XExt.Click(_this.obj, _this.mouseX, _this.mouseY);
     }
-  }
+  };
 
   XExt.XInputAction.prototype.IsExpired = function () {
     return ((Date.now() - this.tstamp) > 500);
-  }
+  };
 
   XExt.getLastClicked = function () {
     var is_recent_click = (Date.now() - jsh.last_clicked_time) < 100;
     if (jsh.last_clicked && is_recent_click) return jsh.last_clicked;
     return undefined;
-  }
+  };
 
   XExt.Click = function (obj, x, y) {
     window.setTimeout(function () {
-      obj.dispatchEvent(new MouseEvent("mousedown", {
+      obj.dispatchEvent(new MouseEvent('mousedown', {
         bubbles: true,
         cancelable: true,
         view: window
       }));
-      obj.dispatchEvent(new MouseEvent("mouseup", {
+      obj.dispatchEvent(new MouseEvent('mouseup', {
         bubbles: true,
         cancelable: true,
         view: window
       }));
-      obj.dispatchEvent(new MouseEvent("click", {
+      obj.dispatchEvent(new MouseEvent('click', {
         bubbles: true,
         cancelable: true,
         view: window
       }));
     }, 1);
-  }
+  };
 
   XExt.isIOS = function () {
-    if ((navigator.userAgent.match(/iPhone/i)) || 
-        (navigator.userAgent.match(/iPod/i)) || 
+    if ((navigator.userAgent.match(/iPhone/i)) ||
+        (navigator.userAgent.match(/iPod/i)) ||
         (navigator.userAgent.match(/iPad/i))) {
       return true;
     }
-  }
+  };
 
   XExt.clearDialogs = function(){
     jsh.xDialog = [];
@@ -1757,7 +1757,7 @@ exports = module.exports = function(jsh){
     jsh.dialogBlock.hide();
     jsh.dialogBlock.off('mousedown.close');
     jsh.dialogBlock.off('mouseup.close');
-  }
+  };
 
   XExt.dialogButtonFunc = function (dialogClass, oldactive, onComplete, params) {
     if (!params) params = {};
@@ -1781,12 +1781,12 @@ exports = module.exports = function(jsh){
       if (oldactive) oldactive.focus();
       window.setTimeout(function () { jsh.xDialog.shift(); if (onComplete) onComplete(); }, 1);
       if (params.onCompleteImmediate) params.onCompleteImmediate();
-    }
+    };
     if(!params.onClosing) return rslt;
     return function(){
       params.onClosing(rslt);
     };
-  }
+  };
 
   XExt.getDialogContainer = function (sel) {
     var jsel = $(sel);
@@ -1794,7 +1794,7 @@ exports = module.exports = function(jsh){
     var jdialog = jsel.closest('.xdialogbox');
     if(!jdialog.length) return window;
     return jdialog[0];
-  }
+  };
 
   XExt.Alert = function (obj, onAccept, params) {
     params = _.extend({ escapeHTML: true }, params);
@@ -1824,7 +1824,7 @@ exports = module.exports = function(jsh){
     jsh.dialogBlock.show();
     jsh.XWindowResize();
     if (!XExt.isIOS()) jsh.$dialogBlock('.xalertbox.base input').focus();
-  }
+  };
 
   XExt.Confirm = function (obj, onYes, onNo, options) {
     var default_options = {
@@ -1846,7 +1846,7 @@ exports = module.exports = function(jsh){
       msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
     }
     //if (window.confirm(msg)) { if (onYes) onYes(); }
-    //if (onNo) onNo(); 
+    //if (onNo) onNo();
     jsh.xDialog.unshift('.xconfirmbox');
     jsh.$dialogBlock('.xconfirmbox.base').zIndex(jsh.xDialog.length);
     
@@ -1876,29 +1876,29 @@ exports = module.exports = function(jsh){
     jsh.dialogBlock.show();
     jsh.XWindowResize();
     if (!XExt.isIOS()) jsh.$dialogBlock('.xconfirmbox.base input.button_ok').focus();
-  }
+  };
 
   XExt.stringify = function (origvalue, replacer, space) {
     var cache = [];
     return JSON.stringify(origvalue, function(key, value){
       if (typeof value === 'object' && value !== null) {
         if (cache.indexOf(value) !== -1) {
-            // Duplicate reference found
-            try {
-                // If this value does not reference a parent it can be deduped
-                return JSON.parse(JSON.stringify(value));
-            } catch (error) {
-                // discard key if value cannot be deduped
-                return;
-            }
+          // Duplicate reference found
+          try {
+            // If this value does not reference a parent it can be deduped
+            return JSON.parse(JSON.stringify(value));
+          } catch (error) {
+            // discard key if value cannot be deduped
+            return;
+          }
         }
         // Store value in our collection
         cache.push(value);
-    }
-    if(replacer) return replacer(key, value);
-    return value;
+      }
+      if(replacer) return replacer(key, value);
+      return value;
     }, space);
-  }
+  };
 
   XExt.Prompt = function (obj, dflt, onComplete) {
     var msg = '';
@@ -1936,7 +1936,7 @@ exports = module.exports = function(jsh){
     jsh.dialogBlock.show();
     jsh.XWindowResize();
     jsh.$dialogBlock('.xpromptfield').focus();
-  }
+  };
 
   //html - HTML or jQuery object
   XExt.CustomPrompt = function (sel, html, onInit, onAccept, onCancel, onClosed, options) {
@@ -1967,12 +1967,12 @@ exports = module.exports = function(jsh){
     }, { onClosing: options.onClosing });
     var cancelfunc = function(options){
       options = _.extend({ force: false }, options);
-      options.forceCancel = function(){ cancelfunc({ force: true }); }
+      options.forceCancel = function(){ cancelfunc({ force: true }); };
       if (onCancel){
         if((onCancel(options)===false) && !options.force) return;
       }
       cancelDialogFunc();
-    }
+    };
     var acceptfunc_aftervalidate = XExt.dialogButtonFunc(sel, oldactive, function () {
       if (onClosed) onClosed();
     }, { onClosing: options.onClosing });
@@ -1982,7 +1982,7 @@ exports = module.exports = function(jsh){
       
       if (onAccept) return onAccept(function () { acceptfunc_aftervalidate(); });
       else acceptfunc_aftervalidate();
-    }
+    };
     if (onInit) onInit(acceptfunc, cancelfunc);
     jsh.$dialogBlock(sel + ' input.button_ok').on('click', acceptfunc);
     jsh.$dialogBlock(sel + ' input.button_cancel').on('click', cancelfunc);
@@ -2018,17 +2018,17 @@ exports = module.exports = function(jsh){
       else jsh.$dialogBlock(sel).find('input:visible,textarea:visible,select:visible').first().focus();
     }, 1);
     
-  }
+  };
 
   XExt.AcceptDialog = function(){
     if(!jsh.xDialog.length) throw new Error('No dialog currently active');
     $(jsh.xDialog[0]).trigger('acceptDialog');
-  }
+  };
 
   XExt.CancelDialog = function(){
     if(!jsh.xDialog.length) throw new Error('No dialog currently active');
     $(jsh.xDialog[0]).trigger('cancelDialog');
-  }
+  };
 
   XExt.ZoomEdit = function (val, caption, options, onAccept, onCancel) {
     if(!options) options = {};
@@ -2057,7 +2057,7 @@ exports = module.exports = function(jsh){
     jsh.dialogBlock.show();
     jsh.XWindowResize();
     jsh.$dialogBlock('.xtextzoomfield').focus();
-  }
+  };
 
   XExt.ShowHints = function (lov, caption, options, onInsert, onCancel) {
     if(!options) options = {};
@@ -2102,7 +2102,7 @@ exports = module.exports = function(jsh){
     jsh.dialogBlock.show();
     jsh.XWindowResize();
     jdialog.find('input').first().focus();
-  }
+  };
 
   var popupData = {};
 
@@ -2114,7 +2114,7 @@ exports = module.exports = function(jsh){
       parentobj: parentobj,
       obj: obj
     }));
-  }
+  };
 
   XExt.popup = function (options) {
     options = _.extend({
@@ -2165,75 +2165,75 @@ exports = module.exports = function(jsh){
     XExt.execif(parentfield && parentfield.controlparams && parentfield.controlparams.onpopup,
       function (f) { parentfield.controlparams.onpopup(modelid, parentmodelid, fieldname, f); },
       function () {
-      var code_val = $(obj).data('code_val');
-      if (code_val) popupData[modelid].code_val = code_val;
-      var xgrid = xmodel.controller.grid;
-      var xform = xmodel.controller.form;
-      if(xgrid){
-        xgrid.RowCount = 0;
-        if (xgrid.Prop) xgrid.Prop.Enabled = true;
-        jsh.$root(xgrid.PlaceholderID).html('');
-      }
-      if(xform && xform.Prop){ xform.Prop.Enabled = true; }
-      var orig_jsh_ignorefocusHandler = jsh.ignorefocusHandler;
-      jsh.ignorefocusHandler = true;
-      var popup_options = {};
-      popup_options = {
-        modelid: modelid,
-        href: POPUP_CONTAINER,
-        inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, fixed: true,
-        title: title, 
-        trapFocus: false,
-        fadeOut:0,
-        onOpen: function () {
+        var code_val = $(obj).data('code_val');
+        if (code_val) popupData[modelid].code_val = code_val;
+        var xgrid = xmodel.controller.grid;
+        var xform = xmodel.controller.form;
+        if(xgrid){
+          xgrid.RowCount = 0;
+          if (xgrid.Prop) xgrid.Prop.Enabled = true;
+          jsh.$root(xgrid.PlaceholderID).html('');
+        }
+        if(xform && xform.Prop){ xform.Prop.Enabled = true; }
+        var orig_jsh_ignorefocusHandler = jsh.ignorefocusHandler;
+        jsh.ignorefocusHandler = true;
+        var popup_options = {};
+        popup_options = {
+          modelid: modelid,
+          href: POPUP_CONTAINER,
+          inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, fixed: true,
+          title: title,
+          trapFocus: false,
+          fadeOut:0,
+          onOpen: function () {
           //When nested popups are called, onOpen is not called
-        },
-        onComplete: function () {
-          if (options.OnPopupOpen) if(options.OnPopupOpen(popupData[modelid])===false) return;
-          numOpens++;
-          if(xgrid && (numOpens==1)) xgrid.Select();
-          if (jsh.$root(POPUP_CONTAINER + ' .xsearch_value').first().is(':visible')){
-            jsh.$root(POPUP_CONTAINER + ' .xsearch_value').first().focus();
-          }
-          else if (jsh.$root(POPUP_CONTAINER).find('td a').length) jsh.$root(POPUP_CONTAINER).find('td a').first().focus();
-          //else jsh.$root(POPUP_CONTAINER).find('input,select,textarea').first().focus();
-        },
-        onClosed: function () {
-          var found_popup = false;
-          for(var i=jsh.xPopupStack.length-1;i>=0;i--){
-            if(jsh.xPopupStack[i].modelid==modelid){ jsh.xPopupStack.splice(i,1); found_popup = true; break; }
-          }
-          if(!found_popup) { alert('ERROR - Invalid Popup Stack'); console.log(modelid); console.log(jsh.xPopupStack); };
-
-          if(jsh.xPopupStack.length) $.colorbox(jsh.xPopupStack[jsh.xPopupStack.length-1]);
-
-          if (parentobj && (typeof popupData[modelid].result !== 'undefined')) {
-            if(parentmodel && parentfield && parentfield.name) parentmodel.set(parentfield.name, popupData[modelid].result, null);
-            else parentobj.val(popupData[modelid].result);
-            if (popupData[modelid].resultrow && parentfield && parentfield.controlparams && parentfield.controlparams.popup_copy_results) {
-              for (var fname in parentfield.controlparams.popup_copy_results) {
-                parentmodel.set(fname, popupData[modelid].resultrow[parentfield.controlparams.popup_copy_results[fname]], null);
-              }
+          },
+          onComplete: function () {
+            if (options.OnPopupOpen) if(options.OnPopupOpen(popupData[modelid])===false) return;
+            numOpens++;
+            if(xgrid && (numOpens==1)) xgrid.Select();
+            if (jsh.$root(POPUP_CONTAINER + ' .xsearch_value').first().is(':visible')){
+              jsh.$root(POPUP_CONTAINER + ' .xsearch_value').first().focus();
             }
-            if (options.OnControlUpdate) options.OnControlUpdate(parentobj[0], popupData[modelid]);
-          }
-          if (options.OnPopupClosed) options.OnPopupClosed(popupData[modelid]);
-          if (parentobj) parentobj.focus();
-          jsh.ignorefocusHandler = orig_jsh_ignorefocusHandler;
-          if(xgrid && xgrid.Prop){ xgrid.Prop.Enabled = false; }
-          if(xform && xform.Prop){ xform.Prop.Enabled = false; }
-        },
-      };
-      var xsubform = $(popup_options.href).filter('.xsubform');
-      if(xsubform.length){
-        xsubform.css('max-height',($(window).height()-100)+'px');
-        xsubform.css('display','block');
-        xsubform.css('overflow','auto');
-      }
-      jsh.xPopupStack.push(popup_options);
-      $.colorbox(popup_options);
-    });
-  }
+            else if (jsh.$root(POPUP_CONTAINER).find('td a').length) jsh.$root(POPUP_CONTAINER).find('td a').first().focus();
+          //else jsh.$root(POPUP_CONTAINER).find('input,select,textarea').first().focus();
+          },
+          onClosed: function () {
+            var found_popup = false;
+            for(var i=jsh.xPopupStack.length-1;i>=0;i--){
+              if(jsh.xPopupStack[i].modelid==modelid){ jsh.xPopupStack.splice(i,1); found_popup = true; break; }
+            }
+            if(!found_popup) { alert('ERROR - Invalid Popup Stack'); console.log(modelid); console.log(jsh.xPopupStack); }
+
+            if(jsh.xPopupStack.length) $.colorbox(jsh.xPopupStack[jsh.xPopupStack.length-1]);
+
+            if (parentobj && (typeof popupData[modelid].result !== 'undefined')) {
+              if(parentmodel && parentfield && parentfield.name) parentmodel.set(parentfield.name, popupData[modelid].result, null);
+              else parentobj.val(popupData[modelid].result);
+              if (popupData[modelid].resultrow && parentfield && parentfield.controlparams && parentfield.controlparams.popup_copy_results) {
+                for (var fname in parentfield.controlparams.popup_copy_results) {
+                  parentmodel.set(fname, popupData[modelid].resultrow[parentfield.controlparams.popup_copy_results[fname]], null);
+                }
+              }
+              if (options.OnControlUpdate) options.OnControlUpdate(parentobj[0], popupData[modelid]);
+            }
+            if (options.OnPopupClosed) options.OnPopupClosed(popupData[modelid]);
+            if (parentobj) parentobj.focus();
+            jsh.ignorefocusHandler = orig_jsh_ignorefocusHandler;
+            if(xgrid && xgrid.Prop){ xgrid.Prop.Enabled = false; }
+            if(xform && xform.Prop){ xform.Prop.Enabled = false; }
+          },
+        };
+        var xsubform = $(popup_options.href).filter('.xsubform');
+        if(xsubform.length){
+          xsubform.css('max-height',($(window).height()-100)+'px');
+          xsubform.css('display','block');
+          xsubform.css('overflow','auto');
+        }
+        jsh.xPopupStack.push(popup_options);
+        $.colorbox(popup_options);
+      });
+  };
 
   XExt.popupSelect = function (modelid, obj) {
     modelid = XExt.resolveModelID(modelid);
@@ -2249,7 +2249,7 @@ exports = module.exports = function(jsh){
     popupData[modelid].rowid = rowid;
     popupData[modelid].resultrow = xmodel.controller.form.DataSet[rowid];
     $.colorbox.close();
-  }
+  };
 
   XExt.popupClear = function (modelid, obj) {
     modelid = XExt.resolveModelID(modelid);
@@ -2260,23 +2260,23 @@ exports = module.exports = function(jsh){
     popupData[modelid].rowid = -1;
     popupData[modelid].resultrow = new xmodel.controller.form.DataType();
     $.colorbox.close();
-  }
+  };
 
   XExt.AlertFocus = function (ctrl, msg) {
     XExt.Alert(msg, function () { $(ctrl).focus().select(); });
-  }
+  };
 
   XExt.getModelId = function (obj) {
     var xid = $(obj).closest('.xtbl').data('id');
     if (!xid) xid = $(obj).closest('.xform').data('id');
     if (!xid) return null;
     return xid;
-  }
+  };
 
   XExt.getModelMD5 = function (modelid) {
     modelid = XExt.resolveModelID(modelid);
     return Crypto.MD5(jsh.frontsalt + modelid).toString();
-  }
+  };
 
 
   XExt.numOccurrences = function (val, find) {
@@ -2289,11 +2289,11 @@ exports = module.exports = function(jsh){
     
     while (true) {
       pos = val.indexOf(find, pos);
-      if (pos >= 0) { rslt++; pos += step; } 
+      if (pos >= 0) { rslt++; pos += step; }
       else break;
     }
     return rslt;
-  }
+  };
 
   XExt.getClasses = function(obj){
     var jobj = $(obj);
@@ -2303,7 +2303,7 @@ exports = module.exports = function(jsh){
       if(classes[i].trim()) rslt.push(classes[i].trim());
     }
     return rslt;
-  }
+  };
 
   XExt.ItemContextMenu = function (ctrl) {
     var parent = $(ctrl).closest('.xcontext_parent');
@@ -2312,7 +2312,7 @@ exports = module.exports = function(jsh){
     if (!jsh.$root(menuid).length) return true;
     XExt.ShowContextMenu(menuid, $(ctrl).data('value'));
     return false;
-  }
+  };
 
   XExt.basename = function (fname) {
     var rslt = fname;
@@ -2326,11 +2326,11 @@ exports = module.exports = function(jsh){
     if (rslt.lastIndexOf('/') >= 0) rslt = rslt.substr(rslt.lastIndexOf('/') + 1);
     if (rslt.lastIndexOf('\\') >= 0) rslt = rslt.substr(rslt.lastIndexOf('\\') + 1);
     return rslt;
-  }
+  };
 
   XExt.dirname = function (path) {
     return path.replace(/\\/g, '/').replace(/\/[^\/]*\/?$/, '');
-  }
+  };
 
   XExt.cleanFileName = function (fname) {
     if (typeof fname == 'undefined') return '';
@@ -2339,7 +2339,7 @@ exports = module.exports = function(jsh){
     fname = fname.toString();
     if (fname.length > 247) fname = fname.substr(0, 247);
     return fname.replace(/[\/\?<>\\:\*\|":]/g, '').replace(/[\x00-\x1f\x80-\x9f]/g, '').replace(/^\.+$/, '').replace(/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i, '');
-  }
+  };
 
   XExt.cleanFilePath = function (fpath, options) {
     options = _.extend({ allow: '/' }, options);
@@ -2351,10 +2351,10 @@ exports = module.exports = function(jsh){
     var chars = '\/\?<>\\:\*\|":';
     for(var i=0;i < options.allow.length;i++){ chars = chars.replace(options.allow[i], ''); }
     return fpath.replace(new RegExp('['+RegExp.escape(chars)+']','g'), '').replace(/[\x00-\x1f\x80-\x9f]/g, '').replace(/^\.+$/, '').replace(/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i, '');
-  }
+  };
 
-  XExt.utf8_base64 = function (str) { return window.btoa(unescape(encodeURIComponent(str))); }
-  XExt.base64_utf8 = function (str) { return decodeURIComponent(escape(window.atob(str))); }
+  XExt.utf8_base64 = function (str) { return window.btoa(unescape(encodeURIComponent(str))); };
+  XExt.base64_utf8 = function (str) { return decodeURIComponent(escape(window.atob(str))); };
 
   XExt.chainObj = function (obj, p, f) {
     if (!(obj[p])) obj[p] = f;
@@ -2362,7 +2362,7 @@ exports = module.exports = function(jsh){
       var oldf = obj[p];
       obj[p] = function () { f(); oldf(); };
     }
-  }
+  };
 
   //Given an original function orig_f, run f(), then run orig_f()
   XExt.chain = function (orig_f, f) {
@@ -2372,7 +2372,7 @@ exports = module.exports = function(jsh){
       if(typeof rslt != 'undefined') return rslt;
       return orig_f.apply(this, arguments);
     };
-  }
+  };
 
   //Given an original function orig_f, run orig_f(), then run f()
   XExt.chainToEnd = function (orig_f, f) {
@@ -2382,12 +2382,12 @@ exports = module.exports = function(jsh){
       if(typeof rslt != 'undefined') return rslt;
       return f.apply(this, arguments);
     };
-  }
+  };
 
   XExt.execif = function (cond, apply, f) {
     if (cond) apply(f);
     else f();
-  }
+  };
 
   XExt.LiteralOrLookup = function(str, dictionary, xmodel) {
     //console.log("Evaluating: "+str);
@@ -2420,7 +2420,7 @@ exports = module.exports = function(jsh){
     }
     //Return the value
     return rslt;
-  }
+  };
 
   XExt.findClosest = function (elem, sel) {
     var jobj = $(elem).find(sel);
@@ -2428,12 +2428,12 @@ exports = module.exports = function(jsh){
     var parent = $(elem).parent();
     if (!parent.length) return $();
     return XExt.findClosest(parent, sel);
-  }
+  };
 
   XExt.getToken = function (onComplete, onFail) {
     if(!jsh) throw new Error('XExt requires jsHarmony instance to run getToken');
     jsh.XForm.prototype.XExecute('../_token', {}, onComplete, onFail);
-  }
+  };
 
   XExt.triggerAsync = function(handlers, cb /*, param1, param2 */){
     if(!cb) cb = function(){ };
@@ -2446,7 +2446,7 @@ exports = module.exports = function(jsh){
       var hparams = [handler_cb].concat(params);
       handler.apply(null, hparams);
     }, cb);
-  }
+  };
 
   XExt.trigger = function(handlers /*, param1, param2 */){
     if(!handlers) handlers = [];
@@ -2458,7 +2458,7 @@ exports = module.exports = function(jsh){
     _.each(handlers, function(handler){
       handler.apply(null, params);
     });
-  }
+  };
 
   XExt.handleOnce = function(handlers, f){
     var hasExecuted = false;
@@ -2471,38 +2471,38 @@ exports = module.exports = function(jsh){
       f.apply(null, arguments);
     };
     handlers.push(onceHandler);
-  }
+  };
 
   /*************************/
   /* Form Helper Functions */
   /*************************/
   XExt.isGridControl = function (ctrl) {
     return (jsh.$root('.SQ_CARRIER_PRO').closest('.xtbl').length > 0);
-  }
+  };
   XExt.getFormBase = function (id) {
     if (!jsh.XBase[id]) { XExt.Alert('ERROR: Base form ' + id + ' not found.'); return; }
     var basemodelid = jsh.XBase[id][0];
     if (basemodelid) return jsh.XModels[basemodelid].controller.form;
     return undefined;
-  }
+  };
   XExt.getForm = function (id) {
     if (!(id in jsh.XModels)) { XExt.Alert('ERROR: Form ' + id + ' not found.'); return; }
     return jsh.XModels[id].controller.form;
-  }
+  };
   XExt.getFormFromObject = function (ctrl) {
     var modelid = $(ctrl).closest('.xform').data('id');
     if (modelid) return jsh.XModels[modelid].controller.form;
     return undefined;
-  }
+  };
   XExt.getModelIdFromObject = function (ctrl) {
     var modelid = $(ctrl).closest('.xform').data('id');
     if (modelid) return modelid;
     return undefined;
-  }
+  };
   XExt.getFieldNameFromObject = function (ctrl) {
     var jctrl = $(ctrl).closest('.xform_ctrl,.xform_file_upload');
     return jctrl.data('id');
-  }
+  };
   XExt.getFieldFromObject = function(ctrl){
     var jctrl = $(ctrl).closest('.xform_ctrl,.xform_file_upload');
     if(!jctrl.length) return undefined;
@@ -2514,27 +2514,27 @@ exports = module.exports = function(jsh){
         return xmodel.fields[fieldName];
       }
     }
-  }
+  };
   XExt.getFormField = function (xform, fieldname) {
     if (!xform) { XExt.Alert('ERROR: Cannot read field ' + fieldname + ' - Parent form not found.'); return; }
     if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
     return xform.Data.GetValue(xform.Data.Fields[fieldname]);
-  }
+  };
   XExt.formatField = function (xform, fieldname, fieldval) {
     if (!xform) { XExt.Alert('ERROR: Cannot read field ' + fieldname + ' - Parent form not found.'); return; }
     if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
     return jsh.XFormat.Apply(xform.Data.Fields[fieldname].format, fieldval);
-  }
+  };
   XExt.setFormField = function (xform, fieldname, fieldval) {
     if (!xform) { XExt.Alert('ERROR: Cannot set field ' + fieldname + ' - Parent form not found.'); return; }
     if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
     XExt.XModel.SetFieldValue(xform.Data, xform.Data.Fields[fieldname], fieldval);
-  }
+  };
   XExt.setFormControl = function (xform, fieldname, fieldval) { //Set fieldval to undefined for refresh
     if (!xform) { XExt.Alert('ERROR: Cannot set field ' + fieldname + ' - Parent form not found.'); return; }
     if (!xform.Data.Fields[fieldname]) { XExt.Alert('ERROR: Target field ' + fieldname + ' not found in ' + xform.Data._modelid); return; }
     XExt.XModel.SetControlValue(xform.Data, xform.Data.Fields[fieldname], fieldval);
-  }
+  };
   XExt.isFieldTopmost = function(modelid, fieldname){
     if(!modelid) return true;
     var model = jsh.XModels[modelid];
@@ -2548,7 +2548,7 @@ exports = module.exports = function(jsh){
       parentmodel = jsh.XModels[parentmodel.parent];
     }
     return true;
-  }
+  };
   /***********************/
   /* UI Helper Functions */
   /***********************/
@@ -2585,7 +2585,7 @@ exports = module.exports = function(jsh){
     if (windowstr) windowstr = windowstr.substr(1);
     if (existingWindow) { existingWindow.location = url; existingWindow.focus(); return existingWindow; }
     else return window.open(url, '_blank', windowstr);
-  }
+  };
   XExt.popupReport = function (modelid, querystringParams, windowParams, existingWindow) {
     modelid = XExt.resolveModelID(modelid);
     var url = jsh._BASEURL + '_d/_report/' + modelid + '/';
@@ -2604,7 +2604,7 @@ exports = module.exports = function(jsh){
     if (windowstr) windowstr = windowstr.substr(1);
     if (existingWindow) { existingWindow.location = url; existingWindow.focus(); return existingWindow; }
     else return window.open(url, '_blank', windowstr);
-  }
+  };
   XExt.fitWindowScript = function(onComplete){
     var rsltFunc = function(callback){
       if (window.opener && window.opener !== window) {
@@ -2620,16 +2620,16 @@ exports = module.exports = function(jsh){
         }
       }
       return callback();
-    }
+    };
     return '('+rsltFunc.toString()+')(function(){'+onComplete.toString()+'})';
-  }
+  };
   XExt.createWindow = function(url, target, params){
     var win = window.open(undefined, target, params);
-    var pageBody = 
+    var pageBody =
       '<script type="text/javascript">'+
       '(function(){' +
       'setTimeout(function(){' +
-      XExt.fitWindowScript("window.location.href = "+JSON.stringify(url)+";")+
+      XExt.fitWindowScript('window.location.href = '+JSON.stringify(url)+';')+
       '}, 100);'+
       '})();</script>';
     if(url && (url.substr(0,5)=='data:')){
@@ -2637,13 +2637,13 @@ exports = module.exports = function(jsh){
     }
     win.document.write(pageBody);
     return win;
-  }
+  };
   XExt.renderCanvasCheckboxes = function () {
     jsh.$root('canvas.checkbox.checked').each(function () {
       var obj = this;
       var w = obj.width;
       var h = obj.height;
-      var ctx = obj.getContext("2d");
+      var ctx = obj.getContext('2d');
       
       ctx.beginPath();
       ctx.lineWidth = 1;
@@ -2661,18 +2661,18 @@ exports = module.exports = function(jsh){
       ctx.lineTo(0, h);
       ctx.stroke();
     });
-  }
+  };
   XExt.DataBinding = function(data){
     this.Bindings = [];
     this.Data = data;
-  }
+  };
   XExt.DataBinding.prototype.Bind = function(obj){
     if(!obj.OnUpdate) throw new Error('Binding missing OnUpdate handler');
     if(!_.includes(this.Bindings,obj)){
       this.Bindings.push(obj);
       obj.OnUpdate(this.Data);
     }
-  }
+  };
   XExt.DataBinding.prototype.Unbind = function(obj){
     var found = false;
     for(var i=0;i<this.Bindings.length;i++){
@@ -2683,7 +2683,7 @@ exports = module.exports = function(jsh){
       }
     }
     if(!found) throw new Error('Binding not found');
-  }
+  };
   XExt.DataBinding.prototype.Update = function(data){
     var _this = this;
     _this.Data = data;
@@ -2691,7 +2691,7 @@ exports = module.exports = function(jsh){
       var binding = _this.Bindings[i];
       binding.OnUpdate(_this.Data);
     }
-  }
+  };
   XExt.insertTextAtCursor = function(txt,className){
     if(window.getSelection){
       var s = document.createElement('SPAN');
@@ -2699,15 +2699,15 @@ exports = module.exports = function(jsh){
       if(className) s.className = className;
       var sel = window.getSelection();
       if(!sel || !sel.rangeCount) return null;// throw new Error('Control does not have an available');
-      sel.getRangeAt(0).insertNode(s); 
+      sel.getRangeAt(0).insertNode(s);
       return s;
     }
-    else if(document.selection && document.selection.createRange){ 
+    else if(document.selection && document.selection.createRange){
       document.selection.createRange().text = txt;
       return null;
     }
     else throw new Error('Inserting text into contenteditable not supported.');
-  }
+  };
   XExt.selectionIsChildOf = function(jobj){
     if(window.getSelection){
       var sel = window.getSelection();
@@ -2717,7 +2717,7 @@ exports = module.exports = function(jsh){
       return $.contains(jobj[0],rstart.startContainer);
     }
     else throw new Error('Inserting text into contenteditable not supported.');
-  }
+  };
   XExt.hasSelection = function(){
     if (window.getSelection) {
       var sel = window.getSelection();
@@ -2727,7 +2727,7 @@ exports = module.exports = function(jsh){
       return !r.collapsed;
     }
     return false;
-  }
+  };
   XExt.clearSelection = function(){
     if(!XExt.hasSelection()) return;
     if (window.getSelection) {
@@ -2739,7 +2739,7 @@ exports = module.exports = function(jsh){
     } else if (document.selection) {  // IE
       document.selection.empty();
     }
-  }
+  };
   XExt.getSelection = function(obj){
     if(typeof obj.selectionStart != 'undefined'){ //Chrome
       return {'start': obj.selectionStart, 'end': obj.selectionEnd};
@@ -2754,21 +2754,21 @@ exports = module.exports = function(jsh){
     else return undefined;
   };
   XExt.getSalt = function(len){
-    var rslt = "";
-    var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=][}{|~,.<>?";
+    var rslt = '';
+    var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=][}{|~,.<>?';
     for(var i=0;i<len;i++) rslt += chars.charAt(Math.floor(Math.random()*chars.length));
     return rslt;
-  }
+  };
   XExt.Tick = function(f){
     window.setTimeout(f,1);
-  }
+  };
   XExt.waitUntil = function(cond, f, cancel, timeout){
     if(!timeout) timeout = 100;
     if(!cancel) cancel = function(f){ return false; };
     if(cancel(f)) return;
     if(cond()) return f();
     setTimeout(function(){ XExt.waitUntil(cond, f, cancel, timeout); }, timeout);
-  }
+  };
   XExt.scrollIntoView = function(jcontainer, pos, h){
     if(!jcontainer.length) return;
     var sTop = jcontainer.scrollTop();
@@ -2783,7 +2783,7 @@ exports = module.exports = function(jsh){
     if((pos.left < minH) || (pos.left > maxH)) jcontainer.scrollLeft(pos.left);
     if((posbottom < minV) || (posbottom > maxV)){
       if(posbottom < minV) jcontainer.scrollTop(pos.top);
-      else { 
+      else {
         var newscrollTop = posbottom - cH;
         if(newscrollTop < 0) newscrollTop = 0;
         jcontainer.scrollTop(newscrollTop);
@@ -2792,18 +2792,18 @@ exports = module.exports = function(jsh){
     else if(pos.top < minV){
       jcontainer.scrollTop(pos.top);
     }
-  }
+  };
   XExt.scrollObjIntoView = function(jcontainer, jobj){
     var jobjpos = jobj.offset();
     var jcontainerpos = jcontainer.offset();
     jobjpos.top -= jcontainerpos.top - jcontainer.scrollTop();
     jobjpos.left -= jcontainerpos.left - jcontainer.scrollLeft();
     XExt.scrollIntoView(jcontainer, jobjpos, jobj.height());
-  }
+  };
   //Check if the mouse is within the target element
   XExt.isMouseWithin = function(elem) {
     return XExt.isPointWithin(elem, jsh.mouseX, jsh.mouseY);
-  }
+  };
   //Check if the x,y coordinate is within the element
   XExt.isPointWithin = function(elem, x, y) {
     var jobj = $(elem);
@@ -2815,7 +2815,7 @@ exports = module.exports = function(jsh){
     if (y < joff.top) return false;
     if (y > (joff.top + h)) return false;
     return true;
-  }
+  };
   XExt.getObjectAnchors = function(elem, x, y, options) {
     //Anchors: 'top','bottom','left','right','full'
     options = _.extend({ anchors: ['full'], full_threshold: 0.25 }, options);
@@ -2838,10 +2838,10 @@ exports = module.exports = function(jsh){
     else if(tp > 0){ if(anchors.bottom) rslt[1] = 'bottom'; }
     else{ if(anchors.top) rslt[1] = 'top'; }
 
-    if(!rslt[1] && anchors.full) rslt[1] = 'full'; 
+    if(!rslt[1] && anchors.full) rslt[1] = 'full';
 
     return rslt;
-  }
+  };
   XExt.bindDragSource = function(jobj){
     var mouseDownTimer = null;
     jobj.mousedown(function(e){
@@ -2858,7 +2858,7 @@ exports = module.exports = function(jsh){
     jobj.mouseup(function(e){
       if(mouseDownTimer) window.clearTimeout(mouseDownTimer);
     });
-  }
+  };
   //Bind tab control events
   XExt.bindTabControl = function(obj){
     var jobj = $(obj);
@@ -2876,13 +2876,13 @@ exports = module.exports = function(jsh){
         jtabpanels.removeClass('selected');
         jtabpanels.filter('.'+tabFor).addClass('selected');
       }
-      var ontabselected = jtabbutton.data('ontabselected')
+      var ontabselected = jtabbutton.data('ontabselected');
       if(ontabselected) XExt.JSEval(ontabselected, jtabbutton[0]);
     });
     if(!jtabbuttons.filter('.selected').length) jtabbuttons.first().addClass('selected');
     jtabpanels.filter('.'+jtabbuttons.filter('.selected').attr('for')).addClass('selected');
     jobj.addClass('initialized');
-  }
+  };
   //Bind accordion events
   XExt.bindAccordion = function(obj){
     var rightArrow = '&#xE5CC;';
@@ -2896,12 +2896,12 @@ exports = module.exports = function(jsh){
       jobj.removeClass('expanded');
       jbody.slideUp();
       jstate.html(rightArrow);
-    }
+    };
     var showBody = function(){
       jobj.addClass('expanded');
       jbody.slideDown();
       jstate.html(downArrow);
-    }
+    };
 
 
     jobj.on('click', function(){
@@ -2912,7 +2912,7 @@ exports = module.exports = function(jsh){
     jobj.addClass('initialized');
     if(jbody.hasClass('expanded')) showBody();
     else hideBody();
-  }
+  };
   //Resolve Model ID
   XExt.resolveModelID = function(modelid, sourceModel){
     if(!jsh) return modelid;
@@ -2938,19 +2938,19 @@ exports = module.exports = function(jsh){
     if(modelid in jsh.XModels) return modelid;
     if(modelid in jsh.XBase) return XExt.resolveModelID(jsh.XBase[modelid][0]);
     return modelid;
-  }
+  };
   XExt.isNullUndefinedEmpty = function(val){
     if(typeof val === 'undefined') return true;
     if(val === null) return true;
     if(val === '') return true;
     if(val === false) return true;
     return false;
-  }
+  };
   XExt.isNullUndefined = function(val){
     if(typeof val === 'undefined') return true;
     if(val === null) return true;
     return false;
-  }
+  };
   
   XExt.isDisplayLayoutColumnHidden = function (field_name, display_layout, fields) {
     if(!display_layout || !display_layout.columns) return false;
@@ -2959,7 +2959,7 @@ exports = module.exports = function(jsh){
     }
     if(fields && !fields[field_name]) return false;
     return true;
-}
+  };
 
   return XExt;
-}
+};

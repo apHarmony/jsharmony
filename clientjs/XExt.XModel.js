@@ -22,7 +22,7 @@ var _ = require('lodash');
 
 exports = module.exports = function(jsh){
 
-  var XExtXModel = function(){ }
+  var XExtXModel = function(){ };
 
   XExtXModel.GetRowID = function (modelid,obj){
     modelid = jsh.XExt.resolveModelID(modelid);
@@ -35,7 +35,7 @@ exports = module.exports = function(jsh){
       if (cur_row.length) rslt = cur_row.data('id');
     }
     return rslt;
-  }
+  };
 
   XExtXModel.OnRender = function (modelid) {
     modelid = jsh.XExt.resolveModelID(modelid);
@@ -111,7 +111,7 @@ exports = module.exports = function(jsh){
     var parentobj = jsh.root;
     if (xformdata._jrow) parentobj = xformdata._jrow;
     XExtXModel.RenderField(xformdata, parentobj, xformdata._modelid, field, val);
-  }
+  };
 
   XExtXModel.SetControlValue = function (xformdata, field, val) { //Leave val to "undefined" for refresh
     var parentobj = jsh.root;
@@ -121,7 +121,7 @@ exports = module.exports = function(jsh){
       jctrl.trigger('change');
       xformdata.OnControlUpdate(jctrl[0]);
     }
-  }
+  };
 
   XExtXModel.RenderField = function (_this, parentobj, modelid, field, val, options){
     if(!options) options = { updatePreviousValue: true };
@@ -326,7 +326,7 @@ exports = module.exports = function(jsh){
     else if (!is_editable && !jctrl.hasClass('uneditable')) { jsh.XPage.Disable(jctrl, field, show_lookup_when_readonly); }
 
     return jctrl;
-  }
+  };
 
   XExtXModel.OnControlUpdate = function (modelid) {
     modelid = jsh.XExt.resolveModelID(modelid);
@@ -493,7 +493,7 @@ exports = module.exports = function(jsh){
       return false;
     }
     return true;
-  }
+  };
 
   XExtXModel.HasUpdate = function () {
     return function (id) {
@@ -506,8 +506,8 @@ exports = module.exports = function(jsh){
       var newval = this.GetValue(field);
       if(!XExtXModel.StringEquals(oldval, newval)){
         if(jsh && jsh._debug){
-          console.log(id + " Old: " + oldval);
-          console.log(id + " New: " + newval);
+          console.log(id + ' Old: ' + oldval);
+          console.log(id + ' New: ' + newval);
         }
         return true;
       }
@@ -564,7 +564,7 @@ exports = module.exports = function(jsh){
       rslt[key] = val;
     });
     return rslt;
-  }
+  };
 
   XExtXModel.BindLOV = function (modelid) {
     modelid = jsh.XExt.resolveModelID(modelid);
@@ -598,14 +598,14 @@ exports = module.exports = function(jsh){
         }
       });
     };
-  }
+  };
 
   XExtXModel.ParseDefault = function (dflt, jslocals) {
     if(_.isString(dflt) && (dflt.substr(0,3)=='js:')){
       return 'function(data){'+jslocals+'return '+dflt.substr(3)+';}';
     }
     return JSON.stringify(dflt);
-  }
+  };
 
   XExtXModel.ApplyDefaults = function (xformdata) {
     if(!('_querystring_applied' in xformdata)) xformdata._querystring_applied = [];
@@ -614,8 +614,8 @@ exports = module.exports = function(jsh){
         xformdata[fname] = jsh._GET[fname];
         xformdata._querystring_applied.push(fname);
       }
-    }  
-  }
+    }
+  };
 
   /*** XController ***/
 
@@ -623,49 +623,49 @@ exports = module.exports = function(jsh){
     this.xmodel = xmodel;
     this.form = undefined;
     this.grid = undefined;
-  }
+  };
 
   XExtXModel.XController.prototype.Select = function(onDone){
     if(this.grid) return this.grid.Select(onDone);
     else if(this.form) return this.form.Select(onDone);
-  }
+  };
 
   XExtXModel.XController.prototype.HasUpdates = function(){
     if(this.grid) return this.grid.HasUpdates();
     else if(this.form) return this.form.HasUpdates();
-  }
+  };
 
   XExtXModel.XController.prototype.HasBreadCrumbs = function(){
     if(this.grid) return ('bcrumbs' in this.grid);
     else if(this.form) return ('bcrumbs' in this.form);
-  }
+  };
 
   XExtXModel.XController.prototype.GetBreadCrumbs = function(){
     if(this.grid) return this.grid.bcrumbs;
     else if(this.form) return this.form.bcrumbs;
-  }
+  };
 
   XExtXModel.XController.prototype.HasTitle = function(){
     if(this.grid) return ('title' in this.grid);
     else if(this.form) return ('title' in this.form);
-  }
+  };
 
   XExtXModel.XController.prototype.GetTitle = function(){
     if(this.grid) return this.grid.title;
     else if(this.form) return this.form.title;
-  }
+  };
 
   /*** XField ***/
 
   XExtXModel.XField = function(props){
     this._previous_value = undefined;
     for(var prop in props) this[prop] = props[prop];
-  }
+  };
 
   XExtXModel.XField.prototype.hasDefault = function(){
     if('default' in this) return true;
     return false;
-  }
+  };
 
   XExtXModel.XField.prototype.getDefault = function(data){
     if('default' in this){
@@ -673,7 +673,7 @@ exports = module.exports = function(jsh){
       return this.default;
     }
     return undefined;
-  }
+  };
 
   return XExtXModel;
-}
+};

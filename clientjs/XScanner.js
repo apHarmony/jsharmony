@@ -70,7 +70,7 @@ exports = module.exports = function(jsh){
           XScanner_ClearLoadEvents();
           var jdata = data.responseJSON;
           if ((jdata instanceof Object) && ('_error' in jdata)) {
-            if (jsh.DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { }
+            if (jsh.DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { /* Do nothing */ }
             else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { jsh.XExt.Alert(jdata._error.Message); }
             else { jsh.XExt.Alert('Error #' + jdata._error.Number + ': ' + jdata._error.Message); }
             if (onFail) onFail(jdata._error);
@@ -88,7 +88,7 @@ exports = module.exports = function(jsh){
     }, function () { //Token Generation Error
       XScanner_Timeout(onFail);
     });
-  }
+  };
 
   return XScanner;
-}
+};
