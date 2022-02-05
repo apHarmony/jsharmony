@@ -17,6 +17,8 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/* eslint-disable quotes */
+
 exports = module.exports = function(appConfig, installerParams, callback){
   var localParams = appConfig.params.jsharmony || {};
 
@@ -28,18 +30,18 @@ exports = module.exports = function(appConfig, installerParams, callback){
   appConfig.body += "  //config.server.https_port = 8081;\r\n";
 
   appConfig.body += (localParams.https_cert) ?
-                    "  config.server.https_cert = "+localParams.https_cert+";\r\n" :
-                    "  //config.server.https_cert = 'path/to/https-cert.pem';\r\n";
+    "  config.server.https_cert = "+localParams.https_cert+";\r\n" :
+    "  //config.server.https_cert = 'path/to/https-cert.pem';\r\n";
 
   appConfig.body += (localParams.https_key) ?
-                    "  config.server.https_key = "+localParams.https_key+";\r\n" :
-                    "  //config.server.https_key = 'path/to/https-key.pem';\r\n";
+    "  config.server.https_key = "+localParams.https_key+";\r\n" :
+    "  //config.server.https_key = 'path/to/https-key.pem';\r\n";
 
   appConfig.body += (localParams.https_ca) ?
-                    "  config.server.https_ca = "+localParams.https_ca+";\r\n" :
-                    "  //config.server.https_ca = 'path/to/https-ca.pem';\r\n";
+    "  config.server.https_ca = "+localParams.https_ca+";\r\n" :
+    "  //config.server.https_ca = 'path/to/https-ca.pem';\r\n";
 
   appConfig.body += "  config.frontsalt = "+JSON.stringify(installerParams.xlib.getSalt(60))+";\r\n";
 
   return callback();
-}
+};

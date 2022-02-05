@@ -17,13 +17,9 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var ejs = require('ejs');
 var crypto = require('crypto');
-var async = require('async');
 var ejsext = require('../lib/ejsext.js');
 var Helper = require('../lib/Helper.js');
-var HelperFS = require('../lib/HelperFS.js');
-
 
 // RenderLogin
 exports = module.exports = function (req, res, onComplete) {
@@ -48,15 +44,12 @@ exports = module.exports = function (req, res, onComplete) {
   if ('source' in req.body) source = req.body.source;
   
   if (req.method == 'POST') {
-    var curtime = Date.now();
     var expiry = false;
     var ipaddr = req.connection.remoteAddress;
     account.remember = ('remember' in req.body);
     if (account.remember) expiry = new Date(Date.now() + 31536000000);
     //Handle superadmin::user
     
-    var dbtypes = this.AppSrv.DB.types;
-    var _this = this;
     var verrors = {};
     var loginfunc = function (nopass) {
       //Check User against database
@@ -68,7 +61,7 @@ exports = module.exports = function (req, res, onComplete) {
           var user_info = rslt[0][0];
           if ((user_info[jsh.map.user_status]||'').toUpperCase() != 'ACTIVE') {
             if(jsh.Config.debug_params.auth_debug) jsh.Log('Login: User account not ACTIVE', { source: 'authentication' });
-            verrors[''] = 'Your account has been suspended.  Please contact support at <a href="mailto:' + jsh.Config.support_email + '">' + jsh.Config.support_email + '</a> for more information'; 
+            verrors[''] = 'Your account has been suspended.  Please contact support at <a href="mailto:' + jsh.Config.support_email + '">' + jsh.Config.support_email + '</a> for more information';
           }
           else {
             (function(onAuthenticate){ //Perform Authentication
@@ -114,17 +107,17 @@ exports = module.exports = function (req, res, onComplete) {
             );
           }
         }
-        else { 
+        else {
           if(jsh.Config.debug_params.auth_debug){
             jsh.Log('Login: User account not found', { source: 'authentication' });
             if(err) jsh.Log(err);
           }
-          verrors[''] = 'Invalid email address or password'; 
+          verrors[''] = 'Invalid email address or password';
           return RenderPage(req, jsh, account, source, verrors, onComplete);
         }
       });
-    }
-    var superindex = account.username.indexOf(":");
+    };
+    var superindex = account.username.indexOf(':');
     if ((superindex >= 0) && (superindex < (account.username.length - 1))) {
       var uemail = account.username.substr(0, superindex);
       var superemail = account.username.substr(superindex + 1);

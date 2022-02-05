@@ -28,18 +28,16 @@ var _ = require('lodash');
 // RenderLoginForgotPassword
 exports = module.exports = function (req, res, onComplete){
   var jsh = this;
-  if (!(req.secure) && !(req.jshsite.auth.allow_insecure_http_logins)) { return Helper.GenError(req, res, -21, 'Secure connection required'); return; }
-  if(!req.jshsite.auth.on_passwordreset) { return Helper.GenError(req, res, -9, 'Password reset not enabled'); return; }
+  if (!(req.secure) && !(req.jshsite.auth.allow_insecure_http_logins)) { return Helper.GenError(req, res, -21, 'Secure connection required'); }
+  if(!req.jshsite.auth.on_passwordreset) { return Helper.GenError(req, res, -9, 'Password reset not enabled'); }
   var fdata = { username:'' };
   var accountCookie = Helper.GetCookie(req, jsh, 'account');
-	if(accountCookie){
-		if('username' in accountCookie) fdata.username = accountCookie.username;
-	}
+  if(accountCookie){
+    if('username' in accountCookie) fdata.username = accountCookie.username;
+  }
   if ('username' in req.body) fdata.username = req.body.username;
 
   if (req.method == 'POST') {
-    var dbtypes = this.AppSrv.DB.types;
-    var _this = this;
     var verrors = {};
     var email = fdata.username;
     
@@ -67,7 +65,7 @@ exports = module.exports = function (req, res, onComplete){
             var email_params = { 'SYS_USER_NAME': sys_user_name, 'SUPPORT_EMAIL': support_email, 'RESET_LINK': reset_link };
             jsh.SendTXTEmail(req._DBContext, 'RESETPASS', pe_email, null, null, null, email_params, function (err) {
               if (err) { jsh.Log.error(err); res.end('An error occurred sending the password reset email.  Please contact support for assistance.'); }
-              else onComplete(RenderPage(req, jsh, fdata, verrors, "A link to reset your password has been sent to your email address."));
+              else onComplete(RenderPage(req, jsh, fdata, verrors, 'A link to reset your password has been sent to your email address.'));
             });
             return;
           }
@@ -75,21 +73,21 @@ exports = module.exports = function (req, res, onComplete){
         if(all_suspended) { verrors[''] = 'Your account has been suspended.  Please contact support at <a href="mailto:' + jsh.Config.support_email + '">' + jsh.Config.support_email + '</a> for more information'; }
       }
       else { verrors[''] = 'Invalid email address.'; }
-			onComplete(RenderPage(req, jsh,fdata,verrors));
-		});
-	}
-	else onComplete(RenderPage(req,jsh,fdata));
+      onComplete(RenderPage(req, jsh,fdata,verrors));
+    });
+  }
+  else onComplete(RenderPage(req,jsh,fdata));
 };
 
 function RenderPage(req, jsh, fdata, verrors, rslt){
-	return ejs.render(jsh.getEJS('jsh_login.forgotpassword'),{ 
-		'fdata':fdata,
-	  'jsh': jsh,
+  return ejs.render(jsh.getEJS('jsh_login.forgotpassword'),{
+    'fdata':fdata,
+    'jsh': jsh,
     'verrors': verrors,
     'rslt': rslt,
-		'ejsext':ejsext,
+    'ejsext':ejsext,
     'req': req,
     _: _
-	});
+  });
 }
 

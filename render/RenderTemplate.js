@@ -18,17 +18,16 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 // RenderTemplate.js
-var HelperFS = require('../lib/HelperFS.js');
 var _ = require('lodash');
 
 exports = module.exports = {};
 
 exports = module.exports = function(req,res,basetemplate,params){
   var jsh = this;
-	req.jshsite.menu(req,res,jsh,params,function(){
+  req.jshsite.menu(req,res,jsh,params,function(){
     if(typeof req._override_title != 'undefined') params.title = req._override_title;
     if(typeof req._override_template != 'undefined') basetemplate = req._override_template;
-		res.render(jsh.getView(req, basetemplate),_.extend({},{ _: _ },params));
-	});
+    res.render(jsh.getView(req, basetemplate),_.extend({},{ _: _ },params));
+  });
 };
 

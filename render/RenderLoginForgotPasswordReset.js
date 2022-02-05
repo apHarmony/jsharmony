@@ -27,7 +27,7 @@ var _ = require('lodash');
 // RenderLoginForgotPassword
 exports = module.exports = function (req, res, onComplete) {
   if (!(req.secure) && !(req.jshsite.auth.allow_insecure_http_logins)) { Helper.GenError(req, res, -21, 'Secure connection required'); return; }
-  if(!req.jshsite.auth.on_passwordreset) { return Helper.GenError(req, res, -9, 'Password reset not enabled'); return; }
+  if(!req.jshsite.auth.on_passwordreset) { return Helper.GenError(req, res, -9, 'Password reset not enabled'); }
   //Get user_id from URL
   //If no user_id, redirect to regular forgot_password
   var fdata = {};
@@ -38,9 +38,7 @@ exports = module.exports = function (req, res, onComplete) {
   if ('key' in req.query) fdata.key = req.query.key;
   else return Helper.GenHTMLError(res, -20, 'Your password reset link has expired');
   
-  var dbtypes = this.AppSrv.DB.types;
   var verrors = {};
-  var _this = this;
   var jsh = this;
   req._DBContext = 'loginforgotpasswordreset';
   
@@ -60,10 +58,10 @@ exports = module.exports = function (req, res, onComplete) {
             //Validate Password
             var xvalidate = new XValidate();
             xvalidate.AddValidator('_obj.password', 'New Password', 'IU', [XValidate._v_Required(), function (caption, val) {
-                if ((fdata.password == '') && (fdata.confirm_password == '')) return "";
-                if (fdata.password != fdata.confirm_password) return "Password and confirmed password must match.";
-                return "";
-              }, XValidate._v_MinLength(6), XValidate._v_MaxLength(50)]);
+              if ((fdata.password == '') && (fdata.confirm_password == '')) return '';
+              if (fdata.password != fdata.confirm_password) return 'Password and confirmed password must match.';
+              return '';
+            }, XValidate._v_MinLength(6), XValidate._v_MaxLength(50)]);
             verrors = xvalidate.Validate('IU', fdata);
             if (!_.isEmpty(verrors)) { onComplete(RenderPage(req, jsh, fdata, verrors)); return; }
             

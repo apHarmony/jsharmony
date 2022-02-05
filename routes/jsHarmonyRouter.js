@@ -20,14 +20,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 var express = require('express');
 var querystring = require('querystring');
 var _ = require('lodash');
-var path = require('path');
-var fs = require('fs');
 
 var ejs = require('ejs');
 var ejsext = require('../lib/ejsext.js');
 var Helper = require('../lib/Helper.js');
 var HelperFS = require('../lib/HelperFS.js');
-var jsHarmonySite = require('../jsHarmonySite.js');
 var async = require('async');
 var url = require('url');
 var csv = require('csv');
@@ -68,8 +65,8 @@ var jsHarmonyRouter = function (jsh, siteid) {
     req.forcequery = {};
     //Delete jQuery Anti-Cache timestamp
     if('_' in req.query) delete req.query['_'];
-    req.getJSClientParams = function () { return jsh.getJSClientParams(req); }
-    req.getJSLocals = function(){ return jsh.getJSLocals(req); }
+    req.getJSClientParams = function () { return jsh.getJSClientParams(req); };
+    req.getJSLocals = function(){ return jsh.getJSLocals(req); };
     req.getJSH = function() { return jsh; };
     if (req.jshsite && req.jshsite.show_system_errors) req._show_system_errors = 1;
     setNoCache(req,res);
@@ -100,7 +97,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
       if (rslt != false) jsh.RenderTemplate(req, res, '', { title: 'Reset Password', body: rslt, menudata: {}, selectedmenu: '', ejsext: ejsext, modelid: '', req: req, jsh: jsh });
     });
   });
-  for(var stylusName in jsh.Stylus){
+  for(let stylusName in jsh.Stylus){
     handleStylus(jsh, siteid, router, stylusName, { public: true });
   }
   router.get('/application.css', function (req, res) {
@@ -123,7 +120,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     (siteConfig.auth.onAuth || jsh.Auth).call(jsh, req, res, next, function (errno, msg) {
       if ((req.url.indexOf('/_d/') == 0) || (req.url.indexOf('/_ul/') == 0)) {
         //For AppSrv, return error message
-        if (typeof errno == 'undefined') return Helper.GenError(req, res, -10, "User not authenticated, please log in");
+        if (typeof errno == 'undefined') return Helper.GenError(req, res, -10, 'User not authenticated, please log in');
         return Helper.GenError(req, res, errno, msg);
       }
       else {
@@ -151,23 +148,27 @@ var jsHarmonyRouter = function (jsh, siteid) {
   });
   router.get(/^\/js\/jsHarmony.render.js/, function(req, res, next){
     res.end(ejs.render(jsh.getEJS('jsh_render.js'), {
-      req: req, _: _, ejsext: ejsext, jsh: jsh,
+      req: req,
+      _: _,
+      ejsext: ejsext,
+      jsh: jsh,
       srcfiles: jsh.AppSrv.modelsrv.getSrcFiles(),
       popups: jsh.Popups,
-      _: _
     }));
   });
   router.get(/^\/js\/jsHarmony.loader.js/, function (req, res, next) {
     //Verify model exists
     res.end(ejs.render(jsh.getEJS('jsh_loader.js'), {
-      req: req, _: _, ejsext: ejsext, jsh: jsh,
+      req: req,
+      _: _,
+      ejsext: ejsext,
+      jsh: jsh,
       srcfiles: jsh.AppSrv.modelsrv.getSrcFiles(),
       popups: jsh.Popups,
-      _: _
     }));
   });
   bindApps(siteConfig.private_apps);
-  for(var stylusName in jsh.Stylus){
+  for(let stylusName in jsh.Stylus){
     handleStylus(jsh, siteid, router, stylusName, { public: false });
   }
   router.post('/_ul/clear', function (req, res) {
@@ -192,7 +193,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     jsh.AppSrv.Download(req, res, '_temp', keyid, undefined, params);
   });
   //router.get('/_dl/:modelid/:keyid/:fieldid', function (req, res, next) {
-  router.get(/^\/\_dl\/(.*)\/([^/]*)\/([^/]*)/, function (req, res, next) {
+  router.get(/^\/_dl\/(.*)\/([^/]*)\/([^/]*)/, function (req, res, next) {
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
     if (typeof fullmodelid === 'undefined') { next(); return; }
@@ -205,7 +206,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     if (req.query && ('thumb' in req.query)) params.thumb = req.query.thumb;
     jsh.AppSrv.Download(req, res, fullmodelid, keyid, fieldid, params);
   });
-  router.get('/_token', function (req, res) { 
+  router.get('/_token', function (req, res) {
     jsh.AppSrv.GetToken(req, res);
   });
   router.post('/_d/_transaction', function (req, res, next) {
@@ -224,9 +225,9 @@ var jsHarmonyRouter = function (jsh, siteid) {
       if (!('method' in action)) throw new Error('Action missing method');
       if (!('model' in action)) throw new Error('Action missing model');
       var method = action.method;
-      var fullmodelid = action.model
+      var fullmodelid = action.model;
 
-      if (!jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
+      if (!jsh.hasModel(req, fullmodelid)) throw new Error('Error: Model ' + fullmodelid + ' not found in collection.');
       //Parse query, post
       if ('query' in action) query = querystring.parse(action.query);
       if ('post' in action) post = querystring.parse(action.post);
@@ -255,7 +256,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   // /_d/_report/:modelid
-  router.get(/^\/\_d\/\_report\/(.*)/, function (req, res, next) {
+  router.get(/^\/_d\/_report\/(.*)/, function (req, res, next) {
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
     if (typeof fullmodelid === 'undefined') { next(); return; }
@@ -265,7 +266,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   // /_d/_report_html/:modelid
-  router.get(/^\/\_d\/\_report_html\/(.*)/, function (req, res, next) {
+  router.get(/^\/_d\/_report_html\/(.*)/, function (req, res, next) {
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
     if (typeof fullmodelid === 'undefined') { next(); return; }
@@ -275,7 +276,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   // /_d/_reportjob/:modelid
-  router.get(/^\/\_d\/\_reportjob\/(.*)/, function (req, res, next) {
+  router.get(/^\/_d\/_reportjob\/(.*)/, function (req, res, next) {
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
     if (typeof fullmodelid === 'undefined') { next(); return; }
@@ -285,7 +286,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   // /_csv/:modelid
-  router.get(/^\/\_csv\/(.*)/, function (req, res, next) {
+  router.get(/^\/_csv\/(.*)/, function (req, res, next) {
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
     if (typeof fullmodelid === 'undefined') { next(); return; }
@@ -311,20 +312,20 @@ var jsHarmonyRouter = function (jsh, siteid) {
     if (typeof queueid === 'undefined') { next(); return; }
     jsh.AppSrv.PopQueue(req, res, next, queueid);
   });
-  router.route(/^\/\_d\/(.*)/)
-		.all(function (req, res, next) {
-    var fullmodelid = req.params[0];
-    fullmodelid = Helper.trimRight(fullmodelid,'/');
-    if (typeof fullmodelid === 'undefined') { next(); return; }
-    if (!jsh.hasModel(req, fullmodelid)) throw new Error("Error: Model " + fullmodelid + " not found in collection.");
-    processCustomRouting('d', req, res, jsh, fullmodelid, function(){
-      var verb = req.method.toLowerCase();
-      if (verb == 'get') jsh.AppSrv.getModel(req, res, fullmodelid);
-      else if (verb == 'put') jsh.AppSrv.putModel(req, res, fullmodelid);
-      else if (verb == 'post') jsh.AppSrv.postModel(req, res, fullmodelid);
-      else if (verb == 'delete') jsh.AppSrv.deleteModel(req, res, fullmodelid);
+  router.route(/^\/_d\/(.*)/)
+    .all(function (req, res, next) {
+      var fullmodelid = req.params[0];
+      fullmodelid = Helper.trimRight(fullmodelid,'/');
+      if (typeof fullmodelid === 'undefined') { next(); return; }
+      if (!jsh.hasModel(req, fullmodelid)) throw new Error('Error: Model ' + fullmodelid + ' not found in collection.');
+      processCustomRouting('d', req, res, jsh, fullmodelid, function(){
+        var verb = req.method.toLowerCase();
+        if (verb == 'get') jsh.AppSrv.getModel(req, res, fullmodelid);
+        else if (verb == 'put') jsh.AppSrv.putModel(req, res, fullmodelid);
+        else if (verb == 'post') jsh.AppSrv.postModel(req, res, fullmodelid);
+        else if (verb == 'delete') jsh.AppSrv.deleteModel(req, res, fullmodelid);
+      });
     });
-  });
   router.get('/', function (req, res) {
     //Get root menu and render
     var params = {};
@@ -346,7 +347,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   // /_report/:modelid
-  router.get(/^\/\_report\/(.*)/, function (req, res, next) {
+  router.get(/^\/_report\/(.*)/, function (req, res, next) {
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
     if (!jsh.hasModel(req, fullmodelid)) return next();
@@ -356,7 +357,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   // /_model/:modelid
-  router.get(/^\/\_model\/(.*)/, function (req, res, next) {
+  router.get(/^\/_model\/(.*)/, function (req, res, next) {
     //Return model meta-data for SinglePage rendering
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
@@ -379,17 +380,16 @@ var jsHarmonyRouter = function (jsh, siteid) {
   });
   router.post('/_js/exec', function (req, res, next) {
     if(!('SYSADMIN' in req._roles) && !('DEV' in req._roles)) return next();
-    var sql = req.body.sql;
     var js = req.body.js;
 
     var jsvars = {
       appsrv: 'jsh.AppSrv'
     };
-    var jscmd = '(function(jsh){'+_.reduce(jsvars, function(rslt, val,key){ return 'var '+key+' = '+val+'; ' }, '')+'return (function(){'+js+'})();}).call(undefined, jsh)';
+    var jscmd = '(function(jsh){'+_.reduce(jsvars, function(rslt, val,key){ return 'var '+key+' = '+val+'; '; }, '')+'return (function(){'+js+'})();}).call(undefined, jsh)';
     var jsrslt = '';
     var jserr = '';
     try{
-      var jsrslt = eval(jscmd);
+      jsrslt = eval(jscmd);
     }
     catch(ex){
       jserr = ex.toString();
@@ -439,7 +439,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
       //Convert buffers to hex strings
       Helper.convertBufferToHexString(dbrslt);
       //Return result
-      rslt = {
+      var rslt = {
         '_success': 1,
         '_stats': Helper.FormatStats(req, stats, { notices: show_notices, show_all_messages: true }),
         'dbrslt': dbrslt
@@ -471,14 +471,14 @@ var jsHarmonyRouter = function (jsh, siteid) {
     }, dbconfig);
   });
   // /_debug/:modelid
-  router.get(/^\/\_debug\/(.*)/, function (req, res, next) {
+  router.get(/^\/_debug\/(.*)/, function (req, res, next) {
     if(!('SYSADMIN' in req._roles) && !('DEV' in req._roles)) return next();
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
     if (typeof fullmodelid === 'undefined') { next(); return; }
     if (!jsh.hasModel(req, fullmodelid)) { next(); return; }
     var model = jsh.getModel(req, fullmodelid);
-    res.header("Content-Type",'application/json');
+    res.header('Content-Type','application/json');
     //Sort alpha
     res.send(JSON.stringify(model,function(key,val){
       if(_.isString(val)) return val;
@@ -527,8 +527,10 @@ var jsHarmonyRouter = function (jsh, siteid) {
 function genSinglePage(jsh, req, res, fullmodelid){
   //Render SinglePage body content
   var ejsbody = ejs.render(jsh.getEJS('jsh_singlepage'), {
-    req: req, _: _, ejsext: ejsext, jsh: jsh,
-    _: _
+    req: req,
+    _: _,
+    ejsext: ejsext,
+    jsh: jsh,
   });
   //Set template (popup vs full)
   var tmpl_name = req.jshsite.basetemplate;
@@ -546,15 +548,14 @@ function processModelQuerystring(jsh, req, fullmodelid) {
   if (!jsh.hasModel(req, fullmodelid)) return;
   req.forcequery = {};
   var model = jsh.getModel(req, fullmodelid);
-  var qs = model.querystring||{};
   var foundq = [];
-  for (qkey in model.querystring) {
+  for (var qkey in model.querystring) {
     if (qkey.length < 2) continue;
     var qtype = qkey[0];
     var qkeyname = qkey.substr(1);
     foundq.push(qkeyname);
     if ((qtype == '&') || ((qtype == '|') && !(qkeyname in req.query))) {
-      var qval = model.querystring[qkey];
+      let qval = model.querystring[qkey];
       qval = Helper.ResolveParams(req, qval);
       //Resolve qval
       req.query[qkeyname] = qval;
@@ -565,7 +566,7 @@ function processModelQuerystring(jsh, req, fullmodelid) {
   for(var datalockid in req.jshsite.datalock){
     if(_.includes(foundq, datalockid)) continue;
     if(!(datalockid in req.query)){
-      var qval = Helper.ResolveParams(req, '@'+datalockid);
+      let qval = Helper.ResolveParams(req, '@'+datalockid);
       req.query[datalockid] = qval;
       req.forcequery[datalockid] = qval;
     }
@@ -583,7 +584,7 @@ function processCustomRouting(routetype, req, res, jsh, fullmodelid, cb, params)
         onroute_params = { query: {}, post: req.body };
         if (req.query && ('d' in req.query)) onroute_params.query = JSON.parse(req.query.d);
       }
-      else onroute_params = { query: req.query, post: req.body }
+      else onroute_params = { query: req.query, post: req.body };
     }
     else if(routetype=='d_transaction'){ onroute_params = params; }
     else { onroute_params = { query: req.query, post: req.body }; }
@@ -633,7 +634,7 @@ jsHarmonyRouter.PublicRoot = function(root, options){
     if (Helper.beginsWith(req.path, '/_report/')) return next();
     if (Helper.beginsWith(req.path, '/_model/')) return next();
     return staticRouter(req, res, next);
-  }
-}
+  };
+};
 
 module.exports = jsHarmonyRouter;
