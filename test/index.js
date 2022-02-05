@@ -21,7 +21,7 @@ var jsHarmony = require('../index');
 var pgsqlDBDriver = require('jsharmony-db-pgsql');
 
 var jsh = new jsHarmony();
-jsh.DBConfig['default'] = { host: "server.domain.com", database: "DBNAME", user: "DBUSER", password: "DBPASS", _driver: new pgsqlDBDriver() };
+jsh.DBConfig['default'] = { host: 'server.domain.com', database: 'DBNAME', user: 'DBUSER', password: 'DBPASS', _driver: new pgsqlDBDriver() };
 jsh.Config.appbasepath = __dirname;
 
 
@@ -51,7 +51,7 @@ describe('Basic HTTP',function(){
       https_port:0,
       https_cert: '/path/to/cert.pem',
       https_key: '/path/to/key.pem',
-    }
+    };
     jsh.Run(function(servers){
       jsh.Servers['default'].Close();
       jsh.Servers = {};

@@ -22,6 +22,7 @@ var os = require('os');
 var fs = require('fs');
 
 var path_authConfig = path.join(os.homedir(),'jsharmony/auth.json');
+var authConfig = {};
 if(fs.existsSync(path_authConfig)){
   authConfig = JSON.parse(fs.readFileSync(path_authConfig,'utf8'));
   console.log('\r\n==== Loading auth config ====\r\n'+JSON.stringify(authConfig,null,4)+'\r\n');
@@ -36,10 +37,10 @@ describe('WebSocket', function(){
         'Cookie': authCookie
       }
     };
-    var socket = new WebSocket("ws://localhost:8080/_log", options);
+    var socket = new WebSocket('ws://localhost:8080/_log', options);
     socket.onmessage = function(e){
       console.log(e.data);
-    }
+    };
     socket.onopen = function(e){
       var settings = {
         sources: {
@@ -51,7 +52,7 @@ describe('WebSocket', function(){
       };
       socket.send(JSON.stringify({ setSettings: settings }));
       socket.send(JSON.stringify({ getHistory: true }));
-    }
+    };
     setTimeout(function(){ socket.close(); setTimeout(done, 500); }, 50000);
   });
 });

@@ -32,20 +32,20 @@ var baseModel = {
   },
   'str': 'SAMPLE',
   'arr1': [
-    {"item": "field1", "key": "value1"},
-    {"item": "field2", "key": "value2"},
-    {"item": "field3", "key": "value3"},
-    {"item": "field4", "key": "value4"},
-    {"name": "fieldtest", "key": "valuetest"},
-    {"item": "fieldrem", "key": "valuerem"},
-    {"item": "fieldx", "key": "valuex"},
-    {"item": "field5", "key": "value5"},
+    {'item': 'field1', 'key': 'value1'},
+    {'item': 'field2', 'key': 'value2'},
+    {'item': 'field3', 'key': 'value3'},
+    {'item': 'field4', 'key': 'value4'},
+    {'name': 'fieldtest', 'key': 'valuetest'},
+    {'item': 'fieldrem', 'key': 'valuerem'},
+    {'item': 'fieldx', 'key': 'valuex'},
+    {'item': 'field5', 'key': 'value5'},
   ],
   'arr2': [
-    {"item": "field1", "key": "value1"},
-    {"item": "field2", "key": "value2"},
+    {'item': 'field1', 'key': 'value1'},
+    {'item': 'field2', 'key': 'value2'},
   ],
-}
+};
 
 var transform = {
   'key2': 'value2',
@@ -62,22 +62,22 @@ var transform = {
     '__SUFFIX__': '>>>',
   },
   'arr1': [
-    {"item": "field7", "key": "value7", "__AFTER__": "__END__"},
-    {"item": "field6", "key": "value6"},
-    {"item": "field4-2", "key": "value4-2", "__AFTER__": "item:field4"},
-    {"item": "field1-2", "key": "value1-2", "__AFTER__": 0},
-    {"name": "fieldtest2", "key": "valuetest2", "__AFTER__": "fieldtest"},
-    {"item": "field0", "key": "value0", "__AFTER__": "__START__"},
-    {"__MATCH__": "item:field3", "__REPLACE__": true, "item":"field3-new"},
-    {"__MATCH__": "item:field5", "key":"value5-new"},
-    {"__MATCH__": "item:fieldx", "__AFTER__": "item:field2"},
-    {"__MATCH__": "item:fieldrem", "__REMOVE__": true},
+    {'item': 'field7', 'key': 'value7', '__AFTER__': '__END__'},
+    {'item': 'field6', 'key': 'value6'},
+    {'item': 'field4-2', 'key': 'value4-2', '__AFTER__': 'item:field4'},
+    {'item': 'field1-2', 'key': 'value1-2', '__AFTER__': 0},
+    {'name': 'fieldtest2', 'key': 'valuetest2', '__AFTER__': 'fieldtest'},
+    {'item': 'field0', 'key': 'value0', '__AFTER__': '__START__'},
+    {'__MATCH__': 'item:field3', '__REPLACE__': true, 'item':'field3-new'},
+    {'__MATCH__': 'item:field5', 'key':'value5-new'},
+    {'__MATCH__': 'item:fieldx', '__AFTER__': 'item:field2'},
+    {'__MATCH__': 'item:fieldrem', '__REMOVE__': true},
   ],
   'arr2': [
-    {"__MATCH__": "*", "__REMOVE__": true},
-    {"item": "field3", "key": "value3"},
+    {'__MATCH__': '*', '__REMOVE__': true},
+    {'item': 'field3', 'key': 'value3'},
   ]
-}
+};
 
 var expected = {
   'key': 'value',
@@ -87,24 +87,24 @@ var expected = {
   },
   'str': '<<<SAMPLE>>>',
   'arr1': [
-    {"item": "field0", "key": "value0"},
-    {"item": "field1", "key": "value1"},
-    {"item": "field1-2", "key": "value1-2"},
-    {"item": "field2", "key": "value2"},
-    {"item": "fieldx", "key": "valuex"},
-    {"item": "field3-new"},
-    {"item": "field4", "key": "value4"},
-    {"item": "field4-2", "key": "value4-2"},
-    {"name": "fieldtest", "key": "valuetest"},
-    {"name": "fieldtest2", "key": "valuetest2"},
-    {"item": "field5", "key": "value5-new"},
-    {"item": "field6", "key": "value6"},
-    {"item": "field7", "key": "value7"},
+    {'item': 'field0', 'key': 'value0'},
+    {'item': 'field1', 'key': 'value1'},
+    {'item': 'field1-2', 'key': 'value1-2'},
+    {'item': 'field2', 'key': 'value2'},
+    {'item': 'fieldx', 'key': 'valuex'},
+    {'item': 'field3-new'},
+    {'item': 'field4', 'key': 'value4'},
+    {'item': 'field4-2', 'key': 'value4-2'},
+    {'name': 'fieldtest', 'key': 'valuetest'},
+    {'name': 'fieldtest2', 'key': 'valuetest2'},
+    {'item': 'field5', 'key': 'value5-new'},
+    {'item': 'field6', 'key': 'value6'},
+    {'item': 'field7', 'key': 'value7'},
   ],
   'arr2': [
-    {"item": "field3", "key": "value3"},
+    {'item': 'field3', 'key': 'value3'},
   ]
-}
+};
 
 describe('Model Transforms', function(){
   it('Basic', function (done) {

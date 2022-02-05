@@ -39,7 +39,7 @@ describe('ValidateSubnet',function(){
     assert.strictEqual(Helper.ValidateSubnet('254.255.255.255','255.255.255.255/9'), false);
     assert.strictEqual(Helper.ValidateSubnet('255.255.255.255','255.255.255.255/10'), true);
     assert.strictEqual(Helper.ValidateSubnet('255.255.255.255','255.255.255.255/11'), true);
-    assert.strictEqual(Helper.ValidateSubnet('255.255.255.255','255.255.255.255/12'), true);  
+    assert.strictEqual(Helper.ValidateSubnet('255.255.255.255','255.255.255.255/12'), true);
     assert.strictEqual(Helper.ValidateSubnet('255.255.255.255','255.255.255.255/13'), true);
     assert.strictEqual(Helper.ValidateSubnet('255.255.255.255','255.255.255.255/14'), true);
     assert.strictEqual(Helper.ValidateSubnet('255.254.255.255','255.255.255.255/15'), true);

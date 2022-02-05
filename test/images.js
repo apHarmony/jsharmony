@@ -143,7 +143,7 @@ describe('Resize',function(){
       var tickTime = (endTicks - startTicks) * TICK_DURATION;
       var clockTime = (endTime - startTime);
       var tickDelay = Math.abs(clockTime - tickTime);
-      assert(!hungTicks, 'Unexpected hang of '+hungTickTime+'ms');
+      assert(!hungTicks, 'Unexpected hang of '+hungTickTime+'ms :: ' + tickDelay + ': '+tickDelay);
       if(CREATE_EXPECTED_IMAGES) return cb();
       validateImage(path.join(cmpPath,fname), path.join(dstPath,fname), dstType, function(err){
         cb(err);
@@ -203,7 +203,7 @@ describe('Crop',function(){
       var tickTime = (endTicks - startTicks) * TICK_DURATION;
       var clockTime = (endTime - startTime);
       var tickDelay = Math.abs(clockTime - tickTime);
-      assert(!hungTicks, 'Unexpected hang of '+hungTickTime+'ms');
+      assert(!hungTicks, 'Unexpected hang of '+hungTickTime+'ms :: ' + tickDelay + ': '+tickDelay);
       if(CREATE_EXPECTED_IMAGES) return cb();
       validateImage(path.join(cmpPath,fname), path.join(dstPath,fname), dstType, function(err){
         cb(err);
@@ -246,7 +246,7 @@ describe('Resample',function(){
       var tickTime = (endTicks - startTicks) * TICK_DURATION;
       var clockTime = (endTime - startTime);
       var tickDelay = Math.abs(clockTime - tickTime);
-      assert(!hungTicks, 'Unexpected hang of '+hungTickTime+'ms');
+      assert(!hungTicks, 'Unexpected hang of '+hungTickTime+'ms :: ' + tickDelay + ': '+tickDelay);
       return cb();
     });
   }
@@ -265,4 +265,4 @@ describe('Resample',function(){
 
 after(function(){
   clearInterval(tickTimer);
-})
+});
