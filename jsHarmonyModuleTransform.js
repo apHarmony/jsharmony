@@ -70,16 +70,16 @@ jsHarmonyModuleTransform.prototype.Validate = function(){
   _.each(_this.sql, function(val, key){
     if(!_this.ignore_errors.value[val] && (val in allvalues) && (key != allvaluekeys[val])){ _this.module.jsh.Log.error('Conflict on value '+val+' between sql and '+allvalues[val]); }
     allvalues[val] = 'sql';
-    allvaluekeys[val] = key; 
+    allvaluekeys[val] = key;
   });
   _.each(_this.fields, function(val, key){
     if(!_this.ignore_errors.value[val] && (val in allvalues) && (key != allvaluekeys[val])){ _this.module.jsh.Log.error('Conflict on value '+val+' between fields and '+allvalues[val]); }
     allvalues[val] = 'fields';
-    allvaluekeys[val] = key; 
+    allvaluekeys[val] = key;
   });
   _.each(_this.tables, function(val, key){
     if(!_this.ignore_errors.value[val] && (val in allvalues) && (key != allvaluekeys[val])){ _this.module.jsh.Log.error('Conflict on value '+val+' between tables and '+allvalues[val]); }
-    allvalues[val] = 'tables'; 
+    allvalues[val] = 'tables';
     allvaluekeys[val] = key;
   });
 };

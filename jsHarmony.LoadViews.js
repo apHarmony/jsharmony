@@ -56,11 +56,11 @@ exports.getEJSFilename = function (f) {
 
 exports.LoadEJS = function (f, onError) {
   var fpath = this.getEJSFilename(f);
-  if (!fs.existsSync(fpath)) { 
+  if (!fs.existsSync(fpath)) {
     var errmsg = 'EJS path not found: ' + f + ' at ' + fpath;
     if(onError) onError(errmsg);
     else this.LogInit_ERROR(errmsg);
-    return null; 
+    return null;
   }
   return fs.readFileSync(fpath, 'utf8');
 };

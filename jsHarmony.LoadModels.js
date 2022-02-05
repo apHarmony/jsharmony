@@ -635,10 +635,10 @@ function SortModelArray(arr){
               var qVal = elemQuery[1];
               for(let j = 0; j < arr.length; j++){
                 if(qField in arr[j]){
-                  if((qVal=='*') || (arr[j][qField] === qVal)){ 
+                  if((qVal=='*') || (arr[j][qField] === qVal)){
                     newidx = j + 1;
                     //if(newidx > i) newidx--; /* if moving forward, subtract 1 */
-                    break; 
+                    break;
                   }
                 }
               }
@@ -646,10 +646,10 @@ function SortModelArray(arr){
           }
           if(newidx == -1){
             for(let j = 0; j < arr.length; j++){
-              if(arr[j].name == elem['__AFTER__']){ 
+              if(arr[j].name == elem['__AFTER__']){
                 newidx = j + 1;
                 //if(newidx > i) newidx--; /* if moving forward, subtract 1 */
-                break; 
+                break;
               }
             }
           }
@@ -724,12 +724,12 @@ exports.ParseDeprecated = function () {
     }
     if (model.duplicate && !_.isString(model.duplicate)){
       if('link_text' in model.duplicate){
-        _this.LogDeprecated(model.id + ': model.duplicate.link_text has been deprecated.  Please use model.duplicate.button_text instead.'); 
+        _this.LogDeprecated(model.id + ': model.duplicate.link_text has been deprecated.  Please use model.duplicate.button_text instead.');
         model.duplicate.button_text = model.duplicate.link_text;
         delete model.duplicate.link_text;
       }
       if('link' in model.duplicate){
-        _this.LogDeprecated(model.id + ': model.duplicate.link has been deprecated.  Please use model.duplicate.link_on_success instead.'); 
+        _this.LogDeprecated(model.id + ': model.duplicate.link has been deprecated.  Please use model.duplicate.link_on_success instead.');
         model.duplicate.link_on_success = model.duplicate.link;
         delete model.duplicate.link;
       }
@@ -931,7 +931,7 @@ exports.ParseEntities = function () {
     modelExt.sqlext = db.SQLExt;
     var tabledef = modelExt.tabledef = db.getTableDefinition(model.table);
     if(tabledef && tabledef.table_type){
-      model._dbdef = { 
+      model._dbdef = {
         table_type: tabledef.table_type ,
         instead_of_insert: tabledef.instead_of_insert
       };
@@ -1040,8 +1040,8 @@ exports.ParseEntities = function () {
     if (!('title' in model)){
       if(model.tabs && model.tabs.length && model.tabpos && (model.tabpos=='top')){ /* No action */ }
       else {
-        if(!originalCaption && 
-          tabledef && tabledef.description && 
+        if(!originalCaption &&
+          tabledef && tabledef.description &&
           _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.metadata_captions) model.title = tabledef.description;
         else if((model.layout == 'grid') || (model.layout == 'multisel')) model.title = model.caption[2];
         else model.title = model.caption[1];
@@ -1450,10 +1450,10 @@ exports.ParseEntities = function () {
         }
       }
       if((field.type=='date') && !('format' in field) && (((model.layout=='grid') && !field.control) || (field.control=='label'))){
-        field.format = ['date','YYYY-MM-DD']; 
+        field.format = ['date','YYYY-MM-DD'];
       }
       if((field.type=='time') && !('format' in field) && (((model.layout=='grid') && !field.control) || (field.control=='label'))){
-        field.format = ['time','HH:mm:ss']; 
+        field.format = ['time','HH:mm:ss'];
       }
       if(!('caption' in field)){
         if(_.includes(['subform','html','hidden'],field.control)) field.caption = '';
@@ -1492,12 +1492,12 @@ exports.ParseEntities = function () {
           field.captioncolon = true;
         }
       }
-      if (field.key) { 
-        field.actions += 'K'; 
+      if (field.key) {
+        field.actions += 'K';
         if(Helper.hasAction(field.actions, 'F') || field.foreignkey){ _this.LogInit_WARNING(model.id + ' > ' + field.name + ': Key field should not also have foreignkey attribute.'); }
       }
-      if ('__REMOVEFIELD__' in field){ 
-        _this.LogDeprecated(model.id + ' > ' + field.name + ': __REMOVEFIELD__ has been deprecated.  Please use __REMOVE__ instead.'); 
+      if ('__REMOVEFIELD__' in field){
+        _this.LogDeprecated(model.id + ' > ' + field.name + ': __REMOVEFIELD__ has been deprecated.  Please use __REMOVE__ instead.');
         field.__REMOVE__ = field.__REMOVEFIELD__;
         delete field.__REMOVEFIELD__;
       }
@@ -1743,9 +1743,9 @@ exports.ParseEntities = function () {
     if(model.layout=='multisel'){
       var lovfield = '';
       _.each(model.fields, function(field){
-        if(field.lov){ 
+        if(field.lov){
           if(lovfield != '') _this.LogInit_ERROR('Model ' + model.id + ': Can only have one LOV per Multisel');
-          lovfield = field.name; 
+          lovfield = field.name;
         }
       });
       if(lovfield == '') _this.LogInit_ERROR('Model ' + model.id + ': Multisel requires one LOV');
@@ -2092,7 +2092,7 @@ exports.ParseEntities = function () {
     //Verify bindings are set up properly
     ParseModelRoles(_this, model, model.id, model.actions);
 
-    //Check Parent / Child Relationships for Potentially Missing Foreign keys  
+    //Check Parent / Child Relationships for Potentially Missing Foreign keys
     if (model.tabs) {
       for (let i=0; i<model.tabs.length; i++) {
         var tab = model.tabs[i];
@@ -2216,7 +2216,7 @@ exports.ParseEntities = function () {
         }
       }
     }
-  });  
+  });
 
   //Validate LOV DB and add sqlselect for cross-db LOV
   //Perform this after datalock validation, since datalocks should not be required for this sqlselect
@@ -2288,7 +2288,7 @@ function ParseMultiLineProperties(obj, arr) {
 }
 
 function addHiddenField(model, fieldname, props){
-  var newfield = _.extend({ 
+  var newfield = _.extend({
     name: fieldname,
     control: 'hidden'
   }, props);
@@ -2314,8 +2314,8 @@ exports.AddSqlParams = function(model, element, desc, props){
   if(!props) props = ['sql'];
   if(!element) return;
   var sql = '';
-  _.each(props, function(prop){ 
-    if(element[prop]) sql += _this.AppSrvClass.prototype.getSQL(model, element[prop], _this)+' '; 
+  _.each(props, function(prop){
+    if(element[prop]) sql += _this.AppSrvClass.prototype.getSQL(model, element[prop], _this)+' ';
   });
   sql = sql.trim();
   if (sql) {
@@ -2370,7 +2370,7 @@ exports.AddFieldDatalock = function(model, field, siteid, datalockid, datalockSe
 exports.AddAutomaticBindings = function(model, element, elementname, options){
   var _this = this;
   //bindType: parentKey, childKey, nonKeyFields
-  options = _.extend({ 
+  options = _.extend({
     //bindType: parentKey, childKey, or nonKeyFields
     //  parentKey: Create a binding between each Parent Form's Key and a field with the same name in the child (Default)
     //             "PARENT_KEY": "PARENT_KEY"
@@ -2383,11 +2383,11 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
     //                "ADDITIONAL_FIELD": "ADDITONAL_FIELD"
     //                "CHILD_FIELD": "CHILD_FIELD" (When parent is a Form, Form-m, and Exec)
     // auto: parentKey and then childKey
-    bindType: 'auto', 
+    bindType: 'auto',
     //Array of field names used for binding nonKeyFields
-    additionalFields: [], 
+    additionalFields: [],
     //Express Request
-    req: null, 
+    req: null,
     //Logging function
     log: function(msg){ _this.Log.error(msg); },
     //Do not display an error if binding not parentKey Binding not found
@@ -2426,7 +2426,7 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
       //The following creates a conditional binding based on the name of the Parent Form's Key
       //"CHILD_FIELD": {
       //  //If the parent form's key name is "PARENT_KEY", set the binding from CHILD_FIELD to the character string 'CONSTANT'
-      //  "key:PARENT_KEY": "'CONSTANT'", 
+      //  "key:PARENT_KEY": "'CONSTANT'",
       //  //If the parent form's key name is "PARENT_KEY", set the binding from CHILD_FIELD to the Parent's PARENT_FIELD
       //  "key:PARENT_KEY": "PARENT_FIELD"
       //}
@@ -2446,7 +2446,7 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
       //"CHILD_FIELD": "'CONSTANT'"
       if(_.isString(parentField)){
         if(parentField=='key'){
-          if(parentKeys.length != 1) { options.log(model.id + ' > ' + elementname + ' Bindings: Must have one key in the parent model when dynamically binding '+childKey+' to "key"'); return; } 
+          if(parentKeys.length != 1) { options.log(model.id + ' > ' + elementname + ' Bindings: Must have one key in the parent model when dynamically binding '+childKey+' to "key"'); return; }
           parentField = parentKeys[0];
         }
         bindings[childKey] = parentField;
@@ -2455,7 +2455,7 @@ exports.AddAutomaticBindings = function(model, element, elementname, options){
   }
 
   //If dynamic bindings were not applied
-  if(!found_bindings){ 
+  if(!found_bindings){
     var auto_keys = _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.keys;
     var ttabledef = options.modelsExt ? options.modelsExt[tmodel.id].tabledef : null;
     var stabledef = options.modelsExt ? options.modelsExt[model.id].tabledef : null;
@@ -2539,7 +2539,7 @@ exports.AddBindingFields = function(model, element, elementname, modelsExt){
       else if(childKey && (childKey.toString().indexOf('js:')==0)){ /* No action */ }
       else {
         var tfield = _this.AppSrvClass.prototype.getFieldByName(tmodel.fields, childKey);
-        if(!tfield) { 
+        if(!tfield) {
           let created_field = false;
           if(auto_keys && ttabledef){
             //Add foreign key based on binding
@@ -2555,7 +2555,7 @@ exports.AddBindingFields = function(model, element, elementname, modelsExt){
       else if(binding && (binding.toString().indexOf('js:')==0)){ /* No action */ }
       else {
         var sfield = _this.AppSrvClass.prototype.getFieldByName(model.fields, binding);
-        if(!sfield) { 
+        if(!sfield) {
           let created_field = false;
           if(auto_keys && tabledef){
             //Add foreign key based on binding
@@ -2600,8 +2600,8 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
     if(linkTarget.modelid.substr(0,3)=='js:') return;
     var linkModel = jsh.getModel(null,linkTarget.modelid,model);
     if (!linkModel) { _this.LogInit_ERROR((prefix||'') + 'Link Target model "' + linkTarget.modelid + '" not found'+(suffix?' in link expression "'+suffix+'"':'')); return; }
-    if((linkTarget.action=='insert')&&!Helper.hasAction(linkModel.actions, 'I')) { 
-      _this.LogInit_ERROR((prefix||'') + 'Link Target model "' + linkTarget.modelid + '" does not have "I" action'+(suffix?' for link expression "'+suffix+'"':'')); 
+    if((linkTarget.action=='insert')&&!Helper.hasAction(linkModel.actions, 'I')) {
+      _this.LogInit_ERROR((prefix||'') + 'Link Target model "' + linkTarget.modelid + '" does not have "I" action'+(suffix?' for link expression "'+suffix+'"':''));
     }
     validateSiteRoles(model, linkModel, prefix, suffix, roles);
   }
@@ -2693,7 +2693,7 @@ function ParseModelRoles(jsh, model, srcmodelid, srcactions) {
           found_parent_popup_copy_results[parent_field] = false;
         });
         _.each(tmodel.fields, function(tfield){
-          if(tfield.name==field.popuplov.code_val) found_code_val = true; 
+          if(tfield.name==field.popuplov.code_val) found_code_val = true;
           for(let key in found_child_popup_copy_results) if(tfield.name==key) found_child_popup_copy_results[key] = true;
         });
         _.each(model.fields, function(pfield){
@@ -2728,7 +2728,7 @@ exports.getDatepickerFormat = function(fstr, fdesc){
   /*
   Moment Format String
   --------------------
-  >>> Month	
+  >>> Month
   M	1 2 ... 11 12
   Mo	1st 2nd ... 11th 12th
   MM	01 02 ... 11 12
@@ -2766,7 +2766,7 @@ exports.getDatepickerFormat = function(fstr, fdesc){
   >>> Year
   YY	70 71 ... 29 30
   YYYY	1970 1971 ... 2029 2030
-  Y	1970 1971 ... 9999 +10000 +10001 
+  Y	1970 1971 ... 9999 +10000 +10001
   Note: This complies with the ISO 8601 standard for dates past the year 9999
   >>> Week Year
   gg	70 71 ... 29 30
@@ -2796,7 +2796,7 @@ exports.getDatepickerFormat = function(fstr, fdesc){
   SSS	000 001 ... 998 999
   SSSS ... SSSSSSSSS	000[0..] 001[0..] ... 998[0..] 999[0..]
   >>> Time Zone
-  z or zz	EST CST ... MST PST 
+  z or zz	EST CST ... MST PST
   Note: as of 1.6.0, the z/zz format tokens have been deprecated from plain moment objects. Read more about it here. However, they *do* work if you are using a specific time zone with the moment-timezone addon.
   Z	-07:00 -06:00 ... +06:00 +07:00
   ZZ	-0700 -0600 ... +0600 +0700
@@ -2938,7 +2938,7 @@ exports.getDefaultValidators = function(field, desc){
       break;
     case 'FILE':
       if (!field.controlparams || !field.controlparams.data_folder) { _this.LogInit_ERROR(desc + ' Field ' + (field.name || '') + ' missing field.controlparams.data_folder'); }
-      else HelperFS.createFolderIfNotExists(_this.Config.datadir + field.controlparams.data_folder, function () { }); 
+      else HelperFS.createFolderIfNotExists(_this.Config.datadir + field.controlparams.data_folder, function () { });
       break;
     case 'BINARY':
       var flen = -1;

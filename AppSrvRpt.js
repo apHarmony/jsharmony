@@ -180,7 +180,7 @@ AppSrvRpt.prototype.batchReport = function (req, res, db, dbcontext, model, sql_
               thisapp.rptsrv.queueReport(req, res, model.id, batchparams, {}, _.extend({}, params, { db: db, dbcontext: dbcontext, errorHandler: errorHandler, fromBatch: true}), function (err, tmppath, dispose, dbdata) {
                 if(err) return cb(err);
                 batchdbdata.push(dbdata);
-                /* Report Done */ 
+                /* Report Done */
                 HelperFS.getFileStats(req, res, tmppath, function (err, stat) {
                   if (err){ dispose(); return cb('Report file not found'); }
                   pdfFiles.push(tmppath);
@@ -230,7 +230,7 @@ AppSrvRpt.prototype.parseReportSQLData = function (req, db, dbcontext, model, sq
     var datalockqueries = [];
     var skipdatalock = true;
     if(req){
-      //Add DataLock parameters to SQL 
+      //Add DataLock parameters to SQL
       thisapp.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, dparams.nodatalock);
       skipdatalock = false;
       if ('nodatalock' in dparams) {
@@ -343,32 +343,32 @@ AppSrvRpt.prototype.genReportContent = function(req, res, fullmodelid, params, d
   });
 
   if(ejsbody_header){
-    rslt.header = _this.RenderEJS(ejsbody_header, { 
-      model: model, 
-      moment: moment, 
+    rslt.header = _this.RenderEJS(ejsbody_header, {
+      model: model,
+      moment: moment,
       _this: _this,
       jsh: jsh,
       ejsext: ejsext,
       data: data,
       params: params,
       _: _,
-      pageNum: "<span class='pageNumber'></span>", 
-      numPages: "<span class='totalPages'></span>" 
+      pageNum: "<span class='pageNumber'></span>",
+      numPages: "<span class='totalPages'></span>"
     });
   }
 
   if(ejsbody_footer){
-    rslt.footer = _this.RenderEJS(ejsbody_footer, { 
-      model: model, 
-      moment: moment, 
+    rslt.footer = _this.RenderEJS(ejsbody_footer, {
+      model: model,
+      moment: moment,
       _this: _this,
       jsh: jsh,
       ejsext: ejsext,
       data: data,
       params: params,
       _: _,
-      pageNum: "<span class='pageNumber'></span>", 
-      numPages: "<span class='totalPages'></span>" 
+      pageNum: "<span class='pageNumber'></span>",
+      numPages: "<span class='totalPages'></span>"
     });
   }
 
@@ -592,8 +592,8 @@ AppSrvRpt.prototype.genReportPdf = function (req, res, fullmodelid, params, data
                 fontElement.setAttribute('style', font_render[i]+'visibility:hidden;position:absolute;top:0px;left:0px;');
                 document.body.appendChild(fontElement);
               }
-              document.body.style['-webkit-print-color-adjust'] = 'exact'; 
-              return document.body.clientWidth; 
+              document.body.style['-webkit-print-color-adjust'] = 'exact';
+              return document.body.clientWidth;
             };
 
             fs.writeFile(tmphtmlpath, rptcontent.body||'','utf8',function(err){
@@ -782,10 +782,10 @@ AppSrvRpt.prototype.getBrowser = function (callback) {
   if (_this.browser) {
     //Recycle browser after _BROWSER_RECYCLE_COUNT uses
     _this.browserreqcount++;
-    if (_this.browserreqcount >= _BROWSER_RECYCLE_COUNT) { 
+    if (_this.browserreqcount >= _BROWSER_RECYCLE_COUNT) {
       jsh.Log.info('Recycling Report Renderer');
       var oldbrowser = _this.browser;
-      _this.browser = null; 
+      _this.browser = null;
       return oldbrowser.close()
         .then(function(){ return _this.getBrowser(callback); })
         .catch(function(err){ var errmsg = 'Cound not exit report renderer: '+err.toString(); jsh.Log.error(errmsg); return callback(new Error(errmsg)); });
@@ -848,7 +848,7 @@ AppSrvRpt.prototype.runReportJob = function (req, res, fullmodelid, Q, P, onComp
   
   if (!('sql' in model.jobqueue)) throw new Error(fullmodelid + ' missing job queue sql');
   
-  //Add DataLock parameters to SQL 
+  //Add DataLock parameters to SQL
   var datalockqueries = [];
   thisapp.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); });
   

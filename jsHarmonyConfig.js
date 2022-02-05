@@ -34,7 +34,7 @@ jsHarmonyConfigBase.prototype.Validate = function(jsh, desc){
     var diff = _.difference(props,this._validProperties,['_validProperties']);
     if(diff && diff.length){
       jsh.LogInit_ERROR('Invalid setting'+((diff.length>1)?'s':'')+(desc?' in '+desc:'')+' config: '+diff.join(', '));
-    }  
+    }
   }
 
   return true;
@@ -85,7 +85,7 @@ function jsHarmonyConfig(config){
     
     db_requests: false,        //Log every database request through DB.js
     db_raw_sql: false,         //Log raw database SQL requests
-    db_log_level: 6,           //Bitmask: 2 = WARNING, 4 = NOTICES :: Database messages logged to the console / log 
+    db_log_level: 6,           //Bitmask: 2 = WARNING, 4 = NOTICES :: Database messages logged to the console / log
     db_error_sql_state: true,  //Log SQL state during DB error
 
     log_socket: true,          //Enable DEV users to connect via WebSockets and read log
@@ -339,7 +339,7 @@ jsHarmonyConfig.prototype.Init = function(cb){
 };
 jsHarmonyConfig.prototype.Merge = function(config, jsh, sourceModuleName){
   if(config){
-    if(!sourceModuleName && config.sourceModuleName) sourceModuleName = config.sourceModuleName; 
+    if(!sourceModuleName && config.sourceModuleName) sourceModuleName = config.sourceModuleName;
     for(var prop in config){
       //Handle modules
       if(prop=='sourceModuleName') continue;

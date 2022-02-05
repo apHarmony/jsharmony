@@ -167,9 +167,9 @@ exports.getStylusCSS = function(stylusName, callback){
   var sync = false;
   if(!callback){
     sync = true;
-    callback = function(err, rslt){ 
-      if(err) throw err; 
-      else return rslt; 
+    callback = function(err, rslt){
+      if(err) throw err;
+      else return rslt;
     };
   }
   if(!(stylusName in _this.Stylus)) return callback(new Error('Stylus CSS not defined for: '+stylusName));

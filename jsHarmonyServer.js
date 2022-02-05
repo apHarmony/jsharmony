@@ -246,14 +246,14 @@ jsHarmonyServer.prototype.addWebSocketHandler = function(server){
           //Run route to validate authentication
           var siteConfig = _this.jsh.Sites['main'];
           if(!siteConfig){
-            _this.jsh.Log.error('WebSocket Authentication requires jsh.Site "main"'); 
+            _this.jsh.Log.error('WebSocket Authentication requires jsh.Site "main"');
             socket.destroy();
-            return; 
+            return;
           }
           var router = _this.app;
           router.handle(req, {
-            writeHead: function(txt){ }, 
-            setHeader: function(txt){ }, 
+            writeHead: function(txt){ },
+            setHeader: function(txt){ },
             send: function(txt){ },
             end: function(txt){
               //Route returned WEBSOCKET
@@ -268,13 +268,13 @@ jsHarmonyServer.prototype.addWebSocketHandler = function(server){
                 return;
               }
               else{
-                _this.jsh.Log.error('Unauthorized access to WebSocket '+webSocket.path+' by '+Helper.GetIP(req)); 
+                _this.jsh.Log.error('Unauthorized access to WebSocket '+webSocket.path+' by '+Helper.GetIP(req));
                 socket.destroy();
                 return;
               }
             }
           }, function(){
-            _this.jsh.Log.error('WebSocket Authentication Failed for: '+webSocket.path+' by '+Helper.GetIP(req)); 
+            _this.jsh.Log.error('WebSocket Authentication Failed for: '+webSocket.path+' by '+Helper.GetIP(req));
             socket.destroy();
             return;
           });
@@ -372,9 +372,9 @@ jsHarmonyServer.prototype.Run = function(cb){
       _this.jsh.Log.error('\r\n\r\n\r\nCANNOT START SERVER!!!!!!\r\n\r\n');
       if (err && (err.code == 'EADDRINUSE')) {
         _this.jsh.Log.error('SERVER ALREADY RUNNING ON PORT '+_this.serverConfig.http_port+'\r\n\r\n');
-        Helper.triggerAsync(_this.jsh.Config.onServerReady); 
+        Helper.triggerAsync(_this.jsh.Config.onServerReady);
         if(cb) cb();
-      } 
+      }
       else throw err;
     });
   }
@@ -390,7 +390,7 @@ jsHarmonyServer.prototype.Run = function(cb){
     _this.addWebSocketHandler(server);
     server.timeout = _this.serverConfig.request_timeout;
     var new_http_port = 0;
-    var new_https_port = 0; 
+    var new_https_port = 0;
 
     var start_https_server = function(cb_https,servers){
       if(!servers) servers = [];
@@ -412,7 +412,7 @@ jsHarmonyServer.prototype.Run = function(cb){
           _this.jsh.Log.error('SERVER ALREADY RUNNING ON PORT '+_this.serverConfig.https_port+'\r\n\r\n');
           Helper.triggerAsync(_this.jsh.Config.onServerReady);
           if (cb_https) cb_https();
-        } 
+        }
         else throw err;
       });
     };
@@ -441,7 +441,7 @@ jsHarmonyServer.prototype.Run = function(cb){
           _this.jsh.Log.error('SERVER ALREADY RUNNING ON PORT '+_this.serverConfig.http_port+'\r\n\r\n');
           Helper.triggerAsync(_this.jsh.Config.onServerReady);
           if (cb) cb();
-        } 
+        }
         else throw err;
       });
     }

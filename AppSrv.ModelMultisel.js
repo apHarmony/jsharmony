@@ -60,7 +60,7 @@ exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
   if (!is_insert) _.each(foreignkeylist, function (val) { sql_foreignkeys.push(val); });
   var sql_foreignkeyfields = this.getFieldsByName(model.fields, sql_foreignkeys);
   
-  //Add DataLock parameters to SQL 
+  //Add DataLock parameters to SQL
   this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
     if ('lovkey' in dfield) return false; //DATALOCK validation handled  below in prefix
     datalockqueries.push(datalockquery);
@@ -88,7 +88,7 @@ exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
   }
   if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
   
-  //Add dynamic parameters from query string	
+  //Add dynamic parameters from query string
   var keys = [];
   if (is_insert) keys = this.getFieldsByName(model.fields, lovkeylist);
   else keys = this.getFieldsByName(model.fields, foreignkeylist);
@@ -164,7 +164,7 @@ exports.postModelMultisel = function (req, res, fullmodelid, Q, P, onComplete) {
   var lov_datalockqueries = [];
   
   var subs = [];
-  //Add key from query string	
+  //Add key from query string
   for (let i = 0; i < lovvals.length; i++) {
     var lovval = lovvals[i];
     var fname = 'multisel' + i;
@@ -193,7 +193,7 @@ exports.postModelMultisel = function (req, res, fullmodelid, Q, P, onComplete) {
     else throw new Error('Missing parameter ' + fname);
   });
   
-  //Add DataLock parameters to SQL 
+  //Add DataLock parameters to SQL
   _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
     if ('lovkey' in dfield) return false; //DATALOCK lovkey validation not necessary here, this only checks existing data
     datalockqueries.push(datalockquery);

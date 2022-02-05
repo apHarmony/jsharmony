@@ -8,6 +8,10 @@ module.exports = {
         "ecmaVersion": 8
     },
     "rules": {
+        "no-trailing-spaces":[
+          "error",
+          { "skipBlankLines": true }
+        ],
         "indent": [
             "error",
             2,

@@ -120,7 +120,7 @@ exports.parseLink = function (target) {
         _.each(prekeys, function (val) {
           var keydata = val.split('=');
           if (keydata.length > 1) keys[keydata[0]] = keydata[1];
-          else{ 
+          else{
             if(action == 'download') keys[keydata[0]] = '';
             else keys[keydata[0]] = keydata[0];
           }
@@ -152,8 +152,8 @@ exports.parseFieldExpression = function(field, exp, params, options){
 
   for(var rparam in rparams) rslt = Helper.ReplaceAll(rslt, '%%%'+rparam+'%%%', rparams[rparam]);
 
-  if(options.ejs && (rslt.indexOf('<%') >= 0)){ 
-    rslt = ejs.render(rslt, rparams); 
+  if(options.ejs && (rslt.indexOf('<%') >= 0)){
+    rslt = ejs.render(rslt, rparams);
   }
 
   return rslt;
@@ -163,11 +163,11 @@ exports.parseFieldExpression = function(field, exp, params, options){
 //Button Links
 //  jsh.getURL(req, model, link_target, undefined, undefined, link_bindings);
 //Tab Links: linktabs[model.id] = tabmodelid
-//  jsh.getURL(req, model, '', linktabs); 
+//  jsh.getURL(req, model, '', linktabs);
 //Duplicate Model Links
 //  jsh.getURL(req, model, model.duplicate.link_on_success, undefined, dmodel.fields);
 //Select Links: 'select'
-//  jsh.getURL(req, model, srcfield.link + ':' + model.id, undefined, model.fields); 
+//  jsh.getURL(req, model, srcfield.link + ':' + model.id, undefined, model.fields);
 //Field link
 //  jsh.getURL(req, model, srcfield.link, undefined, model.fields);
 //Field insert_link

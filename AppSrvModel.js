@@ -109,8 +109,8 @@ AppSrvModel.prototype.GetModel = function (req, res, fullmodelid) {
     if(_.isString(rslt)){
       _this.genClientModel(req, res, 'jsHarmony/_BASE_HTML_MESSAGE', { topmost: true, parentBindings: null, sourceModel: null, onComplete: function(model){
         if(_.isString(model)) return res.end(model);
-        model = _.extend(model, { 
-          id: fullmodelid, 
+        model = _.extend(model, {
+          id: fullmodelid,
           caption: ['',fullmodelid,fullmodelid],
           title: fullmodelid,
           helpurl: '',
@@ -201,7 +201,7 @@ AppSrvModel.prototype.genClientModel = function (req, res, modelid, options) {
     if(model.layout=='form'){
       if(!model.nokey && !model.unbound){
         var keys = _this.AppSrv.getKeys(model.fields);
-        if(keys && keys.length){ 
+        if(keys && keys.length){
           return onComplete(jsh.RenderFormStarter(req, fullmodelid));
         }
       }

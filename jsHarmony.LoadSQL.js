@@ -245,7 +245,7 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
   var _this = this;
   var module = (moduleName ? _this.Modules[moduleName] : null);
   
-  var d = _this.LoadSQLFiles(module, dir, { ignoreDirectories: true, filterType: type });  
+  var d = _this.LoadSQLFiles(module, dir, { ignoreDirectories: true, filterType: type });
 
   //Load Base SQL files
   _this.LogInit_PERFORMANCE('Loading Base SQL Files '+(Date.now()-_this.Statistics.StartTime));
@@ -556,12 +556,12 @@ exports.LoadDBSchemas = function(cb){
             if(lovs[code_type][field_name]){
               _.each(lovs[code_type][field_name], function(lov){
                 let code = getCODE(dbConfig._driver.name, lov.schema, lov.table);
-                field.foreignkeys.lov.push({ 
+                field.foreignkeys.lov.push({
                   code_type: code_type,
                   code_name: field_name,
                   code_schema: code.code_schema,
                   schema_name: lov.schema,
-                  table_name: lov.table, 
+                  table_name: lov.table,
                   column_name: map.code_val,
                 });
               });

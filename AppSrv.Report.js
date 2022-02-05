@@ -32,7 +32,7 @@ exports.getReport = function (req, res, fullmodelid, Q, P, callback) {
   if (typeof callback == 'undefined') callback = function (err, tmppath, dispose, dbdata) {
     if(err){ Helper.GenError(req, res, -99999, err.toString()); return; }
 
-    /* Report Done */ 
+    /* Report Done */
     HelperFS.getFileStats(req, res, tmppath, function (err, stat) {
       if (err != null) return dispose();
       var fsize = stat.size;
@@ -92,11 +92,11 @@ exports.parseReportHTML = function(rptcontent){
     rslt = rslt.substr(0,idx) + "<div style='clear:both;'>" + rptcontent.footer + '</div>' + rslt.substr(idx,rslt.length);
   }
   //Convert paths to relative
-  rslt = rslt.replace(/(file:\/\/[^"'>]*)/gi,function(match,p1){ 
+  rslt = rslt.replace(/(file:\/\/[^"'>]*)/gi,function(match,p1){
     p1 = p1.replace(_this.jsh.Config.datadir,'');
     if(Helper.endsWith(p1,'/node_modules/jsharmony/public/js/jsHarmony.js')) return '/js/jsHarmony.js';
     if(p1.lastIndexOf('/public/') >= 0) return p1.substr(p1.lastIndexOf('/public/')+7);
-    return ''; 
+    return '';
   });
   return rslt;
 };
@@ -107,7 +107,7 @@ exports.getReportHTML = function (req, res, fullmodelid, Q, P, callback) {
   if (typeof Q == 'undefined') Q = req.query;
   if (typeof P == 'undefined') P = req.body;
   if (typeof callback == 'undefined') callback = function (err, rptcontent) {
-    /* Report Done */ 
+    /* Report Done */
     if(err){ Helper.GenError(req, res, -99999, err.toString()); return; }
     
     var rslt = '';

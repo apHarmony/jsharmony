@@ -390,7 +390,7 @@ jsHarmony.prototype.SetModuleNamespace = function(moduleName){
 
 //Set the Job Processor
 jsHarmony.prototype.SetJobProc = function(jobproc){
-  this.AppSrv.JobProc = jobproc; 
+  this.AppSrv.JobProc = jobproc;
 };
 
 //Require a folder in order to start jsHarmony
