@@ -34,12 +34,11 @@ exports = module.exports = function(jsh){
     //Error
     var jerrdata = {};
     try { jerrdata = JSON.parse(errdata); }
-    catch(ex){ }
+    catch(ex){ /* Do nothing */ }
     if ((jerrdata instanceof Object) && ('_error' in jerrdata)) {
-      if (jsh.DefaultErrorHandler(jerrdata._error.Number, jerrdata._error.Message)) { }
+      if (jsh.DefaultErrorHandler(jerrdata._error.Number, jerrdata._error.Message)) { /* Do nothing */ }
       else if ((jerrdata._error.Number == -9) || (jerrdata._error.Number == -5)) { jsh.XExt.Alert(jerrdata._error.Message); }
       else { jsh.XExt.Alert('Error #' + jerrdata._error.Number + ': ' + jerrdata._error.Message); }
-      if ('onFail' in ExecParams) ExecParams.onFail(jerrdata._error);
       return;
     }
     if(('status' in errdata) && (errdata.status == '404')){ jsh.XExt.Alert('(404) The requested page was not found.'); }
@@ -77,13 +76,15 @@ exports = module.exports = function(jsh){
     if(!searchjson || !searchjson.length) return true;
 
     var exprslt = [];
+    var i=0;
 
     //Compare
-    for(var i=0;i<searchjson.length;i++){
+    for(i=0;i<searchjson.length;i++){
       var exp = searchjson[i];
       if(!exp.Column){ exprslt.push(null); continue; }
 
       var vals = null;
+      var val = null;
       if(exp.Column=='ALL'){
         vals = [];
         var keys = [];
@@ -91,13 +92,13 @@ exports = module.exports = function(jsh){
         else keys = _.keys(jsh.XExt.XModel.GetOwnFields(row));
 
         _.each(keys, function(key){
-          var val = row[key];
+          val = row[key];
           if(model) val = jsh.XExt.getTypedFieldValue(jsh.XExt.getFieldByName(model, key), val);
           vals.push(val);
         });
       }
       else{
-        var val = row[exp.Column];
+        val = row[exp.Column];
         if(model) val = jsh.XExt.getTypedFieldValue(jsh.XExt.getFieldByName(model, exp.Column), val);
         vals = [val];
       }
@@ -108,7 +109,7 @@ exports = module.exports = function(jsh){
       if(!_.includes(['null','notnull','contains','notcontains','=','<>','beginswith','endswith','>','<','>=','<='], exp.Comparison)){ exprslt.push(null); continue; }
 
       for(var j=0;j<vals.length;j++){
-        var val = vals[j];
+        val = vals[j];
         var cmpval = exp.Value;
         if(exp.Comparison=='null'){
           if(jsh.XExt.isNullUndefinedEmpty(val)) cmprslt = true;
@@ -135,7 +136,7 @@ exports = module.exports = function(jsh){
             if(jsh.XExt.beginsWith(valstr, cmpvalstr)) cmprslt = true;
           }
           else if(exp.Comparison=='endswith'){
-            if(jsh.XExt.endsWith(valstr, cmpvalstr)) cmprslt = true;
+            if(jsh.XExt.endsWith(valstr, cmpvalstr)) cmprslt = true; // eslint-disable-line es5/no-es6-methods
           }
           else {
             //Compare types
@@ -178,19 +179,17 @@ exports = module.exports = function(jsh){
     }
 
     //Apply AND
-    for(var i=searchjson.length-1;i>0;i--){
-      var exp = searchjson[i];
-      var prevexp = searchjson[i-1];
-      if(exp.Join=='and'){
+    for(i=searchjson.length-1;i>0;i--){
+      if(searchjson[i].Join=='and'){
         if((exprslt[i-1]===null) && (exprslt[i]!==null)){ exprslt[i-1] = exprslt[i]; }
-        else if((exprslt[i-1]===null) && (exprslt[i]===null)){ }
+        else if((exprslt[i-1]===null) && (exprslt[i]===null)){ /* Do nothing */ }
         else exprslt[i-1] = exprslt[i-1] && exprslt[i];
         exprslt.splice(i,1);
       }
     }
 
     //Apply OR
-    for(var i=0;i<exprslt.length;i++){
+    for(i=0;i<exprslt.length;i++){
       if(exprslt[i]===true) return true;
     }
     return false;

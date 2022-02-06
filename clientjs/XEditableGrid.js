@@ -59,7 +59,7 @@ exports = module.exports = function(jsh){
 
   XEditableGrid.prototype.CellLeave = function (oldobj, newobj, e) {
     this.DebugLog('Leave Cell ' + $(oldobj).data('id'));
-    if (this.OnCellLeave) this.OnCellLeave(obj, e);
+    if (this.OnCellLeave) this.OnCellLeave(oldobj, e);
   };
 
   XEditableGrid.prototype.RowEnter = function (rowid) {
@@ -113,7 +113,6 @@ exports = module.exports = function(jsh){
       if(newobj && newobj.tagName && (newobj.tagName.toUpperCase()=='BODY')) newobj = null;
       if (jsh.xLoader.IsLoading) { return; }
       var newrowid = -1;
-      var oldrowid = -1;
       var oldobj = _this.CurrentCell;
       if (!oldobj) return; //Return if user was not previously in grid
       if ($.datepicker && $.datepicker._datepickerShowing) {
@@ -144,8 +143,7 @@ exports = module.exports = function(jsh){
       //On success
       _this.CellChange(_this.CurrentCell, obj, e);
       if(onComplete) onComplete();
-      if (!_immediate_result) {
-      }
+      if (!_immediate_result) { /* Do nothing */ }
     }, function (_immediate_result) {
       //On failure
       if (_immediate_result) {
@@ -164,8 +162,6 @@ exports = module.exports = function(jsh){
 
   XEditableGrid.prototype.CheckboxUpdate = function (obj, e) {
     var _this = this;
-    var obj_changed = (this.CurrentCell != obj);
-    //if(!obj_changed) return;
     if (this.ErrorClass) if ($(obj).hasClass(this.ErrorClass)) { this.CurrentCell = obj; return; }
     var ischecked = obj.checked;
     obj.checked = !ischecked;
@@ -200,7 +196,6 @@ exports = module.exports = function(jsh){
   //Return true if immediate result
   //Return false if needs to wait
   XEditableGrid.prototype.ControlLeaving = function (newobj, e, onsuccess, oncancel) {
-    var _this = this;
     var rslt = this.CellLeaving(this.CurrentCell, newobj, e, onsuccess, oncancel);
     if (rslt === true) return true;
     else if (rslt === false) return true;
@@ -214,10 +209,10 @@ exports = module.exports = function(jsh){
     if (e.keyCode == 27) { //Escape key pressed
       //Get current Rowid
       var rowid = -1;
-      var obj = this.CurrentCell;
-      if (obj) rowid = jsh.XExt.XModel.GetRowID(this.modelid, obj);
+      var obj_currentCell = this.CurrentCell;
+      if (obj_currentCell) rowid = jsh.XExt.XModel.GetRowID(this.modelid, obj_currentCell);
       if (rowid < 0) return;
-      if (this.OnCancelEdit) this.OnCancelEdit(rowid, obj);
+      if (this.OnCancelEdit) this.OnCancelEdit(rowid, obj_currentCell);
     }
   };
 
@@ -273,7 +268,7 @@ exports = module.exports = function(jsh){
       (rowchange && (this.CommitLevel == 'row'))
     )) {
       if (newobj){ jsh.queuedInputAction = new jsh.XExt.XInputAction(newobj); }
-      else if (jsh.queuedInputAction && !jsh.queuedInputAction.IsExpired()) { }
+      else if (jsh.queuedInputAction && !jsh.queuedInputAction.IsExpired()) { /* Do nothing */ }
       else jsh.queuedInputAction = null;
       
       jsh.ignorefocusHandler = true;
