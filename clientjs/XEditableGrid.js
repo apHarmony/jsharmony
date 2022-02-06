@@ -18,6 +18,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var $ = require('./jquery-1.11.2');
+$.fn.$find = function(){ return $.fn.find.apply(this, arguments); };
 var _ = require('lodash');
 
 exports = module.exports = function(jsh){
@@ -348,7 +349,7 @@ exports = module.exports = function(jsh){
     var xmodel = (modelid? jsh.XModels[modelid] : null);
     var xfields = (xmodel ? xmodel.fields : []);
 
-    jobj.find('.xelem' + xmodel.class).each(function(){
+    jobj.$find('.xelem' + xmodel.class).each(function(){
       //Ignore hidden fields
       if((this.nodeName.toLowerCase()=='input')&&(this.type.toLowerCase()=='hidden')) return;
       var jobj = $(this);
@@ -360,7 +361,7 @@ exports = module.exports = function(jsh){
       jobj.change(function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
       if(_.includes(classList,'xtagbox_base')){
         jobj.on('input keyup', function (e) { if (!$(this).hasClass('editable')) return; return _this.ControlUpdate(this, e); });
-        //jobj.prev().find('input').focus(function (e) { return _this.SetFocus(this, e); });
+        //jobj.prev().$find('input').focus(function (e) { return _this.SetFocus(this, e); });
         jsh.XExt.TagBox_Focus(jobj.prev(), function(e){ return _this.SetFocus(this, e); });
       }
       if(_.includes(classList, 'editable')) if(_.includes(classList,'checkbox')) jobj.click(function (e) { return _this.CheckboxUpdate(this, e); });
@@ -402,10 +403,10 @@ exports = module.exports = function(jsh){
       });
       */
     });
-    jobj.find('.xelem' + xmodel.class + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e); });
-    jobj.find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; return _this.SetFocus(ctrl, e); });
+    jobj.$find('.xelem' + xmodel.class + ', .xlookup, .xtextzoom').keydown(function (e) { return _this.ControlKeyDown(this, e); });
+    jobj.$find('.xlookup,.xtextzoom').focus(function (e) { var ctrl = $(this).prev()[0]; return _this.SetFocus(ctrl, e); });
     if(datarow && datarow._is_insert){
-      jobj.find('.xelem' + xmodel.class).each(function(){
+      jobj.$find('.xelem' + xmodel.class).each(function(){
         var jobj = $(this);
         if (!jobj.hasClass('editable')) return;
         jobj.addClass('updated');

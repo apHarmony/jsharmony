@@ -40,10 +40,10 @@ exports.parse = function (_q, options) {
         q[i] = q[i].trim();
         if(!q[i]){ q.splice(i,1); i--; }
       }
-      var exp = '';
-      for(var i=0;i<q.length;i++){
+      exp = '';
+      for(var j=0;j<q.length;j++){
         if(exp) exp+='|';
-        exp+=exports.escape(q[i]);
+        exp+=exports.escape(q[j]);
       }
       if(exp) exp = '('+exp + ')';
     }
@@ -62,7 +62,7 @@ exports.search = function (data, q, fpath){
   if (q instanceof RegExp) {
     //Regular Expression
     var rm = null;
-    while (rm = q.exec(data)) {
+    while (rm = q.exec(data)) { // eslint-disable-line no-cond-assign
       m.push(rm.index);
       mlen.push(rm[0].length);
     }
@@ -123,5 +123,5 @@ function ReplaceAll(val, find, replace) {
 }
 
 exports.escape = function(q) {
-  return q.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&');
+  return q.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&');
 };

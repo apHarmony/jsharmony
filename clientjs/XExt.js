@@ -18,11 +18,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var $ = require('./jquery-1.11.2');
+$.fn.$find = function(){ return $.fn.find.apply(this, arguments); };
 var _ = require('lodash');
 
 exports = module.exports = function(jsh){
-  var XValidate = jsh.XValidate;
-
+  var XValidate = jsh.XValidate; // eslint-disable-line no-unused-vars
   var XExt = function(){ };
 
   XExt.XModel = require('./XExt.XModel.js')(jsh);
@@ -64,8 +64,8 @@ exports = module.exports = function(jsh){
     var lovfilter = {};
     if (!plural) lovfilter[jsh.uimap.code_parent] = parentvals[0];
     else {
-      for (var i = 0; i < parentvals.length; i++) {
-        lovfilter[jsh.uimap.code_parent + (i + 1)] = parentvals[i];
+      for (var j = 0; j < parentvals.length; j++) {
+        lovfilter[jsh.uimap.code_parent + (j + 1)] = parentvals[j];
       }
     }
     
@@ -74,10 +74,10 @@ exports = module.exports = function(jsh){
       var isMatch = true;
       if(!LOV[i]) continue;
       for(var key in lovfilter){
-        if((LOV[i][key]===null)&&(lovfilter[key]===null)){}
-        else if((typeof LOV[i][key]==='undefined')&&(typeof lovfilter[key]==='undefined')){}
+        if((LOV[i][key]===null)&&(lovfilter[key]===null)){ /* Do nothing */ }
+        else if((typeof LOV[i][key]==='undefined')&&(typeof lovfilter[key]==='undefined')){ /* Do nothing */ }
         else if(XExt.isNullUndefined(LOV[i][key]) || XExt.isNullUndefined(lovfilter[key])) isMatch = false;
-        else if(LOV[i][key] && lovfilter[key] && (LOV[i][key].toString() == lovfilter[key].toString())){}
+        else if(LOV[i][key] && lovfilter[key] && (LOV[i][key].toString() == lovfilter[key].toString())){ /* Do nothing */ }
         else isMatch = false;
       }
       if(isMatch) cLOV.push(LOV[i]);
@@ -97,7 +97,7 @@ exports = module.exports = function(jsh){
   };
 
   XExt.TagBox_Refresh = function(jctrl, jbaseinputctrl){
-    jctrl.find('span').remove();
+    jctrl.$find('span').remove();
     XExt.TagBox_AddTags(jctrl, jbaseinputctrl, jbaseinputctrl.val().split(','));
   };
 
@@ -115,7 +115,7 @@ exports = module.exports = function(jsh){
     jctrl.on('click_remove', function(tmp_e, e){
       onFocus.call(this, e);
     });
-    jctrl.find('.xtag_input').on('focus', function(e){
+    jctrl.$find('.xtag_input').on('focus', function(e){
       onFocus.call(this, e);
     });
     jctrl.on('click', function(e){
@@ -130,13 +130,13 @@ exports = module.exports = function(jsh){
       if(!val.length) return;
       var jnew = $('<span class="notextselect">'+XExt.escapeHTML(val)+'	&#8203;<div class="xtag_remove xtag_focusable">✕</div></span>');
       jnew.data('val', val);
-      jctrl.find('.xtag_input').before(jnew);
+      jctrl.$find('.xtag_input').before(jnew);
 
-      jnew.find('.xtag_remove').on('click', function(e){
+      jnew.$find('.xtag_remove').on('click', function(e){
         if(jctrl.hasClass('uneditable')) return;
         jctrl.trigger('click_remove', [e]);
         if(e.isPropagationStopped()||e.isImmediatePropagationStopped()) return;
-        jctrl.find('.xtag_input').blur();
+        jctrl.$find('.xtag_input').blur();
         $(this).closest('span').remove();
         XExt.TagBox_Save(jctrl, jbaseinputctrl);
       });
@@ -155,7 +155,7 @@ exports = module.exports = function(jsh){
     jctrl.addClass('xtag_focusable');
     jctrl.append('<input class="xtag_input inactive xtag_focusable" size="1" />');
 
-    var jinput = jctrl.find('.xtag_input');
+    var jinput = jctrl.$find('.xtag_input');
 
     jctrl.on('click', function(){
       if(jinput.hasClass('inactive')){
@@ -522,7 +522,7 @@ exports = module.exports = function(jsh){
   //Escape while enabling escape characters in a string
   XExt.escapeHTMLN = function (val) {
     var rslt = XExt.escapeHTML(val);
-    return String(val).replace(/&amp;([\w]+);/g, function (s,p1) {
+    return String(rslt).replace(/&amp;([\w]+);/g, function (s,p1) {
       return '&'+p1+';';
     });
   };
@@ -539,7 +539,7 @@ exports = module.exports = function(jsh){
       '\u00A0':'&#xa0;'
     };
     
-    return String(val).replace(/[\u00A0&<>"'\/]/g, function (s) {
+    return String(val).replace(/[\u00A0&<>"'/]/g, function (s) {
       return entityMap[s];
     });
   };
@@ -597,7 +597,7 @@ exports = module.exports = function(jsh){
   XExt.prettyURL = function(val, options){
     //options { }
     var rslt = (val||'').toString().toLowerCase();
-    rslt = rslt.replace(/[^a-zA-Z0-9_\-]+/g, '-');
+    rslt = rslt.replace(/[^a-zA-Z0-9_-]+/g, '-');
     rslt = XExt.trim(rslt,'-');
     while(rslt.indexOf('--') > 0) rslt = XExt.ReplaceAll(rslt,'--','-');
     return rslt;
@@ -664,7 +664,8 @@ exports = module.exports = function(jsh){
     'visible': function (cond) {
       try {
         if (!cond) return 'display:none;';
-      } catch (ex) { }
+      }
+      catch (ex) { /* Do nothing */ }
       return '';
     },
     'eachKey': function (fields, func) {
@@ -696,7 +697,7 @@ exports = module.exports = function(jsh){
       if (model && model.grid_static){ return '<'+"%=data['"+field.name+"']%"+'>'; }
       if ('sample' in field) val = field.sample;
       if ('default' in field){
-        if(_.isString(field.default) && (field.default.substr(0,3)=='js:')){ }
+        if(_.isString(field.default) && (field.default.substr(0,3)=='js:')){ /* Do nothing */ }
         else val = field.default;
       }
       if (val && ('format' in field)) val = jsh.XFormat.Apply(field.format, val);
@@ -968,8 +969,8 @@ exports = module.exports = function(jsh){
   XExt.makeResizableDiv = function(selector, children, options) {
     if(!options) options = { onDrag: null, onDragEnd: null };
     var obj = document.querySelector(selector);
-    for(var i=0;i<children.length; i++){
-      children[i].obj = document.querySelector(children[i].selector);
+    for(var j=0;j<children.length; j++){
+      children[j].obj = document.querySelector(children[j].selector);
     }
     var resizers = document.querySelectorAll(selector + ' .resizer');
     var minimum_size = 100;
@@ -982,20 +983,9 @@ exports = module.exports = function(jsh){
     var original_mouse_y = 0;
 
     for (var i = 0;i < resizers.length; i++) {
-      const currentResizer = resizers[i];
-      currentResizer.addEventListener('mousedown', function(e) {
-        e.preventDefault();
-        original_width = parseFloat(getComputedStyle(obj, null).getPropertyValue('width').replace('px', ''));
-        original_height = parseFloat(getComputedStyle(obj, null).getPropertyValue('height').replace('px', ''));
-        original_x = obj.getBoundingClientRect().left;
-        original_y = obj.getBoundingClientRect().top;
-        original_mouse_x = e.pageX;
-        original_mouse_y = e.pageY;
-        window.addEventListener('mousemove', resize);
-        window.addEventListener('mouseup', stopResize);
-      });
+      var currentResizer = resizers[i];
 
-      function resize(e) {
+      var resize = function(e) {
         counter++;
         if (counter%2) return counter=1; // ignore 50% to perform better
         if (currentResizer.classList.contains('res-ew')) {
@@ -1016,22 +1006,34 @@ exports = module.exports = function(jsh){
           if (height > minimum_size) {
             obj.style.height = height + 'px';
             obj.style.top = original_y + (e.pageY - original_mouse_y) + 'px';
-            for(var i=0;i<children.length; i++){
-              var correction_y = children[i].correction_y;
+            for(var j=0;j<children.length; j++){
+              var correction_y = children[j].correction_y;
               if(_.isFunction(correction_y)) correction_y = correction_y();
-              children[i].obj.style.height = (height + correction_y) + 'px';
-              children[i].obj.style.top = original_y + (e.pageY - original_mouse_y - correction_y) + 'px';
+              children[j].obj.style.height = (height + correction_y) + 'px';
+              children[j].obj.style.top = original_y + (e.pageY - original_mouse_y - correction_y) + 'px';
             }
           }
         }
         if(options.onDrag) options.onDrag();
-      }
+      };
 
-      function stopResize() {
+      var stopResize = function() {
         window.removeEventListener('mousemove', resize);
         window.removeEventListener('mouseup', stopResize);
         if(options.onDragEnd) options.onDragEnd();
-      }
+      };
+
+      currentResizer.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        original_width = parseFloat(getComputedStyle(obj, null).getPropertyValue('width').replace('px', ''));
+        original_height = parseFloat(getComputedStyle(obj, null).getPropertyValue('height').replace('px', ''));
+        original_x = obj.getBoundingClientRect().left;
+        original_y = obj.getBoundingClientRect().top;
+        original_mouse_x = e.pageX;
+        original_mouse_y = e.pageY;
+        window.addEventListener('mousemove', resize);
+        window.addEventListener('mouseup', stopResize);
+      });
     }
   };
 
@@ -1174,15 +1176,15 @@ exports = module.exports = function(jsh){
       nodes[node.ID] = node;
       sortednodes.push(node);
     }
-    for (var i = 0; i < sortednodes.length; i++) {
-      var node = sortednodes[i];
-      if (node.ParentID && (node.ParentID in nodes)) nodes[node.ParentID].Children.push(node);
+    for (var j = 0; j < sortednodes.length; j++) {
+      var sortednode = sortednodes[j];
+      if (sortednode.ParentID && (sortednode.ParentID in nodes)) nodes[sortednode.ParentID].Children.push(sortednode);
     }
     if (has_seq) sortednodes = _.sortBy(sortednodes, [jsh.uimap.code_seq, jsh.uimap.code_txt]);
     
     var body = '';
-    for (var i = 0; i < tree.length; i++) {
-      body += XExt.TreeRenderNode(jctrl, tree[i], controlparams);
+    for (var k = 0; k < tree.length; k++) {
+      body += XExt.TreeRenderNode(jctrl, tree[k], controlparams);
     }
     var treeid = jctrl.data('treeid');
     if(!treeid){
@@ -1204,9 +1206,9 @@ exports = module.exports = function(jsh){
       _.each(node.Children, function(child){ childrenHtml += XExt.TreeRenderNode(jctrl, child, controlparams); });
       jthis.removeClass('tree_render_lazy').off('tree_render_lazy');
       jthis.next('.children').append(childrenHtml);
-      jthis.next('.children').find('.tree_render_lazy').on('tree_render_lazy', renderLazy);
+      jthis.next('.children').$find('.tree_render_lazy').on('tree_render_lazy', renderLazy);
     }
-    jctrl.find('.tree_render_lazy').on('tree_render_lazy', renderLazy);
+    jctrl.$find('.tree_render_lazy').on('tree_render_lazy', renderLazy);
     jctrl.off('tree_path').on('tree_path', function(e, treePathInfo){
       if(treePathInfo){
         for(var nodeID in nodes){
@@ -1235,7 +1237,7 @@ exports = module.exports = function(jsh){
 
   //ondrop(dropval, anchor, e)
   XExt.TreeEnableDrop = function (jctrl, ondrop, drag_anchor_settings) {
-    var jtreeitems = jctrl.find('a.tree_item');
+    var jtreeitems = jctrl.$find('a.tree_item');
     _.each(jtreeitems, function(obj){
       var jobj = $(obj);
       var dragCounter = 0;
@@ -1290,16 +1292,16 @@ exports = module.exports = function(jsh){
     var mouseDownTimer = null;
     var hoverBorderTimer = null;
     //Set up drop points
-    jctrl.find('a.tree_item').addClass('xdrop');
+    jctrl.$find('a.tree_item').addClass('xdrop');
     //Check if the target can be used as a drop point
     function mouseCanDrop(target){
       return true;
     }
     //Start drag operation
-    jctrl.find('a.tree_item').mousedown(function(e){
+    jctrl.$find('a.tree_item').mousedown(function(e){
       if (e.which == 1) {//left mouse button
         var obj = this;
-        if(XExt.isMouseWithin($(obj).parent().find('.glyph')[0])) return;
+        if(XExt.isMouseWithin($(obj).parent().$find('.glyph')[0])) return;
         if(jsh.xContextMenuVisible) return;
         XExt.CancelBubble(e);
         if(mouseDownTimer) window.clearTimeout(mouseDownTimer);
@@ -1308,7 +1310,7 @@ exports = module.exports = function(jsh){
         }, 250);
       }
     });
-    jctrl.find('a.tree_item').mouseup(function(e){
+    jctrl.$find('a.tree_item').mouseup(function(e){
       if(mouseDownTimer) window.clearTimeout(mouseDownTimer);
       if(hoverBorderTimer) window.clearTimeout(hoverBorderTimer);
       mouseDownTimer = null;
@@ -1319,7 +1321,7 @@ exports = module.exports = function(jsh){
     jsh.off('.jsh_tree_'+treeid);
     var hoverBorderStart = 0;
     jsh.on('jsh_mouseDrag.jsh_tree_'+treeid,function(event, mouseDragObj, targetObj, origEvent){
-      jctrl.find('.xdragtarget').removeClass('xdragtarget').removeClass('xdragtop').removeClass('xdragbottom').removeClass('xdragfull').removeClass('xdragleft').removeClass('xdragright');
+      jctrl.$find('.xdragtarget').removeClass('xdragtarget').removeClass('xdragtop').removeClass('xdragbottom').removeClass('xdragfull').removeClass('xdragleft').removeClass('xdragright');
       //Check if mouse is hovering over tree border
       var joff = jctrl.offset();
       var w = jctrl.outerWidth();
@@ -1378,10 +1380,9 @@ exports = module.exports = function(jsh){
     });
     //On Drop
     jsh.on('jsh_mouseDragEnd.jsh_tree_'+treeid,function(event, mouseDragObj, targetObj, origEvent){
-      jctrl.find('.xdragtarget').removeClass('xdragtarget');
+      jctrl.$find('.xdragtarget').removeClass('xdragtarget');
       if(!targetObj) return;
       if($(targetObj).data('id')==$(mouseDragObj).data('id')) return;
-      var mouseDragObjId = $(mouseDragObj).data('id');
       var targetObjId = $(targetObj).data('id');
       if(targetObjId==mouseDragObj) return;
 
@@ -1478,13 +1479,12 @@ exports = module.exports = function(jsh){
   XExt.TreeDoubleClickNode = function (ctrl, n) {
     var jctrl = $(ctrl);
     var jtree = jctrl.closest('.xform_ctrl.tree');
-    var fieldname = XExt.getFieldNameFromObject(ctrl);
     if(jtree.data('ondoubleclick')) { var rslt = (new Function('n', jtree.data('ondoubleclick'))); rslt.call(ctrl, n); }
   };
 
   XExt.TreeGetSelectedNodes = function (ctrl) {
     var rslt = [];
-    $(ctrl).find('.tree_item.selected').each(function () {
+    $(ctrl).$find('.tree_item.selected').each(function () {
       var val = $(this).data('value');
       if (val) rslt.push(val.toString());
     });
@@ -1493,7 +1493,7 @@ exports = module.exports = function(jsh){
 
   XExt.TreeGetExpandedNodes = function (ctrl) {
     var rslt = [];
-    $(ctrl).find('.tree_item.expanded').each(function () {
+    $(ctrl).$find('.tree_item.expanded').each(function () {
       var val = $(this).data('value');
       if (val) rslt.push(val.toString());
     });
@@ -1541,12 +1541,12 @@ exports = module.exports = function(jsh){
     if (jtree.hasClass('uneditable')) return;
 
     //Deselect previously selected value
-    jtree.find('.selected').removeClass('selected');
+    jtree.$find('.selected').removeClass('selected');
 
     var nodeid = undefined;
     if(nodevalue){
       //Get nodeid from nodevalue
-      function findNode(){ jtree.find('.tree_item').each(function(){ if($(this).data('value')==nodevalue) nodeid = $(this).data('id'); }); }
+      var findNode = function(){ jtree.$find('.tree_item').each(function(){ if($(this).data('value')==nodevalue) nodeid = $(this).data('id'); }); };
       findNode();
 
       if(typeof nodeid == 'undefined'){
@@ -1554,13 +1554,13 @@ exports = module.exports = function(jsh){
         var treePathInfo = { value: nodevalue };
         jtree.trigger('tree_path', [ treePathInfo ]);
         _.each(treePathInfo.path, function(node){
-          var jtreenode = jtree.find('.tree_item_'+node.ID);
+          var jtreenode = jtree.$find('.tree_item_'+node.ID);
           if(jtreenode.hasClass('tree_render_lazy')) jtreenode.trigger('tree_render_lazy');
         });
         findNode();
         if(typeof nodeid == 'undefined') return;
       }
-      jtree.find('.tree_item.tree_item_' + nodeid).addClass('selected');
+      jtree.$find('.tree_item.tree_item_' + nodeid).addClass('selected');
       if (field && field.controlparams) {
         if (field.controlparams.expand_to_selected) XExt.TreeExpandToSelected(ctrl);
       }
@@ -1574,31 +1574,31 @@ exports = module.exports = function(jsh){
   };
 
   XExt.TreeToggleNode = function (jctrl, nodeid) {
-    var jctrl = jctrl.closest('.xform_ctrl.tree');
-    if (jctrl.find('.children.tree_item_' + nodeid).hasClass('expanded'))
+    jctrl = jctrl.closest('.xform_ctrl.tree');
+    if (jctrl.$find('.children.tree_item_' + nodeid).hasClass('expanded'))
       XExt.TreeCollapseNode(jctrl, nodeid);
     else
       XExt.TreeExpandNode(jctrl, nodeid);
   };
 
   XExt.TreeCollapseNode = function (jctrl, nodeid) {
-    var jctrl = jctrl.closest('.xform_ctrl.tree');
-    jctrl.find('.tree_item_' + nodeid).removeClass('expanded');
-    jctrl.find('.tree_item.tree_item_' + nodeid + ' > .glyph').html('&#x25b7;');
+    jctrl = jctrl.closest('.xform_ctrl.tree');
+    jctrl.$find('.tree_item_' + nodeid).removeClass('expanded');
+    jctrl.$find('.tree_item.tree_item_' + nodeid + ' > .glyph').html('&#x25b7;');
   };
 
   XExt.TreeExpandNode = function (jctrl, nodeid) {
-    var jctrl = jctrl.closest('.xform_ctrl.tree');
-    var jtreenode = jctrl.find('.tree_item_' + nodeid);
+    jctrl = jctrl.closest('.xform_ctrl.tree');
+    var jtreenode = jctrl.$find('.tree_item_' + nodeid);
     if(jtreenode.hasClass('tree_render_lazy')) jtreenode.trigger('tree_render_lazy');
     jtreenode.addClass('expanded');
-    jctrl.find('.tree_item.tree_item_' + nodeid + ' > .glyph').html('&#x25e2;');
+    jctrl.$find('.tree_item.tree_item_' + nodeid + ' > .glyph').html('&#x25e2;');
   };
 
   XExt.TreeExpandToSelected = function (ctrl) {
     var toptree = $(ctrl).closest('.xform_ctrl.tree');
     var rslt = [];
-    toptree.find('.tree_item.selected').each(function () {
+    toptree.$find('.tree_item.selected').each(function () {
       var jctrl = $(this);
       var jparent = jctrl.parent();
       while (jparent.length && !jparent.is(toptree)) {
@@ -1610,19 +1610,19 @@ exports = module.exports = function(jsh){
   };
   XExt.TreeExpandAll = function (ctrl) {
     var jctrl = $(ctrl).closest('.xform_ctrl.tree');
-    if(!jctrl.find('.tree_render_lazy').length){
-      jctrl.find('.tree_item').addClass('expanded');
-      jctrl.find('.children').addClass('expanded');
-      jctrl.find('.glyph').html('&#x25e2;');
+    if(!jctrl.$find('.tree_render_lazy').length){
+      jctrl.$find('.tree_item').addClass('expanded');
+      jctrl.$find('.children').addClass('expanded');
+      jctrl.$find('.glyph').html('&#x25e2;');
     }
     else{
-      var unexpanded = jctrl.find('.tree_item').not('.expanded');
+      var unexpanded = jctrl.$find('.tree_item').not('.expanded');
       var i = 0;
       while(unexpanded.length){
         i++;
         if(i>1000)break;
         unexpanded.each(function(){ XExt.TreeExpandNode(jctrl, this.getAttribute('data-id')); });
-        unexpanded = jctrl.find('.tree_item').not('.expanded');
+        unexpanded = jctrl.$find('.tree_item').not('.expanded');
       }
     }
   };
@@ -1648,7 +1648,7 @@ exports = module.exports = function(jsh){
           prec_h = field.precision[0];
           prec_l = field.precision[1];
         }
-        rslt = prec_h + 2;
+        rslt = prec_h + 2 + prec_l;
       }
       else if (ftype == 'float'){ rslt = 128; }
       else if (ftype == 'int') rslt = 15;
@@ -1668,9 +1668,9 @@ exports = module.exports = function(jsh){
     else if (_.includes(['bigint', 'int', 'smallint', 'tinyint'], field.type)) return parseInt(value);
     else if (_.includes(['decimal', 'float'], field.type)) return parseFloat(value);
     else if (field.type == 'time'){
-      var dtstr = jsh.XFormat.time_decode(null, value);
-      if(XExt.isNullUndefined(dtstr)) return dtstr;
-      return new Date(dtstr);
+      var timestr = jsh.XFormat.time_decode(null, value);
+      if(XExt.isNullUndefined(timestr)) return timestr;
+      return new Date(timestr);
     }
     else if (_.includes(['datetime', 'date'], field.type)){
       var dtstr = jsh.XFormat.date_decode(null, value);
@@ -1777,7 +1777,11 @@ exports = module.exports = function(jsh){
       jsh.$dialogBlock(dialogClass).hide();
       jsh.dialogBlock.off('click' + dialogClass);
       if (jsh.xDialog.length == 1) { jsh.dialogBlock.hide(); }
-      if (jsh.xDialog[0] != dialogClass) { alert('ERROR - Invalid Dialog Stack'); console.log(dialogClass); console.log(jsh.xDialog); }
+      if (jsh.xDialog[0] != dialogClass) {
+        alert('ERROR - Invalid Dialog Stack');
+        console.log(dialogClass); // eslint-disable-line no-console
+        console.log(jsh.xDialog); // eslint-disable-line no-console
+      }
       if (oldactive) oldactive.focus();
       window.setTimeout(function () { jsh.xDialog.shift(); if (onComplete) onComplete(); }, 1);
       if (params.onCompleteImmediate) params.onCompleteImmediate();
@@ -2015,7 +2019,7 @@ exports = module.exports = function(jsh){
     setTimeout(function(){
       jsh.XWindowResize();
       if(jsh.$dialogBlock(sel + ' .default_focus').length) jsh.$dialogBlock(sel + ' .default_focus').focus();
-      else jsh.$dialogBlock(sel).find('input:visible,textarea:visible,select:visible').first().focus();
+      else jsh.$dialogBlock(sel).$find('input:visible,textarea:visible,select:visible').first().focus();
     }, 1);
     
   };
@@ -2072,36 +2076,36 @@ exports = module.exports = function(jsh){
     jsh.$dialogBlock('.xhintsbox input').off('click');
     jsh.$dialogBlock('.xhintsbox input').off('keydown');
 
-    var tmpl = jdialog.find('.xhints_rowtemplate').html();
-    var jlisting = jdialog.find('.xhints_listing');
+    var tmpl = jdialog.$find('.xhints_rowtemplate').html();
+    var jlisting = jdialog.$find('.xhints_listing');
     jlisting.empty();
     if(_.isArray(lov)) _.each(lov, function(item){
       var jrow = $(tmpl);
-      jrow.find('input').val(item[jsh.uimap.code_val]);
-      jrow.find('span').text(item[jsh.uimap.code_txt]);
-      if(options.readonly) jrow.find('input').remove();
+      jrow.$find('input').val(item[jsh.uimap.code_val]);
+      jrow.$find('span').text(item[jsh.uimap.code_txt]);
+      if(options.readonly) jrow.$find('input').remove();
       jlisting.append(jrow);
     });
 
-    jdialog.find('input.button_ok,input:checkbox').toggle(!options.readonly);
+    jdialog.$find('input.button_ok,input:checkbox').toggle(!options.readonly);
 
     var getValues = function(){
       var rslt = [];
-      jdialog.find('.xhints_listing input:checkbox:checked').each(function(){ rslt.push($(this).val()); });
+      jdialog.$find('.xhints_listing input:checkbox:checked').each(function(){ rslt.push($(this).val()); });
       return rslt;
     };
     var cancelfunc = XExt.dialogButtonFunc('.xhintsbox', oldactive, function () { if (onCancel) onCancel(); });
     var insertfunc = XExt.dialogButtonFunc('.xhintsbox', oldactive, function () { if (onInsert) onInsert(getValues()); });
-    jdialog.find('input.button_ok').on('click', function(){
+    jdialog.$find('input.button_ok').on('click', function(){
       if(!getValues().length) return XExt.Alert('Please select one or more values to insert');
       insertfunc();
     });
-    jdialog.find('input.button_cancel').on('click', cancelfunc);
-    jdialog.find('input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    jdialog.$find('input.button_cancel').on('click', cancelfunc);
+    jdialog.$find('input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
     jsh.$dialogBlock('.xhintsbox').show();
     jsh.dialogBlock.show();
     jsh.XWindowResize();
-    jdialog.find('input').first().focus();
+    jdialog.$find('input').first().focus();
   };
 
   var popupData = {};
@@ -2195,15 +2199,19 @@ exports = module.exports = function(jsh){
             if (jsh.$root(POPUP_CONTAINER + ' .xsearch_value').first().is(':visible')){
               jsh.$root(POPUP_CONTAINER + ' .xsearch_value').first().focus();
             }
-            else if (jsh.$root(POPUP_CONTAINER).find('td a').length) jsh.$root(POPUP_CONTAINER).find('td a').first().focus();
-          //else jsh.$root(POPUP_CONTAINER).find('input,select,textarea').first().focus();
+            else if (jsh.$root(POPUP_CONTAINER).$find('td a').length) jsh.$root(POPUP_CONTAINER).$find('td a').first().focus();
+          //else jsh.$root(POPUP_CONTAINER).$find('input,select,textarea').first().focus();
           },
           onClosed: function () {
             var found_popup = false;
             for(var i=jsh.xPopupStack.length-1;i>=0;i--){
               if(jsh.xPopupStack[i].modelid==modelid){ jsh.xPopupStack.splice(i,1); found_popup = true; break; }
             }
-            if(!found_popup) { alert('ERROR - Invalid Popup Stack'); console.log(modelid); console.log(jsh.xPopupStack); }
+            if(!found_popup) {
+              alert('ERROR - Invalid Popup Stack');
+              console.log(modelid); // eslint-disable-line no-console
+              console.log(jsh.xPopupStack); // eslint-disable-line no-console
+            }
 
             if(jsh.xPopupStack.length) $.colorbox(jsh.xPopupStack[jsh.xPopupStack.length-1]);
 
@@ -2287,7 +2295,7 @@ exports = module.exports = function(jsh){
     var pos = 0;
     var step = find.length;
     
-    while (true) {
+    while (true) {  // eslint-disable-line no-constant-condition
       pos = val.indexOf(find, pos);
       if (pos >= 0) { rslt++; pos += step; }
       else break;
@@ -2329,7 +2337,7 @@ exports = module.exports = function(jsh){
   };
 
   XExt.dirname = function (path) {
-    return path.replace(/\\/g, '/').replace(/\/[^\/]*\/?$/, '');
+    return path.replace(/\\/g, '/').replace(/\/[^/]*\/?$/, '');
   };
 
   XExt.cleanFileName = function (fname) {
@@ -2338,7 +2346,7 @@ exports = module.exports = function(jsh){
     
     fname = fname.toString();
     if (fname.length > 247) fname = fname.substr(0, 247);
-    return fname.replace(/[\/\?<>\\:\*\|":]/g, '').replace(/[\x00-\x1f\x80-\x9f]/g, '').replace(/^\.+$/, '').replace(/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i, '');
+    return fname.replace(/[/?<>\\:*|":]/g, '').replace(/[\x00-\x1f\x80-\x9f]/g, '').replace(/^\.+$/, '').replace(/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i, ''); //eslint-disable-line no-control-regex
   };
 
   XExt.cleanFilePath = function (fpath, options) {
@@ -2348,9 +2356,9 @@ exports = module.exports = function(jsh){
     
     fpath = fpath.toString();
     if (fpath.length > 247) fpath = fpath.substr(0, 247);
-    var chars = '\/\?<>\\:\*\|":';
+    var chars = '/?<>\\:*|":';
     for(var i=0;i < options.allow.length;i++){ chars = chars.replace(options.allow[i], ''); }
-    return fpath.replace(new RegExp('['+RegExp.escape(chars)+']','g'), '').replace(/[\x00-\x1f\x80-\x9f]/g, '').replace(/^\.+$/, '').replace(/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i, '');
+    return fpath.replace(new RegExp('['+RegExp.escape(chars)+']','g'), '').replace(/[\x00-\x1f\x80-\x9f]/g, '').replace(/^\.+$/, '').replace(/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i, ''); //eslint-disable-line no-control-regex
   };
 
   XExt.utf8_base64 = function (str) { return window.btoa(unescape(encodeURIComponent(str))); };
@@ -2423,7 +2431,7 @@ exports = module.exports = function(jsh){
   };
 
   XExt.findClosest = function (elem, sel) {
-    var jobj = $(elem).find(sel);
+    var jobj = $(elem).$find(sel);
     if (jobj.length) return jobj;
     var parent = $(elem).parent();
     if (!parent.length) return $();
@@ -2581,7 +2589,7 @@ exports = module.exports = function(jsh){
     if (querystringParams) url += '?' + $.param(querystringParams);
     var windowstr = '';
     for (var p in dfltwindowParams) { if (!(p in windowParams)) windowParams[p] = dfltwindowParams[p]; }
-    for (var p in windowParams) { windowstr += ',' + p + '=' + windowParams[p]; }
+    for (var windowParam in windowParams) { windowstr += ',' + windowParam + '=' + windowParams[windowParam]; }
     if (windowstr) windowstr = windowstr.substr(1);
     if (existingWindow) { existingWindow.location = url; existingWindow.focus(); return existingWindow; }
     else return window.open(url, '_blank', windowstr);
@@ -2600,7 +2608,7 @@ exports = module.exports = function(jsh){
     if (querystringParams) url += '?' + $.param(querystringParams);
     var windowstr = '';
     for (var p in dfltwindowParams) { if (!(p in windowParams)) windowParams[p] = dfltwindowParams[p]; }
-    for (var p in windowParams) { windowstr += ',' + p + '=' + windowParams[p]; }
+    for (var windowParam in windowParams) { windowstr += ',' + windowParam + '=' + windowParams[windowParam]; }
     if (windowstr) windowstr = windowstr.substr(1);
     if (existingWindow) { existingWindow.location = url; existingWindow.focus(); return existingWindow; }
     else return window.open(url, '_blank', windowstr);
@@ -2922,15 +2930,16 @@ exports = module.exports = function(jsh){
     if(!sourceModel && jsh.XModels_root) sourceModel = jsh.XModels[jsh.XModels_root];
     if(!sourceModel) return modelid;
     //Relative to namespace
+    var testmodel = '';
     if(sourceModel.namespace){
-      var testmodel = sourceModel.namespace+modelid;
+      testmodel = sourceModel.namespace+modelid;
       if(testmodel in jsh.XModels) return testmodel;
     }
     //Model Using
     if(sourceModel.using){
       for(var i=0;i<sourceModel.using.length;i++){
         var namespace = sourceModel.using[i];
-        var testmodel = namespace+modelid;
+        testmodel = namespace+modelid;
         if(testmodel.substr(0,1)=='/') testmodel = testmodel.substr(1);
         if(testmodel in jsh.XModels) return testmodel;
       }

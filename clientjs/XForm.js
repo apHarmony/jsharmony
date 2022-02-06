@@ -18,8 +18,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var $ = require('./jquery-1.11.2');
+$.fn.$find = function(){ return $.fn.find.apply(this, arguments); };
 var _ = require('lodash');
-var async = require('async');
 
 exports = module.exports = function(jsh){
 
@@ -142,7 +142,7 @@ exports = module.exports = function(jsh){
       this.Data._orig = null;
     }
     if (this.xData) {
-      jsh.$root(this.xData.PlaceholderID).find('.xform_ctrl.updated').removeClass('updated');
+      jsh.$root(this.xData.PlaceholderID).$find('.xform_ctrl.updated').removeClass('updated');
     }
     this.IsDirty = false;
   };
@@ -189,7 +189,7 @@ exports = module.exports = function(jsh){
     this.Data._title = this.title;
     if (this.xData) {
       if(jrow) this.Data._jrow = jrow;
-      else this.Data._jrow = jsh.$root(this.xData.PlaceholderID).find("tr[data-id='" + this.Index + "']");
+      else this.Data._jrow = jsh.$root(this.xData.PlaceholderID).$find("tr[data-id='" + this.Index + "']");
     }
     return true;
   };
@@ -250,7 +250,6 @@ exports = module.exports = function(jsh){
       _this.defaults = _this.Data._defaults;
       _this.bcrumbs = _this.Data._bcrumbs;
       _this.title = _this.Data._title;
-      var xmodel = _this.GetModel();
       //Load Data
       if(_this.modelid in rslt){
         if(_.isArray(rslt[_this.modelid])){
@@ -344,7 +343,7 @@ exports = module.exports = function(jsh){
       _.each(_this.DataType.prototype.Fields, function(field){
         if(!field.name || field.unbound) return;
         if(jsh._GET && (field.name in jsh._GET) && jsh.XExt.isFieldTopmost(modelid, field.name)) data[field.name] = jsh._GET[field.name];
-        else if(_this.defaults && (field.name in _this.defaults)){ }
+        else if(_this.defaults && (field.name in _this.defaults)){ /* Do nothing */ }
         else if(field.hasDefault()){
           data[field.name] = jsh.XFormat.Decode(field.format, field.getDefault(data));
         }
@@ -411,18 +410,18 @@ exports = module.exports = function(jsh){
       this.DBTaskRows['delete_' + dbtasks.length] = i;
     }
     
-    for(var i = 0; i < this.DataSet.length; i++){
-      this.Data = _.extend(this.Data, this.DataSet[i]);
+    for(var j = 0; j < this.DataSet.length; j++){
+      this.Data = _.extend(this.Data, this.DataSet[j]);
       if (this.Data._is_deleted) continue;
-      if (this.DataSet[i] in this.DeleteSet) continue;
+      if (this.DataSet[j] in this.DeleteSet) continue;
       if (this.Data._is_insert) {
         dbtasks.push(this.PrepInsert());
-        this.DBTaskRows['insert_' + dbtasks.length] = i;
+        this.DBTaskRows['insert_' + dbtasks.length] = j;
       }
       else {
         if (this.xData && !this.Data._is_dirty) continue;
         dbtasks.push(this.PrepUpdate());
-        this.DBTaskRows['update_' + dbtasks.length] = i;
+        this.DBTaskRows['update_' + dbtasks.length] = j;
       }
     }
     
@@ -485,6 +484,7 @@ exports = module.exports = function(jsh){
     }
     ExecParams.async = this.async;
     this.API.Execute(ExecParams, function(errdata, rslt){
+      var handled = false;
       if(errdata){
         //Error
         var errtxt = errdata.toString();
@@ -492,21 +492,21 @@ exports = module.exports = function(jsh){
 
         var jerrdata = {};
         try { jerrdata = JSON.parse(errtxt); }
-        catch(ex){ }
+        catch(ex){ /* Do nothing */ }
         if ((jerrdata instanceof Object) && ('_error' in jerrdata)) {
           jerrdata._error.toString = function(){ return _this.FormatError(this); };
           //Standard Error Handlers
-          var handled = false;
+          handled = false;
           if (jsh.DefaultErrorHandler(jerrdata._error.Number, jerrdata._error.Message)) { handled = true; }
           else if (!(_this.HandleError(jerrdata._error,jerrdata._stats,ExecParams,errdata))) { handled = true; }
           else if ((jerrdata._error.Number == -9) || (jerrdata._error.Number == -5)) { jsh.XExt.Alert(jerrdata._error.Message); handled = true; }
           //onFail handler
-          if (('onFail' in ExecParams) && ExecParams.onFail(jerrdata._error, handled)) { }
-          else if(handled) { }
+          if (('onFail' in ExecParams) && ExecParams.onFail(jerrdata._error, handled)) { /* Do nothing */ }
+          else if(handled) { /* Do nothing */ }
           else { jsh.XExt.Alert('Error #' + jerrdata._error.Number + ': ' + jerrdata._error.Message); }
           return;
         }
-        if (('onFail' in ExecParams) && (ExecParams.onFail(errdata))){ }
+        if (('onFail' in ExecParams) && (ExecParams.onFail(errdata))){ /* Do nothing */ }
         else if(('readyState' in errdata) && (errdata.readyState === 0)){ jsh.XExt.Alert('A network error has occurred'); }
         else if(('status' in errdata) && (errdata.status == '404')){ jsh.XExt.Alert('(404) The requested page was not found.'); }
         else if(jsh._show_system_errors){ jsh.XExt.Alert('An error has occurred: ' + errtxt); }
@@ -516,12 +516,12 @@ exports = module.exports = function(jsh){
         //Success
         if ((rslt instanceof Object) && ('_error' in rslt)) {
           rslt._error.toString = function(){ return _this.FormatError(this); };
-          var handled = false;
+          handled = false;
           if(jsh.DefaultErrorHandler(rslt._error.Number,rslt._error.Message)) { handled = true; }
           else if(!(_this.HandleError(rslt._error,rslt._stats,ExecParams, rslt))) { handled = true; }
           else if((rslt._error.Number == -9) || (rslt._error.Number == -5)){ jsh.XExt.Alert(rslt._error.Message); handled = true; }
-          if (('onFail' in ExecParams) && ExecParams.onFail(rslt._error, handled)) { }
-          else if(handled) { }
+          if (('onFail' in ExecParams) && ExecParams.onFail(rslt._error, handled)) { /* Do nothing */ }
+          else if(handled) { /* Do nothing */ }
           else { jsh.XExt.Alert('Error #' + rslt._error.Number + ': ' + rslt._error.Message); }
           return;
         }

@@ -18,6 +18,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var $ = require('./jquery-1.11.2');
+$.fn.$find = function(){ return $.fn.find.apply(this, arguments); };
 var _ = require('lodash');
 
 exports = module.exports = function(jsh){
@@ -96,14 +97,14 @@ exports = module.exports = function(jsh){
       jsh.XExt.SetSettingsCookie(this.SettingsCookieID,this.settings);
     }
     catch(ex){
-      console.error(ex);
+      console.error(ex); // eslint-disable-line no-console
     }
   };
 
   XDebugConsole.prototype.getSourcesForWebSocket = function(){
     var sources = _.extend({},this.settings.sources);
-    for (var k in this.client_sources){
-      delete sources[k];
+    for (var client_source in this.client_sources){
+      delete sources[client_source];
     }
     for (var k in sources){
       if (!sources[k]) delete sources[k];
@@ -241,8 +242,6 @@ exports = module.exports = function(jsh){
 
   XDebugConsole.prototype.createPanel = function(){
     var _this = this;
-
-    var default_sources = this.default_settings.sources;
     var settingsHtml = '';
     for(var source_id in _this.all_sources){
       var obj_id = 'xdebugconsole_source_'+source_id;
@@ -252,10 +251,10 @@ exports = module.exports = function(jsh){
         '</label>';
     }
     this.DebugDialog = jsh.$root('.xdebugconsole');
-    this.DebugPanel  =  this.DebugDialog.find('.debug-panel');
-    this.DebugPanel.find('.debug-settings').append($(settingsHtml));
-    this.DebugPanelMin  = this.DebugDialog.find('.debug-panel-minimized');
-    var checkboxes = this.DebugPanel.find('.xdebugconsole_source');
+    this.DebugPanel  =  this.DebugDialog.$find('.debug-panel');
+    this.DebugPanel.$find('.debug-settings').append($(settingsHtml));
+    this.DebugPanelMin  = this.DebugDialog.$find('.debug-panel-minimized');
+    var checkboxes = this.DebugPanel.$find('.xdebugconsole_source');
     for (var i=0; i<checkboxes.length; i++){
       if (this.settings.sources[checkboxes[i].value]){
         $(checkboxes[i]).click();
@@ -280,7 +279,7 @@ exports = module.exports = function(jsh){
       _this.saveSettings();
       _this.updateWebSocketSources();
     });
-    this.DebugDialog.find('.controls i').on('click',function(){
+    this.DebugDialog.$find('.controls i').on('click',function(){
       var action = $(this).data('action');
       if(action && _this[action]) _this[action]();
     });
@@ -294,7 +293,7 @@ exports = module.exports = function(jsh){
   };
 
   XDebugConsole.prototype.getBodyHeight = function(baseHeight){
-    return baseHeight - 31 - (this.settings.settings_visible ? this.DebugPanel.find('.debug-settings').outerHeight() : 0);
+    return baseHeight - 31 - (this.settings.settings_visible ? this.DebugPanel.$find('.debug-settings').outerHeight() : 0);
   };
 
   XDebugConsole.prototype.setWindowSize = function(size){
@@ -323,7 +322,7 @@ exports = module.exports = function(jsh){
   };
 
   XDebugConsole.prototype.renderSettings = function(){
-    this.DebugPanel.find('.debug-settings').toggle(!!this.settings.settings_visible);
+    this.DebugPanel.$find('.debug-settings').toggle(!!this.settings.settings_visible);
   };
 
   XDebugConsole.prototype.toggleSettings = function(){
@@ -359,18 +358,18 @@ exports = module.exports = function(jsh){
     this.settings.dock = 'bottom';
     this.DebugPanel.attr('style',null);
     this.DebugPanel.show();
-    this.DebugPanel.find('.xdebuginfo-body').attr('style',null);
+    this.DebugPanel.$find('.xdebuginfo-body').attr('style',null);
     this.updatePanelLayout();
     this.saveSettings();
   };
 
   XDebugConsole.prototype.clear = function() {
-    this.DebugPanel.find('.xdebuginfo-body').empty();
+    this.DebugPanel.$find('.xdebuginfo-body').empty();
   };
 
   XDebugConsole.prototype.log = function (txt, clear) {
     if(clear) this.clear();
-    this.DebugPanel.find('.xdebuginfo-body').prepend($('<div class="info-message">'+txt+'</div>'));
+    this.DebugPanel.$find('.xdebuginfo-body').prepend($('<div class="info-message">'+txt+'</div>'));
   };
 
   return XDebugConsole;

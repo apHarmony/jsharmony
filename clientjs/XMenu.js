@@ -18,6 +18,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var $ = require('./jquery-1.11.2');
+$.fn.$find = function(){ return $.fn.find.apply(this, arguments); };
 var _ = require('lodash');
 
 exports = module.exports = function(jsh){
@@ -276,9 +277,9 @@ exports = module.exports = function(jsh){
       }
     }
     
-    var curleft = _this.MenuOverhang;
-    for (var i = 0; i < _this.MenuItems.length; i++) {
-      var xmenuitem = _this.MenuItems[i];
+    curleft = _this.MenuOverhang;
+    for (var j = 0; j < _this.MenuItems.length; j++) {
+      var xmenuitem = _this.MenuItems[j];
       curleft += xmenuitem.data('width');
       if (curleft > maxw) {
         if (xmenuitem.is(':visible')) xmenuitem.hide();
@@ -310,7 +311,7 @@ exports = module.exports = function(jsh){
     }
     if (curleft > maxw) showmore = true;
     
-    var jmore = jSubMenu.find('.xsubmenu_more');
+    var jmore = jSubMenu.$find('.xsubmenu_more');
     if (jmore.size() > 0) {
       if (showmore) {
         if (!jmore.is(':visible')) jmore.show();
@@ -318,13 +319,13 @@ exports = module.exports = function(jsh){
         maxw -= _this.SubMenuMoreWidth;
       }
       else {
-        if (jmore.is(':visible')) { jmore.hide(); jSubMenu.find('.xsubmenu_more').hide(); }
+        if (jmore.is(':visible')) { jmore.hide(); jSubMenu.$find('.xsubmenu_more').hide(); }
       }
     }
     
-    var curleft = _this.SubMenuOverhang;
-    for (var i = 0; i < _this.SubMenuItems.length; i++) {
-      var xsubmenuitem = _this.SubMenuItems[i];
+    curleft = _this.SubMenuOverhang;
+    for (var j = 0; j < _this.SubMenuItems.length; j++) {
+      var xsubmenuitem = _this.SubMenuItems[j];
       curleft += xsubmenuitem.data('width');
       if (curleft > maxw) {
         if (xsubmenuitem.is(':visible')) xsubmenuitem.hide();
@@ -354,14 +355,14 @@ exports = module.exports = function(jsh){
 
     if (jSubMenu.size() > 0) {
       jSubMenu.show();
-      jSubMenu.find('a, div').each(function (i, obj) {
+      jSubMenu.$find('a, div').each(function (i, obj) {
         if ($(obj).hasClass('xsubmenu_more')) return;
         _this.SubMenuItems.push($(obj));
       });
       _this.CalcSubmenuDimensions(true);
       
-      jSubMenu.find('.xsubmenu_more').off('click');
-      jSubMenu.find('.xsubmenu_more').on('click', function () {
+      jSubMenu.$find('.xsubmenu_more').off('click');
+      jSubMenu.$find('.xsubmenu_more').on('click', function () {
         var xsubmenuside = jsh.$root('.xsubmenuside');
         if (!xsubmenuside.is(':visible')) xsubmenuside.show();
         else xsubmenuside.hide();
@@ -389,8 +390,8 @@ exports = module.exports = function(jsh){
   XMenuHorizontal.prototype.CalcDimensions = function(force){
     var _this = this;
     if(!force && (_this.MenuItems.length > 0)){
-      var jobj = _this.MenuItems[0];
-      if(jobj.outerWidth(true).toString() == jobj.data('width')) return false;
+      var jmenuitem = _this.MenuItems[0];
+      if(jmenuitem.outerWidth(true).toString() == jmenuitem.data('width')) return false;
     }
     for(var i=0;i<_this.MenuItems.length;i++){
       var jobj = _this.MenuItems[i];
@@ -406,8 +407,8 @@ exports = module.exports = function(jsh){
     var _this = this;
     var jSubMenu = _this.getSubmenu();
     if(!force && (_this.SubMenuItems.length > 0)){
-      var jobj = _this.SubMenuItems[0];
-      if(jobj.outerWidth(true).toString() == jobj.data('width')) return;
+      var jsubmenuitem = _this.SubMenuItems[0];
+      if(jsubmenuitem.outerWidth(true).toString() == jsubmenuitem.data('width')) return;
     }
     for(var i=0;i<_this.SubMenuItems.length;i++){
       var jobj = _this.SubMenuItems[i];

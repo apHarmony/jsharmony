@@ -18,9 +18,20 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var $ = require('./jquery-1.11.2');
+$.fn.$find = function(){ return $.fn.find.apply(this, arguments); };
 var _ = require('lodash');
 
 exports = module.exports = function(jsh){
+
+  function lteIE7(){
+    if (/MSIE (\d+\.\d+);/.test(navigator.userAgent)){
+      var ieversion=new Number(RegExp.$1);
+      if (ieversion<=7){
+        return true;
+      }
+    }
+    return false;
+  }
 
   function XGrid(options){
     var _this = this;
@@ -39,7 +50,7 @@ exports = module.exports = function(jsh){
     this._this = this;
     this.TemplateID = options.TemplateID;
     this.PlaceholderID = options.PlaceholderID;
-    this.ColSpan = jsh.$root(this.PlaceholderID).parent().find('thead th').length;
+    this.ColSpan = jsh.$root(this.PlaceholderID).parent().$find('thead th').length;
     this.modelid = options.modelid;
     
     if(typeof options.CustomScroll == 'undefined') this.CustomScroll = '';
@@ -116,13 +127,13 @@ exports = module.exports = function(jsh){
     var loader = jsh.xLoader;
     if (typeof getCSV == 'undefined') getCSV = false;
     
-    var rowstart = typeof rowstart !== 'undefined' ? rowstart : 0;
-    var rowcount = typeof rowcount !== 'undefined' ? rowcount : this.RowLimit;
+    rowstart = typeof rowstart !== 'undefined' ? rowstart : 0;
+    rowcount = typeof rowcount !== 'undefined' ? rowcount : this.RowLimit;
     var _this = this;
     
     if(rowstart > 0){
       if(_this.EOF) return;
-      jsh.$root(_this.PlaceholderID).find('tr.xtbl_loadmore').remove();
+      jsh.$root(_this.PlaceholderID).$find('tr.xtbl_loadmore').remove();
       jsh.$root(_this.PlaceholderID).append('<tr class="xtbl_loadmore"><td colspan="'+_this.ColSpan+'"><a href="#">Loading...</div></td></tr>');
     }
     var starttime = (new Date()).getTime();
@@ -151,15 +162,15 @@ exports = module.exports = function(jsh){
 
         var jerrdata = errdata.responseJSON;
         if ((jerrdata instanceof Object) && ('_error' in jerrdata)) {
-          if (jsh.DefaultErrorHandler(jerrdata._error.Number, jerrdata._error.Message)) { }
-          else if (_this.OnLoadError && _this.OnLoadError(jerrdata._error)) { }
+          if (jsh.DefaultErrorHandler(jerrdata._error.Number, jerrdata._error.Message)) { /* Do nothing */ }
+          else if (_this.OnLoadError && _this.OnLoadError(jerrdata._error)) { /* Do nothing */ }
           else if ((jerrdata._error.Number == -9) || (jerrdata._error.Number == -5)) { jsh.XExt.Alert(jerrdata._error.Message); }
           else { jsh.XExt.Alert('Error #' + jerrdata._error.Number + ': ' + jerrdata._error.Message); }
           if (onFail) onFail(jerrdata._error);
           return;
         }
-        if (onFail && onFail(errdata)) { }
-        else if (_this.OnLoadError && _this.OnLoadError(errdata)) { }
+        if (onFail && onFail(errdata)) { /* Do nothing */ }
+        else if (_this.OnLoadError && _this.OnLoadError(errdata)) { /* Do nothing */ }
         else if (('readyState' in errdata) && (errdata.readyState === 0)){ jsh.XExt.Alert('A network error has occurred'); }
         else if (('status' in errdata) && (errdata.status == '404')) { jsh.XExt.Alert('(404) The requested page was not found.'); }
         else if (jsh._show_system_errors) jsh.XExt.Alert('An error has occurred: ' + errdata.responseText);
@@ -179,12 +190,12 @@ exports = module.exports = function(jsh){
     var _this = this;
     var loader = jsh.xLoader;
     if(rowstart > 0){
-      jsh.$root(_this.PlaceholderID).find('tr.xtbl_loadmore').remove();
+      jsh.$root(_this.PlaceholderID).$find('tr.xtbl_loadmore').remove();
     }
     var renderData = false;
     var ejssource = '';
     if ((data instanceof Object) && ('_error' in data)) {
-      if (jsh.DefaultErrorHandler(data['_error'].Number, data['_error'].Message)) { }
+      if (jsh.DefaultErrorHandler(data['_error'].Number, data['_error'].Message)) { /* Do nothing */ }
       else if ((data._error.Number == -9) || (data._error.Number == -5)) { jsh.XExt.Alert(data._error.Message); }
       else { jsh.XExt.Alert('Error #' + data._error.Number + ': ' + data._error.Message); }
     }
@@ -248,7 +259,7 @@ exports = module.exports = function(jsh){
               datatable: data[_this.modelid],
             });
             jsh.$root(_this.PlaceholderID).append(ejsrslt);
-            _this.RowCount = jsh.$root(_this.PlaceholderID).find('tr').length;
+            _this.RowCount = jsh.$root(_this.PlaceholderID).$find('tr').length;
             return f();
           }
         }
@@ -258,7 +269,7 @@ exports = module.exports = function(jsh){
           _this.EOF = data['_eof_' + _this.modelid];
           if ((_this.Paging) && (!_this.EOF)) {
             jsh.$root(_this.PlaceholderID).append('<tr class="xtbl_loadmore"><td colspan="' + _this.ColSpan + '"><a href="#">Load More Data</div></td></tr>');
-            jsh.$root(_this.PlaceholderID).find('.xtbl_loadmore').click(function () {
+            jsh.$root(_this.PlaceholderID).$find('.xtbl_loadmore').click(function () {
               if (_this.OnLoadMoreData) { _this.OnLoadMoreData(); return false; }
               _this.Load(_this.RowCount);
               return false;
@@ -284,11 +295,11 @@ exports = module.exports = function(jsh){
     jsh.$root(_this.PlaceholderID).html('<tr class="xtbl_noresults"><td colspan="' + _this.ColSpan + '" align="center" class="xtbl_noresults">' + noresultsmessage + '</td></tr>');
   };
   XGrid.prototype.ResetSortGlyphs = function (tblobj){
-    var xhtml_thead = tblobj.find('thead tr');
-    xhtml_thead.find('th').removeClass('sortAsc').removeClass('sortDesc');
+    var xhtml_thead = tblobj.$find('thead tr');
+    xhtml_thead.$find('th').removeClass('sortAsc').removeClass('sortDesc');
     if (!this.Sort || (this.Sort.length == 0)) return;
     
-    var xhtml_th = tblobj.find('.thead' + this.Sort[0].substring(1));
+    var xhtml_th = tblobj.$find('.thead' + this.Sort[0].substring(1));
     if (this.Sort[0][0] == '^') { xhtml_th.addClass('sortAsc'); }
     else { xhtml_th.addClass('sortDesc'); }
   };
@@ -306,8 +317,8 @@ exports = module.exports = function(jsh){
     }
     var xhtml_th = $(obj).parent();
     var xhtml_thead = xhtml_th.parent();
-    if(newdir == '^'){ xhtml_thead.find('th').removeClass('sortAsc').removeClass('sortDesc'); xhtml_th.addClass('sortAsc'); }
-    else{ xhtml_thead.find('th').removeClass('sortAsc').removeClass('sortDesc'); xhtml_th.addClass('sortDesc'); }
+    if(newdir == '^'){ xhtml_thead.$find('th').removeClass('sortAsc').removeClass('sortDesc'); xhtml_th.addClass('sortAsc'); }
+    else{ xhtml_thead.$find('th').removeClass('sortAsc').removeClass('sortDesc'); xhtml_th.addClass('sortDesc'); }
     this.Sort.unshift(newdir+col);
     this.Load();
     return false;

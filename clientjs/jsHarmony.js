@@ -22,6 +22,7 @@ require('./crypto-md5-2.5.3.js');
 
 //Libraries
 var $ = require('./jquery-1.11.2');
+$.fn.$find = function(){ return $.fn.find.apply(this, arguments); };
 var jQuery = $;
 require('../public/jquery-ui/js/jquery-ui-1.10.3.custom-aspa.min.js')(jQuery);
 require('../public/js/jquery.colorbox-min.js')(jQuery);
@@ -214,12 +215,12 @@ var jsHarmony = function(options){
     window.jQuery = $;
     window.moment = moment;
     window.jsh = this;
-    if(!_instance) _instance = 'jsh';
+    if(!_this._instance) _this._instance = 'jsh';
   }
 };
 
-jsHarmony.prototype.$root = function(sel){ return this.root.find(sel); };
-jsHarmony.prototype.$dialogBlock = function(sel){ if(!this.dialogBlock) return $(); return this.dialogBlock.find(sel); };
+jsHarmony.prototype.$root = function(sel){ return this.root.$find(sel); };
+jsHarmony.prototype.$dialogBlock = function(sel){ if(!this.dialogBlock) return $(); return this.dialogBlock.$find(sel); };
 
 jsHarmony.prototype.getInstance = function(){
   if(!this._instance) throw new Error('jsHarmony._instance is required');
@@ -262,7 +263,7 @@ jsHarmony.prototype.loadScript = function(url, cb){
     _.each(funcs, function(func){ func(); });
   };
   script.onerror = function (err) {
-    console.log(err);
+    console.log(err); // eslint-disable-line no-console
     _this.XExt.Alert('Error loading script: '+err.toString());
   };
   script.src = url;
@@ -306,8 +307,8 @@ jsHarmony.prototype.BindEvents = function(){
 
 jsHarmony.prototype.Init = function(){
   var _this = this;
-  if(_this.root.find('body').length) _this.root = _this.root.find('body');
-  if(_this.XExt.isMobile()) _this.root.find('.xmain').addClass('xmain_mobile');
+  if(_this.root.$find('body').length) _this.root = _this.root.$find('body');
+  if(_this.XExt.isMobile()) _this.root.$find('.xmain').addClass('xmain_mobile');
   _this.InitFileUpload();
   this.imageLoader = new this.XImageLoader();
   this.imageLoader.loadqueue = new Array(
@@ -384,11 +385,11 @@ jsHarmony.prototype.mouseDrag = function(mouseDragObj, e){
   jclone.css('top', _this.mouseY);
   var targetObj = null;
   _this.$root('.xdrop').each(function(){
-	  if(_this.XExt.isMouseWithin(this)){
+    if(_this.XExt.isMouseWithin(this)){
       if(!_this.mouseCanDrop || _this.mouseCanDrop(this)){
         if(!targetObj || $.contains(targetObj, this)) targetObj = this;
-	    }
-	  }
+      }
+    }
   });
 
   _this.trigger('jsh_mouseDrag', [mouseDragObj, targetObj, e]);
@@ -540,7 +541,7 @@ jsHarmony.prototype.InitFileUpload = function () {
   this.xfileuploadLoader = new Object();
   this.root.append(
     '<div style="display:none;">\
-	    <div class="xfileuploader colorbox_inline" align="center" style="height:80px;"><div style="position:relative;">\
+      <div class="xfileuploader colorbox_inline" align="center" style="height:80px;"><div style="position:relative;">\
         <form class="xfileuploader_form" enctype="multipart/form-data" method="post" target="'+this.getInstance()+'_xfileproxy">\
           <input type="hidden" name="MAX_FILE_SIZE" value="'+this.Config.max_filesize+'" />\
           <input type="hidden" name="prevtoken" class="xfileuploader_prevtoken" value="" />\
@@ -605,7 +606,7 @@ jsHarmony.prototype.runGlobalsMonitor = function(){
         if(_this.XExt.beginsWith(id, 'module$contents$')) continue;
         if(_this.XExt.beginsWith(id, 'mce-data-')) continue;
         if(parseInt(id).toString()==id.toString()) continue;
-        console.log('New global variable: window.'+id);
+        console.log('New global variable: window.'+id); // eslint-disable-line no-console
         _this.XExt.Alert('New global variable: window.'+id);
       }
     }
@@ -616,8 +617,6 @@ jsHarmony.prototype.runGlobalsMonitor = function(){
 jsHarmony.prototype.on = function(){ $(this).on.apply($(this), arguments); };
 jsHarmony.prototype.off = function(){ $(this).off.apply($(this), arguments); };
 jsHarmony.prototype.trigger = function(){ $(this).trigger.apply($(this), arguments); };
-
-var jsHarmonyGlobal = { };
 
 var instances = [];
 if(global.jsHarmony) instances = global.jsHarmony.Instances;

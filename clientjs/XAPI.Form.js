@@ -18,6 +18,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var $ = require('./jquery-1.11.2');
+$.fn.$find = function(){ return $.fn.find.apply(this, arguments); };
 var _ = require('lodash');
 
 exports = module.exports = function(jsh){
@@ -153,7 +154,7 @@ exports = module.exports = function(jsh){
 
         var actionrslt = null;
 
-        if(method=='GET'){
+        if(method=='GET'){ (function(){
           //Get - Select
           //query = _action and keys
           if(_.isEmpty(action.query)) throw new Error('Empty query parameter in GET request - keys required');
@@ -178,8 +179,8 @@ exports = module.exports = function(jsh){
             var row = _this.getRowByKeys(keys);
             actionrslt[_this.modelid] = row;
           }
-        }
-        else if(method=='PUT'){
+        })(); }
+        else if(method=='PUT'){ (function(){
           //Put - Insert
           //query = {}
           //post = data
@@ -204,8 +205,8 @@ exports = module.exports = function(jsh){
             //Add data to dataset
             _this.dataset.push(newrow);
           }
-        }
-        else if(method=='POST'){
+        })(); }
+        else if(method=='POST'){ (function(){
           //Post - Update
           //query = keys
           //post = data
@@ -232,8 +233,8 @@ exports = module.exports = function(jsh){
             //Set updated rowcount
             actionrslt[_this.modelid] = { xrowcount: 1 };
           }
-        }
-        else if(method=='DELETE'){
+        })(); }
+        else if(method=='DELETE'){ (function(){
           //Delete
           //query = keys
           //post = {}
@@ -262,12 +263,12 @@ exports = module.exports = function(jsh){
                 break;
               }
             }
-            if(!deleted) throw new error('Target row for delete operation not found');
+            if(!deleted) throw new Error('Target row for delete operation not found');
 
             //Set updated rowcount
             actionrslt[_this.modelid] = { xrowcount: 1 };
           }
-        }
+        })(); }
         else throw new Error('Invalid method: '+method);
       }
       catch(ex){
