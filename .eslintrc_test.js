@@ -6,8 +6,7 @@ module.exports = {
         "es5"
     ],
     "extends": [
-        "eslint:recommended",
-        "plugin:es5/no-es2015"
+        "eslint:recommended"
     ],
     "globals": {
       "it": "readonly",
