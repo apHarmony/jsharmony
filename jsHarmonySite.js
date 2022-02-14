@@ -20,6 +20,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 var _ = require('lodash');
 var crypto = require('crypto');
 var Helper = require('./lib/Helper.js');
+const RefreshTokenStore = require('./lib/RefreshToken.Store.js');
 
 ///////////////
 //jsHarmonySite
@@ -127,8 +128,20 @@ function jsHarmonySite(jsh, id, config){
 
   if(config) this.Merge(config);
 
+  this.refreshTokenStore = new RefreshTokenStore();
+  
   //Whether the site has been initialized
   this.initialized = true;
+}
+
+jsHarmonySite.prototype.getTokenTimeoutMs = function() {
+  // Make token time span default to 15 minutes with a 0.5 minute minimum.
+  return Math.max((this.auth.token_timeout || 15), 0.5) * 60000;
+}
+
+jsHarmonySite.prototype.getRefreshTokenTimeoutMs = function() {
+  // Make token time span default to 15 minutes with a 0.5 minute minimum.
+  return Math.max((this.auth.token_timeout || 15), 0.5) * 60000;
 }
 
 //Merge target configuration with existing
@@ -231,6 +244,18 @@ jsHarmonySite.prototype.getGlobalParams = function(req){
   if(!_this.globalparams) return {};
   var rslt = _.mapValues(_this.globalparams,function(val,key){ if(_.isFunction(val)) return val(req); return val; });
   return rslt;
+};
+
+jsHarmonySite.prototype.issueRefreshToken = function(username, sessionId) {
+  return this.refreshTokenStore.issueToken(username, sessionId, this.getRefreshTokenTimeoutMs() + Date.now());
+};
+
+jsHarmonySite.prototype.exchangeRefreshToken = function(username, sessionId, refreshToken) {
+  return this.refreshTokenStore.exchangeToken(username, sessionId, refreshToken, this.getRefreshTokenTimeoutMs() + Date.now());
+};
+
+jsHarmonySite.prototype.clearRefreshTokenStore =function(username, sessionId) {
+  this.refreshTokenStore.clearSessionTokenStore(username, sessionId);
 };
 
 jsHarmonySite.Placeholder = function(){

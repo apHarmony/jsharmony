@@ -18,6 +18,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var crypto = require('crypto');
+const Auth = require('../lib/Auth.js');
 var ejsext = require('../lib/ejsext.js');
 var Helper = require('../lib/Helper.js');
 
@@ -32,7 +33,7 @@ exports = module.exports = function (req, res, onComplete) {
     remember: false,
     tstmp: ''
   };
-  var accountCookie = Helper.GetCookie(req, jsh, 'account');
+  var accountCookie = Auth.GetAccountCookie(req, jsh, 'account');
   if (accountCookie) {
     if ('username' in accountCookie) account.username = accountCookie.username;
     if ('remember' in accountCookie) account.remember = (accountCookie.remember == 1);
@@ -44,10 +45,8 @@ exports = module.exports = function (req, res, onComplete) {
   if ('source' in req.body) source = req.body.source;
   
   if (req.method == 'POST') {
-    var expiry = false;
     var ipaddr = req.connection.remoteAddress;
     account.remember = ('remember' in req.body);
-    if (account.remember) expiry = new Date(Date.now() + 31536000000);
     //Handle superadmin::user
     
     var verrors = {};
@@ -81,15 +80,16 @@ exports = module.exports = function (req, res, onComplete) {
                   var pe_ll_tstmp = new Date();
                   account.tstmp = Helper.DateToSQLISO(pe_ll_tstmp);
                   account.password = crypto.createHash('sha1').update(token + account.tstmp).digest('hex');
+                  account.refresh = req.jshsite.issueRefreshToken(account.username, account.password);
+                  account.expires = req.jshsite.getTokenTimeoutMs() + Date.now();
                   var sqlparams = {};
                   sqlparams[jsh.map.user_last_ip] = ipaddr;
                   sqlparams[jsh.map.user_id] = user_id;
                   sqlparams[jsh.map.user_last_tstmp] = pe_ll_tstmp;
                   if(jsh.Config.debug_params.auth_debug) jsh.Log('Login: Success', { source: 'authentication' });
                   req.jshsite.auth.on_loginsuccess(req, jsh, sqlparams, function (err, rslt) {
-                    if ((rslt != null) && (rslt.length == 1) && (rslt[0] != null) && (rslt[0][jsh.map.rowcount] == 1)) {
-                      Helper.ClearCookie(req, res, jsh, 'account', { 'path': req.baseurl });
-                      Helper.SetCookie(req, res, jsh, 'account', account, { 'expires': expiry, 'path': req.baseurl });
+                    if ((rslt != null) && (rslt.length == 1) && (rslt[0] != null) && (rslt[0][jsh.map.rowcount] == 1)) {                      
+                      Auth.SetAccountCookie(req, res, jsh, account);
                       Helper.Redirect302(res, source);
                       return onComplete(false);
                     }
