@@ -44,6 +44,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.jslocals = <%-JSON.stringify(req.getJSLocals())%>;
   jsh.state = { GET:{},QS:'',fullpath:'',fullurl:jsh._BASEURL,hash:'',modelid:'',path:'' };
   jsh.Config.max_filesize = <%-JSON.stringify(jsh.Config.max_filesize)%>;
+  jsh.Config.token_refresh_interval = <%- (req.jshsite.getTokenTimeoutMs() - 15000)  %>;  
   jsh.Config.debug_params = { ignore_globals: <%-JSON.stringify(jsh.Config.debug_params.ignore_globals)%>, monitor_globals: <%-JSON.stringify(jsh.Config.debug_params.monitor_globals)%> };
   jsh.Config.require_html5_after_login = <%-JSON.stringify(jsh.Config.require_html5_after_login)%>;
   jsh.globalparams = <%-JSON.stringify(req.jshsite.getGlobalParams(req))%>;

@@ -354,7 +354,26 @@ jsHarmony.prototype.Init = function(){
     this.requireHTML5();
   }
   if(this.Config.debug_params.monitor_globals) this.runGlobalsMonitor();
+
+  if (_this.Config.token_refresh_interval != null && _this.Config.token_refresh_interval > 0) {
+    _this.refreshCookie();
+    setInterval(function() {
+      _this.refreshCookie();
+    }, _this.Config.token_refresh_interval);
+  }
+
   if(_this.onInit) _this.onInit();
+};
+
+jsHarmony.prototype.refreshCookie = function() {
+  $.ajax('/refresh-auth-cookie', {
+    success: function(data) {
+      data = data || {};
+      if (data.errorCode != null) {
+        window.location.reload();
+      }
+    }
+  });
 };
 
 jsHarmony.prototype.mouseDragBegin = function(mouseDragObj, mouseCanDrop, e){
