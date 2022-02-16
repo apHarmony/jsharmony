@@ -355,7 +355,11 @@ jsHarmony.prototype.Init = function(){
   }
   if(this.Config.debug_params.monitor_globals) this.runGlobalsMonitor();
 
-  if (_this.Config.token_refresh_interval != null && _this.Config.token_refresh_interval > 0) {
+  if (
+    _this.Config.refresh_token_enabled && 
+    _this.Config.token_refresh_interval != null &&
+    _this.Config.token_refresh_interval > 0
+  ) {
     _this.refreshCookie();
     setInterval(function() {
       _this.refreshCookie();

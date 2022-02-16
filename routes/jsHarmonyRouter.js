@@ -116,15 +116,22 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   router.get('/refresh-auth-cookie', function(req, res, next) {
-    const account = Auth.GetAccountCookie(req, jsh);
-    const exchangeResponse = req.jshsite.exchangeRefreshToken(account.username, account.password, account.refresh);
-    if (exchangeResponse.errorCode != null) {
-      Auth.Logout(req, res, jsh);
+
+    let exchangeResponse;
+    if (req.jshsite.isRefreshTokenEnabled()) {
+      const account = Auth.GetAccountCookie(req, jsh);
+      exchangeResponse = req.jshsite.exchangeRefreshToken(account.username, account.password, account.refresh);
+      if (exchangeResponse.errorCode != null) {
+        Auth.Logout(req, res, jsh);
+      } else {
+        account.refresh = exchangeResponse.token;
+        account.expires = req.jshsite.getAccessTokenTimeoutMs() + Date.now();
+        Auth.SetAccountCookie(req, res, jsh, account);
+      }
     } else {
-      account.refresh = exchangeResponse.token;
-      account.expires = req.jshsite.getTokenTimeoutMs() + Date.now();
-      Auth.SetAccountCookie(req, res, jsh, account);
+      exchangeResponse = {};
     }
+
     res.send(exchangeResponse);
   });
   router.all('*', function (req, res, next) {

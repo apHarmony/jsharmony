@@ -80,8 +80,10 @@ exports = module.exports = function (req, res, onComplete) {
                   var pe_ll_tstmp = new Date();
                   account.tstmp = Helper.DateToSQLISO(pe_ll_tstmp);
                   account.password = crypto.createHash('sha1').update(token + account.tstmp).digest('hex');
-                  account.refresh = req.jshsite.issueRefreshToken(account.username, account.password);
-                  account.expires = req.jshsite.getTokenTimeoutMs() + Date.now();
+                  if (req.jshsite.isRefreshTokenEnabled()) {
+                    account.refresh = req.jshsite.issueRefreshToken(account.username, account.password);
+                    account.expires = req.jshsite.getAccessTokenTimeoutMs() + Date.now();
+                  }
                   var sqlparams = {};
                   sqlparams[jsh.map.user_last_ip] = ipaddr;
                   sqlparams[jsh.map.user_id] = user_id;

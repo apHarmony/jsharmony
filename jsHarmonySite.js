@@ -134,14 +134,29 @@ function jsHarmonySite(jsh, id, config){
   this.initialized = true;
 }
 
-jsHarmonySite.prototype.getTokenTimeoutMs = function() {
+jsHarmonySite.prototype.isRefreshTokenEnabled = function() {
+  return this.auth.refresh != null &&
+    (this.auth.refresh.access_token_timeout || 0) > 0 &&
+    (this.auth.refresh.refresh_token_timeout || 0) > 0;
+}
+
+jsHarmonySite.prototype.getAccessTokenTimeoutMs = function() {
+
+  if (!this.isRefreshTokenEnabled()) {
+    return undefined;
+  }
+
   // Make token time span default to 15 minutes with a 0.5 minute minimum.
-  return Math.max((this.auth.token_timeout || 15), 0.5) * 60000;
+  return Math.max((this.auth.refresh.access_token_timeout || 15), 0.5) * 60000;
 }
 
 jsHarmonySite.prototype.getRefreshTokenTimeoutMs = function() {
+  if (!this.isRefreshTokenEnabled()) {
+    return undefined;
+  }
+
   // Make token time span default to 15 minutes with a 0.5 minute minimum.
-  return Math.max((this.auth.token_timeout || 15), 0.5) * 60000;
+  return Math.max((this.auth.refresh.refresh_token_timeout || 15), 0.5) * 60000;
 }
 
 //Merge target configuration with existing
