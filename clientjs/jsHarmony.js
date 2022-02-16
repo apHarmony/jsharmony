@@ -370,11 +370,12 @@ jsHarmony.prototype.Init = function(){
 };
 
 jsHarmony.prototype.refreshCookie = function() {
+  var _this = this;
   $.ajax('/refresh-auth-cookie', {
     success: function(data) {
       data = data || {};
       if (data.errorCode != null) {
-        window.location.reload();
+        _this.DefaultErrorHandler(-10);
       }
     }
   });
