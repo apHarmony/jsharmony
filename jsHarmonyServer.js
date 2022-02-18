@@ -76,7 +76,12 @@ jsHarmonyServer.prototype.Init = function(cb){
 
   app.use(bodyParser.json({ limit: '50mb' }));
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
-  app.use(compression());
+  app.use(compression({
+    filter: function(req, res){
+      if(res && res.locals && res.locals.noCompression) return false;
+      return compression.filter(req, res);
+    }
+  }));
   if(_this.jsh.Config.debug_params && _this.jsh.Config.debug_params.dev_client_js){
     app.get('/js/jsHarmony.js', function(req, res){
       var fcontent = 'alert("jsHarmony.dev.js not compiled.  Please compile using clientcompiler.cmd")';
@@ -254,6 +259,7 @@ jsHarmonyServer.prototype.addWebSocketHandler = function(server){
           router.handle(req, {
             writeHead: function(txt){ },
             setHeader: function(txt){ },
+            getHeader: function(){ return null; },
             send: function(txt){ },
             end: function(txt){
               //Route returned WEBSOCKET
