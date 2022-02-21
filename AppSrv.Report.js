@@ -24,7 +24,9 @@ var fs = require('fs');
 
 module.exports = exports = {};
 
-exports.getReport = function (req, res, fullmodelid, Q, P, callback) {
+exports.getReport = function (req, res, fullmodelid, options, Q, P, callback) {
+  options = _.extend({ download: false }, options);
+
   if (!this.jsh.hasModel(req, fullmodelid)) throw new Error("Error: Report " + fullmodelid + " not found in collection.");
   var _this = this;
   if (typeof Q == 'undefined') Q = req.query;
@@ -51,14 +53,15 @@ exports.getReport = function (req, res, fullmodelid, Q, P, callback) {
             res.writeHead(200, {
               'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
               'Content-Length': fsize,
-              'Content-Disposition': 'filename = ' + encodeURIComponent(filename)
+              'Content-Disposition': (options.download ? 'attachment;': '') + 'filename = ' + encodeURIComponent(filename)
             });
           }
           else {
             res.writeHead(200, {
               'Content-Type': 'application/pdf',
               'Content-Length': fsize,
-              'Content-Disposition': 'filename = ' + encodeURIComponent(filename)
+              'Content-Disposition': (options.download ? 'attachment;': '') + 'filename = ' + encodeURIComponent(filename),
+              'Cache-Control': 'no-cache',
             });
           }
           var rs = fs.createReadStream(tmppath);
