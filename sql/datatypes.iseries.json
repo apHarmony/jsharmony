@@ -1,0 +1,105 @@
+{
+  "smallint":{ "type": "int" },
+  "integer":{ "type": "int" },
+  "bigint":{ "type": "int" },
+  "decimal":{
+    "sql_from_db": "cast(%%%SQL%%% as varchar(50))",
+    "sqlsearch": "%%%SQL%%%",
+    "sqlsearch_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
+    "datatype_config":{
+      "defaults":{ "PREC_H": 5, "PREC_L": 0 }
+    }
+  },
+  "real":{
+    "type":"double precision",
+    "datatype_config":{
+      "defaults":{ "PREC": 24 }
+    },
+    "precision": 24
+  },
+  "double precision":{
+    "sql_from_db": "cast(%%%SQL%%% as varchar(24))",
+    "sqlsearch": "%%%SQL%%%",
+    "sqlsearch_to_db": "cast(%%%SQL%%% as float(%%%PREC%%%))",
+    "datatype_config":{
+      "defaults":{ "PREC": 53 }
+    },
+    "type": "float"
+  },
+  "decfloat":{ 
+    "sql_from_db": "cast(%%%SQL%%% as varchar(42))",
+    "sqlsearch": "%%%SQL%%%",
+    "sqlsort": "cast(%%%SQL%%% as decfloat(%%%PREC%%%))",
+    "sql_to_db": "cast(%%%SQL%%% as decfloat(%%%PREC%%%))",
+    "sqlsearch_to_db": "cast(%%%SQL%%% as decfloat(%%%PREC%%%))",
+    "datatype_config": {
+      "defaults":{ "PREC": 34 }
+    },
+    "type": "decimal"
+  },
+  "char": { "type": "char" },
+  "varchar": { "type": "varchar" },
+  "clob":{
+    "type": "varchar",
+    "length": -1
+  },
+  "graphic": { "type": "char" },
+  "vargraphic": { "type": "varchar" },
+  "dbclob":{
+    "type": "varchar",
+    "length": -1
+  },
+  "binary":{ 
+    "sql_from_db": "HEX(%%%SQL%%%)",
+    "sql_to_db": "VARBINARY_FORMAT(%%%SQL%%%)",
+    "type": "varchar",
+    "datatype_config": {
+      "defaults":{ "LENGTH": 8000 },
+      "validate": ["MaxLength:2*%%%LENGTH%%%+2"],
+      "override_length": "-1"
+    }
+  },
+  "varbinary":{ 
+    "sql_from_db": "HEX(%%%SQL%%%)",
+    "sql_to_db": "VARBINARY_FORMAT(%%%SQL%%%)",
+    "type": "varchar",
+    "datatype_config": {
+      "defaults":{ "LENGTH": 8000 },
+      "validate": ["<% if(LENGTH>0){ %>MaxLength:2*%%%LENGTH%%%+2<% } %>"],
+      "override_length": "-1"
+    }
+  },
+  "blob":{
+    "type": "varbinary",
+    "length": -1
+  },
+  "date":{
+    "sql_from_db": "CHAR(%%%SQL%%%, ISO)",
+    "sqlsearch_to_db": "CAST(%%%SQL%%% AS DATE)"
+  },
+  "time":{
+    "sql_from_db": "CHAR(%%%SQL%%%, ISO)",
+    "sqlsearch_to_db": "CAST(%%%SQL%%% AS TIME)"
+  },
+  "timestamp":{
+    "sql_from_db": "CHAR(%%%SQL%%%)",
+    "sqlsearch_to_db": "CAST(%%%SQL%%% AS TIMESTAMP)",
+    "type": "datetime"
+  },
+  "datalink": {
+    "sql_from_db": "DLURLCOMPLETE(%%%SQL%%%)",
+    "sql_to_db": "DLVALUE(%%%SQL%%%)",
+    "type": "varchar" 
+  },
+  "rowid":{ 
+    "sql_from_db": "HEX(%%%SQL%%%)",
+    "sql_to_db": "VARBINARY_FORMAT(%%%SQL%%%)",
+    "type": "varchar",
+    "length": 80
+  },
+  "xml":{
+    "sql_from_db": "XMLSERIALIZE(%%%SQL%%% AS CLOB CCSID 1208)",
+    "sql_to_db": "XMLPARSE(DOCUMENT %%%SQL%%%)",
+    "type": "clob"
+  }
+}
