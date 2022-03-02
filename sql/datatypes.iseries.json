@@ -23,7 +23,7 @@
     "datatype_config": {
       "defaults":{ "PREC": 34 }
     },
-    "type": "decimal"
+    "type": "float"
   },
   "char": { "type": "char" },
   "varchar": { "type": "varchar" },
@@ -70,7 +70,7 @@
     "sqlsearch_to_db": "CAST(%%%SQL%%% AS TIME)"
   },
   "timestamp":{
-    "sql_from_db": "CHAR(%%%SQL%%%)",
+    "sql_from_db": "REGEXP_REPLACE(CHAR(%%%SQL%%%), '-(\\d\\d)\\.(\\d\\d)\\.(\\d\\d)\\.', ' $1:$2:$3.')",
     "sqlsearch_to_db": "CAST(%%%SQL%%% AS TIMESTAMP)",
     "type": "datetime"
   },
@@ -81,9 +81,12 @@
   },
   "rowid":{ 
     "sql_from_db": "HEX(%%%SQL%%%)",
-    "sql_to_db": "VARBINARY_FORMAT(%%%SQL%%%)",
+    "sql_to_db": "CAST( CAST( VARBINARY_FORMAT(%%%SQL%%%) AS VARCHAR(40) ) AS ROWID)",
     "type": "varchar",
-    "length": 80
+    "length": 80,
+    "datatype_config": {
+      "validate": ["MaxLength:80"]
+    }
   },
   "xml":{
     "sql_from_db": "XMLSERIALIZE(%%%SQL%%% AS CLOB CCSID 1208)",
