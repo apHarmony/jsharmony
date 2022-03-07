@@ -26,7 +26,7 @@ var jsHarmonyCodeGen = require('./lib/CodeGen.js');
 
 module.exports = exports = {};
 
-var _DBDRIVERS = ['pgsql', 'mssql', 'sqlite'];
+var _DBDRIVERS = ['pgsql', 'mssql', 'sqlite', 'iseries'];
 
 exports.getDBDrivers = function(){ return _DBDRIVERS; };
 
