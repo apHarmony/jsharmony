@@ -282,7 +282,7 @@ exports.AddModel = function (modelname, model, prefix, modelpath, modeldir, modu
     prependPropFile('onroute',modelpathbase + '.onroute.js');
   }
   if (!('helpid' in model) && !('inherits' in model)) model.helpid = modelname;
-  if ('onroute' in model) model.onroute = _this.createFunction(model.onroute, ['routetype', 'req', 'res', 'callback', 'require', 'jsh', 'modelid', 'params'], model.id+' model.onroute');
+  if ('onroute' in model) model.onroute = _this.createFunction(model.onroute, ['routetype', 'req', 'res', 'callback', 'require', 'jsh', 'modelid', 'params'], model.id+' model.onroute', model.path);
   //Check if model inherits self - if so, add to _transforms
   if((modelname in this.Models) && model.inherits){
     var parentModel = _this.getModel(null,model.inherits,model);
@@ -1050,8 +1050,8 @@ exports.ParseEntities = function () {
     if(model.layout=='report'){
       if(!('format' in model)) model.format = 'pdf';
       if(!_.includes(['pdf','xlsx'], model.format)) _this.LogInit_ERROR(model.id + ': Unsupported report format: ' + model.format);
-      if('onrender' in model) model.onrender = _this.createFunction(model.onrender, ['report', 'callback', 'require', 'jsh', 'modelid'], model.id+' model.onrender');
-      if('onrendered' in model) model.onrendered = _this.createFunction(model.onrendered, ['report', 'callback', 'require', 'jsh', 'modelid'], model.id+' model.onrendered');
+      if('onrender' in model) model.onrender = _this.createFunction(model.onrender, ['report', 'callback', 'require', 'jsh', 'modelid'], model.id+' model.onrender', model.path);
+      if('onrendered' in model) model.onrendered = _this.createFunction(model.onrendered, ['report', 'callback', 'require', 'jsh', 'modelid'], model.id+' model.onrendered', model.path);
     }
     if (!('ejs' in model)) model.ejs = '';
     if (!('header' in model)) model.header = '';
@@ -1908,7 +1908,7 @@ exports.ParseEntities = function () {
       });
     }
     _this.validateDisplayLayouts(model);
-    if(model.ongetfilename) model.ongetfilename = _this.createFunction(model.ongetfilename, ['callback', 'xmodel', 'Q', 'P', 'req', 'dbdata'], model.id+' model.ongetfilename');
+    if(model.ongetfilename) model.ongetfilename = _this.createFunction(model.ongetfilename, ['callback', 'xmodel', 'Q', 'P', 'req', 'dbdata'], model.id+' model.ongetfilename', model.path);
 
 
     //Validate Model and Field Parameters

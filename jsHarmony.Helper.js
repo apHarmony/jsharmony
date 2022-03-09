@@ -23,6 +23,7 @@ var Helper = require('./lib/Helper.js');
 var ejsext = require('./lib/ejsext.js');
 var moment = require('moment');
 var jsHarmonyLocale = require('./jsHarmonyLocale.js');
+var path = require('path');
 
 var _ERROR = 1;
 var _WARNING = 2;
@@ -760,8 +761,15 @@ exports.SendBaseEmail = function (dbcontext, email_subject, email_text, email_ht
   _this.SendEmail(mparams, callback);
 };
 
-exports.createFunction = function (script, args, desc){
+exports.createFunction = function (script, args, desc, scriptPath){
   try {
+    if(scriptPath){
+      script = [
+        'let _SCRIPT_PATH = '+JSON.stringify(scriptPath) + ';',
+        'let _SCRIPT_DIR = '+JSON.stringify(path.dirname(scriptPath)) + ';',
+        script.toString(),
+      ].join('');
+    }
     return Function.prototype.bind.apply(Function, [null].concat(args||[]).concat([script]))();
   }
   catch(ex){

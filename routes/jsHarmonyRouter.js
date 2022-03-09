@@ -265,6 +265,16 @@ var jsHarmonyRouter = function (jsh, siteid) {
       jsh.AppSrv.getReport(req, res, fullmodelid);
     });
   });
+  // /_d/_report_download/:modelid
+  router.get(/^\/_d\/_report_download\/(.*)/, function (req, res, next) {
+    var fullmodelid = req.params[0];
+    fullmodelid = Helper.trimRight(fullmodelid,'/');
+    if (typeof fullmodelid === 'undefined') { next(); return; }
+    processModelQuerystring(jsh, req, fullmodelid);
+    processCustomRouting('d_report', req, res, jsh, fullmodelid, function(){
+      jsh.AppSrv.getReport(req, res, fullmodelid, { download: true });
+    });
+  });
   // /_d/_report_html/:modelid
   router.get(/^\/_d\/_report_html\/(.*)/, function (req, res, next) {
     var fullmodelid = req.params[0];
@@ -511,7 +521,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
       for(var i=0;i<server.serverConfig.webSockets.length;i++){
         var webSocket = server.serverConfig.webSockets[i];
         if(webSocket.path==pathname){
-          res._headers = res._headers || {};
+          res.locals = _.extend(res.locals, { 'noCompression': true });
           res.end('WEBSOCKET');
           return;
         }
