@@ -339,18 +339,22 @@ exports.putModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
     
     _.each(subs, function (fname) { sql_params[fname] = '%%%' + fname + '%%%'; });
     var dbtasks = {};
+    var sql_rslt = null;
     dbtasks[fullmodelid] = function (dbtrans, callback, transtbl) {
       sql_params = _this.ApplyTransTblEscapedParameters(sql_params, transtbl);
       db.Row(req._DBContext, dbsql.sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
         if (stats) stats.model = model;
         if ((err == null) && (rslt != null) && (_this.jsh.map.rowcount in rslt) && (rslt[_this.jsh.map.rowcount] == 0)) err = Helper.NewError('No records affected', -3, stats);
         if (err != null) { err.model = model; err.sql = dbsql.sql; }
-        else if (fileops.length > 0) {
-          //Move files, if applicable
-          var keyval = '';
-          if (keys.length == 1) keyval = rslt[keys[0].name];
-          else throw new Error('File uploads require one key');
-          return _this.ProcessFileOperations(keyval, fileops, rslt, stats, callback);
+        else {
+          if(model.onsqlinserted) sql_rslt = rslt;
+          if (fileops.length > 0) {
+            //Move files, if applicable
+            var keyval = '';
+            if (keys.length == 1) keyval = rslt[keys[0].name];
+            else throw new Error('File uploads require one key');
+            return _this.ProcessFileOperations(keyval, fileops, rslt, stats, callback);
+          }
         }
         callback(err, rslt, stats);
       });
@@ -393,6 +397,9 @@ exports.putModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
     }
     if (fileops.length > 0) dbtasks['_POSTPROCESS'] = function (callback) {
       _this.ProcessFileOperationsDone(fileops, callback);
+    };
+    if(model.onsqlinserted) dbtasks['_ONSQLINSERTED_POSTPROCESS'] = function (callback, rslt) {
+      model.onsqlinserted(callback, req, res, sql_params, sql_rslt, require, _this.jsh, model.id);
     };
     return onComplete(null, dbtasks);
   });
@@ -464,6 +471,7 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
       return true;
     });
     var dbtasks = {};
+    var sql_rslt = null;
 
     //Add fields from post
     if ((fields.length > 0)||model.sqlupdate){
@@ -531,13 +539,17 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
         db.Row(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
           if (stats) stats.model = model;
           if ((err == null) && (rslt != null) && (_this.jsh.map.rowcount in rslt) && (rslt[_this.jsh.map.rowcount] == 0)) err = Helper.NewError('No records affected', -3, stats);
+
           if (err != null) { err.model = model; err.sql = sql; }
-          else if (fileops.length > 0) {
-            //Set keyval and move files, if applicable
-            var keyval = '';
-            if (keys.length == 1) keyval = sql_params[keys[0].name];
-            else throw new Error('File uploads require one key');
-            return _this.ProcessFileOperations(keyval, fileops, rslt, stats, callback);
+          else {
+            if(model.onsqlupdated) sql_rslt = rslt;
+            if (fileops.length > 0) {
+              //Set keyval and move files, if applicable
+              var keyval = '';
+              if (keys.length == 1) keyval = sql_params[keys[0].name];
+              else throw new Error('File uploads require one key');
+              return _this.ProcessFileOperations(keyval, fileops, rslt, stats, callback);
+            }
           }
           callback(err, rslt, stats);
         });
@@ -558,6 +570,9 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
 
     if (fileops.length > 0) dbtasks['_POSTPROCESS'] = function (callback) {
       _this.ProcessFileOperationsDone(fileops, callback);
+    };
+    if(model.onsqlupdated) dbtasks['_ONSQLUPDATED_POSTPROCESS'] = function (callback) {
+      model.onsqlupdated(callback, req, res, sql_params, sql_rslt, require, _this.jsh, model.id);
     };
 
     return onComplete(null, dbtasks);
@@ -605,11 +620,13 @@ exports.deleteModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
   var sql = db.sql.deleteModelForm(_this.jsh, model, keys, datalockqueries);
   
   var dbtasks = {};
+  var sql_rslt = null;
   dbtasks[fullmodelid] = function (dbtrans, callback) {
     db.Row(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
       if (stats) stats.model = model;
       if ((err == null) && (rslt != null) && (_this.jsh.map.rowcount in rslt) && (rslt[_this.jsh.map.rowcount] == 0)) err = Helper.NewError('No records affected', -3, stats);
       if (err != null) { err.model = model; err.sql = sql; }
+      if(model.onsqldeleted) sql_rslt = rslt;
       callback(err, rslt, stats);
     });
   };
@@ -634,6 +651,9 @@ exports.deleteModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
       _this.ProcessFileOperationsDone(fileops, callback);
     };
   }
+  if(model.onsqldeleted) dbtasks['_ONSQLDELETED_POSTPROCESS'] = function (callback, rslt) {
+    model.onsqldeleted(callback, req, res, sql_params, sql_rslt, require, _this.jsh, model.id);
+  };
   return onComplete(null, dbtasks);
 };
 

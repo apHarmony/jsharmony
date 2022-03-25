@@ -102,7 +102,14 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   
   //Set search parameters
   if (('searchjson' in Q) && (Q.searchjson != '')) {
-    var search_items = JSON.parse(Q.searchjson);
+    var search_items = [];
+    try{
+      search_items = JSON.parse(Q.searchjson);
+    }
+    catch(ex){
+      Helper.GenError(req, res, -4, 'Invalid Parameters');
+      return;
+    }
     var search_join = 'and';
     if (_.isArray(search_items) && (search_items.length > 0)) {
       for (let i = 0; i < search_items.length; i++) {

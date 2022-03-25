@@ -1053,6 +1053,9 @@ exports.ParseEntities = function () {
       if('onrender' in model) model.onrender = _this.createFunction(model.onrender, ['report', 'callback', 'require', 'jsh', 'modelid'], model.id+' model.onrender', model.path);
       if('onrendered' in model) model.onrendered = _this.createFunction(model.onrendered, ['report', 'callback', 'require', 'jsh', 'modelid'], model.id+' model.onrendered', model.path);
     }
+    if('onsqlinserted' in model) model.onsqlinserted = _this.createFunction(model.onsqlinserted, ['callback', 'req', 'res', 'sql_params', 'sql_rslt', 'require', 'jsh', 'modelid'], model.id+' model.onsqlinserted', model.path);
+    if('onsqlupdated' in model) model.onsqlupdated = _this.createFunction(model.onsqlupdated, ['callback', 'req', 'res', 'sql_params', 'sql_rslt', 'require', 'jsh', 'modelid'], model.id+' model.onsqlupdated', model.path);
+    if('onsqldeleted' in model) model.onsqldeleted = _this.createFunction(model.onsqldeleted, ['callback', 'req', 'res', 'sql_params', 'sql_rslt', 'require', 'jsh', 'modelid'], model.id+' model.onsqldeleted', model.path);
     if (!('ejs' in model)) model.ejs = '';
     if (!('header' in model)) model.header = '';
     if (!('templates' in model)) model.templates = {};
@@ -1918,7 +1921,7 @@ exports.ParseEntities = function () {
       'pagesettings', 'format', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_search', 'default_search', 'grid_static', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
-      'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'onrowunbind', 'ondestroy', 'onchange', 'getapi', 'onrender', 'onrendered',
+      'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'onrowunbind', 'ondestroy', 'onchange', 'getapi', 'onrender', 'onrendered', 'onsqlinserted', 'onsqlupdated', 'onsqldeleted',
       'js', 'jslib', 'ejs', 'header', 'css', 'dberrors', 'tablestyle', 'tableclass', 'formstyle', 'formclass', 'popup', 'ongetfilename', 'onloadimmediate', 'sqlwhere', 'sqlwhere_disabled_on_insert', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlgetinsertkeys', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
       'path', 'module', 'templates', 'db', 'onecolumn', 'namespace',

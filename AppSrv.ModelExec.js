@@ -101,6 +101,7 @@ exports.postModelExec = function (req, res, fullmodelid, Q, P, onComplete) {
   var sql = db.sql.postModelExec(jsh, model, param_datalocks, datalockqueries);
   
   var dbtasks = {};
+  var sql_rslt = null;
   dbtasks[fullmodelid] = function (dbtrans, callback, transtbl) {
     sql_params = _this.ApplyTransTblEscapedParameters(sql_params, transtbl);
     var dbfunc = db.Recordset;
@@ -108,8 +109,12 @@ exports.postModelExec = function (req, res, fullmodelid, Q, P, onComplete) {
     dbfunc.call(db, req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
       if (err != null) { err.model = model; err.sql = sql; }
       if (stats) stats.model = model;
+      if(model.onsqlupdated) sql_rslt = rslt;
       callback(err, rslt, stats);
     });
+  };
+  if(model.onsqlupdated) dbtasks['_ONSQLUPDATED_POSTPROCESS'] = function (callback, rslt) {
+    model.onsqlupdated(callback, req, res, sql_params, sql_rslt, require, jsh, model.id);
   };
   return onComplete(null, dbtasks);
 };

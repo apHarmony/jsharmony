@@ -582,7 +582,7 @@ exports.ExecTasks = function (req, res, dbtasks, trans, callback, options) {
     Helper.convertBufferToHexString(rslt);
     //Run POSTPROCESS tasks
     async.eachSeries(posttasks, function (posttask, postcallback) {
-      posttask(postcallback);
+      posttask(postcallback, rslt);
     }, function (err) {
       if (err != null) { _this.AppDBError(req, res, err); return; }
       res.send(JSON.stringify(rslt));
