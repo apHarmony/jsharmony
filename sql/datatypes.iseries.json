@@ -1,0 +1,96 @@
+{
+  "smallint":{ "type": "int" },
+  "integer":{ "type": "int" },
+  "bigint":{ "type": "int" },
+  "decimal":{
+    "sql_from_db": "cast(%%%SQL%%% as varchar(50))",
+    "sqlsearch": "%%%SQL%%%",
+    "datatype_config":{
+      "defaults":{ "PREC_H": 5, "PREC_L": 0 }
+    }
+  },
+  "numeric": { "type": "decimal" },
+  "float":{
+    "sql_from_db": "cast(%%%SQL%%% as varchar(53))",
+    "sqlsearch": "%%%SQL%%%",
+    "datatype_config":{
+      "defaults":{ "PREC": 53 }
+    }
+  },
+  "decfloat":{
+    "sql_from_db": "cast(%%%SQL%%% as varchar(42))",
+    "sqlsearch": "%%%SQL%%%",
+    "datatype_config": {
+      "defaults":{ "PREC": 34 }
+    },
+    "type": "float"
+  },
+  "char": { "type": "char" },
+  "varchar": { "type": "varchar" },
+  "clob":{
+    "type": "varchar",
+    "length": -1
+  },
+  "graphic": { "type": "char" },
+  "varg": { "type": "varchar" },
+  "dbclob":{
+    "type": "varchar",
+    "length": -1
+  },
+  "binary":{
+    "sql_from_db": "HEX(%%%SQL%%%)",
+    "sql_to_db": "VARBINARY_FORMAT(%%%SQL%%%)",
+    "type": "varchar",
+    "datatype_config": {
+      "defaults":{ "LENGTH": 8000 },
+      "validate": ["MaxLength:2*%%%LENGTH%%%+2"],
+      "override_length": "-1"
+    }
+  },
+  "varbin":{
+    "sql_from_db": "HEX(%%%SQL%%%)",
+    "sql_to_db": "VARBINARY_FORMAT(%%%SQL%%%)",
+    "type": "varchar",
+    "datatype_config": {
+      "defaults":{ "LENGTH": 8000 },
+      "validate": ["<% if(LENGTH>0){ %>MaxLength:2*%%%LENGTH%%%+2<% } %>"],
+      "override_length": "-1"
+    }
+  },
+  "blob":{
+    "type": "varbin",
+    "length": -1
+  },
+  "date":{
+    "sql_from_db": "CHAR(%%%SQL%%%, ISO)",
+    "sqlsearch_to_db": "CAST(%%%SQL%%% AS DATE)"
+  },
+  "time":{
+    "sql_from_db": "CHAR(%%%SQL%%%, ISO)",
+    "sqlsearch_to_db": "CAST(%%%SQL%%% AS TIME)"
+  },
+  "timestamp":{
+    "sql_from_db": "REGEXP_REPLACE(CHAR(%%%SQL%%%), '-(\\d\\d)\\.(\\d\\d)\\.(\\d\\d)\\.', ' $1:$2:$3.')",
+    "sqlsearch_to_db": "CAST(%%%SQL%%% AS TIMESTAMP)",
+    "type": "datetime"
+  },
+  "datalink": {
+    "sql_from_db": "DLURLCOMPLETE(%%%SQL%%%)",
+    "sql_to_db": "DLVALUE(%%%SQL%%%)",
+    "type": "varchar" 
+  },
+  "rowid":{ 
+    "sql_from_db": "HEX(%%%SQL%%%)",
+    "sql_to_db": "CAST( CAST( VARBINARY_FORMAT(%%%SQL%%%) AS VARCHAR(40) ) AS ROWID)",
+    "type": "varchar",
+    "length": 80,
+    "datatype_config": {
+      "validate": ["MaxLength:80"]
+    }
+  },
+  "xml":{
+    "sql_from_db": "XMLSERIALIZE(%%%SQL%%% AS CLOB CCSID 1208)",
+    "sql_to_db": "XMLPARSE(DOCUMENT %%%SQL%%%)",
+    "type": "clob"
+  }
+}

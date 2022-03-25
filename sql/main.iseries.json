@@ -1,0 +1,6 @@
+{
+  "Helper_SendTXTEmail": "SELECT TXT_TITLE \"txt_title\",TXT_BODY \"txt_body\",TXT_BCC \"txt_bcc\",TXT_TYPE \"txt_type\" FROM JSHARMONY.TXT WHERE TXT_PROCESS='EMAIL' and TXT_ATTRIB=@txt_attrib",
+  "HelperRender_getTXT": "SELECT TXT_BODY \"txt_body\" FROM JSHARMONY.TXT WHERE TXT_PROCESS=@txt_process AND TXT_ATTRIB=@txt_attrib",
+  "TRUE": "1",
+  "FALSE": "0"
+}
