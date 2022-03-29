@@ -43,8 +43,8 @@ exports.InitDB = function(dbid, cb){
   }
   var driverName = dbdriver.name;
   if(dbid=='default'){
-    //Set MSSQL and PGSQL drivers to Pooled for default connection
-    if(_.includes(['mssql','pgsql'],driverName)){
+    //Set MSSQL, PGSQL, and iSeries drivers to Pooled for default connection
+    if(_.includes(['mssql','pgsql','iseries'],driverName)){
       if(!dbconfig.options) dbconfig.options = {};
       if(!('pooled' in dbconfig.options)) dbconfig.options.pooled = true;
     }
@@ -63,7 +63,7 @@ exports.InitDB = function(dbid, cb){
     ], function(dir){
       if(fs.existsSync(dir)){
         _this.LogInit_PERFORMANCE('Loading SQL from '+dir+' '+(Date.now()-_this.Statistics.StartTime));
-        _this.LoadSQL(db, dir, driverName, modeldir.module);
+        _this.LoadSQL(db, dir, driverName, modeldir.module, dbid);
       }
     });
   }
@@ -81,8 +81,8 @@ exports.AddGlobalSQLParams = function(sqlFuncs, items, prefix){
   }
 };
 
-exports.LoadSQL = function (db, dir, type, moduleName) {
-  var rslt = this.LoadSQLFromFolder(dir, type, moduleName);
+exports.LoadSQL = function (db, dir, type, moduleName, dbid) {
+  var rslt = this.LoadSQLFromFolder(dir, type, moduleName, dbid);
   var sqlext = db.SQLExt;
   for(var funcName in rslt.Funcs){
     sqlext.Funcs[funcName] = rslt.Funcs[funcName];
@@ -152,9 +152,10 @@ exports.LoadSQLFiles = function(module, dir, options){
   return rslt;
 };
 
-exports.LoadSQLObjects = function(dir, module, options){
+exports.LoadSQLObjects = function(dir, module, dbid, options){
   var _this = this;
   options = _.extend({ dbtype: null }, options);
+  if(!dbid) dbid = 'default';
 
   var rslt = [];
 
@@ -179,15 +180,21 @@ exports.LoadSQLObjects = function(dir, module, options){
       var obj = _this.ParseJSON(fpath, module.name, 'SQL Object ' + objname);
       if(!('type' in obj)){
         _.each(obj, function (subobj, subobjname) {
+          let objdbid = subobj.database || 'default';
+          if(objdbid != dbid) return;
           _this.LogInit_INFO('Loading sub-object ' + subobjname);
           rslt.push(_this.AddSQLObject(module, subobjname, subobj, fpath));
         });
       }
-      else rslt.push(_this.AddSQLObject(module, objname, obj, fpath));
+      else {
+        let objdbid = obj.database || 'default';
+        if(objdbid != dbid) continue;
+        rslt.push(_this.AddSQLObject(module, objname, obj, fpath));
+      }
     }
     else if(fobj.type=='folder'){
       if(fname == 'data_files') continue;
-      rslt = rslt.concat(_this.LoadSQLObjects(fpath, module, options));
+      rslt = rslt.concat(_this.LoadSQLObjects(fpath, module, dbid, options));
     }
   }
 
@@ -205,7 +212,7 @@ exports.AddSQLObject = function(module, objname, obj, fpath){
   return obj;
 };
 
-exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
+exports.LoadSQLFromFolder = function (dir, type, moduleName, dbid, rslt) {
 
   //Post-process - extract script prefix if in aaa.bbb.sql format
   function processScriptPrefix(node){
@@ -326,7 +333,7 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, rslt) {
   _this.LogInit_PERFORMANCE('Loading SQL Objects '+(Date.now()-_this.Statistics.StartTime));
   if(module){
     var objectsdir = dir+'objects/';
-    rslt.Objects[moduleName] = _this.LoadSQLObjects(objectsdir, module, { dbtype: type });
+    rslt.Objects[moduleName] = _this.LoadSQLObjects(objectsdir, module, dbid, { dbtype: type });
     if(rslt.Objects[moduleName].length){
       var objScripts = {
         'init': {

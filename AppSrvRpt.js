@@ -104,6 +104,7 @@ AppSrvRpt.prototype.queueReport = function (req, res, fullmodelid, Q, P, params,
   db.ExecTasks(dbtasks, function (err, dbdata, stats) {
     if (err) {
       if(jsh.Config.debug_params.report_debug) jsh.Log.debug(err);
+      if(err.sql) jsh.Log.error('Error running SQL in report '+fullmodelid+' :: '+err.sql);
       return thisapp.AppDBError(req, res, err, stats, errorHandler);
     }
     if (dbdata == null) dbdata = {};
