@@ -552,6 +552,7 @@ exports.ExecTasks = function (req, res, dbtasks, trans, callback, options) {
   //Split off post-processing
   var posttasks = [];
   dbtasks = _this.TransformDBTasks(dbtasks, function(dbtask, key){
+    key = key.toString();
     if (Helper.endsWith(key, '_POSTPROCESS')) posttasks.push(dbtask);
     else return dbtask;
   });
