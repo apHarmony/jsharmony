@@ -534,6 +534,9 @@ RESPONSIVE
   <%-rootcss%> .xbody {
     margin-top:23px;
   }
+  <%-(rootcss||'body')%>.popup .xbody {
+    margin-top:0;
+  }
   <%-rootcss%> .xhead .xtoplinks {
     margin-top:-23px;
     width:100%;

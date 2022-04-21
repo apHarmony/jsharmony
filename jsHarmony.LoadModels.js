@@ -618,7 +618,7 @@ function SortModelArray(arr){
     for(let i = 0; i < arr.length; i++) {
       var elem = arr[i];
       var newidx = -1;
-      if('__AFTER__' in elem){
+      if(_.isObject(elem) && ('__AFTER__' in elem)){
         //Get position of new index
         if(_.isInteger(elem['__AFTER__'])){
           newidx = elem['__AFTER__'] + 1;
@@ -1921,7 +1921,7 @@ exports.ParseEntities = function () {
       'pagesettings', 'format', 'pageheader', 'pageheaderjs', 'reportbody', 'headerheight', 'pagefooter', 'pagefooterjs', 'zoom', 'reportdata', 'description', 'template', 'fields', 'jobqueue', 'batch', 'fonts',
       'hide_system_buttons', 'grid_expand_search', 'grid_rowcount', 'reselectafteredit', 'newrowposition', 'commitlevel', 'validationlevel',
       'grid_require_search', 'default_search', 'grid_static', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
-      'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'onrowunbind', 'ondestroy', 'onchange', 'getapi', 'onrender', 'onrendered', 'onsqlinserted', 'onsqlupdated', 'onsqldeleted',
+      'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'onrowunbind', 'ondestroy', 'onchange', 'getapi', 'onrender', 'onrendered', 'onsqlinserted', 'onsqlupdated', 'onsqldeleted', 'disable_csv_export',
       'js', 'jslib', 'ejs', 'header', 'css', 'dberrors', 'tablestyle', 'tableclass', 'formstyle', 'formclass', 'popup', 'ongetfilename', 'onloadimmediate', 'sqlwhere', 'sqlwhere_disabled_on_insert', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlgetinsertkeys', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
       'path', 'module', 'templates', 'db', 'onecolumn', 'namespace',
@@ -2248,7 +2248,9 @@ exports.ParseEntities = function () {
 
   //Validate password lengths
   for(var password_name in this.Config.passwords){
-    if(!this.Config.passwords[password_name] || (this.Config.passwords[password_name].length < 60)) _this.LogInit_WARNING('jsh.Config.passwords > '+password_name+': Encryption passwords should be at least 60 characters');
+    var password = this.Config.passwords[password_name];
+    if(!password || !password.algorithm || !password.key) _this.LogInit_WARNING('jsh.Config.passwords > '+password_name+': Invalid password definition - algorithm and key are required');
+    if((password.key.length < 60)) _this.LogInit_WARNING('jsh.Config.passwords > '+password_name+': Encryption keys should be at least 60 characters');
   }
 
   //Validate CustomFormatters

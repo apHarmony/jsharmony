@@ -303,8 +303,9 @@ BODY
 }
 <%-rootcss%> .xform_ctrl_textzoom_container {
   white-space:nowrap;
-  display:inline-block;
   vertical-align:top;
+  position:relative;
+  top:-3px;
 }
 <%-rootcss%> .xpopuplov_column,
 <%-rootcss%> .xhints_column {

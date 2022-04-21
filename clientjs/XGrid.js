@@ -286,10 +286,26 @@ exports = module.exports = function(jsh){
       }
     );
   };
+  XGrid.prototype.hasSearch = function(){
+    var _this = this;
+    if(_this.Search) return true;
+    if(!_this.SearchJSON) return false;
+    var searchJSON = null;
+    try{
+      searchJSON = JSON.parse(_this.SearchJSON);
+    }
+    catch(ex){
+      return true;
+    }
+    if(searchJSON && (searchJSON.length==1)){
+      if(searchJSON[0] && !searchJSON[0].Value && (searchJSON[0].Column=='ALL')) return false;
+    }
+    return true;
+  }
   XGrid.prototype.RenderNoResultsMessage = function(options){
     if(!options) options = { search: false };
     var _this = this;
-    var noresultsmessage = _this.NoResultsMessage.replace(/%%%FORSEARCHPHRASE%%%/g, (($.trim(_this.Search) != '')?'for selected search phrase':''));
+    var noresultsmessage = _this.NoResultsMessage.replace(/%%%FORSEARCHPHRASE%%%/g, (_this.hasSearch()?'for selected search phrase':''));
     if (_this.RequireSearch && !options.search) noresultsmessage = _this.RequireSearchMessage;
     else if (!options.search && _this.NoDataMessage) noresultsmessage = _this.NoDataMessage;
     jsh.$root(_this.PlaceholderID).html('<tr class="xtbl_noresults"><td colspan="' + _this.ColSpan + '" align="center" class="xtbl_noresults">' + noresultsmessage + '</td></tr>');

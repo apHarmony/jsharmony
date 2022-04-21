@@ -143,7 +143,13 @@ exports = module.exports = function(jsh){
     var lovTxt = '';
     if(field.showlovtxt){
       var lovTxtName = '__'+jsh.uimap.code_txt+'__'+field.name;
-      lovTxt = _this[lovTxtName];
+      if(lovTxtName in _this){
+        lovTxt = _this[lovTxtName];
+      }
+      else if(field.name in _this._LOVs){
+        lovTxt = jsh.XExt.getLOVTxt(_this._LOVs[field.name], val);
+        if ((!val) && typeof lovTxt == 'undefined') lovTxt = '';
+      }
       //Apply formatting
       if ((lovTxtName in _this) && (typeof lovTxt == 'undefined')) lovTxt = '';
       else lovTxt = jsh.XFormat.Apply(field.format, lovTxt);

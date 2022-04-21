@@ -297,6 +297,7 @@ exports.exportCSV = function (req, res, dbtasks, fullmodelid, options) {
   if (!jsh.hasModel(req, fullmodelid)) throw new Error('Model not found');
   options = _.extend({ /* columns: '["column1","column2"]'  */ }, options);
   var model = jsh.getModel(req, fullmodelid);
+  if(model.disable_csv_export) return Helper.GenError(req, res, -9, 'CSV Export of this data not supported');
   var db = _this.jsh.getModelDB(req, fullmodelid);
   if(options.columns){
     if(_.isString(options.columns)){

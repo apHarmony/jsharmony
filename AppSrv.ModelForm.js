@@ -159,16 +159,22 @@ exports.getModelForm = function (req, res, fullmodelid, Q, P, form_m) {
           //Decrypt encrypted fields
           if (encryptedfields.length > 0) {
             if (keys.length != 1) throw new Error('Encryption requires one key');
-            _.each(encryptedfields, function (field) {
-              var encval = rslt[field.name];
-              if (encval == null) return;
-              if (field.type == 'encascii') {
-                if (!(field.password in _this.jsh.Config.passwords)) throw new Error('Encryption password not defined.');
-                var decipher = crypto.createDecipher('aes128', keyval + _this.jsh.Config.passwords[field.password]);
-                decipher.update(encval);
-                rslt[field.name] = decipher.final().toString('ascii');
+            for(let j = 0; j < encryptedfields.length; j++){
+              let encryptedfield = encryptedfields[j];
+              var encval = rslt[encryptedfield.name];
+              if (encval == null) continue;
+              if (encryptedfield.type == 'encascii') {
+                if (!(encryptedfield.password in _this.jsh.Config.passwords)) throw new Error('Encryption password not defined.');
+                try{
+                  var password = _this.jsh.Config.passwords[encryptedfield.password];
+                  rslt[encryptedfield.name] = Helper.decrypt(password.algorithm, keyval + password.key, encval);
+                }
+                catch(ex){
+                  _this.jsh.Log.error(ex);
+                  return callback(new Error('Error decrypting data'));
+                }
               }
-            });
+            }
           }
           //Verify files exist on disk
           if (filelist.length > 0) {
@@ -376,9 +382,8 @@ exports.putModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
             }
             else {
               if (!(field.password in _this.jsh.Config.passwords)) throw new Error('Encryption password not defined.');
-              var cipher = crypto.createCipher('aes128', keyval + _this.jsh.Config.passwords[field.password]);
-              cipher.update(clearval, 'ascii');
-              enc_sql_params[field.name] = cipher.final();
+              var password = _this.jsh.Config.passwords[field.password];
+              enc_sql_params[field.name] = Helper.encrypt(password.algorithm, keyval + password.key, clearval);
               if ('hash' in field) {
                 var hashfield = hashfields[field.name];
                 if (!(hashfield.salt in _this.jsh.Config.salts)) throw new Error('Hash salt not defined.');
@@ -518,9 +523,8 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
           else {
             if (field.type == 'encascii') {
               if (!(field.password in _this.jsh.Config.passwords)) throw new Error('Encryption password not defined.');
-              var cipher = crypto.createCipher('aes128', keyval + _this.jsh.Config.passwords[field.password]);
-              cipher.update(clearval, 'ascii');
-              sql_params[field.name] = cipher.final();
+              var password = _this.jsh.Config.passwords[field.password];
+              sql_params[field.name] = Helper.encrypt(password.algorithm, keyval + password.key, clearval);
               if ('hash' in field) {
                 let hashfield = hashfields[field.name];
                 if (!(hashfield.salt in _this.jsh.Config.salts)) throw new Error('Hash salt not defined.');
