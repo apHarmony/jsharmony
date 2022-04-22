@@ -2946,9 +2946,7 @@ exports.getDefaultValidators = function(field, desc){
       else HelperFS.createFolderIfNotExists(_this.Config.datadir + field.controlparams.data_folder, function () { });
       break;
     case 'BINARY':
-      var flen = -1;
-      if (('length' in field) && (field.length >= 0)) flen = field.length;
-      addDefaultValidator('IsBinary:'+flen);
+      if (('length' in field) && (field.length >= 0)) addDefaultValidator('MaxLength:'+field.length);
       break;
   }
   return rslt;
