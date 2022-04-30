@@ -301,7 +301,7 @@ exports = module.exports = function(jsh){
       if(searchJSON[0] && !searchJSON[0].Value && (searchJSON[0].Column=='ALL')) return false;
     }
     return true;
-  }
+  };
   XGrid.prototype.RenderNoResultsMessage = function(options){
     if(!options) options = { search: false };
     var _this = this;

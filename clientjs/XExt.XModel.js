@@ -146,7 +146,7 @@ exports = module.exports = function(jsh){
       if(lovTxtName in _this){
         lovTxt = _this[lovTxtName];
       }
-      else if(field.name in _this._LOVs){
+      else if(_this._LOVs && (field.name in _this._LOVs)){
         lovTxt = jsh.XExt.getLOVTxt(_this._LOVs[field.name], val);
         if ((!val) && typeof lovTxt == 'undefined') lovTxt = '';
       }
