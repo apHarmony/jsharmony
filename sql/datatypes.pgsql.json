@@ -12,7 +12,7 @@
   },
   "decimal":{
     "sql_from_db": "cast(%%%SQL%%% as varchar)",
-    "sqlsearch": "%%%SQL%%%",
+    "sqlsearch": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "sqlsearch_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "datatype_config":{
       "defaults":{ "PREC_H": 38, "PREC_L": 10 }
@@ -25,7 +25,7 @@
   },
   "double precision":{
     "sql_from_db": "cast(%%%SQL%%% as varchar(50))",
-    "sqlsearch": "%%%SQL%%%",
+    "sqlsearch": "cast(%%%SQL%%% as float(%%%PREC%%%))",
     "sqlsearch_to_db": "cast(%%%SQL%%% as float(%%%PREC%%%))",
     "datatype_config":{
       "defaults":{ "PREC": 53 }

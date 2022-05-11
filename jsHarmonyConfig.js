@@ -442,8 +442,8 @@ jsHarmonyConfig.prototype.LoadJSONConfigFolder = function(jsh, fpath, sourceModu
   var _this = this;
 
   //Include appropriate config file based on Path
-  if(!fpath) fpath = jsh.Config.appbasepath;
-  if(!fpath) fpath = path.dirname(require.main.filename);
+  if(!fpath && jsh.Config.appbasepath) fpath = path.join(jsh.Config.appbasepath, 'models');
+  if(!fpath) fpath = path.join(path.dirname(require.main.filename), 'models');
   else if(fpath.substr(fpath.length-1,1)=='/') fpath = fpath.substr(0,fpath.length-1);
 
   //Create array of application path
@@ -454,7 +454,6 @@ jsHarmonyConfig.prototype.LoadJSONConfigFolder = function(jsh, fpath, sourceModu
     patharr.unshift(fbasename);
     fbasepath = path.dirname(fbasepath);
   }
-  fpath += '/models';
   //Load app.config.js
   this.LoadJSONConfigFile(jsh, fpath + '/_config.json', sourceModule);
   //Load app.config.local.js

@@ -1635,7 +1635,7 @@ exports.ParseEntities = function () {
         if (field.sql_to_db) field.sql_to_db = _this.parseFieldExpression(field, field.sql_to_db, {}, { ejs:true });
         if (field.sqlsort) field.sqlsort = _this.parseFieldExpression(field, field.sqlsort, {}, { ejs:true });
         if (field.sqlsearch) field.sqlsearch = _this.parseFieldExpression(field, field.sqlsearch, {}, { ejs:true });
-        if (field.sqlsearch_to_db) field.sqlsearch = _this.parseFieldExpression(field, field.sqlsearch_to_db, {}, { ejs:true });
+        if (field.sqlsearch_to_db) field.sqlsearch_to_db = _this.parseFieldExpression(field, field.sqlsearch_to_db, {}, { ejs:true });
         var has_datatype_validator = false;
         if (field.datatype_config){
           if(field.datatype_config.override_length){
@@ -1755,7 +1755,7 @@ exports.ParseEntities = function () {
     }
     
     //Convert mutli-line variables to single string
-    ParseMultiLineProperties(model, ['js', 'jslib', 'sqlselect', 'sqldownloadselect', 'sqlinsert', 'sqlinsertencrypt', 'sqlupdate', 'sqldelete', 'sqlexec', 'sqlwhere', 'sqlgetinsertkeys', 'ongetfilename', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onvalidate', 'onupdate', 'ondestroy', 'oncommit', 'onchange']);
+    ParseMultiLineProperties(model, ['js', 'jslib', 'sqlselect', 'sqldownloadselect', 'sqlrowcount', 'sqlinsert', 'sqlinsertencrypt', 'sqlupdate', 'sqldelete', 'sqlexec', 'sqlwhere', 'sqlgetinsertkeys', 'ongetfilename', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onvalidate', 'onupdate', 'ondestroy', 'oncommit', 'onchange']);
     if (model.breadcrumbs) ParseMultiLineProperties(model.breadcrumbs, ['sql']);
     if (model.fields) _.each(model.fields, function (field) {
       ParseMultiLineProperties(field, ['onchange', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlwhere', 'sqlsort', 'sqlsearch', 'sqlsearchsound', 'value']);
@@ -1923,7 +1923,7 @@ exports.ParseEntities = function () {
       'grid_require_search', 'default_search', 'grid_static', 'rowstyle', 'rowclass', 'rowlimit', 'disableautoload',
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'onrowunbind', 'ondestroy', 'onchange', 'getapi', 'onrender', 'onrendered', 'onsqlinserted', 'onsqlupdated', 'onsqldeleted', 'disable_csv_export',
       'js', 'jslib', 'ejs', 'header', 'css', 'dberrors', 'tablestyle', 'tableclass', 'formstyle', 'formclass', 'popup', 'ongetfilename', 'onloadimmediate', 'sqlwhere', 'sqlwhere_disabled_on_insert', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
-      'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlgetinsertkeys', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
+      'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlinsertencrypt', 'sqlgetinsertkeys', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqlrowcount', 'sqldownloadselect', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
       'path', 'module', 'templates', 'db', 'onecolumn', 'namespace',
       //Report Parameters
       'subheader', 'footerheight', 'headeradd',

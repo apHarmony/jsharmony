@@ -2,12 +2,12 @@
   "integer":{ "type": "int" },
   "decimal":{ 
     "sql_from_db": "%%%SQL%%%",
-    "sqlsearch": "%%%SQL%%%",
+    "sqlsearch": "cast(%%%SQL%%% as real)",
     "sqlsearch_to_db": "cast(%%%SQL%%% as real)"
   },
   "real":{ 
     "sql_from_db": "%%%SQL%%%",
-    "sqlsearch": "%%%SQL%%%",
+    "sqlsearch": "cast(%%%SQL%%% as real)",
     "sqlsearch_to_db": "cast(%%%SQL%%% as real)",
     "datatype_config":{
       "defaults":{ "PREC": 53 }
@@ -16,14 +16,17 @@
   },
   "time":{
     "sql_from_db": "strftime('1970-01-01T%H:%M:%f',%%%SQL%%%)",
+    "sqlsearch": "strftime('1970-01-01T%H:%M:%f',%%%SQL%%%)",
     "sqlsearch_to_db": "strftime('1970-01-01T%H:%M:%f',%%%SQL%%%)"
   },
   "date":{
     "sql_from_db": "strftime('%Y-%m-%dT00:00:00',%%%SQL%%%)",
+    "sqlsearch": "strftime('%Y-%m-%dT00:00:00',%%%SQL%%%)",
     "sqlsearch_to_db": "strftime('%Y-%m-%dT00:00:00',%%%SQL%%%)"
   },
   "datetime":{
     "sql_from_db": "strftime('%Y-%m-%dT%H:%M:%f',%%%SQL%%%)",
+    "sqlsearch": "strftime('%Y-%m-%dT%H:%M:%f',%%%SQL%%%)",
     "sqlsearch_to_db": "strftime('%Y-%m-%dT%H:%M:%f',%%%SQL%%%)"
   },
   "text":{ "type": "varchar" },

@@ -63,14 +63,17 @@
   },
   "date":{
     "sql_from_db": "CHAR(%%%SQL%%%, ISO)",
+    "sqlsearch": "CAST(%%%SQL%%% AS DATE)",
     "sqlsearch_to_db": "CAST(%%%SQL%%% AS DATE)"
   },
   "time":{
     "sql_from_db": "CHAR(%%%SQL%%%, ISO)",
+    "sqlsearch": "CAST(%%%SQL%%% AS TIME)",
     "sqlsearch_to_db": "CAST(%%%SQL%%% AS TIME)"
   },
   "timestamp":{
     "sql_from_db": "REGEXP_REPLACE(CHAR(%%%SQL%%%), '-(\\d\\d)\\.(\\d\\d)\\.(\\d\\d)\\.', ' $1:$2:$3.')",
+    "sqlsearch": "CAST(%%%SQL%%% AS TIMESTAMP)",
     "sqlsearch_to_db": "CAST(%%%SQL%%% AS TIMESTAMP)",
     "type": "datetime"
   },

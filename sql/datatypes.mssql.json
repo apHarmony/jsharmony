@@ -12,9 +12,9 @@
   "bit":{ "type": "boolean" },
   "decimal":{ 
     "sql_from_db": "cast(%%%SQL%%% as nvarchar)",
-    "sqlsearch": "%%%SQL%%%",
     "sqlsort": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "sql_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
+    "sqlsearch": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "sqlsearch_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "datatype_config": {
       "defaults":{ "PREC_H": 38, "PREC_L": 10 }
@@ -22,9 +22,9 @@
   },
   "float":{ 
     "sql_from_db": "convert(varchar(50), %%%SQL%%%, 3)",
-    "sqlsearch": "%%%SQL%%%",
     "sqlsort": "cast(%%%SQL%%% as float(%%%PREC%%%))",
     "sql_to_db": "cast(%%%SQL%%% as float(%%%PREC%%%))",
+    "sqlsearch": "cast(%%%SQL%%% as float(%%%PREC%%%))",
     "sqlsearch_to_db": "cast(%%%SQL%%% as float(%%%PREC%%%))",
     "datatype_config": {
       "defaults":{ "PREC": 53 }
@@ -36,9 +36,9 @@
   },
   "money":{ 
     "sql_from_db": "cast(%%%SQL%%% as nvarchar)",
-    "sqlsearch": "%%%SQL%%%",
     "sqlsort": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "sql_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
+    "sqlsearch": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "sqlsearch_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "datatype_config": {
       "defaults":{ "PREC_H": 19, "PREC_L": 4 }
@@ -51,9 +51,9 @@
   },
   "smallmoney":{ 
     "sql_from_db": "cast(%%%SQL%%% as nvarchar)",
-    "sqlsearch": "%%%SQL%%%",
     "sqlsort": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "sql_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
+    "sqlsearch": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "sqlsearch_to_db": "cast(%%%SQL%%% as decimal(%%%PREC_H%%%,%%%PREC_L%%%))",
     "datatype_config": {
       "defaults":{ "PREC_H": 10, "PREC_L": 4 }
