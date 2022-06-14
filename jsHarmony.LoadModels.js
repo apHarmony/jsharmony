@@ -1758,7 +1758,7 @@ exports.ParseEntities = function () {
     ParseMultiLineProperties(model, ['js', 'jslib', 'sqlselect', 'sqldownloadselect', 'sqlrowcount', 'sqlinsert', 'sqlinsertencrypt', 'sqlupdate', 'sqldelete', 'sqlexec', 'sqlwhere', 'sqlgetinsertkeys', 'ongetfilename', 'oninit', 'onload', 'onloadimmediate', 'oninsert', 'onvalidate', 'onupdate', 'ondestroy', 'oncommit', 'onchange']);
     if (model.breadcrumbs) ParseMultiLineProperties(model.breadcrumbs, ['sql']);
     if (model.fields) _.each(model.fields, function (field) {
-      ParseMultiLineProperties(field, ['onchange', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlwhere', 'sqlsort', 'sqlsearch', 'sqlsearchsound', 'value']);
+      ParseMultiLineProperties(field, ['onclick','onchange', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlwhere', 'sqlsort', 'sqlsearch', 'sqlsearchsound', 'value']);
       if (field.lov) ParseMultiLineProperties(field.lov, ['sql', 'sql2', 'sqlmp', 'sqlselect']);
       if (field.controlparams) ParseMultiLineProperties(field.controlparams, ['onpopup']);
     });
