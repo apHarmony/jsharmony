@@ -126,7 +126,7 @@ exports.ParseTaskCommand = function(model, command, params){
     parseChildCommands('read_file', 'foreach_line', 'line');
   }
   else if(command.exec == 'write_csv'){
-    validateCommandProperties(['path','db','data','sql','headers','overwrite','fields']);
+    validateCommandProperties(['path','db','data','sql','headers','overwrite','fields','csv_options']);
     if(command.sql) command.sql = Helper.ParseMultiLine(command.sql);
     if(command.data){
       if(!_.isArray(command.data)) command.data = [command.data]; //{} => [{}]
@@ -134,7 +134,7 @@ exports.ParseTaskCommand = function(model, command, params){
     }
   }
   else if(command.exec == 'append_csv'){
-    validateCommandProperties(['path','db','data','sql','headers','fields']);
+    validateCommandProperties(['path','db','data','sql','headers','fields','csv_options']);
     if(command.sql) command.sql = Helper.ParseMultiLine(command.sql);
     if(command.data){
       if(!_.isArray(command.data)) command.data = [command.data]; //{} => [{}]

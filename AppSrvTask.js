@@ -774,7 +774,7 @@ AppSrvTask.prototype.getCSVSQLData = function(model, command, params, options, o
 };
 
 AppSrvTask.prototype.exec_write_csv = function(model, command, params, options, command_cb){
-  //write_csv (path, db, data, sql, overwrite, headers)
+  //write_csv (path, db, data, sql, overwrite, headers, csv_options)
   //handle data: {}, [], [[]], [{}]
   //can't have both data and sql
 
@@ -819,6 +819,7 @@ AppSrvTask.prototype.exec_write_csv = function(model, command, params, options, 
       var columns = _.map(command.fields, function(field){ if(_.isString(field)) return field; return field.name; });
       if(!_.isEmpty(columns)) command.columns = columns;
     }
+    csv_options = _.extend(csv_options, (command.csv_options || {}));
     var csvwriter = csv.stringify(csv_options);
     csvwriter.on('error', function(err){
       if(hasError) return;
@@ -846,7 +847,7 @@ AppSrvTask.prototype.exec_write_csv = function(model, command, params, options, 
 };
 
 AppSrvTask.prototype.exec_append_csv = function(model, command, params, options, command_cb){
-  //append_csv (path, db, data, sql)
+  //append_csv (path, db, data, sql, csv_options)
 
   var _this = this;
 
@@ -888,6 +889,7 @@ AppSrvTask.prototype.exec_append_csv = function(model, command, params, options,
       var columns = _.map(command.fields, function(field){ if(_.isString(field)) return field; return field.name; });
       if(!_.isEmpty(columns)) command.columns = columns;
     }
+    csv_options = _.extend(csv_options, (command.csv_options || {}));
     var csvwriter = csv.stringify(csv_options);
     csvwriter.on('error', function(err){
       if(hasError) return;
