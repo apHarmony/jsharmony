@@ -286,7 +286,7 @@ AppSrvTask.prototype.exec_sqltrans = function(model, command, params, options, c
 };
 
 AppSrvTask.prototype.exec_sql = function(model, command, params, options, command_cb){
-  //sql (sql, db, into, foreach_row)
+  //sql (sql, db, into, foreach_row, fields)
 
   var _this = this;
 
@@ -774,7 +774,7 @@ AppSrvTask.prototype.getCSVSQLData = function(model, command, params, options, o
 };
 
 AppSrvTask.prototype.exec_write_csv = function(model, command, params, options, command_cb){
-  //write_csv (path, db, data, sql, overwrite, headers, csv_options)
+  //write_csv (path, db, data, sql, overwrite, fields, headers, csv_options)
   //handle data: {}, [], [[]], [{}]
   //can't have both data and sql
 
@@ -847,7 +847,7 @@ AppSrvTask.prototype.exec_write_csv = function(model, command, params, options, 
 };
 
 AppSrvTask.prototype.exec_append_csv = function(model, command, params, options, command_cb){
-  //append_csv (path, db, data, sql, csv_options)
+  //append_csv (path, db, data, sql, fields, headers, csv_options)
 
   var _this = this;
 
@@ -1111,7 +1111,8 @@ AppSrvTask.prototype.exec_shell = function(model, command, params, options, comm
 };
 
 AppSrvTask.prototype.exec_email = function(model, command, params, options, command_cb){
-  //email (to, cc, bcc, subject, text, html, attachments)
+  //email ( email: { to, cc, bcc, subject, text, html, attachments } )
+  //email ( jsharmony_txt: { txt_attrib, to, cc, bcc, attachments } )
 
   var _this = this;
 
