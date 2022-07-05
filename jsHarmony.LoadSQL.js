@@ -94,8 +94,9 @@ exports.LoadSQL = function (db, dir, type, moduleName, dbid) {
 };
 
 exports.LoadSQLFiles = function(module, dir, options){
-  options = _.extend({ ignoreDirectories: true, filterType: '' },options||{});
+  options = _.extend({ ignoreDirectories: true, filterType: '', db: null },options||{});
   var dbDrivers = this.getDBDrivers();
+  var dbIds = _.keys(this.DBConfig);
   if (!fs.existsSync(dir)) return [];
   var d = fs.readdirSync(dir);
   d.sort(function (a, b) {
@@ -125,6 +126,9 @@ exports.LoadSQLFiles = function(module, dir, options){
         continue;
       }
       else {
+        if (options.db && (fname != options.db)){
+          if (_.includes(dbIds, fname)) continue;
+        }
         if (options.filterType && (fname!=options.filterType)) {
           let found_other_dbtype = false;
           _.each(dbDrivers, function (dbtype) { if (fname==dbtype) found_other_dbtype = true; });
@@ -174,10 +178,27 @@ exports.LoadSQLObjects = function(dir, module, dbid, options){
     };
 
     if(fobj.type=='file'){
-      if (fname.indexOf('.json', fname.length - 5) == -1) continue;
-      var objname = fname.replace('.json', '');
-      _this.LogInit_INFO('Loading ' + objname);
-      var obj = _this.ParseJSON(fpath, module.name, 'SQL Object ' + objname);
+      var objname = '';
+      var obj = null;
+
+      if (fname.indexOf('.json', fname.length - 5) !== -1){
+        objname = fname.replace('.json', '');
+        _this.LogInit_INFO('Loading ' + objname);
+        obj = _this.ParseJSON(fpath, module.name, 'SQL Object ' + objname);
+      }
+      else if (fname.indexOf('.simplejson', fname.length - 11) !== -1){
+        objname = fname.replace('.simplejson', '');
+        _this.LogInit_INFO('Loading ' + objname);
+        try{
+          obj = JSON.parse(fs.readFileSync(fpath, 'utf8'));
+        }
+        catch(ex){
+          _this.Log.console_error(new Error('Error parsing file "'+fpath+'":' + ex.toString()));
+          process.exit(8);
+        }
+      }
+      else continue;
+
       if(!('type' in obj)){
         _.each(obj, function (subobj, subobjname) {
           let objdbid = subobj.database || 'default';
@@ -252,7 +273,7 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, dbid, rslt) {
   var _this = this;
   var module = (moduleName ? _this.Modules[moduleName] : null);
   
-  var d = _this.LoadSQLFiles(module, dir, { ignoreDirectories: true, filterType: type });
+  var d = _this.LoadSQLFiles(module, dir, { ignoreDirectories: true, filterType: type, db: dbid });
 
   //Load Base SQL files
   _this.LogInit_PERFORMANCE('Loading Base SQL Files '+(Date.now()-_this.Statistics.StartTime));
@@ -294,7 +315,7 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, dbid, rslt) {
   //Load SQL Scripts
   _this.LogInit_PERFORMANCE('Loading SQL Scripts '+(Date.now()-_this.Statistics.StartTime));
   var scriptsdir = dir+'scripts/';
-  d = _this.LoadSQLFiles(module, scriptsdir, { ignoreDirectories: false, filterType: type });
+  d = _this.LoadSQLFiles(module, scriptsdir, { ignoreDirectories: false, filterType: type, db: dbid });
   if(module && (d.length > 0)){
     var scripts = {};
 
@@ -303,9 +324,10 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, dbid, rslt) {
       if(d[i].type=='folder'){
         var subdname = d[i].name;
         var subdpath = d[i].path;
-        if(subdname == type){ d=d.concat(_this.LoadSQLFiles(module, subdpath+'/', { ignoreDirectories: false, filterType: type })); continue; }
-        var subd1 = _this.LoadSQLFiles(module, subdpath+'/', { ignoreDirectories: true, filterType: type });
-        var subd2 = _this.LoadSQLFiles(module, subdpath+'/'+type+'/', { ignoreDirectories: true, filterType: type });
+        if(subdname == dbid){ d=d.concat(_this.LoadSQLFiles(module, subdpath+'/', { ignoreDirectories: false, filterType: type })); continue; }
+        if(subdname == type){ d=d.concat(_this.LoadSQLFiles(module, subdpath+'/', { ignoreDirectories: false, filterType: type, db: dbid })); continue; }
+        var subd1 = _this.LoadSQLFiles(module, subdpath+'/', { ignoreDirectories: true, filterType: type, db: dbid });
+        var subd2 = _this.LoadSQLFiles(module, subdpath+'/'+type+'/', { ignoreDirectories: true, filterType: type, db: dbid });
         var subd = subd1.concat(subd2);
         scripts[subdname] = {};
         for(var j=0;j<subd.length;j++){

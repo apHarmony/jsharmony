@@ -200,7 +200,7 @@ AppSrvTask.prototype.exec_commands = function (model, commands, params, options,
       'create_folder','move_folder','delete_folder','list_files',
       'delete_file','copy_file','move_file','write_file','append_file','read_file',
       'write_csv','append_csv','read_csv',
-      'js','shell','email',
+      'js','shell','email','log',
     ];
     options.exec_counter[options.exec_counter.length-1]++;
     _this.log.debug(model, model.id + ': ' + _this.jsh.getTaskCommandDesc(command, options));
@@ -1026,16 +1026,18 @@ AppSrvTask.prototype.exec_js = function(model, command, params, options, command
   //js (js, into, foreach)
 
   var _this = this;
+  var jsh = this.jsh;
 
   if(!command.js) return command_cb(new Error('JS command requires "js" property'));
   if(command.foreach && !command.into) return command_cb(new Error('Command with "foreach" requires "into" property'));
 
-  var jsstr = '(function(){ ' + command.js.toString() + ' })();';
+  var jsstr = '(function(){ ' + _this.replaceParams(params, command.js.toString()) + ' })();';
   var jsrslt = null;
   try{
     jsrslt = eval(jsstr);
   }
   catch(ex){
+    jsh.Log.info('Error executing: '+jsstr);
     if(ex) return command_cb(ex);
   }
 
@@ -1078,12 +1080,17 @@ AppSrvTask.prototype.exec_js = function(model, command, params, options, command
 };
 
 AppSrvTask.prototype.exec_shell = function(model, command, params, options, command_cb){
-  //shell (path, params, cwd)
+  //shell (path, params, cwd, into, foreach_stdio, foreach_stdio_line, foreach_stderr, foreach_stderr_line)
 
   var _this = this;
 
   if(!command.path) return command_cb(new Error('Shell command requires "path" property'));
   var cmdpath = _this.replaceParams(params, command.path);
+
+  if(command.foreach_stdio && !command.into) return command_cb(new Error('Command with "foreach_stdio" requires "into" property'));
+  if(command.foreach_stdio_line && !command.into) return command_cb(new Error('Command with "foreach_stdio_line" requires "into" property'));
+  if(command.foreach_stderr && !command.into) return command_cb(new Error('Command with "foreach_stderr" requires "into" property'));
+  if(command.foreach_stderr_line && !command.into) return command_cb(new Error('Command with "foreach_stderr_line" requires "into" property'));
 
   var cmdparams = [];
   if(command.params){
@@ -1097,17 +1104,163 @@ AppSrvTask.prototype.exec_shell = function(model, command, params, options, comm
     if(!path.isAbsolute(cwd)) cwd = path.join(_this.jsh.Config.datadir, cwd);
   }
 
+  options.exec_counter.push(0);
   var hasError = false;
+  var pendingCallbacks = [];
   var cmd = spawn(cmdpath, cmdparams, { cwd: cwd });
+  var curLine = '';
+  var curLines = {
+    'stdio': '',
+    'stderr': '',
+  };
+  var lastLines = [];
+  var MAX_LINES = 100;
+  function appendLine(txt){
+    curLine += txt;
+    if((curLine.indexOf('\n')) >= 0){
+      var lastLine = curLine.substr(0, curLine.lastIndexOf('\n'));
+      curLine = curLine.substr(curLine.lastIndexOf('\n')+1);
+      lastLines = lastLines.concat(lastLine.split('\n'));
+      while(lastLines.length > MAX_LINES) lastLines.shift();
+    }
+    if(curLine.length > 500) curLine = curLine.substr(0, 497)+'...';
+  }
+  function commandError(err){
+    hasError = true;
+    options.exec_counter.pop();
+    return command_cb(err);
+  }
+  function processLine(foreach_handler, foreach_line_handler, foreach_type, data){
+    var isEOF = false;
+    if(data && data.eof){
+      data = '';
+      isEOF = true;
+    }
+    if(!isEOF && foreach_handler){
+      //Add parameter
+      var shellparams = _.extend({}, params);
+      _this.addParam(shellparams, [], command.into + '.' + foreach_type, (data||'').toString());
+      _this.addParam(shellparams, [], command.into + '.' + foreach_type + '_raw', data);
+      //Execute Commands
+      options.exec_counter[options.exec_counter.length-1]++;
+      pendingCallbacks.push(false);
+      var callbackIdx = pendingCallbacks.length - 1;
+      _this.exec_commands(model, foreach_handler, shellparams, options, function(err){
+        if(hasError) return;
+        if(err) return commandError(err);
+        pendingCallbacks[callbackIdx] = true;
+      });
+    }
+    if(foreach_line_handler){
+      curLines[foreach_type] += (data||'').toString();
+      if(isEOF || ((curLines[foreach_type].indexOf('\n')) >= 0)){
+        var lastLine = '';
+        if(isEOF){
+          lastLine = curLines[foreach_type];
+          curLines[foreach_type] = '';
+        }
+        else {
+          lastLine = curLines[foreach_type].substr(0, curLines[foreach_type].lastIndexOf('\n'));
+          curLines[foreach_type] = curLines[foreach_type].substr(curLines[foreach_type].lastIndexOf('\n')+1);
+        }
+        _.each(lastLine.split('\n'), function(line){
+          var shellparams = _.extend({}, params);
+          _this.addParam(shellparams, [], command.into + '.' + foreach_type, line);
+          //Execute Commands
+          options.exec_counter[options.exec_counter.length-1]++;
+          pendingCallbacks.push(false);
+          var callbackIdx = pendingCallbacks.length - 1;
+          _this.exec_commands(model, foreach_line_handler, shellparams, options, function(err){
+            if(hasError) return;
+            if(err) return commandError(err);
+            pendingCallbacks[callbackIdx] = true;
+          });
+        });
+      }
+    }
+  }
+  cmd.stdout.on('data',function(data){
+    if(hasError) return;
+    appendLine((data||'').toString());
+    processLine(command.foreach_stdio, command.foreach_stdio_line, 'stdio', data);
+  });
+  cmd.stderr.on('data',function(data){
+    if(hasError) return;
+    appendLine((data||'').toString());
+    processLine(command.foreach_stderr, command.foreach_stderr_line, 'stderr', data);
+  });
+  cmd.on('message',function(data){
+    if(hasError) return;
+    appendLine((data||'').toString());
+    processLine(command.foreach_stdio, command.foreach_stdio_line, 'stdio', data);
+  });
   cmd.on('error', function(err){
     if(hasError) return;
-    hasError = true;
-    return command_cb(err);
+    return commandError(err);
   });
-  cmd.on('close', function(){
+  cmd.on('close', function(code){
     if(hasError) return;
-    return command_cb();
+    //Close out the sdtout, stderr inputs
+    processLine(command.foreach_stdio, command.foreach_stdio_line, 'stdio', { eof: true });
+    if(hasError) return;
+    processLine(command.foreach_stderr, command.foreach_stderr_line, 'stderr', { eof: true });
+    if(hasError) return;
+    //Handle exit code
+    if(code){
+      return commandError(new Error('Process exited with code '+code.toString()+': '+lastLines.join('\n')));
+    }
+
+    //Wait for all pending options to close
+    Helper.waitUntil(
+      function cond(){
+        for(var i=0;i<pendingCallbacks.length;i++){ if(!pendingCallbacks[i]) return false; }
+        return true;
+      },
+      function f(){
+        if(hasError) return;
+        options.exec_counter.pop();
+        if(code){
+          return command_cb(new Error('Process exited with code '+code.toString()+': '+lastLines.join('\n')));
+        }
+        return command_cb();
+      },
+      function cancel(f){ return hasError; },
+      1, //timeout
+    );
   });
+};
+
+AppSrvTask.prototype.exec_log = function(model, command, params, options, command_cb){
+  //log (path, level, text)
+
+  var _this = this;
+
+  var msg = command.text || '';
+  msg = _this.replaceParams(params, msg);
+  if(Helper.endsWith(msg, '\n')) msg = msg.substr(0, msg.length - 1);
+  if(Helper.endsWith(msg, '\r')) msg = msg.substr(0, msg.length - 1);
+
+  if(!command.level) command.level = 'info';
+  if(!_.includes(['info','warning','error'], command.level)) throw new Error('Invalid loglevel: ' + command.level);
+
+  if(!command.path){
+    if(_.includes(['info','warning','error'], command.level)) _this.jsh.Log[command.level](msg);
+  }
+  else {
+    var logfile = command.path;
+    logfile = _this.replaceParams(params, logfile);
+
+    var curdt = new Date();
+    logfile = Helper.ReplaceAll(logfile, '%YYYY', Helper.pad(curdt.getFullYear(),'0',4));
+    logfile = Helper.ReplaceAll(logfile, '%MM', Helper.pad(curdt.getMonth()+1,'0',2));
+    logfile = Helper.ReplaceAll(logfile, '%DD', Helper.pad(curdt.getDate(),'0',2));
+
+    if(!path.isAbsolute(logfile)) logfile = path.join(_this.jsh.Config.logdir, logfile);
+
+    _this.jsh.Log[command.level](msg, { logfile: logfile });
+  }
+
+  return command_cb();
 };
 
 AppSrvTask.prototype.exec_email = function(model, command, params, options, command_cb){

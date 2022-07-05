@@ -146,7 +146,17 @@ exports.ParseTaskCommand = function(model, command, params){
     parseChildCommands('read_csv', 'foreach_row', 'row');
   }
   else if(command.exec == 'shell'){
-    validateCommandProperties(['path', 'params', 'cwd']);
+    validateCommandProperties(['path', 'params', 'cwd', 'into', 'foreach_stdio', 'foreach_stderr', 'foreach_stdio_line', 'foreach_stderr_line']);
+    parseChildCommands('shell', 'foreach_stdio', 'stdio');
+    if(command.into) delete params[command.into];
+    parseChildCommands('shell', 'foreach_stdio_line', 'stdio');
+    if(command.into) delete params[command.into];
+    parseChildCommands('shell', 'foreach_stderr', 'stderr');
+    if(command.into) delete params[command.into];
+    parseChildCommands('shell', 'foreach_stderr_line', 'stderr');
+  }
+  else if(command.exec == 'log'){
+    validateCommandProperties(['path', 'level', 'text']);
   }
   else if(command.exec == 'js'){
     validateCommandProperties(['js','into','foreach']);

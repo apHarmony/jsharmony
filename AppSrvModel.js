@@ -607,7 +607,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
   var jsh = this.AppSrv.jsh;
   var model = srcobj;
   var rsltfields = [];
-  var firstsort = (('sort' in model)?model['sort'][0].substring(1):'');
+  var firstsort = ((('sort' in model)&&model.sort.length)?model['sort'][0].substring(1):'');
   var _this = this;
   async.eachOfSeries(srcobj.fields, function(srcfield,i,cb){
     var dstfield = {};

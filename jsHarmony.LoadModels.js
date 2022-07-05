@@ -139,6 +139,19 @@ exports.ParseJSON = function(fname, moduleName, desc, cb, options){
             if(!path.isAbsolute(filepath)) filepath = path.join(fdir, filepath);
             return _this.ParseJSON(filepath, moduleName, desc + ' :: Script ' + filename);
           },
+          '@merge': function(){
+            if(!arguments.length) return null;
+            var accumulator = arguments[0];
+            for(var i=1;i<arguments.length;i++){
+              if(_.isArray(accumulator)) accumulator = accumulator.concat(arguments[i]);
+              else if(_.isString(accumulator)) accumulator += arguments[i];
+              else if(_.isObject(accumulator)) _.extend(accumulator, arguments[i]);
+              else {
+                if(!accumulator) accumulator = arguments[i];
+              }
+            }
+            return accumulator;
+          },
         }
       }).Tree;
     }
