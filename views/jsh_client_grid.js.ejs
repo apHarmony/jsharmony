@@ -202,6 +202,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
     xform.xData = xgrid;
     xgrid.State.Search = xsearch.Data.Items;
+    if(xmodel.default_search) xgrid.SearchJSON = JSON.stringify(xsearch.Data.Items);
     xgrid.State.Sort = xgrid.Sort;
     <%=xejs.iif(('disableautoload' in model) && (model.disableautoload),'xgrid.AutoLoadMore = false;') %>
     xgrid.OnBeforeSelect = function(){

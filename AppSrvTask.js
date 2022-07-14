@@ -153,6 +153,14 @@ AppSrvTask.prototype.logParams = function(model, params){
   this.log.debug(model, model.id + ': Params ' + rslt);
 };
 
+AppSrvTask.prototype.drainLocals = function(commandLocals, command_cb){
+  if(!commandLocals || !commandLocals.length) return command_cb();
+  async.eachSeries(commandLocals, function(locals, locals_cb){
+    if(!locals || !locals.queue) return locals_cb();
+    locals.queue.drain(command_cb);
+  }, command_cb);
+};
+
 AppSrvTask.prototype.exec = function (req, res, dbcontext, modelid, taskparams, taskcallback) {
   taskparams = taskparams || {};
 
@@ -186,14 +194,15 @@ AppSrvTask.prototype.exec = function (req, res, dbcontext, modelid, taskparams, 
     exec_counter: [],
   };
 
-  this.exec_commands(model, task.commands, params, options, callback);
+  this.exec_commands(model, task.commands, null, params, options, callback);
 };
 
-AppSrvTask.prototype.exec_commands = function (model, commands, params, options, callback) {
+AppSrvTask.prototype.exec_commands = function (model, commands, commandLocals, params, options, callback) {
   var _this = this;
   var rslt = _this.getParamValues(params);
   options.exec_counter.push(0);
-  async.eachSeries(commands, function(command, command_cb){
+  if(commandLocals && !commandLocals.length){ for(var i=0;i<commands.length;i++){ commandLocals.push({}); } }
+  async.eachOfSeries(commands, function(command, idx, command_cb){
     var operation_type = command.exec;
     var standard_operations = [
       'sql','sqltrans',
@@ -205,10 +214,15 @@ AppSrvTask.prototype.exec_commands = function (model, commands, params, options,
     options.exec_counter[options.exec_counter.length-1]++;
     _this.log.debug(model, model.id + ': ' + _this.jsh.getTaskCommandDesc(command, options));
     if(_.includes(standard_operations, operation_type)){
+      var orig_locals = options.locals;
+      options.locals = undefined;
+      if(commandLocals) options.locals = commandLocals[idx];
       try{
         _this['exec_'+operation_type](model, command, params, options, command_cb);
+        options.locals = orig_locals;
       }
       catch(ex){
+        options.locals = orig_locals;
         return command_cb(ex);
       }
     }
@@ -276,7 +290,7 @@ AppSrvTask.prototype.exec_sqltrans = function(model, command, params, options, c
     transOptions.trans[dbid] = dbtrans;
 
     //Execute Commands
-    _this.exec_commands(model, command.for, params, transOptions, function(err){
+    _this.exec_commands(model, command.for, null, params, transOptions, function(err){
       return callback(err);
     });
   };
@@ -286,7 +300,7 @@ AppSrvTask.prototype.exec_sqltrans = function(model, command, params, options, c
 };
 
 AppSrvTask.prototype.exec_sql = function(model, command, params, options, command_cb){
-  //sql (sql, db, into, foreach_row, fields)
+  //sql (sql, db, into, foreach_row, fields, batch)
 
   var _this = this;
 
@@ -294,6 +308,10 @@ AppSrvTask.prototype.exec_sql = function(model, command, params, options, comman
   if(!sql) return command_cb(new Error('SQL command missing "sql" property - no SQL to execute'));
 
   if(command.foreach_row && !command.into) return command_cb(new Error('Command with "foreach_row" requires "into" property'));
+  if(command.batch && !options.locals) return command_cb(new Error('Batch commands must be executed within a loop'));
+  if(command.batch && command.foreach_row) return command_cb(new Error('Batch commands cannot be used with foreach'));
+
+  var commandLocals = [];
 
   //Generate array of parameters
   var sql_ptypes = _this.getParamTypes(params);
@@ -306,57 +324,83 @@ AppSrvTask.prototype.exec_sql = function(model, command, params, options, comman
   
   var dbcontext = 'task' || command._DBContext || sql_params._DBContext;
 
-  var dbtasks = {};
-  dbtasks['command'] = function (callback) {
-    //Execute SQL
-    db.Recordset(dbcontext, sql, sql_ptypes, sql_params, options.trans[dbid], function (err, rslt, stats) {
-      if (stats) stats.model = model;
-      if (err) { err.model = model; err.sql = sql; _this.logParams(model, params); return callback(err, rslt, stats); }
-
-      Helper.execif(command.foreach_row && rslt,
-        function(f){
-          if(command.foreach_row && rslt){
-            options.exec_counter.push(0);
-            async.eachSeries(rslt, function(row, row_cb){
-              //Validate
-              var verrors = _this.validateFields(command, row);
-              if(verrors) return row_cb(new Error('Error validating ' + command.into + ': ' + verrors + '\nData: ' + JSON.stringify(row)));
-
-              //Add to parameters
-              var rowparams = _.extend({}, params);
-              for(var key in row){
-                _this.addParam(rowparams, command.fields, command.into + '.' + key, row[key]);
-              }
-
-              //Add null for empty columns
-              _.each(command.fields, function(field){
-                var fieldName = (_.isString(field) ? field : field.name);
-                if(!fieldName) return;
-                var paramName = command.into + '.' + fieldName;
-                if(!(paramName in rowparams)){
-                  _this.addParam(rowparams, command.fields, paramName, null);
-                }
-              });
-              
-              //Execute Commands
-              options.exec_counter[options.exec_counter.length-1]++;
-              _this.exec_commands(model, command.foreach_row, rowparams, options, row_cb);
-            }, function(err){
-              options.exec_counter.pop();
-              if(err) return callback(err);
-              return f();
-            });
-          }
-        },
-        function(){
+  if(command.batch){
+    //Execute batch queue
+    if(!options.locals.queue) options.locals.queue = new Helper.gather(function(sqls, gather_cb){
+      if(!sqls.length) return gather_cb();
+      var dbtasks = {};
+      dbtasks['command'] = function (callback) {
+        //Execute SQL
+        db.Recordset(dbcontext, sqls.join(' '), [], {}, options.trans[dbid], function (err, rslt, stats) {
+          if (stats) stats.model = model;
+          if (err) { err.model = model; err.sql = sql; _this.logParams(model, params); return callback(err, rslt, stats); }
           callback(err, rslt, stats);
-        }
-      );
+        });
+      };
+      db.ExecTasks(dbtasks, function (err, rslt, stats) {
+        return gather_cb(err);
+      });
+    }, { length: command.batch });
+
+    sql = db.applySQLParams(sql, sql_ptypes, sql_params).trim();
+    if(!Helper.endsWith(sql, ';')) sql += ';';
+    options.locals.queue.push(sql, command_cb);
+  }
+  else {
+    //Execute single command
+    var dbtasks = {};
+    dbtasks['command'] = function (callback) {
+      //Execute SQL
+      db.Recordset(dbcontext, sql, sql_ptypes, sql_params, options.trans[dbid], function (err, rslt, stats) {
+        if (stats) stats.model = model;
+        if (err) { err.model = model; err.sql = sql; _this.logParams(model, params); return callback(err, rslt, stats); }
+
+        Helper.execif(command.foreach_row && rslt,
+          function(f){
+            if(command.foreach_row && rslt){
+              options.exec_counter.push(0);
+              async.eachSeries(rslt, function(row, row_cb){
+                //Validate
+                var verrors = _this.validateFields(command, row);
+                if(verrors) return row_cb(new Error('Error validating ' + command.into + ': ' + verrors + '\nData: ' + JSON.stringify(row)));
+
+                //Add to parameters
+                var rowparams = _.extend({}, params);
+                for(var key in row){
+                  _this.addParam(rowparams, command.fields, command.into + '.' + key, row[key]);
+                }
+
+                //Add null for empty columns
+                _.each(command.fields, function(field){
+                  var fieldName = (_.isString(field) ? field : field.name);
+                  if(!fieldName) return;
+                  var paramName = command.into + '.' + fieldName;
+                  if(!(paramName in rowparams)){
+                    _this.addParam(rowparams, command.fields, paramName, null);
+                  }
+                });
+                
+                //Execute Commands
+                options.exec_counter[options.exec_counter.length-1]++;
+                _this.exec_commands(model, command.foreach_row, commandLocals, rowparams, options, row_cb);
+              }, function(err){
+                options.exec_counter.pop();
+                if(err) return callback(err);
+                return f();
+              });
+            }
+          },
+          function(){
+            callback(err, rslt, stats);
+          }
+        );
+      });
+    };
+    db.ExecTasks(dbtasks, function (err, rslt, stats) {
+      if(err) return command_cb(err);
+      return _this.drainLocals(commandLocals, command_cb);
     });
-  };
-  db.ExecTasks(dbtasks, function (err, rslt, stats) {
-    return command_cb(err);
-  });
+  }
 };
 
 AppSrvTask.prototype.exec_create_folder = function(model, command, params, options, command_cb){
@@ -439,6 +483,7 @@ AppSrvTask.prototype.exec_list_files = function(model, command, params, options,
   if(!command.foreach_file) return command_cb(new Error('list_files command missing "foreach_file" property'));
   if(!command.into) return command_cb(new Error('list_files command missing "into" property'));
 
+  var commandLocals = [];
   fs.readdir(fpath, function(err, files){
     if(err) return command_cb(err);
     options.exec_counter.push(0);
@@ -491,11 +536,12 @@ AppSrvTask.prototype.exec_list_files = function(model, command, params, options,
         
         //Execute Commands for the file
         options.exec_counter[options.exec_counter.length-1]++;
-        _this.exec_commands(model, command.foreach_file, commandparams, options, file_cb);
+        _this.exec_commands(model, command.foreach_file, commandLocals, commandparams, options, file_cb);
       });
     }, function(err){
       options.exec_counter.pop();
-      return command_cb(err);
+      if(err) return command_cb(err);
+      return _this.drainLocals(commandLocals, command_cb);
     });
   });
 };
@@ -660,6 +706,7 @@ AppSrvTask.prototype.exec_read_file = function(model, command, params, options, 
   var dataBuffer = '';
 
   options.exec_counter.push(0);
+  var commandLocals = [];
 
   function processLine(line, line_cb){
     //Add to parameters
@@ -667,7 +714,7 @@ AppSrvTask.prototype.exec_read_file = function(model, command, params, options, 
     _this.addParam(lineparams, [], command.into + '.text', line);
 
     options.exec_counter[options.exec_counter.length-1]++;
-    _this.exec_commands(model, command.foreach_line, lineparams, options, function(err){
+    _this.exec_commands(model, command.foreach_line, commandLocals, lineparams, options, function(err){
       return line_cb(err);
     });
   }
@@ -718,7 +765,7 @@ AppSrvTask.prototype.exec_read_file = function(model, command, params, options, 
     else{
       if((processData(processDataHandler)===true) && hasFinished){
         options.exec_counter.pop();
-        return command_cb();
+        return _this.drainLocals(commandLocals, command_cb);
       }
     }
   }
@@ -949,6 +996,7 @@ AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, c
 
   options.exec_counter.push(0);
   var rowcnt = 0;
+  var commandLocals = [];
 
   function processRow(row_cb){
     if(hasError) return;
@@ -977,7 +1025,7 @@ AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, c
     });
 
     options.exec_counter[options.exec_counter.length-1]++;
-    _this.exec_commands(model, command.foreach_row, rowparams, options, function(err){
+    _this.exec_commands(model, command.foreach_row, commandLocals, rowparams, options, function(err){
       Helper.execif(rowcnt%10==0, function(f){
         setTimeout(f,1);
       }, function(){
@@ -997,7 +1045,7 @@ AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, c
     else{
       if((processRow(processRowHandler)===true) && hasFinished){
         options.exec_counter.pop();
-        return command_cb();
+        return _this.drainLocals(commandLocals, command_cb);
       }
     }
   }
@@ -1015,7 +1063,7 @@ AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, c
       hasReadable = true;
       if(processRow(processRowHandler)===true){
         options.exec_counter.pop();
-        return command_cb();
+        return _this.drainLocals(commandLocals, command_cb);
       }
     }
   });
@@ -1033,6 +1081,7 @@ AppSrvTask.prototype.exec_js = function(model, command, params, options, command
 
   var jsstr = '(function(){ ' + _this.replaceParams(params, command.js.toString()) + ' })();';
   var jsrslt = null;
+  var commandLocals = [];
   try{
     jsrslt = eval(jsstr);
   }
@@ -1064,15 +1113,16 @@ AppSrvTask.prototype.exec_js = function(model, command, params, options, command
             
             //Execute Commands
             options.exec_counter[options.exec_counter.length-1]++;
-            _this.exec_commands(model, command.foreach, rowparams, options, row_cb);
+            _this.exec_commands(model, command.foreach, commandLocals, rowparams, options, row_cb);
           }, function(err){
             options.exec_counter.pop();
-            return command_cb(err);
+            if(err) return command_cb(err);
+            return _this.drainLocals(commandLocals, command_cb);
           });
           return;
         }
       }
-      return command_cb();
+      return _this.drainLocals(commandLocals, command_cb);
     }
   );
 
@@ -1106,6 +1156,7 @@ AppSrvTask.prototype.exec_shell = function(model, command, params, options, comm
 
   options.exec_counter.push(0);
   var hasError = false;
+  var commandLocals = [];
   var pendingCallbacks = [];
   var cmd = spawn(cmdpath, cmdparams, { cwd: cwd });
   var curLine = '';
@@ -1145,7 +1196,7 @@ AppSrvTask.prototype.exec_shell = function(model, command, params, options, comm
       options.exec_counter[options.exec_counter.length-1]++;
       pendingCallbacks.push(false);
       var callbackIdx = pendingCallbacks.length - 1;
-      _this.exec_commands(model, foreach_handler, shellparams, options, function(err){
+      _this.exec_commands(model, foreach_handler, commandLocals, shellparams, options, function(err){
         if(hasError) return;
         if(err) return commandError(err);
         pendingCallbacks[callbackIdx] = true;
@@ -1170,7 +1221,7 @@ AppSrvTask.prototype.exec_shell = function(model, command, params, options, comm
           options.exec_counter[options.exec_counter.length-1]++;
           pendingCallbacks.push(false);
           var callbackIdx = pendingCallbacks.length - 1;
-          _this.exec_commands(model, foreach_line_handler, shellparams, options, function(err){
+          _this.exec_commands(model, foreach_line_handler, commandLocals, shellparams, options, function(err){
             if(hasError) return;
             if(err) return commandError(err);
             pendingCallbacks[callbackIdx] = true;
@@ -1222,7 +1273,7 @@ AppSrvTask.prototype.exec_shell = function(model, command, params, options, comm
         if(code){
           return command_cb(new Error('Process exited with code '+code.toString()+': '+lastLines.join('\n')));
         }
-        return command_cb();
+        return _this.drainLocals(commandLocals, command_cb);
       },
       function cancel(f){ return hasError; },
       1, //timeout

@@ -84,7 +84,7 @@ exports.ParseTaskCommand = function(model, command, params){
   }
 
   if(command.exec == 'sql'){
-    validateCommandProperties(['sql','db','into','foreach_row','fields']);
+    validateCommandProperties(['sql','db','into','foreach_row','fields','batch']);
     if(command.sql) command.sql = Helper.ParseMultiLine(command.sql);
     parseChildCommands('sql', 'foreach_row', 'row');
   }
