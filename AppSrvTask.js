@@ -188,6 +188,7 @@ AppSrvTask.prototype.exec = function (req, res, dbcontext, modelid, taskparams, 
   if(verrors) return callback(new Error('Task parameter errors: ' + verrors));
 
   var params = {};
+  _this.fieldParams = {};
   for(var key in taskparams){
     _this.addParam(params, model.fields, key, taskparams[key]);
     _this.addParam(_this.fieldParams, model.fields, key, taskparams[key]);
