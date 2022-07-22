@@ -27,9 +27,10 @@ var csv = require('csv');
 var spawn = require('child_process').spawn;
 
 //Task Logger
-function AppSrvTaskLogger(jsh) {
+function AppSrvTaskLogger(jsh, task) {
   var _this = this;
   this.jsh = jsh;
+  this.task = task;
 
   this.isSendingEmail = false;
 
@@ -62,6 +63,7 @@ AppSrvTaskLogger.prototype.log = function(model, loglevel, msg){
       if(!logtarget.events && (loglevel == 'debug')) return;
 
       var curdt = new Date();
+      if(_this.task) logfile = _this.task.replaceParams(_this.task.fieldParams, logfile);
       logfile = Helper.ReplaceAll(logfile, '%YYYY', Helper.pad(curdt.getFullYear(),'0',4));
       logfile = Helper.ReplaceAll(logfile, '%MM', Helper.pad(curdt.getMonth()+1,'0',2));
       logfile = Helper.ReplaceAll(logfile, '%DD', Helper.pad(curdt.getDate(),'0',2));
@@ -109,8 +111,9 @@ AppSrvTaskLogger.prototype.sendErrorEmail = function(model, email_params, txt){
 function AppSrvTask(appsrv) {
   this.AppSrv = appsrv;
   this.jsh = appsrv.jsh;
+  this.fieldParams = {};
 
-  this.log = new AppSrvTaskLogger(this.jsh);
+  this.log = new AppSrvTaskLogger(this.jsh, this);
 }
 
 AppSrvTask.prototype.getParamType = function(fields, key, value){
@@ -185,7 +188,10 @@ AppSrvTask.prototype.exec = function (req, res, dbcontext, modelid, taskparams, 
   if(verrors) return callback(new Error('Task parameter errors: ' + verrors));
 
   var params = {};
-  for(var key in taskparams){ _this.addParam(params, model.fields, key, taskparams[key]); }
+  for(var key in taskparams){
+    _this.addParam(params, model.fields, key, taskparams[key]);
+    _this.addParam(_this.fieldParams, model.fields, key, taskparams[key]);
+  }
 
   if(dbcontext && !taskparams._DBContext) _this.addParam(params, [], '_DBContext', dbcontext);
 
@@ -212,7 +218,10 @@ AppSrvTask.prototype.exec_commands = function (model, commands, commandLocals, p
       'js','shell','email','log',
     ];
     options.exec_counter[options.exec_counter.length-1]++;
-    _this.log.debug(model, model.id + ': ' + _this.jsh.getTaskCommandDesc(command, options));
+    if(command.batch && (commandLocals && commandLocals[idx] && commandLocals[idx].queue && (commandLocals[idx].queue.items.length > 0))){ /* Do nothing */ }
+    else {
+      _this.log.debug(model, model.id + ': ' + _this.jsh.getTaskCommandDesc(command, options));
+    }
     if(_.includes(standard_operations, operation_type)){
       var orig_locals = options.locals;
       options.locals = undefined;

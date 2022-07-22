@@ -88,6 +88,7 @@ function jsHarmonyConfig(config){
     report_interactive: false, //Launch Report Viewer in Interactive Mode - Show Browser in Desktop
     auth_debug: false,         //Debug Login / Authentication - Log Hashes
     delay_requests: 0,         //Add a delay of this many milliseconds to all router requests (for testing latency)
+    debug_log_to_disk: false,  //Log debug messages to disk
     
     db_requests: false,        //Log every database request through DB.js
     db_raw_sql: false,         //Log raw database SQL requests
