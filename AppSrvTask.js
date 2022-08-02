@@ -182,8 +182,6 @@ AppSrvTask.prototype.exec = function (req, res, dbcontext, modelid, taskparams, 
   model = this.jsh.getModel(req, modelid);
   var task = model.task;
 
-  this.log.info(model, 'Running task: ' + model.id);
-
   var verrors = this.validateFields(task, taskparams);
   if(verrors) return callback(new Error('Task parameter errors: ' + verrors));
 
@@ -193,6 +191,8 @@ AppSrvTask.prototype.exec = function (req, res, dbcontext, modelid, taskparams, 
     _this.addParam(params, model.fields, key, taskparams[key]);
     _this.addParam(_this.fieldParams, model.fields, key, taskparams[key]);
   }
+
+  this.log.info(model, 'Running task: ' + model.id);
 
   if(dbcontext && !taskparams._DBContext) _this.addParam(params, [], '_DBContext', dbcontext);
 

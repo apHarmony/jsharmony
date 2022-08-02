@@ -266,7 +266,13 @@ BODY
 <%-rootcss%> select.uneditable,
 <%-rootcss%> textarea.uneditable,
 <%-rootcss%> .xtagbox.uneditable {
-	background-color:#f5f5f5;
+	background-color:#f7f7f7;
+}
+<%-rootcss%> .xtbl tbody tr.even input.uneditable,
+<%-rootcss%> .xtbl tbody tr.even<%-rootcss%> select.uneditable,
+<%-rootcss%> .xtbl tbody tr.even<%-rootcss%> textarea.uneditable,
+<%-rootcss%> .xtbl tbody tr.even<%-rootcss%> .xtagbox.uneditable {
+	background-color:#f0f0f0;
 }
 <%-rootcss%> input.updated, 
 <%-rootcss%> select.updated, 

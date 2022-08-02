@@ -936,9 +936,11 @@ exports.ParseEntities = function () {
       isReadOnlyGrid: undefined,
     };
     var modelDB = 'default';
+    if('database' in model) model.db = model.database;
     if('db' in model){
       if(!(model.db in _this.DBConfig)) _this.LogInit_ERROR('Model ' + model.id + ' uses an undefined db: '+model.db);
       else modelDB = model.db;
+      model.database = model.db;
     }
     var db = modelExt.db = _this.DB[modelDB];
     modelExt.sqlext = db.SQLExt;
@@ -1937,7 +1939,7 @@ exports.ParseEntities = function () {
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'onrowunbind', 'ondestroy', 'onchange', 'getapi', 'onrender', 'onrendered', 'onsqlinserted', 'onsqlupdated', 'onsqldeleted', 'disable_csv_export',
       'js', 'jslib', 'ejs', 'header', 'css', 'dberrors', 'tablestyle', 'tableclass', 'formstyle', 'formclass', 'popup', 'ongetfilename', 'onloadimmediate', 'sqlwhere', 'sqlwhere_disabled_on_insert', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlinsertencrypt', 'sqlgetinsertkeys', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqlrowcount', 'sqldownloadselect', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
-      'path', 'module', 'templates', 'db', 'onecolumn', 'namespace',
+      'path', 'module', 'templates', 'db', 'database', 'onecolumn', 'namespace',
       //Report Parameters
       'subheader', 'footerheight', 'headeradd',
       'display_layouts'
@@ -1955,7 +1957,7 @@ exports.ParseEntities = function () {
       'image', 'thumbnails', 'expand_all', 'expand_to_selected', 'onmove', 'ondrop', 'drag_anchor_settings', 'item_context_menu', 'item_dropdown', 'insert_link', 'grid_save_before_update', 'update_when_blank', 'htmlarea_config', 'placeholder'
     ];
     var _v_popuplov = ['target', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
-    var _v_lov = ['sql', 'sql2', 'sqlmp', 'code', 'code2', 'code_sys', 'code2_sys', 'code_app', 'code2_app', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db', 'values', 'post_process'];
+    var _v_lov = ['sql', 'sql2', 'sqlmp', 'code', 'code2', 'code_sys', 'code2_sys', 'code_app', 'code2_app', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db', 'database', 'values', 'post_process'];
     //lov
     var existing_targets = [];
     for (let f in model) { if (f.substr(0, 7) == 'comment') continue; if (!_.includes(_v_model, f)) _this.LogInit_ERROR(model.id + ': Invalid model property: ' + f); }
@@ -2243,6 +2245,9 @@ exports.ParseEntities = function () {
       if(field.lov){
         var lov = field.lov;
         var lovDB = 'default';
+        if('database' in lov){
+          lov.db = lov.database;
+        }
         if('db' in lov){
           if(!(lov.db in _this.DBConfig)) _this.LogInit_ERROR('Model ' + model.id + ' LOV ' + field.name + ' uses an undefined db: '+lov.db);
           else lovDB = lov.db;
