@@ -262,6 +262,12 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, dbid, rslt) {
     }
   }
 
+  function processScriptName(fname){
+    var fparts = fname.split('.');
+    if((fparts.length == 2) && (fparts[1]=='sql')) return fparts[0] + '.__0__.sql';
+    return fname;
+  }
+
   //-----------------------------------
 
   if(!rslt) rslt = {};
@@ -331,7 +337,7 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, dbid, rslt) {
         var subd = subd1.concat(subd2);
         scripts[subdname] = {};
         for(var j=0;j<subd.length;j++){
-          var fname = subd[j].name;
+          let fname = processScriptName(subd[j].name);
           if(!(fname in subd[j])) scripts[subdname][fname] = '';
           else scripts[subdname][fname] += '\r\n';
           scripts[subdname][fname] += fs.readFileSync(subd[j].path, 'utf8');
@@ -342,7 +348,7 @@ exports.LoadSQLFromFolder = function (dir, type, moduleName, dbid, rslt) {
     //Process files
     for(let i=0;i<d.length;i++){
       if(d[i].type=='file'){
-        scripts[d[i].name] = fs.readFileSync(d[i].path, 'utf8');
+        scripts[processScriptName(d[i].name)] = fs.readFileSync(d[i].path, 'utf8');
       }
     }
 

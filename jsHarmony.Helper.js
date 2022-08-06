@@ -826,6 +826,12 @@ exports._tPN = function(msgId, params, cnt, section){
   return Helper.ReplaceParams(msgId, params);
 };
 
+exports.Restart = function(timeout){
+  var f = function(){ process.exit(); };
+  if(timeout) setTimeout(f,1000);
+  else f();
+};
+
 //Log Initialization Errors / Warnings / Info
 exports.LogInit = function(severity, msg) {
   var _this = this;

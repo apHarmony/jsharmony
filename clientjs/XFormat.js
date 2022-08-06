@@ -54,6 +54,7 @@ exports = module.exports = function(){
 
   XFormat.parseDate = function(val){
     if(!val) return moment(null);
+    if(_.isNumber(val)) return moment(val);
     val = val.trim();
     val = val.replace(/,/g,' ');
     val = val.replace(/ {2}/g,' ');
