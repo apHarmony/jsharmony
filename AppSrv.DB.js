@@ -25,37 +25,59 @@ var moment = require('moment');
 
 module.exports = exports = {};
 
-exports.ExecDBFunc = function (dbfunc, context, sql, ptypes, params, callback, dbconfig, db) {
+exports.ExecDBFunc = function (dbfunc, context, sql, ptypes, params, callback, dbconfig, db, trans) {
   var _this = this;
   if(!db) db = _this.jsh.getDB('default');
-  db.ExecTasks([function (cb) {
-    dbfunc.call(db, context, sql, ptypes, params, undefined, function (err, rslt, stats) { cb(err, rslt, stats); }, dbconfig);
-  }], callback);
+  if(trans){
+    db.ExecTransTasks([function (dbtrans, cb, transtbl) {
+      dbfunc.call(db, context, sql, ptypes, params, dbtrans, function (err, rslt, stats) { cb(err, rslt, stats); }, dbconfig);
+    }], callback);
+  }
+  else {
+    db.ExecTasks([function (cb) {
+      dbfunc.call(db, context, sql, ptypes, params, undefined, function (err, rslt, stats) { cb(err, rslt, stats); }, dbconfig);
+    }], callback);
+  }
 };
 
-exports.ExecRecordset = function (context, sql, ptypes, params, callback, dbconfig, db) {
+exports.ExecRecordset = function (context, sql, ptypes, params, callback, dbconfig, db, trans) {
   if(!db) db = this.jsh.getDB('default');
-  this.ExecDBFunc(db.Recordset, context, sql, ptypes, params, callback, dbconfig, db);
+  this.ExecDBFunc(db.Recordset, context, sql, ptypes, params, callback, dbconfig, db, trans);
+};
+exports.ExecRecordsetTrans = function (context, sql, ptypes, params, callback, dbconfig, db) {
+  return this.ExecRecordset(context, sql, ptypes, params, callback, dbconfig, db, true);
 };
 
-exports.ExecMultiRecordset = function (context, sql, ptypes, params, callback, dbconfig, db) {
+exports.ExecMultiRecordset = function (context, sql, ptypes, params, callback, dbconfig, db, trans) {
   if(!db) db = this.jsh.getDB('default');
-  this.ExecDBFunc(db.MultiRecordset, context, sql, ptypes, params, callback, dbconfig, db);
+  this.ExecDBFunc(db.MultiRecordset, context, sql, ptypes, params, callback, dbconfig, db, trans);
+};
+exports.ExecMultiRecordsetTrans = function (context, sql, ptypes, params, callback, dbconfig, db) {
+  return this.ExecMultiRecordset(context, sql, ptypes, params, callback, dbconfig, db, true);
 };
 
-exports.ExecRow = function (context, sql, ptypes, params, callback, dbconfig, db) {
+exports.ExecRow = function (context, sql, ptypes, params, callback, dbconfig, db, trans) {
   if(!db) db = this.jsh.getDB('default');
-  this.ExecDBFunc(db.Row, context, sql, ptypes, params, callback, dbconfig, db);
+  this.ExecDBFunc(db.Row, context, sql, ptypes, params, callback, dbconfig, db, trans);
+};
+exports.ExecRowTrans = function (context, sql, ptypes, params, callback, dbconfig, db) {
+  return this.ExecRow(context, sql, ptypes, params, callback, dbconfig, db, true);
 };
 
-exports.ExecCommand = function (context, sql, ptypes, params, callback, dbconfig, db) {
+exports.ExecCommand = function (context, sql, ptypes, params, callback, dbconfig, db, trans) {
   if(!db) db = this.jsh.getDB('default');
-  this.ExecDBFunc(db.Command, context, sql, ptypes, params, callback, dbconfig, db);
+  this.ExecDBFunc(db.Command, context, sql, ptypes, params, callback, dbconfig, db, trans);
+};
+exports.ExecCommandTrans = function (context, sql, ptypes, params, callback, dbconfig, db) {
+  return this.ExecCommand(context, sql, ptypes, params, callback, dbconfig, db, true);
 };
 
-exports.ExecScalar = function (context, sql, ptypes, params, callback, dbconfig, db) {
+exports.ExecScalar = function (context, sql, ptypes, params, callback, dbconfig, db, trans) {
   if(!db) db = this.jsh.getDB('default');
-  this.ExecDBFunc(db.Scalar, context, sql, ptypes, params, callback, dbconfig, db);
+  this.ExecDBFunc(db.Scalar, context, sql, ptypes, params, callback, dbconfig, db, trans);
+};
+exports.ExecScalarTrans = function (context, sql, ptypes, params, callback, dbconfig, db) {
+  return this.ExecScalar(context, sql, ptypes, params, callback, dbconfig, db, true);
 };
 
 exports.GetDBErrorMessage = function(dberrors, errmsg){
