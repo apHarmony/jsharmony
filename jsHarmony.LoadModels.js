@@ -111,6 +111,14 @@ exports.ParseJSON = function(fname, moduleName, desc, cb, options){
   if(!options) options = { fatalError: true };
   var _this = this;
   var fread = null;
+
+  //Transform
+  var module = _this.Modules[moduleName];
+  function _transform(txt){
+    if(!module) return txt;
+    return module.transform.Apply(txt, fname);
+  }
+
   if(cb) fread = function(fread_cb){ fs.readFile(fname, 'utf8', fread_cb); };
   else fread = function(fread_cb){ return fread_cb(null, fs.readFileSync(fname, 'utf8'));  };
   return fread(function(err, data){
@@ -120,10 +128,7 @@ exports.ParseJSON = function(fname, moduleName, desc, cb, options){
     }
     var fdir = path.dirname(fname);
     var ftext = fs.readFileSync(fname, 'utf8');
-    ftext = Helper.JSONstrip(ftext);
-    //Apply Transform
-    var module = _this.Modules[moduleName];
-    if(module) ftext = module.transform.Apply(ftext, fname);
+    ftext = _transform(Helper.JSONstrip(ftext));
     //Parse JSON
     var rslt  = null;
     try {
@@ -132,7 +137,7 @@ exports.ParseJSON = function(fname, moduleName, desc, cb, options){
           '@importstr': function(filename){
             var filepath = filename;
             if(!path.isAbsolute(filepath)) filepath = path.join(fdir, filepath);
-            return fs.readFileSync(filepath, 'utf8');
+            return _transform(fs.readFileSync(filepath, 'utf8'));
           },
           '@importjson': function(filename){
             var filepath = filename;
