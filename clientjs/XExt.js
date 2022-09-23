@@ -786,8 +786,8 @@ exports = module.exports = function(jsh){
   XExt.CKEditor = function (id, config, cb) {
     if (!window.CKEDITOR){
       //Dynamically load CKEditor script, and rerun function when finished
-      window.CKEDITOR_BASEPATH = jsh._BASEURL+'js/ckeditor/';
-      jsh.loadScript(jsh._BASEURL+'js/ckeditor/ckeditor.js', function(){ XExt.CKEditor(id, config, cb); });
+      window.CKEDITOR_BASEPATH = jsh._PUBLICURL+'js/ckeditor/';
+      jsh.loadScript(jsh._PUBLICURL+'js/ckeditor/ckeditor.js', function(){ XExt.CKEditor(id, config, cb); });
       return;
     }
     if(!id){ if(cb) cb(); return; }
@@ -808,8 +808,8 @@ exports = module.exports = function(jsh){
   XExt.TinyMCE = function (id, config, cb) {
     if (!window.tinymce){
       //Dynamically load TinyMCE script, and rerun function when finished
-      window.TINYMCE_BASEPATH = jsh._BASEURL+'js/tinymce/';
-      jsh.loadScript(jsh._BASEURL+'js/tinymce/tinymce.min.js', function(){ XExt.TinyMCE(id, config, cb); });
+      window.TINYMCE_BASEPATH = jsh._PUBLICURL+'js/tinymce/';
+      jsh.loadScript(jsh._PUBLICURL+'js/tinymce/tinymce.min.js', function(){ XExt.TinyMCE(id, config, cb); });
       return;
     }
     if(!config){ if(cb) cb(); return; }

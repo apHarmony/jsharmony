@@ -2273,7 +2273,7 @@ exports.ParseEntities = function () {
   for(var password_name in this.Config.passwords){
     var password = this.Config.passwords[password_name];
     if(!password || !password.algorithm || !password.key) _this.LogInit_WARNING('jsh.Config.passwords > '+password_name+': Invalid password definition - algorithm and key are required');
-    if((password.key.length < 60)) _this.LogInit_WARNING('jsh.Config.passwords > '+password_name+': Encryption keys should be at least 60 characters');
+    if(password && password.key && (password.key.length < 60)) _this.LogInit_WARNING('jsh.Config.passwords > '+password_name+': Encryption keys should be at least 60 characters');
   }
 
   //Validate CustomFormatters
