@@ -172,13 +172,12 @@ exports.getTitle = function (req, res, fullmodelid, targetperm, onComplete) {
 exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
   var _this = this;
   var _defaults = {};
-  var db = _this.jsh.getModelDB(req, model.id);
+  var modeldb = 'default';
+  if(model.db) modeldb = model.db;
   
   //Prepare Default Values Query
-  var dflt_ptypes = [];
-  var dflt_params = {};
+  var defaultCommands = {};
   var dflt_verrors = {};
-  var dflt_sql_fields = [];
 
   if(model.fields) for (var field_i = 0; field_i < model.fields.length; field_i++) {
     var field = model.fields[field_i];
@@ -188,13 +187,25 @@ exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
       if (_.isString(dflt) && (dflt.substr(0,3)=='js:')) continue;
       if (_.isString(dflt) || _.isNumber(dflt) || _.isBoolean(dflt)) _defaults[field.name] = field.default;
       else {
+        var dflt_db = modeldb;
+        if(dflt && dflt.db) dflt_db = dflt.db;
+
+        if(!(dflt_db in defaultCommands)){
+          defaultCommands[dflt_db] = {
+            dflt_ptypes: [],
+            dflt_params: {},
+            dflt_sql_fields: [],
+          };
+        }
+        let defaultCommand = defaultCommands[dflt_db];
+
         var sql = '';
         if ('sql' in dflt) { sql = dflt.sql; }
         else { Helper.GenError(req, res, -99999, 'Custom Default Value requires SQL'); return false; }
         
         var dflt_sql_field_datalockqueries = [];
         var dflt_sql_field_param_datalocks = [];
-        _this.getDataLockSQL(req, model, [dflt], dflt_ptypes, dflt_params, dflt_verrors, function (datalockquery) { dflt_sql_field_datalockqueries.push(datalockquery); }, dflt.nodatalock, field.name + '_' + model.id + '_dflt');
+        _this.getDataLockSQL(req, model, [dflt], defaultCommand.dflt_ptypes, defaultCommand.dflt_params, dflt_verrors, function (datalockquery) { dflt_sql_field_datalockqueries.push(datalockquery); }, dflt.nodatalock, field.name + '_' + model.id + '_dflt');
         
         //Add lov parameters
         if ('sql_params' in dflt) {
@@ -202,23 +213,23 @@ exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
           for (var i = 0; i < dflt_pfields.length; i++) {
             var dflt_pfield = dflt_pfields[i];
             var dflt_pname = dflt_pfield.name;
-            if (dflt_pname in dflt_params) continue;
-            dflt_ptypes.push(_this.getDBType(dflt_pfield));
-            dflt_params[dflt_pname] = null;
+            if (dflt_pname in defaultCommand.dflt_params) continue;
+            defaultCommand.dflt_ptypes.push(_this.getDBType(dflt_pfield));
+            defaultCommand.dflt_params[dflt_pname] = null;
             if (dflt_pname in Q) {
-              dflt_params[dflt_pname] = _this.DeformatParam(dflt_pfield, Q[dflt_pname], dflt_verrors);
-              _this.getDataLockSQL(req, model, model.fields, dflt_ptypes, dflt_params, dflt_verrors, function (datalockquery, dfield) {
+              defaultCommand.dflt_params[dflt_pname] = _this.DeformatParam(dflt_pfield, Q[dflt_pname], dflt_verrors);
+              _this.getDataLockSQL(req, model, model.fields, defaultCommand.dflt_ptypes, defaultCommand.dflt_params, dflt_verrors, function (datalockquery, dfield) {
                 if (dfield != dflt_pfield) return false;
                 dflt_sql_field_param_datalocks.push({ pname: dflt_pname, datalockquery: datalockquery, field: dfield });
                 return true;
               }, undefined, field.name + '_' + model.id + '_dflt_key');
-              dflt_verrors = _.merge(dflt_verrors, model.xvalidate.Validate('*', dflt_params, dflt_pname));
+              dflt_verrors = _.merge(dflt_verrors, model.xvalidate.Validate('*', defaultCommand.dflt_params, dflt_pname));
             }
           }
         }
         if (!_.isEmpty(dflt_verrors)) { Helper.GenError(req, res, -2, dflt_verrors[''].join('\n')); return false; }
         
-        dflt_sql_fields.push({ name: field.name, field: field, sql: sql, datalockqueries: dflt_sql_field_datalockqueries, param_datalocks: dflt_sql_field_param_datalocks });
+        defaultCommand.dflt_sql_fields.push({ name: field.name, field: field, sql: sql, datalockqueries: dflt_sql_field_datalockqueries, param_datalocks: dflt_sql_field_param_datalocks });
       }
     }
     else if(field.name in Q){
@@ -226,27 +237,31 @@ exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
     }
   }
   
-  var dflt_sql = db.sql.getDefaultTasks(_this.jsh, dflt_sql_fields);
-
-  //Add parameters from querystring
-  _this.ApplyQueryParameters(Q, dflt_sql, dflt_ptypes, dflt_params, model);
+  for(var dbid in defaultCommands){
+    let defaultCommand = defaultCommands[dbid];
+    var db = _this.jsh.getDB(dbid);
+    var dflt_sql = db.sql.getDefaultTasks(_this.jsh, defaultCommand.dflt_sql_fields);
   
-  //Execute Query
-  dbtasks['_defaults'] = function (dbtrans, callback, transtbl) {
-    _this.ApplyTransTblChainedParameters(transtbl, dflt_sql, dflt_ptypes, dflt_params, model.fields);
-    if (dflt_sql) {
-      db.Row(req._DBContext, dflt_sql, dflt_ptypes, dflt_params, dbtrans, function (err, rslt, stats) {
-        if (err == null) {
-          for (var f in rslt) {
-            if (rslt[f] == null) _defaults[f] = '';
-            else _defaults[f] = rslt[f].toString();
+    //Add parameters from querystring
+    _this.ApplyQueryParameters(Q, dflt_sql, defaultCommand.dflt_ptypes, defaultCommand.dflt_params, model);
+    
+    //Execute Query
+    dbtasks['_defaults_'+dbid] = function (dbtrans, callback, transtbl) {
+      _this.ApplyTransTblChainedParameters(transtbl, dflt_sql, defaultCommand.dflt_ptypes, defaultCommand.dflt_params, model.fields);
+      if (dflt_sql) {
+        db.Row(req._DBContext, dflt_sql, defaultCommand.dflt_ptypes, defaultCommand.dflt_params, dbtrans, function (err, rslt, stats) {
+          if (err == null) {
+            for (var f in rslt) {
+              if (rslt[f] == null) _defaults[f] = '';
+              else _defaults[f] = rslt[f].toString();
+            }
           }
-        }
-        callback(err, _defaults, stats);
-      });
-    }
-    else callback(null, _defaults);
-  };
+          callback(err, _defaults, stats);
+        });
+      }
+      else callback(null, _defaults);
+    };
+  }
 };
 
 exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks, targetperm) {
@@ -432,7 +447,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
         }
       }
       if (!_.isEmpty(lov_verrors)) { Helper.GenError(req, res, -2, lov_verrors[''].join('\n')); fatalError = true; return; }
-      var sql = lovdb.sql.getLOV(_this.jsh, field.name, lov, datalockqueries, param_datalocks, { truncate_lov: truncate_lov });
+      var sql = lovdb.sql.getLOV(_this.jsh, field.name, lov, datalockqueries, param_datalocks, { truncate_lov: truncate_lov, model: model });
 
       //Add parameters from querystring
       _this.ApplyQueryParameters(Q, sql, lov_ptypes, lov_params, model);

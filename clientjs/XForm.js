@@ -243,6 +243,16 @@ exports = module.exports = function(jsh){
           _this.Data._LOVs[tbl.substring(5)] = rslt[tbl];
         }
       }
+      //Merge Default Keys
+      var keysToDelete = [];
+      for(var key in rslt){
+        if(key && (key.toString().indexOf('_defaults_')==0)){
+          if(!('_defaults' in rslt)) rslt._defaults = {};
+          _.extend(rslt._defaults, rslt[key]);
+          keysToDelete.push(key);
+        }
+      }
+      _.each(keysToDelete, function(key){ delete rslt[key]; });
       if ('_defaults' in rslt) { _this.Data['_defaults'] = rslt['_defaults']; }
       if ('_bcrumbs' in rslt) { _this.Data['_bcrumbs'] = rslt['_bcrumbs']; }
       if ('_title' in rslt) { _this.Data['_title'] = rslt['_title']; }

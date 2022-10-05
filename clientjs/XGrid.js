@@ -202,6 +202,16 @@ exports = module.exports = function(jsh){
     else {
       if (_this.GetMeta) {
         _this.GetMeta = false;
+        //Merge Default Keys
+        var keysToDelete = [];
+        for(var key in data){
+          if(key && (key.toString().indexOf('_defaults_')==0)){
+            if(!('_defaults' in data)) data._defaults = {};
+            _.extend(data._defaults, data[key]);
+            keysToDelete.push(key);
+          }
+        }
+        _.each(keysToDelete, function(key){ delete data[key]; });
         if ('_defaults' in data) { _this.defaults = data['_defaults']; }
         if ('_bcrumbs' in data) { _this.bcrumbs = data['_bcrumbs']; }
         if ('_title' in data) { _this.title = data['_title']; }
