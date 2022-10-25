@@ -336,16 +336,17 @@ exports = module.exports = function(jsh){
     getVars();
   };
 
-  XExt.InputValue = function (_Caption, _Validation, _Default, _PostProcess){
+  XExt.InputValue = function (_Caption, _Validation, _Default, _PostProcess, options){
     this.Caption = _Caption;
     this.Validation = _Validation;
     this.Default = (_Default ? _Default : '');
     this.PostProcess = _PostProcess;
     this.Value = undefined;
+    this.options = _.extend({ PromptText: null }, options);
   };
   XExt.InputValue.prototype.Prompt = function (onComplete) {
     var _this = this;
-    XExt.Prompt(_this.Caption, _this.Default, function (rslt) {
+    XExt.Prompt((_this.options.PromptText || _this.Caption), _this.Default, function (rslt) {
       if (rslt == null) {
         if (onComplete) { onComplete(null); }
         return;
@@ -2498,7 +2499,7 @@ exports = module.exports = function(jsh){
     return jsh.XModels[id].controller.form;
   };
   XExt.getFormFromObject = function (ctrl) {
-    var modelid = $(ctrl).closest('.xform').data('id');
+    var modelid = $(ctrl).closest('.xform,.xtbl').data('id');
     if (modelid) return jsh.XModels[modelid].controller.form;
     return undefined;
   };

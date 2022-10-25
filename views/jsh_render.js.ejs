@@ -116,6 +116,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if(!options) options = {
       //addHistory: false, if we should not add history to the browser state
       //onRefreshNoChange: function(){ /* If unchanged */ }, if we should only render if the model is different from the cached model
+      //onPageError: function(data){ return true; } //Return true if the error is handled and should not require further processing
     };
 
     //Clear Previous Loaders
@@ -241,8 +242,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       else if(data.responseText && data.responseText.indexOf('***'+'ACCOUNT_UNPAID_BALANCE'+'***')>=0){ window.location.href = jsh._BASEURL+'C_PA_CC'; return true; }
       else if(data.responseText && data.responseText.indexOf('***'+'JSHARMONY_LOGIN'+'***')>=0){ window.location.href = jsh.state.fullurl; return true; }
       else if(data.responseText && data.responseText.indexOf('***'+'JSHARMONY_REDIRECT'+'***')==0){ XExt.navTo(data.responseText.substr(data.responseText.indexOf('\n')+1)); return true; }
-      else if ((data instanceof Object) && ('Number' in data)){ 
-        if(data.Number == -11){ XExt.Alert(data.Message?data.Message:'Invalid Model Access'); return true; }
+      else if ((data instanceof Object) && ('Number' in data)){
+        if(options.onPageError && options.onPageError(data)){ return true; }
+        else if(data.Number == -11){ XExt.Alert(data.Message?data.Message:'Invalid Model Access'); return true; }
         else if(_.includes([-1,-2,-9],data.Number)){ XExt.Alert(data.Message,null,{ onAcceptImmediate:closeIfPopup }); return true; }
       }
       else if(data.responseText && data.responseText.indexOf('***'+'NO_ACCESS'+'***')>=0){ XExt.Alert('No Access to '+(jsh&&jsh.state&&jsh.state.modelid?jsh.state.modelid:'')); return true; }
@@ -264,7 +266,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.Navigate = function(a,addHistory,orig_url,onCancel,options){
-    options = _.extend({ force: false }, options);
+    options = _.extend({ force: false, onPageError: null }, options);
     var apath = a.pathname;
     var aqs = a.search;
     var ahash = a.hash;
@@ -323,7 +325,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         jsh.cancelExit = true;
       }
       jsh.state = new_jsh_state;
-      jsh.Load({addHistory: addHistory});
+      jsh.Load({addHistory: addHistory, onPageError: options.onPageError});
     }
 
     //Try to exit, show message if changes on the page

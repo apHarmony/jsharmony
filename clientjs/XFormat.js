@@ -296,6 +296,15 @@ exports = module.exports = function(){
     return func(val);
   };
 
+  XFormat.js_decode = function(funcstr, val) {
+    var func = eval('(function(val){'+funcstr+'})');
+    return func(val);
+  };
+
+  XFormat.js_noop_decode = function(val) {
+    return val;
+  };
+
   XFormat.parseFormat = function(format){
     if(_.isArray(format)) return format;
     format = (format||'').toString();
@@ -333,6 +342,7 @@ exports = module.exports = function(){
 
   XFormat.Apply = function(format,val){
     if(typeof val == 'undefined') return '###MISSING###';
+    if(format && format.encode) format = format.encode;
     if(format){
       format = XFormat.parseFormat(format);
       if(!(format[0] in this)){ return '###Invalid Format ' + format[0] + '###'; }
@@ -349,6 +359,9 @@ exports = module.exports = function(){
   XFormat.Decode = function(format, val){
     if(typeof val == 'undefined') return val;
     if(!format) return val;
+    var customDecode = false;
+    if(format && format.decode){ format = format.decode; customDecode = true; }
+    else if(format && (format.toString().substr(0,3)=='js:')){ format = 'js_noop'; }
     format = XFormat.parseFormat(format);
     var fargs = [];
     for (var i = 1; i < format.length; i++) fargs.push(format[i]);

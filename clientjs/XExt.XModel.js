@@ -25,6 +25,12 @@ exports = module.exports = function(jsh){
 
   var XExtXModel = function(){ };
 
+  function setPreviousValue(xdata, id, val){
+    if(!xdata) return;
+    if(!xdata._previous_values) xdata._previous_values = {};
+    xdata._previous_values[id] = val;
+  }
+
   XExtXModel.GetRowID = function (modelid,obj){
     modelid = jsh.XExt.resolveModelID(modelid);
     var jobj = $(obj);
@@ -137,7 +143,7 @@ exports = module.exports = function(jsh){
     if ((field.name in _this) && (typeof val == 'undefined')) val = '';
     else val = jsh.XFormat.Apply(field.format, val);
     
-    if(options.updatePreviousValue) field._previous_value = dataval;
+    if(options.updatePreviousValue) setPreviousValue(_this, field.name, dataval);
 
     //Get LOV Txt
     var lovTxt = '';
@@ -355,12 +361,21 @@ exports = module.exports = function(jsh){
             }
           }
         }
-        var oldval = field._previous_value;
+        var xform = jsh.XExt.getFormFromObject(obj);
+        var oldval = undefined;
+        if(xform && xform.Data && xform.Data._previous_values){
+          if(id in xform.Data._previous_values) oldval = xform.Data._previous_values[id];
+        }
         var newval = _this.GetValue(field);
         var firedUndo = false;
         var xmodel = jsh.XModels[modelid];
         if (('onchange' in field) || (xmodel && ('onchange' in xmodel))){
-          var undoChange = function(){ firedUndo = true; var xmodel = jsh.XModels[modelid]; field._previous_value = oldval; xmodel.set(field.name, oldval, null); };
+          var undoChange = function(){
+            firedUndo = true;
+            var xmodel = jsh.XModels[modelid];
+            setPreviousValue(xform && xform.Data, id, oldval);
+            xmodel.set(field.name, oldval, null);
+          };
           if(!XExtXModel.StringEquals(oldval, newval)){
             if(field.onchange){
               var fieldEvent = (new Function('obj', 'newval', 'undoChange', 'e', field.onchange));
@@ -372,7 +387,7 @@ exports = module.exports = function(jsh){
             }
           }
         }
-        if(!firedUndo) field._previous_value = newval;
+        if(!firedUndo) setPreviousValue(xform && xform.Data, id, newval);
       }
     };
   };
@@ -549,6 +564,7 @@ exports = module.exports = function(jsh){
     var rslt = {};
     _.forOwn(val, function (val, key) {
       if (key == '_LOVs') return;
+      if (key == '_previous_values') return;
       if (key == '_defaults') return;
       if (key == '_title') return;
       if (key == '_bcrumbs') return;
@@ -655,7 +671,6 @@ exports = module.exports = function(jsh){
   /*** XField ***/
 
   XExtXModel.XField = function(props){
-    this._previous_value = undefined;
     for(var prop in props) this[prop] = props[prop];
   };
 

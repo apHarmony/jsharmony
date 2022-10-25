@@ -2945,13 +2945,13 @@ exports.getDefaultValidators = function(field, desc){
     case 'BIGINT':
     case 'INT':
     case 'SMALLINT':
-      addDefaultValidator('IsNumeric', { ignore: function(validator){ if(validator.substr(0,10)=='IsNumeric:') return true; } }); break;
+      addDefaultValidator('IsNumeric', { ignore: function(validator){ if(validator.toString().substr(0,10)=='IsNumeric:') return true; } }); break;
     case 'TINYINT':
       addDefaultValidator('MaxValue:255');
       addDefaultValidator('IsNumeric:true');
       break;
     case 'DECIMAL':
-      addDefaultValidator('IsDecimal', { ignore: function(validator){ if(validator.substr(0,10)=='IsDecimal:') return true; } }); break;
+      addDefaultValidator('IsDecimal', { ignore: function(validator){ if(validator.toString().substr(0,10)=='IsDecimal:') return true; } }); break;
     case 'FLOAT':
       addDefaultValidator('IsFloat'); break;
     case 'DATE':

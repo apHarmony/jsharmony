@@ -236,7 +236,15 @@ exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
       _defaults[field.name] = Q[field.name];
     }
   }
-  
+
+  if(_.isEmpty(defaultCommands)){
+    defaultCommands[modeldb] = {
+      dflt_ptypes: [],
+      dflt_params: {},
+      dflt_sql_fields: [],
+    };
+  }
+
   for(var dbid in defaultCommands){
     let defaultCommand = defaultCommands[dbid];
     var db = _this.jsh.getDB(dbid);
@@ -259,7 +267,9 @@ exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
           callback(err, _defaults, stats);
         });
       }
-      else callback(null, _defaults);
+      else {
+        callback(null, _defaults);
+      }
     };
   }
 };

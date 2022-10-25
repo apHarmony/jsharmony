@@ -674,6 +674,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
       else if (model.unbound){
         if (_.isString(srcfield.default) || _.isNumber(srcfield.default) || _.isBoolean(srcfield.default)) dstfield.default = srcfield.default;
       }
+      else dstfield.default = srcfield.default;
     }
     if ('actions' in srcfield) {
       if(srcfield.always_editable){
