@@ -723,7 +723,7 @@ exports.ParseSQLObjects = function(){
             var isAlias = !!tbl.table;
             let resolvedTable = isAlias ? tbl.table : tblKey;
             if(module.schema && ((resolvedTable.indexOf('.')<0)) && !tbl.sql){
-              resolvedTable = module.schema + '.' + tblKey;
+              resolvedTable = module.schema + '.' + resolvedTable;
             }
             if(isAlias){
               tbl.table = resolvedTable;
