@@ -359,8 +359,7 @@ exports = module.exports = function(){
   XFormat.Decode = function(format, val){
     if(typeof val == 'undefined') return val;
     if(!format) return val;
-    var customDecode = false;
-    if(format && format.decode){ format = format.decode; customDecode = true; }
+    if(format && format.decode){ format = format.decode; }
     else if(format && (format.toString().substr(0,3)=='js:')){ format = 'js_noop'; }
     format = XFormat.parseFormat(format);
     var fargs = [];
