@@ -25,6 +25,11 @@ exports = module.exports = function(jsh){
 
   var XExtXModel = function(){ };
 
+  function getPreviousValue(xdata, id){
+    if(!xdata || !xdata._previous_values) return undefined;
+    return xdata._previous_values[id];
+  }
+
   function setPreviousValue(xdata, id, val){
     if(!xdata) return;
     if(!xdata._previous_values) xdata._previous_values = {};
@@ -362,10 +367,7 @@ exports = module.exports = function(jsh){
           }
         }
         var xform = jsh.XExt.getFormFromObject(obj);
-        var oldval = undefined;
-        if(xform && xform.Data && xform.Data._previous_values){
-          if(id in xform.Data._previous_values) oldval = xform.Data._previous_values[id];
-        }
+        var oldval = getPreviousValue(xform && xform.Data, id);
         var newval = _this.GetValue(field);
         var firedUndo = false;
         var xmodel = jsh.XModels[modelid];

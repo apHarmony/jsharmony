@@ -168,6 +168,7 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && !('
     xdata._is_dirty = false;
     xdata._is_deleted = false;
     xdata._orig = null;
+    xdata._previous_values = {};
     xform.Render();
 
     if (typeof xmodel.onload != 'undefined') if(xmodel.onload(xmodel, callback) === false) return;

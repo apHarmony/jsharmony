@@ -140,10 +140,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       xform.DataSet = xform.DataSet.concat(data[_this.modelid]);
       for (var i = 0; i < data[_this.modelid].length; i++) {
         var rowid = _this.RowCount + i;
-        xform.DataSet[rowid]['_is_insert'] = false;
-        xform.DataSet[rowid]['_is_dirty'] = false;
-        xform.DataSet[rowid]['_is_deleted'] = false;
-        xform.DataSet[rowid]['_orig'] = null;
+        xform.DataSet[rowid]._is_insert = false;
+        xform.DataSet[rowid]._is_dirty = false;
+        xform.DataSet[rowid]._is_deleted = false;
+        xform.DataSet[rowid]._orig = null;
+        xform.DataSet[rowid]._previous_values = {};
         xform.ApplyUnboundDefaults(xform.DataSet[rowid]);
       }
       jsh.async.waterfall([
@@ -429,9 +430,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if('_success' in rslt){
         if((_this.modelid in rslt) && (rslt[_this.modelid].length > 0)){
           _this.DataSet[rowid] = _.extend(_this.DataSet[rowid],rslt[_this.modelid][0]);
-          _this.DataSet[rowid]['_is_insert'] = false;
-          _this.DataSet[rowid]['_is_dirty'] = false;
-          _this.DataSet[rowid]['_orig'] = null;
+          _this.DataSet[rowid]._is_insert = false;
+          _this.DataSet[rowid]._is_dirty = false;
+          _this.DataSet[rowid]._orig = null;
+          _this.DataSet[rowid]._previous_values = {};
           _this.ApplyUnboundDefaults(_this.DataSet[rowid]);
 
           var ejssource = jsh.$root(xgrid.TemplateID).html();
@@ -471,6 +473,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if(xform.Data._orig != null) xform.Data = _.extend(xform.Data, xform.Data._orig);
       xform.Data._orig = null;
       xform.Data._is_dirty = false;
+      xform.Data._previous_values = {};
       xform.DataSet[rowid] = _.extend(xform.DataSet[rowid], xform.Data);
       xform.Render();
     }
@@ -637,6 +640,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           xform.DataSet[rowid]._is_insert = false;
           xform.DataSet[rowid]._is_dirty = false;
           xform.DataSet[rowid]._orig = null;
+          xform.DataSet[rowid]._previous_values = {};
           var jrow = jsh.$root(xgrid.PlaceholderID).find("tr[data-id='" + rowid + "']");
           if(xmodel.onrowunbind) xmodel.onrowunbind(xmodel,jrow,rowid);
           jrow.remove();
@@ -646,6 +650,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
             xform.Data._is_insert = false;
             xform.Data._is_dirty = false;
             xform.Data._orig = null;
+            xform.Data._previous_values = {};
             xform.Index = -1;
             for(var i=0;i<xform.Count();i++){
               if(!xform.DataSet[i]._is_deleted){ 
