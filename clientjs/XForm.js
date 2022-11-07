@@ -223,6 +223,7 @@ exports = module.exports = function(jsh){
     var rslt = new this.DataType();
     rslt._is_insert = true;
     rslt._is_dirty = true;
+    rslt._previous_values = {};
     rslt = this.ApplyDefaults(rslt);
     this.ApplyUnboundDefaults(rslt);
     if(!options.unbound){
@@ -265,10 +266,11 @@ exports = module.exports = function(jsh){
         if(_.isArray(rslt[_this.modelid])){
           _this.DataSet = rslt[_this.modelid];
           for (var i = 0; i < _this.DataSet.length; i++) {
-            _this.DataSet[i]['_is_insert'] = false;
-            _this.DataSet[i]['_is_dirty'] = false;
-            _this.DataSet[i]['_is_deleted'] = false;
-            _this.DataSet[i]['_orig'] = null;
+            _this.DataSet[i]._is_insert = false;
+            _this.DataSet[i]._is_dirty = false;
+            _this.DataSet[i]._is_deleted = false;
+            _this.DataSet[i]._previous_values = {};
+            _this.DataSet[i]._orig = null;
             _this.ApplyUnboundDefaults(_this.DataSet[i]);
           }
           _this.DeleteSet = [];
@@ -287,6 +289,7 @@ exports = module.exports = function(jsh){
           _this.Data._is_insert = false;
           _this.Data._is_dirty = false;
           _this.Data._is_deleted = false;
+          _this.Data._previous_values = {};
           _this.Data._orig = null;
           _this.ApplyUnboundDefaults(_this.Data);
         }
@@ -314,6 +317,7 @@ exports = module.exports = function(jsh){
       if(this.Data._orig) this.Data = _.extend(this.Data, this.Data._orig);
       this.Data._orig = null;
       this.Data._is_dirty = false;
+      this.Data._previous_values = {};
     }
     if(this.DataSet){
       for(var i=0;i<this.DataSet.length;i++){
@@ -322,6 +326,7 @@ exports = module.exports = function(jsh){
         row._orig = null;
         row._is_dirty = false;
         row._is_deleted = false;
+        row._previous_values = {};
         if(row._is_insert){
           this.DataSet.splice(i,1);
           i--;

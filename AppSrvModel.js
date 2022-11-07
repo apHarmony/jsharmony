@@ -671,10 +671,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
     }
     if('default' in srcfield){
       if(_.isString(srcfield.default) && (srcfield.default.substr(0,3)=='js:')) dstfield.default = srcfield.default;
-      else if (model.unbound){
-        if (_.isString(srcfield.default) || _.isNumber(srcfield.default) || _.isBoolean(srcfield.default)) dstfield.default = srcfield.default;
-      }
-      else dstfield.default = srcfield.default;
+      else if (_.isString(srcfield.default) || _.isNumber(srcfield.default) || _.isBoolean(srcfield.default)) dstfield.default = srcfield.default;
     }
     if ('actions' in srcfield) {
       if(srcfield.always_editable){
