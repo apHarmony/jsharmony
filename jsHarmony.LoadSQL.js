@@ -717,12 +717,14 @@ exports.ParseSQLObjects = function(){
           _.each(obj.dependencies, function(tblname){ obj._dependencies[tblname] = tblname; });
         }
         else if(obj.type=='view'){
+          //Resolve Tables
           var resolvedTables = {};
           if(obj.tables) for(let tblKey in obj.tables){
             let tbl = obj.tables[tblKey];
             var isAlias = !!tbl.table;
             let resolvedTable = isAlias ? tbl.table : tblKey;
-            if(module.schema && ((resolvedTable.indexOf('.')<0)) && !tbl.sql){
+            if(obj.with && (tblKey in obj.with)){ /* Do nothing */ }
+            else if(module.schema && ((resolvedTable.indexOf('.')<0)) && !tbl.sql){
               resolvedTable = module.schema + '.' + resolvedTable;
             }
             if(isAlias){
@@ -734,6 +736,15 @@ exports.ParseSQLObjects = function(){
             }
           }
           obj.tables = resolvedTables;
+
+          //Resolve Dependencies
+          if(obj.dependencies) for(var i=0;i<obj.dependencies.length;i++){
+            let depName = obj.dependencies[i];
+            if(module.schema && ((depName.indexOf('.')<0))){
+              obj.dependencies[i] = module.schema + '.' + depName;
+            }
+          }
+
           obj._tables = {};
           for(let tblname in obj.tables){
             let tbl = obj.tables[tblname];
