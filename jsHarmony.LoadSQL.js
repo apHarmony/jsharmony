@@ -738,7 +738,7 @@ exports.ParseSQLObjects = function(){
           obj.tables = resolvedTables;
 
           //Resolve Dependencies
-          if(obj.dependencies) for(var i=0;i<obj.dependencies.length;i++){
+          if(obj.dependencies) for(let i=0;i<obj.dependencies.length;i++){
             let depName = obj.dependencies[i];
             if(module.schema && ((depName.indexOf('.')<0))){
               obj.dependencies[i] = module.schema + '.' + depName;
@@ -750,7 +750,7 @@ exports.ParseSQLObjects = function(){
             let tbl = obj.tables[tblname];
             let resolvedTable = tbl.table ? tbl.table : tblname;
             obj._tables[resolvedTable] = resolvedTable;
-            if(tbl.columns) for(var i=0;i<tbl.columns.length;i++){
+            if(tbl.columns) for(let i=0;i<tbl.columns.length;i++){
               var col = tbl.columns[i];
               if(_.isString(col)) tbl.columns[i] = col = { name: col };
             }

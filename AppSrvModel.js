@@ -117,11 +117,13 @@ AppSrvModel.prototype.GetModel = function (req, res, fullmodelid) {
           helpurl_onclick: '',
           ejs: rslt
         });
+        res.type('json');
         res.end(JSON.stringify(model));
       } });
       return;
     }
     else {
+      res.type('json');
       res.end(JSON.stringify(rslt));
     }
   } });

@@ -29,6 +29,7 @@ exports.GetToken = function (req, res) {
   if (!req.jshsite.auth.getToken) { return Helper.GenError(req, res, -99999, 'Token generation not defined'); }
   req.jshsite.auth.getToken(this, req, function (rslt, err) {
     if (err) { return Helper.GenError(req, res, -99999, err); }
+    res.type('json');
     res.end(JSON.stringify(rslt));
   });
 };
@@ -67,7 +68,10 @@ exports.PopQueue = function (req, res, next, queueid) {
   if (!_.isEmpty(verrors)) { return Helper.GenError(req, res, -2, verrors[''].join('\n')); }
   
   if (!Helper.hasModelAction(req, queue, 'D')) { return Helper.GenError(req, res, -11, 'Invalid Access'); }
-  this.JobProc.PopQueue(req, res, queueid, P, function () { res.end(JSON.stringify({ '_success': 1 })); });
+  this.JobProc.PopQueue(req, res, queueid, P, function () {
+    res.type('json');
+    res.end(JSON.stringify({ '_success': 1 }));
+  });
 };
 
 exports.SendQueue = function (queueid, message) {

@@ -569,7 +569,11 @@ exports.ExecTasks = function (req, res, dbtasks, trans, callback, options) {
     function(dbtrans, callback, transtbl){ ... }
   */
   var _this = this;
-  if (_.isEmpty(dbtasks)) { res.end(JSON.stringify({ '_success': 1, '_stats': {} })); return; }
+  if (_.isEmpty(dbtasks)) {
+    res.type('json');
+    res.end(JSON.stringify({ '_success': 1, '_stats': {} }));
+    return;
+  }
   
   //Split off post-processing
   var posttasks = [];
@@ -608,6 +612,7 @@ exports.ExecTasks = function (req, res, dbtasks, trans, callback, options) {
       posttask(postcallback, rslt);
     }, function (err) {
       if (err != null) { _this.AppDBError(req, res, err); return; }
+      res.type('json');
       res.send(JSON.stringify(rslt));
       if (typeof callback != 'undefined') callback();
     });

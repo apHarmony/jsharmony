@@ -476,6 +476,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
         csv.stringify(csvdata, { quotedString: true }).pipe(res);
       }
       else {
+        res.type('json');
         res.send(JSON.stringify(rslt));
       }
     }, dbconfig);

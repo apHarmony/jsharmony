@@ -522,7 +522,7 @@ exports = module.exports = function(jsh){
       if (!field) return false;
       var oldval = this[id];
       if ('format' in field) {
-        let oldval_fmt = jsh.XFormat.Apply(field.format, oldval);
+        var oldval_fmt = jsh.XFormat.Apply(field.format, oldval);
         oldval = jsh.XFormat.Decode(field.format, oldval_fmt);
       }
       var newval = this.GetValue(field);

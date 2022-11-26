@@ -911,6 +911,7 @@ AppSrvRpt.prototype.runReportJob = function (req, res, fullmodelid, Q, P, onComp
         if (err != null) { thisapp.AppDBError(req, res, err, stats); return; }
         else rslt = { '_success': _.size(jobtasks) };
         rslt['_stats'] = Helper.FormatStats(req, stats);
+        res.type('json');
         res.send(JSON.stringify(rslt));
       });
     }

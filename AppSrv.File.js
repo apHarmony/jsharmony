@@ -74,7 +74,10 @@ exports.Upload = function (req, res) {
       else {
         rslt = { '_success': 1, 'file_size': file_size, 'file_token': file_token, 'file_orig_name': file_orig_name, 'file_extension': file_ext };
         if (req.jsproxyid) return res.end(Helper.js_proxy(req, rslt));
-        else return res.end(JSON.stringify(rslt));
+        else{
+          res.type('json');
+          return res.end(JSON.stringify(rslt));
+        }
       }
     });
   });
@@ -144,6 +147,7 @@ exports.ClearUpload = function (req, res) {
   if (!('_DBContext' in req) || (req._DBContext == '') || (req._DBContext == null)) { return Helper.GenError(req, res, -30, 'Invalid file upload request.'); }
   var user_folder = jsh.Config.datadir + 'temp/' + req._DBContext + '/';
   HelperFS.clearFiles(user_folder, -1, -1, function (err) {
+    res.type('json');
     res.end(JSON.stringify({ '_success': 1 }));
   });
 };
