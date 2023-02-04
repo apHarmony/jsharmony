@@ -1802,7 +1802,7 @@ exports = module.exports = function(jsh){
   };
 
   XExt.Alert = function (obj, onAccept, params) {
-    params = _.extend({ escapeHTML: true }, params);
+    params = _.extend({ escapeHTML: true, style: '' }, params);
     var msg = '';
     if (_.isString(obj)) msg = obj;
     else msg = JSON.stringify(obj);
@@ -1813,6 +1813,8 @@ exports = module.exports = function(jsh){
     //alert(msg);
     jsh.xDialog.unshift('.xalertbox');
     jsh.$dialogBlock('.xalertbox.base').zIndex(jsh.xDialog.length);
+
+    jsh.$dialogBlock('.xalertbox').prop('style', params.style);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();

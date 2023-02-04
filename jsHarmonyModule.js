@@ -92,6 +92,9 @@ jsHarmonyModule.prototype.Application = function(){
 };
 jsHarmonyModule.prototype.onModuleAdded = function(){
 };
+jsHarmonyModule.prototype.replaceSchema = function(sql){
+  return Helper.ReplaceAll(sql,'{schema}.', this.schema?this.schema+'.':'');
+};
 
 //Root Application Module
 jsHarmonyModule.ApplicationModule = function(jsh){

@@ -949,7 +949,8 @@ exports.ParseEntities = function () {
     }
     var db = modelExt.db = _this.DB[modelDB];
     modelExt.sqlext = db.SQLExt;
-    var tabledef = modelExt.tabledef = db.getTableDefinition(model.table);
+    var moduleSchema = (model.module && _this.Modules[model.module] && _this.Modules[model.module].schema) || '';
+    var tabledef = modelExt.tabledef = db.getTableDefinition(model.table, moduleSchema);
     if(tabledef && tabledef.table_type){
       model._dbdef = {
         table_type: tabledef.table_type ,
