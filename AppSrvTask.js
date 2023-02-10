@@ -146,9 +146,10 @@ AppSrvTask.prototype.getParamTypes = function(params){
   return rslt;
 };
 
-AppSrvTask.prototype.addParam = function(params, fields, key, value){
+AppSrvTask.prototype.addParam = function(params, fields, key, value, keySource){
+  keySource = keySource || key;
   if(key in params) throw new Error('Parameter already defined: ' + key);
-  params[key] = { name: key, value: value, type: this.getParamType(fields, key, value) };
+  params[key] = { name: key, value: value, type: this.getParamType(fields, keySource, value) };
 };
 
 AppSrvTask.prototype.logParams = function(model, params){
@@ -377,7 +378,7 @@ AppSrvTask.prototype.exec_sql = function(model, command, params, options, comman
                 //Add to parameters
                 var rowparams = _.extend({}, params);
                 for(var key in row){
-                  _this.addParam(rowparams, command.fields, command.into + '.' + key, row[key]);
+                  _this.addParam(rowparams, command.fields, command.into + '.' + key, row[key], key);
                 }
 
                 //Add null for empty columns
@@ -1022,7 +1023,7 @@ AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, c
     //Add to parameters
     var rowparams = _.extend({}, params);
     for(var key in row){
-      _this.addParam(rowparams, command.fields, command.into + '.' + key, row[key]);
+      _this.addParam(rowparams, command.fields, command.into + '.' + key, row[key], key);
     }
     //Add null for empty columns
     _.each(command.fields, function(field){
@@ -1118,7 +1119,7 @@ AppSrvTask.prototype.exec_js = function(model, command, params, options, command
             //Add to parameters
             var rowparams = _.extend({}, params);
             for(var key in row){
-              _this.addParam(rowparams, [], command.into + '.' + key, row[key]);
+              _this.addParam(rowparams, [], command.into + '.' + key, row[key], key);
             }
             
             //Execute Commands
