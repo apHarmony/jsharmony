@@ -183,6 +183,7 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
     if (!this.jsh.hasModel(req, fullmodelid)) throw new Error('Error: Model ' + fullmodelid + ' not found in collection.');
     var model = this.jsh.getModel(req, fullmodelid);
     var db = this.jsh.getModelDB(req, fullmodelid);
+    var dbcontext = this.jsh.getDBContext(req, model, db);
     //Verify model access
     if (!Helper.hasModelAction(req, model, 'B')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
     if (model.unbound) { Helper.GenError(req, res, -11, 'Cannot run database queries on unbound models'); return; }
@@ -220,7 +221,7 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
     
     var sql = db.sql.Download(_this.jsh, model, fields, keys, datalockqueries);
     
-    this.ExecRow(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt) {
+    this.ExecRow(dbcontext, sql, sql_ptypes, sql_params, function (err, rslt) {
       //Get extension, filename
       if(err) jsh.Log.error(err);
       if ((rslt == null) || (rslt.length != 1) || (rslt[0] == null)) { return Helper.GenError(req, res, -33, 'Download file not found.'); }

@@ -59,7 +59,7 @@ AppSrvRpt.prototype.queueReport = function (req, res, fullmodelid, Q, P, params,
   if(req){
     if (!Helper.hasModelAction(req, model, 'B')) { return errorHandler(-11, jsh._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); }
     db = db || jsh.getModelDB(req, fullmodelid);
-    dbcontext = dbcontext || req._DBContext || 'report';
+    dbcontext = dbcontext || jsh.getDBContext(req, model, db) || 'report';
   }
   else if(!db) throw new Error('Either req or db is required.');
 
@@ -222,7 +222,7 @@ AppSrvRpt.prototype.parseReportSQLData = function (req, db, dbcontext, model, sq
   var _this = this;
   if(req){
     db = db || jsh.getModelDB(req, model.id);
-    dbcontext = dbcontext || req._DBContext || 'report';
+    dbcontext = dbcontext || jsh.getDBContext(req, model, db) || 'report';
   }
   else if(!db) throw new Error('Either req or db is required.');
   _.each(rdata, function (dparams, dname) {
@@ -832,6 +832,7 @@ AppSrvRpt.prototype.runReportJob = function (req, res, fullmodelid, Q, P, onComp
   var sql_params = {};
   var verrors = {};
   var db = jsh.getModelDB(req, fullmodelid);
+  var dbcontext = jsh.getDBContext(req, model, db);
   
   var fields = thisapp.getFieldsByName(model.fields, fieldlist);
   if (fields.length == 0) return onComplete(null, {});
@@ -857,7 +858,7 @@ AppSrvRpt.prototype.runReportJob = function (req, res, fullmodelid, Q, P, onComp
   
   var dbtasks = {};
   dbtasks['jobqueue'] = function (callback) {
-    db.Recordset(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt, stats) {
+    db.Recordset(dbcontext, sql, sql_ptypes, sql_params, function (err, rslt, stats) {
       if ((err == null) && (rslt == null)) err = Helper.NewError('Record not found', -1);
       if (err != null) { err.model = model; err.sql = sql; }
       if (stats) stats.model = model;

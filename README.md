@@ -1,5 +1,5 @@
 # =========
-# jsharmony
+# jsHarmony
 # =========
 
 Rapid Application Development (RAD) Platform for Node.js Database Application Development

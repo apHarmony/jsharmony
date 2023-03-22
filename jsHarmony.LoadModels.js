@@ -2250,7 +2250,7 @@ exports.ParseEntities = function () {
     if (model.fields) _.each(model.fields, function (field) {
       if(field.lov){
         var lov = field.lov;
-        var lovDB = 'default';
+        var lovDB = modelDB;
         if('database' in lov){
           lov.db = lov.database;
         }

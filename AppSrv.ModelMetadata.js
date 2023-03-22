@@ -33,6 +33,7 @@ exports.getTabCode = function (req, res, fullmodelid, onComplete) {
   var keylist = this.getKeyNames(model.fields);
   var tabcodelist = [model.tabcode];
   var db = _this.jsh.getModelDB(req, fullmodelid);
+  var dbcontext = _this.jsh.getDBContext(req, model, db);
   
   if (req.query.action == 'insert') { return onComplete(); }
   else if (!_.includes(['update','browse'],req.query.action)) { Helper.GenError(req, res, -9, 'Action not supported'); return; }
@@ -65,7 +66,7 @@ exports.getTabCode = function (req, res, fullmodelid, onComplete) {
   
   var sql = db.sql.getTabCode(_this.jsh, model, selectfields, keys, datalockqueries);
   
-  this.ExecScalar(req._DBContext, sql, sql_ptypes, sql_params, function (err, rslt) {
+  this.ExecScalar(dbcontext, sql, sql_ptypes, sql_params, function (err, rslt) {
     if (err) { _this.jsh.Log.error(err); Helper.GenError(req, res, -99999, 'An unexpected error has occurred'); return; }
     if (rslt && rslt[0]) {
       return onComplete(rslt[0]);
@@ -81,6 +82,7 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
   var fieldlist = [];
   var nodatalock = null;
   var db = this.jsh.getModelDB(req, model.id);
+  var dbcontext = this.jsh.getDBContext(req, model, db);
   if (typeof model.title !== 'undefined'){
     if(_.isString(model.title)) title = model.title;
     else if(model.title.insert && Helper.hasAction(targetperm,'I')){
@@ -147,7 +149,7 @@ exports.addTitleTasks = function (req, res, model, Q, dbtasks, targetperm) {
   
   dbtasks['_title'] = function (dbtrans, callback, transtbl) {
     _this.ApplyTransTblChainedParameters(transtbl, sql, sql_ptypes, sql_params, model.fields);
-    db.Scalar(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, title, stats) {
+    db.Scalar(dbcontext, sql, sql_ptypes, sql_params, dbtrans, function (err, title, stats) {
       if (err) { _this.jsh.Log.error(err); Helper.GenError(req, res, -99999, 'An unexpected error has occurred'); return; }
       if(title) title = Helper.ResolveParams(req, title);
       return callback(null, title, stats);
@@ -248,6 +250,7 @@ exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
   for(var dbid in defaultCommands){
     let defaultCommand = defaultCommands[dbid];
     var db = _this.jsh.getDB(dbid);
+    var dbcontext = _this.jsh.getDBContext(req, model, db);
     var dflt_sql = db.sql.getDefaultTasks(_this.jsh, defaultCommand.dflt_sql_fields);
   
     //Add parameters from querystring
@@ -257,7 +260,7 @@ exports.addDefaultTasks = function (req, res, model, Q, dbtasks) {
     dbtasks['_defaults_'+dbid] = function (dbtrans, callback, transtbl) {
       _this.ApplyTransTblChainedParameters(transtbl, dflt_sql, defaultCommand.dflt_ptypes, defaultCommand.dflt_params, model.fields);
       if (dflt_sql) {
-        db.Row(req._DBContext, dflt_sql, defaultCommand.dflt_ptypes, defaultCommand.dflt_params, dbtrans, function (err, rslt, stats) {
+        db.Row(dbcontext, dflt_sql, defaultCommand.dflt_ptypes, defaultCommand.dflt_params, dbtrans, function (err, rslt, stats) {
           if (err == null) {
             for (var f in rslt) {
               if (rslt[f] == null) _defaults[f] = '';
@@ -284,6 +287,7 @@ exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks, targetperm) 
   var fieldlist = [];
   var nodatalock = null;
   var db = this.jsh.getModelDB(req, model.id);
+  var dbcontext = this.jsh.getDBContext(req, model, db);
   if(model.breadcrumbs.insert && Helper.hasAction(targetperm,'I')){
     if(model.breadcrumbs.insert.sql){ sql = model.breadcrumbs.insert.sql; fieldlist = model.breadcrumbs.insert.sql_params; nodatalock = model.breadcrumbs.insert.nodatalock; }
   }
@@ -350,7 +354,7 @@ exports.addBreadcrumbTasks = function (req, res, model, Q, dbtasks, targetperm) 
   
   dbtasks['_bcrumbs'] = function (dbtrans, callback, transtbl) {
     _this.ApplyTransTblChainedParameters(transtbl, sql, sql_ptypes, sql_params, model.fields);
-    db.Row(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
+    db.Row(dbcontext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
       if ((err == null) && (rslt == null)) err = Helper.NewError('Breadcrumbs not found', -14);
       if (err != null) { err.model = model; err.sql = sql; }
       if (stats) stats.model = model;
@@ -384,6 +388,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
       if(lov && lov.db){
         lovdb = jsh.getDB(lov.db);
       }
+      var dbcontext = jsh.getDBContext(req, model, lovdb);
 
       //If form and actions="B", do not get the full LOV
       var tgtactions = ejsext.getActions(req, model, field.actions, options.action);
@@ -469,7 +474,7 @@ exports.addLOVTasks = function (req, res, model, Q, dbtasks, options) {
 
       dbtasks['_LOV_' + field.name] = function (dbtrans, callback, transtbl) {
         _this.ApplyTransTblChainedParameters(transtbl, sql, lov_ptypes, lov_params, model.fields);
-        lov_db_function.call(lovdb, req._DBContext, sql, lov_ptypes, lov_params, dbtrans, function (err, rslt, stats) {
+        lov_db_function.call(lovdb, dbcontext, sql, lov_ptypes, lov_params, dbtrans, function (err, rslt, stats) {
           if (err == null) {
             //Generate warning if the LOV options are too long, and sqlselect, sqltruncate is not defined for the field
             if(!rslt) rslt = [];

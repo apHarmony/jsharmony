@@ -58,6 +58,7 @@ exports.postModelExec = function (req, res, fullmodelid, Q, P, onComplete) {
   var model = jsh.getModel(req, fullmodelid);
   if (!Helper.hasModelAction(req, model, 'U')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
   var db = jsh.getModelDB(req, fullmodelid);
+  var dbcontext = jsh.getDBContext(req, model, db);
   
   var fieldlist = this.getFieldNames(req, model.fields, 'U');
   
@@ -106,7 +107,7 @@ exports.postModelExec = function (req, res, fullmodelid, Q, P, onComplete) {
     sql_params = _this.ApplyTransTblEscapedParameters(sql_params, transtbl);
     var dbfunc = db.Recordset;
     if (model.sqltype && (model.sqltype == 'multirecordset')) dbfunc = db.MultiRecordset;
-    dbfunc.call(db, req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
+    dbfunc.call(db, dbcontext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
       if (err != null) { err.model = model; err.sql = sql; }
       if (stats) stats.model = model;
       if(model.onsqlupdated) sql_rslt = rslt;

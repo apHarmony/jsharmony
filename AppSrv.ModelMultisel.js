@@ -40,6 +40,7 @@ exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
   var allfieldslist = _.union([lovfield.name], fieldlist);
   var allfields = this.getFieldsByName(model.fields, allfieldslist);
   var db = _this.jsh.getModelDB(req, fullmodelid);
+  var dbcontext = _this.jsh.getDBContext(req, model, db);
   
   var is_insert = true;
   if (_this.ParamCheck('Q', Q, _.union(_.map(foreignkeylist, function (foreignkey) { return '&' + foreignkey; }), ['|_action']), false)) { is_insert = false; }
@@ -115,7 +116,7 @@ exports.getModelMultisel = function (req, res, fullmodelid, Q, P) {
   
   var dbtasks = {};
   dbtasks[fullmodelid] = function (dbtrans, callback) {
-    db.Recordset(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
+    db.Recordset(dbcontext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
       if ((err == null) && (rslt == null)) err = Helper.NewError('Record not found', -1);
       if (err != null) { err.model = model; err.sql = sql; }
       if (stats) stats.model = model;
@@ -145,6 +146,7 @@ exports.postModelMultisel = function (req, res, fullmodelid, Q, P, onComplete) {
   var foreignkeylist = _this.getFieldNames(req, model.fields, 'F');
   var foreignkeyfields = this.getFieldsByName(model.fields, foreignkeylist);
   var db = _this.jsh.getModelDB(req, fullmodelid);
+  var dbcontext = _this.jsh.getDBContext(req, model, db);
   
   if (!_this.ParamCheck('Q', Q, _.map(foreignkeylist, function (foreignkey) { return '&' + foreignkey; }))) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
   if (!_this.ParamCheck('P', P, ['&' + lovfield.name])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
@@ -229,7 +231,7 @@ exports.postModelMultisel = function (req, res, fullmodelid, Q, P, onComplete) {
   var sql_rslt = null;
   dbtasks[fullmodelid] = function (dbtrans, callback, transtbl) {
     sql_params = _this.ApplyTransTblEscapedParameters(sql_params, transtbl);
-    db.Row(req._DBContext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
+    db.Row(dbcontext, sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
       if (err != null) { err.model = model; err.sql = sql; }
       if (stats) stats.model = model;
       if(model.onsqlupdated) sql_rslt = rslt;

@@ -489,6 +489,15 @@ exports.getModelDB = function(req, fullmodelid) {
   return this.getDB(dbid);
 };
 
+exports.getDBContext = function(req, model, db){
+  var dbcontext = req._DBContext;
+  if(this.Config.onGetDBContext){
+    var sysContext = this.Config.onGetDBContext(this, req, model, db);
+    if(!Helper.isNullUndefined(sysContext)) dbcontext = sysContext;
+  }
+  return dbcontext;
+};
+
 exports.getDB = function(dbid){
   if(!dbid) dbid = 'default';
   if(!(dbid in this.DB)) throw new Error('Database connection '+dbid+' not found');

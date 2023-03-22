@@ -43,6 +43,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   encryptedfields = this.getEncryptedFields(req, model.fields, 'S'); //Encrypted fields can be used for search
   if ((encryptedfields.length > 0) && !(req.secure) && (!_this.jsh.Config.system_settings.allow_insecure_http_encryption)) { Helper.GenError(req, res, -51, 'Encrypted / hash fields require HTTPS connection'); return; }
   var db = _this.jsh.getModelDB(req, fullmodelid);
+  var dbcontext = _this.jsh.getDBContext(req, model, db);
   if ('d' in Q) P = JSON.parse(Q.d);
   
   if (!_this.ParamCheck('Q', Q, ['|rowstart', '|rowcount', '|sort', '|search', '|searchjson', '|d', '|meta', '|getcount'])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
@@ -212,7 +213,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   var dbtaskname = fullmodelid;
   if (!is_insert) {
     dbtasks[dbtaskname] = function (dbtans, callback) {
-      db.Recordset(req._DBContext, dbsql.sql, sql_ptypes, sql_params, dbtans, function (err, rslt, stats) {
+      db.Recordset(dbcontext, dbsql.sql, sql_ptypes, sql_params, dbtans, function (err, rslt, stats) {
         if (err != null) { err.model = model; err.sql = dbsql.sql; }
         else {
           if (stats) stats.model = model;
@@ -274,7 +275,7 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   
   if (getcount) {
     dbtasks['_count_' + dbtaskname] = function (dbtrans, callback) {
-      db.Row(req._DBContext, dbsql.rowcount_sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
+      db.Row(dbcontext, dbsql.rowcount_sql, sql_ptypes, sql_params, dbtrans, function (err, rslt, stats) {
         if ((err == null) && (rslt == null)) err = Helper.NewError('Count not found', -14);
         if (err != null) { err.model = model; err.sql = dbsql.rowcount_sql; }
         if (stats) stats.model = model;

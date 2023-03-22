@@ -263,6 +263,9 @@ function jsHarmonyConfig(config){
   //When a client tries to connect to a jsHarmony queue
   this.onQueueSubscribe = []; //function(cb, req, res, queueid){ return cb(); }
 
+  //Overriding the database context
+  this.onGetDBContext = null; //function(jsh, req, model, db){ return 'system'; }
+
   //Theme CSS files
   this.themes = {
     'light': [ 'jsHarmony.theme.light.css' ],
