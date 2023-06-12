@@ -369,6 +369,7 @@ jsHarmonyServer.prototype.Run = function(cb){
     _this.servers.push(server);
     _this.addWebSocketHandler(server);
     server.timeout = _this.serverConfig.request_timeout;
+    if(server.timeout > 2*60*1000) server.keepAlive = true;
     _this.ListenPort(server, _this.serverConfig.http_port, _this.serverConfig.http_ip, function(){
       _this.jsh.Log.info(_this.jsh.Config.app_name + ' listening on HTTP port ' + server.address().port);
       _this.jsh.Log.info('Log in at '+_this.getURL());
@@ -395,6 +396,7 @@ jsHarmonyServer.prototype.Run = function(cb){
     _this.servers.push(server);
     _this.addWebSocketHandler(server);
     server.timeout = _this.serverConfig.request_timeout;
+    if(server.timeout > 2*60*1000) server.keepAlive = true;
     var new_http_port = 0;
     var new_https_port = 0;
 
@@ -438,6 +440,7 @@ jsHarmonyServer.prototype.Run = function(cb){
       var redirect_server = http.createServer(redirect_app);
       _this.servers.push(redirect_server);
       redirect_server.timeout = _this.serverConfig.request_timeout;
+      if(redirect_server.timeout > 2*60*1000) redirect_server.keepAlive = true;
       _this.ListenPort(redirect_server, _this.serverConfig.http_port, _this.serverConfig.http_ip, function(){
         new_http_port = redirect_server.address().port;
         start_https_server(cb,[redirect_server]);
