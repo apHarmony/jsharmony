@@ -1947,7 +1947,7 @@ exports = module.exports = function(jsh){
 
   //html - HTML or jQuery object
   XExt.CustomPrompt = function (sel, html, onInit, onAccept, onCancel, onClosed, options) {
-    options = _.extend({ backgroundClose: false, reuse: false, restoreFocus: true, onClosing: null }, options);
+    options = _.extend({ backgroundClose: false, reuse: false, restoreFocus: true, onClosing: null, asyncInit: false }, options);
     if(options.specialKeys === false) options.specialKeys = { enter: false, escape: false };
     else options.specialKeys = _.extend({ enter: true, escape: true }, options.specialKeys);
 
@@ -1990,41 +1990,52 @@ exports = module.exports = function(jsh){
       if (onAccept) return onAccept(function () { acceptfunc_aftervalidate(); });
       else acceptfunc_aftervalidate();
     };
-    if (onInit) onInit(acceptfunc, cancelfunc);
-    jsh.$dialogBlock(sel + ' input.button_ok').on('click', acceptfunc);
-    jsh.$dialogBlock(sel + ' input.button_cancel').on('click', cancelfunc);
+    XExt.execif(true,
+      function(done){
+        if(onInit && options.asyncInit){
+          onInit(acceptfunc, cancelfunc, done);
+        }
+        else {
+          if (onInit) onInit(acceptfunc, cancelfunc);
+          return done();
+        }
+      },
+      function(){
+        jsh.$dialogBlock(sel + ' input.button_ok').on('click', acceptfunc);
+        jsh.$dialogBlock(sel + ' input.button_cancel').on('click', cancelfunc);
 
-    jsh.$dialogBlock(sel).off('acceptDialog').on('acceptDialog', acceptfunc);
-    jsh.$dialogBlock(sel).off('cancelDialog').on('cancelDialog', cancelfunc);
+        jsh.$dialogBlock(sel).off('acceptDialog').on('acceptDialog', acceptfunc);
+        jsh.$dialogBlock(sel).off('cancelDialog').on('cancelDialog', cancelfunc);
 
-    jsh.$dialogBlock(sel + ' input, ' + sel + ' textarea, ' + sel + ' select').on('keydown', function (e) {
-      if (options.specialKeys.escape && (e.keyCode == 27)) { e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); }
-    });
-    jsh.$dialogBlock(sel + ' input:not(:checkbox):not(:button)').on('keydown', function (e) {
-      if (options.specialKeys.escape && (e.keyCode == 13)) { e.preventDefault(); e.stopImmediatePropagation(); acceptfunc(); }
-    });
-    if(options.backgroundClose){
-      jsh.dialogBlock.on('mousedown.close' + sel, function(e){
-        if(!$(e.target).is('.xdialogoverlay,.xdialogblock')) return;
-        var mouseDownTime = new Date().getTime();
-        jsh.dialogBlock.one('mouseup.close', function(e){
-          var mouseUpTime = new Date().getTime();
-          if((mouseUpTime - mouseDownTime) > 5000) return;
-          if(!$(e.target).is('.xdialogoverlay,.xdialogblock')) return;
-          if(jsh.xDialog.length && (jsh.xDialog[0]==sel)){ e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); }
+        jsh.$dialogBlock(sel + ' input, ' + sel + ' textarea, ' + sel + ' select').on('keydown', function (e) {
+          if (options.specialKeys.escape && (e.keyCode == 27)) { e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); }
         });
-      });
-    }
-    jsh.$dialogBlock(sel).show();
-    jsh.dialogBlock.show();
-    if(jsh.XPage && jsh.XPage.LayoutOneColumn) jsh.XPage.LayoutOneColumn(jsh.$dialogBlock(sel)[0], { reset: true });
-    jsh.XWindowResize();
-    setTimeout(function(){
-      jsh.XWindowResize();
-      if(jsh.$dialogBlock(sel + ' .default_focus').length) jsh.$dialogBlock(sel + ' .default_focus').focus();
-      else jsh.$dialogBlock(sel).$find('input:visible,textarea:visible,select:visible').first().focus();
-    }, 1);
-    
+        jsh.$dialogBlock(sel + ' input:not(:checkbox):not(:button)').on('keydown', function (e) {
+          if (options.specialKeys.escape && (e.keyCode == 13)) { e.preventDefault(); e.stopImmediatePropagation(); acceptfunc(); }
+        });
+        if(options.backgroundClose){
+          jsh.dialogBlock.on('mousedown.close' + sel, function(e){
+            if(!$(e.target).is('.xdialogoverlay,.xdialogblock')) return;
+            var mouseDownTime = new Date().getTime();
+            jsh.dialogBlock.one('mouseup.close', function(e){
+              var mouseUpTime = new Date().getTime();
+              if((mouseUpTime - mouseDownTime) > 5000) return;
+              if(!$(e.target).is('.xdialogoverlay,.xdialogblock')) return;
+              if(jsh.xDialog.length && (jsh.xDialog[0]==sel)){ e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); }
+            });
+          });
+        }
+        jsh.$dialogBlock(sel).show();
+        jsh.dialogBlock.show();
+        if(jsh.XPage && jsh.XPage.LayoutOneColumn) jsh.XPage.LayoutOneColumn(jsh.$dialogBlock(sel)[0], { reset: true });
+        jsh.XWindowResize();
+        setTimeout(function(){
+          jsh.XWindowResize();
+          if(jsh.$dialogBlock(sel + ' .default_focus').length) jsh.$dialogBlock(sel + ' .default_focus').focus();
+          else jsh.$dialogBlock(sel).$find('input:visible,textarea:visible,select:visible').first().focus();
+        }, 1);
+      }
+    );
   };
 
   XExt.AcceptDialog = function(){
