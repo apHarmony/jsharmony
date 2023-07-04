@@ -1812,9 +1812,8 @@ exports = module.exports = function(jsh){
     }
     //alert(msg);
     jsh.xDialog.unshift('.xalertbox');
-    jsh.$dialogBlock('.xalertbox.base').zIndex(jsh.xDialog.length);
-
     jsh.$dialogBlock('.xalertbox').prop('style', params.style);
+    jsh.$dialogBlock('.xalertbox.base').zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
     if (oldactive) $(oldactive).blur();
