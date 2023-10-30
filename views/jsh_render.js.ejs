@@ -127,6 +127,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //Get Model
     jsh.GetModel(jsh.state.modelid,jsh.state.GET,function(rslt){//On Success
       var model = rslt;
+
+      //If template is different, perform hard redirect
+      if(jsh.cur_model && ((model.basetemplate||'') != (jsh.cur_model.basetemplate||''))) { window.location.href = jsh.state.fullurl; return; }
+
       //Do not reload if performing a refresh, and the model is the same as the previous model
       if(options.onRefreshNoChange && jsh.cur_model && model && (JSON.stringify(model)==JSON.stringify(jsh.cur_model))){ options.onRefreshNoChange(); return; }
 

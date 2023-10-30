@@ -1945,7 +1945,7 @@ exports.ParseEntities = function () {
       'oninit', 'oncommit', 'onload', 'oninsert', 'onupdate', 'onvalidate', 'onloadstate', 'ongetstate', 'onrowbind', 'onrowunbind', 'ondestroy', 'onchange', 'getapi', 'onrender', 'onrendered', 'onsqlinserted', 'onsqlupdated', 'onsqldeleted', 'disable_csv_export',
       'js', 'jslib', 'ejs', 'header', 'css', 'dberrors', 'tablestyle', 'tableclass', 'formstyle', 'formclass', 'popup', 'ongetfilename', 'onloadimmediate', 'sqlwhere', 'sqlwhere_disabled_on_insert', 'breadcrumbs', 'tabpos', 'tabs', 'tabpanelstyle',
       'nokey', 'nodatalock', 'unbound', 'duplicate', 'sqlselect', 'sqlupdate', 'sqlinsert', 'sqlinsertencrypt', 'sqlgetinsertkeys', 'sqldelete', 'sqlexec', 'sqlexec_comment', 'sqlrowcount', 'sqldownloadselect', 'sqltype', 'onroute', 'tabcode', 'noresultsmessage', 'bindings',
-      'path', 'module', 'templates', 'db', 'database', 'onecolumn', 'namespace',
+      'path', 'module', 'templates', 'db', 'database', 'onecolumn', 'namespace', 'basetemplate',
       //Report Parameters
       'subheader', 'footerheight', 'headeradd',
       'display_layouts'

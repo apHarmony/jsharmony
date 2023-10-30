@@ -546,8 +546,11 @@ function genSinglePage(jsh, req, res, fullmodelid){
   //Set template (popup vs full)
   var tmpl_name = req.jshsite.basetemplate;
   var model = jsh.getModel(req, fullmodelid);
-  if ('popup' in model){
+  if('popup' in model){
     if('popup' in jsh.Views) tmpl_name = 'popup';
+  }
+  if('basetemplate' in model){
+    if(model.basetemplate in jsh.Views) tmpl_name = model.basetemplate;
   }
   //Render page
   jsh.RenderTemplate(req, res, tmpl_name, {

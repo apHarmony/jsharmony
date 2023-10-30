@@ -544,7 +544,7 @@ exports.getDBType = function (field) {
     if ((typeof flen == 'undefined') || (flen==-1)) flen = _this.DB.types.MAX;
     return _this.DB.types.VarBinary(flen);
   }
-  else throw new Error('Key ' + fname + ' has invalid type.');
+  else throw new Error('Key ' + fname + ' has invalid type: '+(field.type||'').toString());
 };
 
 exports.TransformDBTasks = function(collection, f){
