@@ -1966,28 +1966,34 @@ exports = module.exports = function(jsh){
     jsh.$dialogBlock(sel + ' input').off('click');
     jsh.$dialogBlock(sel + ' input').off('keydown');
 
-    var cancelDialogFunc = XExt.dialogButtonFunc(sel, oldactive, function () {
-      if (onClosed) onClosed();
-      if(options.reuse) jsh.$dialogBlock(sel).hide();
-      else jsh.$dialogBlock(sel).remove();
-    }, { onClosing: options.onClosing });
-    var cancelfunc = function(options){
+    var cancelDialogFunc = function(_onClosed){
+      XExt.dialogButtonFunc(sel, oldactive, function () {
+        if (onClosed) onClosed();
+        if (_onClosed) _onClosed();
+        if(options.reuse) jsh.$dialogBlock(sel).hide();
+        else jsh.$dialogBlock(sel).remove();
+      }, { onClosing: options.onClosing })();
+    };
+    var cancelfunc = function(options, _onClosed){
       options = _.extend({ force: false }, options);
       options.forceCancel = function(){ cancelfunc({ force: true }); };
       if (onCancel){
         if((onCancel(options)===false) && !options.force) return;
       }
-      cancelDialogFunc();
+      cancelDialogFunc(_onClosed);
     };
-    var acceptfunc_aftervalidate = XExt.dialogButtonFunc(sel, oldactive, function () {
-      if (onClosed) onClosed();
-    }, { onClosing: options.onClosing });
-    var acceptfunc = function () {
+    var acceptfunc_aftervalidate = function(_onClosed){
+      XExt.dialogButtonFunc(sel, oldactive, function () {
+        if (onClosed) onClosed();
+        if (_onClosed) _onClosed();
+      }, { onClosing: options.onClosing })();
+    };
+    var acceptfunc = function (_onClosed) {
       //Verify this is the topmost dialog
       if ((jsh.xDialog.length > 0) && (jsh.xDialog[0] != (sel))) return;
       
-      if (onAccept) return onAccept(function () { acceptfunc_aftervalidate(); });
-      else acceptfunc_aftervalidate();
+      if (onAccept) return onAccept(function () { acceptfunc_aftervalidate(_onClosed); });
+      else acceptfunc_aftervalidate(_onClosed);
     };
     XExt.execif(true,
       function(done){
