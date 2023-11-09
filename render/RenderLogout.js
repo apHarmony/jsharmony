@@ -18,6 +18,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var Helper = require('../lib/Helper.js');
+var querystring = require('querystring');
 
 // RenderLogout.js
 exports = module.exports = function (req, res, onComplete) {
@@ -39,5 +40,7 @@ exports = module.exports = function (req, res, onComplete) {
   Helper.SetCookie(req, res, jsh, 'account', account, { 'expires': expiry, 'path': req.baseurl });
   delete req[jsh.map.user_id];
   req.isAuthenticated = false;
-  onComplete('<div>You have successfully logged out of the system. <a href="' + req.baseurl + 'login">Log back in.</a></div>');
+  var loginUrl = req.baseurl+'login';
+  if(req.query && req.query.source) loginUrl += '?' + querystring.stringify({ source: req.query.source });
+  onComplete('<div>You have successfully logged out of the system. <a href="' + Helper.escapeHTML(loginUrl) + '">Log back in.</a></div>');
 };

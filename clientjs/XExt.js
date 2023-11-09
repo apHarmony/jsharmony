@@ -2006,11 +2006,11 @@ exports = module.exports = function(jsh){
         }
       },
       function(){
-        jsh.$dialogBlock(sel + ' input.button_ok').on('click', acceptfunc);
-        jsh.$dialogBlock(sel + ' input.button_cancel').on('click', cancelfunc);
+        jsh.$dialogBlock(sel + ' input.button_ok').on('click', function(){ acceptfunc(); });
+        jsh.$dialogBlock(sel + ' input.button_cancel').on('click', function(){ cancelfunc(); });
 
-        jsh.$dialogBlock(sel).off('acceptDialog').on('acceptDialog', acceptfunc);
-        jsh.$dialogBlock(sel).off('cancelDialog').on('cancelDialog', cancelfunc);
+        jsh.$dialogBlock(sel).off('acceptDialog').on('acceptDialog', function(){ acceptfunc(); });
+        jsh.$dialogBlock(sel).off('cancelDialog').on('cancelDialog', function(){ cancelfunc(); });
 
         jsh.$dialogBlock(sel + ' input, ' + sel + ' textarea, ' + sel + ' select').on('keydown', function (e) {
           if (options.specialKeys.escape && (e.keyCode == 27)) { e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); }
