@@ -2016,7 +2016,7 @@ exports = module.exports = function(jsh){
           if (options.specialKeys.escape && (e.keyCode == 27)) { e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); }
         });
         jsh.$dialogBlock(sel + ' input:not(:checkbox):not(:button)').on('keydown', function (e) {
-          if (options.specialKeys.escape && (e.keyCode == 13)) { e.preventDefault(); e.stopImmediatePropagation(); acceptfunc(); }
+          if (options.specialKeys.enter && (e.keyCode == 13)) { e.preventDefault(); e.stopImmediatePropagation(); acceptfunc(); }
         });
         if(options.backgroundClose){
           jsh.dialogBlock.on('mousedown.close' + sel, function(e){

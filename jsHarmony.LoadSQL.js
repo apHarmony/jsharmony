@@ -156,6 +156,53 @@ exports.LoadSQLFiles = function(module, dir, options){
   return rslt;
 };
 
+exports.LoadSQLFile = function(sqlfilename, module, basepath){
+  var _this = this;
+  var sqlfiletype = 'sql';
+  if(basepath){
+    try{
+      var basepathStats = fs.lstatSync(basepath);
+      if(!basepathStats.isDirectory()) basepath = path.dirname(basepath);
+    }
+    catch(ex){
+      basepath = '';
+    }
+  }
+  if(Helper.beginsWith(sqlfilename, 'simplejson:')){
+    sqlfiletype = 'simplejson';
+    sqlfilename = sqlfilename.substr(11);
+  }
+  else if(Helper.beginsWith(sqlfilename, 'json:')){
+    sqlfiletype = 'json';
+    sqlfilename = sqlfilename.substr(5);
+  }
+  else if (sqlfilename.indexOf('.simplejson', sqlfilename.length - 11) !== -1){
+    sqlfiletype = 'simplejson';
+  }
+  else if (sqlfilename.indexOf('.json', sqlfilename.length - 5) !== -1){
+    sqlfiletype = 'json';
+  }
+
+  _this.Log.info('Loading SQL from ' + sqlfilename);
+
+  if(basepath && !path.isAbsolute(sqlfilename)) sqlfilename = path.join(basepath, sqlfilename);
+
+  if(sqlfiletype=='simplejson'){
+    try{
+      return JSON.parse(fs.readFileSync(sqlfilename, 'utf8'));
+    }
+    catch(ex){
+      throw new Error('Error parsing file "'+sqlfilename+'":' + ex.toString());
+    }
+  }
+  else if(sqlfiletype=='json'){
+    return _this.ParseJSON(sqlfilename, module && module.name, 'SQL File ' + sqlfilename, null, { fatalError: false });
+  }
+  else {
+    return fs.readFileSync(sqlfilename, 'utf8');
+  }
+};
+
 exports.LoadSQLObjects = function(dir, module, dbid, options){
   var _this = this;
   options = _.extend({ dbtype: null }, options);
