@@ -2077,9 +2077,7 @@ exports.ParseEntities = function () {
     }
 
     //Generate Validators
-    _.each(model.fields, function (field) {
-      if(field.validate) _this.AddValidatorFuncs(model.xvalidate, field, model.id);
-    });
+    _this.ResetModelValidation(model);
 
     if(model.task) _this.ParseTask(model);
   });

@@ -715,6 +715,14 @@ exports.AddValidatorFuncs = function (xvalidate, field, desc) {
   });
 };
 
+exports.ResetModelValidation = function(model){
+  var _this = this;
+  model.xvalidate = new _this.XValidate();
+  _.each(model.fields, function (field) {
+    if(field.validate) _this.AddValidatorFuncs(model.xvalidate, field, model.id);
+  });
+};
+
 exports.SendTXTEmail = function (dbcontext, txt_attrib, email_to, email_cc, email_bcc, email_attachments, params, callback) {
   var _this = this;
   //Pull TXT data from database

@@ -1801,18 +1801,23 @@ exports = module.exports = function(jsh){
     return jdialog[0];
   };
 
-  XExt.Alert = function (obj, onAccept, params) {
-    params = _.extend({ escapeHTML: true, style: '' }, params);
+  XExt.Alert = function (obj, onAccept, options) {
+    options = _.extend({
+      escapeHTML: true,
+      style: '',
+      button_ok_caption: 'OK',
+      autohide: false, //Timeout in ms, ex. 3000
+    }, options);
     var msg = '';
     if (_.isString(obj)) msg = obj;
     else msg = JSON.stringify(obj);
-    if(params.escapeHTML){
+    if(options.escapeHTML){
       msg = XExt.escapeHTML(msg);
       msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
     }
     //alert(msg);
     jsh.xDialog.unshift('.xalertbox');
-    jsh.$dialogBlock('.xalertbox').prop('style', params.style);
+    jsh.$dialogBlock('.xalertbox').prop('style', options.style);
     jsh.$dialogBlock('.xalertbox.base').zIndex(jsh.xDialog.length);
     
     var oldactive = document.activeElement;
@@ -1820,16 +1825,24 @@ exports = module.exports = function(jsh){
     jsh.$dialogBlock('.xalertmessage').html(msg);
     jsh.$dialogBlock('.xalertbox input').off('click');
     jsh.$dialogBlock('.xalertbox input').off('keydown');
-    var acceptfunc = XExt.dialogButtonFunc('.xalertbox', oldactive, onAccept, { onCompleteImmediate: params.onAcceptImmediate });
+    var isClosing = false;
+    var acceptfunc = function(){
+      isClosing = true;
+      XExt.dialogButtonFunc('.xalertbox', oldactive, onAccept, { onCompleteImmediate: options.onAcceptImmediate })();
+    };
     jsh.$dialogBlock('.xalertbox input').on('click', acceptfunc);
     jsh.$dialogBlock('.xalertbox input').on('keydown', function (e) { if (e.keyCode == 27) { acceptfunc(); } });
+
+    if (options.button_ok_caption) jsh.$dialogBlock('.xalertbox input.button_ok').show().val(options.button_ok_caption);
+    else jsh.$dialogBlock('.xalertbox input.button_ok').hide();
 
     jsh.$dialogBlock('.xalertbox').off('acceptDialog').on('acceptDialog', acceptfunc);
     
     jsh.$dialogBlock('.xalertbox.base').show();
     jsh.dialogBlock.show();
     jsh.XWindowResize();
-    if (!XExt.isIOS()) jsh.$dialogBlock('.xalertbox.base input').focus();
+    if (!XExt.isIOS() && options.button_ok_caption) jsh.$dialogBlock('.xalertbox.base input').focus();
+    if(options.autohide) setTimeout(function(){ if(!isClosing) acceptfunc(); }, options.autohide);
   };
 
   XExt.Confirm = function (obj, onYes, onNo, options) {
