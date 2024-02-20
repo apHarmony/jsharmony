@@ -624,7 +624,7 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
     dstfield.controlparams = {};
     if ('controlparams' in srcfield) {
       copyValues(dstfield.controlparams, srcfield.controlparams, [
-        'download_button', 'preview_button', 'upload_button', 'delete_button', 'dateformat', 'item_context_menu', 'item_dropdown', 'expand_all', 'onmove', 'ondrop', 'drag_anchor_settings', 'expand_to_selected', 'lazy_render', 'value_true', 'value_false', 'value_hidden', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup','base_readonly','grid_save_before_update','update_when_blank','htmlarea_config','show_thumbnail','preview_on_click','panelstyle','placeholder','icon',
+        'download_button', 'preview_button', 'upload_button', 'delete_button', 'dateformat', 'item_context_menu', 'item_dropdown', 'expand_all', 'onmove', 'ondrop', 'ongetnodecontent', 'drag_anchor_settings', 'expand_to_selected', 'lazy_render', 'value_true', 'value_false', 'value_hidden', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup','base_readonly','grid_save_before_update','update_when_blank','htmlarea_config','show_thumbnail','preview_on_click','panelstyle','placeholder','icon',
       ]);
       if ('thumbnails' in srcfield.controlparams) for (var tname in srcfield.controlparams.thumbnails) {
         var thumb = srcfield.controlparams.thumbnails[tname];

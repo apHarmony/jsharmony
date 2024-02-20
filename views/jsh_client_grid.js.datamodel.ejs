@@ -75,6 +75,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           <%-xejs.iif('lazy_render' in field.controlparams,'"lazy_render":'+JSON.stringify(field.controlparams.lazy_render)+',') %>
           <%-xejs.iif('onmove' in field.controlparams,'"onmove":function(dragval, dropval, anchor, e){'+jslocals+field.controlparams.onmove+'},') %>
           <%-xejs.iif('ondrop' in field.controlparams,'"ondrop":function(dropval, anchor, e){'+jslocals+field.controlparams.ondrop+'},') %>
+          <%-xejs.iif('ongetnodecontent' in field.controlparams,'"ongetnodecontent":function(node, defaultval){'+jslocals+field.controlparams.ongetnodecontent+'},') %>
           <%-xejs.iif('drag_anchor_settings' in field.controlparams,'"drag_anchor_settings":'+JSON.stringify(field.controlparams.drag_anchor_settings)+',') %>
           <%-xejs.iif('value_true' in field.controlparams,'"value_true":'+JSON.stringify(field.controlparams.value_true)+',') %>
           <%-xejs.iif('value_false' in field.controlparams,'"value_false":'+JSON.stringify(field.controlparams.value_false)+',') %>
