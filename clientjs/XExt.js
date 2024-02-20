@@ -1410,9 +1410,9 @@ exports = module.exports = function(jsh){
     var getNodeContent = function(){
       var rslt = XExt.escapeHTML(n.Text);
       if(controlparams && controlparams.ongetnodecontent) rslt = controlparams.ongetnodecontent(n, rslt);
-      if(!rslt) rslt = XExt.escapeHTML("\u00A0");
+      if(!rslt) rslt = XExt.escapeHTML('\u00A0');
       return rslt;
-    }
+    };
     var rslt = jsh.ejs.render('\
       <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length && (n.LazyRender&&!n.Expanded)?"tree_render_lazy":"")%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>" onclick=\'<%-instance%>.XExt.TreeSelectNode(this,<%-JSON.stringify(n.Value)%>,{ source: "click" }); return false;\' oncontextmenu=\'return <%-instance%>.XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'<%-instance%>.XExt.CancelBubble(arguments[0]); <%-instance%>.XExt.TreeToggleNode(<%-instance%>.$(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><% if(n.Icon){ %><img class="icon" src="<%-jsh._PUBLICURL%>images/icon_<%=n.Icon%>.png" /><% } %><span>'+item_dropdown_html+'<%-getNodeContent()%></span></a>\
       <div class="children <%=(n.Expanded?"expanded":"")%> tree_item_<%=n.ID%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>"><%-children%></div>',
