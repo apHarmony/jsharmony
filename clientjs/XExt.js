@@ -2522,9 +2522,6 @@ exports = module.exports = function(jsh){
   /*************************/
   /* Form Helper Functions */
   /*************************/
-  XExt.isGridControl = function (ctrl) {
-    return (jsh.$root('.SQ_CARRIER_PRO').closest('.xtbl').length > 0);
-  };
   XExt.getFormBase = function (id) {
     if (!jsh.XBase[id]) { XExt.Alert('ERROR: Base form ' + id + ' not found.'); return; }
     var basemodelid = jsh.XBase[id][0];
