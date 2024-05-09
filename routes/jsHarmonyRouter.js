@@ -190,6 +190,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     if (typeof keyid === 'undefined') { next(); return; }
     var params = {};
     if (req.query && req.query.view) params.view = true;
+    if (req.query && ('thumb' in req.query)) params.thumb = req.query.thumb;
     jsh.AppSrv.Download(req, res, '_temp', keyid, undefined, params);
   });
   //router.get('/_dl/:modelid/:keyid/:fieldid', function (req, res, next) {

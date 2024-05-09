@@ -152,6 +152,25 @@ exports.ClearUpload = function (req, res) {
   });
 };
 
+exports.DefaultThumbnail = function (req, res, fext) {
+  var svgContent = '<?xml version="1.0" encoding="utf-8"?>\
+  <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"\
+     width="87.25px" height="116.75px" viewBox="0 0 87.25 116.75" enable-background="new 0 0 87.25 116.75" xml:space="preserve">\
+  <style>.jsh_svgtxt_small { font: 12px sans-serif; }</style>\
+  <polygon fill="#FAFBFB" stroke="#999999" stroke-miterlimit="10" points="0.5,0.5 0.5,116.25 86.75,116.25 86.75,25.5 62,0.5 "/>\
+  <polyline fill="#F1F0F0" stroke="#999999" stroke-width="0.7" stroke-miterlimit="10" points="62,0.75 62,25.75 86.75,25.75 "/>\
+  <path fill="#F1F0F0" stroke="#999999" stroke-miterlimit="10" d="M62,0.75"/>\
+  <path fill="#F1F0F0" stroke="#999999" stroke-miterlimit="10" d="M86.75,25.75"/>\
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" class="jsh_svgtxt_small">'+Helper.escapeHTML(Helper.trim(fext||'','.'))+'</text>\
+  </svg>\
+  ';
+  res.writeHead(200, {
+    'Content-Type': 'image/svg+xml',
+    'Content-Length': svgContent.length,
+  });
+  res.end(svgContent);
+};
+
 exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
   if (!options) options = {};
   if (!('_DBContext' in req) || (req._DBContext == '') || (req._DBContext == null)) { return Helper.GenError(req, res, -10, 'Invalid Login / Not Authenticated'); }
@@ -166,7 +185,10 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
     HelperFS.outputFile(req, res, fpath, fname, function (err) {
       //Only executes upon error
       if (err != null) {
-        if (('code' in err) && (err.code == 'ENOENT')) return Helper.GenError(req, res, -33, 'Download file not found.');
+        if (('code' in err) && (err.code == 'ENOENT')){
+          if('thumb' in options){ return exports.DefaultThumbnail(req, res, fext); }
+          return Helper.GenError(req, res, -33, 'Download file not found.');
+        }
         return Helper.GenError(req, res, -99999, 'Error occurred during file operation (' + err.toString() + ')');
       }
     }, serveoptions);
@@ -177,6 +199,7 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
     var file_ext = path.extname(fname).toLowerCase(); //Get extension
     if ((file_ext == '') || (!_.includes(jsh.Config.valid_extensions, file_ext))) { return Helper.GenError(req, res, -32, 'File extension is not supported.'); }
     var fpath = jsh.Config.datadir + 'temp/' + req._DBContext + '/' + fname;
+    if(('thumb' in options) &&  !_.includes(jsh.Config.supported_images, file_ext)){ return exports.DefaultThumbnail(req, res, file_ext); }
     serveFile(req, res, fpath, fname, file_ext);
   }
   else {
@@ -243,6 +266,7 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
         if(err) return Helper.GenError(req, res, -33, 'Download file not found.');
         var fext = path.extname(filename);
         if(field.controlparams._data_file_has_extension && !('file_extension' in field.controlparams.sqlparams)) fname += fext;
+        if(!fext) fext = path.extname(fname);
         serveFile(req, res, filename, fname, fext);
       });
     }, undefined, db);
@@ -335,19 +359,22 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
           ext: file_ext
         };
         
+        
+        //Create Thumbnails, if applicable
+        if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
+          var tdest = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||field.name) + '_' + tname + '_%%%KEY%%%';
+          if (field.controlparams._data_file_has_extension) tdest += '.' + field.controlparams.thumbnails[tname].format;
+          if (_.includes(jsh.Config.supported_images, file_ext)) {
+            if (field.controlparams.thumbnails[tname].resize) fileops.push({ op: 'img_resize', src: fpath, dest: tdest, size: field.controlparams.thumbnails[tname].resize, format: field.controlparams.thumbnails[tname].format });
+            else if (field.controlparams.thumbnails[tname].crop) fileops.push({ op: 'img_crop', src: fpath, dest: tdest, size: field.controlparams.thumbnails[tname].crop, format: field.controlparams.thumbnails[tname].format });
+            else throw new Error('No thumbnail resize or crop operation in ' + field.name);
+          }
+          else {
+            fileops.push({ op: 'move', src: '', dest: tdest });
+          }
+        }
         //Resize Image, if applicable
         if (field.controlparams.image && _.includes(jsh.Config.supported_images, file_ext)) {
-          //Create Thumbnails, if applicable
-          if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
-            var tdest = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||field.name) + '_' + tname + '_%%%KEY%%%';
-            if (field.controlparams._data_file_has_extension) tdest += '.' + field.controlparams.thumbnails[tname].format;
-            if (_.includes(jsh.Config.supported_images, file_ext)) {
-              if (field.controlparams.thumbnails[tname].resize) fileops.push({ op: 'img_resize', src: fpath, dest: tdest, size: field.controlparams.thumbnails[tname].resize, format: field.controlparams.thumbnails[tname].format });
-              else if (field.controlparams.thumbnails[tname].crop) fileops.push({ op: 'img_crop', src: fpath, dest: tdest, size: field.controlparams.thumbnails[tname].crop, format: field.controlparams.thumbnails[tname].format });
-              else throw new Error('No thumbnail resize or crop operation in ' + field.name);
-            }
-          }
-          
           filedest = Helper.ReplaceAll(filedest, '%%%EXT%%%', '.' + field.controlparams.image.format);
           if (field.controlparams.image.resize) fileops.push({ op: 'img_resize', src: fpath, dest: filedest, size: field.controlparams.image.resize, format: field.controlparams.image.format });
           else if (field.controlparams.image.crop) fileops.push({ op: 'img_crop', src: fpath, dest: filedest, size: field.controlparams.image.crop, format: field.controlparams.image.format });

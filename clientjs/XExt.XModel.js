@@ -195,7 +195,7 @@ exports = module.exports = function(jsh){
           var download_thumb_url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field.name + '?view=1&_=' + (Date.now());
           if(field.controlparams.show_thumbnail) download_thumb_url += '&thumb='+field.controlparams.show_thumbnail;
           jctrl_thumbnail.attr('src', download_thumb_url).show();
-          if(typeof field.controlparams.thumbnail_width != 'undefined') jctrl_thumbnail.attr('width', field.controlparams.thumbnail_width + 'px');
+          if(typeof field.controlparams.thumbnail_width != 'undefined') jctrl_thumbnail.css('max-width', field.controlparams.thumbnail_width + 'px');
         }
         else jctrl_thumbnail.hide();
       }
@@ -220,9 +220,9 @@ exports = module.exports = function(jsh){
         jctrl_dbdelete.val('0');
         //Set thumbnail
         if (jctrl_thumbnail.length && field.controlparams.show_thumbnail) {
-          var thumb_url = jsh._BASEURL + '_dl/_temp/' + file_token + '?view=1';
+          var thumb_url = jsh._BASEURL + '_dl/_temp/' + file_token + '?view=1&thumb='+field.controlparams.show_thumbnail;
           jctrl_thumbnail.attr('src', thumb_url).show();
-          if(typeof field.controlparams.thumbnail_width != 'undefined') jctrl_thumbnail.attr('width', field.controlparams.thumbnail_width + 'px');
+          if(typeof field.controlparams.thumbnail_width != 'undefined') jctrl_thumbnail.css('max-width', field.controlparams.thumbnail_width + 'px');
         }
         else jctrl_thumbnail.hide();
       }

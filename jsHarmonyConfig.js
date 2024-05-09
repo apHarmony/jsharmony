@@ -47,7 +47,8 @@ jsHarmonyConfigBase.prototype.Init = function(cb){
 jsHarmonyConfigBase.prototype.Merge = function(config, jsh, sourceModuleName, handlers){
   if(!handlers) handlers = {};
   for(var prop in config){
-    if(!(prop in this)) this[prop] = config[prop];
+    if(prop == '__TRANSFORM__') jsh.ApplyModelTransform(this, config[prop]);
+    else if(!(prop in this)) this[prop] = config[prop];
     else if(prop in handlers) handlers[prop](this, config);
     else if(_.isArray(this[prop]) && _.isArray(config[prop])){ for(var j = 0;j<config[prop].length;j++) this[prop].push(config[prop][j]); }
     else if(_.isObject(this[prop])) _.merge(this[prop], config[prop]);

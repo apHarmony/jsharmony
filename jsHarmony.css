@@ -596,6 +596,7 @@ BODY
 <%-rootcss%> .xform .xtextzoom.icon,
 <%-rootcss%> .xtextzoom.icon {
   top:6px;
+  vertical-align: top;
 }
 <%-rootcss%> .xrow .xlookup.icon,
 <%-rootcss%> .xrow .xhints.icon,
