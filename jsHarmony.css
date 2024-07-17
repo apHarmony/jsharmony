@@ -934,7 +934,7 @@ DIALOG BOXES
 }
 <%-jshElementSelector%>.xdebugconsole .res-ns{
   cursor: row-resize;
-  height: 3px;
+  height: 4px;
 }
 <%-jshElementSelector%>.xdebugconsole .res-ew{
   display: inline-block;
@@ -1009,12 +1009,25 @@ DIALOG BOXES
 <%-jshElementSelector%>.xdebugconsole .debug-settings input {
   margin-right: 5px;
 }
+<%-jshElementSelector%>.xdebugconsole .debug-settings label[for="debugconsole_filter"] {
+  position: relative;
+  top: -2px;
+}
+<%-jshElementSelector%>.xdebugconsole .debug-settings label[for="debugconsole_filter"] > input {
+  font-size: 13px;
+  padding-bottom: 0px;
+  padding-top: 0px;
+}
 <%-jshElementSelector%>.xdebugconsole .info-message{
   padding: 2px 19px;
   border-bottom: 1px solid #999;
   white-space: pre-wrap;
   font-size: 12px;
   line-height: 15px;
+  display: none;
+}
+<%-jshElementSelector%>.xdebugconsole .info-message.visible{
+  display: block;
 }
 <%-jshElementSelector%>.xdebugconsole .controls i {
   cursor: pointer;

@@ -30,6 +30,7 @@
   },
   "homepage": "https://github.com/apHarmony/jsharmony",
   "devDependencies": {
+    "eslint-plugin-es5": "^1.5.0",
     "jsharmony-db-pgsql": "^1.1.19",
     "mocha": "^8.4.0"
   },

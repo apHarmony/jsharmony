@@ -250,6 +250,11 @@ exports = module.exports = function(jsh){
           '<input type="checkbox" class="xdebugconsole_source" id="' + obj_id + '" value="' + source_id + '"> ' + _this.all_sources[source_id] +
         '</label>';
     }
+    //Filter Input
+    settingsHtml +=
+      '<label for="debugconsole_filter">' +
+        '<input type="text" placeholder="Filter" class="xdebugconsole_filter" id="debugconsole_filter"></input>'+
+      '</label>';
     this.DebugDialog = jsh.$root('.xdebugconsole');
     this.DebugPanel  =  this.DebugDialog.$find('.debug-panel');
     this.DebugPanel.$find('.debug-settings').append($(settingsHtml));
@@ -278,6 +283,19 @@ exports = module.exports = function(jsh){
       _this.settings.sources[jobj.val()] = !!jobj.prop('checked');
       _this.saveSettings();
       _this.updateWebSocketSources();
+    });
+    //Apply Filter
+    this.DebugPanel.on('change keydown paste input', '.xdebugconsole_filter', function(){
+      var filterTxt = $(this).val().toLowerCase();
+      var messages = document.querySelector('.xdebuginfo-body').children;
+      for(var i=0; i < messages.length; i++) {
+        var container = messages[i];
+        var isVisible = container.classList.contains('visible');
+        if(filterTxt.length == 0 || ((container.innerText.toLowerCase().indexOf(filterTxt)) >= 0)) {
+          if(!isVisible) container.classList.add('visible');
+        }
+        else if(isVisible) container.classList.remove('visible');
+      }
     });
     this.DebugDialog.$find('.controls i').on('click',function(){
       var action = $(this).data('action');
@@ -369,7 +387,9 @@ exports = module.exports = function(jsh){
 
   XDebugConsole.prototype.log = function (txt, clear) {
     if(clear) this.clear();
-    this.DebugPanel.$find('.xdebuginfo-body').prepend($('<div class="info-message">'+txt+'</div>'));
+    var filterTxt = this.DebugPanel.$find('.xdebugconsole_filter').val().toLowerCase();
+    var showMsg = !filterTxt.length || (txt.toLowerCase().indexOf(filterTxt) >= 0);
+    this.DebugPanel.$find('.xdebuginfo-body').prepend($('<div class="info-message'+(showMsg ? ' visible': '')+'">'+txt+'</div>'));
   };
 
   return XDebugConsole;
