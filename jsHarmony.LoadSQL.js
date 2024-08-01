@@ -147,6 +147,14 @@ exports.LoadSQLFiles = function(module, dir, options){
       }
     }
 
+    if(options.db && (fpath.indexOf('.' + options.db + '.') < 0)){
+      let found_other_db = false;
+      _.each(dbIds, function(dbId){ if (fpath.indexOf('.' + dbId + '.') >= 0) found_other_db = true; });
+      if (found_other_db){
+        continue;
+      }
+    }
+
     if(module && module.onFilterSQLScripts){
       if(module.onFilterSQLScripts(fobj)===false) continue;
     }
