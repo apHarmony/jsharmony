@@ -87,8 +87,6 @@ exports = module.exports = function(jsh){
     }
     this.IsLoading = false;
     this.TemplateHTMLFunc = null;
-    this.LastColumns = new Array(); //Used in Tool Search
-    this.Formatters = new Array(); //Used in Tool Search
     this.LastData = null;
     this.Data = null;
     this.PreProcessResult = null;

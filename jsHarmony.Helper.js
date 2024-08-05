@@ -373,9 +373,9 @@ exports.getURL_onclick = function (req, model, link) {
       for(var key in params) paramsarr.push(key+'='+params[key]);
       rslt = "window.open(url,'"+Helper.escapeJS(windowtarget)+"','"+Helper.escapeJS(paramsarr.join(','))+"');return false;";
     }
-  }
-  if(ptarget.action=='savenew'){
-    rslt = req.jshsite.instance+'.XPage.SaveNew(function(){' + rslt + '}, { abortRefresh: ' + (windowtarget=='_self'?'true':'false') + ' });return false;';
+    if(ptarget.action=='savenew'){
+      rslt = req.jshsite.instance+'.XPage.SaveNew(function(){' + rslt + '}, { abortRefresh: ' + (windowtarget=='_self'?'true':'false') + ' });return false;';
+    }
   }
   return seturl + rslt;
 };
