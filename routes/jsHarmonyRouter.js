@@ -241,13 +241,13 @@ var jsHarmonyRouter = function (jsh, siteid) {
           for (var model in curdbtasks) {
             dbtasks[i + '_' + model] = curdbtasks[model];
           }
+          if(i==1) firstdb = jsh.getModelDB(req, fullmodelid);
           return callback(null);
         };
         if (method == 'get') actionprocessed(null, jsh.AppSrv.getModel(req, res, fullmodelid, true, query, post));
         else if (method == 'put') jsh.AppSrv.putModel(req, res, fullmodelid, true, query, post, actionprocessed);
         else if (method == 'post') jsh.AppSrv.postModel(req, res, fullmodelid, true, query, post, actionprocessed);
         else if (method == 'delete') jsh.AppSrv.deleteModel(req, res, fullmodelid, true, query, post, actionprocessed);
-        firstdb = jsh.getModelDB(req, fullmodelid);
       }, { query: query, post: post });
     }, function (err) {
       if (err == null) {
