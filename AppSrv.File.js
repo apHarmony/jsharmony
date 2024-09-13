@@ -181,7 +181,12 @@ exports.Download = function (req, res, fullmodelid, keyid, fieldid, options) {
   
   var serveFile = function (req, res, fpath, fname, fext) {
     var serveoptions = {};
-    if (options.view) serveoptions = { attachment: false, mime_override: fext };
+    if (options.view || options.source){
+      serveoptions = { attachment: false, mime_override: fext };
+      if(fext && (fext in jsh.Config.file_viewers)){
+        if(jsh.Config.file_viewers[fext](jsh, req, res, options, fpath, fname) !== false) return;
+      }
+    }
     HelperFS.outputFile(req, res, fpath, fname, function (err) {
       //Only executes upon error
       if (err != null) {

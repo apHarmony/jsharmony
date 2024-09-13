@@ -190,6 +190,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     if (typeof keyid === 'undefined') { next(); return; }
     var params = {};
     if (req.query && req.query.view) params.view = true;
+    if (req.query && req.query.source) params.source = true;
     if (req.query && ('thumb' in req.query)) params.thumb = req.query.thumb;
     jsh.AppSrv.Download(req, res, '_temp', keyid, undefined, params);
   });
@@ -204,6 +205,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     if (typeof fieldid === 'undefined') { next(); return; }
     var params = {};
     if (req.query && req.query.view) params.view = true;
+    if (req.query && req.query.source) params.source = true;
     if (req.query && ('thumb' in req.query)) params.thumb = req.query.thumb;
     jsh.AppSrv.Download(req, res, fullmodelid, keyid, fieldid, params);
   });
