@@ -2070,6 +2070,11 @@ exports.ParseEntities = function () {
     else if((model.layout=='report')&&(Helper.hasAction(model.actions, 'ID'))) _this.LogInit_ERROR(model.id + ': Report layout only supports BU actions');
     if((model.layout=='grid')&&model.grid_static&&(Helper.hasAction(model.actions, 'IUD'))) _this.LogInit_ERROR(model.id + ': The model.grid_static property cannot be used with IUD actions');
 
+    if(model.reselectafteredit && !_.includes(['row'], model.reselectafteredit)) _this.LogInit_ERROR(model.id + ': Invalid reselectafteredit - ' + model.reselectafteredit);
+    if(model.newrowposition && !_.includes(['first','last'], model.newrowposition)) _this.LogInit_ERROR(model.id + ': Invalid newrowposition - ' + model.newrowposition);
+    if(model.commitlevel && !_.includes(['cell','row','page','auto','none'], model.commitlevel)) _this.LogInit_ERROR(model.id + ': Invalid commitlevel - ' + model.commitlevel);
+    if(model.validationlevel && !_.includes(['cell','row'], model.validationlevel)) _this.LogInit_ERROR(model.id + ': Invalid validationlevel - ' + model.validationlevel);
+
     if(!_this.Config.system_settings.deprecated.disable_sqlwhere_on_form_update_delete){
       if(model.sqlwhere && Helper.hasAction(model.actions, 'I') && !model.sqlinsert){
         if(!model.sqlwhere_disabled_on_insert) _this.LogInit_ERROR(model.id + ': model.sqlwhere is not supported with I action.  Use the model.sqlwhere_disabled_on_insert property to disable sqlwhere on insert.');

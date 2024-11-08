@@ -190,6 +190,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     if (typeof keyid === 'undefined') { next(); return; }
     var params = {};
     if (req.query && req.query.view) params.view = true;
+    if (req.query && req.query.source) params.source = true;
     if (req.query && ('thumb' in req.query)) params.thumb = req.query.thumb;
     jsh.AppSrv.Download(req, res, '_temp', keyid, undefined, params);
   });
@@ -204,6 +205,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     if (typeof fieldid === 'undefined') { next(); return; }
     var params = {};
     if (req.query && req.query.view) params.view = true;
+    if (req.query && req.query.source) params.source = true;
     if (req.query && ('thumb' in req.query)) params.thumb = req.query.thumb;
     jsh.AppSrv.Download(req, res, fullmodelid, keyid, fieldid, params);
   });
@@ -241,13 +243,13 @@ var jsHarmonyRouter = function (jsh, siteid) {
           for (var model in curdbtasks) {
             dbtasks[i + '_' + model] = curdbtasks[model];
           }
+          if(i==1) firstdb = jsh.getModelDB(req, fullmodelid);
           return callback(null);
         };
         if (method == 'get') actionprocessed(null, jsh.AppSrv.getModel(req, res, fullmodelid, true, query, post));
         else if (method == 'put') jsh.AppSrv.putModel(req, res, fullmodelid, true, query, post, actionprocessed);
         else if (method == 'post') jsh.AppSrv.postModel(req, res, fullmodelid, true, query, post, actionprocessed);
         else if (method == 'delete') jsh.AppSrv.deleteModel(req, res, fullmodelid, true, query, post, actionprocessed);
-        firstdb = jsh.getModelDB(req, fullmodelid);
       }, { query: query, post: post });
     }, function (err) {
       if (err == null) {

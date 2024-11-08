@@ -158,6 +158,8 @@ function jsHarmonyConfig(config){
   this.valid_extensions = [".jpg", ".jpeg", ".pdf", ".png", ".svg", ".tif", ".tiff", ".gif", ".mp4", ".ogv", ".webm", ".mp3", ".wav", ".avi", ".txt", ".xlsm", ".xls", ".xlsx", ".bak", ".zip", ".csv"];
   //Valid image extensions
   this.supported_images = ['.jpg','.jpeg','.gif','.png','.svg'];
+  //File viewers
+  this.file_viewers = { /* '.ext': function(jsh, req, res, options, fpath, fname){ ... } */ };
   //Time before log entries are flushed to disk
   this.LogSleepDelay = 1000;
   //Application base path (containing models folder)
