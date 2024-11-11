@@ -292,6 +292,96 @@ exports.getModelRecordset = function (req, res, fullmodelid, Q, P, rowlimit, opt
   return dbtasks;
 };
 
+exports.importCSV = function (req, res, fullmodelid, Q, P, options) {
+  options = _.extend({ batch_size: 100 }, options);
+  var _this = this;
+  var model = this.jsh.getModel(req, fullmodelid);
+  if (!Helper.hasModelAction(req, model, 'IU')) { Helper.GenError(req, res, -11, _this._tP('Invalid Model Access for @fullmodelid', { fullmodelid })); return; }
+  var keys = _this.getKeys(model.fields);
+  var db = _this.jsh.getModelDB(req, fullmodelid);
+  var dbcontext = _this.jsh.getDBContext(req, model, db);
+  if (!_this.ParamCheck('Q', Q, ['|batch_size'])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
+  if (!_this.ParamCheck('P', P, ['&csv_data'])) { Helper.GenError(req, res, -4, 'Invalid Parameters'); return; }
+  var sql_ptypes = [];
+  var sql_pnames = [];
+  var verrors = {};
+  var csv_data = [];
+  var csv_header = [];
+  try {
+    var data = P.csv_data || [];
+    if(data.length < 2) return Helper.GenError(req, res, -11, 'Imported CSV data must contain one header row and at least one data row');
+    csv_header = data[0];
+    for(var i=1; i<data; i++){
+      if(data[i].length != csv_header.length) return Helper.GenError(req, res, -11, 'Imported CSV data must contain rows of equal length');
+    }
+    csv_data = data.slice(1);
+  }
+  catch (err) {
+    return Helper.GenError(req, res, -4, 'Invalid Parameters');
+  }
+  if (model.fields.length == 0) return null;
+  _.each(model.fields, function (field) {
+    var fname = field.name;
+    if (_.includes(csv_header, (field.caption))) {
+      var dbtype = _this.getDBType(field);
+      sql_ptypes.push(dbtype);
+      sql_pnames.push(fname);
+    }
+    else throw new Error('Missing parameter ' + fname);
+  });
+  if (!_.isEmpty(verrors)) { Helper.GenError(req, res, -2, verrors[''].join('\n')); return; }
+  var upsertQueue = new Helper.gather(function(sqls, gather_cb){
+    if(!sqls.length) return gather_cb();
+    var dbtasks = {};
+    //Generate params
+    dbtasks['paste_upsert_'+fullmodelid] = function (callback) {
+      db.Row(dbcontext, sqls.join(' '), [], {}, function (err, rslt, stats) {
+        if (stats) stats.model = model;
+        if (err) { err.model = model; err.sql = sqls; return callback(err, rslt, stats); }
+        callback(err, rslt, stats);
+      });
+    };
+    db.ExecTasks(dbtasks, function (err, rslt, stats) {
+      return gather_cb(err, rslt);
+    });
+  }, { length: options.batch_size });
+  async.each(csv_data, function (csv_row, csv_cb) {
+    var sql_params = {};
+    var param_datalocks = [];
+    var datalockqueries = [];
+    for(var i=0; i<csv_row.length; i++){
+      sql_params[sql_pnames[i]] = csv_row[i];
+    }
+    _.each(model.fields, function (field) {
+      //Add PreCheck, if type='F'
+      if (Helper.hasAction(field.actions, 'F')) {
+        _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery, dfield) {
+          if (dfield != field) return false;
+          param_datalocks.push({ pname: field.name, datalockquery: datalockquery, field: dfield });
+          return true;
+        },undefined,model.id + ': '+field.name);
+      }
+    });
+    //Add DataLock parameters to SQL
+    _this.getDataLockSQL(req, model, model.fields, sql_ptypes, sql_params, verrors, function (datalockquery) { datalockqueries.push(datalockquery); }, null, fullmodelid);
+    var upsertSql = db.sql.upsertModelForm(_this.jsh, model, model.fields, keys, param_datalocks, datalockqueries);
+    var upsertSqlApplied = db.applySQLParams(upsertSql, sql_ptypes, sql_params).trim();
+    if(!Helper.endsWith(upsertSqlApplied, ';')) upsertSqlApplied += ';';
+    upsertQueue.push(upsertSqlApplied, csv_cb);
+  }, function(err){
+    if (err != null) { _this.AppDBError(req, res, err); return; }
+    if(upsertQueue.items.length) {
+      upsertQueue.drain(function(){
+        res.type('json');
+        res.end(JSON.stringify({ '_success': 1 }));
+      });
+    } else {
+      res.type('json');
+      res.end(JSON.stringify({ '_success': 1 }));
+    }
+  });
+};
+  
 exports.exportCSV = function (req, res, dbtasks, fullmodelid, options) {
   var _this = this;
   var jsh = _this.jsh;
