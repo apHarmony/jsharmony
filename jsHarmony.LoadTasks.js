@@ -26,7 +26,7 @@ function addFieldValidator(field, validator){
   field.validation.push(validator);
 }
 
-exports.ParseTask = function(model){
+exports.ParseTask = function(model, modelExt){
   var _this = this;
 
   var task = model.task;
@@ -38,7 +38,7 @@ exports.ParseTask = function(model){
   });
 
   if(!('commands' in task)){ _this.LogInit_ERROR('Error loading' + model.id + ' task: Missing task.commands property'); return; }
-  _.each(task.commands, function(command){ _this.ParseTaskCommand(model, command, params); });
+  _.each(task.commands, function(command){ _this.ParseTaskCommand(model, modelExt, command, params); });
 
 };
 
@@ -58,7 +58,7 @@ exports.getTaskCommandDesc = function(command, options){
   return rslt;
 };
 
-exports.ParseTaskCommand = function(model, command, params){
+exports.ParseTaskCommand = function(model, modelExt, command, params){
   var _this = this;
   params = _.extend({}, params);
 
@@ -71,7 +71,7 @@ exports.ParseTaskCommand = function(model, command, params){
         if(command.into in params) _this.LogInit_ERROR('Error loading task ' + model.id + ': '+commandType+'.into property would override an existing variable');
         params[command.into] = true;
       }
-      _.each(command[childCommandProperty], function(command){ _this.ParseTaskCommand(model, command); });
+      _.each(command[childCommandProperty], function(command){ _this.ParseTaskCommand(model, modelExt, command); });
     }
   }
 
@@ -81,6 +81,12 @@ exports.ParseTaskCommand = function(model, command, params){
       if(key == 'xvalidate') continue;
       if(!_.includes(props, key)) _this.LogInit_ERROR('Invalid ' + command.exec + ' command property: ' + key + ' in command ' + _this.getTaskCommandDesc(command));
     }
+  }
+
+  if(command.fields){
+    _.each(command.fields, function(field){
+      _this.codegen.resolveType(modelExt && modelExt.sqlext, field);
+    });
   }
 
   if(command.exec == 'sql'){

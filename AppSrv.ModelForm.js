@@ -482,7 +482,7 @@ exports.postModelForm = function (req, res, fullmodelid, Q, P, onComplete) {
     var sql_rslt = null;
 
     //Add fields from post
-    if ((fields.length > 0)||model.sqlupdate){
+    if ((fields.length > 0)||(sql_extfields.length > 0)||model.sqlupdate){
       _.each(fields, function (field) {
         var fname = field.name;
         if(field.sqlupdate==='') return;

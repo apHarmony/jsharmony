@@ -116,15 +116,21 @@ function AppSrvTask(appsrv) {
   this.log = new AppSrvTaskLogger(this.jsh, this);
 }
 
-AppSrvTask.prototype.getParamType = function(fields, key, value){
-  var _this = this;
-  //Search fields for type
+AppSrvTask.prototype.getField = function(fields, key){
   if(fields) for(var i=0;i<fields.length;i++){
     var field = fields[i];
     if(field.name == key){
-      if(!('type' in field)) break;
-      return _this.AppSrv.getDBType(field);
+      return field;
     }
+  }
+  return null;
+};
+
+AppSrvTask.prototype.getParamType = function(field, value){
+  var _this = this;
+  //Return type based on field
+  if(field && field.type){
+    return _this.AppSrv.getDBType(field);
   }
   //Return type based on value
   return _this.AppSrv.DB.types.fromValue(value);
@@ -146,10 +152,24 @@ AppSrvTask.prototype.getParamTypes = function(params){
   return rslt;
 };
 
+AppSrvTask.prototype.deformatParams = function(model, params, vals){
+  var _this = this;
+  var verrors = {};
+  for(var key in params){
+    var param = params[key];
+    if(!param.field) continue;
+    if(key in vals){
+      vals[key] = _this.AppSrv.DeformatParam(param.field, vals[key], verrors);
+    }
+  }
+  if(!_.isEmpty(verrors)) _this.log.debug(model, model.id + ': ' + verrors[''].join(', '));
+};
+
 AppSrvTask.prototype.addParam = function(params, fields, key, value, keySource){
   keySource = keySource || key;
   if(key in params) throw new Error('Parameter already defined: ' + key);
-  params[key] = { name: key, value: value, type: this.getParamType(fields, keySource, value) };
+  var field = this.getField(fields, keySource);
+  params[key] = { name: key, value: value, type: this.getParamType(field, value), field: JSON.parse(JSON.stringify(field)) };
 };
 
 AppSrvTask.prototype.logParams = function(model, params){
@@ -327,6 +347,7 @@ AppSrvTask.prototype.exec_sql = function(model, command, params, options, comman
   //Generate array of parameters
   var sql_ptypes = _this.getParamTypes(params);
   var sql_params = _this.getParamValues(params);
+  _this.deformatParams(model, params, sql_params);
 
   //Resolve database connection
   var dbid = command.db || 'default';
@@ -805,6 +826,7 @@ AppSrvTask.prototype.getCSVSQLData = function(model, command, params, options, o
   //Generate array of parameters
   var sql_ptypes = _this.getParamTypes(params);
   var sql_params = _this.getParamValues(params);
+  _this.deformatParams(model, params, sql_params);
 
   //Resolve database connection
   var dbid = command.db || 'default';

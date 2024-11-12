@@ -74,6 +74,7 @@ function jsHarmony(config) {
   this.Cache = {};
   this.FontCache = {};
   this.AppSrv = null;
+  this.codegen = null;
   this.map = {};
   this.uimap = {};
   this.isInitialized = false;

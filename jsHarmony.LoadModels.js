@@ -915,7 +915,7 @@ exports.validateDisplayLayouts = function(model){
 exports.ParseEntities = function () {
   var _this = this;
   _this.ParseCustomControls();
-  var codegen = new jsHarmonyCodeGen(_this);
+  var codegen = _this.codegen = new jsHarmonyCodeGen(_this);
   var auto_datatypes = _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.datatypes;
   var auto_attributes = _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.attributes;
   var auto_controls =  _this.Config.system_settings.automatic_schema && _this.Config.system_settings.automatic_schema.controls;
@@ -2084,7 +2084,7 @@ exports.ParseEntities = function () {
     //Generate Validators
     _this.ResetModelValidation(model);
 
-    if(model.task) _this.ParseTask(model);
+    if(model.task) _this.ParseTask(model, modelExt);
   });
 
   var all_lovs = {};
