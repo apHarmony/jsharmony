@@ -15,7 +15,10 @@ else if(parent && (parent.topmost) && ('tabpos' in parent) && (parent.tabpos=='t
   <%-jsh.RenderView('jsh_buttons',ejsparams)%>
   <% if(model.inlinepopup){ %><a href="#" onclick="<%-instance%>.XExt.popupClear('<%=model.id%>',this); return false;" style="<%-xejs.visible(xejs.showSystemButton(model,'clear'))%>"><img src="<%-jsh._PUBLICURL%>images/icon_delete.png" alt="Clear" title="Clear" />Clear</a><% } %>
   <% if(model.topmost && (model.commitlevel) && (model.commitlevel != 'none')){ %><a href="#" class="save <%=xactiontype%>" onclick="<%-instance%>.XPage.Save();return false;" style="display:none;"><img src="<%-jsh._PUBLICURL%>images/icon_save.png" alt="Save" title="Save" />Save</a><% } %>
-  <% if(!model.templates.grid && !model.grid_static && xejs.showSystemButton(model,'add')){ %><a href="#" onclick="<%-js('xmodel.controller.AddRow();')%>" class="xbuttoninsert" style="<%-xejs.visible(xejs.showSystemButton(model,'insert') && model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'I'))%>"><img src="<%-jsh._PUBLICURL%>images/icon_insert.png" alt="Add" title="Add" />Add</a><% } %>
+  <% if(!model.templates.grid && !model.grid_static && xejs.showSystemButton(model,'add')){ %>
+    <a href="#" onclick="<%-js('xmodel.controller.editablegrid.Import();')%>" style="<%-xejs.visible(xejs.showSystemButton(model,'import')&&!model.disable_csv_import)%>"><img src="<%-jsh._PUBLICURL%>images/icon_upload.png" alt="Import" title="Import" />Import</a>
+    <a href="#" onclick="<%-js('xmodel.controller.AddRow();')%>" class="xbuttoninsert" style="<%-xejs.visible(xejs.showSystemButton(model,'insert') && model.commitlevel && (model.commitlevel != 'none') && XExt.hasAction(model.actions,'I'))%>"><img src="<%-jsh._PUBLICURL%>images/icon_insert.png" alt="Add" title="Add" />Add</a>
+  <% } %>
   <a href="#" class="xsearchbutton xsearchbutton<%=model.class%>" onclick="<%-js('xmodel.controller.SearchButtonClick();')%>" style="<%-xejs.visible(xejs.showSystemButton(model,'search'))%>"><img src="<%-jsh._PUBLICURL%>images/icon_search.png" alt="Search" title="Search" /><span>Search</span></a>
   <a href="/" onclick="<%-js('jsh.XPage.Print();')%>" style="<%-xejs.visible(model.topmost && xejs.showSystemButton(model,'print'))%>"><img src="<%-jsh._PUBLICURL%>images/icon_print.png" alt="Print" title="Print" />Print</a>
   <a href="#" onclick="<%-js('xmodel.controller.Export();')%>" style="<%-xejs.visible(xejs.showSystemButton(model,'export')&&!model.disable_csv_export)%>"><img src="<%-jsh._PUBLICURL%>images/icon_export.png" alt="Export" title="Export" />Export</a>
@@ -112,6 +115,27 @@ else if(parent && (parent.topmost) && ('tabpos' in parent) && (parent.tabpos=='t
         %%>
       </div>
       <div style="text-align:center;"><input type="button" value="Apply" class="button_ok" style="margin-right:15px;" /> <input type="button" value="Cancel" class="button_cancel" /></div>
+    </div>
+  </div>
+</script>
+
+<script class="xgrid_template_import_<%=model.class%>" type="text/x-ejs-template">
+  <div class="xdialogbox xpromptbox xgrid_import_<%=model.class%>" style="width:300px;">
+    <div align="left" style="padding-top:8px;">
+      <div style="30px;">
+        <div class="xactions top">
+          <a href="#" class="save top 
+          "><img src="/images/icon_download.png" alt="Download CSV" title="Download CSV">CSV</a>
+        </div>
+      </div>
+      <div>
+        <p>Paste CSV/TSV, then click &#8220;Import&#8221;.</p>
+        <textarea style="margin-top:20px;width:300px;height:200px;" placeholder="Paste CSV Data"></textarea>
+      </div>
+      <div style="text-align:center;">
+        <input type="button" value="Import" class="button_ok" style="margin-right:15px;" />
+        <input type="button" value="Cancel" class="button_cancel" />
+      </div>
     </div>
   </div>
 </script>

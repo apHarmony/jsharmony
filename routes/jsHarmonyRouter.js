@@ -299,22 +299,31 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   // /_csv/:modelid
-  router.get(/^\/_csv\/(.*)/, function (req, res, next) {
-    var fullmodelid = req.params[0];
-    fullmodelid = Helper.trimRight(fullmodelid,'/');
-    if (typeof fullmodelid === 'undefined') { next(); return; }
-    if (!jsh.hasModel(req, fullmodelid)) { next(); return; }
-    var model = jsh.getModel(req, fullmodelid);
-    if (model.layout != 'grid') throw new Error('CSV Export only supported on Grid');
-    processCustomRouting('csv', req, res, jsh, fullmodelid, function(){
-      var dbtask = jsh.AppSrv.getModelRecordset(req, res, fullmodelid,
-        _.pick(req.query || {}, ['rowstart', 'rowcount', 'sort', 'search', 'searchjson', 'd', 'meta', 'getcount']),
-        req.body, jsh.Config.export_rowlimit, {'export': false}
-      );
-      var options = _.pick(req.query || {}, ['columns']);
-      jsh.AppSrv.exportCSV(req, res, dbtask, fullmodelid, options);
+  router.route(/^\/_csv\/(.*)/)
+    .all(function (req, res, next) {
+      var fullmodelid = req.params[0];
+      fullmodelid = Helper.trimRight(fullmodelid,'/');
+      if (typeof fullmodelid === 'undefined') { next(); return; }
+      if (!jsh.hasModel(req, fullmodelid)) { next(); return; }
+      var model = jsh.getModel(req, fullmodelid);
+      if (model.layout != 'grid') throw new Error('CSV Export only supported on Grid');
+      processCustomRouting('csv', req, res, jsh, fullmodelid, function(){
+        var verb = req.method.toLowerCase();
+        var options = {};
+        if (verb == 'get') {
+          var dbtask = jsh.AppSrv.getModelRecordset(req, res, fullmodelid,
+            _.pick(req.query || {}, ['rowstart', 'rowcount', 'sort', 'search', 'searchjson', 'd', 'meta', 'getcount']),
+            req.body, jsh.Config.export_rowlimit, {'export': false}
+          );
+          options = _.pick(req.query || {}, ['columns', 'iscsvpaste']);
+          jsh.AppSrv.exportCSV(req, res, dbtask, fullmodelid, options);
+        }
+        else if (verb == 'post') {
+          options = _.pick(req.query || {}, ['batch_size']);
+          jsh.AppSrv.importCSV(req, res, fullmodelid, req.query, req.body, options);
+        }
+      });
     });
-  });
   router.get('/_queue/:queueid', function (req, res, next) {
     var queueid = req.params.queueid;
     if (typeof queueid === 'undefined') { next(); return; }

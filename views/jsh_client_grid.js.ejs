@@ -863,7 +863,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if(!xsearch.Data.Items.length) xcontroller.SearchAddDefault();
   }
 
-  xcontroller.Export = function(){
+  xcontroller.Export = function(options){
+    options = _.extend({ iscsvpaste: false }, options);
     if(!xgrid.Prop.isInlinePopup) if(jsh.XPage.onGridExit(null,function(){ xcontroller.Export(); })) return;
 
     //Load export columns, if applicable
@@ -873,6 +874,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       var exportColumns = _.reduce(currentDisplayLayout.columns, function (rslt, column) { if (column.name) rslt.push(column.name); return rslt; }, []);
       params.columns = JSON.stringify(exportColumns);
     }
+    if(options.iscsvpaste) params.iscsvpaste = true;
 
     xgrid.Load(0,0,null,true,undefined,{ params: params });
   }
