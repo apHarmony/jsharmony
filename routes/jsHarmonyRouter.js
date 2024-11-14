@@ -315,7 +315,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
             _.pick(req.query || {}, ['rowstart', 'rowcount', 'sort', 'search', 'searchjson', 'd', 'meta', 'getcount']),
             req.body, jsh.Config.export_rowlimit, {'export': false}
           );
-          options = _.pick(req.query || {}, ['columns']);
+          options = _.pick(req.query || {}, ['columns', 'iscsvpaste']);
           jsh.AppSrv.exportCSV(req, res, dbtask, fullmodelid, options);
         }
         else if (verb == 'post') {
