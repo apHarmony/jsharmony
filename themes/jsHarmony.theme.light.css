@@ -317,7 +317,7 @@ BODY
 <%-rootcss%> .xform_ctrl.tree a.tree_item { color: #333; }
 <%-rootcss%> .xform_ctrl.tree { border-color: #ddd; }
 <%-rootcss%> .xform_ctrl.tree a.tree_item.selected { background-color:#f8f8f8; }
-<%-jshElementSelector%>.xdebugconsole .res-ns{ height: 1px; }
+<%-jshElementSelector%>.xdebugconsole .res-ns{ height: 4px; }
 <%-jshElementSelector%>.xdebugconsole .res-ew{ width: 1px; }
 <%-jshElementSelector%>.xdebugconsole header{ background-color:#f2f2f2; }
 /***************************
