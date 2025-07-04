@@ -77,15 +77,69 @@ exports = module.exports = function(jsh){
     });
   };
 
-  XBarcode.EnableScanner = function (jobj, onSuccess){
+  XBarcode.EnableScanner = function (jobj, onBarcodeEnd, options){
+    options = _.extend({
+      onBarcodeStart: null, // function(e){}  (May be fired multiple times, per start key)
+      startKeys: ['^17', '^66', '^85'],
+      endKeys: ['13'],
+      autoEnd: false,
+    }, options);
     if (typeof jobj.data('keydown_focus') !== 'undefined') return;
+    var isScanning = false;
+    var scanTimer = null;
+    var AUTOENDSCAN_TIMEOUT = 500;
+    var autoEndScan = function(){
+      if(scanTimer) clearTimeout(scanTimer);
+      scanTimer = null;
+      if(isScanning){
+        isScanning = false;
+        if (onBarcodeEnd) onBarcodeEnd.call(jobj[0]);
+      }
+    };
     jobj.data('keydown_focus', '');
     jobj.keydown(function (e) {
-      if ((e.which == 17 && e.ctrlKey) || (e.which == 66 && e.ctrlKey) || (e.which == 85 && e.ctrlKey)) {
-        e.preventDefault();
-        return;
+      for(var i=0;i<options.startKeys.length;i++){
+        var startKey = (options.startKeys[i]).toString();
+        if(startKey){
+          var startKeyCtrl = startKey[0]=='^';
+          if(startKeyCtrl) startKey = startKey.substr(1);
+          startKey = parseInt(startKey);
+          if((e.which === startKey) && (!!e.ctrlKey == !!startKeyCtrl)){
+            e.preventDefault();
+            if(!isScanning){
+              if(options.onBarcodeStart) options.onBarcodeStart(e); // May be fired multiple times
+              if(options.autoEnd){
+                isScanning = true;
+                scanTimer = setTimeout(autoEndScan, AUTOENDSCAN_TIMEOUT);
+              }
+            }
+            return;
+          }
+        }
       }
-      else if (e.keyCode == 13) { if (onSuccess) if (onSuccess.call(this) === false) { e.preventDefault(); e.stopImmediatePropagation(); return; } }
+      for(i=0;i<options.endKeys.length;i++){
+        var endKey = (options.endKeys[i]).toString();
+        if(endKey){
+          var endKeyCtrl = endKey[0]=='^';
+          if(endKeyCtrl) endKey = endKey.substr(1);
+          endKey = parseInt(endKey);
+          if((e.which === endKey) && (!!e.ctrlKey == !!endKeyCtrl)){
+            isScanning = false;
+            if(scanTimer){ clearTimeout(scanTimer); scanTimer = null; }
+            if (onBarcodeEnd){
+              if (onBarcodeEnd.call(this) === false) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return;
+              }
+            }
+          }
+        }
+      }
+      if(isScanning && scanTimer && options.autoEnd){
+        clearTimeout(scanTimer);
+        scanTimer = setTimeout(autoEndScan, AUTOENDSCAN_TIMEOUT);
+      }
       jobj.data('keydown_focus','1');
     });
     jobj.blur(function (e) { jobj.data('keydown_focus',''); });

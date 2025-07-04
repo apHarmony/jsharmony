@@ -317,7 +317,8 @@ BODY
   top:-1px;
 }
 <%-rootcss%> .xinputerror {
-	border: 2px solid red !important;
+  border: 2px solid red !important;
+  outline: none;
 }
 <%-rootcss%> .xnorecords {
 	text-align:center;

@@ -49,7 +49,8 @@ var jsHarmonyRouter = function (jsh, siteid) {
         if(j.toString().substr(0,6)=='regex:'){
           pathExp = new RegExp(j.substr(6));
         }
-        if(app[j].route){ router.use(pathExp, app[j]); }
+        if(!app[j]){ /* Do nothing */ }
+        else if(app[j].route){ router.use(pathExp, app[j]); }
         else router.all(pathExp, app[j].bind(jsh.AppSrv));
       }
     }
