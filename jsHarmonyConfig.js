@@ -252,6 +252,8 @@ function jsHarmonyConfig(config){
   this.model_groups = {};
   //Datalock Definitions
   this.datalocks = {};
+  //Datalock Option Definitions
+  this.datalock_options = {};
   //Field Encryption Salts
   this.salts = {};
   //Field Encryption Passwords

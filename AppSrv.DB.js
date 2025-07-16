@@ -456,6 +456,10 @@ exports.getDataLockSQL = function (req, model, fields, sql_ptypes, sql_params, v
   for (var datalockid in req.jshsite.datalock) {
     if ((typeof nodatalock != 'undefined') && (Helper.arrayIndexOf(nodatalock,datalockid,arrayOptions) >= 0)) continue;
     if(model && Helper.arrayIndexOf(model.nodatalock,datalockid,arrayOptions) >= 0) continue;
+    var datalock_options = this.jsh.Config.datalock_options && this.jsh.Config.datalock_options[req.jshsite.id] && Helper.arrayItem(this.jsh.Config.datalock_options[req.jshsite.id],datalockid,arrayOptions);
+    if(model && datalock_options && datalock_options.for){
+      if(!_.includes(datalock_options.for, model.id)) continue;
+    }
     var found_datalock = false;
     var datalockval = req.jshsite.datalock[datalockid](req);
     for (var i = 0; i < fields.length; i++) {
@@ -469,6 +473,7 @@ exports.getDataLockSQL = function (req, model, fields, sql_ptypes, sql_params, v
           var datalocks = Helper.arrayItem(this.jsh.Config.datalocks[req.jshsite.id],datalockid,arrayOptions);
           if(!datalocks) throw new Error("Datalock '"+datalockid+"' not defined in site datalocks");
           var datalockquery = Helper.arrayItem(datalocks,datalockqueryid,arrayOptions);
+          if(datalockquery === '') continue;
           if (!datalockquery) throw new Error("Datalock query '" + datalockqueryid + "' not defined in config for site "+req.jshsite.id+', datalock: '+datalockid);
           var frslt = fPerDataLock(datalockquery, field);
           if ((typeof frslt !== 'undefined') && (frslt === false)) continue;
@@ -544,6 +549,7 @@ exports.getDBType = function (field) {
     if ((typeof flen == 'undefined') || (flen==-1)) flen = _this.DB.types.MAX;
     return _this.DB.types.VarBinary(flen);
   }
+  else if (ftype == 'raw') return _this.DB.types.Raw;
   else throw new Error('Key ' + fname + ' has invalid type: '+(field.type||'').toString());
 };
 

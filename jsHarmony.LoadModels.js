@@ -2157,6 +2157,10 @@ exports.ParseEntities = function () {
     for(var siteid in _this.Config.datalocks){
       if((siteid=='main') || (model.roles && model.roles[siteid] && !_.isString(model.roles[siteid]))){
         for(var datalockid in _this.Config.datalocks[siteid]){
+          var datalock_options = _this.Config.datalock_options && _this.Config.datalock_options[siteid] && Helper.arrayItem(_this.Config.datalock_options[siteid],datalockid,datalockSearchOptions);
+          if(datalock_options && datalock_options.for){
+            if(!_.includes(datalock_options.for, model.id)) continue;
+          }
 
           var skip_datalock = function(element, datalockid, datalockSearchOptions){ return (element && element.nodatalock && (Helper.arrayIndexOf(element.nodatalock,datalockid,datalockSearchOptions) >= 0)); };
 
