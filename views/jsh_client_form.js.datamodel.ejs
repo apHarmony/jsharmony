@@ -79,6 +79,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           <%-xejs.iif('dateformat' in field.controlparams,'"dateformat":'+JSON.stringify(field.controlparams.dateformat)+',') %>
           <%-xejs.iif('update_when_blank' in field.controlparams,'"update_when_blank":'+JSON.stringify(field.controlparams.update_when_blank)+',') %>
           <%-xejs.iif('htmlarea_config' in field.controlparams,'"htmlarea_config":'+JSON.stringify(field.controlparams.htmlarea_config)+',') %>
+          <%-xejs.iif('select_link' in field.controlparams,'"select_link":'+JSON.stringify(field.controlparams.select_link)+',') %>
           <%-xejs.iif('placeholder' in field.controlparams,'"placeholder":'+JSON.stringify(field.controlparams.placeholder)+',') %>
         <% }%>
       },
