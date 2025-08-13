@@ -640,6 +640,9 @@ AppSrvModel.prototype.copyModelFields = function (req, res, rslt, srcobj, target
         dstfield.controlparams.insert_link = jsh.getURL(req, model, srcfield.controlparams.insert_link, undefined, undefined, srcfield.bindings);
         dstfield.controlparams.insert_link_onclick = jsh.getURL_onclick(req, model, srcfield.controlparams.insert_link);
       }
+      if (('select_link' in srcfield.controlparams) && (srcfield.controlparams.select_link)) {
+        dstfield.controlparams.select_link = srcfield.controlparams.select_link;
+      }
     }
     if (('serverejs' in srcfield) && (srcfield.serverejs)) {
       dstfield.value = ejs.render(dstfield.value, { ejsext: ejsext, req: req, res: res, _: _, model: model, jsh: jsh });

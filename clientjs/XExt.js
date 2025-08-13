@@ -18,6 +18,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var $ = require('./jquery-1.11.2');
+var d3 = require('../public/js/d3.min.js');
 $.fn.$find = function(){ return $.fn.find.apply(this, arguments); };
 var _ = require('lodash');
 
@@ -144,6 +145,91 @@ exports = module.exports = function(jsh){
 
     _.each(new_tags, function(tag){ addTag(tag); });
     XExt.TagBox_Save(jctrl, jbaseinputctrl);
+  };
+
+  XExt.PieChart_Init = function(jctrl, field, xmodel){
+    var emodelid = field.controlparams.select_link;
+    jsh.XForm.prototype.XExecutePost(emodelid, { }, function (rslt) {
+      if ('_success' in rslt) {
+        XExt.PieChart_Render(jctrl, rslt[emodelid], xmodel);
+      }
+      else XExt.Alert('Error while loading data');
+    }, function (err) { });
+  };
+
+  XExt.PieChart_Render = function(jctrl, piechart_data, xmodel){
+
+    var data = piechart_data;
+    var getDesc = function(d){ return d.code_txt; };
+    var getTooltip = function(d){ return d.data.code_txt + ': ' + d.data.cnt; };
+    var getLink = function(d){ return d.link; };
+
+    var pie_scale = 0.83;
+    var width = 780, height = 700, radius = Math.min(width, height) * pie_scale / 2;
+
+    var animationDuration = 300;
+
+    var color = d3.scaleOrdinal().domain(data.map(getDesc)).range(d3.quantize(function(t){ return d3.interpolateHsl('#3caf85','#a66dbc')(t); }, data.length + 1).reverse());
+    var getColor = function(d){ return d.color || color(getDesc(d)) };
+
+    var svg = d3.select('.chart_'+ xmodel.class).append('svg').attr('viewBox', [-width / 2, -height * pie_scale / 2, width, height]);
+
+    var pie = d3.pie().sort(null).value(function(d) { return d.cnt; });
+    var g = svg.selectAll('.arc').data(pie(piechart_data)).enter().append('g').attr('class', 'arc');
+
+    var arc = d3.arc().innerRadius(0).outerRadius(radius - 1);
+    g.append('path')
+      .attr('d', arc)
+      .style('fill', function(d){ return getColor(d.data); })
+      .transition()
+      .duration(animationDuration)
+      .attrTween('d', function(d){
+        var i = d3.interpolate(d.startAngle, d.endAngle);
+        return function(t){ d.endAngle = i(t); return arc(d); };
+      });
+
+    //Tooltip
+    g.selectAll('path').append('title').text(getTooltip);  
+
+    //Key
+    var jkey = $('.chart_'+xmodel.class+' .key');
+    jkey.empty();
+    var sorted_items = piechart_data.slice().sort(function(a,b){
+      if(a.cnt > b.cnt) return -1;
+      if(a.cnt < b.cnt) return 1;
+    });
+    _.each(sorted_items, function(data){
+      if(!data.cnt) return;
+      var jitem = $('<div class="item"></div>');
+      jitem.text(data.code_txt + ' (' + data.cnt + ')');
+      var jitembox = $('<div class="box"></div>');
+      jitembox.css('background-color',getColor(data));
+      jitem.prepend(jitembox);
+      jkey.append(jitem);
+    });
+
+    //Mouse Over Effects
+    g.on('mouseover', function(){
+      d3.select(this).style('cursor', 'pointer');
+      d3.select(this).select('path').style('fill', function(d){
+        var curColor = getColor(d.data);
+        var highlightColor = d3.lch(curColor);
+        highlightColor.l = highlightColor.l + 12;
+        return highlightColor;
+      });
+    });
+
+    g.on('mouseout', function(){
+      d3.select(this).style('cursor', 'default');
+      d3.select(this).select('path').style('fill', function(d){ return getColor(d.data); });
+    });
+
+    g.on('click', function(event, d){
+      const link = getLink(d.data);
+      if (link) {
+        window.open(link, '_blank');
+      }
+    });
   };
 
   XExt.TagBox_Render = function(jctrl, jbaseinputctrl){

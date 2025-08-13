@@ -577,6 +577,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           XPage.traverseModelsAsync(jsh.XModels_root, function (xmodel, done) {
             async.eachSeries(xmodel.fields, function(field, field_cb){
               if(field.control=='htmlarea') return XExt.CKEditor(xmodel.class+'_'+field.name, (field.controlparams?field.controlparams.htmlarea_config:undefined), field_cb);
+              else if(field.control=='pie_chart'){
+                jsh.XExt.PieChart_Init(jsh.root.$find('.' + field.name + '.xelem' + xmodel.class), field, xmodel);
+              }
               else return field_cb();
             }, done);
           }, function(){

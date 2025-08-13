@@ -32,7 +32,7 @@ module.exports = exports = {};
 |    LOAD MODELS   |
 *******************/
 
-var BASE_CONTROLS = ['label', 'html', 'textbox', 'textzoom', 'dropdown', 'date', 'textarea', 'htmlarea', 'hidden', 'subform', 'html', 'password', 'file_upload', 'file_download', 'button', 'linkbutton', 'tree', 'checkbox','image','tagbox'];
+var BASE_CONTROLS = ['label', 'html', 'textbox', 'textzoom', 'dropdown', 'date', 'textarea', 'htmlarea', 'hidden', 'subform', 'html', 'password', 'file_upload', 'file_download', 'button', 'linkbutton', 'tree', 'checkbox','image','tagbox','pie_chart'];
 var BASE_DATATYPES = ['DATETIME','VARCHAR','CHAR','BOOLEAN','BIGINT','INT','SMALLINT','TINYINT','DECIMAL','FLOAT','DATE','DATETIME','TIME','ENCASCII','HASH','FILE','BINARY'];
 
 //Get array of all model folders
@@ -1618,6 +1618,11 @@ exports.ParseEntities = function () {
         if(!('expand_to_selected' in field.controlparams)) field.controlparams.expand_to_selected = true;
       }
 
+      //Initialize pie_chart control
+      if((field.control=='pie_chart') && !(field.controlparams && ('select_link' in field.controlparams))){ //if the control is pie_chart and there is no select_link in controlparams
+        _this.LogInit_ERROR('Model ' + model.id + ' Field ' + (field.name || '') + ' should have a select_link control parameter');
+      }
+      
       //Add validation to password control
       if((field.control=='password')&&!field.unbound&&!('validate' in field)){
         field.validate = [{'function':'Required','actions':((field.controlparams && field.controlparams.update_when_blank)?'BIU':'I')}, 'MinLength:8'];
@@ -1960,7 +1965,7 @@ exports.ParseEntities = function () {
     var _v_controlparams = [
       'value_true', 'value_false', 'value_hidden', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'base_readonly', 'dateformat', 'panelstyle',
       'download_button', 'preview_button', 'upload_button', 'delete_button', 'data_folder', 'data_file_prefix', 'sqlparams', '_data_file_has_extension', 'show_thumbnail', 'preview_on_click', 'icon',
-      'image', 'thumbnails', 'expand_all', 'expand_to_selected', 'onmove', 'ondrop', 'ongetnodecontent', 'drag_anchor_settings', 'item_context_menu', 'item_dropdown', 'insert_link', 'grid_save_before_update', 'update_when_blank', 'htmlarea_config', 'placeholder'
+      'image', 'thumbnails', 'expand_all', 'expand_to_selected', 'onmove', 'ondrop', 'ongetnodecontent', 'drag_anchor_settings', 'item_context_menu', 'item_dropdown', 'insert_link', 'grid_save_before_update', 'update_when_blank', 'htmlarea_config', 'placeholder', 'select_link'
     ];
     var _v_popuplov = ['target', 'code_val', 'popupstyle', 'popupiconstyle', 'popup_copy_results', 'onpopup', 'popup_copy_results', 'onpopup', 'base_readonly'];
     var _v_lov = ['sql', 'sql2', 'sqlmp', 'code', 'code2', 'code_sys', 'code2_sys', 'code_app', 'code2_app', 'schema', 'blank', 'parent', 'parents', 'datalock', 'sql_params', 'sqlselect', 'sqlselect_params', 'sqltruncate', 'always_get_full_lov', 'nodatalock', 'showcode', 'db', 'database', 'values', 'post_process'];

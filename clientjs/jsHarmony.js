@@ -27,6 +27,7 @@ var jQuery = $;
 require('../public/jquery-ui/js/jquery-ui-1.10.3.custom-aspa.min.js')(jQuery);
 require('../public/js/jquery.colorbox-min.js')(jQuery);
 require('../public/js/jquery.csv.min.js')(jQuery);
+var d3 = require('../public/js/d3.min.js');
 var _ = require('lodash');
 var ejs = require('ejs');
 var async = require('async');
@@ -91,6 +92,7 @@ var jsHarmony = function(options){
   this.$ = $;
   this._ = _;
   this.ejs = ejs;
+  this.d3 = d3;
   this.async = async;
   this.moment = moment;
   this.XGrid = XGrid(this);
