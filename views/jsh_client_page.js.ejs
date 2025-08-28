@@ -1120,6 +1120,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
       if (jctrl.hasClass('dropdown')) jctrl.prop('disabled', true);
       else if (jctrl.hasClass('checkbox')) jctrl.prop('disabled', true);
+      else if (jctrl.hasClass('xform_ctrl_htmlarea')) jctrl.prop('disabled', true);
       else if(jctrl.hasClass('xtagbox_base')){
         jctrl.prev().addClass('uneditable');
         jctrl.prev().find('input').prop('disabled', true);
@@ -1140,6 +1141,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
       if (jctrl.hasClass('dropdown')) jctrl.prop('disabled', false);
       else if (jctrl.hasClass('checkbox')) jctrl.prop('disabled', false);
+      else if (jctrl.hasClass('xform_ctrl_htmlarea')) jctrl.prop('disabled', false);
       else if(jctrl.hasClass('xtagbox_base')){
         jctrl.prev().removeClass('uneditable');
         jctrl.prev().find('input').prop('disabled', false);
