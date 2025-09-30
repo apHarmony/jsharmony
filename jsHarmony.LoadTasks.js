@@ -90,8 +90,20 @@ exports.ParseTaskCommand = function(model, modelExt, command, params){
   }
 
   if(command.exec == 'sql'){
-    validateCommandProperties(['sql','db','into','foreach_row','fields','batch']);
-    if(command.sql) command.sql = Helper.ParseMultiLine(command.sql);
+    validateCommandProperties(['sql','db','into','foreach_row','fields','batch','batch_prefix','batch_suffix','batch_glue','db_context_user']);
+    if(command.sql){
+      if(_.isObject(command.sql)){
+        for(let key in command.email){
+          if(!_.includes(['name','columns'], key)) _this.LogInit_ERROR('Invalid sql command property: sql.' + key + ' in command ' + _this.getTaskCommandDesc(command));
+        }
+        if(command.sql.columns) _.each(command.sql.columns, function(column){
+          _this.codegen.resolveType(modelExt && modelExt.sqlext, column);
+        });
+      }
+      else {
+        command.sql = Helper.ParseMultiLine(command.sql);
+      }
+    }
     parseChildCommands('sql', 'foreach_row', 'row');
   }
   else if(command.exec == 'sqltrans'){
@@ -132,7 +144,7 @@ exports.ParseTaskCommand = function(model, modelExt, command, params){
     parseChildCommands('read_file', 'foreach_line', 'line');
   }
   else if(command.exec == 'write_csv'){
-    validateCommandProperties(['path','db','data','sql','headers','overwrite','fields','csv_options']);
+    validateCommandProperties(['path','db','data','sql','db_context_user','headers','overwrite','fields','csv_options']);
     if(command.sql) command.sql = Helper.ParseMultiLine(command.sql);
     if(command.data){
       if(!_.isArray(command.data)) command.data = [command.data]; //{} => [{}]
@@ -140,7 +152,7 @@ exports.ParseTaskCommand = function(model, modelExt, command, params){
     }
   }
   else if(command.exec == 'append_csv'){
-    validateCommandProperties(['path','db','data','sql','headers','fields','csv_options']);
+    validateCommandProperties(['path','db','data','sql','db_context_user','headers','fields','csv_options']);
     if(command.sql) command.sql = Helper.ParseMultiLine(command.sql);
     if(command.data){
       if(!_.isArray(command.data)) command.data = [command.data]; //{} => [{}]
@@ -170,7 +182,7 @@ exports.ParseTaskCommand = function(model, modelExt, command, params){
     parseChildCommands('js', 'foreach', 'item');
   }
   else if(command.exec == 'email'){
-    validateCommandProperties(['email','jsharmony_txt']);
+    validateCommandProperties(['email','jsharmony_txt','db_context_user']);
     if(command.email) for(let key in command.email){
       if(!_.includes(['to','cc','bcc','subject','text','html','attachments'], key)) _this.LogInit_ERROR('Invalid email command property: email.' + key + ' in command ' + _this.getTaskCommandDesc(command));
     }

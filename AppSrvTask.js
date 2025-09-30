@@ -47,12 +47,17 @@ AppSrvTaskLogger.prototype.log = function(model, loglevel, msg){
   var _this = this;
 
   if(!msg) return;
-  msg = msg.toString();
+
+  function getMsg(){
+    if(_.isFunction(msg)) msg = msg();
+    if(!_.isString(msg)) msg = msg.toString();
+    return msg;
+  }
 
   if(!_.includes(['debug','info','warning','error'], loglevel)) throw new Error('Invalid loglevel: ' + loglevel);
 
   if(!model || !model.task || !model.task.logtarget){
-    if(_.includes(['info','warning','error'], loglevel)) _this.jsh.Log[loglevel](msg);
+    if(_.includes(['info','warning','error'], loglevel)) _this.jsh.Log[loglevel](getMsg());
   }
 
   if(model && model.task){
@@ -70,14 +75,14 @@ AppSrvTaskLogger.prototype.log = function(model, loglevel, msg){
 
       if(!path.isAbsolute(logfile)) logfile = path.join(_this.jsh.Config.logdir, logfile);
 
-      _this.jsh.Log[loglevel](msg, { logfile: logfile });
+      _this.jsh.Log[loglevel](getMsg(), { logfile: logfile });
     });
 
     if(loglevel == 'error'){
       _.each(model.task.onerror, function(errorcommand){
         if(errorcommand.email){
           //Send email on error
-          _this.sendErrorEmail(model.task, errorcommand.email, msg);
+          _this.sendErrorEmail(model.task, errorcommand.email, getMsg());
         }
       });
     }
@@ -165,11 +170,36 @@ AppSrvTask.prototype.deformatParams = function(model, params, vals){
   if(!_.isEmpty(verrors)) _this.log.debug(model, model.id + ': ' + verrors[''].join(', '));
 };
 
-AppSrvTask.prototype.addParam = function(params, fields, key, value, keySource){
+AppSrvTask.prototype.addParam = function(params, command, key, value, keySource){
   keySource = keySource || key;
   if(key in params) throw new Error('Parameter already defined: ' + key);
-  var field = this.getField(fields, keySource);
-  params[key] = { name: key, value: value, type: this.getParamType(field, value), field: JSON.parse(JSON.stringify(field)) };
+  var field = undefined;
+  var type = undefined;
+  if(command){
+    if(!command._task_cache) command._task_cache = {};
+    if(!command._task_cache.fields) command._task_cache.fields = {};
+    if(command._task_cache.fields[keySource]){
+      command._task_cache.fields[keySource].count++;
+      field = command._task_cache.fields[keySource].field;
+      type = command._task_cache.fields[keySource].type;
+      if(!type && (command._task_cache.fields[keySource].count == 10000)){
+        this.jsh.Log.info('Improve performance by defining parameter type for "' + keySource + '" in fields');
+      }
+    }
+    else {
+      if(command.fields){
+        field = JSON.parse(JSON.stringify(this.getField(command.fields, keySource)));
+        type = (field && field.type) ? this.getParamType(field) : undefined;
+      }
+      command._task_cache.fields[keySource] = {
+        count: 1,
+        field: field,
+        type: type,
+      };
+    }
+  }
+  if(!type) type = this.getParamType(field, value);
+  params[key] = { name: key, value: value, type: type, field: field };
 };
 
 AppSrvTask.prototype.logParams = function(model, params){
@@ -209,13 +239,13 @@ AppSrvTask.prototype.exec = function (req, res, dbcontext, modelid, taskparams, 
   var params = {};
   _this.fieldParams = {};
   for(var key in taskparams){
-    _this.addParam(params, model.fields, key, taskparams[key]);
-    _this.addParam(_this.fieldParams, model.fields, key, taskparams[key]);
+    _this.addParam(params, model, key, taskparams[key]);
+    _this.addParam(_this.fieldParams, model, key, taskparams[key]);
   }
 
   this.log.info(model, 'Running task: ' + model.id);
 
-  if(dbcontext && !taskparams._DBContext) _this.addParam(params, [], '_DBContext', dbcontext);
+  if(dbcontext && !taskparams._DBContext) _this.addParam(params, model, '_DBContext', dbcontext);
 
   var options = {
     trans: { },
@@ -232,19 +262,19 @@ AppSrvTask.prototype.exec_commands = function (model, commands, commandLocals, p
   if(commandLocals && !commandLocals.length){ for(var i=0;i<commands.length;i++){ commandLocals.push({}); } }
   async.eachOfSeries(commands, function(command, idx, command_cb){
     var operation_type = command.exec;
-    var standard_operations = [
-      'sql','sqltrans',
-      'create_folder','move_folder','delete_folder','list_files',
-      'delete_file','copy_file','move_file','write_file','append_file','read_file',
-      'write_csv','append_csv','read_csv',
-      'js','shell','email','log',
-    ];
+    var standard_operations = {
+      sql: 1,sqltrans: 1,
+      create_folder: 1,move_folder: 1,delete_folder: 1,list_files: 1,
+      delete_file: 1,copy_file: 1,move_file: 1,write_file: 1,append_file: 1,read_file: 1,
+      write_csv: 1,append_csv: 1,read_csv: 1,
+      js: 1,shell: 1,email: 1,log: 1,
+    };
     options.exec_counter[options.exec_counter.length-1]++;
     if(command.batch && (commandLocals && commandLocals[idx] && commandLocals[idx].queue && (commandLocals[idx].queue.items.length > 0))){ /* Do nothing */ }
     else {
-      _this.log.debug(model, model.id + ': ' + _this.jsh.getTaskCommandDesc(command, options));
+      _this.log.debug(model, function(){ return model.id + ': ' + _this.jsh.getTaskCommandDesc(command, options); });
     }
-    if(_.includes(standard_operations, operation_type)){
+    if(operation_type in standard_operations){
       var orig_locals = options.locals;
       options.locals = undefined;
       if(commandLocals) options.locals = commandLocals[idx];
@@ -272,7 +302,7 @@ AppSrvTask.prototype.validateFields = function(obj, values){
   return '';
 };
 
-AppSrvTask.prototype.replaceParams = function(params, val){
+AppSrvTask.prototype.replaceParams = function(params, val, replaceCache){
   if(!val) return val;
   var _this = this;
   //Traverse val
@@ -284,7 +314,8 @@ AppSrvTask.prototype.replaceParams = function(params, val){
     }
     return Helper.mapReplace(params, val, {
       getKey: function(key){ return '@' + key; },
-      getValue: function(key){ return params[key].value; }
+      getValue: function(key){ return params[key].value; },
+      replaceCache: replaceCache,
     });
   }
   if(_.isNumber(val) || _.isDate(val) || _.isBoolean(val) || _.isDate(val) || _.isFunction(val)) return val;
@@ -335,6 +366,9 @@ AppSrvTask.prototype.exec_sql = function(model, command, params, options, comman
 
   var _this = this;
 
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.exec_sql) command._task_cache.exec_sql = {};
+
   var sql = command.sql;
   if(!sql) return command_cb(new Error('SQL command missing "sql" property - no SQL to execute'));
 
@@ -354,83 +388,143 @@ AppSrvTask.prototype.exec_sql = function(model, command, params, options, comman
   if(!(dbid in _this.jsh.DB)) return command_cb(new Error('Database connection '+dbid+' not found'));
   var db = this.jsh.DB[dbid];
   
-  var dbcontext = 'task' || command._DBContext || sql_params._DBContext;
+  var dbcontext = 'task';
+  if(!Helper.isNullUndefined(command.db_context_user)) dbcontext = command.db_context_user;
+  else if(!Helper.isNullUndefined(sql_params._DBContext)) dbcontext = sql_params._DBContext;
 
   if(command.batch){
     //Execute batch queue
-    if(!options.locals.queue) options.locals.queue = new Helper.gather(function(sqls, gather_cb){
-      if(!sqls.length) return gather_cb();
-      var dbtasks = {};
-      dbtasks['command'] = function (callback) {
-        //Execute SQL
-        db.Recordset(dbcontext, sqls.join(' '), [], {}, options.trans[dbid], function (err, rslt, stats) {
-          if (stats) stats.model = model;
-          if (err) { err.model = model; err.sql = sql; _this.logParams(model, params); return callback(err, rslt, stats); }
-          callback(err, rslt, stats);
-        });
-      };
-      db.ExecTasks(dbtasks, function (err, rslt, stats) {
-        return gather_cb(err);
-      });
-    }, { length: command.batch });
+    if(_.isObject(sql) && _.includes(db.getCapabilities(dbcontext), 'bulk_insert')){
+      if(!sql.name) return command_cb(new Error('Batch Bulk Insert command requires table name: "name"'));
+      if(!sql.columns) return command_cb(new Error('Batch Bulk Insert command requires table columns: "columns"'));
 
-    sql = db.applySQLParams(sql, sql_ptypes, sql_params).trim();
-    if(!Helper.endsWith(sql, ';')) sql += ';';
-    options.locals.queue.push(sql, command_cb);
+      if(!command._task_cache.exec_sql.bulk_insert) command._task_cache.exec_sql.bulk_insert = {};
+      if(!command._task_cache.exec_sql.bulk_insert.columns){
+        command._task_cache.exec_sql.bulk_insert.columns = _.map(sql.columns, function(column){
+          return {
+            name: column.name,
+            type: _this.getParamType(column),
+            options: _.pick(column, ['nullable', 'primary', 'identity', 'readOnly', 'length']),
+          };
+        });
+      }
+
+      if(!options.locals.queue) options.locals.queue = new Helper.gather(function(rows, gather_cb){
+        if(!rows.length) return gather_cb();
+        var dbtasks = {};
+        dbtasks['command'] = function (callback) {
+          //Execute SQL
+          db.BulkInsert(dbcontext, { name: sql.name, columns: command._task_cache.exec_sql.bulk_insert.columns, data: rows }, [], {}, options.trans[dbid], function (err, rslt, stats) {
+            if (stats) stats.model = model;
+            if (err) { err.model = model; err.sql = sql; _this.logParams(model, params); return callback(err, rslt, stats); }
+            callback(err, rslt, stats);
+          });
+        };
+        db.ExecTasks(dbtasks, function (err, rslt, stats) {
+          return gather_cb(err);
+        });
+      }, { length: command.batch });
+
+      var rowData = [];
+      _.each(sql.columns, function(column){
+        if(!column.value) rowData.push(null);
+        else if(column.value[0]=='@') rowData.push(sql_params[column.value.substr(1)]);
+        else rowData.push(column.value);
+      });
+      options.locals.queue.push(rowData, command_cb);
+    }
+    else {
+      if(!options.locals.queue) options.locals.queue = new Helper.gather(function(sqls, gather_cb){
+        if(!sqls.length) return gather_cb();
+        var dbtasks = {};
+        dbtasks['command'] = function (callback) {
+          //Execute SQL
+          db.Recordset(dbcontext, (command.batch_prefix || '') + ' ' + sqls.join((command.batch_glue || ' ')) + ' ' + (command.batch_suffix || ''), [], {}, options.trans[dbid], function (err, rslt, stats) {
+            if (stats) stats.model = model;
+            if (err) { err.model = model; err.sql = sql; _this.logParams(model, params); return callback(err, rslt, stats); }
+            callback(err, rslt, stats);
+          });
+        };
+        db.ExecTasks(dbtasks, function (err, rslt, stats) {
+          return gather_cb(err);
+        });
+      }, { length: command.batch });
+
+      sql = db.applySQLParams(sql, sql_ptypes, sql_params).trim();
+      if(!command.batch_glue && !Helper.endsWith(sql, ';')) sql += ';';
+      options.locals.queue.push(sql, command_cb);
+    }
   }
   else {
     //Execute single command
     var dbtasks = {};
     dbtasks['command'] = function (callback) {
       //Execute SQL
-      db.Recordset(dbcontext, sql, sql_ptypes, sql_params, options.trans[dbid], function (err, rslt, stats) {
-        if (stats) stats.model = model;
-        if (err) { err.model = model; err.sql = sql; _this.logParams(model, params); return callback(err, rslt, stats); }
 
-        Helper.execif(command.foreach_row && rslt,
-          function(f){
-            if(command.foreach_row && rslt){
-              options.exec_counter.push(0);
-              async.eachSeries(rslt, function(row, row_cb){
-                //Validate
-                var verrors = _this.validateFields(command, row);
-                if(verrors) return row_cb(new Error('Error validating ' + command.into + ': ' + verrors + '\nData: ' + JSON.stringify(row)));
+      function processRow(row, row_cb){
+        //Validate
+        var verrors = _this.validateFields(command, row);
+        if(verrors) return row_cb(new Error('Error validating ' + command.into + ': ' + verrors + '\nData: ' + JSON.stringify(row)));
 
-                //Add to parameters
-                var rowparams = _.extend({}, params);
-                for(var key in row){
-                  _this.addParam(rowparams, command.fields, command.into + '.' + key, row[key], key);
-                }
+        //Add to parameters
+        var rowparams = _.extend({}, params);
+        for(var key in row){
+          _this.addParam(rowparams, command, command.into + '.' + key, row[key], key);
+        }
 
-                //Add null for empty columns
-                _.each(command.fields, function(field){
-                  var fieldName = (_.isString(field) ? field : field.name);
-                  if(!fieldName) return;
-                  var paramName = command.into + '.' + fieldName;
-                  if(!(paramName in rowparams)){
-                    _this.addParam(rowparams, command.fields, paramName, null);
-                  }
-                });
-                
-                //Execute Commands
-                options.exec_counter[options.exec_counter.length-1]++;
-                _this.exec_commands(model, command.foreach_row, commandLocals, rowparams, options, row_cb);
-              }, function(err){
-                options.exec_counter.pop();
-                if(err) return callback(err);
-                return f();
-              });
-            }
-          },
-          function(){
-            callback(err, rslt, stats);
+        //Add null for empty columns
+        _.each(command.fields, function(field){
+          var fieldName = (_.isString(field) ? field : field.name);
+          if(!fieldName) return;
+          var paramName = command.into + '.' + fieldName;
+          if(!(paramName in rowparams)){
+            _this.addParam(rowparams, command, paramName, null);
           }
-        );
-      });
+        });
+        
+        //Execute Commands
+        options.exec_counter[options.exec_counter.length-1]++;
+        _this.exec_commands(model, command.foreach_row, commandLocals, rowparams, options, row_cb);
+      }
+
+      if(command.foreach_row && _.includes(db.getCapabilities(dbcontext), 'recordset_stream')){
+        options.exec_counter.push(0);
+        db.StreamRecordset(dbcontext, sql, sql_ptypes, sql_params, options.trans[dbid], {
+          onRow: processRow,
+          onDrained: function(err){
+            options.exec_counter.pop();
+            if (err) { err.model = model; err.sql = sql; _this.logParams(model, params); return callback(err); }
+            callback(err);
+          },
+        });
+      }
+      else {
+        db.Recordset(dbcontext, sql, sql_ptypes, sql_params, options.trans[dbid], function (err, rslt, stats) {
+          if (stats) stats.model = model;
+          if (err) { err.model = model; err.sql = sql; _this.logParams(model, params); return callback(err, rslt, stats); }
+  
+          Helper.execif(command.foreach_row && rslt,
+            function(f){
+              if(command.foreach_row && rslt){
+                options.exec_counter.push(0);
+                async.eachSeries(rslt, processRow, function(err){
+                  options.exec_counter.pop();
+                  if(err) return callback(err);
+                  return f();
+                });
+              }
+            },
+            function(){
+              callback(err, rslt, stats);
+            }
+          );
+        });
+      }
     };
     db.ExecTasks(dbtasks, function (err, rslt, stats) {
       if(err) return command_cb(err);
-      return _this.drainLocals(commandLocals, command_cb);
+      if(commandLocals && commandLocals.length) return _this.drainLocals(commandLocals, command_cb);
+      return command_cb();
     });
   }
 };
@@ -440,9 +534,12 @@ AppSrvTask.prototype.exec_create_folder = function(model, command, params, optio
 
   var _this = this;
 
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+
   var fpath = command.path;
   if(!fpath) return command_cb(new Error('create_folder command missing "path" property'));
-  fpath = _this.replaceParams(params, fpath);
+  fpath = _this.replaceParams(params, fpath, command._task_cache.replaceCache);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
   HelperFS.createFolderIfNotExists(fpath, command_cb);
@@ -453,14 +550,17 @@ AppSrvTask.prototype.exec_move_folder = function(model, command, params, options
 
   var _this = this;
 
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+
   var fpath = command.path;
   if(!fpath) return command_cb(new Error('move_folder command missing "path" property'));
-  fpath = _this.replaceParams(params, fpath);
+  fpath = _this.replaceParams(params, fpath, command._task_cache.replaceCache);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
   var fdest = command.dest;
   if(!fdest) return command_cb(new Error('move_folder command missing "dest" property'));
-  fdest = _this.replaceParams(params, fdest);
+  fdest = _this.replaceParams(params, fdest, command._task_cache.replaceCache);
   if(!path.isAbsolute(fdest)) fdest = path.join(_this.jsh.Config.datadir, fdest);
 
   fs.lstat(fpath, function(err, stats){
@@ -485,9 +585,12 @@ AppSrvTask.prototype.exec_delete_folder = function(model, command, params, optio
 
   var _this = this;
 
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+
   var fpath = command.path;
   if(!fpath) return command_cb(new Error('delete_folder command missing "path" property'));
-  fpath = _this.replaceParams(params, fpath);
+  fpath = _this.replaceParams(params, fpath, command._task_cache.replaceCache);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
   fs.exists(fpath, function(exists){
@@ -507,9 +610,12 @@ AppSrvTask.prototype.exec_list_files = function(model, command, params, options,
 
   var _this = this;
 
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+
   var fpath = command.path;
   if(!fpath) return command_cb(new Error('list_files command missing "path" property'));
-  fpath = _this.replaceParams(params, fpath);
+  fpath = _this.replaceParams(params, fpath, command._task_cache.replaceCache);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
   if(!command.foreach_file) return command_cb(new Error('list_files command missing "foreach_file" property'));
@@ -563,8 +669,8 @@ AppSrvTask.prototype.exec_list_files = function(model, command, params, options,
 
         //Add to parameters
         var commandparams = _.extend({}, params);
-        _this.addParam(commandparams, [], command.into + '.path', filepath);
-        _this.addParam(commandparams, [], command.into + '.filename', filename);
+        _this.addParam(commandparams, command, command.into + '.path', filepath);
+        _this.addParam(commandparams, command, command.into + '.filename', filename);
         
         //Execute Commands for the file
         options.exec_counter[options.exec_counter.length-1]++;
@@ -573,7 +679,8 @@ AppSrvTask.prototype.exec_list_files = function(model, command, params, options,
     }, function(err){
       options.exec_counter.pop();
       if(err) return command_cb(err);
-      return _this.drainLocals(commandLocals, command_cb);
+      if(commandLocals && commandLocals.length) return _this.drainLocals(commandLocals, command_cb);
+      return command_cb();
     });
   });
 };
@@ -583,9 +690,12 @@ AppSrvTask.prototype.exec_delete_file = function(model, command, params, options
 
   var _this = this;
 
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+
   var fpath = command.path;
   if(!fpath) return command_cb(new Error('delete_file command missing "path" property'));
-  fpath = _this.replaceParams(params, fpath);
+  fpath = _this.replaceParams(params, fpath, command._task_cache.replaceCache);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
   fs.lstat(fpath, function(err, stats){
@@ -604,14 +714,17 @@ AppSrvTask.prototype.exec_copy_file = function(model, command, params, options, 
 
   var _this = this;
 
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+
   var fpath = command.path;
   if(!fpath) return command_cb(new Error('copy_file command missing "path" property'));
-  fpath = _this.replaceParams(params, fpath);
+  fpath = _this.replaceParams(params, fpath, command._task_cache.replaceCache);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
   var fdest = command.dest;
   if(!fdest) return command_cb(new Error('copy_file command missing "dest" property'));
-  fdest = _this.replaceParams(params, fdest);
+  fdest = _this.replaceParams(params, fdest, command._task_cache.replaceCache);
   if(!path.isAbsolute(fdest)) fdest = path.join(_this.jsh.Config.datadir, fdest);
 
   fs.lstat(fpath, function(err, stats){
@@ -637,14 +750,17 @@ AppSrvTask.prototype.exec_move_file = function(model, command, params, options, 
 
   var _this = this;
 
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+
   var fpath = command.path;
   if(!fpath) return command_cb(new Error('move_file command missing "path" property'));
-  fpath = _this.replaceParams(params, fpath);
+  fpath = _this.replaceParams(params, fpath, command._task_cache.replaceCache);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
   var fdest = command.dest;
   if(!fdest) return command_cb(new Error('move_file command missing "dest" property'));
-  fdest = _this.replaceParams(params, fdest);
+  fdest = _this.replaceParams(params, fdest, command._task_cache.replaceCache);
   if(!path.isAbsolute(fdest)) fdest = path.join(_this.jsh.Config.datadir, fdest);
 
   fs.lstat(fpath, function(err, stats){
@@ -670,14 +786,17 @@ AppSrvTask.prototype.exec_write_file = function(task, command, params, options, 
 
   var _this = this;
 
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+
   var fpath = command.path;
   if(!fpath) return command_cb(new Error('write_file command missing "path" property'));
-  fpath = _this.replaceParams(params, fpath);
+  fpath = _this.replaceParams(params, fpath, command._task_cache.replaceCache);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
   var ftext = command.text;
   if(!ftext) return command_cb(new Error('write_file command missing "text" property'));
-  ftext = _this.replaceParams(params, ftext);
+  ftext = _this.replaceParams(params, ftext, command._task_cache.replaceCache);
 
   fs.lstat(fpath, function(err, stats){
     if (err && (err.code == 'ENOENT')){ /* File not found - OK */ }
@@ -696,14 +815,17 @@ AppSrvTask.prototype.exec_append_file = function(model, command, params, options
 
   var _this = this;
 
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+
   var fpath = command.path;
   if(!fpath) return command_cb(new Error('append_file command missing "path" property'));
-  fpath = _this.replaceParams(params, fpath);
+  fpath = _this.replaceParams(params, fpath, command._task_cache.replaceCache);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
   var ftext = command.text;
   if(!ftext) return command_cb(new Error('append_file command missing "text" property'));
-  ftext = _this.replaceParams(params, ftext);
+  ftext = _this.replaceParams(params, ftext, command._task_cache.replaceCache);
 
   fs.lstat(fpath, function(err, stats){
     var file_exists = false;
@@ -723,9 +845,12 @@ AppSrvTask.prototype.exec_read_file = function(model, command, params, options, 
 
   var _this = this;
 
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+
   var fpath = command.path;
   if(!fpath) return command_cb(new Error('read_file command missing "path" property'));
-  fpath = _this.replaceParams(params, fpath);
+  fpath = _this.replaceParams(params, fpath, command._task_cache.replaceCache);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
   if(command.foreach_line && !command.into) return command_cb(new Error('Command with "foreach_line" requires "into" property'));
@@ -743,7 +868,7 @@ AppSrvTask.prototype.exec_read_file = function(model, command, params, options, 
   function processLine(line, line_cb){
     //Add to parameters
     var lineparams = _.extend({}, params);
-    _this.addParam(lineparams, [], command.into + '.text', line);
+    _this.addParam(lineparams, command, command.into + '.text', line);
 
     options.exec_counter[options.exec_counter.length-1]++;
     _this.exec_commands(model, command.foreach_line, commandLocals, lineparams, options, function(err){
@@ -797,7 +922,8 @@ AppSrvTask.prototype.exec_read_file = function(model, command, params, options, 
     else{
       if((processData(processDataHandler)===true) && hasFinished){
         options.exec_counter.pop();
-        return _this.drainLocals(commandLocals, command_cb);
+        if(commandLocals && commandLocals.length) return _this.drainLocals(commandLocals, command_cb);
+        return command_cb();
       }
     }
   }
@@ -833,7 +959,9 @@ AppSrvTask.prototype.getCSVSQLData = function(model, command, params, options, o
   if(!(dbid in _this.jsh.DB)) return callback(new Error('Database connection '+dbid+' not found'));
   var db = this.jsh.DB[dbid];
   
-  var dbcontext = 'task' || command._DBContext || sql_params._DBContext;
+  var dbcontext = 'task';
+  if(!Helper.isNullUndefined(command.db_context_user)) dbcontext = command.db_context_user;
+  else if(!Helper.isNullUndefined(sql_params._DBContext)) dbcontext = sql_params._DBContext;
 
   var dbtasks = {};
   dbtasks['command'] = function (callback) {
@@ -860,9 +988,12 @@ AppSrvTask.prototype.exec_write_csv = function(model, command, params, options, 
 
   var _this = this;
 
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+
   var fpath = command.path;
   if(!fpath) return command_cb(new Error('write_csv command missing "path" property'));
-  fpath = _this.replaceParams(params, fpath);
+  fpath = _this.replaceParams(params, fpath, command._task_cache.replaceCache);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
   if((!command.data && !command.sql) || (command.data && command.sql)) return command_cb(new Error('write_csv command requires either "data" or "sql" property'));
@@ -871,7 +1002,7 @@ AppSrvTask.prototype.exec_write_csv = function(model, command, params, options, 
   if(command.data){
     fdata = command.data;
     if(!fdata) return command_cb(new Error('write_csv command missing "data" property'));
-    fdata = _this.replaceParams(params, fdata);
+    fdata = _this.replaceParams(params, fdata, command._task_cache.replaceCache);
   }
 
   fs.lstat(fpath, function(err, stats){
@@ -931,9 +1062,12 @@ AppSrvTask.prototype.exec_append_csv = function(model, command, params, options,
 
   var _this = this;
 
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+
   var fpath = command.path;
   if(!fpath) return command_cb(new Error('append_csv command missing "path" property'));
-  fpath = _this.replaceParams(params, fpath);
+  fpath = _this.replaceParams(params, fpath, command._task_cache.replaceCache);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
   if((!command.data && !command.sql) || (command.data && command.sql)) return command_cb(new Error('append_csv command requires either "data" or "sql" property'));
@@ -942,7 +1076,7 @@ AppSrvTask.prototype.exec_append_csv = function(model, command, params, options,
   if(command.data){
     fdata = command.data;
     if(!fdata) return command_cb(new Error('append_csv command missing "data" property'));
-    fdata = _this.replaceParams(params, fdata);
+    fdata = _this.replaceParams(params, fdata, command._task_cache.replaceCache);
   }
 
   fs.lstat(fpath, function(err, stats){
@@ -1001,9 +1135,12 @@ AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, c
 
   var _this = this;
 
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+
   var fpath = command.path;
   if(!fpath) return command_cb(new Error('read_csv command missing "path" property'));
-  fpath = _this.replaceParams(params, fpath);
+  fpath = _this.replaceParams(params, fpath, command._task_cache.replaceCache);
   if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
 
   if(command.foreach_row && !command.into) return command_cb(new Error('Command with "foreach_row" requires "into" property'));
@@ -1045,7 +1182,7 @@ AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, c
     //Add to parameters
     var rowparams = _.extend({}, params);
     for(var key in row){
-      _this.addParam(rowparams, command.fields, command.into + '.' + key, row[key], key);
+      _this.addParam(rowparams, command, command.into + '.' + key, row[key], key);
     }
     //Add null for empty columns
     _.each(command.fields, function(field){
@@ -1053,7 +1190,7 @@ AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, c
       if(!fieldName) return;
       var paramName = command.into + '.' + fieldName;
       if(!(paramName in rowparams)){
-        _this.addParam(rowparams, command.fields, paramName, null);
+        _this.addParam(rowparams, command, paramName, null);
       }
     });
 
@@ -1078,7 +1215,8 @@ AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, c
     else{
       if((processRow(processRowHandler)===true) && hasFinished){
         options.exec_counter.pop();
-        return _this.drainLocals(commandLocals, command_cb);
+        if(commandLocals && commandLocals.length) return _this.drainLocals(commandLocals, command_cb);
+        return command_cb();
       }
     }
   }
@@ -1096,7 +1234,8 @@ AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, c
       hasReadable = true;
       if(processRow(processRowHandler)===true){
         options.exec_counter.pop();
-        return _this.drainLocals(commandLocals, command_cb);
+        if(commandLocals && commandLocals.length) return _this.drainLocals(commandLocals, command_cb);
+        return command_cb();
       }
     }
   });
@@ -1112,15 +1251,37 @@ AppSrvTask.prototype.exec_js = function(model, command, params, options, command
   if(!command.js) return command_cb(new Error('JS command requires "js" property'));
   if(command.foreach && !command.into) return command_cb(new Error('Command with "foreach" requires "into" property'));
 
-  var jsstr = '(function(){ ' + _this.replaceParams(params, command.js.toString()) + ' })();';
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+  if(!command._task_cache.exec_js) command._task_cache.exec_js = {
+    lastFunc: undefined,
+    lastFuncStr: undefined,
+  };
+
+  var jsstr = '(function(){ ' + _this.replaceParams(params, command.js.toString(), command._task_cache.replaceCache) + ' });';
+  var jsfunc = null;
   var jsrslt = null;
   var commandLocals = [];
-  try{
-    jsrslt = eval(jsstr);
+  if(command._task_cache.exec_js.lastFuncStr == jsstr){
+    try{
+      jsrslt = command._task_cache.exec_js.lastFunc();
+    }
+    catch(ex){
+      jsh.Log.info('Error executing: '+jsstr);
+      if(ex) return command_cb(ex);
+    }
   }
-  catch(ex){
-    jsh.Log.info('Error executing: '+jsstr);
-    if(ex) return command_cb(ex);
+  else {
+    try{
+      jsfunc = eval(jsstr);
+      jsrslt = jsfunc();
+    }
+    catch(ex){
+      jsh.Log.info('Error executing: '+jsstr);
+      if(ex) return command_cb(ex);
+    }
+    command._task_cache.exec_js.lastFunc = jsfunc;
+    command._task_cache.exec_js.lastFuncStr = jsstr;
   }
 
   Helper.execif((jsrslt && jsrslt.then && jsrslt.catch),
@@ -1141,7 +1302,7 @@ AppSrvTask.prototype.exec_js = function(model, command, params, options, command
             //Add to parameters
             var rowparams = _.extend({}, params);
             for(var key in row){
-              _this.addParam(rowparams, [], command.into + '.' + key, row[key], key);
+              _this.addParam(rowparams, command, command.into + '.' + key, row[key], key);
             }
             
             //Execute Commands
@@ -1150,12 +1311,14 @@ AppSrvTask.prototype.exec_js = function(model, command, params, options, command
           }, function(err){
             options.exec_counter.pop();
             if(err) return command_cb(err);
-            return _this.drainLocals(commandLocals, command_cb);
+            if(commandLocals && commandLocals.length) return _this.drainLocals(commandLocals, command_cb);
+            return command_cb();
           });
           return;
         }
       }
-      return _this.drainLocals(commandLocals, command_cb);
+      if(commandLocals && commandLocals.length) return _this.drainLocals(commandLocals, command_cb);
+      return command_cb();
     }
   );
 
@@ -1167,8 +1330,11 @@ AppSrvTask.prototype.exec_shell = function(model, command, params, options, comm
 
   var _this = this;
 
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+
   if(!command.path) return command_cb(new Error('Shell command requires "path" property'));
-  var cmdpath = _this.replaceParams(params, command.path);
+  var cmdpath = _this.replaceParams(params, command.path, command._task_cache.replaceCache);
 
   if(command.foreach_stdio && !command.into) return command_cb(new Error('Command with "foreach_stdio" requires "into" property'));
   if(command.foreach_stdio_line && !command.into) return command_cb(new Error('Command with "foreach_stdio_line" requires "into" property'));
@@ -1177,13 +1343,13 @@ AppSrvTask.prototype.exec_shell = function(model, command, params, options, comm
 
   var cmdparams = [];
   if(command.params){
-    cmdparams = _this.replaceParams(params, command.params);
+    cmdparams = _this.replaceParams(params, command.params, command._task_cache.replaceCache);
   }
 
   var cwd = command.cwd;
   if(!cwd) cwd = _this.jsh.Config.datadir;
   else {
-    cwd = _this.replaceParams(params, cwd);
+    cwd = _this.replaceParams(params, cwd, command._task_cache.replaceCache);
     if(!path.isAbsolute(cwd)) cwd = path.join(_this.jsh.Config.datadir, cwd);
   }
 
@@ -1223,8 +1389,8 @@ AppSrvTask.prototype.exec_shell = function(model, command, params, options, comm
     if(!isEOF && foreach_handler){
       //Add parameter
       var shellparams = _.extend({}, params);
-      _this.addParam(shellparams, [], command.into + '.' + foreach_type, (data||'').toString());
-      _this.addParam(shellparams, [], command.into + '.' + foreach_type + '_raw', data);
+      _this.addParam(shellparams, command, command.into + '.' + foreach_type, (data||'').toString());
+      _this.addParam(shellparams, command, command.into + '.' + foreach_type + '_raw', data);
       //Execute Commands
       options.exec_counter[options.exec_counter.length-1]++;
       pendingCallbacks.push(false);
@@ -1249,7 +1415,7 @@ AppSrvTask.prototype.exec_shell = function(model, command, params, options, comm
         }
         _.each(lastLine.split('\n'), function(line){
           var shellparams = _.extend({}, params);
-          _this.addParam(shellparams, [], command.into + '.' + foreach_type, line);
+          _this.addParam(shellparams, command, command.into + '.' + foreach_type, line);
           //Execute Commands
           options.exec_counter[options.exec_counter.length-1]++;
           pendingCallbacks.push(false);
@@ -1306,7 +1472,8 @@ AppSrvTask.prototype.exec_shell = function(model, command, params, options, comm
         if(code){
           return command_cb(new Error('Process exited with code '+code.toString()+': '+lastLines.join('\n')));
         }
-        return _this.drainLocals(commandLocals, command_cb);
+        if(commandLocals && commandLocals.length) return _this.drainLocals(commandLocals, command_cb);
+        return command_cb();
       },
       function cancel(f){ return hasError; },
       1, //timeout
@@ -1319,8 +1486,11 @@ AppSrvTask.prototype.exec_log = function(model, command, params, options, comman
 
   var _this = this;
 
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+
   var msg = command.text || '';
-  msg = _this.replaceParams(params, msg);
+  msg = _this.replaceParams(params, msg, command._task_cache.replaceCache);
   if(Helper.endsWith(msg, '\n')) msg = msg.substr(0, msg.length - 1);
   if(Helper.endsWith(msg, '\r')) msg = msg.substr(0, msg.length - 1);
 
@@ -1332,7 +1502,7 @@ AppSrvTask.prototype.exec_log = function(model, command, params, options, comman
   }
   else {
     var logfile = command.path;
-    logfile = _this.replaceParams(params, logfile);
+    logfile = _this.replaceParams(params, logfile, command._task_cache.replaceCache);
 
     var curdt = new Date();
     logfile = Helper.ReplaceAll(logfile, '%YYYY', Helper.pad(curdt.getFullYear(),'0',4));
@@ -1353,10 +1523,13 @@ AppSrvTask.prototype.exec_email = function(model, command, params, options, comm
 
   var _this = this;
 
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+
   if((!command.email && !command.jsharmony_txt) || (command.email && command.jsharmony_txt)) return command_cb(new Error('email command requires either "email" or "jsharmony_txt" property'));
 
   if(command.email){
-    let emailparams = _this.replaceParams(params, command.email);
+    let emailparams = _this.replaceParams(params, command.email, command._task_cache.replaceCache);
 
     //Make sure to and subject exists
     if(!emailparams.to) return command_cb(new Error('email command missing "email.to" property'));
@@ -1379,7 +1552,7 @@ AppSrvTask.prototype.exec_email = function(model, command, params, options, comm
     });
   }
   else if(command.jsharmony_txt){
-    let emailparams = _this.replaceParams(params, command.jsharmony_txt);
+    let emailparams = _this.replaceParams(params, command.jsharmony_txt, command._task_cache.replaceCache);
 
     //Make sure to and subject exists
     if(!emailparams.txt_attrib) return command_cb(new Error('email command missing "jsharmony_txt.txt_attrib" property'));
@@ -1396,7 +1569,10 @@ AppSrvTask.prototype.exec_email = function(model, command, params, options, comm
     }
 
     var dataparams = _this.getParamValues(params);
-    var dbcontext = 'task' || command._DBContext || dataparams._DBContext;
+    
+    var dbcontext = 'task';
+    if(!Helper.isNullUndefined(command.db_context_user)) dbcontext = command.db_context_user;
+    else if(!Helper.isNullUndefined(dataparams._DBContext)) dbcontext = dataparams._DBContext;
 
     //Send email
     _this.jsh.SendTXTEmail(dbcontext, emailparams.txt_attrib, emailparams.to, emailparams.cc, emailparams.bcc, emailparams.attachments, dataparams, function(err){
