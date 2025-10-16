@@ -90,7 +90,7 @@ exports.ParseTaskCommand = function(model, modelExt, command, params){
   }
 
   if(command.exec == 'sql'){
-    validateCommandProperties(['sql','db','into','foreach_row','fields','batch','batch_prefix','batch_suffix','batch_glue','db_context_user']);
+    validateCommandProperties(['sql','db','into','foreach_row','fields','batch','batch_prefix','batch_suffix','batch_glue','db_context_user','stream']);
     if(command.sql){
       command.sql = Helper.ParseMultiLine(command.sql);
       if(_.isObject(command.sql)){

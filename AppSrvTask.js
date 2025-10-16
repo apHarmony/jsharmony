@@ -487,7 +487,7 @@ AppSrvTask.prototype.exec_sql = function(model, command, params, options, comman
         _this.exec_commands(model, command.foreach_row, commandLocals, rowparams, options, row_cb);
       }
 
-      if(command.foreach_row && _.includes(db.getCapabilities(dbcontext), 'recordset_stream')){
+      if(command.foreach_row && command.stream && _.includes(db.getCapabilities(dbcontext), 'recordset_stream')){
         options.exec_counter.push(0);
         db.StreamRecordset(dbcontext, sql, sql_ptypes, sql_params, options.trans[dbid], {
           onRow: processRow,
