@@ -92,6 +92,7 @@ exports.ParseTaskCommand = function(model, modelExt, command, params){
   if(command.exec == 'sql'){
     validateCommandProperties(['sql','db','into','foreach_row','fields','batch','batch_prefix','batch_suffix','batch_glue','db_context_user']);
     if(command.sql){
+      command.sql = Helper.ParseMultiLine(command.sql);
       if(_.isObject(command.sql)){
         for(let key in command.email){
           if(!_.includes(['name','columns'], key)) _this.LogInit_ERROR('Invalid sql command property: sql.' + key + ' in command ' + _this.getTaskCommandDesc(command));
@@ -99,9 +100,6 @@ exports.ParseTaskCommand = function(model, modelExt, command, params){
         if(command.sql.columns) _.each(command.sql.columns, function(column){
           _this.codegen.resolveType(modelExt && modelExt.sqlext, column);
         });
-      }
-      else {
-        command.sql = Helper.ParseMultiLine(command.sql);
       }
     }
     parseChildCommands('sql', 'foreach_row', 'row');
