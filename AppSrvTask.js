@@ -1258,13 +1258,13 @@ AppSrvTask.prototype.exec_js = function(model, command, params, options, command
     lastFuncStr: undefined,
   };
 
-  var jsstr = '(function(){ ' + _this.replaceParams(params, command.js.toString(), command._task_cache.replaceCache) + ' });';
+  var jsstr = '(function(model, command, params, commandLocals, options){ ' + _this.replaceParams(params, command.js.toString(), command._task_cache.replaceCache) + ' });';
   var jsfunc = null;
   var jsrslt = null;
   var commandLocals = [];
   if(command._task_cache.exec_js.lastFuncStr == jsstr){
     try{
-      jsrslt = command._task_cache.exec_js.lastFunc();
+      jsrslt = command._task_cache.exec_js.lastFunc.call(this, model, command, params, commandLocals, options);
     }
     catch(ex){
       jsh.Log.info('Error executing: '+jsstr);
@@ -1274,7 +1274,7 @@ AppSrvTask.prototype.exec_js = function(model, command, params, options, command
   else {
     try{
       jsfunc = eval(jsstr);
-      jsrslt = jsfunc();
+      jsrslt = jsfunc.call(this, model, command, params, commandLocals, options);
     }
     catch(ex){
       jsh.Log.info('Error executing: '+jsstr);
