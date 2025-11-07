@@ -113,6 +113,12 @@ exports = module.exports = function(jsh){
                 scanTimer = setTimeout(autoEndScan, AUTOENDSCAN_TIMEOUT);
               }
             }
+            else {
+              if(options.autoEnd){
+                if(scanTimer){ clearTimeout(scanTimer); scanTimer = null; }
+                scanTimer = setTimeout(autoEndScan, AUTOENDSCAN_TIMEOUT);
+              }
+            }
             return;
           }
         }
