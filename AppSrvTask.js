@@ -361,6 +361,49 @@ AppSrvTask.prototype.exec_sqltrans = function(model, command, params, options, c
   });
 };
 
+var deformatTypes = {
+  date: true,
+  datetime: true,
+  time: true,
+  encascii: true,
+  binary: true,
+  boolean: true,
+};
+
+FieldRequiresDeformat = function (field) {
+  return deformatTypes[field && field.type];
+}
+
+AppSrvTask.prototype.willCommandQueue = function(command){
+  var _this = this;
+
+  var sql = command.sql;
+  if(!sql) return false;
+
+  if(command.foreach_row && !command.into) return false;
+  if(command.batch && command.foreach_row) return false;
+
+  //Resolve database connection
+  var dbid = command.db || 'default';
+  if(!(dbid in _this.jsh.DB)) return false;
+  var db = this.jsh.DB[dbid];
+
+  var dbcontext = 'task';
+  if(!Helper.isNullUndefined(command.db_context_user)) dbcontext = command.db_context_user;
+  else if(!Helper.isNullUndefined(sql_params._DBContext)) dbcontext = sql_params._DBContext;
+
+  if(command.batch){
+    if(_.isObject(sql) && _.includes(db.getCapabilities(dbcontext), 'bulk_insert')){
+      if(!sql.name) return false;
+      if(!sql.columns) return false;
+
+      return true;
+    }
+  }
+
+  return false;
+}
+
 AppSrvTask.prototype.exec_sql = function(model, command, params, options, command_cb){
   //sql (sql, db, into, foreach_row, fields, batch)
 
@@ -461,10 +504,58 @@ AppSrvTask.prototype.exec_sql = function(model, command, params, options, comman
     dbtasks['command'] = function (callback) {
       //Execute SQL
 
+      var prefix = '@'+command.into+'.';
+      var commandColFunc = [];
+      var allCommandsQueue = _.every(command.foreach_row, function(subCommand) {
+        return _this.willCommandQueue(subCommand);
+      });
+      if (allCommandsQueue) {
+        _.each(command.foreach_row, function(subCommand, subIndex) {
+          var colFunc = [];
+          _.each(subCommand.sql.columns, function(column){
+            if(!column.value) colFunc.push(function(){return null;});
+            else if(column.value.startsWith(prefix)) {
+              var key = column.value.substr(prefix.length);
+              var field = _this.getField(command.fields, key);
+              var fetch;
+              if (!FieldRequiresDeformat(field)) fetch = function(row){return row[key] || null;};
+              else {
+                fetch = function(row, verrors){return _this.AppSrv.DeformatParam(field, row[key] || null, verrors);};
+
+                _this.jsh.Log.info('Field ' + key + ' requires deformat processing, performance may be improved by using a diffent data type');
+              }
+              colFunc.push(fetch);
+            }
+          });
+          commandColFunc[subIndex] = colFunc;
+        });
+      }
+
+      var firstRowComplete = false;
+      var hasValidations = command.xvalidate.Validators.length > 0;
+
       function processRow(row, row_cb){
+        options.exec_counter[options.exec_counter.length-1]++;
+
         //Validate
-        var verrors = _this.validateFields(command, row);
-        if(verrors) return row_cb(new Error('Error validating ' + command.into + ': ' + verrors + '\nData: ' + JSON.stringify(row)));
+        if (hasValidations) {
+          var verrors = _this.validateFields(command, row);
+          if(verrors) return row_cb(new Error('Error validating ' + command.into + ': ' + verrors + '\nData: ' + JSON.stringify(row)));
+        }
+
+        if (allCommandsQueue && firstRowComplete) {
+          _.each(commandColFunc, function(colFunc, subIndex) {
+            var ferrors = {};
+            var rowData = _.map(colFunc, function(f){
+              return f(row, ferrors);
+            });
+            if(!_.isEmpty(ferrors)) _this.log.debug(model, model.id + ': ' + ferrors[''].join(', '));
+
+            commandLocals[subIndex].queue.push(rowData, row_cb);
+          });
+
+          return;
+        }
 
         //Add to parameters
         var rowparams = _.extend({}, params);
@@ -474,7 +565,7 @@ AppSrvTask.prototype.exec_sql = function(model, command, params, options, comman
 
         //Add null for empty columns
         _.each(command.fields, function(field){
-          var fieldName = (_.isString(field) ? field : field.name);
+          var fieldName = (typeof(field) === 'string' ? field : field.name);
           if(!fieldName) return;
           var paramName = command.into + '.' + fieldName;
           if(!(paramName in rowparams)){
@@ -483,8 +574,8 @@ AppSrvTask.prototype.exec_sql = function(model, command, params, options, comman
         });
         
         //Execute Commands
-        options.exec_counter[options.exec_counter.length-1]++;
         _this.exec_commands(model, command.foreach_row, commandLocals, rowparams, options, row_cb);
+        firstRowComplete = true;
       }
 
       if(command.foreach_row && command.stream && _.includes(db.getCapabilities(dbcontext), 'recordset_stream')){
