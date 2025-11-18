@@ -96,7 +96,7 @@ function jsHarmonyConfig(config){
     db_log_level: 6,           //Bitmask: 2 = WARNING, 4 = NOTICES :: Database messages logged to the console / log
     db_error_sql_state: true,  //Log SQL state during DB error
 
-    log_socket: true,          //Enable DEV users to connect via WebSockets and read log
+    log_socket: undefined,     //Enable DEV users to connect via WebSockets and read log
 
     monitor_globals: false,    //Enable client-side monitoring of global / window variables: display a message if a new variable is found
     ignore_globals: [],        //Ignore these global variables in the client-side global monitor
@@ -350,6 +350,7 @@ jsHarmonyConfig.prototype.Init = function(cb){
   if(!this.datadir) this.datadir = this.appbasepath + '/data/';
   if(!this.logdir) this.logdir = this.datadir + 'log/';
   if(!this.localmodeldir) this.localmodeldir = this.appbasepath + '/models/';
+  if(typeof this.debug_params.log_socket == 'undefined') this.debug_params.log_socket = !this.interactive;
   if(cb) return cb();
 };
 jsHarmonyConfig.prototype.Merge = function(config, jsh, sourceModuleName){
