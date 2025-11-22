@@ -361,7 +361,7 @@ AppSrvTask.prototype.exec_sqltrans = function(model, command, params, options, c
   });
 };
 
-var deformatTypes = {
+var bulkInsertFormatters = {
   date: true,
   datetime: true,
   time: true,
@@ -370,39 +370,21 @@ var deformatTypes = {
   boolean: true,
 };
 
-FieldRequiresDeformat = function (field) {
-  return deformatTypes[field && field.type];
-}
-
-AppSrvTask.prototype.willCommandQueue = function(command){
-  var _this = this;
+AppSrvTask.prototype.isBulkInsertCommand = function(command, db, dbcontext){
+  //{ sql: { name, columns }, batch }
+  if(!command.sql) return false;
+  if(command.foreach_row) return false;
+  if('batch' in command) return false;
 
   var sql = command.sql;
-  if(!sql) return false;
-
-  if(command.foreach_row && !command.into) return false;
-  if(command.batch && command.foreach_row) return false;
-
-  //Resolve database connection
-  var dbid = command.db || 'default';
-  if(!(dbid in _this.jsh.DB)) return false;
-  var db = this.jsh.DB[dbid];
-
-  var dbcontext = 'task';
-  if(!Helper.isNullUndefined(command.db_context_user)) dbcontext = command.db_context_user;
-  else if(!Helper.isNullUndefined(sql_params._DBContext)) dbcontext = sql_params._DBContext;
-
-  if(command.batch){
-    if(_.isObject(sql) && _.includes(db.getCapabilities(dbcontext), 'bulk_insert')){
-      if(!sql.name) return false;
-      if(!sql.columns) return false;
-
-      return true;
-    }
+  if(_.isObject(sql) && _.includes(db.getCapabilities(dbcontext), 'bulk_insert')){
+    if(!sql.name) return false;
+    if(!sql.columns) return false;
+    return true;
   }
 
   return false;
-}
+};
 
 AppSrvTask.prototype.exec_sql = function(model, command, params, options, command_cb){
   //sql (sql, db, into, foreach_row, fields, batch)
@@ -505,33 +487,32 @@ AppSrvTask.prototype.exec_sql = function(model, command, params, options, comman
       //Execute SQL
 
       var prefix = '@'+command.into+'.';
-      var commandColFunc = [];
-      var allCommandsQueue = _.every(command.foreach_row, function(subCommand) {
-        return _this.willCommandQueue(subCommand);
+      var bulkInsertSubcommands = [];
+      var optimizeBulkInsertSubcommands = _.every(command.foreach_row, function(subcommand) {
+        return _this.isBulkInsertCommand(subcommand, db, dbcontext);
       });
-      if (allCommandsQueue) {
-        _.each(command.foreach_row, function(subCommand, subIndex) {
-          var colFunc = [];
-          _.each(subCommand.sql.columns, function(column){
-            if(!column.value) colFunc.push(function(){return null;});
+      if (optimizeBulkInsertSubcommands) {
+        _.each(command.foreach_row, function(subcommand, subcommandIndex) {
+          var columnFormatters = [];
+          _.each(subcommand.sql.columns, function(column){
+            if(!column.value) columnFormatters.push(function(){return null;});
             else if(column.value.startsWith(prefix)) {
               var key = column.value.substr(prefix.length);
               var field = _this.getField(command.fields, key);
-              var fetch;
-              if (!FieldRequiresDeformat(field)) fetch = function(row){return row[key] || null;};
-              else {
-                fetch = function(row, verrors){return _this.AppSrv.DeformatParam(field, row[key] || null, verrors);};
-
+              if (bulkInsertFormatters[field && field.type]){
+                columnFormatters.push(function(row, verrors){return _this.AppSrv.DeformatParam(field, row[key] || null, verrors);});
                 _this.jsh.Log.info('Field ' + key + ' requires deformat processing, performance may be improved by using a diffent data type');
               }
-              colFunc.push(fetch);
+              else{
+                columnFormatters.push(function(row){return row[key] || null;});
+              }
             }
           });
-          commandColFunc[subIndex] = colFunc;
+          bulkInsertSubcommands[subcommandIndex] = columnFormatters;
         });
       }
 
-      var firstRowComplete = false;
+      var firstRow = true;
       var hasValidations = command.xvalidate.Validators.length > 0;
 
       function processRow(row, row_cb){
@@ -543,17 +524,16 @@ AppSrvTask.prototype.exec_sql = function(model, command, params, options, comman
           if(verrors) return row_cb(new Error('Error validating ' + command.into + ': ' + verrors + '\nData: ' + JSON.stringify(row)));
         }
 
-        if (allCommandsQueue && firstRowComplete) {
-          _.each(commandColFunc, function(colFunc, subIndex) {
+        if (optimizeBulkInsertSubcommands && !firstRow) {
+          _.each(bulkInsertSubcommands, function(columnFormatters, subcommandIndex) {
             var ferrors = {};
-            var rowData = _.map(colFunc, function(f){
+            var rowData = _.map(columnFormatters, function(f){
               return f(row, ferrors);
             });
             if(!_.isEmpty(ferrors)) _this.log.debug(model, model.id + ': ' + ferrors[''].join(', '));
 
-            commandLocals[subIndex].queue.push(rowData, row_cb);
+            commandLocals[subcommandIndex].queue.push(rowData, row_cb);
           });
-
           return;
         }
 
@@ -575,7 +555,7 @@ AppSrvTask.prototype.exec_sql = function(model, command, params, options, comman
         
         //Execute Commands
         _this.exec_commands(model, command.foreach_row, commandLocals, rowparams, options, row_cb);
-        firstRowComplete = true;
+        firstRow = false;
       }
 
       if(command.foreach_row && command.stream && _.includes(db.getCapabilities(dbcontext), 'recordset_stream')){
