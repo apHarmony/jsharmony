@@ -79,15 +79,20 @@ exports = module.exports = function(jsh){
 
   XBarcode.EnableScanner = function (jobj, onBarcodeEnd, options){
     options = _.extend({
+      onBarcodeReady: null, // function(){}  Ready for input
       onBarcodeStart: null, // function(e){}  (May be fired multiple times, per start key)
       startKeys: ['^17', '^66', '^85'],
       endKeys: ['13'],
-      autoEnd: false,
+      ignoreKeys: [],
+      autoEnd: false,  // Call onBarcodeEnd after timeout
+      onKey: null,
+      destroyHandler: null, // [] Array of function(){}
     }, options);
     if (typeof jobj.data('keydown_focus') !== 'undefined') return;
     var isScanning = false;
     var scanTimer = null;
     var AUTOENDSCAN_TIMEOUT = 500;
+
     var autoEndScan = function(){
       if(scanTimer) clearTimeout(scanTimer);
       scanTimer = null;
@@ -95,43 +100,62 @@ exports = module.exports = function(jsh){
         isScanning = false;
         if (onBarcodeEnd) onBarcodeEnd.call(jobj[0]);
       }
+      if(options.onBarcodeReady) options.onBarcodeReady();
     };
     jobj.data('keydown_focus', '');
-    jobj.keydown(function (e) {
-      for(var i=0;i<options.startKeys.length;i++){
-        var startKey = (options.startKeys[i]).toString();
-        if(startKey){
-          var startKeyCtrl = startKey[0]=='^';
-          if(startKeyCtrl) startKey = startKey.substr(1);
-          startKey = parseInt(startKey);
-          if((e.which === startKey) && (!!e.ctrlKey == !!startKeyCtrl)){
-            e.preventDefault();
-            if(!isScanning){
-              if(options.onBarcodeStart) options.onBarcodeStart(e); // May be fired multiple times
-              if(options.autoEnd){
-                isScanning = true;
-                scanTimer = setTimeout(autoEndScan, AUTOENDSCAN_TIMEOUT);
-              }
-            }
-            else {
-              if(options.autoEnd){
-                if(scanTimer){ clearTimeout(scanTimer); scanTimer = null; }
-                scanTimer = setTimeout(autoEndScan, AUTOENDSCAN_TIMEOUT);
-              }
-            }
-            return;
+
+    jobj.on('keydown.xbarcode', function (e) {
+      function keyMatches(keyInfo){
+        keyInfo = keyInfo.toString();
+        if(keyInfo){
+          var keyInfoCtrl = keyInfo[0]=='^';
+          if(keyInfoCtrl) keyInfo = keyInfo.substr(1);
+          keyInfo = parseInt(keyInfo);
+          if((e.which === keyInfo) && (!!e.ctrlKey == !!keyInfoCtrl)){
+            return true;
           }
         }
+        return false;
+      }
+
+      for(var i=0;i<options.startKeys.length;i++){
+        if(keyMatches(options.startKeys[i])){
+          e.preventDefault();
+          if(isScanning) {
+            if(options.autoEnd){
+              if(scanTimer){ clearTimeout(scanTimer); scanTimer = null; }
+              scanTimer = setTimeout(autoEndScan, AUTOENDSCAN_TIMEOUT);
+            }
+          }
+          else if(!options.autoEnd || !scanTimer){
+            if(options.onBarcodeStart) options.onBarcodeStart(e); // May be fired multiple times
+            if(options.autoEnd){
+              isScanning = true;
+              scanTimer = setTimeout(autoEndScan, AUTOENDSCAN_TIMEOUT);
+            }
+          }
+          return;
+        }
+      }
+      //Ignore after start, so that autoend will be extended
+      for(i=0;i<options.ignoreKeys.length;i++){
+        if(keyMatches(options.ignoreKeys[i])){
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          if(isScanning && scanTimer && options.autoEnd){
+            clearTimeout(scanTimer);
+            scanTimer = setTimeout(autoEndScan, AUTOENDSCAN_TIMEOUT);
+          }
+          return;
+        }
+      }
+      if(isScanning){
+        if(options.onKey) options.onKey(e);
       }
       for(i=0;i<options.endKeys.length;i++){
-        var endKey = (options.endKeys[i]).toString();
-        if(endKey){
-          var endKeyCtrl = endKey[0]=='^';
-          if(endKeyCtrl) endKey = endKey.substr(1);
-          endKey = parseInt(endKey);
-          if((e.which === endKey) && (!!e.ctrlKey == !!endKeyCtrl)){
+        if(keyMatches(options.endKeys[i])){
+          if(isScanning){
             isScanning = false;
-            if(scanTimer){ clearTimeout(scanTimer); scanTimer = null; }
             if (onBarcodeEnd){
               if (onBarcodeEnd.call(this) === false) {
                 e.preventDefault();
@@ -139,6 +163,11 @@ exports = module.exports = function(jsh){
                 return;
               }
             }
+          }
+          else {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return;
           }
         }
       }
@@ -148,9 +177,16 @@ exports = module.exports = function(jsh){
       }
       jobj.data('keydown_focus','1');
     });
-    jobj.blur(function (e) { jobj.data('keydown_focus',''); });
-    jobj.keyup(function (e) {
+    jobj.on('blur.xbarcode', function (e) { jobj.data('keydown_focus',''); });
+    jobj.on('keyup.xbarcode', function (e) {
       if (jobj.data('keydown_focus') != '1') return;
+    });
+    if(options.onBarcodeReady) options.onBarcodeReady();
+    if(options.destroyHandler) options.destroyHandler.push(function(){
+      clearTimeout(scanTimer);
+      jobj.off('.xbarcode');
+      jobj.removeData('keydown_focus');
+      scanTimer = null;
     });
   };
 
