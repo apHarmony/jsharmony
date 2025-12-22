@@ -38,8 +38,14 @@ exports = module.exports = function(jsh){
     var _this = this;
     var url = ExecParams.url;
     if(!_.isEmpty(ExecParams.query)) url += '?'+$.param(ExecParams.query);
-    var loader = jsh.xLoader;
-    if(jsh.xDialog.length) loader = jsh.xDialogLoader;
+    var loader = null;
+    if('loader' in ExecParams){
+      loader = ExecParams.loader;
+    }
+    else {
+      loader = jsh.xLoader;
+      if(jsh.xDialog.length) loader = jsh.xDialogLoader;
+    }
     if(loader) loader.StartLoading(_this);
     $.ajax({
       type:ExecParams.method.toUpperCase(),

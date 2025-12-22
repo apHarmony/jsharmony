@@ -51,6 +51,7 @@ exports = module.exports = function(jsh){
     this.GetDeleteParams = function(){ return this.GetKeys(); };
     this.GetKeys = function(){ return {}; };
     this.async = true;
+    this.loader = true;
     this.Index = 0;
     this.xData = null;
     this.IsDirty = false;
@@ -498,6 +499,8 @@ exports = module.exports = function(jsh){
       if(!ExecParams.model) ExecParams.model = this.modelid;
     }
     ExecParams.async = this.async;
+    if(this.loader === true){ /* Do nothing */ }
+    else ExecParams.loader = this.loader;
     this.API.Execute(ExecParams, function(errdata, rslt){
       var handled = false;
       if(errdata){
@@ -686,6 +689,7 @@ exports = module.exports = function(jsh){
     var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
     if(options.async === false) xform.async = false;
+    if('loader' in options) xform.loader = options.loader;
     xform.qExecute(xform.PrepExecute('get', xform.url, q, d, onComplete, onFail));
   };
 
@@ -694,6 +698,7 @@ exports = module.exports = function(jsh){
     var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
     if(options.async === false) xform.async = false;
+    if('loader' in options) xform.loader = options.loader;
     xform.qExecute(xform.PrepExecute('post', xform.url, q, d, onComplete, onFail));
   };
 
@@ -702,6 +707,7 @@ exports = module.exports = function(jsh){
     var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
     if(options.async === false) xform.async = false;
+    if('loader' in options) xform.loader = options.loader;
     xform.qExecute(xform.PrepExecute('put', xform.url, q, d, onComplete, onFail));
   };
 
@@ -710,6 +716,7 @@ exports = module.exports = function(jsh){
     var xform = new XForm(url);
     if(options.OnDBError) xform.Data.OnDBError = options.OnDBError;
     if(options.async === false) xform.async = false;
+    if('loader' in options) xform.loader = options.loader;
     xform.qExecute(xform.PrepExecute('delete', xform.url, q, d, onComplete, onFail));
   };
 

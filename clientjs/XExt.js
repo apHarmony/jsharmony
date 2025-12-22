@@ -1904,6 +1904,7 @@ exports = module.exports = function(jsh){
   };
 
   XExt.stringify = function (origvalue, replacer, space) {
+    // Handle circular JSON structures
     var cache = [];
     return JSON.stringify(origvalue, function(key, value){
       if (typeof value === 'object' && value !== null) {
