@@ -331,7 +331,7 @@ exports.ProcessFileParams = function (req, res, model, P, fieldlist, sql_extfiel
       //Delete Thumbnails in main operation
       if (field.controlparams.thumbnails) for (var tname in field.controlparams.thumbnails) {
         var tdest = jsh.Config.datadir + field.controlparams.data_folder + '/' + (field.controlparams.data_file_prefix||field.name) + '_' + tname + '_%%%KEY%%%';
-        if (field.controlparams._data_file_has_extension) filedest += '%%%EXT%%%';
+        if (field.controlparams._data_file_has_extension) tdest += '%%%EXT%%%';
         fileops.push({ op: 'move', src: '', dest: tdest });
       }
       filecallback(null);
