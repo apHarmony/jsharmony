@@ -1728,6 +1728,7 @@ exports.ParseEntities = function () {
       if(field.validate){
         for(var i=0;i<field.validate.length;i++){
           let validator = field.validate[i];
+          if(validator && validator.function) validator.function = Helper.ParseMultiLine(validator.function);
           let validator_updated = false;
           let vfunc = _.isString(validator)?validator:validator.function;
           let vparams = '';
