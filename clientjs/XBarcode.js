@@ -85,7 +85,7 @@ exports = module.exports = function(jsh){
       endKeys: ['13'],
       ignoreKeys: [],
       autoEnd: false,  // Call onBarcodeEnd after timeout
-      onKey: null,
+      onKey: null,     // function(e, isScanning){}
       destroyHandler: null, // [] Array of function(){}
     }, options);
     if (typeof jobj.data('keydown_focus') !== 'undefined') return;
@@ -149,9 +149,7 @@ exports = module.exports = function(jsh){
           return;
         }
       }
-      if(isScanning){
-        if(options.onKey) options.onKey(e);
-      }
+      if(options.onKey) options.onKey(e, isScanning);
       for(i=0;i<options.endKeys.length;i++){
         if(keyMatches(options.endKeys[i])){
           if(isScanning){
