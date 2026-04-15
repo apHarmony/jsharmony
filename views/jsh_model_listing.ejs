@@ -1,0 +1,119 @@
+<style>
+  .model_listing {
+    border-collapse: separate;
+    border-spacing: 10px 3px;
+    margin-bottom: 10px;
+  }
+
+  .model_title_container {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted black;
+  }
+
+  .model_title {
+    max-width:150px;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    overflow:hidden;
+  }
+
+  .model_title_tooltip {
+    visibility: hidden;
+    background-color: black;
+    color: #ffffff;
+    text-align: center;
+    padding: 5px;
+    border-radius: 6px;
+    position: absolute;
+    bottom: 18px;
+    white-space: nowrap;
+    z-index: 1;
+  }
+
+  .model_title:hover + .model_title_tooltip {
+    visibility: visible;
+  }
+</style>
+
+<br/>&nbsp;
+
+<% let has_models = false; %>
+
+<%
+  let modules = { 'Local':[] };
+  for (let modelid in jsh.Models) {
+    let module = jsh.Models[modelid].module||'Local';
+    if(!(module in modules)) modules[module] = [];
+    modules[module].push(modelid);
+  }
+%>
+
+<% for (let module in modules) { %>
+  <% 
+    let modelids = modules[module];
+    modelids.sort();
+    if (!modelids.length) continue;
+    has_models = true;
+  %>
+
+  <h2><%= module %></h2>
+  <table class="model_listing">
+    <% for (let i = 0; i < modelids.length; i++) { %>
+      <% 
+        let modelid = modelids[i];
+        let model = jsh.Models[modelid];
+        let hasTask = ('task' in model) && model.task;
+        let modelTitle = _.isString(model.title)
+          ? Helper.escapeHTML(model.title)
+          : '';
+      %>
+
+      <tr>
+        <td>
+          <a href="<%= req.baseurl + modelid %>" target="_blank">
+            <%= modelid %>
+          </a>
+        </td>
+
+        <!-- layout -->
+        <td>
+          <%= model.layout %><%= hasTask ? ' (task)' : '' %>
+        </td>
+
+        <!-- table -->
+        <td>
+          <%= model.table ? 'table.' + model.table : '' %>
+        </td>
+
+        <!-- db -->
+        <td>
+          <%= model.db ? 'db.' + model.db : '' %>
+        </td>
+
+        <!-- schema -->
+        <td>
+          <%= model.schema ? 'schema.' + model.schema : '' %>
+        </td>
+
+        <!-- title -->
+        <td>
+          <% if (modelTitle) { %>
+            <div class="model_title_container">
+              <div class="model_title">
+                <%- modelTitle %>
+              </div>
+              <div class="model_title_tooltip">
+                <%- modelTitle %>
+              </div>
+            </div>
+          <% } %>
+        </td>
+      </tr>
+    <% } %>
+  </table>
+<% } %>
+
+<% if (!has_models) { %>
+  No models found
+<% } %>

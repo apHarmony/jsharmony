@@ -153,6 +153,7 @@ AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.ModelMultisel.js
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.ModelExec.js'));
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.ModelMetadata.js'));
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.Report.js'));
+AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.Task.js'));
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.File.js'));
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.Queue.js'));
 AppSrv.prototype = _.extend(AppSrv.prototype, require('./AppSrv.DB.js'));
