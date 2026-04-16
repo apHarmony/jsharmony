@@ -1055,6 +1055,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     xmodel.controller.RunReport();
   }
 
+  XPage.RunTask = function() {
+    var xmodel = jsh.XModels[jsh.XModels_root];
+    if (!(xmodel.layout == 'exec')) { XExt.Alert('Root model does not have a "exec" layout'); return; }
+    xmodel.controller.RunTask();
+  }
+
   XPage.RunReportHTML = function() {
     var xmodel = jsh.XModels[jsh.XModels_root];
     if (!(xmodel.layout == 'report')) { XExt.Alert('Root model does not have a "report" layout'); return; }

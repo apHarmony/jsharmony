@@ -259,6 +259,19 @@ var jsHarmonyRouter = function (jsh, siteid) {
       }
     });
   });
+  // /_d/_task/:modelid
+  router.post(/^\/_d\/_task\/(.*)/, function (req, res, next) {
+    var fullmodelid = req.params[0];
+    fullmodelid = Helper.trimRight(fullmodelid,'/');
+    if (typeof fullmodelid === 'undefined') { next(); return; }
+    var model = jsh.getModel(req, fullmodelid);
+    if (!model.task) { Helper.GenError(req, res, -6, 'Model does not have a task defined'); return; }
+    if (!Helper.hasModelAction(req, model, 'U')) { Helper.GenError(req, res, -11, 'Invalid Model Access'); return; }
+    processModelQuerystring(jsh, req, fullmodelid);
+    processCustomRouting('d_task', req, res, jsh, fullmodelid, function(){
+      jsh.AppSrv.execTask(req, res, fullmodelid);
+    });
+  });
   // /_d/_report/:modelid
   router.get(/^\/_d\/_report\/(.*)/, function (req, res, next) {
     var fullmodelid = req.params[0];

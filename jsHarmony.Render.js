@@ -32,29 +32,12 @@ module.exports = exports = {};
 |    RENDER HTML   |
 *******************/
 exports.RenderListing = function (req) {
-  let rslt = '<br/>&nbsp;';
-  let modules = { 'Local':[] };
-  for (let modelid in this.Models) {
-    let module = this.Models[modelid].module||'Local';
-    if(!(module in modules)) modules[module] = [];
-    modules[module].push(modelid);
-  }
-  let has_models = false;
-  for(let module in modules){
-    let modelids = modules[module];
-    modelids.sort();
-    if(!modelids.length) continue;
-    else has_models = true;
-    rslt += '<h2>'+module+'</h2>';
-    rslt += '<ul>';
-    for (let i = 0; i < modelids.length; i++) {
-      let modelid = modelids[i];
-      rslt += '<li><a href="' + req.baseurl + modelid + '" target="_blank">' + modelid + '</a></li>';
-    }
-    rslt += '</ul>';
-  }
-  if(!has_models) rslt += 'No models found';
-  return rslt;
+  return ejs.render(this.getEJS('jsh_model_listing'),{
+    'Helper': Helper,
+    'jsh': this,
+    'req': req,
+    _: _
+  });
 };
 
 exports.RenderFormStarter = function(req, fullmodelid){

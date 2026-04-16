@@ -104,6 +104,15 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && (fi
     window.open(url,'_blank');
   }
 
+  xcontroller.RunTask = function(){
+    var xpostform = new jsh.XForm('_task/'+modelid);
+    xpostform.qExecute(xpostform.PrepExecute('post', xpostform.url, xform.GetFieldParams('B'), {}, function (rslt) {
+      if('_success' in rslt){
+        XExt.Alert('Task ran successfully.');
+      }
+    }));
+  }
+
   xcontroller.TestQueue = function(callback){
     if(!xform.Data.Commit()) return;
     if(xmodel.layout !== 'report'){ XExt.Alert('Model is not a report'); return; }
