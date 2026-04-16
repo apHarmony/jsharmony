@@ -106,12 +106,11 @@ _.each(model.fields,function(field){ if(XExt.hasAction(field.actions,'B') && (fi
 
   xcontroller.RunTask = function(){
     var xpostform = new jsh.XForm('_task/'+modelid);
-    xpostform.Data = xform.GetFieldParams('B');
-    xpostform.Execute(function(rslt){ 
+    xpostform.qExecute(xpostform.PrepExecute('post', xpostform.url, xform.GetFieldParams('B'), {}, function (rslt) {
       if('_success' in rslt){
         XExt.Alert('Task ran successfully.');
       }
-    });
+    }));
   }
 
   xcontroller.TestQueue = function(callback){

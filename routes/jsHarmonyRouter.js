@@ -260,7 +260,7 @@ var jsHarmonyRouter = function (jsh, siteid) {
     });
   });
   // /_d/_task/:modelid
-  router.get(/^\/_d\/_task\/(.*)/, function (req, res, next) {
+  router.post(/^\/_d\/_task\/(.*)/, function (req, res, next) {
     var fullmodelid = req.params[0];
     fullmodelid = Helper.trimRight(fullmodelid,'/');
     if (typeof fullmodelid === 'undefined') { next(); return; }
