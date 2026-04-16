@@ -22,11 +22,10 @@ var _ = require('lodash');
 
 module.exports = exports = {};
 
-exports.execTask = function (req, res, fullmodelid, Q, P, callback) {
+exports.execTask = function (req, res, fullmodelid, Q, callback) {
 
   if (!this.jsh.hasModel(req, fullmodelid)) throw new Error('Error: Task ' + fullmodelid + ' not found in collection.');
   if (typeof Q == 'undefined') Q = req.query;
-  if (typeof P == 'undefined') P = req.body;
   if (typeof callback == 'undefined') callback = function (err) {
     if(err){ Helper.GenError(req, res, -99999, err.toString()); return; }
     
