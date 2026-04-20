@@ -84,6 +84,7 @@ exports = module.exports = function(jsh){
       startKeys: ['^17', '^66', '^85'],
       endKeys: ['13'],
       ignoreKeys: [],
+      scanlessEnd: false,
       autoEnd: false,  // Call onBarcodeEnd after timeout
       onKey: null,     // function(e, isScanning){}
       destroyHandler: null, // [] Array of function(){}
@@ -152,7 +153,7 @@ exports = module.exports = function(jsh){
       if(options.onKey) options.onKey(e, isScanning);
       for(i=0;i<options.endKeys.length;i++){
         if(keyMatches(options.endKeys[i])){
-          if(isScanning){
+          if(isScanning || options.scanlessEnd){
             isScanning = false;
             if (onBarcodeEnd){
               if (onBarcodeEnd.call(this) === false) {
