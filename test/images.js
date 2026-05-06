@@ -29,7 +29,7 @@ var HelperImg = require('jsharmony-image-sharp');
 
 var CREATE_EXPECTED_IMAGES = false;
 
-var srcPath = path.join(__dirname, 'src/images/base');
+var srcPath = path.join(__dirname, 'models/src/images/base');
 var cmpPath = path.join(__dirname, 'data/images/expected');
 var dstPath = path.join(__dirname, 'data/images/generated');
 
@@ -96,23 +96,27 @@ function validateImage(src, dst, format, cb){
 var imageConversions = {
   'jpg': {
     src: path.join(srcPath,'building.jpg'),
-    dst: ['jpg','gif','png','tif'],
+    dst: ['jpg','webp','gif','png','tif'],
   },
   'png': {
     src: path.join(srcPath,'logo.png'),
-    dst: ['jpg','gif','png','tif'],
+    dst: ['jpg','webp','gif','png','tif'],
   },
   'svg': {
     src: path.join(srcPath,'camping.svg'),
-    dst: ['svg','jpg','gif','png','tif'],
+    dst: ['svg','jpg','webp','gif','png','tif'],
   },
   'gif': {
     src: path.join(srcPath,'logo.gif'),
-    dst: ['jpg','gif','png','tif'],
+    dst: ['jpg','webp','gif','png','tif'],
   },
   'tif': {
     src: path.join(srcPath,'logo.tif'),
-    dst: ['jpg','gif','png','tif'],
+    dst: ['jpg','webp','gif','png','tif'],
+  },
+  'webp': {
+    src: path.join(srcPath,'tree.webp'),
+    dst: ['jpg','webp','gif','png','tif'],
   },
 };
 
@@ -214,7 +218,7 @@ describe('Crop',function(){
   _.each(imageConversions, function(imageConversion, srcType){
     _.each(imageConversion.dst, function(dstType){
       if(dstType=='gif') return; //GIF not supported by Sharp
-      if(dstType=='svg') return; //GIF not supported by Sharp
+      if(dstType=='svg') return; //SVG not supported by Sharp
       it(srcType.toUpperCase() + ' -> ' + dstType.toUpperCase(), function (done) {
         this.timeout(5000);
         cropOp(imageConversion.src, 'crop_base_'+srcType+'_'+dstType+'.'+dstType, [400,400], dstType, done);
