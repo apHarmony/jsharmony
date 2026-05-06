@@ -331,6 +331,7 @@ CUSTOM CONTROL STYLES
 <%-rootcss%> body .xtbl tbody tr.xgrid_row_none { background-color:#ffffff; }
 
 <%-rootcss%> body .xtbl tbody tr.xgrid_row_green { background-color:#c2ffb8; }
+<%-rootcss%> body .xtbl tbody tr.xgrid_row_green.even { background-color:#b7f5ad; }
 <%-rootcss%> body .xtbl tbody tr.xgrid_row_yellow { background-color:#fffeb8; }
 <%-rootcss%> body .xtbl tbody tr.xgrid_row_red { background-color:#ffb8b8; }
 <%-rootcss%> body .xtbl tbody tr.xgrid_row_gray { background-color:#cccccc; }

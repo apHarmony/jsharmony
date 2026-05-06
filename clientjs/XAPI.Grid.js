@@ -108,7 +108,7 @@ exports = module.exports = function(jsh){
 
       if(!_.includes(['null','notnull','contains','notcontains','=','<>','beginswith','endswith','>','<','>=','<='], exp.Comparison)){ exprslt.push(null); continue; }
 
-      for(var j=0;j<vals.length;j++){
+      for(var j=0;(j<vals.length)&&(cmprslt==false);j++){
         val = vals[j];
         var cmpval = exp.Value;
         if(exp.Comparison=='null'){
