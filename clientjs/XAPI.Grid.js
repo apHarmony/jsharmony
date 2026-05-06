@@ -227,6 +227,8 @@ exports = module.exports = function(jsh){
 
         if(_.isString(col1)) col1 = col1.toUpperCase();
         if(_.isString(col2)) col2 = col2.toUpperCase();
+        if(_.isNil(col1)) col1 = '';
+        if(_.isNil(col2)) col2 = '';
 
         if(sortexp.dir=='^'){
           if(col1 < col2) return -1;
