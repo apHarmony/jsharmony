@@ -155,9 +155,9 @@ function jsHarmonyConfig(config){
     "validation_level": "standard"
   };
   //Valid file upload extensions
-  this.valid_extensions = [".jpg", ".jpeg", ".pdf", ".png", ".svg", ".tif", ".tiff", ".gif", ".mp4", ".ogv", ".webm", ".mp3", ".wav", ".avi", ".txt", ".xlsm", ".xls", ".xlsx", ".bak", ".zip", ".csv"];
+  this.valid_extensions = [".jpg", ".jpeg", ".webp", ".pdf", ".png", ".svg", ".tif", ".tiff", ".gif", ".mp4", ".ogv", ".webm", ".mp3", ".wav", ".avi", ".txt", ".xlsm", ".xls", ".xlsx", ".bak", ".zip", ".csv"];
   //Valid image extensions
-  this.supported_images = ['.jpg','.jpeg','.gif','.png','.svg'];
+  this.supported_images = ['.jpg','.jpeg','.webp','.gif','.png','.svg'];
   //File viewers
   this.file_viewers = { /* '.ext': function(jsh, req, res, options, fpath, fname){ ... } */ };
   //Time before log entries are flushed to disk
