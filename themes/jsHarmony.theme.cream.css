@@ -528,6 +528,10 @@ HORIZONTAL MENU STYLES
   border-top-color:#C4AA72;
 }
 
+<%-rootcss%> .xsidebar_user {
+  display:none;
+}
+
 /***************************
 VERTICAL MENU STYLES
 ***************************/

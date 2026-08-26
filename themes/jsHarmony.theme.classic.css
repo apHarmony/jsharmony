@@ -400,6 +400,10 @@ HORIZONTAL MENU STYLES
 	text-decoration:none;
 }
 
+<%-rootcss%> .xsidebar_user {
+  display:none;
+}
+
 /***************************
 VERTICAL MENU STYLES
 ***************************/
