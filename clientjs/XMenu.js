@@ -97,6 +97,7 @@ exports = module.exports = function(jsh){
   XMenuHorizontal.prototype.Init = function(){
     var _this = this;
     if(!XMenuBase.prototype.Init.apply(this)) return;
+    jsh.$root('.xhead').removeClass('xhead_vertical');
 
     //Set up Top Menu Sidebar
     if (jsh.$root('.xmenu').size() > 0) {
@@ -451,6 +452,7 @@ exports = module.exports = function(jsh){
   XMenuVertical.prototype.Init = function(){
     var _this = this;
     if(!XMenuBase.prototype.Init.apply(this)) return;
+    jsh.$root('.xhead').addClass('xhead_vertical');
 
     console.log('XMenuVertical loaded');
 
@@ -665,6 +667,7 @@ exports = module.exports = function(jsh){
   XMenuVertical.prototype.RenderSubmenu = function(){
     var _this = this;
     var jSubMenu = _this.getSubmenu();
+    var offset = jsh.$root('.xmenuvertical').outerWidth();
 
     //Set up Side Menu Sidebar
     _this.SubMenuItems = [];
@@ -673,11 +676,12 @@ exports = module.exports = function(jsh){
     jsh.$root('.xsubmenu').hide();
     jsh.$root('.xsubmenuside').hide().empty();
 
-    jsh.$root('.xbody').css('margin-left', jsh.$root('.xmenuvertical').outerWidth() + 'px');
+    jsh.$root('.xbody ').css({'margin-left': offset + 'px', 'width': 'calc(100% - ' + offset + 'px)', 'box-sizing': 'border-box'});
 
     if (jSubMenu.size() > 0) {
       jSubMenu.show();
-      jsh.$root('.xbody').css('margin-left', (jsh.$root('.xmenuvertical').outerWidth() + jSubMenu.outerWidth()) + 'px');
+      offset += jSubMenu.outerWidth();
+      jsh.$root('.xbody').css({'margin-left': offset + 'px', 'width': 'calc(100% - ' + offset + 'px)', 'box-sizing': 'border-box'});
       jSubMenu.$find('a, div').each(function (i, obj) {
         if ($(obj).hasClass('xsubmenu_more')) return;
         _this.SubMenuItems.push($(obj));
@@ -748,10 +752,11 @@ exports = module.exports = function(jsh){
     var _this = this;
     var jmenu = jsh.$root('.xmenuvertical');
     jmenu.toggleClass('collapsed');
+    jsh.$root('.xhead_vertical').toggleClass('collapsed');
     jsh.$root('.xsubmenu').hide();
     jsh.$root('.xmenuside').hide();
     jsh.$root('.xsubmenuside').hide();
-    if(jmenu.hasClass('collapsed')) jsh.$root('.xbody').css('margin-left', '80px'); else jsh.$root('.xbody').css('margin-left', '270px');
+    if(jmenu.hasClass('collapsed')) jsh.$root('.xbody').css('margin-left', '81px'); else jsh.$root('.xbody').css('margin-left', '270px');
     _this.RefreshLayout();
   };
 

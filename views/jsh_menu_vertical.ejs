@@ -2,12 +2,13 @@
 <div class="xmenuvertical">
   <%
 var xmenu_headings = {};
+var xmenu_icons = {'DASHBOARD' : 'dashboard', 'CUSTOMER' : 'people', 'REPORTS' : 'report', 'ADMIN' : 'settings', 'DEV' : 'code'};
 if(locals.menudata && menudata.MainMenu){
   %><div class="xmenu"><%
     for(var i=0;i<menudata.MainMenu.length;i++){ var menuitem = menudata.MainMenu[i];
       xmenu_headings[menuitem.ID] = menuitem.Title;
       var hasSubmenu = menudata.SubMenus && menudata.SubMenus[menuitem.ID] && menudata.SubMenus[menuitem.ID].length;
-      %><a href="<%-hasSubmenu?'#':menuitem.Link%>" onclick="<%-hasSubmenu?'':ejsext.escapeHTML(menuitem.OnClick?menuitem.OnClick+';return false;':'')%>" data-id="<%=menuitem.ID%>" class="xmenuitem xmenuitem_<%=ejsext.escapeCSSClass(menuitem.ID)%> <%-ejsext.iif(hasSubmenu,'has_submenu')%> <%-ejsext.iif(menuitem.Selected,'selected')%>"><span class="xmenuitem_icon xmenuitem_icon_<%=ejsext.escapeCSSClass(menuitem.ID)%>"></span><span class="xmenuitem_label"><%=menuitem.Title%></span><div class="bottom"></div></a><%
+      %><a href="<%-hasSubmenu?'#':menuitem.Link%>" onclick="<%-hasSubmenu?'':ejsext.escapeHTML(menuitem.OnClick?menuitem.OnClick+';return false;':'')%>" data-id="<%=menuitem.ID%>" class="xmenuitem xmenuitem_<%=ejsext.escapeCSSClass(menuitem.ID)%> <%-ejsext.iif(hasSubmenu,'has_submenu')%> <%-ejsext.iif(menuitem.Selected,'selected')%>"><span class="xmenuitem_icon material-icons"><%=xmenu_icons[menuitem.ID] || 'circle'%></span><span class="xmenuitem_label"><%=menuitem.Title%></span><div class="bottom"></div></a><%
   }
 }
     %><a class="xmenu_more" href="#"><div class="xmenu_more_bg">Menu <img src="<%-req.jshsite.publicurl%>images/arrow_right_white.png" /><div class="bottom"></div></div></a><%

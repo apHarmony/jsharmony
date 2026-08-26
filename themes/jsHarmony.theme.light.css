@@ -533,47 +533,262 @@ VERTICAL MENU STYLES
 ***************************/
 
 <%-rootcss%> .xmenuvertical {
-  position:absolute;
+  position:fixed;
   top:0px;
+  bottom:0px;
   left:0px;
-  width:220px;
-  height:100%;
+  width:270px;
+  background-color:#24528F;
+  z-index:100;
 }
 
 <%-rootcss%> .xmenuvertical .xmenu {
   display:block;
-  width:220px;
+  position:absolute;
+  top:80px;
+  width:270px;
+  z-index:101;
 }
 
 <%-rootcss%> .xmenuvertical .xmenuitem {
   display:block;
-  width:220px;
+  position:relative;
+  width:270px;
+  height:70px;
   box-sizing:border-box;
+  padding-left:64px;
+  line-height:70px;
+}
+
+<%-rootcss%> .xmenuvertical .xmenuitem_icon {
+  display:flex;
+  position:absolute;
+  left:25.5px;
+  top:50%;
+  width:30px;
+  height:30px;
+  transform:translateY(-50%);
+  background-repeat:no-repeat;
+  background-position:center center;
+  background-size:contain;
+  align-items:center;
+  justify-content:center;
+  font-size:36px;
+  color:#fff;
+}
+
+<%-rootcss%> .xmenuvertical .xmenuitem_label {
+  font-family:'PT Sans', arial, helvetica, sans-serif;
+  display:block;
+  padding-left:10px;
+  color:#fff;
+  font-size:20px;
+}
+
+<%-rootcss%> .xmenuvertical .xmenuitem.has_submenu::after {
+  content:'chevron_right';
+  font-family:'Material Icons';
+  position:absolute;
+  right:15px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:24px;
+  line-height:1;
+  color:#fff;
 }
 
 <%-rootcss%> .xmenuvertical .xsubmenu {
   display:none;
-  position:absolute;
+  position:fixed;
   top:0px;
-  left:220px;
+  bottom:0px;
+  padding-top:28px;
+  left:270px;
   width:220px;
+  background-color:#f5f5f5;
 }
 
 <%-rootcss%> .xmenuvertical .xsubmenuitem {
+  font-family:'PT Sans', arial, helvetica, sans-serif;
   display:block;
+  padding-left:10px;
   width:220px;
+  height:35px;
+  font-size:15px;
+  line-height:35px;
   box-sizing:border-box;
+  color:#202020;
+  border-bottom:0.5px solid #ccc;
 }
 
-<%-rootcss%> .xmenuvertical .xmenuvertical_collapse {
+<%-rootcss%> .xmenuvertical .xsubmenu .head {
+  padding-left:10px;
+  padding-bottom:30px;
+  font-weight:bold;
+  font-size:20px;
+  color:#202020;
+}
+
+<%-rootcss%> .xmenuvertical_collapse {
   display:block;
-  position:absolute;
-  top:20px;
-  left:24px;
+  position:fixed;
+  left:25.5px;
+  top:18.5px;
   width:30px;
   height:30px;
-  z-index:20;
-  outline:2px solid white;
+  z-index:110;
+  outline:1px solid white;
+}
+
+<%-rootcss%> .xmenuvertical .xmenuitem.selected {
+  background-color:#1d4b87;
+}
+
+<%-rootcss%> .xhead.xhead_vertical {
+  position:static;
+  width:270px;
+  height:100%;
+  background:none;
+  overflow:visible;
+}
+
+<%-rootcss%> .xhead_vertical .xlogo {
+  position:fixed;
+  top:0px;
+  left:0px;
+  z-index:110;
+}
+
+<%-rootcss%> .xhead_vertical .xtoplinks {
+  display:block;
+  position:fixed;
+  width:270px;
+  height:70px;
+  top:auto;
+  right:auto;
+  bottom:0px;
+  left:0px;
+  z-index:101;
+  background-color:#24528F;
+  background-image:none;
+}
+
+<%-rootcss%> .xhead_vertical .xtoplinks_body {
+  font-family:'PT Sans', arial, helvetica, sans-serif;
+  font-size:20px;
+  display:block;
+  position:relative;
+  width:270px;
+  height:70px;
+  box-sizing:border-box;
+  padding-left:6px;
+  line-height:70px;
+  background-color:#24528F;
+  background-image:none;
+}
+
+<%-rootcss%> .xhead_vertical .xtoplinks_body > a:last-child {
+  color:#fff;
+}
+
+<%-rootcss%> .xhead_vertical .xtoplinks_body > a:last-child::before {
+  content:'logout';
+  font-family:'Material Symbols Outlined';
+  font-size:30px;
+  margin-right:10px;
+  vertical-align:middle;
+  color:#fff;
+  text-decoration:none;
+  display:inline-block;
+}
+
+<%-rootcss%> .xhead_vertical .xtoplinks_desc,
+<%-rootcss%> .xhead_vertical .toplink_help,
+<%-rootcss%> .xhead_vertical .xtoplinks_corner {
+  display:none;
+}
+
+<%-rootcss%> .xhead_vertical .xtoplinks:before {
+  display:none;
+}
+
+<%-rootcss%> .xhead_vertical .xsidebar_user {
+  display:block;
+  position:fixed;
+  top:53px;
+  left:0px;
+  width:270px;
+  box-sizing:border-box;
+  padding-left:65px;
+  color:#fff;
+  font-size:16px;
+  z-index:800;
+}
+
+<%-rootcss%> .xhead.xhead_vertical ~ .xbody.with_xhead {
+  top:0px;
+}
+
+<%-rootcss%> .xmain.vertical_menu .xformcontainer {
+  position:relative;
+  left:auto;
+  right:auto;
+  width:100%;
+  box-sizing:border-box;
+  border:1px solid #bbb;
+}
+
+/* VERTICAL COLLAPSED */
+
+<%-rootcss%> .xhead_vertical.collapsed .xlogoimg {
+  display:block;
+  width:55px;
+  overflow:hidden;
+}
+
+<%-rootcss%> .xmenuvertical.collapsed {
+  width:81px;
+}
+
+<%-rootcss%> .xmenuvertical.collapsed .xmenu {
+  width:81px;
+}
+
+<%-rootcss%> .xmenuvertical.collapsed .xmenuitem {
+  width:81px;
+  padding-left:0px;
+}
+
+<%-rootcss%> .xmenuvertical.collapsed .xmenuitem_label {
+  display:none;
+}
+
+<%-rootcss%> .xmenuvertical.collapsed .xsubmenu {
+  left:81px;
+}
+
+<%-rootcss%> .xmenuvertical.collapsed .xmenuitem.has_submenu::after {
+  display:none;
+}
+
+<%-rootcss%> .xhead_vertical.collapsed .xsidebar_user {
+  display:none;
+}
+
+<%-rootcss%> .xhead_vertical.collapsed .xtoplinks {
+  width:81px;
+}
+
+<%-rootcss%> .xhead_vertical.collapsed .xtoplinks_body {
+  width:81px;
+}
+
+<%-rootcss%> .xhead_vertical.collapsed .xtoplinks_body > a:last-child {
+  color:transparent;
+}
+
+<%-rootcss%> .xhead_vertical.collapsed .xtoplinks_body > a:last-child::before {
+  color:#fff;
 }
 
 /*
