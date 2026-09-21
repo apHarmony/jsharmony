@@ -1467,9 +1467,9 @@ AppSrvTask.prototype.exec_read_xlsx = function(model, command, params, options, 
     processRow(row, processRowHandler);
   }
 
-  jsh.Extensions.report.getExcelJS(function(err, excelJS){
+  _this.jsh.Extensions.report.getExcelJS(function(err, excelJS){
     if(err) return fail(err);
-    var workbookReader = new exceljs.stream.xlsx.WorkbookReader(f, xlsx_options);
+    var workbookReader = new excelJS.stream.xlsx.WorkbookReader(f, xlsx_options);
     workbookReader.on('worksheet', function(worksheetReader){
       var selectedWorksheet = (++worksheetIndex === 1);
       if(!selectedWorksheet) return;
