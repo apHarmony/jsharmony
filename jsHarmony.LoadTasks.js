@@ -161,6 +161,11 @@ exports.ParseTaskCommand = function(model, modelExt, command, params){
     validateCommandProperties(['path','into','foreach_row','headers','fields','pipe','csv_options']);
     parseChildCommands('read_csv', 'foreach_row', 'row');
   }
+  else if(command.exec == 'read_xlsx'){
+    _this.Extensions.logDependency('report', model.id);
+    validateCommandProperties(['path','into','foreach_row','headers','fields','pipe','xlsx_options']);
+    parseChildCommands('read_xlsx', 'foreach_row', 'row');
+  }
   else if(command.exec == 'shell'){
     validateCommandProperties(['path', 'params', 'cwd', 'into', 'foreach_stdio', 'foreach_stderr', 'foreach_stdio_line', 'foreach_stderr_line']);
     parseChildCommands('shell', 'foreach_stdio', 'stdio');

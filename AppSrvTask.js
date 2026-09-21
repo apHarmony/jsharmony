@@ -266,7 +266,7 @@ AppSrvTask.prototype.exec_commands = function (model, commands, commandLocals, p
       sql: 1,sqltrans: 1,
       create_folder: 1,move_folder: 1,delete_folder: 1,list_files: 1,
       delete_file: 1,copy_file: 1,move_file: 1,write_file: 1,append_file: 1,read_file: 1,
-      write_csv: 1,append_csv: 1,read_csv: 1,
+      write_csv: 1,append_csv: 1,read_csv: 1, read_xlsx: 1,
       js: 1,shell: 1,email: 1,log: 1,
     };
     options.exec_counter[options.exec_counter.length-1]++;
@@ -1311,6 +1311,198 @@ AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, c
     }
   });
   f.pipe(csvparser);
+};
+
+AppSrvTask.prototype.exec_read_xlsx = function(model, command, params, options, command_cb){
+  //read_xlsx (path, into, foreach_row, fields, headers, pipe, xlsx_options)
+
+  var _this = this;
+
+  if(!command._task_cache) command._task_cache = {};
+  if(!command._task_cache.replaceCache) command._task_cache.replaceCache = {};
+
+  var fpath = command.path;
+  if(!fpath) return command_cb(new Error('read_xlsx command missing "path" property'));
+  fpath = _this.replaceParams(params, fpath, command._task_cache.replaceCache);
+  if(!path.isAbsolute(fpath)) fpath = path.join(_this.jsh.Config.datadir, fpath);
+
+  if(command.foreach_row && !command.into) return command_cb(new Error('Command with "foreach_row" requires "into" property'));
+
+  //Read XLSX stream
+  var column_headers = false;
+  if(command.headers) column_headers = true;
+  if(command.fields){
+    column_headers = _.map(command.fields, function(field){ if(_.isString(field)) return field; return field.name; });
+  }
+  var hasReadFinished = false;
+  var hasFinished = false;
+  var hasWorksheet = false;
+  var isProcessing = false;
+  var rows = [];
+  var headerNames = null;
+  var worksheetIndex = 0;
+  var f = fs.createReadStream(fpath);
+  if(command.pipe){
+    var fpipe = Helper.JSEval(command.pipe, _this, {
+      jsh: _this.jsh
+    });
+    f = f.pipe(fpipe);
+  }
+
+  options.exec_counter.push(0);
+  var rowcnt = 0;
+  var commandLocals = [];
+  var xlsx_options = command.xlsx_options || {};
+
+  function getCellValue(cell) {
+    if (cell.value == null) return null;
+    if (_.isObject(cell.value) && ('error' in cell.value)) return null;
+    return cell.text;
+  }
+
+  function parseRow(excelRow){
+    var row = {};
+
+    //Use first row as headers
+    if(column_headers === true){
+      if(!headerNames){
+        headerNames = [];
+        excelRow.eachCell({ includeEmpty: true }, function(cell, columnNumber){
+          var headerName = getCellValue(cell);
+          if(headerName === null || typeof headerName === 'undefined' || headerName === ''){
+            headerName = 'column_' + columnNumber;
+          }
+          headerNames[columnNumber - 1] = String(headerName);
+        });
+
+        return null;
+      }
+
+      _.each(headerNames, function(headerName, columnIndex){
+        row[headerName] = getCellValue(excelRow.getCell(columnIndex + 1));
+      });
+    }
+    else if(_.isArray(column_headers)){
+      _.each(column_headers, function(headerName, columnIndex){
+        row[headerName] = getCellValue(excelRow.getCell(columnIndex + 1));
+      });
+    }
+    else{
+      for(var columnIndex = 0; columnIndex < excelRow.cellCount; columnIndex++){
+        row[columnIndex] = getCellValue(excelRow.getCell(columnIndex + 1));
+      }
+    }
+
+    return row;
+  }
+
+  function finish(err){
+    if(hasFinished) return;
+  
+    hasFinished = true;
+  
+    if(err){
+      rows = [];
+      if(f && f.destroy) f.destroy();
+    }
+  
+    options.exec_counter.pop();
+    
+    if(err) return command_cb(err);
+    if(commandLocals && commandLocals.length) return _this.drainLocals(commandLocals, command_cb);
+    return command_cb();
+  }
+  
+  function fail(err){
+    return finish(err);
+  }
+
+  function processRow(row, row_cb){
+    if(hasFinished) return;
+    rowcnt++;
+
+    //Validate
+    var verrors = _this.validateFields(command, row);
+    if(verrors) return row_cb(new Error('Error validating ' + command.into + ': ' + verrors + '\nData: ' + JSON.stringify(row)));
+
+    //Add to parameters
+    var rowparams = _.extend({}, params);
+    for(var key in row){
+      _this.addParam(rowparams, command, command.into + '.' + key, row[key], key);
+    }
+    //Add null for empty columns
+    _.each(command.fields, function(field){
+      var fieldName = (_.isString(field) ? field : field.name);
+      if(!fieldName) return;
+      var paramName = command.into + '.' + fieldName;
+      if(!(paramName in rowparams)){
+        _this.addParam(rowparams, command, paramName, null);
+      }
+    });
+
+    options.exec_counter[options.exec_counter.length-1]++;
+    _this.exec_commands(model, command.foreach_row, commandLocals, rowparams, options, function(err){
+      Helper.execif(rowcnt%10==0, function(f){
+        setTimeout(f,1);
+      }, function(){
+        return row_cb(err);
+      });
+    });
+  }
+
+  function processRowHandler(err){
+    if(hasFinished) return;
+
+    if(err) return fail(err);
+
+    if(!rows.length){
+      isProcessing = false;
+      if(hasReadFinished) return finish();
+      return;
+    }
+
+    isProcessing = true;
+
+    var row = rows.shift();
+    processRow(row, processRowHandler);
+  }
+
+  jsh.Extensions.report.getExcelJS(function(err, excelJS){
+    if(err) return fail(err);
+    var workbookReader = new exceljs.stream.xlsx.WorkbookReader(f, xlsx_options);
+    workbookReader.on('worksheet', function(worksheetReader){
+      var selectedWorksheet = (++worksheetIndex === 1);
+      if(!selectedWorksheet) return;
+
+      hasWorksheet = true;
+
+      worksheetReader.on('row', function(excelRow){
+        if(hasFinished) return;
+        var row = parseRow(excelRow);
+
+        //Skip header row
+        if(row === null) return;
+
+        rows.push(row);
+        if(!isProcessing) processRowHandler();
+      });
+
+      worksheetReader.on('error', fail);
+    });
+
+    workbookReader.on('error', fail);
+
+    workbookReader.on('end', function(){
+      if(hasFinished) return;
+      if(!hasWorksheet) return fail(new Error('Excel file does not contain a worksheet'));
+
+      hasReadFinished = true;
+
+      if(!isProcessing && !rows.length) return finish();
+    });
+
+    workbookReader.read();
+  });
 };
 
 AppSrvTask.prototype.exec_js = function(model, command, params, options, command_cb){
