@@ -1314,7 +1314,7 @@ AppSrvTask.prototype.exec_read_csv = function(model, command, params, options, c
 };
 
 AppSrvTask.prototype.exec_read_xlsx = function(model, command, params, options, command_cb){
-  //read_xlsx (path, into, foreach_row, fields, headers, pipe, xlsx_options)
+  //read_xlsx (path, into, foreach_row, fields, headers, pipe, xlsx_options, skip_first_row)
 
   var _this = this;
 
@@ -1352,7 +1352,7 @@ AppSrvTask.prototype.exec_read_xlsx = function(model, command, params, options, 
   options.exec_counter.push(0);
   var rowcnt = 0;
   var commandLocals = [];
-  var xlsx_options = command.xlsx_options || {};
+  var xlsx_options = _.extend({ worksheets: 'emit', sharedStrings: 'cache', styles: 'ignore', hyperlinks: 'ignore', entries: 'ignore' }, command.xlsx_options);
 
   function getCellValue(cell) {
     if (cell.value == null) return null;
@@ -1360,7 +1360,7 @@ AppSrvTask.prototype.exec_read_xlsx = function(model, command, params, options, 
     return cell.text;
   }
 
-  function parseRow(excelRow){
+  function parseRow(excelRow, isFirstRow){
     var row = {};
 
     //Use first row as headers
@@ -1374,15 +1374,14 @@ AppSrvTask.prototype.exec_read_xlsx = function(model, command, params, options, 
           }
           headerNames[columnNumber - 1] = String(headerName);
         });
-
         return null;
       }
-
       _.each(headerNames, function(headerName, columnIndex){
         row[headerName] = getCellValue(excelRow.getCell(columnIndex + 1));
       });
     }
     else if(_.isArray(column_headers)){
+      if(isFirstRow && command.skip_first_row) return null;
       _.each(column_headers, function(headerName, columnIndex){
         row[headerName] = getCellValue(excelRow.getCell(columnIndex + 1));
       });
@@ -1476,9 +1475,11 @@ AppSrvTask.prototype.exec_read_xlsx = function(model, command, params, options, 
 
       hasWorksheet = true;
 
+      var isFirstRow = true;
       worksheetReader.on('row', function(excelRow){
         if(hasFinished) return;
-        var row = parseRow(excelRow);
+        var row = parseRow(excelRow, isFirstRow);
+        isFirstRow = false;
 
         //Skip header row
         if(row === null) return;
