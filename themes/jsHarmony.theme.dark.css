@@ -1,5 +1,5 @@
 /*
-Copyright 2017 apHarmony
+Copyright 2020 apHarmony
 
 This file is part of jsHarmony.
 
@@ -23,8 +23,8 @@ MAIN ELEMENTS
 =============
 */
 <%-(rootcss||'body')%> { 
-	background-color: #fff; 
-	color: #000000;  /*202020*/
+	background-color: #131C2B; 
+	color: #d3d3d3;  /*202020*/
 	margin:0px;
 	padding:0px;
 }
@@ -38,25 +38,26 @@ MAIN ELEMENTS
   line-height: 18px;
 }
 <%-rootcss%> pre {
-  background-color: #eee;
+  background-color: #131C2B;
   padding: 10px;
   font-size: 11px;
 }
 <%-rootcss%> a,
-<%-rootcss%> .link { color: #426cc2; text-decoration:none; }
-<%-rootcss%> a:visited { color: #426cc2; }
+<%-rootcss%> .link { color: #6b8ed6; text-decoration:none; }
+<%-rootcss%> a:visited { color: #6b8ed6; }
 <%-rootcss%> a:hover { text-decoration:underline;}
 <%-rootcss%> h1{
 	font-family: 'PT Sans', arial, helvetica, sans-serif;
-	color:#252525;
-	font-size:24px;
-	margin:0;
-	padding:0 0 19px 0;
+	color:#dfdfdf;
+  font-size:24px;
+  line-height:1.2;
+	margin:-5px 0 0 0;
+	padding:0 0 14px 0;
 	font-weight:normal;
 }
 <%-rootcss%> h2{
 	font-family: 'PT Sans', arial, helvetica, sans-serif;
-	color:#252525;
+	color:#555;
 	font-size:19px;
 	margin:0px 0 0px 0;
 	padding:0 0 15px 0;
@@ -70,11 +71,42 @@ MAIN ELEMENTS
 <%-rootcss%> input,
 <%-rootcss%> textarea {
   font-family: 'PT Sans', arial, helvetica, sans-serif;
-	padding-left:3px;
+  padding-left:3px;
+  line-height:normal;
+  height:auto;
+  appearance: auto;
+  -moz-appearance: auto;
+  -ms-appearance: auto;
+  -webkit-appearance: auto;
+  display:inline-block;
+  float:none;
+  opacity:1;
+  z-index:auto;
+  background-color:transparent;
+  color: #d3d3d3;
+  width:auto;
 }
 <%-rootcss%> select {
+  font-family: 'PT Sans', arial, helvetica, sans-serif;
   padding-top:2px;
   padding-bottom:2px;
+  line-height:normal;
+  height:auto;
+  appearance: auto;
+  -moz-appearance: auto;
+  -ms-appearance: auto;
+  -webkit-appearance: auto;
+  display:inline-block;
+  float:none;
+  opacity:1;
+  z-index:auto;
+  background-color:transparent;
+  color: #d3d3d3;
+  width:auto;
+}
+<%-rootcss%> label {
+  margin:0;
+  font-weight:normal;
 }
 
 /*
@@ -105,8 +137,14 @@ BODY
   left:0px;
   width:100%;
   z-index:1;
-  background-color:#31245d;
-  background-image:url('<%-req.jshsite.publicurl%>images/top.png');
+  background-color:#233045;
+  background-image:linear-gradient(
+    to bottom,
+    #233045 0%,
+    #233045 77%,
+    #131C2B 77%,
+    #131C2B 100%
+); 
   background-repeat:repeat-x;
 }
 <%-rootcss%> .xhead.unfixed {
@@ -125,50 +163,61 @@ BODY
   font-size:13px;
 }
 <%-rootcss%> .xtbl thead tr {
-	background-color:#333333;
+	color:#999;
 }
 <%-rootcss%> .xtbl thead th {
 	text-align:left;
 	font-weight:normal;
-	color:#ffffff;
-	padding:2px 6px 1px 6px;
-	border-right:1px solid #333333;
-	border-left:1px solid #333333;
+  color:#fff;
+  background-color:#0E98CC;
+  padding:7px 7px 6px 7px;
+  border-top:1px solid #ededed91;
+  border-bottom:2px solid #ededed91;
+	border-right:1px solid #ededed91;
+	border-left:1px solid #ededed91;
 }
 <%-rootcss%> .xtbl thead th a {
-	color:#ffffff;
+	color:#fff;
 	display:block;
 }
+<%-rootcss%> .xtbl tbody {
+  border-bottom: 1px solid #ededed91;
+}
 <%-rootcss%> .xtbl tbody tr.even {
-	background-color:#f7f7f7;
+	background-color:#1E2738;
 }
 <%-rootcss%> .xtbl tbody td {
-	border-left:1px solid #9f9f9f;
-	border-bottom:1px solid #9f9f9f;
-	border-right:1px solid #9f9f9f;
-	padding:3px 6px 3px 6px;
+	border-left:1px solid #ededed91;
+	border-right:1px solid #ededed91;
+	padding:5px 7px 5px 7px;
   vertical-align:text-top;
+  color: #d3d3d3;
 }
 <%-rootcss%> .xtbl .xtbl_loadmore a {
 	display:block;
 	text-align:center;
-	padding:4px;
-	background-color:#f3f3f3;
-	border:1px solid #aaaaaa;
+	padding:6px;
+	background-color:#fefefe;
+  border:1px solid #ddd;
+  color:#555;
+}
+<%-rootcss%> .xtbl td.xtbl_noresults a,
+<%-rootcss%> .xtbl td.xtbl_noresults a:visited {
+  color:#555;
 }
 <%-rootcss%> a.xtab,<%-rootcss%> a.xtab:visited{
-  background-color:#dedede;
+  background-color:#1E2738;
   color:#555;
 	padding:5px 15px;
 	margin-right:1px;
-	border-top:1px solid #333333;
-	border-left:1px solid #333333;
-  border-right:1px solid #333333;
+	border-top:1px solid #bbb;
+	border-left:1px solid #bbb;
+  border-right:1px solid #bbb;
   transition: padding-right 0.5s,padding-left 0.5s;
 }
 <%-rootcss%> a.xtab.selected{
-  background-color:#333333;
-  color:#ffffff;
+  background-color: #171F2E;
+  color: #dfdfdf;
   padding-right: 20px;
   padding-left: 20px;
 	
@@ -190,10 +239,10 @@ BODY
   border:0;
 }
 <%-rootcss%> .xpanel {
-	border-top:2px solid #333333;
-	border-right:1px solid #333333;
-	border-left:1px solid #333333;
-	border-bottom:1px solid #333333;
+	border-top:2px solid #ededed91;
+	border-right:1px solid #ededed91;
+	border-left:1px solid #ededed91;
+	border-bottom:1px solid #ededed91;
 	padding:10px;
   min-height:20px;
   display:table;
@@ -206,7 +255,79 @@ BODY
 <%-rootcss%> .xtabbody.selected {
   display:block;
 }
+<%-rootcss%> .xactions a,
+<%-rootcss%> .xactions a:visited {
+  color: #dfdfdf;
+}
+<%-rootcss%> .xcontext_menu { border-bottom:1px solid #ddd; }
+<%-rootcss%> .xcontext_menu a,
+<%-rootcss%> .xcontext_menu a:visited {
+  border-top:1px solid #ddd;
+  border-right:1px solid #ddd;
+  border-left:1px solid #ddd;
+  color: #555;
+}
+<%-rootcss%> .xcontext_menu a:hover {
+  background-color:#f7f7f7;
+}
+<%-rootcss%> input.uneditable,
+<%-rootcss%> select.uneditable,
+<%-rootcss%> textarea.uneditable,
+<%-rootcss%> .xtagbox.uneditable {
+	background-color:#f7f7f7;
+}
+<%-rootcss%> .xtbl tbody tr.even input.uneditable,
+<%-rootcss%> .xtbl tbody tr.even<%-rootcss%> select.uneditable,
+<%-rootcss%> .xtbl tbody tr.even<%-rootcss%> textarea.uneditable,
+<%-rootcss%> .xtbl tbody tr.even<%-rootcss%> .xtagbox.uneditable {
+	background-color:#f0f0f0;
+}
+<%-rootcss%> input.updated, 
+<%-rootcss%> select.updated, 
+<%-rootcss%> textarea.updated,
+<%-rootcss%> .xtagbox.updated,
+<%-rootcss%> input.uneditable.updated, 
+<%-rootcss%> select.uneditable.updated, 
+<%-rootcss%> textarea.uneditable.updated,
+<%-rootcss%> .xtagbox.uneditable.updated,
+<%-rootcss%> .xform_label.updated,
+<%-rootcss%> .xform_html.updated
+{
+	background-color:#fffedf;
+}
+<%-rootcss%> .xform_checkbox_container.updated {
+  background-color:#fffedf;
+}
 
+<%-jshElementSelector%>.xloadingblock div .xloadingbox,
+<%-rootcss%> .xloadingcontainer div .xloadingbox {
+  border:1px solid #ddd;
+  font-weight:400;
+  color:#777;
+}
+<%-jshElementSelector%>.xdialogblock .xdialogbox {
+  border:1px solid #bbb;
+  font-weight:normal;
+  line-height:20px;
+  font-size:14px;
+}
+<%-rootcss%> .xtbl th.sortAsc a {
+  background-image: url('/images/arrow_up_gray.png');
+}
+<%-rootcss%> .xtbl th.sortDesc a {
+  background-image: url('/images/arrow_down_gray.png');
+}
+<%-rootcss%> a.linkbutton,
+<%-rootcss%> a.linkbutton:visited {
+  color: #333;
+}
+<%-rootcss%> .xform .htmlarea_container { border: none; }
+<%-rootcss%> .xform_ctrl.tree a.tree_item { color: #d3d3d3; }
+<%-rootcss%> .xform_ctrl.tree { border-color: #ddd; }
+<%-rootcss%> .xform_ctrl.tree a.tree_item.selected { background-color:#171F2E; }
+<%-jshElementSelector%>.xdebugconsole .res-ns{ height: 1px; }
+<%-jshElementSelector%>.xdebugconsole .res-ew{ width: 1px; }
+<%-jshElementSelector%>.xdebugconsole header{ background-color:#f2f2f2; }
 /***************************
 CUSTOM CONTROL STYLES
 ***************************/
@@ -242,7 +363,7 @@ HORIZONTAL MENU STYLES
 	text-decoration:none;
 	font-size:15px;
 	display:inline-block;
-	padding:14px 8px 28px 8px;
+	padding:14px 8px 27px 8px;
 	position:relative;
 	margin-right:7px;
 	margin-left:7px;
@@ -265,7 +386,7 @@ HORIZONTAL MENU STYLES
 	text-decoration:none;
 }
 <%-rootcss%> .xmenuhorizontal .xmenu a.selected .bottom{
-	background-image:url('<%-req.jshsite.publicurl%>images/menu_highlight_bl.png');
+	/*background-image:url('<%-req.jshsite.publicurl%>images/menu_highlight_bl.png');*/
 	width:6px;
 	height:10px;
 	display:block;
@@ -278,17 +399,20 @@ HORIZONTAL MENU STYLES
   position:absolute;
   right:0px;
   top:5px;
-  padding:0 0 0 2px;
-  background-image:url('<%-req.jshsite.publicurl%>images/menu_divider.png');
-  background-repeat:repeat-y;
+  padding:0 14px 0 1px;
+  background-image:url('/images/arrow_right_white.png');
+  background-repeat:no-repeat;
+  background-position:73px 48px;
   margin-left:0px;
+  border-left:1px solid #c5c5c51c;
 }
 <%-rootcss%> .xmenuhorizontal .xmenu_more_bg {
-  padding:43px 22px 18px 28px;
+  padding:43px 20px 20px 26px;
   background-position-y:-5px;
   background-repeat:repeat-x;
 }
 <%-rootcss%> .xmenuhorizontal a.xmenu_more img {
+  display:none;
   position:relative;
   top:-1px;
   padding-left:4px;
@@ -301,8 +425,8 @@ HORIZONTAL MENU STYLES
   z-index:9999;
 }
 <%-rootcss%> .xmenuhorizontal .xmenuside a{
-  background-color:#31245d;
-  background-image:url('<%-req.jshsite.publicurl%>images/menu_side_bg.png');
+  background-color:#233045;
+  background-image:none;
   text-align:center;
   height:26px;
   color:white;
@@ -311,7 +435,8 @@ HORIZONTAL MENU STYLES
   font-family: 'PT Sans', arial, helvetica, sans-serif;
 	color:#ffffff;
 	text-decoration:none;
-	font-size:15px;
+  font-size:15px;
+  border-top:1px solid #c5c5c51c;
 }
 <%-rootcss%> .xmenuhorizontal .xmenupaddle {
   background-image:url('<%-req.jshsite.publicurl%>images/menu_highlight_triangle.png');
@@ -323,6 +448,7 @@ HORIZONTAL MENU STYLES
   left:0;
   position:absolute;
   opacity:0;
+  z-indeX:10000;
 }
 <%-rootcss%> .xmenuhorizontal .xmenuside a:hover{
   text-decoration:underline;
@@ -345,12 +471,12 @@ HORIZONTAL MENU STYLES
 }
 <%-rootcss%> .xmenuhorizontal .xsubmenu a {
 	font-family: 'PT Sans', arial, helvetica, sans-serif;
-	color:#202020;
+	color:#dfdfdf;
 	text-decoration:none;
   display:inline-block;
 }
 <%-rootcss%> .xmenuhorizontal .xsubmenu a.selected {
-  border-bottom:2px solid #777;
+  border-bottom:2px solid #aaa;
   padding-bottom:2px;
 }
 <%-rootcss%> .xmenuhorizontal .xsubmenu a:hover {
@@ -364,10 +490,11 @@ HORIZONTAL MENU STYLES
   display:block;
   top:-8px;
   right:0px;
-  padding:7px 29px 0 29px;
-  background-color:#eeeeee;
-  border-left:1px solid #777;
-  border-right:1px solid #777;
+  padding:6px 29px 0 30px;
+  background-color:#233045;
+  border-left:1px solid #ededed91;
+  border-top:1px solid #ededed91;
+  border-bottom:1px solid #ededed91;
   height:23px;
   z-index:2;
 }
@@ -378,20 +505,20 @@ HORIZONTAL MENU STYLES
   z-index:9998;
 }
 <%-rootcss%> .xmenuhorizontal .xsubmenuside a {
-  background-color:#eeeeee;
+  background-color:#233045;
   text-align:left;
   font-family: 'PT Sans', arial, helvetica, sans-serif;
-	color:#202020;
+	color:#dfdfdf;
 	text-decoration:none;
   display:block;
   padding:6px 16px 5px 16px;
   font-size:13px;
-  border-bottom:1px solid #777;
-  border-right:1px solid #777;
-  border-left:1px solid #777;
+  border-bottom:1px solid #ccc;
+  border-right:1px solid #ccc;
+  border-left:1px solid #ccc;
 }
 <%-rootcss%> .xmenuhorizontal .xsubmenuside a.selected {
-	border-left:6px solid #777;
+	border-left:6px solid #ccc;
 }
 <%-rootcss%> .xmenuhorizontal .xsubmenuside a:hover {
 	text-decoration:underline;
@@ -399,9 +526,53 @@ HORIZONTAL MENU STYLES
 <%-rootcss%> .xmenuhorizontal .xsubmenuside a.selected:hover {
 	text-decoration:none;
 }
+<%-rootcss%> .xhead .xtoplinks {
+	background-color:#00BFFF;
+}
+<%-rootcss%> .xhead .xtoplinks:before{
+  border-top-color:#00BFFF;
+}
 
 <%-rootcss%> .xsidebar_user {
   display:none;
+}
+
+
+/*
+==========
+RESPONSIVE
+==========
+*/
+@media screen and (max-width: 500px) {
+  <%-rootcss%> .xhead {
+    margin-top:23px;
+  }
+  <%-rootcss%> .xbody {
+    margin-top:23px;
+  }
+  <%-(rootcss||'body')%>.popup .xbody {
+    margin-top:0;
+  }
+  <%-rootcss%> .xhead .xtoplinks {
+    margin-top:-23px;
+    width:100%;
+    text-align:right;
+  }
+  <%-rootcss%> .xhead .xtoplinks:before {
+    content:none;
+  }
+  <%-rootcss%> .xhead .xtoplinks_corner,
+  <%-rootcss%> .xhead .xtoplinks_desc_app {
+    display:none;
+  }
+  <%-rootcss%> .xmenuhorizontal .xmenu_more_bg {
+    padding-top:54px;
+    padding-bottom:9px;
+  }
+  <%-rootcss%> .xmenuhorizontal .xmenu a.xmenu_more {
+    background-position-y: 59px;
+    border-left:0;
+  }
 }
 
 /***************************
@@ -414,8 +585,8 @@ VERTICAL MENU STYLES
   bottom:0px;
   left:0px;
   width:270px;
-  background-color:#31245d;
-  z-index:100;
+  background-color:#233045;
+  z-index: 100;
 }
 
 <%-rootcss%> .xmenuvertical .xmenu {
@@ -423,7 +594,7 @@ VERTICAL MENU STYLES
   position:absolute;
   top:80px;
   width:270px;
-  z-index:101;
+  z-index: 101;
 }
 
 <%-rootcss%> .xmenuvertical .xmenuitem {
@@ -450,19 +621,19 @@ VERTICAL MENU STYLES
   align-items:center;
   justify-content:center;
   font-size:36px;
-  color:#fff;
+  color: #fff;
 }
 
 <%-rootcss%> .xmenuvertical .xmenuitem_label {
-  font-family:'PT Sans', arial, helvetica, sans-serif;
+  font-family: 'PT Sans', arial, helvetica, sans-serif;
   display:block;
   padding-left:10px;
-  color:#fff;
+  color:#dfdfdf;
   font-size:20px;
 }
 
 <%-rootcss%> .xmenuvertical .xmenuitem.has_submenu::after {
-  content:'chevron_right';
+  content: 'chevron_right';
   font-family:'Material Icons';
   position:absolute;
   right:15px;
@@ -481,11 +652,11 @@ VERTICAL MENU STYLES
   padding-top:28px;
   left:270px;
   width:220px;
-  background-color:#eeeeee;
+  background-color:#171F2E;
 }
 
 <%-rootcss%> .xmenuvertical .xsubmenuitem {
-  font-family:'PT Sans', arial, helvetica, sans-serif;
+  font-family: 'PT Sans', arial, helvetica, sans-serif;
   display:block;
   padding-left:10px;
   width:220px;
@@ -493,8 +664,8 @@ VERTICAL MENU STYLES
   font-size:15px;
   line-height:35px;
   box-sizing:border-box;
-  color:#202020;
-  border-bottom:0.5px solid #777;
+  color: #dfdfdf;
+  border-bottom:0.5px solid #ededed91;
 }
 
 <%-rootcss%> .xmenuvertical .xsubmenu .head {
@@ -502,7 +673,6 @@ VERTICAL MENU STYLES
   padding-bottom:30px;
   font-weight:bold;
   font-size:20px;
-  color:#202020;
 }
 
 <%-rootcss%> .xmenuvertical_collapse {
@@ -517,7 +687,7 @@ VERTICAL MENU STYLES
 }
 
 <%-rootcss%> .xmenuvertical .xmenuitem.selected {
-  background-color:#333333;
+  background-color:#0E98CC;
 }
 
 <%-rootcss%> .xhead.xhead_vertical {
@@ -545,7 +715,7 @@ VERTICAL MENU STYLES
   bottom:0px;
   left:0px;
   z-index:101;
-  background-color:#31245d;
+  background-color:#233045;
   background-image:none;
 }
 
@@ -559,12 +729,8 @@ VERTICAL MENU STYLES
   box-sizing:border-box;
   padding-left:6px;
   line-height:70px;
-  background-color:#31245d;
+  background-color:#233045;
   background-image:none;
-}
-
-<%-rootcss%> .xhead_vertical .xtoplinks_body > a:last-child {
-  color:#fff;
 }
 
 <%-rootcss%> .xhead_vertical .xtoplinks_body > a:last-child::before {
@@ -596,7 +762,7 @@ VERTICAL MENU STYLES
   width:270px;
   box-sizing:border-box;
   padding-left:65px;
-  color:#fff;
+  color:#dfdfdf;
   font-size:16px;
   z-index:800;
 }
@@ -611,7 +777,7 @@ VERTICAL MENU STYLES
   right:auto;
   width:100%;
   box-sizing:border-box;
-  border:1px solid #333333;
+  border: 1px solid #ededed91;
 }
 
 /* VERTICAL COLLAPSED */
@@ -647,6 +813,7 @@ VERTICAL MENU STYLES
   display:none;
 }
 
+
 <%-rootcss%> .xhead_vertical.collapsed .xsidebar_user {
   display:none;
 }
@@ -674,11 +841,21 @@ PRINT STYLESHEET
 */
 @media print {
   <%-rootcss%> .xtbl thead th { 
-    color:#000000; 
-    border:1px solid #000000;
+    color:#555; 
+    border:1px solid #ddd;
   }
   <%-rootcss%> .xbody { padding:20px 0 0 15px; }
-  <%-rootcss%> .xtbl thead th a { color:#000000; }
+  <%-rootcss%> .xtbl thead th a { color:#555; }
   <%-rootcss%> .xmenuhorizontal .xmenu { display:none !important; }
   <%-rootcss%> .xmenuhorizontal .xsubmenu { display:none !important; }
+}
+
+/*
+================
+ICON STYLES
+================
+*/
+
+img[src*="icon_"] {
+    filter: invert(1) brightness(1.15);
 }

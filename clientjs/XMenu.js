@@ -97,6 +97,7 @@ exports = module.exports = function(jsh){
   XMenuHorizontal.prototype.Init = function(){
     var _this = this;
     if(!XMenuBase.prototype.Init.apply(this)) return;
+    jsh.$root('.xhead').removeClass('xhead_vertical');
 
     //Set up Top Menu Sidebar
     if (jsh.$root('.xmenu').size() > 0) {
@@ -428,9 +429,349 @@ exports = module.exports = function(jsh){
     if(!jobj.hasClass('xsubmenu_more')) jsubmenuside.hide();
   };
 
+  //-----------------------------------------------------------------
+  //XMenuVertical :: Menu Implementation for Vertical Menu System
+  //-----------------------------------------------------------------
+  var XMenuVertical = function(){
+    this.MenuItems = [];       //Top Menu items
+    this.MenuOverhang = 0;     //How much the full menu would exceed window dimensions
+    this.MenuMoreHeight = 0;   //Height of the "More" button
 
+    this.SubMenuItems = [];    //Submenu Items
+    this.SubMenuOverhang = 0;  //How much the full submenu would exceed window dimensions
+    this.SubMenuMoreHeight = 0;//Height of the submenu "More" button
+
+    this.menuid = '';          //Currently selected Menu ID
+    this.submenuid = '';       //Currently selected SubMenu ID
+  };
+
+  XMenuVertical.prototype = new XMenuBase();
+
+  XMenuVertical.isActive = function(){ return jsh.$root('.xmenuvertical').length; };
+
+  XMenuVertical.prototype.Init = function(){
+    var _this = this;
+    if(!XMenuBase.prototype.Init.apply(this)) return;
+    jsh.$root('.xhead').addClass('xhead_vertical');
+
+    console.log('XMenuVertical loaded');
+
+    //Set up Top Menu Sidebar
+    if (jsh.$root('.xmenu').size() > 0) {
+      jsh.$root('.xmenu a').each(function (i, obj) {
+        if ($(obj).hasClass('xmenu_more')) return;
+        _this.MenuItems.push($(obj));
+      });
+      _this.CalcDimensions(true);
+
+      //Open submenu
+      jsh.$root('.xmenu .xmenuitem.has_submenu').click(function () {
+        var menuid = $(this).data('id');
+        var jSubMenu = _this.getSubmenu(menuid);
+
+        console.log('menuid:' + menuid);
+        console.log('submenu found:' + jSubMenu.length);
+
+        if(jSubMenu.length){
+          if((_this.menuid == menuid) && jSubMenu.is(':visible')){
+            jSubMenu.hide();
+            jsh.$root('.xbody').css('margin-left', jsh.$root('.xmenuvertical').outerWidth() + 'px');
+          }
+          else{
+            _this.menuid = menuid;
+            _this.RenderSubmenu();
+          }
+          return false;
+        }
+      });
+      
+      jsh.$root('.xmenu_more').click(function () {
+        var xmenuside = jsh.$root('.xmenuside');
+        jsh.$root('.xsubmenuside').hide();
+        if (!xmenuside.is(':visible')) xmenuside.show();
+        else xmenuside.hide();
+        return false;
+      });
+      
+      //Create xmenuside
+      var xmenuside = jsh.$root('.xmenuside');
+      if (xmenuside.size() > 0) {
+        for (var i = 0; i < _this.MenuItems.length; i++) {
+          var xmenuitem = _this.MenuItems[i];
+          var link_onclick = xmenuitem.attr('onclick');
+          if(link_onclick){
+            link_onclick = 'onclick="' + link_onclick + ' ;"';
+          }
+          var htmlobj = '<a href="' + xmenuitem.attr('href') + '" ' + link_onclick + ' class="xmenusideitem xmenusideitem_' + jsh.XExt.escapeCSSClass(xmenuitem.data('id')) + ' ' + (xmenuitem.hasClass('selected')?'selected':'') + '">' + xmenuitem.html() + '</a>';
+          xmenuside.append(htmlobj);
+        }
+      }
+    }
+
+      jsh.$root('.xmenuvertical_collapse').click(function(e){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        _this.ToggleCollapsed();
+
+        return false;
+      });
+  };
+
+  //Update the currently selected menu item
+  XMenuVertical.prototype.Select = function(selectedmenu){
+    var _this = this;
+    if(!selectedmenu) selectedmenu = '';
+
+    //Get top menu item
+    if(!_.isString && _.isArray(selectedmenu)) selectedmenu = selectedmenu[selectedmenu.length-1];
+    selectedmenu = (selectedmenu||'').toString().toUpperCase();
+
+    selectedmenu = jsh.XExt.escapeCSSClass(selectedmenu);
+
+    //Find item
+    var jsubmenuitem = jsh.$root('.xsubmenu .xsubmenuitem_'+selectedmenu).first();
+    var jmenuitem = null;
+    var submenuid = '';
+    var menuid = '';
+    if(jsubmenuitem.length){
+      submenuid = selectedmenu;
+      menuid = jsh.XExt.escapeCSSClass(jsubmenuitem.closest('.xsubmenu').data('parent'));
+      jmenuitem = jsh.$root('.xmenu .xmenuitem_'+menuid).first();
+    }
+    else{
+      jsubmenuitem = null;
+      jmenuitem = jsh.$root('.xmenu .xmenuitem_'+selectedmenu).first();
+      if(jmenuitem.length){
+        menuid = selectedmenu;
+      }
+      else{
+        jmenuitem = null;
+      }
+    }
+
+    _this.menuid = menuid;
+    _this.submenuid = submenuid;
+
+    //Render submenu
+    _this.RenderSubmenu();
+
+    var jmenusideitem = null;
+    if(menuid) jmenusideitem = jsh.$root('.xmenuside .xmenusideitem_'+menuid);
+
+    var jsubmenusideitem = null;
+    if(submenuid) jsubmenusideitem = jsh.$root('.xsubmenuside .xsubmenusideitem_'+submenuid);
+
+    jsh.$root('.xmenu .xmenuitem').not(jmenuitem).removeClass('selected');
+    jsh.$root('.xmenuside .xmenusideitem').not(jmenusideitem).removeClass('selected');
+    if (jmenuitem && !jmenuitem.hasClass('selected')) jmenuitem.addClass('selected');
+    if (jmenusideitem && !jmenusideitem.hasClass('selected')) jmenusideitem.addClass('selected');
+
+    jsh.$root('.xsubmenu .xsubmenuitem').not(jsubmenuitem).removeClass('selected');
+    jsh.$root('.xsubmenuside .xsubmenusideitem').not(jsubmenusideitem).removeClass('selected');
+    if (jsubmenuitem && !jsubmenuitem.hasClass('selected')) jsubmenuitem.addClass('selected');
+    if (jsubmenusideitem && !jsubmenusideitem.hasClass('selected')) jsubmenusideitem.addClass('selected');
+  };
+
+  XMenuVertical.prototype.RefreshLayout = function(){
+    var _this = this;
+    if(!this.isInitialized) return;
+
+    if (jsh.$root('.xmenu').size() == 0) return;
+    var maxh = $(window).height()-1;
+    
+    //Refresh dimensions, if necessary
+    _this.CalcDimensions();
+
+    var showmore = false;
+    //Find out if we need to show "more" menu
+    var curtop = _this.MenuOverhang;
+    for (var i = 0; i < _this.MenuItems.length; i++) { curtop += _this.MenuItems[i].data('height'); }
+    if (curtop > maxh) showmore = true;
+    
+    var jmore = jsh.$root('.xmenu_more');
+    if (jmore.size() > 0) {
+      if (showmore) {
+        if (!jmore.is(':visible')) jmore.show();
+        if (_this.MenuMoreHeight <= 0) { _this.MenuMoreHeight = jmore.outerHeight(true); }
+        maxh -= _this.MenuMoreHeight;
+      }
+      else {
+        if (jmore.is(':visible')) { jmore.hide(); jsh.$root('.xmenuside').hide(); }
+      }
+    }
+    
+    curtop = _this.MenuOverhang;
+    for (var j = 0; j < _this.MenuItems.length; j++) {
+      var xmenuitem = _this.MenuItems[j];
+      curtop += xmenuitem.data('height');
+      if (curtop > maxh) {
+        if (xmenuitem.is(':visible')) xmenuitem.hide();
+      }
+      else {
+        if (!xmenuitem.is(':visible')) xmenuitem.show();
+      }
+    }
+
+    this.RefreshSubmenuLayout();
+  };
+
+  XMenuVertical.prototype.RefreshSubmenuLayout = function(){
+    var _this = this;
+    var jSubMenu = _this.getSubmenu();
+    if(!jSubMenu.length) return;
+    var maxh = $(window).height()-1;
+
+    //Refresh dimensions, if necessary
+    _this.CalcSubmenuDimensions();
+    
+    var showmore = false;
+    //Find out if we need to show "more" menu
+    var curtop = _this.SubMenuOverhang;
+    for (var i = 0; i < _this.SubMenuItems.length; i++) {
+      curtop += _this.SubMenuItems[i].data('height');
+    }
+    if (curtop > maxh) showmore = true;
+    
+    var jmore = jSubMenu.$find('.xsubmenu_more');
+    if (jmore.size() > 0) {
+      if (showmore) {
+        if (!jmore.is(':visible')) jmore.show();
+        if (_this.SubMenuMoreHeight <= 0) { _this.SubMenuMoreHeight = jmore.outerHeight(true); }
+        maxh -= _this.SubMenuMoreHeight;
+      }
+      else {
+        if (jmore.is(':visible')) { jmore.hide(); jSubMenu.$find('.xsubmenu_more').hide(); }
+      }
+    }
+    
+    curtop = _this.SubMenuOverhang;
+    for (var j = 0; j < _this.SubMenuItems.length; j++) {
+      var xsubmenuitem = _this.SubMenuItems[j];
+      curtop += xsubmenuitem.data('height');
+      if (curtop > maxh) {
+        if (xsubmenuitem.is(':visible')) xsubmenuitem.hide();
+      }
+      else {
+        if (!xsubmenuitem.is(':visible')) xsubmenuitem.show();
+      }
+    }
+  };
+
+  XMenuVertical.prototype.getSubmenu = function(menuid){
+    var _this = this;
+    if(!menuid) menuid = _this.menuid;
+    return jsh.$root('.xsubmenu_' + jsh.XExt.escapeCSSClass(String(menuid).toUpperCase()));
+  };
+
+  XMenuVertical.prototype.RenderSubmenu = function(){
+    var _this = this;
+    var jSubMenu = _this.getSubmenu();
+    var offset = jsh.$root('.xmenuvertical').outerWidth();
+
+    //Set up Side Menu Sidebar
+    _this.SubMenuItems = [];
+    _this.SubMenuOverhang = 0;
+    _this.SubMenuMoreHeight = 0;
+    jsh.$root('.xsubmenu').hide();
+    jsh.$root('.xsubmenuside').hide().empty();
+
+    jsh.$root('.xbody ').css({'margin-left': offset + 'px', 'width': 'calc(100% - ' + offset + 'px)', 'box-sizing': 'border-box'});
+
+    if (jSubMenu.size() > 0) {
+      jSubMenu.show();
+      offset += jSubMenu.outerWidth();
+      jsh.$root('.xbody').css({'margin-left': offset + 'px', 'width': 'calc(100% - ' + offset + 'px)', 'box-sizing': 'border-box'});
+      jSubMenu.$find('a, div').each(function (i, obj) {
+        if ($(obj).hasClass('xsubmenu_more')) return;
+        _this.SubMenuItems.push($(obj));
+      });
+      _this.CalcSubmenuDimensions(true);
+      
+      jSubMenu.$find('.xsubmenu_more').off('click');
+      jSubMenu.$find('.xsubmenu_more').on('click', function () {
+        var xsubmenuside = jsh.$root('.xsubmenuside');
+        if (!xsubmenuside.is(':visible')) xsubmenuside.show();
+        else xsubmenuside.hide();
+        return false;
+      });
+    }
+
+    //Initialize xsubmenuside for this submenu
+    var xsubmenuside = jsh.$root('.xsubmenuside');
+    if (xsubmenuside.size() > 0) {
+      for (var i = 0; i < _this.SubMenuItems.length; i++) {
+        var xsubmenuitem = _this.SubMenuItems[i];
+        if ($(xsubmenuitem).is('a')) {
+          var link_onclick = xsubmenuitem.attr('onclick');
+          if(link_onclick){
+            link_onclick = 'onclick="'+jsh.getInstance()+'.$root(\'.xsubmenuside\').hide(); ' + link_onclick + ';"';
+          }
+          var htmlobj = '<a href="' + xsubmenuitem.attr('href') + '" ' + link_onclick + ' class="xsubmenusideitem xsubmenusideitem_' + jsh.XExt.escapeCSSClass(xsubmenuitem.data('id')) + ' ' + (xsubmenuitem.hasClass('selected')?'selected':'') + '">' + xsubmenuitem.html() + '</a>';
+          xsubmenuside.append(htmlobj);
+        }
+      }
+    }
+
+    _this.RefreshLayout();
+  };
+
+  XMenuVertical.prototype.CalcDimensions = function(force){
+    var _this = this;
+    if(!force && (_this.MenuItems.length > 0)){
+      var jmenuitem = _this.MenuItems[0];
+      if(jmenuitem.outerHeight(true).toString() == jmenuitem.data('height')) return false;
+    }
+    for(var i=0;i<_this.MenuItems.length;i++){
+      var jobj = _this.MenuItems[i];
+      var jheight = jobj.outerHeight(true);
+      jobj.data('height', jheight);
+    }
+    _this.MenuOverhang = jsh.$root('.xmenu').offset().top + parseInt(jsh.$root('.xmenu').css('padding-top').replace(/\D/g, ''));
+    if (isNaN(_this.MenuOverhang)) _this.MenuOverhang = 0;
+    return true;
+  };
+
+  XMenuVertical.prototype.CalcSubmenuDimensions = function(force){
+    var _this = this;
+    var jSubMenu = _this.getSubmenu();
+    if(!force && (_this.SubMenuItems.length > 0)){
+      var jsubmenuitem = _this.SubMenuItems[0];
+      if(jsubmenuitem.outerHeight(true).toString() == jsubmenuitem.data('height')) return;
+    }
+    for(var i=0;i<_this.SubMenuItems.length;i++){
+      var jobj = _this.SubMenuItems[i];
+      var jheight = jobj.outerHeight(true);
+      jobj.data('height', jheight);
+    }
+    _this.SubMenuOverhang = jSubMenu.offset().top + parseInt(jSubMenu.css('padding-top').replace(/\D/g, ''));
+    if (isNaN(_this.SubMenuOverhang)) _this.SubMenuOverhang = 0;
+  };
+
+  XMenuVertical.prototype.ToggleCollapsed = function(){
+    var _this = this;
+    var jmenu = jsh.$root('.xmenuvertical');
+    jmenu.toggleClass('collapsed');
+    jsh.$root('.xhead_vertical').toggleClass('collapsed');
+    jsh.$root('.xsubmenu').hide();
+    jsh.$root('.xmenuside').hide();
+    jsh.$root('.xsubmenuside').hide();
+    if(jmenu.hasClass('collapsed')) jsh.$root('.xbody').css('margin-left', '81px'); else jsh.$root('.xbody').css('margin-left', '270px');
+    _this.RefreshLayout();
+  };
+
+  XMenuVertical.prototype.Navigated = function(obj){
+    var jobj = $(obj);
+    var jmenuside = jsh.$root('.xmenuside');
+    var jsubmenuside = jsh.$root('.xsubmenuside');
+
+    if(!jobj.hasClass('xmenu_more')) jmenuside.hide();
+    if(!jobj.hasClass('xsubmenu_more')) jsubmenuside.hide();
+  };
+  
   XMenu.Base = XMenuBase;
   XMenu.Interfaces['horizontal'] = XMenuHorizontal;
+  XMenu.Interfaces['vertical'] = XMenuVertical;
 
   return XMenu;
 };

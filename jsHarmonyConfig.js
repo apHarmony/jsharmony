@@ -274,7 +274,9 @@ function jsHarmonyConfig(config){
   //Theme CSS files
   this.themes = {
     'light': [ 'jsHarmony.theme.light.css' ],
-    'classic': [ 'jsHarmony.theme.classic.css' ]
+    'classic': [ 'jsHarmony.theme.classic.css' ],
+    'dark' : [ 'jsharmony.theme.dark.css'],
+    'cream' : [ 'jsharmony.theme.cream.css'],
   };
   this.theme = 'light';
   //Additional CSS files for jsHarmony.css
