@@ -17,8 +17,6 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var $ = require('./jquery-1.11.2');
-$.fn.$find = function(){ return $.fn.find.apply(this, arguments); };
 var _ = require('lodash');
 
 exports = module.exports = function(jsh){
@@ -73,10 +71,10 @@ exports = module.exports = function(jsh){
       this.Data.OnRender.apply(this.Data, arguments);
     }
     else if(this.TemplateID){
-      var ejssource = jsh.$root(this.TemplateID).html();
-      jsh.$root(this.PlaceholderID).html(jsh.XExt.renderEJS(ejssource, undefined, {
+      var ejssource = jsh.xd(this.TemplateID).first().innerHTML;
+      jsh.xd(this.PlaceholderID).html = jsh.XExt.renderEJS(ejssource, undefined, {
         data:this.Data
-      }));
+      });
     }
     if (this.OnAfterRender) this.OnAfterRender();
   };
@@ -106,7 +104,7 @@ exports = module.exports = function(jsh){
     else if(obj.xvalidate) validator = obj.xvalidate;
     else return true;
     var parentobj = undefined;
-    if (this.xData) parentobj = this.Data._jrow;
+    if (this.xData) parentobj = this.Data._row;
     return validator.ValidateControls(perms,obj,'',parentobj);
   };
   XForm.prototype.ResetValidation = function(obj){
@@ -143,7 +141,7 @@ exports = module.exports = function(jsh){
       this.Data._orig = null;
     }
     if (this.xData) {
-      jsh.$root(this.xData.PlaceholderID).$find('.xform_ctrl.updated').removeClass('updated');
+      jsh.xd(this.xData.PlaceholderID).get('.xform_ctrl.updated').class.remove('updated');
     }
     this.IsDirty = false;
   };
@@ -171,7 +169,7 @@ exports = module.exports = function(jsh){
     if(this.Index == (this.Count()-1)) return;
     this.NavTo(this.Count()-1);
   };
-  XForm.prototype.SetIndex = function (_index, saveold, jrow) {
+  XForm.prototype.SetIndex = function (_index, saveold, row) {
     if (typeof saveold == 'undefined') saveold = true;
     if (_index > this.Count()) { jsh.XExt.Alert('Cannot navigate - Index greater than size of collection'); return false; }
     else if (_index < 0) { jsh.XExt.Alert('Cannot navigate - Index less than zero'); return false; }
@@ -189,8 +187,10 @@ exports = module.exports = function(jsh){
     this.Data._bcrumbs = this.bcrumbs;
     this.Data._title = this.title;
     if (this.xData) {
-      if(jrow) this.Data._jrow = jrow;
-      else this.Data._jrow = jsh.$root(this.xData.PlaceholderID).$find("tr[data-id='" + this.Index + "']");
+      if(row) {
+        this.Data._row = row;
+      }
+      else this.Data._row = jsh.xd(this.xData.PlaceholderID).get("tr[data-id='" + this.Index + "']").element;
     }
     return true;
   };
@@ -466,8 +466,8 @@ exports = module.exports = function(jsh){
       execdata.push({
         method: dbtask.method,
         model: dbtask.model,
-        query: $.param(dbtask.query),
-        post: $.param(dbtask.post)
+        query: jsh.XExt.escapeQuery(dbtask.query),
+        post: jsh.XExt.escapeQuery(dbtask.post)
       });
     }
     var final_onComplete = function (rslt) {
@@ -481,7 +481,7 @@ exports = module.exports = function(jsh){
       'method': 'post',
       'model': '_transaction',
       'query': {},
-      'post': $.param({ data: JSON.stringify(execdata) }),
+      'post': jsh.XExt.escapeQuery({ data: JSON.stringify(execdata) }),
       'onComplete': final_onComplete
     };
     if (onFail) execparams.onFail = onFail;

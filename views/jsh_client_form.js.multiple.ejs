@@ -19,7 +19,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 (function(jsh){
   var _ = jsh._;
-  var $ = jsh.$;
   var XExt = jsh.XExt;
   var xform = null;
   var modelid = '<%=model.id%>';
@@ -61,13 +60,13 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     //Pull keys from parent
     //Get recordset
     
-    jsh.$root('.xelem'+xmodel.class).keyup(function(){ if(jsh.is_insert) return; if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this);; });
-    jsh.$root('.xelem'+xmodel.class+'.dropdown').change(function(){ if(jsh.is_insert) return; if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this); });
-    jsh.$root('.xelem'+xmodel.class+'.checkbox').change(function(){ if(jsh.is_insert) return; if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this); });
-    jsh.$root('.xelem'+xmodel.class+'.xtagbox_base').on('input keyup', function(){ if(jsh.is_insert) return; if(!$(this).hasClass('editable')) return; xform.Data.OnControlUpdate(this); });
+    jsh.xd('.xelem'+xmodel.class).on('keyup', function(){ if(jsh.is_insert) return; if(!jsh.XDom.class.contains(this, 'editable')) return; xform.Data.OnControlUpdate(this);; });
+    jsh.xd('.xelem'+xmodel.class+'.dropdown').on('change', function(){ if(jsh.is_insert) return; if(!jsh.XDom.class.contains(this, 'editable')) return; xform.Data.OnControlUpdate(this); });
+    jsh.xd('.xelem'+xmodel.class+'.checkbox').on('change', function(){ if(jsh.is_insert) return; if(!jsh.XDom.class.contains(this, 'editable')) return; xform.Data.OnControlUpdate(this); });
+    jsh.xd('.xelem'+xmodel.class+'.xtagbox_base').on('input keyup', function(){ if(jsh.is_insert) return; if(!jsh.XDom.class.contains(this, 'editable')) return; xform.Data.OnControlUpdate(this); });
 
     <% _.each(model.fields,function(field){ if(!('control' in field) || !field.name) return; if(field.control=='date') {%>
-    jsh.$root(".<%=field.name%>.xelem"+xmodel.class).datepicker({ changeMonth: true, changeYear: true, dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||jsh.DEFAULT_DATEFORMAT), onSelect: function(){ if(jsh.is_insert) return; xform.Data.OnControlUpdate(this); } });
+    jsh.XExt.DatePicker(jsh.xd(".<%=field.name%>.xelem"+xmodel.class).element, { dateFormat: ('<%=(field.controlparams?field.controlparams.dateformat:'')%>'||jsh.DEFAULT_DATEFORMAT), onSelect: function(ctrl){ if(jsh.is_insert) return; xform.Data.OnControlUpdate(ctrl); } });
     <% } }); %>
 
     if(xmodel.unbound){

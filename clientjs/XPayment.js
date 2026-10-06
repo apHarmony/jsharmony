@@ -20,7 +20,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 var _ = require('lodash');
 
 exports = module.exports = function(jsh){
-
   function XPayment() {
     this.Loader = {};
     this.Initialized = false;
@@ -43,7 +42,7 @@ exports = module.exports = function(jsh){
       jsh.xLoader.StopLoading(_this.Loader);
       _this.Result();
     };
-    jsh.root.append('\
+    jsh.xdroot.append('\
       <iframe id="'+jsh.getInstance()+'_xpaymentproxy" name="'+jsh.getInstance()+'_xpaymentproxy" src="about:blank" onload="'+jsh.getInstance()+'.onPaymentProxyComplete(this);" style="width:0;height:0;border:0px solid #fff;"></iframe>\
       <div class="xpaymentformcontainer" style="position:absolute;top:0px;left:0px;width:1px;height:1px;overflow:hidden;"></div>\
     ');
@@ -88,10 +87,10 @@ exports = module.exports = function(jsh){
       formhtml += '<INPUT TYPE="HIDDEN" NAME="' + jsh.XExt.escapeHTML(key) + '" VALUE="' + jsh.XExt.escapeHTML(val) + '" />';
     });
     formhtml += '</form>';
-    jsh.$root('.xpaymentformcontainer').html(formhtml);
-    jsh.$root('.xpaymentform').attr('action', fp_data.fp_url);
+    jsh.xd('.xpaymentformcontainer').html = formhtml;
+    jsh.xd('.xpaymentform').attr.action = fp_data.fp_url;
     jsh.xLoader.StartLoading(this.Loader);
-    jsh.$root('.xpaymentform').submit();
+    jsh.xd('.xpaymentform').emit('submit');
   };
   XPayment.prototype.Result = function() {
     var _this = this;

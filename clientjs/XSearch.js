@@ -17,8 +17,6 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var $ = require('./jquery-1.11.2');
-$.fn.$find = function(){ return $.fn.find.apply(this, arguments); };
 var _ = require('lodash');
 
 exports = module.exports = function(jsh){
@@ -56,13 +54,13 @@ exports = module.exports = function(jsh){
     var _PlaceholderID = '';
     if(this.xmodel && this.xmodel && this.xmodel.controller && this.xmodel.controller.search) _PlaceholderID = this.xmodel.controller.search.PlaceholderID || '';
     _this.Items = [];
-    var jSearchExpressions = jsh.$root(_PlaceholderID + ' div.xsearch_expression');
-    for(var i=0;i<jSearchExpressions.length;i++){
-      var jobj = $(jSearchExpressions[i]);
-      var v_column = jobj.$find('select.xsearch_column').val();
-      var v_value = jobj.$find('input.xsearch_value').val();
-      var v_join = ((i==0) ? undefined : $(jSearchExpressions[i-1]).$find('select.xsearch_join').val());
-      var v_comparison = jobj.$find('select.xsearch_comparison').val();
+    var searchExpressions = jsh.xd(_PlaceholderID + ' div.xsearch_expression').elements;
+    for(var i=0;i<searchExpressions.length;i++){
+      var obj = searchExpressions[i];
+      var v_column = jsh.XDom(obj, 'select.xsearch_column').value;
+      var v_value = jsh.XDom(obj, 'input.xsearch_value').value;
+      var v_join = ((i==0) ? undefined : jsh.XDom(searchExpressions[i-1], 'select.xsearch_join').value);
+      var v_comparison = jsh.XDom(obj, 'select.xsearch_comparison').value;
       if ((v_column==='ALL') || !v_comparison) v_comparison = 'contains';
       _this.Items.push(new SearchItem(v_column, v_value, v_join, v_comparison));
     }
@@ -70,11 +68,12 @@ exports = module.exports = function(jsh){
   SearchQuery.prototype.HasUpdates = function (_PlaceholderID) {
     var _this = this;
     var newitems = [];
-    jsh.$root(_PlaceholderID + ' div').each(function (i, obj) {
-      var v_value = $(obj).$find('input.xsearch_value').val();
-      var v_join = $(obj).$find('input.xsearch_join').val();
-      var v_comparison = $(obj).$find('select.xsearch_comparison').val();
-      newitems.push(new SearchItem($(obj).$find('select.xsearch_column').val(), v_value, v_join, v_comparison));
+    jsh.xd(_PlaceholderID + ' div').elements.forEach(function (obj, i) {
+      var v_column = jsh.XDom(obj, 'select.xsearch_column').value;
+      var v_value = jsh.XDom(obj, 'input.xsearch_value').value;
+      var v_join = jsh.XDom(obj, 'input.xsearch_join').value;
+      var v_comparison = jsh.XDom(obj, 'select.xsearch_comparison').value;
+      newitems.push(new SearchItem(v_column, v_value, v_join, v_comparison));
     });
     if (newitems.length != _this.Items.length) return true;
     for (var i = 0; i < newitems.length; i++) {

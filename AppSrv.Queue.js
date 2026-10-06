@@ -19,7 +19,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
 var Helper = require('./lib/Helper.js');
 var _ = require('lodash');
-var XValidate = require('jsharmony-validate');
+var XValidate = require('./XValidate.js');
 
 module.exports = exports = {};
 

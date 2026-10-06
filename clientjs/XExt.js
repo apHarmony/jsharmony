@@ -17,12 +17,11 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var $ = require('./jquery-1.11.2');
-$.fn.$find = function(){ return $.fn.find.apply(this, arguments); };
 var _ = require('lodash');
 
 exports = module.exports = function(jsh){
   var XValidate = jsh.XValidate; // eslint-disable-line no-unused-vars
+  var XDom = jsh.XDom;
   var XExt = function(){ };
 
   XExt.XModel = require('./XExt.XModel.js')(jsh);
@@ -47,20 +46,18 @@ exports = module.exports = function(jsh){
   };
 
   XExt.RenderLOV = function (_data, ctrl, LOV) {
-    ctrl.empty();
-    ctrl.html(jsh.ejs.render('\
+    XDom(ctrl).html = jsh.ejs.render('\
       <% for(var i=0;i<data.length;i++){ %>\
       <option value="<%=data[i][jsh.uimap.code_val]%>"><%=data[i][jsh.uimap.code_txt]%></option>\
       <% } %>'
     , { data: LOV, jsh: jsh }
-    ));
+    );
   };
 
   XExt.RenderParentLOV = function (_data, ctrl, parentvals, LOV, field, plural) {
     //Get Previous Value
     var prevval = _data[field.name];
     if (prevval == null) prevval = '';
-    ctrl.empty();
     var lovfilter = {};
     if (!plural) lovfilter[jsh.uimap.code_parent] = parentvals[0];
     else {
@@ -85,101 +82,106 @@ exports = module.exports = function(jsh){
     if ((!plural) && (!(jsh.uimap.code_parent in LOV[0]))) cLOV.unshift(LOV[0]);
     else if ((plural) && (!((jsh.uimap.code_parent + '1') in LOV[0]))) cLOV.unshift(LOV[0]);
     else if ('lovblank' in field) cLOV.unshift(LOV[0]);
-    ctrl.html(jsh.ejs.render('\
+    XDom(ctrl).html = jsh.ejs.render('\
       <% for(var i=0;i<data.length;i++){ %>\
       <option value="<%=data[i][jsh.uimap.code_val]%>"><%=data[i][jsh.uimap.code_txt]%></option>\
       <% } %>'
     , { data: cLOV, jsh: jsh }
-    ));
+    );
     //Apply prevval
-    var lov_matches = ctrl.children('option').filter(function () { return String($(this).val()).toUpperCase() == String(prevval).toUpperCase(); }).length;
-    if (lov_matches > 0) ctrl.val(prevval);
+    var lov_matches = _.filter(ctrl.children, function (el) { return String(el.value).toUpperCase() == String(prevval).toUpperCase(); }).length;
+    if (lov_matches > 0) ctrl.value = prevval;
   };
 
-  XExt.TagBox_Refresh = function(jctrl, jbaseinputctrl){
-    jctrl.$find('span').remove();
-    XExt.TagBox_AddTags(jctrl, jbaseinputctrl, jbaseinputctrl.val().split(','));
+  XExt.TagBox_Refresh = function(ctrl, baseinputctrl){
+    XDom(ctrl, 'span').remove();
+    XExt.TagBox_AddTags(ctrl, baseinputctrl, XDom(baseinputctrl).value.split(','));
   };
 
-  XExt.TagBox_Save = function(jctrl, jbaseinputctrl){
+  XExt.TagBox_Save = function(ctrl, baseinputctrl){
     var tags = [];
-    jctrl.children('span').each(function(){
-      tags.push($(this).data('val'));
-    });
-    var prevval = jbaseinputctrl.val();
-    jbaseinputctrl.val(tags.join(', '));
-    if(jbaseinputctrl.val()!=prevval) jbaseinputctrl.trigger('input');
+    XDom(ctrl).getChildren('span').elements.forEach(function(el){ tags.push(XDom(el).data.val); });
+    var xdBaseInputCtrl = XDom(baseinputctrl);
+    var prevval = xdBaseInputCtrl.value;
+    xdBaseInputCtrl.value = tags.join(', ');
+    if(xdBaseInputCtrl.value!=prevval) xdBaseInputCtrl.emit('input');
   };
 
-  XExt.TagBox_Focus = function(jctrl, onFocus){
-    jctrl.on('click_remove', function(tmp_e, e){
+  XExt.TagBox_Focus = function(ctrl, onFocus){
+    var xdctrl = XDom(ctrl);
+    xdctrl.on('click_remove', function(e){
+      onFocus.call(this, e.detail);
+    });
+    XDom(xdctrl, '.xtag_input').on('focus', function(e){
       onFocus.call(this, e);
     });
-    jctrl.$find('.xtag_input').on('focus', function(e){
-      onFocus.call(this, e);
-    });
-    jctrl.on('click', function(e){
+    xdctrl.on('click', function(e){
       onFocus.call(this, e);
     });
   };
 
-  XExt.TagBox_AddTags = function(jctrl, jbaseinputctrl, new_tags){
-
+  XExt.TagBox_AddTags = function(ctrl, baseinputctrl, new_tags){
+    var xdctrl = XDom(ctrl);
     var addTag = function(val){
       val = val.trim();
       if(!val.length) return;
-      var jnew = $('<span class="notextselect">'+XExt.escapeHTML(val)+'	&#8203;<div class="xtag_remove xtag_focusable">✕</div></span>');
-      jnew.data('val', val);
-      jctrl.$find('.xtag_input').before(jnew);
 
-      jnew.$find('.xtag_remove').on('click', function(e){
-        if(jctrl.hasClass('uneditable')) return;
-        jctrl.trigger('click_remove', [e]);
-        if(e.isPropagationStopped()||e.isImmediatePropagationStopped()) return;
-        jctrl.$find('.xtag_input').blur();
-        $(this).closest('span').remove();
-        XExt.TagBox_Save(jctrl, jbaseinputctrl);
+      var newSpan = XDom.render('<span class="notextselect">'+XExt.escapeHTML(val)+'	&#8203;<div class="xtag_remove xtag_focusable">✕</div></span>');
+      var xdnew = XDom(newSpan);
+      xdnew.data.val = val;
+
+      xdctrl.insertBefore(newSpan, xdctrl.get('.xtag_input').element);
+
+      XDom(xdnew, '.xtag_remove').on('click', function(e){
+        if(xdctrl.class.contains('uneditable')) return;
+        xdctrl.emit('click_remove', e);
+        XDom(xdctrl, '.xtag_input').blur();
+        XDom(this).parent('span').remove();
+        XExt.TagBox_Save(ctrl, baseinputctrl);
       });
     };
 
     _.each(new_tags, function(tag){ addTag(tag); });
-    XExt.TagBox_Save(jctrl, jbaseinputctrl);
+    XExt.TagBox_Save(ctrl, baseinputctrl);
   };
 
-  XExt.TagBox_Render = function(jctrl, jbaseinputctrl){
-    jbaseinputctrl.hide();
-    jctrl.empty();
-    jctrl.off('click');
+  XExt.TagBox_Render = function(ctrl, baseinputctrl){
+    var xdctrl = XDom(ctrl);
+    var xdbaseinputctrl = XDom(baseinputctrl);
 
-    jctrl.css('display','inline-block');
-    jctrl.addClass('xtag_focusable');
-    jctrl.append('<input class="xtag_input inactive xtag_focusable" size="1" />');
+    xdbaseinputctrl.style.display = false;
+    xdctrl.clear();
 
-    var jinput = jctrl.$find('.xtag_input');
+    xdctrl.style.display = 'inline-block';
+    xdctrl.class.add('xtag_focusable');
+    xdctrl.append('<input class="xtag_input inactive xtag_focusable" size="1" />');
 
-    jctrl.on('click', function(){
-      if(jinput.hasClass('inactive')){
-        jinput.val('');
-        jinput[0].parentNode.insertBefore(jinput[0], null);
-        jinput.focus();
+    var xdinput = XDom(xdctrl, '.xtag_input');
+
+    xdctrl.on('click', function(){
+      if(xdinput.class.contains('inactive')){
+        xdinput.value = '';
+        xdinput.element.parentNode.insertBefore(xdinput.element, null);
+        xdinput.focus();
       }
     });
 
-    if(jbaseinputctrl.data('id')) jinput.data('id', jbaseinputctrl.data('id'));
+    if(xdbaseinputctrl.data.id) xdinput.data.id = xdbaseinputctrl.data.id;
 
-    jinput.on('input keyup', function(e){
-      var val = $(this).val();
-      if(val.indexOf(',')>=0){ $(this).val(''); XExt.TagBox_AddTags(jctrl, jbaseinputctrl, val.split(',')); }
-      $(this).attr('size',Math.round(($(this).val()||' ').toString().length/.87));
+    xdinput.on('input keyup', function(e){
+      var xdthis = XDom(this);
+      var val = xdthis.value;
+      if(val.indexOf(',')>=0){ xdthis.value = ''; XExt.TagBox_AddTags(ctrl, baseinputctrl, val.split(',')); }
+      xdthis.attr.size = Math.round((xdthis.value||' ').toString().length/.87);
     });
 
     var isMovingInput = false;
 
-    jinput.on('keydown', function(e){
-      if(jctrl.hasClass('uneditable')) return;
+    xdinput.on('keydown', function(e){
+      if(xdctrl.class.contains('uneditable')) return;
 
       var obj = this;
-      var jobj = $(obj);
+      var xdobj = XDom(obj);
       var handled = false;
       isMovingInput = false;
 
@@ -188,37 +190,38 @@ exports = module.exports = function(jsh){
       if(sel) cursorpos = sel.start;
 
       if(e.which==39){ //Right
-        if(jobj.next().length && (cursorpos==jobj.val().length)){
+        if(xdobj.nextSibling().length && (cursorpos==xdobj.value.length)){
           handled = true;
           var objnextnext = null;
-          if(jobj.next().next().length) objnextnext = jobj.next().next()[0];
+          if(xdobj.nextSibling().nextSibling().length) objnextnext = xdobj.nextSibling().nextSibling().element;
           isMovingInput = true;
-          jobj[0].parentNode.insertBefore(jobj[0], objnextnext);
-          jobj.focus();
+          xdobj.element.parentNode.insertBefore(xdobj.element, objnextnext);
+          xdobj.focus();
           isMovingInput = false;
         }
       }
       else if(e.which==37){ //Left
-        if(jobj.prev().length && (cursorpos==0)){
+        if(xdobj.previousSibling().length && (cursorpos==0)){
           handled = true;
-          var objprev = jobj.prev()[0];
+          var objprev = xdobj.previousSibling().element;
           isMovingInput = true;
-          jobj[0].parentNode.insertBefore(jobj[0], objprev);
-          jobj.focus();
+          xdobj.element.parentNode.insertBefore(xdobj.element, objprev);
+          xdobj.focus();
           isMovingInput = false;
         }
       }
       else if(e.which==8){ //Backspace
-        if(jobj.prev().length && (cursorpos==0)){
+        if(xdobj.previousSibling().length && (cursorpos==0)){
           handled = true;
-          jobj.prev().remove();
-          XExt.TagBox_Save(jctrl, jbaseinputctrl);
+          xdobj.previousSibling().remove();
+          XExt.TagBox_Save(ctrl, baseinputctrl);
         }
       }
       else if(e.which==13){ //Backspace
-        var val = $(this).val();
-        $(this).val('');
-        XExt.TagBox_AddTags(jctrl, jbaseinputctrl, [val]);
+        var xdthis = XDom(this);
+        var val = xdthis.value;
+        xdthis.value = '';
+        XExt.TagBox_AddTags(ctrl, baseinputctrl, [val]);
       }
       if(handled){
         e.preventDefault();
@@ -227,18 +230,147 @@ exports = module.exports = function(jsh){
       }
     });
 
-    jinput.on('focus', function(){
-      $(this).removeClass('inactive');
+    xdinput.on('focus', function(){
+      XDom(this).class.remove('inactive');
     });
 
-    jinput.on('focusout', function(){
+    xdinput.on('focusout', function(){
       if(isMovingInput) return;
-      if(!jctrl.hasClass('uneditable')){
-        var val = $(this).val();
-        $(this).val('');
-        XExt.TagBox_AddTags(jctrl, jbaseinputctrl, [val]);
+      var xdthis = XDom(this);
+      if(!xdctrl.class.contains('uneditable')){
+        var val = xdthis.value;
+        xdthis.value = '';
+        XExt.TagBox_AddTags(ctrl, baseinputctrl, [val]);
       }
-      $(this).addClass('inactive');
+      xdthis.class.add('inactive');
+    });
+  };
+
+  /**************
+   * DATEPICKER *
+   **************/
+  
+  XExt.DatePickerRender = function(ctrl, date, options){
+    options = _.extend({ dateFormat: jsh.DEFAULT_DATEFORMAT, onSelect: null}, options);
+    if(jsh.xd('.xdatepicker').length) XExt.DatePickerRemove();
+    XDom('body').append(
+      '<div class="xdatepicker" style="display: none">\
+        <div class="xdatepicker_banner">\
+          <div class="xdatepicker_nav"><a class="xdatepicker_prev">&lt</a></div>\
+          <div class="xdatepicker_center">\
+            <select class="select_month" style="width:100%"><option value="0">Jan</option><option value="1">Feb</option><option value="2">Mar</option><option value="3">Apr</option><option value="4">May</option><option value="5">Jun</option><option value="6">Jul</option><option value="7">Aug</option><option value="8">Sep</option><option value="9">Oct</option><option value="10">Nov</option><option value="11">Dec</option></select>\
+            <select class="select_year" style="width:100%"></select>\
+          </div>\
+          <div class="xdatepicker_nav"><a class="xdatepicker_next">&gt</a></div>\
+        </div>\
+        <table><thead><tr><th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th></tr></thead><tbody></tbody></table>\
+      </div>'
+    );
+    var selDate = {year: date.getFullYear(), month: date.getMonth(), day: date.getDate()};
+    XExt.DatePickerUpdate(date, selDate);
+
+    //Attach handlers:
+    var xdDatePicker = jsh.xd('.xdatepicker');
+    xdDatePicker.on('click', XDom.liveEvent('.entry', function(e){
+      var xdClicked = XDom(e.target);
+      XDom(ctrl).value = jsh.moment({year: xdClicked.data.year, month: xdClicked.data.month, day: xdClicked.innerHTML}).format(options.dateFormat);
+      XDom(xdDatePicker, '.entry').class.remove('selected');
+      xdClicked.class.add('selected');
+      XExt.DatePickerHide();
+      if(options.onSelect) options.onSelect(ctrl);
+    }));
+    var xdSelectMonth = XDom(xdDatePicker, '.select_month');
+    var xdSelectYear = XDom(xdDatePicker, '.select_year');
+    xdDatePicker.on('change', function(){
+      XExt.DatePickerUpdate(new Date(xdSelectYear.value, xdSelectMonth.value), selDate);
+    });
+    XDom(xdDatePicker, '.xdatepicker_next').on('click', function(){
+      var currMonth = parseInt(xdSelectMonth.value);
+      var currYear = parseInt(xdSelectYear.value);
+      if(currMonth >= 11) {currYear++; currMonth = 0;}
+      else currMonth++;
+      XExt.DatePickerUpdate(new Date(currYear, currMonth), selDate);
+    });
+    XDom(xdDatePicker, '.xdatepicker_prev').on('click', function(){
+      var currMonth = parseInt(xdSelectMonth.value);
+      var currYear = parseInt(xdSelectYear.value);
+      if(currMonth <= 0) {currYear--; currMonth = 11;}
+      else currMonth--;
+      XExt.DatePickerUpdate(new Date(currYear, currMonth), selDate);
+    });
+    XExt.DatePickerShow();
+  };
+
+  XExt.DatePickerUpdate = function(date, selDate){
+    var xdDatePicker = jsh.xd('.xdatepicker');
+    if(!xdDatePicker.length) return;
+
+    var month = date.getMonth();
+    var year = date.getFullYear();
+
+    var firstDay = new Date(year, month, 1).getDay();
+    var totalDays = new Date(year, month + 1, 0).getDate();
+    //Load banner years
+    var xdSelectYear = XDom(xdDatePicker, '.select_year');
+    xdSelectYear.clear();
+    for(var i=-10; i<=10; i++){
+      var value = year+i;
+      xdSelectYear.append('<option value="'+ value +'">'+ value +'</option>');
+    }
+    //Update banner values
+    XDom(xdDatePicker, '.select_month').value = month;
+    XDom(xdDatePicker, '.select_year').value = year;
+    //Clear table body for update
+    var xdTable = XDom(xdDatePicker, 'tbody');
+    xdTable.clear();
+    var xdCurrentTr = XDom(XDom.render('<tr></tr>'));
+    //Append empty cells for beginning of month
+    for(var j=0; j<firstDay; j++){
+      xdCurrentTr.append('<td></td>');
+    }
+    //Fill out cells with dates
+    for(var day_idx = 1; day_idx<=totalDays; day_idx++){
+      if((day_idx + firstDay - 1) % 7 === 0){
+        xdTable.append(xdCurrentTr);
+        xdCurrentTr = XDom(XDom.render('<tr></tr>'));
+      }
+      var xdCell = XDom(XDom.render('<td><a class="entry">' + day_idx + '</a></td>'));
+      var xdEntry = XDom(xdCell, 'a.entry');
+      xdEntry.data.month = month;
+      xdEntry.data.year = year;
+      if(selDate.year == year && selDate.month == month && selDate.day == day_idx) xdEntry.class.add('selected');
+      xdCurrentTr.append(xdCell);
+    }
+    //Append last incomplete row
+    if(xdCurrentTr.children.length > 0) xdTable.append(xdCurrentTr);
+  };
+
+  XExt.DatePickerRemove = function(){
+    jsh.xd('.xdatepicker').remove();
+  };
+
+  XExt.DatePickerHide = function(){
+    jsh.xd('.xdatepicker').animate.opacity(false, XExt.DatePickerRemove, 350);
+  };
+
+  XExt.DatePickerShow = function(){
+    jsh.xd('.xdatepicker').animate.opacity(true, null, 350);
+  };
+
+  XExt.DatePicker = function(ctrl, options){
+    var xdctrl = XDom(ctrl);
+    xdctrl.on('focus', function(){
+      var moment = jsh.moment(xdctrl.value, options.dateFormat);
+      if(!moment.isValid()) moment = jsh.moment();
+      var date = new Date(moment.year(), moment.month(), [moment.date()]);
+      XExt.DatePickerRender(ctrl, date, options);
+      var xdDatepicker = jsh.xd('.xdatepicker');
+      xdDatepicker.style.top = xdctrl.calc.top()+xdctrl.calc.heightToBorder()+window.scrollY+'px';
+      xdDatepicker.style.left = xdctrl.calc.left()+window.scrollX+'px';
+    });
+    xdctrl.on('keydown', function(e){
+      if(e.keyCode == 27) XExt.DatePickerHide(); //esc
+      if(e.keyCode == 9) XExt.DatePickerRemove();//tab
     });
   };
 
@@ -250,55 +382,49 @@ exports = module.exports = function(jsh){
   };
 
   XExt.HideContextMenu = function () {
-    jsh.$root('.xcontext_menu').hide();
+    jsh.xd('.xcontext_menu').style.display = false;
   };
 
   XExt.ShowContextMenu = function (selector, context_item, data, options){
     options = _.extend({ top: jsh.mouseY, left: jsh.mouseX }, options);
     if (!selector) selector = '.xcontext_menu';
     XExt.HideContextMenu();
-    jsh.$root(selector).css('visibility', 'hidden');
-    jsh.$root(selector).show();
+    var xdSelector = jsh.xd(selector);
+    xdSelector.style.visibility = 'hidden';
+    xdSelector.style.display = true;
     var xtop = options.top; var xleft = options.left;
 
-    var wwidth = $(window).width();
-    var wheight = $(window).height() - 20;
-    var dwidth = jsh.$root(selector).outerWidth()+4;
-    var dheight = jsh.$root(selector).outerHeight()+4;
+    var wwidth = window.innerWidth;
+    var wheight = window.innerHeight - 20;
+    var dwidth = xdSelector.calc.widthToBorder()+4;
+    var dheight = xdSelector.calc.heightToBorder()+4;
     if ((xtop + dheight) > wheight) xtop = wheight - dheight;
     if ((xleft + dwidth) > wwidth) xleft = wwidth - dwidth;
-
-    var offset = jsh.$root(selector).offsetParent().offset();
-    xtop -= offset.top - 1;
-    xleft -= offset.left - 1;
+    var offsetParent = xdSelector.element.offsetParent;
+    xtop -= XDom.calc.top(offsetParent) - 1;
+    xleft -= XDom.calc.left(offsetParent) - 1;
 
     if (xtop < 0) xtop = 0;
     if (xleft < 0) xleft = 0;
 
-    jsh.$root(selector).children('a').each(function(){
-      var obj = this;
-      var onrender = $(obj).data('onrender');
+    xdSelector.getChildren('a').elements.forEach(function(el){
+      var obj = el;
+      var xdobj = XDom(obj);
+      var onrender = xdobj.data.onrender;
       if(onrender){
         var f = (new Function('context_item', 'data', onrender));
         var frslt = f.call(obj, context_item, data);
-        $(this).toggle(frslt !== false);
+        xdobj.style.display = (frslt !== false);
       }
     });
 
-    jsh.$root(selector).css({ 'top': xtop, 'left': xleft });
-    jsh.$root(selector).css('visibility', 'visible');
+    xdSelector.style.top = xtop+'px';
+    xdSelector.style.left = xleft+'px';
+    xdSelector.style.visibility = 'visible';
     if(jsh){
       jsh.xContextMenuVisible = true;
       jsh.xContextMenuItem = context_item;
       jsh.xContextMenuItemData = data;
-    }
-  };
-
-  XExt.jForEach = function(jctrls, f){
-    if(!jctrls || !jctrls.length) return;
-    if(jctrls.length==1) f(jctrls);
-    else {
-      for(var i=0;i<jctrls.length;i++) f($(jctrls[i]));
     }
   };
 
@@ -505,9 +631,9 @@ exports = module.exports = function(jsh){
     modelid = XExt.resolveModelID(modelid);
     var modelclass = modelid;
     if(modelid in jsh.XModels) modelclass = jsh.XModels[modelid].class;
-    jsh.$root('.xtab' + modelclass).each(function (i, obj) {
-      var jobj = $(obj);
-      if (jobj.html() == tabname) jobj.hide();
+    jsh.xd('.xtab' + modelclass).elements.forEach(function (obj) {
+      var xdobj = XDom(obj);
+      if (xdobj.innerHTML == tabname) xdobj.style.display = false;
     });
   };
 
@@ -611,33 +737,77 @@ exports = module.exports = function(jsh){
     if(typeof val == 'undefined') return '';
     return encodeURI(val);
   };
+  XExt.escapeQuery = function(query) {
+    function pair(key, value) {
+      return encodeURIComponent(key.toString()) + '=' + encodeURIComponent((value || typeof(value) == 'number') ? value.toString() : '');
+    }
+    function arrayValue(array, prefix) {
+      return _.map(array, function(value, index) {
+        if (_.isArray(value)) {
+          return arrayValue(value, prefix+'['+index+']');
+        } else if (_.isObjectLike(value)) {
+          return objectValue(value, prefix+'['+index+']');
+        } else {
+          return pair(prefix+'[]', value);
+        }
+      }).join('&');
+    }
+    function objectValue(object, prefix) {
+      // can't use _.map because it treats an object with a length as an array
+      var result = [];
+      _.forIn(object, function(value, _key) {
+        var key;
+        if (prefix) {
+          key = prefix + '[' + _key + ']';
+        } else {
+          key = _key;
+        }
+        if (_.isArray(value)) {
+          result.push(arrayValue(value, key));
+        } else if (_.isObjectLike(value)) {
+          result.push(objectValue(value, key));
+        } else {
+          result.push(pair(key, value));
+        }
+      });
+      return result.join('&');
+    }
+
+    return objectValue(query, '');
+  };
   XExt.pad = function (val, padding, length) {
     var rslt = val.toString();
     while (rslt.length < length) rslt = padding + rslt;
     return rslt;
   };
-  XExt.getMargin = function(jctrl){
+  XExt.getMargin = function(ctrl){
+    var xdctrl = XDom(ctrl);
+    var xdctrlStyles = xdctrl.style.calc;
     return {
-      top: parseInt(jctrl.css('margin-top')),
-      right: parseInt(jctrl.css('margin-right')),
-      bottom: parseInt(jctrl.css('margin-bottom')),
-      left: parseInt(jctrl.css('margin-left'))
+      top: parseInt(xdctrlStyles.marginTop),
+      right: parseInt(xdctrlStyles.marginRight),
+      bottom: parseInt(xdctrlStyles.marginBottom),
+      left: parseInt(xdctrlStyles.marginLeft)
     };
   };
-  XExt.getPadding = function(jctrl){
+  XExt.getPadding = function(ctrl){
+    var xdctrl = XDom(ctrl);
+    var xdctrlStyles = xdctrl.style.calc;
     return {
-      top: parseInt(jctrl.css('padding-top')),
-      right: parseInt(jctrl.css('padding-right')),
-      bottom: parseInt(jctrl.css('padding-bottom')),
-      left: parseInt(jctrl.css('padding-left'))
+      top: parseInt(xdctrlStyles.paddingTop),
+      right: parseInt(xdctrlStyles.paddingRight),
+      bottom: parseInt(xdctrlStyles.paddingBottom),
+      left: parseInt(xdctrlStyles.paddingLeft)
     };
   };
-  XExt.getBorder = function(jctrl){
+  XExt.getBorder = function(ctrl){
+    var xdctrl = XDom(ctrl);
+    var xdctrlStyles = xdctrl.style.calc;
     return {
-      top: parseInt(jctrl.css('border-top-width')),
-      right: parseInt(jctrl.css('border-right-width')),
-      bottom: parseInt(jctrl.css('border-bottom-width')),
-      left: parseInt(jctrl.css('border-left-width'))
+      top: parseInt(xdctrlStyles.borderTopWidth),
+      right: parseInt(xdctrlStyles.borderRightWidth),
+      bottom: parseInt(xdctrlStyles.borderBottomWidth),
+      left: parseInt(xdctrlStyles.borderLeftWidth)
     };
   };
   XExt.xejs = {
@@ -797,13 +967,16 @@ exports = module.exports = function(jsh){
     if(!id){ if(cb) cb(); return; }
     if (window.CKEDITOR.instances[id]){ if(cb) cb(); return; }
     
-    var elem = jsh.$root('#'+id);
-    if(!elem.length) elem = jsh.$root('.'+id);
+    var elem = jsh.xd('#'+id);
+    if(!elem.length) elem = jsh.xd('.'+id);
     if(!elem.length){ return XExt.Alert('Cound not initialize editor on '+id+': form control with that id not found'); }
-    var orig_width = elem.outerWidth();
-    var orig_height = elem.outerHeight();
-    if(!elem.parent().hasClass(id + '_container')){
-      elem.wrap('<div class="' + id + '_container htmlarea_container" style="width:' + orig_width + 'px;"></div>');
+    var orig_width = elem.calc.widthToBorder();
+    var orig_height = elem.calc.heightToBorder();
+    var xdParent = elem.parent();
+    if(!xdParent.class.contains(id + '_container')){
+      var wrapper = XDom.render('<div class="' + id + '_container htmlarea_container" style="width:' + orig_width + 'px;"></div>');
+      xdParent.element.append(wrapper);
+      wrapper.appendChild(elem.element);
     }
     window.CKEDITOR.replace(id, _.extend({ height: orig_height },config));
     if(cb) cb();
@@ -819,13 +992,16 @@ exports = module.exports = function(jsh){
     if(!config){ if(cb) cb(); return; }
     if (window.tinymce.get(id)){ if(cb) cb(); return; }
     
-    var elem = jsh.$root('#'+id);
-    if(!elem.length) elem = jsh.$root('.'+id);
+    var elem = jsh.xd('#'+id);
+    if(!elem.length) elem = jsh.xd('.'+id);
     if(!elem.length){ return XExt.Alert('Cound not initialize editor on '+id+': form control with that id not found'); }
-    var orig_width = elem.outerWidth();
-    var orig_height = elem.outerHeight();
-    if(!elem.parent().hasClass(id + '_container')){
-      elem.wrap('<div class="' + id + '_container htmlarea_container" style="width:' + orig_width + 'px;"></div>');
+    var orig_width = elem.calc.widthToBorder();
+    var orig_height = elem.calc.heightToBorder();
+    var xdParent = elem.parent();
+    if(!xdParent.class.contains(id + '_container')){
+      var wrapper = XDom.render('<div class="' + id + '_container htmlarea_container" style="width:' + orig_width + 'px;"></div>');
+      xdParent.element.append(wrapper);
+      wrapper.appendChild(elem.element);
     }
     config = config || {};
     config.selector = '#' + id;
@@ -917,21 +1093,20 @@ exports = module.exports = function(jsh){
   XExt.jumpAnchor = function (name) {
     if (!name) return;
     if (name[0] == '#') name = name.substring(1);
-    var jobj = jsh.$root('a[name=' + name + ']');
-    if (jobj.size() == 0) return;
-    var elem = jobj.get(0);
-    var elemoff = $(elem).offset();
-    window.scrollTo(0, elemoff.top);
+    var xdobj = jsh.xd('a[name="' + name + '"]');
+    if (xdobj.length == 0) return;
+    window.scrollTo(0, xdobj.calc.top());
   };
   XExt.getURLObj = function (url) {
     var a = document.createElement('a');
     a.href = url;
     return a;
   };
-  XExt.aPhoneCheck = function (jobj, caption) {
-    var val = jobj.val();
+  XExt.aPhoneCheck = function (obj, caption) {
+    var xdobj = XDom(obj);
+    var val = xdobj.value;
     if (val && (val == '1' || !val.match(/[0123456789]/))) {
-      jobj.addClass('xinputerror');
+      xdobj.class.add('xinputerror');
       XExt.Alert('Invalid ' + caption);
       return false;
     }
@@ -1134,17 +1309,18 @@ exports = module.exports = function(jsh){
     this.LazyRender = false;
   }
 
-  XExt.TreeRender = function (jctrl, LOV, field) {
+  XExt.TreeRender = function (ctrl, LOV, field) {
+    var xdctrl = XDom(ctrl);
     //Create Cache of Opened Nodes
-    var firstRender = !jctrl.children().length;
-    var expanded_nodes = XExt.TreeGetExpandedNodes(jctrl);
-    var selected_nodes = XExt.TreeGetSelectedNodes(jctrl);
+    var firstRender = !xdctrl.children.length;
+    var expanded_nodes = XExt.TreeGetExpandedNodes(ctrl);
+    var selected_nodes = XExt.TreeGetSelectedNodes(ctrl);
 
     var tree = [];
     var nodes = {};
     var sortednodes = [];
     
-    jctrl.empty();
+    xdctrl.clear();
     if (LOV.length == 0) return;
     
     //Create Tree
@@ -1157,8 +1333,8 @@ exports = module.exports = function(jsh){
     //Disable item_dropdown if context menu is empty
     if(controlparams.item_dropdown){
       if(field && field.name){
-        var jcontextmenu = jsh.$root('._item_context_menu_' + field.name);
-        if(!jcontextmenu.length || !jcontextmenu.children().length) controlparams.item_dropdown = false;
+        var xdContextmenu = jsh.xd('._item_context_menu_' + field.name);
+        if(!xdContextmenu.length || !xdContextmenu.children.length) controlparams.item_dropdown = false;
       }
     }
 
@@ -1188,32 +1364,35 @@ exports = module.exports = function(jsh){
     
     var body = '';
     for (var k = 0; k < tree.length; k++) {
-      body += XExt.TreeRenderNode(jctrl, tree[k], controlparams);
+      body += XExt.TreeRenderNode(ctrl, tree[k], controlparams);
     }
-    var treeid = jctrl.data('treeid');
+    var treeid = xdctrl.data.treeid;
     if(!treeid){
       treeid = 1;
-      while(jsh.$root('[data-treeid='+treeid+']').length) treeid++;
-      jctrl.data('treeid', treeid);
+      while(jsh.xd('[data-treeid="'+treeid+'"]').length) treeid++;
+      xdctrl.data.treeid = treeid;
     }
-    jctrl.html(body);
+    xdctrl.html = body;
 
     function renderLazy(){
-      var jthis = $(this);
+      var xdthis = XDom(this);
       //Get node id
-      var nodeid = jthis.data('id');
+      var nodeid = xdthis.data.id;
       //Find node by node id
       var node = nodes[nodeid];
       if(!node) return;
       //Render that node
       var childrenHtml = '';
-      _.each(node.Children, function(child){ childrenHtml += XExt.TreeRenderNode(jctrl, child, controlparams); });
-      jthis.removeClass('tree_render_lazy').off('tree_render_lazy');
-      jthis.next('.children').append(childrenHtml);
-      jthis.next('.children').$find('.tree_render_lazy').on('tree_render_lazy', renderLazy);
+      _.each(node.Children, function(child){ childrenHtml += XExt.TreeRenderNode(ctrl, child, controlparams); });
+      xdthis.class.remove('tree_render_lazy');
+      xdthis.off('tree_render_lazy', renderLazy);
+      var xdSibChildren = xdthis.nextSibling('.children');
+      xdSibChildren.append(childrenHtml);
+      XDom(xdSibChildren, '.tree_render_lazy').on('tree_render_lazy', renderLazy);
     }
-    jctrl.$find('.tree_render_lazy').on('tree_render_lazy', renderLazy);
-    jctrl.off('tree_path').on('tree_path', function(e, treePathInfo){
+    XDom(xdctrl, '.tree_render_lazy').on('tree_render_lazy', renderLazy);
+    xdctrl.on('tree_path', function(e){
+      var treePathInfo = e.detail;
       if(treePathInfo){
         for(var nodeID in nodes){
           var node = nodes[nodeID];
@@ -1232,80 +1411,97 @@ exports = module.exports = function(jsh){
     });
 
     if(firstRender){
-      if (controlparams.expand_all) XExt.TreeExpandAll(jctrl);
-      else if (controlparams.expand_to_selected) XExt.TreeExpandToSelected(jctrl);
+      if (controlparams.expand_all) XExt.TreeExpandAll(ctrl);
+      else if (controlparams.expand_to_selected) XExt.TreeExpandToSelected(ctrl);
     }
-    if(controlparams.ondrop) XExt.TreeEnableDrop(jctrl, controlparams.ondrop, controlparams.drag_anchor_settings);
-    if(controlparams.onmove) XExt.TreeEnableDrag(jctrl, controlparams.onmove, controlparams.drag_anchor_settings);
+    if(controlparams.ondrop) XExt.TreeEnableDrop(ctrl, controlparams.ondrop, controlparams.drag_anchor_settings);
+    if(controlparams.onmove) XExt.TreeEnableDrag(ctrl, controlparams.onmove, controlparams.drag_anchor_settings);
   };
 
   //ondrop(dropval, anchor, e)
-  XExt.TreeEnableDrop = function (jctrl, ondrop, drag_anchor_settings) {
-    var jtreeitems = jctrl.$find('a.tree_item');
-    _.each(jtreeitems, function(obj){
-      var jobj = $(obj);
+  XExt.TreeEnableDrop = function (ctrl, ondrop, drag_anchor_settings) {
+    var xdctrl = XDom(ctrl);
+    var _treeitems = xdctrl.get('a.tree_item').elements;
+    _.each(_treeitems, function(obj){
+      var xdobj = XDom(obj);
       var dragCounter = 0;
-      jobj.on('dragenter', function(e){
+      xdobj.on('dragenter', function(e){
         dragCounter++;
-        if(!jobj.hasClass('xdragtarget')) jobj.addClass('xdragtarget');
+        if(!xdobj.class.contains('xdragtarget')) xdobj.class.add('xdragtarget');
         e.preventDefault();
         e.stopPropagation();
       });
-      jobj.on('dragleave', function(e){
+      xdobj.on('dragleave', function(e){
         dragCounter--;
         if(dragCounter <= 0){
           dragCounter = 0;
-          jobj.removeClass('xdragtarget').removeClass('xdragtop').removeClass('xdragbottom').removeClass('xdragfull').removeClass('xdragleft').removeClass('xdragright');
+          xdobj.class.remove('xdragtarget');
+          xdobj.class.remove('xdragtop');
+          xdobj.class.remove('xdragbottom');
+          xdobj.class.remove('xdragfull');
+          xdobj.class.remove('xdragleft');
+          xdobj.class.remove('xdragright');
         }
         e.preventDefault();
         e.stopPropagation();
       });
-      jobj.on('dragover', function(e){
+      xdobj.on('dragover', function(e){
         var targetAnchor = XExt.getObjectAnchors(this, jsh.mouseX, jsh.mouseY, drag_anchor_settings);
-  
-        jobj.removeClass('xdragtop').removeClass('xdragbottom').removeClass('xdragfull').removeClass('xdragleft').removeClass('xdragright');
-        if(targetAnchor[0]=='left') jobj.addClass('xdragleft');
-        else if(targetAnchor[0]=='right') jobj.addClass('xdragright');
-  
-        if(targetAnchor[1]=='top') jobj.addClass('xdragtop');
-        else if(targetAnchor[1]=='bottom') jobj.addClass('xdragbottom');
-        else if(targetAnchor[1]=='full') jobj.addClass('xdragfull');
-  
+
+        xdobj.class.remove('xdragtop');
+        xdobj.class.remove('xdragbottom');
+        xdobj.class.remove('xdragfull');
+        xdobj.class.remove('xdragleft');
+        xdobj.class.remove('xdragright');
+        if(targetAnchor[0]=='left') xdobj.class.add('xdragleft');
+        else if(targetAnchor[0]=='right') xdobj.class.add('xdragright');
+
+        if(targetAnchor[1]=='top') xdobj.class.add('xdragtop');
+        else if(targetAnchor[1]=='bottom') xdobj.class.add('xdragbottom');
+        else if(targetAnchor[1]=='full') xdobj.class.add('xdragfull');
+
         e.preventDefault();
         e.stopPropagation();
       });
-      jobj.on('drop', function(e){
+      xdobj.on('drop', function(e){
         dragCounter = 0;
-        jobj.removeClass('xdragtarget').removeClass('xdragtop').removeClass('xdragbottom').removeClass('xdragfull').removeClass('xdragleft').removeClass('xdragright');
+        xdobj.class.remove('xdragtarget');
+        xdobj.class.remove('xdragtop');
+        xdobj.class.remove('xdragbottom');
+        xdobj.class.remove('xdragfull');
+        xdobj.class.remove('xdragleft');
+        xdobj.class.remove('xdragright');
         e.preventDefault();
         e.stopPropagation();
-  
-        var targetObjVal = jobj.data('value');
+
+        var targetObjVal = xdobj.data.value;
         var targetAnchor = XExt.getObjectAnchors(this, jsh.mouseX, jsh.mouseY, drag_anchor_settings);
         if(ondrop) ondrop(targetObjVal, targetAnchor, e);
       });
     });
-    jctrl.on('drop dragenter dragleave dragover', function(e){
+    xdctrl.on('drop dragenter dragleave dragover', function(e){
       e.preventDefault();
       e.stopPropagation();
     });
   };
 
   //onmove(dragval, dropval, anchor, e)
-  XExt.TreeEnableDrag = function (jctrl, onmove, drag_anchor_settings) {
+  XExt.TreeEnableDrag = function (ctrl, onmove, drag_anchor_settings) {
+    var xdctrl = XDom(ctrl);
     var mouseDownTimer = null;
     var hoverBorderTimer = null;
+    var xdTreeItem = XDom(xdctrl, 'a.tree_item');
     //Set up drop points
-    jctrl.$find('a.tree_item').addClass('xdrop');
+    xdTreeItem.class.add('xdrop');
     //Check if the target can be used as a drop point
     function mouseCanDrop(target){
       return true;
     }
     //Start drag operation
-    jctrl.$find('a.tree_item').mousedown(function(e){
+    xdTreeItem.on('mousedown', function(e){
       if (e.which == 1) {//left mouse button
         var obj = this;
-        if(XExt.isMouseWithin($(obj).parent().$find('.glyph')[0])) return;
+        if(XExt.isMouseWithin(XDom(obj).parent().getElement('.glyph'))) return;
         if(jsh.xContextMenuVisible) return;
         XExt.CancelBubble(e);
         if(mouseDownTimer) window.clearTimeout(mouseDownTimer);
@@ -1314,24 +1510,31 @@ exports = module.exports = function(jsh){
         }, 250);
       }
     });
-    jctrl.$find('a.tree_item').mouseup(function(e){
+    xdTreeItem.on('mouseup', function(e){
       if(mouseDownTimer) window.clearTimeout(mouseDownTimer);
       if(hoverBorderTimer) window.clearTimeout(hoverBorderTimer);
       mouseDownTimer = null;
       hoverBorderTimer = null;
     });
     //While dragging, update styles on drop points
-    var treeid = jctrl.data('treeid');
+    var treeid = xdctrl.data.treeid;
     jsh.off('.jsh_tree_'+treeid);
     var hoverBorderStart = 0;
-    jsh.on('jsh_mouseDrag.jsh_tree_'+treeid,function(event, mouseDragObj, targetObj, origEvent){
-      jctrl.$find('.xdragtarget').removeClass('xdragtarget').removeClass('xdragtop').removeClass('xdragbottom').removeClass('xdragfull').removeClass('xdragleft').removeClass('xdragright');
+    jsh.on('jsh_mouseDrag.jsh_tree_'+treeid, function(event, mouseDragObj, targetObj, origEvent){
+      var xdDragTarget = XDom(xdctrl, '.xdragtarget');
+      xdDragTarget.class.remove('xdragtarget');
+      xdDragTarget.class.remove('xdragtop');
+      xdDragTarget.class.remove('xdragbottom');
+      xdDragTarget.class.remove('xdragfull');
+      xdDragTarget.class.remove('xdragleft');
+      xdDragTarget.class.remove('xdragright');
       //Check if mouse is hovering over tree border
-      var joff = jctrl.offset();
-      var w = jctrl.outerWidth();
-      var h = jctrl.outerHeight();
-      if ((jsh.mouseX >= joff.left) && (jsh.mouseX <= (joff.left + w))) {
-        if ((jsh.mouseY >= joff.top) && (jsh.mouseY <= (joff.top + 15))){
+      var offsetTop = xdctrl.calc.top();
+      var offsetLeft = xdctrl.calc.left();
+      var w = xdctrl.calc.widthToBorder();
+      var h = xdctrl.calc.heightToBorder();
+      if ((jsh.mouseX >= offsetLeft) && (jsh.mouseX <= (offsetLeft + w))) {
+        if ((jsh.mouseY >= offsetTop) && (jsh.mouseY <= (offsetTop + 15))){
           //Hovering over top
           if(!hoverBorderTimer){
             hoverBorderStart = 0;
@@ -1339,12 +1542,12 @@ exports = module.exports = function(jsh){
               var nowTime = new Date().getTime();
               if(!hoverBorderStart) hoverBorderStart = nowTime;
               if((nowTime-hoverBorderStart)>300){
-                jctrl.scrollTop(Math.max(jctrl.scrollTop() - 15, 0));
+                xdctrl.element.scrollTop = (Math.max(xdctrl.element.scrollTop - 15, 0));
               }
             }, 100);
           }
         }
-        else if((jsh.mouseY <= (joff.top + h)) && (jsh.mouseY >= (joff.top + h - 15))){
+        else if((jsh.mouseY <= (offsetTop + h)) && (jsh.mouseY >= (offsetTop + h - 15))){
           //Hovering over bottom
           if(!hoverBorderTimer){
             hoverBorderStart = 0;
@@ -1352,7 +1555,7 @@ exports = module.exports = function(jsh){
               var nowTime = new Date().getTime();
               if(!hoverBorderStart) hoverBorderStart = nowTime;
               if((nowTime-hoverBorderStart)>300){
-                jctrl.scrollTop(jctrl.scrollTop() + 15);
+                xdctrl.element.scrollTop += 15;
               }
             }, 100);
           }
@@ -1369,29 +1572,30 @@ exports = module.exports = function(jsh){
 
 
       if(!targetObj) return;
-      if($(targetObj).data('id')==$(mouseDragObj).data('id')) return;
-      jsh.$root('.xdrag').css('visibility','visible');
+      var xdTargetObj = XDom(targetObj);
+      if(xdTargetObj.data.id==XDom.getData(mouseDragObj, 'id')) return;
+      XDom.setStyle(jsh.xdroot.getElements('.xdrag'), 'visibility','visible');
 
       var targetAnchor = XExt.getObjectAnchors(targetObj, jsh.mouseX, jsh.mouseY, drag_anchor_settings);
-      $(targetObj).addClass('xdragtarget');
+      xdTargetObj.class.add('xdragtarget');
 
-      if(targetAnchor[0]=='left') $(targetObj).addClass('xdragleft');
-      else if(targetAnchor[0]=='right') $(targetObj).addClass('xdragright');
+      if(targetAnchor[0]=='left') xdTargetObj.class.add('xdragleft');
+      else if(targetAnchor[0]=='right') xdTargetObj.class.add('xdragright');
 
-      if(targetAnchor[1]=='top') $(targetObj).addClass('xdragtop');
-      else if(targetAnchor[1]=='bottom') $(targetObj).addClass('xdragbottom');
-      else if(targetAnchor[1]=='full') $(targetObj).addClass('xdragfull');
+      if(targetAnchor[1]=='top') xdTargetObj.class.add('xdragtop');
+      else if(targetAnchor[1]=='bottom') xdTargetObj.class.add('xdragbottom');
+      else if(targetAnchor[1]=='full') xdTargetObj.class.add('xdragfull');
     });
     //On Drop
     jsh.on('jsh_mouseDragEnd.jsh_tree_'+treeid,function(event, mouseDragObj, targetObj, origEvent){
-      jctrl.$find('.xdragtarget').removeClass('xdragtarget');
+      XDom(xdctrl, '.xdragtarget').class.remove('xdragtarget');
       if(!targetObj) return;
-      if($(targetObj).data('id')==$(mouseDragObj).data('id')) return;
-      var targetObjId = $(targetObj).data('id');
+      if(XDom.getData(targetObj, 'id')==XDom.getData(mouseDragObj, 'id')) return;
+      var targetObjId = XDom.getData(targetObj, 'id');
       if(targetObjId==mouseDragObj) return;
 
-      var mouseDragObjVal = $(mouseDragObj).data('value');
-      var targetObjVal = $(targetObj).data('value');
+      var mouseDragObjVal = XDom.getData(mouseDragObj, 'value');
+      var targetObjVal = XDom.getData(targetObj, 'value');
       
       var targetAnchor = XExt.getObjectAnchors(targetObj, jsh.mouseX, jsh.mouseY, drag_anchor_settings);
 
@@ -1408,7 +1612,7 @@ exports = module.exports = function(jsh){
     }
     var item_dropdown_html = '';
     if(controlparams && controlparams.item_dropdown){
-      item_dropdown_html = '<div class="tree_item_dropdown_container"><div class="tree_item_dropdown"  data-value="<%=n.Value%>" onclick=\'<%-instance%>.XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>,{ top: <%-instance%>.$(this).offset().top+<%-instance%>.$(this).outerHeight()-1, left: <%-instance%>.$(this).offset().left, hideIfOpen: true });event.preventDefault();event.stopPropagation();event.stopImmediatePropagation(); return false;\'>'+XExt.escapeHTML(controlparams.item_dropdown.caption || 'Actions')+'</div></div>';
+      item_dropdown_html = '<div class="tree_item_dropdown_container"><div class="tree_item_dropdown"  data-value="<%=n.Value%>" onclick=\'<%-instance%>.XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>,{ top: <%-instance%>.XDom.calc.top(this)+<%-instance%>.XDom.calc.heightToBorder(this)-1, left: <%-instance%>.XDom.calc.left(this), hideIfOpen: true });event.preventDefault();event.stopPropagation();event.stopImmediatePropagation(); return false;\'>'+XExt.escapeHTML(controlparams.item_dropdown.caption || 'Actions')+'</div></div>';
     }
     var getNodeContent = function(){
       var rslt = XExt.escapeHTML(n.Text);
@@ -1417,7 +1621,7 @@ exports = module.exports = function(jsh){
       return rslt;
     };
     var rslt = jsh.ejs.render('\
-      <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length && (n.LazyRender&&!n.Expanded)?"tree_render_lazy":"")%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>" onclick=\'<%-instance%>.XExt.TreeSelectNode(this,<%-JSON.stringify(n.Value)%>,{ source: "click" }); return false;\' oncontextmenu=\'return <%-instance%>.XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'<%-instance%>.XExt.CancelBubble(arguments[0]); <%-instance%>.XExt.TreeToggleNode(<%-instance%>.$(this).closest(".xform_ctrl.tree"),<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><% if(n.Icon){ %><img class="icon" src="<%-jsh._PUBLICURL%>images/icon_<%=n.Icon%>.png" /><% } %><span>'+item_dropdown_html+'<%-getNodeContent()%></span></a>\
+      <a href="#" class="tree_item tree_item_<%=n.ID%> <%=(n.Children.length && (n.LazyRender&&!n.Expanded)?"tree_render_lazy":"")%> <%=(n.Children.length==0?"nochildren":"")%> <%=(n.Expanded?"expanded":"")%> <%=(n.Selected?"selected":"")%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>" onclick=\'<%-instance%>.XExt.TreeSelectNode(this,<%-JSON.stringify(n.Value)%>,{ source: "click" }); return false;\' oncontextmenu=\'return <%-instance%>.XExt.TreeItemContextMenu(this,<%-JSON.stringify(n.ID)%>);\'><div class="glyph" href="#" onclick=\'<%-instance%>.XExt.CancelBubble(arguments[0]); <%-instance%>.XExt.TreeToggleNode(<%-instance%>.XDom(this).parent(".xform_ctrl.tree").element,<%-JSON.stringify(n.ID)%>); return false;\'><%-(n.Expanded?"&#x25e2;":"&#x25b7;")%></div><% if(n.Icon){ %><img class="icon" src="<%-jsh._PUBLICURL%>images/icon_<%=n.Icon%>.png" /><% } %><span>'+item_dropdown_html+'<%-getNodeContent()%></span></a>\
       <div class="children <%=(n.Expanded?"expanded":"")%> tree_item_<%=n.ID%>" data-id="<%=n.ID%>" data-value="<%=n.Value%>"><%-children%></div>',
     { n: n, children: children, jsh: jsh, instance: jsh.getInstance(), getNodeContent: getNodeContent }
     );
@@ -1464,38 +1668,38 @@ exports = module.exports = function(jsh){
   };
 
   XExt.TreeItemContextMenu = function (ctrl, n, contextMenuOptions) {
-    var jctrl = $(ctrl);
-    var jtree = jctrl.closest('.xform_ctrl.tree');
+    var xdctrl = XDom(ctrl);
+    var xdtree = xdctrl.parent('.xform_ctrl.tree');
     var fieldname = XExt.getFieldNameFromObject(ctrl);
     var menuid = '._item_context_menu_' + fieldname;
-    if(jtree.data('oncontextmenu')) {
-      var f = (new Function('n', jtree.data('oncontextmenu')));
+    if(xdtree.data.oncontextmenu) {
+      var f = (new Function('n', xdtree.data.oncontextmenu));
       var frslt = f.call(ctrl, n);
       if((frslt === false) || (frslt===true)) return frslt;
     }
-    if (jsh.$root(menuid).length) {
+    if (jsh.xd(menuid).length) {
       if(contextMenuOptions && contextMenuOptions.hideIfOpen){
-        if(jsh.$root(menuid).is(':visible')){
+        if(jsh.xd(menuid).isVisible()){
           XExt.HideContextMenu();
           return false;
         }
       }
-      XExt.ShowContextMenu(menuid, $(ctrl).data('value'), { id:n }, contextMenuOptions);
+      XExt.ShowContextMenu(menuid, xdctrl.data.value, { id:n }, contextMenuOptions);
       return false;
     }
     return true;
   };
 
   XExt.TreeDoubleClickNode = function (ctrl, n) {
-    var jctrl = $(ctrl);
-    var jtree = jctrl.closest('.xform_ctrl.tree');
-    if(jtree.data('ondoubleclick')) { var rslt = (new Function('n', jtree.data('ondoubleclick'))); rslt.call(ctrl, n); }
+    var xdctrl = XDom(ctrl);
+    var xdtree = xdctrl.parent('.xform_ctrl.tree');
+    if(xdtree.data.ondoubleclick) { var rslt = (new Function('n', xdtree.data.ondoubleclick)); rslt.call(ctrl, n); }
   };
 
   XExt.TreeGetSelectedNodes = function (ctrl) {
     var rslt = [];
-    $(ctrl).$find('.tree_item.selected').each(function () {
-      var val = $(this).data('value');
+    XDom(ctrl, '.tree_item.selected').elements.forEach(function(el) {
+      var val = XDom.getData(el, 'value');
       if (val) rslt.push(val.toString());
     });
     return rslt;
@@ -1503,8 +1707,8 @@ exports = module.exports = function(jsh){
 
   XExt.TreeGetExpandedNodes = function (ctrl) {
     var rslt = [];
-    $(ctrl).$find('.tree_item.expanded').each(function () {
-      var val = $(this).data('value');
+    XDom(ctrl, '.tree_item.expanded').elements.forEach(function(el) {
+      var val = XDom.getData(el, 'value');
       if (val) rslt.push(val.toString());
     });
     return rslt;
@@ -1514,28 +1718,28 @@ exports = module.exports = function(jsh){
     if(!options) options = { triggerChange: true, source: '' };
     if(!('triggerChange' in options)) options.triggerChange = true;
 
-    var jctrl = $(ctrl);
+    var xdctrl = XDom(ctrl);
 
     if(options.source=='click'){
       var curClick = (new Date()).getTime();
       var startX = jsh.mouseX;
       var startY = jsh.mouseY;
-      var lastClick = parseInt(jctrl.data('lastclick')||0);
-      jctrl.data('lastclick', curClick.toString());
+      var lastClick = parseInt(xdctrl.data.lastclick||0);
+      xdctrl.data.lastclick = curClick.toString();
 
       if((curClick-lastClick)<=XExt.DOUBLECLICK_TIMEOUT){
-        XExt.TreeDoubleClickNode(ctrl, jctrl.data('id'));
-        jctrl.data('lastclick', '');
+        XExt.TreeDoubleClickNode(ctrl, xdctrl.data.id);
+        xdctrl.data.lastclick = '';
       }
       else {
         XExt.handleOnce(jsh.xLoader.onMouseDown, function(e){
           var loaderClick = (new Date()).getTime();
-          if(jctrl.data('lastclick') && ((loaderClick-curClick)<=XExt.DOUBLECLICK_TIMEOUT)){
+          if(xdctrl.data.lastclick && ((loaderClick-curClick)<=XExt.DOUBLECLICK_TIMEOUT)){
             var diffX = Math.abs(jsh.mouseX - startX);
             var diffY = Math.abs(jsh.mouseY - startY);
             if((diffX <= 8) && (diffY <= 8)){
-              XExt.TreeDoubleClickNode(ctrl, jctrl.data('id'));
-              jctrl.data('lastclick', '');
+              XExt.TreeDoubleClickNode(ctrl, xdctrl.data.id);
+              xdctrl.data.lastclick = '';
             }
           }
         });
@@ -1547,30 +1751,30 @@ exports = module.exports = function(jsh){
     var field = undefined;
     if (xform && fieldname) field = xform.Data.Fields[fieldname];
     
-    var jtree = jctrl.closest('.xform_ctrl.tree');
-    if (jtree.hasClass('uneditable')) return;
+    var xdtree = xdctrl.parent('.xform_ctrl.tree');
+    if (xdtree.class.contains('uneditable')) return;
 
     //Deselect previously selected value
-    jtree.$find('.selected').removeClass('selected');
+    XDom(xdtree, '.selected').class.remove('selected');
 
     var nodeid = undefined;
     if(nodevalue){
       //Get nodeid from nodevalue
-      var findNode = function(){ jtree.$find('.tree_item').each(function(){ if($(this).data('value')==nodevalue) nodeid = $(this).data('id'); }); };
+      var findNode = function(){ xdtree.get('.tree_item').elements.forEach(function(el){ if(XDom.getData(el, 'value')==nodevalue) nodeid = XDom.getData(el, 'id'); }); };
       findNode();
 
       if(typeof nodeid == 'undefined'){
         //Lazy evaluation
         var treePathInfo = { value: nodevalue };
-        jtree.trigger('tree_path', [ treePathInfo ]);
+        xdtree.emit('tree_path', treePathInfo);
         _.each(treePathInfo.path, function(node){
-          var jtreenode = jtree.$find('.tree_item_'+node.ID);
-          if(jtreenode.hasClass('tree_render_lazy')) jtreenode.trigger('tree_render_lazy');
+          var xdtreenode = XDom(xdtree, '.tree_item_'+node.ID);
+          if(xdtreenode.class.contains('tree_render_lazy')) xdtreenode.emit('tree_render_lazy');
         });
         findNode();
         if(typeof nodeid == 'undefined') return;
       }
-      jtree.$find('.tree_item.tree_item_' + nodeid).addClass('selected');
+      XDom(xdtree, '.tree_item.tree_item_' + nodeid).class.add('selected');
       if (field && field.controlparams) {
         if (field.controlparams.expand_to_selected) XExt.TreeExpandToSelected(ctrl);
       }
@@ -1580,59 +1784,59 @@ exports = module.exports = function(jsh){
     if (field && jsh.init_complete) {
       if(xform && xform.Data && options.triggerChange) xform.Data.OnControlUpdate(ctrl);
     }
-    if((typeof nodeid !== 'undefined') && jtree.data('onselected')) { var rslt = (new Function('nodeid', jtree.data('onselected'))); rslt.call(ctrl, nodeid); }
+    if((typeof nodeid !== 'undefined') && xdtree.data.onselected) { var rslt = (new Function('nodeid', xdtree.data.onselected)); rslt.call(ctrl, nodeid); }
   };
 
-  XExt.TreeToggleNode = function (jctrl, nodeid) {
-    jctrl = jctrl.closest('.xform_ctrl.tree');
-    if (jctrl.$find('.children.tree_item_' + nodeid).hasClass('expanded'))
-      XExt.TreeCollapseNode(jctrl, nodeid);
+  XExt.TreeToggleNode = function (ctrl, nodeid) {
+    var xdctrl = XDom(ctrl).parent('.xform_ctrl.tree');
+    if (XDom(xdctrl, '.children.tree_item_' + nodeid).class.contains('expanded'))
+      XExt.TreeCollapseNode(xdctrl.element, nodeid);
     else
-      XExt.TreeExpandNode(jctrl, nodeid);
+      XExt.TreeExpandNode(xdctrl.element, nodeid);
   };
 
-  XExt.TreeCollapseNode = function (jctrl, nodeid) {
-    jctrl = jctrl.closest('.xform_ctrl.tree');
-    jctrl.$find('.tree_item_' + nodeid).removeClass('expanded');
-    jctrl.$find('.tree_item.tree_item_' + nodeid + ' > .glyph').html('&#x25b7;');
+  XExt.TreeCollapseNode = function (ctrl, nodeid) {
+    var xdctrl = XDom(ctrl).parent('.xform_ctrl.tree');
+    XDom(xdctrl, '.tree_item_' + nodeid).class.remove('expanded');
+    XDom(xdctrl, '.tree_item.tree_item_' + nodeid + ' > .glyph').html = '&#x25b7;';
   };
 
-  XExt.TreeExpandNode = function (jctrl, nodeid) {
-    jctrl = jctrl.closest('.xform_ctrl.tree');
-    var jtreenode = jctrl.$find('.tree_item_' + nodeid);
-    if(jtreenode.hasClass('tree_render_lazy')) jtreenode.trigger('tree_render_lazy');
-    jtreenode.addClass('expanded');
-    jctrl.$find('.tree_item.tree_item_' + nodeid + ' > .glyph').html('&#x25e2;');
+  XExt.TreeExpandNode = function (ctrl, nodeid) {
+    var xdctrl = XDom(ctrl).parent('.xform_ctrl.tree');
+    var xdTreenode = XDom(xdctrl, '.tree_item_' + nodeid);
+    if(xdTreenode.class.contains('tree_render_lazy')) xdTreenode.emit('tree_render_lazy');
+    xdTreenode.class.add('expanded');
+    XDom(xdctrl, '.tree_item.tree_item_' + nodeid + ' > .glyph').html = '&#x25e2;';
   };
 
   XExt.TreeExpandToSelected = function (ctrl) {
-    var toptree = $(ctrl).closest('.xform_ctrl.tree');
+    var toptree = XDom(ctrl).parent('.xform_ctrl.tree');
     var rslt = [];
-    toptree.$find('.tree_item.selected').each(function () {
-      var jctrl = $(this);
-      var jparent = jctrl.parent();
-      while (jparent.length && !jparent.is(toptree)) {
-        XExt.TreeExpandNode(toptree, jparent.data('id'));
-        jparent = jparent.parent();
+    toptree.get('.tree_item.selected').elements.forEach(function(el){
+      var xdParent = XDom(el).parent();
+      while (xdParent.length && (xdParent.element != toptree.element)) {
+        XExt.TreeExpandNode(toptree.element, xdParent.data.id);
+        xdParent = xdParent.parent();
       }
     });
     return rslt;
   };
   XExt.TreeExpandAll = function (ctrl) {
-    var jctrl = $(ctrl).closest('.xform_ctrl.tree');
-    if(!jctrl.$find('.tree_render_lazy').length){
-      jctrl.$find('.tree_item').addClass('expanded');
-      jctrl.$find('.children').addClass('expanded');
-      jctrl.$find('.glyph').html('&#x25e2;');
+    var xdctrl = XDom(ctrl).parent('.xform_ctrl.tree');
+    var xdTreeItem = XDom(xdctrl, '.tree_item');
+    if(!xdctrl.get('.tree_render_lazy').elements.length){
+      xdTreeItem.class.add('expanded');
+      XDom(xdctrl, '.children').class.add('expanded');
+      XDom(xdctrl, '.glyph').html = '&#x25e2;';
     }
     else{
-      var unexpanded = jctrl.$find('.tree_item').not('.expanded');
+      var unexpanded = xdTreeItem.omit('.expanded');
       var i = 0;
       while(unexpanded.length){
         i++;
         if(i>1000)break;
-        unexpanded.each(function(){ XExt.TreeExpandNode(jctrl, this.getAttribute('data-id')); });
-        unexpanded = jctrl.$find('.tree_item').not('.expanded');
+        unexpanded.elements.forEach(function(el){ XExt.TreeExpandNode(xdctrl.element, XDom.getAttribute(el, 'data-id')); });
+        unexpanded = xdTreeItem.omit('.expanded');
       }
     }
   };
@@ -1705,8 +1909,7 @@ exports = module.exports = function(jsh){
   };
 
   XExt.XInputAction = function (_obj, _overrideFunc) {
-    if (_obj && (_obj instanceof $) && (_obj.length)) this.obj = _obj[0];
-    else this.obj = _obj;
+    this.obj = _obj;
     this.tstamp = Date.now();
     this.mouseX = jsh.mouseX;
     this.mouseY = jsh.mouseY;
@@ -1716,7 +1919,7 @@ exports = module.exports = function(jsh){
 
   XExt.XInputAction.prototype.Exec = function () {
     var _this = this;
-    if (_this.obj) $(_this.obj).focus();
+    if (_this.obj) _this.obj.focus();
     if (this.overrideFunc) this.overrideFunc();
     else if (_this.obj && _this.mouseDown) {
       XExt.Click(_this.obj, _this.mouseX, _this.mouseY);
@@ -1762,20 +1965,21 @@ exports = module.exports = function(jsh){
   };
 
   XExt.clearDialogs = function(){
+    _.each(jsh.xDialog, function(xdialog){
+      if(xdialog.onDestroy) xdialog.onDestroy();
+    });
     jsh.xDialog = [];
-    jsh.dialogBlock.children().hide();
-    jsh.dialogBlock.hide();
-    jsh.dialogBlock.off('mousedown.close');
-    jsh.dialogBlock.off('mouseup.close');
+    XDom(jsh.xdDialogBlock, '.xdialogbox').remove();
+    jsh.xdDialogBlock.style.display = false;
   };
 
-  XExt.dialogButtonFunc = function (dialogClass, oldactive, onComplete, params) {
+  XExt.dialogButtonFunc = function (obj, oldactive, onComplete, params) {
     if (!params) params = {};
     var rslt = function () {
       //Delete duplicates from stack
       for (var i = 0; i < jsh.xDialog.length; i++) {
         for (var j = 0; j < i; j++) {
-          if (jsh.xDialog[j] == jsh.xDialog[i]) {
+          if (jsh.xDialog[j].obj == jsh.xDialog[i].obj) {
             jsh.xDialog.splice(i, 1);
             i--;
             break;
@@ -1783,16 +1987,16 @@ exports = module.exports = function(jsh){
         }
       }
       //Verify this is the topmost dialog
-      if ((jsh.xDialog.length > 0) && (jsh.xDialog[0] != dialogClass)) return;
-      jsh.$dialogBlock(dialogClass).hide();
-      jsh.dialogBlock.off('click' + dialogClass);
-      if (jsh.xDialog.length == 1) { jsh.dialogBlock.hide(); }
-      if (jsh.xDialog[0] != dialogClass) {
+      if ((jsh.xDialog.length > 0) && (jsh.xDialog[0].obj != obj)) return;
+      if(jsh.xDialog[0].onDestroy) jsh.xDialog[0].onDestroy();
+
+      if (jsh.xDialog.length == 1) { jsh.xdDialogBlock.style.display = false; }
+      if (jsh.xDialog[0].obj != obj) {
         alert('ERROR - Invalid Dialog Stack');
-        console.log(dialogClass); // eslint-disable-line no-console
+        console.log(obj); // eslint-disable-line no-console
         console.log(jsh.xDialog); // eslint-disable-line no-console
       }
-      if (oldactive) oldactive.focus();
+      if(oldactive) XDom.focus(oldactive);
       window.setTimeout(function () { jsh.xDialog.shift(); if (onComplete) onComplete(); }, 1);
       if (params.onCompleteImmediate) params.onCompleteImmediate();
     };
@@ -1803,11 +2007,25 @@ exports = module.exports = function(jsh){
   };
 
   XExt.getDialogContainer = function (sel) {
-    var jsel = $(sel);
-    if(!jsel.length) return window;
-    var jdialog = jsel.closest('.xdialogbox');
-    if(!jdialog.length) return window;
-    return jdialog[0];
+    var xdobj = XDom(sel);
+    if(!xdobj.length) return window;
+    var xdDialog = xdobj.parent('.xdialogbox');
+    if(!xdDialog.length) return window;
+    return xdDialog.element;
+  };
+
+  /**
+   * Retrieves and wraps a template element
+   *
+   * @param {String} sel - The CSS selector used to find the template
+   * @returns {XDom} An XDom wrapped template
+   */
+  XExt.renderTemplate = function (sel) {
+    var tmpl = XDom(jsh.xdDialogBlock, sel).innerHTML;
+    var container = document.createElement('div');
+    container.innerHTML = tmpl||'';
+    if(container.children.length != 1) return XDom(container);
+    return XDom(container.children[0]);
   };
 
   XExt.Alert = function (obj, onAccept, options) {
@@ -1825,32 +2043,43 @@ exports = module.exports = function(jsh){
       msg = XExt.ReplaceAll(XExt.ReplaceAll(msg, '\n', '<br/>'), '\r', '');
     }
     //alert(msg);
-    jsh.xDialog.unshift('.xalertbox');
-    jsh.$dialogBlock('.xalertbox').prop('style', options.style);
-    jsh.$dialogBlock('.xalertbox.base').zIndex(jsh.xDialog.length);
-    
+    var xdobj = XExt.renderTemplate('script.template_xalertbox');
+    var alertBox = xdobj.element;
+    var xDialogObj = {
+      obj: alertBox,
+      onDestroy: function(){ xdobj.remove(); },
+    };
+    jsh.xDialog.unshift(xDialogObj);
+    xdobj.attr.style = options.style;
+    xdobj.style.zIndex = jsh.xDialog.length;
     var oldactive = document.activeElement;
-    if (oldactive) $(oldactive).blur();
-    jsh.$dialogBlock('.xalertmessage').html(msg);
-    jsh.$dialogBlock('.xalertbox input').off('click');
-    jsh.$dialogBlock('.xalertbox input').off('keydown');
+    XDom(oldactive).blur();
+    XDom(xdobj, '.xalertmessage').html = msg;
     var isClosing = false;
     var acceptfunc = function(){
       isClosing = true;
-      XExt.dialogButtonFunc('.xalertbox', oldactive, onAccept, { onCompleteImmediate: options.onAcceptImmediate })();
+      XExt.dialogButtonFunc(alertBox, oldactive, onAccept, { onCompleteImmediate: options.onAcceptImmediate })();
     };
-    jsh.$dialogBlock('.xalertbox input').on('click', acceptfunc);
-    jsh.$dialogBlock('.xalertbox input').on('keydown', function (e) { if (e.keyCode == 27) { acceptfunc(); } });
+    var xdInput = XDom(xdobj, 'input');
+    xdInput.on('click', acceptfunc);
+    xdInput.on('keydown', function (e) { if (e.keyCode == 27) { acceptfunc(); } });
 
-    if (options.button_ok_caption) jsh.$dialogBlock('.xalertbox input.button_ok').show().val(options.button_ok_caption);
-    else jsh.$dialogBlock('.xalertbox input.button_ok').hide();
+    var xdBtnOK = XDom(xdobj, 'input.button_ok');
+    if (options.button_ok_caption){
+      xdBtnOK.style.display = true;
+      xdBtnOK.value = options.button_ok_caption;
+    }
+    else xdBtnOK.style.display = false;
 
-    jsh.$dialogBlock('.xalertbox').off('acceptDialog').on('acceptDialog', acceptfunc);
+    xdobj.on('acceptDialog', acceptfunc);
     
-    jsh.$dialogBlock('.xalertbox.base').show();
-    jsh.dialogBlock.show();
+    jsh.xdDialogBlock.element.appendChild(alertBox);
+    xdobj.style.display = true;
+    jsh.xdDialogBlock.style.display = true;
     jsh.XWindowResize();
-    if (!XExt.isIOS() && options.button_ok_caption) jsh.$dialogBlock('.xalertbox.base input').focus();
+    if (!XExt.isIOS()) {
+      xdInput.focus();
+    }
     if(options.autohide) setTimeout(function(){ if(!isClosing) acceptfunc(); }, options.autohide);
   };
 
@@ -1875,35 +2104,45 @@ exports = module.exports = function(jsh){
     }
     //if (window.confirm(msg)) { if (onYes) onYes(); }
     //if (onNo) onNo();
-    jsh.xDialog.unshift('.xconfirmbox');
-    jsh.$dialogBlock('.xconfirmbox.base').zIndex(jsh.xDialog.length);
-    
     var oldactive = document.activeElement;
-    if (oldactive) $(oldactive).blur();
-    jsh.$dialogBlock('.xconfirmmessage').html(msg);
-    jsh.$dialogBlock('.xconfirmbox input').off('click');
-    jsh.$dialogBlock('.xconfirmbox input').off('keydown');
-    var cancelfunc = XExt.dialogButtonFunc('.xconfirmbox', oldactive, (options.onCancel ? options.onCancel : onNo));
-    var acceptfunc = XExt.dialogButtonFunc('.xconfirmbox', oldactive, onYes);
+    XDom(oldactive).blur();
+
+    var xdobj = XExt.renderTemplate('script.template_xconfirmbox');
+    var confirmBox = xdobj.element;
+
+    var xDialogObj = {
+      obj: confirmBox,
+      onDestroy: function(){ xdobj.remove(); },
+    };
+    jsh.xDialog.unshift(xDialogObj);
+    xdobj.style.zIndex = jsh.xDialog.length;
+
+    // prep content, values, and handlers for confirm box
+    XDom(xdobj, '.xconfirmmessage').html = msg;
+    var cancelfunc = XExt.dialogButtonFunc(confirmBox, oldactive, (options.onCancel ? options.onCancel : onNo));
+    var acceptfunc = XExt.dialogButtonFunc(confirmBox, oldactive, onYes);
+    var xdBtnOK = XDom(xdobj, 'input.button_ok');
+    var xdBtnNo = XDom(xdobj, 'input.button_no');
+    var xdBtnCancel = XDom(xdobj, 'input.button_cancel');
     if(options.onCancel){
-      jsh.$dialogBlock('.xconfirmbox input.button_cancel').show();
-      jsh.$dialogBlock('.xconfirmbox input.button_cancel').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, options.onCancel));
+      xdBtnCancel.style.display = true;
+      xdBtnCancel.on('click', XExt.dialogButtonFunc(confirmBox, oldactive, options.onCancel));
     }
-    else jsh.$dialogBlock('.xconfirmbox input.button_cancel').hide();
-    if (options.button_ok_caption) jsh.$dialogBlock('.xconfirmbox input.button_ok').val(options.button_ok_caption);
-    if (options.button_no_caption) jsh.$dialogBlock('.xconfirmbox input.button_no').val(options.button_no_caption);
-    if (options.button_cancel_caption) jsh.$dialogBlock('.xconfirmbox input.button_cancel').val(options.button_cancel_caption);
-
-    jsh.$dialogBlock('.xconfirmbox').off('acceptDialog').on('acceptDialog', acceptfunc);
-    jsh.$dialogBlock('.xconfirmbox').off('cancelDialog').on('cancelDialog', cancelfunc);
-
-    jsh.$dialogBlock('.xconfirmbox input.button_ok').on('click', acceptfunc);
-    jsh.$dialogBlock('.xconfirmbox input.button_no').on('click', XExt.dialogButtonFunc('.xconfirmbox', oldactive, onNo));
-    jsh.$dialogBlock('.xconfirmbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    jsh.$dialogBlock('.xconfirmbox.base').show();
-    jsh.dialogBlock.show();
+    else xdBtnCancel.style.display = false;
+    if (options.button_ok_caption) xdBtnOK.value = options.button_ok_caption;
+    if (options.button_no_caption) xdBtnNo.value = options.button_no_caption;
+    if (options.button_cancel_caption) xdBtnCancel.value = options.button_cancel_caption;
+    xdobj.on('acceptDialog', acceptfunc);
+    xdobj.on('cancelDialog', cancelfunc);
+    xdBtnOK.on('click', acceptfunc);
+    xdBtnNo.on('click', XExt.dialogButtonFunc(confirmBox, oldactive, onNo));
+    XDom(xdobj, 'input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    
+    jsh.xdDialogBlock.element.appendChild(confirmBox);
+    xdobj.style.display = true;
+    jsh.xdDialogBlock.style.display = true;
     jsh.XWindowResize();
-    if (!XExt.isIOS()) jsh.$dialogBlock('.xconfirmbox.base input.button_ok').focus();
+    if (!XExt.isIOS()) xdBtnOK.focus();
   };
 
   XExt.stringify = function (origvalue, replacer, space) {
@@ -1942,62 +2181,98 @@ exports = module.exports = function(jsh){
     //var rslt = window.prompt(msg, dflt);
     //If cancel or close, rslt = null
     //if (onComplete) onComplete(rslt);
-    jsh.xDialog.unshift('.xpromptbox');
-    jsh.$dialogBlock('.xpromptbox.base').zIndex(jsh.xDialog.length);
+    var xdobj = XExt.renderTemplate('script.template_xpromptbox');
+    var promptBox = xdobj.element;
+
+    var xDialogObj = {
+      obj: promptBox,
+      onDestroy: function(){ xdobj.remove(); },
+    };
+    jsh.xDialog.unshift(xDialogObj);
+    xdobj.style.zIndex = jsh.xDialog.length;
     
     var oldactive = document.activeElement;
-    if (oldactive) $(oldactive).blur();
-    jsh.$dialogBlock('.xpromptmessage').html(msg);
-    jsh.$dialogBlock('.xpromptbox input').off('click');
-    jsh.$dialogBlock('.xpromptbox input').off('keydown');
-    jsh.$dialogBlock('.xpromptfield').val(dflt);
-    var cancelfunc = XExt.dialogButtonFunc('.xpromptbox', oldactive, function () { if (onComplete) onComplete(null); });
-    var acceptfunc = XExt.dialogButtonFunc('.xpromptbox', oldactive, function () { if (onComplete) onComplete(jsh.$dialogBlock('.xpromptfield').val()); });
-    jsh.$dialogBlock('.xpromptbox input.button_ok').on('click', acceptfunc);
-    jsh.$dialogBlock('.xpromptbox input.button_cancel').on('click', cancelfunc);
+    XDom(oldactive).blur();
+    XDom(xdobj, '.xpromptmessage').html = msg;
+    var xdPromptField = XDom(xdobj, '.xpromptfield');
+    xdPromptField.value = dflt;
+    var cancelfunc = XExt.dialogButtonFunc(promptBox, oldactive, function () { if (onComplete) onComplete(null); });
+    var acceptfunc = XExt.dialogButtonFunc(promptBox, oldactive, function () { if (onComplete) onComplete(xdPromptField.value); });
+    XDom(xdobj, 'input.button_ok').on('click', acceptfunc);
+    XDom(xdobj, 'input.button_cancel').on('click', cancelfunc);
 
-    jsh.$dialogBlock('.xpromptbox').off('acceptDialog').on('acceptDialog', acceptfunc);
-    jsh.$dialogBlock('.xpromptbox').off('cancelDialog').on('cancelDialog', cancelfunc);
+    xdobj.on('acceptDialog', acceptfunc);
+    xdobj.on('cancelDialog', cancelfunc);
 
-    jsh.$dialogBlock('.xpromptbox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    jsh.$dialogBlock('.xpromptfield').on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
-    jsh.$dialogBlock('.xpromptbox.base').show();
-    jsh.dialogBlock.show();
+    XDom(xdobj, 'input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    xdPromptField.on('keydown', function (e) { if (e.keyCode == 13) { acceptfunc(); } });
+    
+    jsh.xdDialogBlock.element.appendChild(promptBox);
+    xdobj.style.display = true;
+    jsh.xdDialogBlock.style.display = true;
     jsh.XWindowResize();
-    jsh.$dialogBlock('.xpromptfield').focus();
+    xdPromptField.focus();
   };
 
-  //html - HTML or jQuery object
+  //html - HTML or Element
   XExt.CustomPrompt = function (sel, html, onInit, onAccept, onCancel, onClosed, options) {
-    options = _.extend({ backgroundClose: false, reuse: false, restoreFocus: true, onClosing: null, asyncInit: false }, options);
+    options = _.extend({ backgroundClose: false, restoreFocus: true, onClosing: null, asyncInit: false }, options);
     if(options.specialKeys === false) options.specialKeys = { enter: false, escape: false };
     else options.specialKeys = _.extend({ enter: true, escape: true }, options.specialKeys);
 
+    var reuse = false;
+    var customPrompt = null;
     //Classes - default_focus, button_ok, button_cancel
-    var foundPrevDialog = jsh.$dialogBlock(sel).length;
-    if (foundPrevDialog && !options.reuse) jsh.$dialogBlock(sel).remove();
-    if (!foundPrevDialog || !options.reuse) jsh.dialogBlock.append(html);
-    
+    if(_.isString(html)){
+      customPrompt = XDom.render(html.trim());
+      if(!customPrompt) customPrompt = document.createElement('div');
+    }
+    else {
+      reuse = true;
+      customPrompt = html;
+      if(!customPrompt) customPrompt = document.createElement('div');
+      for(var j=0;j<jsh.xDialog.length;j++){
+        if(jsh.xDialog[j].obj == customPrompt){
+          if(jsh.xDialog[j].onDestroy) jsh.xDialog[j].onDestroy({ recycle: true });
+          jsh.xDialog.splice(j, 1);
+          j--;
+        }
+      }
+    }
+
+    var onDestroy = function(options /* { recycle: false }  */ ){
+      options = options || { recycle: false };
+      // We always remove handlers even if reuse is false. This is to remove handlers applied beyond the obj (xdialogblock)
+      xDialogObj.handlers.forEach(function(obj) {
+        XDom.off(obj.target, obj.eventName, obj.handler);
+      });
+      if(!options.recycle){
+        if(reuse) XDom.style.display(customPrompt, false);
+        else XDom.remove(customPrompt);
+      }
+    };
+
+    var xdobj = XDom(customPrompt);
+    var xDialogObj = {
+      obj: customPrompt,
+      handlers: [],
+      onDestroy: onDestroy,
+    };
     //ShowDialog
-    jsh.xDialog.unshift(sel);
-    jsh.$dialogBlock(sel).zIndex(jsh.xDialog.length);
-    
+    jsh.xDialog.unshift(xDialogObj);
+    xdobj.style.zIndex = jsh.xDialog.length;
+
     var oldactive = document.activeElement;
-    if (oldactive) $(oldactive).blur();
+    XDom(oldactive).blur();
     oldactive = options.restoreFocus ? oldactive : undefined;
-    
-    jsh.$dialogBlock(sel + ' input').off('click');
-    jsh.$dialogBlock(sel + ' input').off('keydown');
 
     var cancelDialogFunc = function(_onClosed){
-      XExt.dialogButtonFunc(sel, oldactive, function () {
-        if (onClosed) onClosed();
-        if (_onClosed) _onClosed();
-        if(options.reuse) jsh.$dialogBlock(sel).hide();
-        else jsh.$dialogBlock(sel).remove();
+      XExt.dialogButtonFunc(customPrompt, oldactive, function () {
+        if (onClosed) onClosed(xDialogObj);
+        if (_onClosed) _onClosed(xDialogObj);
       }, { onClosing: options.onClosing })();
     };
-    var cancelfunc = function(options, _onClosed){
+    var cancelfunc = xDialogObj.cancelfunc = function(options, _onClosed){
       options = _.extend({ force: false }, options);
       options.forceCancel = function(){ cancelfunc({ force: true }); };
       if (onCancel){
@@ -2006,61 +2281,69 @@ exports = module.exports = function(jsh){
       cancelDialogFunc(_onClosed);
     };
     var acceptfunc_aftervalidate = function(_onClosed){
-      XExt.dialogButtonFunc(sel, oldactive, function () {
-        if (onClosed) onClosed();
-        if (_onClosed) _onClosed();
+      XExt.dialogButtonFunc(customPrompt, oldactive, function () {
+        if (onClosed) onClosed(xDialogObj);
+        if (_onClosed) _onClosed(xDialogObj);
       }, { onClosing: options.onClosing })();
     };
-    var acceptfunc = function (_onClosed) {
+    var acceptfunc = xDialogObj.acceptfunc = function (_onClosed) {
       //Verify this is the topmost dialog
-      if ((jsh.xDialog.length > 0) && (jsh.xDialog[0] != (sel))) return;
+      if ((jsh.xDialog.length > 0) && (jsh.xDialog[0].obj != customPrompt)) return;
       
       if (onAccept) return onAccept(function () { acceptfunc_aftervalidate(_onClosed); });
       else acceptfunc_aftervalidate(_onClosed);
     };
+    var bindDialogHandler = xDialogObj.bindDialogHandler = function bindDialogHandler(tgt, eventName, handler){
+      XDom.on(tgt, eventName, handler);
+      if(reuse) xDialogObj.handlers.push({target: tgt, eventName: eventName, handler: handler});
+    };
     XExt.execif(true,
       function(done){
+        jsh.xdDialogBlock.element.appendChild(customPrompt);
         if(onInit && options.asyncInit){
-          onInit(acceptfunc, cancelfunc, done);
+          onInit(xDialogObj, done);
         }
         else {
-          if (onInit) onInit(acceptfunc, cancelfunc);
+          if (onInit) onInit(xDialogObj);
           return done();
         }
       },
       function(){
-        jsh.$dialogBlock(sel + ' input.button_ok').on('click', function(){ acceptfunc(); });
-        jsh.$dialogBlock(sel + ' input.button_cancel').on('click', function(){ cancelfunc(); });
-
-        jsh.$dialogBlock(sel).off('acceptDialog').on('acceptDialog', function(){ acceptfunc(); });
-        jsh.$dialogBlock(sel).off('cancelDialog').on('cancelDialog', function(){ cancelfunc(); });
-
-        jsh.$dialogBlock(sel + ' input, ' + sel + ' textarea, ' + sel + ' select').on('keydown', function (e) {
+        bindDialogHandler(XDom(xdobj, 'input.button_ok'), 'click', function(){ acceptfunc(); });
+        bindDialogHandler(XDom(xdobj, 'input.button_cancel'), 'click', function(){ cancelfunc(); });
+        bindDialogHandler(xdobj, 'acceptDialog', function(){ acceptfunc(); });
+        bindDialogHandler(xdobj, 'cancelDialog', function(){ cancelfunc(); });
+        bindDialogHandler(XDom(xdobj, 'input, textarea, select'), 'keydown', function (e) {
           if (options.specialKeys.escape && (e.keyCode == 27)) { e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); }
         });
-        jsh.$dialogBlock(sel + ' input:not(:checkbox):not(:button)').on('keydown', function (e) {
+        bindDialogHandler(XDom(xdobj, 'input:not([type="checkbox"]):not([type="button"])'), 'keydown', function (e) {
           if (options.specialKeys.enter && (e.keyCode == 13)) { e.preventDefault(); e.stopImmediatePropagation(); acceptfunc(); }
         });
+
         if(options.backgroundClose){
-          jsh.dialogBlock.on('mousedown.close' + sel, function(e){
-            if(!$(e.target).is('.xdialogoverlay,.xdialogblock')) return;
+          
+          bindDialogHandler(jsh.xdDialogBlock, 'mousedown', function(e){
+            var xdTarget = XDom(e.target);
+            if(!(xdTarget.class.contains('xdialogoverlay') || xdTarget.class.contains('xdialogblock'))) return;
             var mouseDownTime = new Date().getTime();
-            jsh.dialogBlock.one('mouseup.close', function(e){
+            jsh.xdDialogBlock.on('mouseup', (function mouseUpHandler(e){
+              jsh.xdDialogBlock.off('mouseup', mouseUpHandler);
               var mouseUpTime = new Date().getTime();
               if((mouseUpTime - mouseDownTime) > 5000) return;
-              if(!$(e.target).is('.xdialogoverlay,.xdialogblock')) return;
-              if(jsh.xDialog.length && (jsh.xDialog[0]==sel)){ e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); }
-            });
+              if(!(xdTarget.class.contains('xdialogoverlay') || xdTarget.class.contains('xdialogblock'))) return;
+              if(jsh.xDialog.length && (jsh.xDialog[0].obj==customPrompt)){ e.preventDefault(); e.stopImmediatePropagation(); cancelfunc(); }
+            }));
           });
         }
-        jsh.$dialogBlock(sel).show();
-        jsh.dialogBlock.show();
-        if(jsh.XPage && jsh.XPage.LayoutOneColumn) jsh.XPage.LayoutOneColumn(jsh.$dialogBlock(sel)[0], { reset: true });
+        xdobj.style.display = true;
+        jsh.xdDialogBlock.style.display = true;
+        if(jsh.XPage && jsh.XPage.LayoutOneColumn) jsh.XPage.LayoutOneColumn(customPrompt, { reset: true });
         jsh.XWindowResize();
         setTimeout(function(){
           jsh.XWindowResize();
-          if(jsh.$dialogBlock(sel + ' .default_focus').length) jsh.$dialogBlock(sel + ' .default_focus').focus();
-          else jsh.$dialogBlock(sel).$find('input:visible,textarea:visible,select:visible').first().focus();
+          var xdDefaultFocus = XDom(xdobj, '.default_focus');
+          if(xdDefaultFocus.length) xdDefaultFocus.focus();
+          else XDom(xdobj, 'input,textarea,select').filter(XDom.isVisible).first().focus();
         }, 1);
       }
     );
@@ -2068,86 +2351,106 @@ exports = module.exports = function(jsh){
 
   XExt.AcceptDialog = function(){
     if(!jsh.xDialog.length) throw new Error('No dialog currently active');
-    $(jsh.xDialog[0]).trigger('acceptDialog');
+    XDom(jsh.xDialog[0].obj).emit('acceptDialog');
   };
 
   XExt.CancelDialog = function(){
     if(!jsh.xDialog.length) throw new Error('No dialog currently active');
-    $(jsh.xDialog[0]).trigger('cancelDialog');
+    XDom(jsh.xDialog[0].obj).emit('cancelDialog');
   };
 
   XExt.ZoomEdit = function (val, caption, options, onAccept, onCancel) {
     if(!options) options = {};
     if(!val) val = '';
     val = val.toString();
-    jsh.xDialog.unshift('.xtextzoombox');
-    jsh.$dialogBlock('.xtextzoombox').zIndex(jsh.xDialog.length);
+    var xdobj = XExt.renderTemplate('script.template_xtextzoombox');
+    var textZoomBox = xdobj.element;
+
+    var xDialogObj = {
+      obj: textZoomBox,
+      onDestroy: function(){ xdobj.remove(); },
+    };
+    jsh.xDialog.unshift(xDialogObj);
+    xdobj.style.zIndex = jsh.xDialog.length;
     
     var oldactive = document.activeElement;
-    if (oldactive) $(oldactive).blur();
-    jsh.$dialogBlock('.xtextzoommessage').html(caption);
-    jsh.$dialogBlock('.xtextzoombox input').off('click');
-    jsh.$dialogBlock('.xtextzoombox input').off('keydown');
-    jsh.$dialogBlock('.xtextzoomfield').val(val);
+    XDom(oldactive).blur();
+    XDom(xdobj, '.xtextzoommessage').html = caption;
+    var xdTextZoomField = XDom(xdobj, '.xtextzoomfield');
+    xdTextZoomField.value = val;
     
-    jsh.$dialogBlock('.xtextzoomfield').prop('readonly', (options.readonly?true:false));
-    if(options.readonly) jsh.$dialogBlock('.xtextzoomfield').removeClass('editable').addClass('uneditable');
-    else jsh.$dialogBlock('.xtextzoomfield').removeClass('uneditable').addClass('editable');
-
-    var cancelfunc = XExt.dialogButtonFunc('.xtextzoombox', oldactive, function () { if (onCancel) onCancel(); });
-    var acceptfunc = XExt.dialogButtonFunc('.xtextzoombox', oldactive, function () { if (onAccept) onAccept(jsh.$dialogBlock('.xtextzoomfield').val()); });
-    jsh.$dialogBlock('.xtextzoombox input.button_ok').on('click', acceptfunc);
-    jsh.$dialogBlock('.xtextzoombox input.button_cancel').on('click', cancelfunc);
-    jsh.$dialogBlock('.xtextzoombox input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    jsh.$dialogBlock('.xtextzoombox').show();
-    jsh.dialogBlock.show();
+    
+    if(options.readonly) {
+      xdTextZoomField.attr.readonly = 'readonly';
+      xdTextZoomField.class.remove('editable');
+      xdTextZoomField.class.add('uneditable');
+    }
+    else {
+      xdTextZoomField.class.remove('uneditable');
+      xdTextZoomField.class.add('editable');
+    }
+    var cancelfunc = XExt.dialogButtonFunc(textZoomBox, oldactive, function () { if (onCancel) onCancel(); });
+    var acceptfunc = XExt.dialogButtonFunc(textZoomBox, oldactive, function () { if (onAccept) onAccept(xdTextZoomField.value); });
+    XDom(xdobj, 'input.button_ok').on('click', acceptfunc);
+    XDom(xdobj, 'input.button_cancel').on('click', cancelfunc);
+    XDom(xdobj, 'input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    jsh.xdDialogBlock.element.appendChild(textZoomBox);
+    xdobj.style.display = true;
+    jsh.xdDialogBlock.style.display = true;
     jsh.XWindowResize();
-    jsh.$dialogBlock('.xtextzoomfield').focus();
+    xdTextZoomField.focus();
   };
 
   XExt.ShowHints = function (lov, caption, options, onInsert, onCancel) {
     if(!options) options = {};
     if(!lov) lov = [];
-    jsh.xDialog.unshift('.xhintsbox');
-    var jdialog = jsh.$dialogBlock('.xhintsbox');
-    jdialog.zIndex(jsh.xDialog.length);
+    var xdobj = XExt.renderTemplate('script.template_xhintsbox');
+    var hintsBox = xdobj.element;
+
+    var xDialogObj = {
+      obj: hintsBox,
+      onDestroy: function(){ xdobj.remove(); },
+    };
+    jsh.xDialog.unshift(xDialogObj);
+    xdobj.style.zIndex = jsh.xDialog.length;
 
     var oldactive = document.activeElement;
-    if (oldactive) $(oldactive).blur();
-    jsh.$dialogBlock('.xhintsmessage').html(caption);
-    jsh.$dialogBlock('.xhintsbox input').off('click');
-    jsh.$dialogBlock('.xhintsbox input').off('keydown');
+    XDom(oldactive).blur();
+    XDom(xdobj, '.xhintsmessage').html = caption;
 
-    var tmpl = jdialog.$find('.xhints_rowtemplate').html();
-    var jlisting = jdialog.$find('.xhints_listing');
-    jlisting.empty();
+    var hintsListing = xdobj.get('.xhints_listing').element;
+    var tmplRow = XDom(jsh.xdDialogBlock, 'script.xhints_rowtemplate').innerHTML;
+    
     if(_.isArray(lov)) _.each(lov, function(item){
-      var jrow = $(tmpl);
-      jrow.$find('input').val(item[jsh.uimap.code_val]);
-      jrow.$find('span').text(item[jsh.uimap.code_txt]);
-      if(options.readonly) jrow.$find('input').remove();
-      jlisting.append(jrow);
+      var xdRow = XDom(XDom.render(tmplRow));
+      var xdRowInput = XDom(xdRow, 'input');
+      xdRowInput.value = item[jsh.uimap.code_val];
+      XDom(xdRow, 'span').text = item[jsh.uimap.code_txt];
+      if(options.readonly) xdRowInput.remove();
+      hintsListing.append(xdRow.element);
     });
 
-    jdialog.$find('input.button_ok,input:checkbox').toggle(!options.readonly);
+    if(options.readonly) XDom(xdobj, 'input.button_ok,input[type="checkbox"]').style.display = false;
 
     var getValues = function(){
       var rslt = [];
-      jdialog.$find('.xhints_listing input:checkbox:checked').each(function(){ rslt.push($(this).val()); });
+      xdobj.get('.xhints_listing input[type="checkbox"]:checked').elements.forEach(function(obj){ rslt.push(XDom.getValue(obj)); });
       return rslt;
     };
-    var cancelfunc = XExt.dialogButtonFunc('.xhintsbox', oldactive, function () { if (onCancel) onCancel(); });
-    var insertfunc = XExt.dialogButtonFunc('.xhintsbox', oldactive, function () { if (onInsert) onInsert(getValues()); });
-    jdialog.$find('input.button_ok').on('click', function(){
+    var cancelfunc = XExt.dialogButtonFunc(hintsBox, oldactive, function () { if (onCancel) onCancel(); });
+    var insertfunc = XExt.dialogButtonFunc(hintsBox, oldactive, function () { if (onInsert) onInsert(getValues()); });
+    XDom(xdobj, 'input.button_ok').on('click', function(){
       if(!getValues().length) return XExt.Alert('Please select one or more values to insert');
       insertfunc();
     });
-    jdialog.$find('input.button_cancel').on('click', cancelfunc);
-    jdialog.$find('input').on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
-    jsh.$dialogBlock('.xhintsbox').show();
-    jsh.dialogBlock.show();
+    XDom(xdobj, 'input.button_cancel').on('click', cancelfunc);
+    var xdInput = XDom(xdobj, 'input');
+    xdInput.on('keydown', function (e) { if (e.keyCode == 27) { cancelfunc(); } });
+    jsh.xdDialogBlock.element.appendChild(hintsBox);
+    xdobj.style.display = true;
+    jsh.xdDialogBlock.style.display = true;
     jsh.XWindowResize();
-    jdialog.$find('input').first().focus();
+    xdInput.first().focus();
   };
 
   var popupData = {};
@@ -2181,8 +2484,9 @@ exports = module.exports = function(jsh){
     var title = options.title;
     var parentobj = options.parentobj;
     var obj = options.obj;
+    var xdobj = XDom(obj);
 
-    var parentmodelid = $(obj).data('model');
+    var parentmodelid = xdobj.data.model;
     var parentmodelclass = parentmodelid;
     var parentfield = null;
     var parentmodel = null;
@@ -2203,7 +2507,7 @@ exports = module.exports = function(jsh){
     if(parentmodelclass) POPUP_CONTAINER += '.xelem' + parentmodelclass;
     if(options.container) POPUP_CONTAINER = options.container;
 
-    if (!parentobj) parentobj = jsh.$root(POPUP_CONTAINER);
+    if (!parentobj) parentobj = jsh.xd(POPUP_CONTAINER);
     var numOpens = 0;
     var xmodel = jsh.XModels[modelid];
 
@@ -2211,77 +2515,66 @@ exports = module.exports = function(jsh){
     XExt.execif(parentfield && parentfield.controlparams && parentfield.controlparams.onpopup,
       function (f) { parentfield.controlparams.onpopup(modelid, parentmodelid, fieldname, f); },
       function () {
-        var code_val = $(obj).data('code_val');
+        var code_val = xdobj.data.code_val;
         if (code_val) popupData[modelid].code_val = code_val;
         var xgrid = xmodel.controller.grid;
         var xform = xmodel.controller.form;
         if(xgrid){
           xgrid.RowCount = 0;
           if (xgrid.Prop) xgrid.Prop.Enabled = true;
-          jsh.$root(xgrid.PlaceholderID).html('');
+          jsh.xd(xgrid.PlaceholderID).clear();
         }
         if(xform && xform.Prop){ xform.Prop.Enabled = true; }
         var orig_jsh_ignorefocusHandler = jsh.ignorefocusHandler;
         jsh.ignorefocusHandler = true;
-        var popup_options = {};
-        popup_options = {
-          modelid: modelid,
-          href: POPUP_CONTAINER,
-          inline: true, closeButton: true, arrowKey: false, preloading: false, overlayClose: true, fixed: true,
-          title: title,
-          trapFocus: false,
-          fadeOut:0,
-          onOpen: function () {
-          //When nested popups are called, onOpen is not called
-          },
-          onComplete: function () {
-            if (options.OnPopupOpen) if(options.OnPopupOpen(popupData[modelid])===false) return;
-            numOpens++;
-            if(xgrid && (numOpens==1)) xgrid.Select();
-            if (jsh.$root(POPUP_CONTAINER + ' .xsearch_value').first().is(':visible')){
-              jsh.$root(POPUP_CONTAINER + ' .xsearch_value').first().focus();
-            }
-            else if (jsh.$root(POPUP_CONTAINER).$find('td a').length) jsh.$root(POPUP_CONTAINER).$find('td a').first().focus();
-          //else jsh.$root(POPUP_CONTAINER).$find('input,select,textarea').first().focus();
-          },
-          onClosed: function () {
-            var found_popup = false;
-            for(var i=jsh.xPopupStack.length-1;i>=0;i--){
-              if(jsh.xPopupStack[i].modelid==modelid){ jsh.xPopupStack.splice(i,1); found_popup = true; break; }
-            }
-            if(!found_popup) {
-              alert('ERROR - Invalid Popup Stack');
-              console.log(modelid); // eslint-disable-line no-console
-              console.log(jsh.xPopupStack); // eslint-disable-line no-console
-            }
+        var onInit = function (xDialogObj) {
+          if (options.OnPopupOpen) if(options.OnPopupOpen(popupData[modelid])===false) return;
+          numOpens++;
+          if(xgrid && (numOpens==1)) xgrid.Select();
+          var xdSearchVal = jsh.xd(POPUP_CONTAINER + ' .xsearch_value');
+          if (xdSearchVal.isVisible()) xdSearchVal.first().focus();
+          else if (jsh.xd(POPUP_CONTAINER).get('td a').length) XDom.focus(jsh.xd(POPUP_CONTAINER).get('td a').element);
 
-            if(jsh.xPopupStack.length) $.colorbox(jsh.xPopupStack[jsh.xPopupStack.length-1]);
-
-            if (parentobj && (typeof popupData[modelid].result !== 'undefined')) {
-              if(parentmodel && parentfield && parentfield.name) parentmodel.set(parentfield.name, popupData[modelid].result, null);
-              else parentobj.val(popupData[modelid].result);
-              if (popupData[modelid].resultrow && parentfield && parentfield.controlparams && parentfield.controlparams.popup_copy_results) {
-                for (var fname in parentfield.controlparams.popup_copy_results) {
-                  parentmodel.set(fname, popupData[modelid].resultrow[parentfield.controlparams.popup_copy_results[fname]], null);
-                }
-              }
-              if (options.OnControlUpdate) options.OnControlUpdate(parentobj[0], popupData[modelid]);
-            }
-            if (options.OnPopupClosed) options.OnPopupClosed(popupData[modelid]);
-            if (parentobj) parentobj.focus();
-            jsh.ignorefocusHandler = orig_jsh_ignorefocusHandler;
-            if(xgrid && xgrid.Prop){ xgrid.Prop.Enabled = false; }
-            if(xform && xform.Prop){ xform.Prop.Enabled = false; }
-          },
+          xDialogObj.bindDialogHandler(XDom(xDialogObj.obj, '.xpopupbox_content').element, 'scroll', function(){ jsh.refreshBodyHead(xdPopup.get('.xbodyhead').elements); });
         };
-        var xsubform = $(popup_options.href).filter('.xsubform');
-        if(xsubform.length){
-          xsubform.css('max-height',($(window).height()-100)+'px');
-          xsubform.css('display','block');
-          xsubform.css('overflow','auto');
+        var onClosed = function () {
+          if (parentobj && (typeof popupData[modelid].result !== 'undefined')) {
+            if(parentmodel && parentfield && parentfield.name) parentmodel.set(parentfield.name, popupData[modelid].result, null);
+            else parentobj.value = popupData[modelid].result;
+            if (popupData[modelid].resultrow && parentfield && parentfield.controlparams && parentfield.controlparams.popup_copy_results) {
+              for (var fname in parentfield.controlparams.popup_copy_results) {
+                parentmodel.set(fname, popupData[modelid].resultrow[parentfield.controlparams.popup_copy_results[fname]], null);
+              }
+            }
+            if (options.OnControlUpdate) options.OnControlUpdate(parentobj.element, popupData[modelid]);
+          }
+          if (options.OnPopupClosed) options.OnPopupClosed(popupData[modelid]);
+          if (parentobj) parentobj.focus();
+          jsh.ignorefocusHandler = orig_jsh_ignorefocusHandler;
+          if(xgrid && xgrid.Prop){ xgrid.Prop.Enabled = false; }
+          if(xform && xform.Prop){ xform.Prop.Enabled = false; }
+        };
+
+        var panelWidth = null;
+        var panelHeight = null;
+        var xsubformPanel = jsh.xd(POPUP_CONTAINER + '.xsubform').get('.xpanel').element;
+        if(xsubformPanel) {
+          panelWidth = xsubformPanel.style.width;
+          panelHeight = xsubformPanel.style.height;
         }
-        jsh.xPopupStack.push(popup_options);
-        $.colorbox(popup_options);
+
+        var xdPopup = XDom(jsh.xdDialogBlock, POPUP_CONTAINER).parent('.xdialogbox.xpopupbox');
+        if(!xdPopup.length) {
+          xdPopup = XExt.renderTemplate('script.template_popupbox');
+          xdPopup.getElement('.xpopupbox_content').appendChild(jsh.xd(POPUP_CONTAINER).element);
+          XDom(xdPopup, 'a.xpopupbox_header_close').on('click', function(){ XExt.CancelDialog(); });
+        }
+
+        XDom(xdPopup, '.xpopupbox_header_title').text = title;
+        var xdPopContext = XDom(xdPopup, '.xpopupbox_content');
+        if(panelWidth) xdPopContext.style.width = panelWidth;
+        if(panelHeight) xdPopContext.style.minHeight = panelHeight;
+        XExt.CustomPrompt(null, xdPopup.element, onInit, null, null, onClosed, {backgroundClose: true});
       });
   };
 
@@ -2298,7 +2591,7 @@ exports = module.exports = function(jsh){
     popupData[modelid].result = rslt;
     popupData[modelid].rowid = rowid;
     popupData[modelid].resultrow = xmodel.controller.form.DataSet[rowid];
-    $.colorbox.close();
+    XExt.AcceptDialog();
   };
 
   XExt.popupClear = function (modelid, obj) {
@@ -2309,16 +2602,17 @@ exports = module.exports = function(jsh){
     popupData[modelid].result = rslt;
     popupData[modelid].rowid = -1;
     popupData[modelid].resultrow = new xmodel.controller.form.DataType();
-    $.colorbox.close();
+    XExt.AcceptDialog();
   };
 
   XExt.AlertFocus = function (ctrl, msg) {
-    XExt.Alert(msg, function () { $(ctrl).focus().select(); });
+    XExt.Alert(msg, function () { ctrl.focus(); XDom(ctrl).emit('select'); });
   };
 
   XExt.getModelId = function (obj) {
-    var xid = $(obj).closest('.xtbl').data('id');
-    if (!xid) xid = $(obj).closest('.xform').data('id');
+    var xdobj = XDom(obj);
+    var xid = xdobj.parent('.xtbl').data.id;
+    if (!xid) xid = xdobj.parent('.xform').data.id;
     if (!xid) return null;
     return xid;
   };
@@ -2346,9 +2640,8 @@ exports = module.exports = function(jsh){
   };
 
   XExt.getClasses = function(obj){
-    var jobj = $(obj);
     var rslt = [];
-    var classes = (jobj.attr('class')||'').split(/\s+/);
+    var classes = (XDom.getAttribute(obj, 'class')||'').split(/\s+/);
     for(var i=0;i<classes.length;i++){
       if(classes[i].trim()) rslt.push(classes[i].trim());
     }
@@ -2356,11 +2649,12 @@ exports = module.exports = function(jsh){
   };
 
   XExt.ItemContextMenu = function (ctrl) {
-    var parent = $(ctrl).closest('.xcontext_parent');
+    var xdctrl = XDom(ctrl);
+    var parent = xdctrl.parent('.xcontext_parent');
     if (!parent.length) return true;
-    var menuid = '._item_context_menu_' + parent.data('id');
-    if (!jsh.$root(menuid).length) return true;
-    XExt.ShowContextMenu(menuid, $(ctrl).data('value'));
+    var menuid = '._item_context_menu_' + parent.data.id;
+    if (!jsh.xdroot.get(menuid).length) return true;
+    XExt.ShowContextMenu(menuid, xdctrl.data.value);
     return false;
   };
 
@@ -2472,12 +2766,13 @@ exports = module.exports = function(jsh){
     return rslt;
   };
 
-  XExt.findClosest = function (elem, sel) {
-    var jobj = $(elem).$find(sel);
-    if (jobj.length) return jobj;
-    var parent = $(elem).parent();
-    if (!parent.length) return $();
-    return XExt.findClosest(parent, sel);
+  XExt.selectClosest = function (elem, sel, filterFunc) {
+    var xdobj = XDom(elem).get(sel);
+    if (filterFunc) xdobj = xdobj.filter(filterFunc);
+    if (xdobj.length) return xdobj.element;
+    var xdparent = XDom(elem).parent();
+    if (!xdparent.length) return null;
+    return XExt.selectClosest(xdparent.element, sel, filterFunc);
   };
 
   XExt.getToken = function (onComplete, onFail) {
@@ -2537,24 +2832,24 @@ exports = module.exports = function(jsh){
     return jsh.XModels[id].controller.form;
   };
   XExt.getFormFromObject = function (ctrl) {
-    var modelid = $(ctrl).closest('.xform,.xtbl').data('id');
+    var modelid = XDom(ctrl).parent('.xform,.xtbl').data.id;
     if (modelid) return jsh.XModels[modelid].controller.form;
     return undefined;
   };
   XExt.getModelIdFromObject = function (ctrl) {
-    var modelid = $(ctrl).closest('.xform').data('id');
+    var modelid = XDom(ctrl).parent('.xform').data.id;
     if (modelid) return modelid;
     return undefined;
   };
   XExt.getFieldNameFromObject = function (ctrl) {
-    var jctrl = $(ctrl).closest('.xform_ctrl,.xform_file_upload');
-    return jctrl.data('id');
+    var xdctrl = XDom(ctrl).parent('.xform_ctrl,.xform_file_upload');
+    return xdctrl.data.id;
   };
   XExt.getFieldFromObject = function(ctrl){
-    var jctrl = $(ctrl).closest('.xform_ctrl,.xform_file_upload');
-    if(!jctrl.length) return undefined;
-    var fieldName = jctrl.data('id');
-    var modelid = XExt.getModelId(jctrl);
+    var xdctrl = XDom(ctrl).parent('.xform_ctrl,.xform_file_upload');
+    if(!xdctrl.length) return undefined;
+    var fieldName = xdctrl.data.id;
+    var modelid = XExt.getModelId(ctrl);
     if(fieldName && modelid){
       var xmodel = jsh.XModels[modelid];
       if(xmodel && xmodel.fields && (fieldName in xmodel.fields)){
@@ -2625,7 +2920,7 @@ exports = module.exports = function(jsh){
       dfltwindowParams.height = default_popup_size[1];
     }
     if (!windowParams) windowParams = {};
-    if (querystringParams) url += '?' + $.param(querystringParams);
+    if (querystringParams) url += '?' + XExt.escapeQuery(querystringParams);
     var windowstr = '';
     for (var p in dfltwindowParams) { if (!(p in windowParams)) windowParams[p] = dfltwindowParams[p]; }
     for (var windowParam in windowParams) { windowstr += ',' + windowParam + '=' + windowParams[windowParam]; }
@@ -2644,7 +2939,7 @@ exports = module.exports = function(jsh){
       dfltwindowParams.height = default_popup_size[1];
     }
     if (!windowParams) windowParams = {};
-    if (querystringParams) url += '?' + $.param(querystringParams);
+    if (querystringParams) url += '?' + XExt.escapeQuery(querystringParams);
     var windowstr = '';
     for (var p in dfltwindowParams) { if (!(p in windowParams)) windowParams[p] = dfltwindowParams[p]; }
     for (var windowParam in windowParams) { windowstr += ',' + windowParam + '=' + windowParams[windowParam]; }
@@ -2686,8 +2981,8 @@ exports = module.exports = function(jsh){
     return win;
   };
   XExt.renderCanvasCheckboxes = function () {
-    jsh.$root('canvas.checkbox.checked').each(function () {
-      var obj = this;
+    jsh.xd('canvas.checkbox.checked').elements.forEach(function (el) {
+      var obj = el;
       var w = obj.width;
       var h = obj.height;
       var ctx = obj.getContext('2d');
@@ -2755,13 +3050,26 @@ exports = module.exports = function(jsh){
     }
     else throw new Error('Inserting text into contenteditable not supported.');
   };
-  XExt.selectionIsChildOf = function(jobj){
+  XExt.isChildOf = function(tgt_obj, container_obj){
+    if(tgt_obj === container_obj) return false;
+    var curElement = tgt_obj;
+    while(curElement){
+      curElement = curElement.parentNode;
+      if(curElement === container_obj) return true;
+    }
+    return false;
+  };
+  XExt.selectionIsChildOf = function(obj){
     if(window.getSelection){
       var sel = window.getSelection();
       if(!sel || !sel.rangeCount) return false;
       var rstart = sel.getRangeAt(0);
-      if(jobj[0] == rstart.startContainer) return true;
-      return $.contains(jobj[0],rstart.startContainer);
+      var curElement = rstart.startContainer;
+      while(curElement){
+        if(curElement === obj) return true;
+        curElement = curElement.parentNode;
+      }
+      return false;
     }
     else throw new Error('Inserting text into contenteditable not supported.');
   };
@@ -2795,7 +3103,7 @@ exports = module.exports = function(jsh){
       obj.focus();
       var r = document.selection.createRange();
       var r_len = r.text.length;
-      r.moveStart('character', -1 * $(obj).val().length);
+      r.moveStart('character', -1 * obj.options.length);
       return {'start': r.text.length - r_len, 'end': r.text.length};
     }
     else return undefined;
@@ -2816,36 +3124,38 @@ exports = module.exports = function(jsh){
     if(cond()) return f();
     setTimeout(function(){ XExt.waitUntil(cond, f, cancel, timeout); }, timeout);
   };
-  XExt.scrollIntoView = function(jcontainer, pos, h){
-    if(!jcontainer.length) return;
-    var sTop = jcontainer.scrollTop();
-    var sLeft = jcontainer.scrollLeft();
-    var cW = jcontainer[0].clientWidth;
-    var cH = jcontainer[0].clientHeight;
+  XExt.scrollIntoView = function(container, pos, h){
+    if(!container) return;
+    var sTop = container.scrollTop;
+    var sLeft = container.scrollLeft;
+    var cW = container.clientWidth;
+    var cH = container.clientHeight;
     var minV = sTop;
     var maxV = sTop + cH;
     var minH = sLeft;
     var maxH = sLeft + cW;
     var posbottom = pos.top + h;
-    if((pos.left < minH) || (pos.left > maxH)) jcontainer.scrollLeft(pos.left);
+    if((pos.left < minH) || (pos.left > maxH)) container.scrollLeft = pos.left;
     if((posbottom < minV) || (posbottom > maxV)){
-      if(posbottom < minV) jcontainer.scrollTop(pos.top);
+      if(posbottom < minV) container.scrollTop = pos.top;
       else {
         var newscrollTop = posbottom - cH;
         if(newscrollTop < 0) newscrollTop = 0;
-        jcontainer.scrollTop(newscrollTop);
+        container.scrollTop = newscrollTop;
       }
     }
     else if(pos.top < minV){
-      jcontainer.scrollTop(pos.top);
+      container.scrollTop = pos.top;
     }
   };
-  XExt.scrollObjIntoView = function(jcontainer, jobj){
-    var jobjpos = jobj.offset();
-    var jcontainerpos = jcontainer.offset();
-    jobjpos.top -= jcontainerpos.top - jcontainer.scrollTop();
-    jobjpos.left -= jcontainerpos.left - jcontainer.scrollLeft();
-    XExt.scrollIntoView(jcontainer, jobjpos, jobj.height());
+  XExt.scrollObjIntoView = function(container, obj){
+    var xdcontainer = XDom(container);
+    var xdobj = XDom(obj);
+    var objpos = {top: xdobj.calc.top(), left: xdobj.calc.left()};
+    var containerpos = {top: xdcontainer.calc.top(), left: xdcontainer.calc.left()};
+    objpos.top -= containerpos.top - xdcontainer.element.scrollTop;
+    objpos.left -= containerpos.left - xdcontainer.element.scrollLeft;
+    XExt.scrollIntoView(container, objpos, xdobj.calc.height());
   };
   //Check if the mouse is within the target element
   XExt.isMouseWithin = function(elem) {
@@ -2853,14 +3163,15 @@ exports = module.exports = function(jsh){
   };
   //Check if the x,y coordinate is within the element
   XExt.isPointWithin = function(elem, x, y) {
-    var jobj = $(elem);
-    var joff = jobj.offset();
-    var w = jobj.outerWidth();
-    var h = jobj.outerHeight();
-    if (x < joff.left) return false;
-    if (x > (joff.left + w)) return false;
-    if (y < joff.top) return false;
-    if (y > (joff.top + h)) return false;
+    var xdobj = XDom(elem);
+    var offsetTop = xdobj.calc.top();
+    var offsetLeft = xdobj.calc.left();
+    var w = xdobj.calc.widthToBorder();
+    var h = xdobj.calc.heightToBorder();
+    if (x < offsetLeft) return false;
+    if (x > (offsetLeft + w)) return false;
+    if (y < offsetTop) return false;
+    if (y > (offsetTop + h)) return false;
     return true;
   };
   XExt.getObjectAnchors = function(elem, x, y, options) {
@@ -2868,14 +3179,14 @@ exports = module.exports = function(jsh){
     options = _.extend({ anchors: ['full'], full_threshold: 0.25 }, options);
     var anchors = {};
     for(var i=0;i<options.anchors.length;i++) anchors[options.anchors[i]] = 1;
-    var jobj = $(elem);
-    var joff = jobj.offset();
-    var w = jobj.outerWidth(false);
-    var h = jobj.outerHeight(false);
-    var fph = Math.abs(((h>0)?((y-joff.top)/h):0) - 0.5);
+    var xdobj = XDom(elem);
+    var offsetTop = xdobj.calc.top();
+    var w = xdobj.calc.widthToMargin();
+    var h = xdobj.calc.heightToMargin();
+    var fph = Math.abs(((h>0)?((y-offsetTop)/h):0) - 0.5);
   
-    var lp = ((w>0)?((x-joff.left)/w):0) - 0.5;
-    var tp = ((h>0)?((y-joff.top)/h):0) - 0.5;
+    var lp = ((w>0)?((x-xdobj.calc.left())/w):0) - 0.5;
+    var tp = ((h>0)?((y-offsetTop)/h):0) - 0.5;
     var rslt = ['',''];
 
     if(lp < 0){ if(anchors.left) rslt[0] = 'left'; }
@@ -2889,9 +3200,10 @@ exports = module.exports = function(jsh){
 
     return rslt;
   };
-  XExt.bindDragSource = function(jobj){
+  XExt.bindDragSource = function(obj){
     var mouseDownTimer = null;
-    jobj.mousedown(function(e){
+    var xdobj = XDom(obj);
+    xdobj.on('mousedown', function(e){
       if (e.which == 1) {//left mouse button
         var obj = this;
         if(jsh.xContextMenuVisible) return;
@@ -2902,62 +3214,63 @@ exports = module.exports = function(jsh){
         }, 250);
       }
     });
-    jobj.mouseup(function(e){
+    xdobj.on('mouseup', function(e){
       if(mouseDownTimer) window.clearTimeout(mouseDownTimer);
     });
   };
   //Bind tab control events
   XExt.bindTabControl = function(obj){
-    var jobj = $(obj);
-    var jtabbuttons = jobj.children('.xtab');
-    if(!jtabbuttons.length) jtabbuttons = jobj.children('.xtabs').children('.xtab');
-    var jtabpanels = jobj.children('.xpanel').children('.xtabbody');
-    jtabbuttons.on('click', function(e){
-      var jtabbutton = $(this);
+    var xdobj = XDom(obj);
+    var xdTabButtons = xdobj.getChildren('.xtab');
+    if(!xdTabButtons.length) xdTabButtons = xdobj.getChildren('.xtabs').getChildren('.xtab');
+    var xdTabPanels = xdobj.getChildren('.xpanel').getChildren('.xtabbody');
+    xdTabButtons.on('click', function(e){
+      var xdTabButton = XDom(this);
       e.preventDefault();
-      if(jtabbutton.hasClass('selected')) return;
-      var tabFor = jtabbutton.attr('for');
-      jtabbuttons.removeClass('selected');
-      jtabbutton.addClass('selected');
+      if(xdTabButton.class.contains('selected')) return;
+      var tabFor = xdTabButton.attr.for;
+      xdTabButtons.class.remove('selected');
+      xdTabButton.class.add('selected');
       if(tabFor){
-        jtabpanels.removeClass('selected');
-        jtabpanels.filter('.'+tabFor).addClass('selected');
+        xdTabPanels.class.remove('selected');
+        xdTabPanels.filter('.'+tabFor).class.add('selected');
       }
-      var ontabselected = jtabbutton.data('ontabselected');
-      if(ontabselected) XExt.JSEval(ontabselected, jtabbutton[0]);
+      var ontabselected = xdTabButton.data.ontabselected;
+      if(ontabselected) XExt.JSEval(ontabselected, xdTabButton.element);
     });
-    if(!jtabbuttons.filter('.selected').length) jtabbuttons.first().addClass('selected');
-    jtabpanels.filter('.'+jtabbuttons.filter('.selected').attr('for')).addClass('selected');
-    jobj.addClass('initialized');
+    if(!xdTabButtons.filter('.selected').length) xdTabButtons.first().class.add('selected');
+    xdTabPanels.filter('.'+xdTabButtons.filter('.selected').attr.for).class.add('selected');
+    xdobj.class.add('initialized');
   };
   //Bind accordion events
   XExt.bindAccordion = function(obj){
     var rightArrow = '&#xE5CC;';
     var downArrow = '&#xE313;';
-    var jobj = $(obj);
-    var jbody = jobj.next('.xaccordionbody');
-    var jstate = $('<span class="material-icons xaccordionstate"></span>');
-    jobj.append(jstate);
+    var xdobj = XDom(obj);
+    var xdbody = xdobj.nextSibling('.xaccordionbody');
+    var state = XDom.render('<span class="material-icons xaccordionstate"></span>');
+    var xdState = XDom(state);
+    obj.appendChild(state);
 
     var hideBody = function(){
-      jobj.removeClass('expanded');
-      jbody.slideUp();
-      jstate.html(rightArrow);
+      xdobj.class.remove('expanded');
+      xdbody.animate.height(false);
+      xdState.html = rightArrow;
     };
     var showBody = function(){
-      jobj.addClass('expanded');
-      jbody.slideDown();
-      jstate.html(downArrow);
+      xdobj.class.add('expanded');
+      xdbody.animate.height(true);
+      xdState.html = downArrow;
     };
 
 
-    jobj.on('click', function(){
-      var isExpanded = jobj.hasClass('expanded');
+    xdobj.on('click', function(){
+      var isExpanded = xdobj.class.contains('expanded');
       if(isExpanded) hideBody();
       else showBody();
     });
-    jobj.addClass('initialized');
-    if(jbody.hasClass('expanded')) showBody();
+    xdobj.class.add('initialized');
+    if(xdbody.class.contains('expanded')) showBody();
     else hideBody();
   };
   //Resolve Model ID
@@ -3007,6 +3320,147 @@ exports = module.exports = function(jsh){
     }
     if(fields && !fields[field_name]) return false;
     return true;
+  };
+
+  XExt.AppendUrlParams = function(url, params)  {
+    var hash = url.indexOf('#');
+    if (hash != -1) {
+      url = url.slice(0,hash);
+    }
+    if (params) {
+      if (typeof(params) == 'object') {
+        // $.params/escapeQuery will generate blank values ("foo=&...")
+        // However $.ajax options (notably .data) are copied in a way that removes undefined values.
+        // Filtering here should provide similar behavior, and if you need blank values, append the escapeQuery value yourself.
+        var definedParams = _.omitBy(params, function(x) {return typeof(x)=='undefined';});
+        params = XExt.escapeQuery(definedParams);
+      }
+      if (params) {
+        url = url + ((url.indexOf('?') == -1) ? '?' : '&') + params;
+      }
+    }
+    return url;
+  };
+
+  XExt.AppendUrlParamsCacheBust = function(url, params) {
+    return XExt.AppendUrlParams(url, _.extend({_: Date.now()}, params));
+  };
+
+  XExt.Request = function(url, options) {
+    options = _.extend({headers: {}}, options);
+    if ('async' in options && options.async === false) throw new Error('sync Request is not supported. Use Request_Sync instead');
+    if (options.dataType && options.dataType != 'json') throw new Error('Currently only JSON requests are supported.');
+
+    if (typeof(options.cache) === 'boolean') {
+      options.cache = options.cache ? 'default' : 'no-store';
+    }
+    if (options.body instanceof FormData) {
+      // leave it alone, the browser handles it.
+    } else {
+      if (typeof(options.body) == 'object') {
+        options.body = XExt.escapeQuery(options.body);
+      }
+      if (options.body && !options.headers['Content-Type']) {
+        options.headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
+      }
+    }
+    if (!options.headers['Accept']) {
+      options.headers['Accept'] = 'application/json, text/javascript, */*; q=0.01';
+    }
+
+    var request = fetch(url, options).then(function(response){
+      return response.text().then(function(text) {
+        if (response.ok) {
+          try {
+            // if we use response.json, we won't be able to get the response text if it fails, and JSHAMRONY_REDIRECT and company expect it.
+            var json = JSON.parse(text);
+            if (options.success) options.success(json);
+            return json;
+          } catch (_) {} // eslint-disable-line no-empty
+        }
+        // not ok OR json decode failed.
+        response.responseText = text;
+        if (options.error) options.error(response);
+        return response;
+      });
+    });
+    options.error && request.catch(options.error);
+    options.complete && request.finally(options.complete);
+    return request;
+  };
+
+  XExt.Request_Sync = function(url, options) {
+    options = _.extend({headers: {}}, options);
+    if (options.dataType && options.dataType != 'json') throw new Error('Currently only JSON requests are supported.');
+
+    if (options.body instanceof FormData) {
+      // leave it alone, the browser handles it.
+    } else {
+      if (typeof(options.body) == 'object') {
+        options.body = XExt.escapeQuery(options.body);
+      }
+      if (options.body && !options.headers['Content-Type']) {
+        options.headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
+      }
+    }
+    if (!options.headers['Accept']) {
+      options.headers['Accept'] = 'application/json, text/javascript, */*; q=0.01';
+    }
+
+    var request = new XMLHttpRequest();
+    request.addEventListener('load', function(e) {
+      var isOk = request.status >= 200 && request.status < 300 || request.status === 304;
+      if (isOk) {
+        try {
+          var json = JSON.parse(request.responseText);
+          if (options.success) options.success(json);
+          return;
+        } catch (_) {} // eslint-disable-line no-empty
+      }
+      // not ok OR json decode failed.
+      if (options.error) options.error(request);
+      return;
+    });
+    if (options.error) {
+      request.addEventListener('error', function(e) {options.error(e);});
+      request.addEventListener('abort', function(e) {options.error(e);});
+    }
+    request.open(options.method||'GET', url, false);
+    _.forEach(options.headers, function(value, key) {
+      request.setRequestHeader(key, value);
+    });
+    if (options.credentials == 'include') {
+      request.withCredentials = true;
+    }
+    try {
+      request.send(options.body || null);
+    } catch(e) {
+      if (options.error) options.error(e);
+    }
+  };
+
+  XExt.Request_JSONP = function(url, options) {
+    var callbackName = 'XExt_Request_JSONP' + Date.now();
+    var response;
+    window[callbackName] = function(arg) {response = arg;};
+    var params = {};
+    params[options.jsonp || 'callback'] = callbackName;
+
+    var script = document.createElement('script');
+    script.async = true;
+    script.src = XExt.AppendUrlParams(url, params);
+    XDom.on(script, 'load error', function(e) {
+      script.remove();
+      delete window[callbackName];
+      if (options.error && e.type == 'error') {
+        options.error(e);
+      }
+      if (options.complete && e.type == 'load') {
+        options.complete(response);
+      }
+    });
+
+    document.querySelector('head').append(script);
   };
 
   return XExt;

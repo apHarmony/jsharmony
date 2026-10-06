@@ -17,8 +17,6 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var $ = require('./jquery-1.11.2');
-$.fn.$find = function(){ return $.fn.find.apply(this, arguments); };
 var _ = require('lodash');
 
 exports = module.exports = function(jsh){
@@ -38,13 +36,12 @@ exports = module.exports = function(jsh){
 
   XExtXModel.GetRowID = function (modelid,obj){
     modelid = jsh.XExt.resolveModelID(modelid);
-    var jobj = $(obj);
     var xmodel = jsh.XModels[modelid];
     var rslt = -1;
-    if(jobj.hasClass('row_independent')){ /* Do nothing */ }
-    else {
-      var cur_row = jobj.closest('.xrow_'+xmodel.class);
-      if (cur_row.length) rslt = cur_row.data('id');
+    if(jsh.XDom.class.contains(obj, 'row_independent')){ /* Do nothing */ }
+    else if (obj) {
+      var cur_row = obj.closest('.xrow_'+xmodel.class);
+      if (cur_row) rslt = parseInt(jsh.XDom.getData(cur_row, 'id'));
     }
     return rslt;
   };
@@ -53,33 +50,33 @@ exports = module.exports = function(jsh){
     modelid = jsh.XExt.resolveModelID(modelid);
     return function(){
       var _this = this; //datamodel
-      var parentobj = jsh.root;
-      if (this._jrow) parentobj = this._jrow;
+      var parentobj = jsh.xdroot.element;
+      if (this._row) parentobj = this._row;
       var xmodel = jsh.XModels[modelid];
       if(!xmodel) return;
       var isGrid = (xmodel.layout == 'grid');
       //Clear highlighted background of currently edited cells
-      parentobj.$find('.xelem'+xmodel.class+'.xform_ctrl.updated').removeClass('updated');
-      
+      jsh.XDom(parentobj, '.xelem'+xmodel.class+'.xform_ctrl.updated').class.remove('updated');
+
       if (xmodel.layout == 'form-m') {
         if (xmodel.controller.form.Count()==0) {
-          jsh.$root('.xelem'+xmodel.class+'.xnorecords').show();
-          jsh.$root('.xelem'+xmodel.class+'.xformcontainer').css('visibility', 'hidden');
+          jsh.xd('.xelem'+xmodel.class+'.xnorecords').style.display = true;
+          jsh.xd('.xelem'+xmodel.class+'.xformcontainer').style.visibility = 'hidden';
         }
         else {
-          jsh.$root('.xelem'+xmodel.class+'.xnorecords').hide();
-          jsh.$root('.xelem'+xmodel.class+'.xformcontainer').css('visibility', 'visible');
+          jsh.xd('.xelem'+xmodel.class+'.xnorecords').style.display = false;
+          jsh.xd('.xelem'+xmodel.class+'.xformcontainer').style.visibility = 'visible';
         }
       }
       else if(xmodel.layout == 'form') {
         if(!jsh.is_insert){
           if (xmodel.controller.form.Data._is_insert) {
-            jsh.$root('.xelem'+xmodel.class+'.xnorecords').show();
-            jsh.$root('.xelem'+xmodel.class+'.xformcontainer').css('visibility', 'hidden');
+            jsh.xd('.xelem'+xmodel.class+'.xnorecords').style.display = true;
+            jsh.xd('.xelem'+xmodel.class+'.xformcontainer').style.visibility = 'hidden';
           }
           else {
-            jsh.$root('.xelem'+xmodel.class+'.xnorecords').hide();
-            jsh.$root('.xelem'+xmodel.class+'.xformcontainer').css('visibility', 'visible');
+            jsh.xd('.xelem'+xmodel.class+'.xnorecords').style.display = false;
+            jsh.xd('.xelem'+xmodel.class+'.xformcontainer').style.visibility = 'visible';
           }
         }
       }
@@ -89,49 +86,51 @@ exports = module.exports = function(jsh){
         for (var _LOV in this._LOVs) {
           var lovselector = '.' + _LOV + '.xelem' + xmodel.class;
           if (isGrid) lovselector = '.' + _LOV + '.xelem' + xmodel.class;
-          var ctrl = parentobj.$find(lovselector);
-          if (('control' in this.Fields[_LOV]) && (this.Fields[_LOV].control == 'tree'))
+          var ctrl = jsh.XDom(parentobj, lovselector).element;
+          if (!ctrl) {
+            // noop
+          } else if (('control' in this.Fields[_LOV]) && (this.Fields[_LOV].control == 'tree')) {
             jsh.XExt.TreeRender(ctrl, this._LOVs[_LOV], this.Fields[_LOV]);
-          else if ('lovparent' in this.Fields[_LOV])
+          } else if ('lovparent' in this.Fields[_LOV]) {
             jsh.XExt.RenderParentLOV(_this, ctrl, [_this[this.Fields[_LOV].lovparent]], this._LOVs[_LOV], this.Fields[_LOV], false);
-          else if ('lovparents' in this.Fields[_LOV]) {
+          } else if ('lovparents' in this.Fields[_LOV]) {
             var parentvals = [];
             for (var i = 0; i < this.Fields[_LOV].lovparents.length; i++) {
               parentvals.push(_this[this.Fields[_LOV].lovparents[i]]);
             }
             jsh.XExt.RenderParentLOV(_this, ctrl, parentvals, this._LOVs[_LOV], this.Fields[_LOV], true);
-          }
-          else
+          } else {
             jsh.XExt.RenderLOV(this, ctrl, this._LOVs[_LOV]);
+          }
         }
       }
       //Put data into the form
       _.each(this.Fields, function (field) {
         if(field.control=='tagbox'){
-          jsh.XExt.TagBox_Render(parentobj.$find('.'+field.name+'_editor.xtagbox'+'.xelem'+xmodel.class), parentobj.$find('.'+field.name+'.xelem'+xmodel.class));
+          jsh.XExt.TagBox_Render(jsh.XDom(parentobj, '.'+field.name+'_editor.xtagbox'+'.xelem'+xmodel.class).elements, jsh.XDom(parentobj, '.'+field.name+'.xelem'+xmodel.class).elements);
         }
         XExtXModel.RenderField(_this, parentobj, modelid, field);
       });
       if (xmodel.layout == 'form-m') {
-        jsh.$root('.navtext_' + xmodel.class).html((xmodel.controller.form.Index + 1) + ' of ' + xmodel.controller.form.Count());
+        jsh.xd('.navtext_' + xmodel.class).text = (xmodel.controller.form.Index + 1) + ' of ' + xmodel.controller.form.Count();
       }
     };
   };
 
   XExtXModel.SetFieldValue = function (xformdata, field, val){
     xformdata[field.name] = val;
-    var parentobj = jsh.root;
-    if (xformdata._jrow) parentobj = xformdata._jrow;
+    var parentobj = jsh.xdroot.element;
+    if (xformdata._row) parentobj = xformdata._row;
     XExtXModel.RenderField(xformdata, parentobj, xformdata._modelid, field, val);
   };
 
   XExtXModel.SetControlValue = function (xformdata, field, val) { //Leave val to "undefined" for refresh
-    var parentobj = jsh.root;
-    if (xformdata._jrow) parentobj = xformdata._jrow;
-    var jctrl = XExtXModel.RenderField(xformdata, parentobj, xformdata._modelid, field, val, { updatePreviousValue: false });
-    if(jctrl && jctrl.length){
-      jctrl.trigger('change');
-      xformdata.OnControlUpdate(jctrl[0]);
+    var parentobj = jsh.xdroot.element;
+    if (xformdata._row) parentobj = xformdata._row;
+    var ctrl = XExtXModel.RenderField(xformdata, parentobj, xformdata._modelid, field, val, { updatePreviousValue: false });
+    if(ctrl){
+      jsh.XDom.emit(ctrl, 'change');
+      xformdata.OnControlUpdate(ctrl);
     }
   };
 
@@ -167,68 +166,76 @@ exports = module.exports = function(jsh){
     }
     
     var fieldselector = '.' + field.name + '.xelem' + xmodel.class;
-    var jctrl = parentobj.$find(fieldselector);
+    var xdCtrl = jsh.XDom(parentobj, fieldselector);
     //Apply value to hidden field if updateable non-control element
     if(jsh.XExt.hasAction(field.actions,'BIU') && _.includes(['html','label','linkbutton','button'],field.control)){
-      var jctrl_hidden = parentobj.$find('.'+field.name+'_field_value.xelem'+xmodel.class);
-      jctrl_hidden.val(val);
+      var ctrl_hidden = jsh.XDom(parentobj, '.'+field.name+'_field_value.xelem'+xmodel.class).element;
+      if (ctrl_hidden) ctrl_hidden.value = val;
     }
     if (('control' in field) && ((field.control == 'file_upload')||(field.control == 'file_download')||(field.control == 'image'))) {
       //Show "Upload File" always
       var filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
       if(field.control=='image') filefieldselector = '.xelem' + xmodel.class + '.' + field.name;
-      var jctrl_token = parentobj.$find(filefieldselector + '_token');
-      var jctrl_dbdelete = parentobj.$find(filefieldselector + '_dbdelete');
-      var jctrl_dbexists = parentobj.$find(filefieldselector + '_dbexists');
-      var jctrl_thumbnail = parentobj.$find(filefieldselector + '_thumbnail');
-      var file_token = jctrl_token.val();
+      var ctrl_token = jsh.XDom(parentobj, filefieldselector + '_token').element;
+      var ctrl_dbdelete = jsh.XDom(parentobj, filefieldselector + '_dbdelete').element;
+      var ctrl_dbexists = jsh.XDom(parentobj, filefieldselector + '_dbexists').element;
+      var ctrl_thumbnail = jsh.XDom(parentobj, filefieldselector + '_thumbnail').element;
+      var file_token = ctrl_token && ctrl_token.value;
       if (val === true) {
         //Has DB file
-        jctrl.removeClass('nodocument');
-        jctrl_token.val('');
-        jctrl_dbdelete.val('0');
-        jctrl_dbexists.val('1');
+        xdCtrl.class.remove('nodocument');
+        if (ctrl_token) ctrl_token.value = '';
+        if (ctrl_dbdelete) ctrl_dbdelete.value = '0';
+        if (ctrl_dbexists) ctrl_dbexists.value = '1';
         //Set thumbnail
-        if (jctrl_thumbnail.length && ((field.control=='image') || (field.controlparams.show_thumbnail))) {
-          var keys = xmodel.controller.form.GetKeys();
-          if (xmodel.keys.length != 1) { throw new Error('File models require one key.'); }
-          var download_thumb_url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field.name + '?view=1&_=' + (Date.now());
-          if(field.controlparams.show_thumbnail) download_thumb_url += '&thumb='+field.controlparams.show_thumbnail;
-          jctrl_thumbnail.attr('src', download_thumb_url).show();
-          if(typeof field.controlparams.thumbnail_width != 'undefined') jctrl_thumbnail.css('max-width', field.controlparams.thumbnail_width + 'px');
+        if (ctrl_thumbnail) {
+          if ((field.control=='image') || (field.controlparams.show_thumbnail)) {
+            var keys = xmodel.controller.form.GetKeys();
+            if (xmodel.keys.length != 1) { throw new Error('File models require one key.'); }
+            var download_thumb_url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field.name + '?view=1&_=' + (Date.now());
+            if(field.controlparams.show_thumbnail) download_thumb_url += '&thumb='+field.controlparams.show_thumbnail;
+            ctrl_thumbnail.src = download_thumb_url;
+            jsh.XDom(ctrl_thumbnail).style.display = true;
+            if(typeof field.controlparams.thumbnail_width != 'undefined') ctrl_thumbnail.style.maxWidth = field.controlparams.thumbnail_width + 'px';
+          }
+          else jsh.XDom(ctrl_thumbnail).style.display = false;
         }
-        else jctrl_thumbnail.hide();
       }
       else if (val === false) {
         //No DB File
-        jctrl.addClass('nodocument');
-        jctrl_token.val('');
-        jctrl_dbdelete.val('0');
-        jctrl_dbexists.val('0');
+        xdCtrl.class.add('nodocument');
+        if (ctrl_token) ctrl_token.value = '';
+        if (ctrl_dbdelete) ctrl_dbdelete.value = '0';
+        if (ctrl_dbexists) ctrl_dbexists.value = '0';
       }
       else if (val === '') {
         //Delete action (either delete temp file or DB file
-        jctrl.addClass('nodocument');
-        jctrl_token.val('');
-        if (jctrl_dbexists.val() == '1') jctrl_dbdelete.val('1');
-        else jctrl_dbdelete.val('0');
+        xdCtrl.class.add('nodocument');
+        if (ctrl_token) ctrl_token.value = '';
+        if (ctrl_dbdelete) {
+          if (ctrl_dbexists && ctrl_dbexists.value == '1') ctrl_dbdelete.value = '1';
+          else ctrl_dbdelete.value = '0';
+        }
       }
       else if (_.isString(val)) {
         //Uploaded new temp file
-        jctrl.removeClass('nodocument');
-        jctrl_token.val(val);
-        jctrl_dbdelete.val('0');
+        xdCtrl.class.remove('nodocument');
+        if (ctrl_token) ctrl_token.value = val;
+        if (ctrl_dbdelete) ctrl_dbdelete.value = '0';
         //Set thumbnail
-        if (jctrl_thumbnail.length && field.controlparams.show_thumbnail) {
-          var thumb_url = jsh._BASEURL + '_dl/_temp/' + file_token + '?view=1&thumb='+field.controlparams.show_thumbnail;
-          jctrl_thumbnail.attr('src', thumb_url).show();
-          if(typeof field.controlparams.thumbnail_width != 'undefined') jctrl_thumbnail.css('max-width', field.controlparams.thumbnail_width + 'px');
+        if (ctrl_thumbnail) {
+          if (field.controlparams.show_thumbnail) {
+            var thumb_url = jsh._BASEURL + '_dl/_temp/' + file_token + '?view=1&thumb='+field.controlparams.show_thumbnail;
+            ctrl_thumbnail.src = thumb_url;
+            jsh.XDom(ctrl_thumbnail).style.display = true;
+            if(typeof field.controlparams.thumbnail_width != 'undefined') ctrl_thumbnail.style.maxWidth = field.controlparams.thumbnail_width + 'px';
+          }
+          else jsh.XDom(ctrl_thumbnail).style.display = false;
         }
-        else jctrl_thumbnail.hide();
       }
     }
     else if (('control' in field) && (field.control == 'tree')) {
-      jsh.XExt.TreeSelectNode(jctrl, val, { triggerChange: false });
+      jsh.XExt.TreeSelectNode(xdCtrl.element, val, { triggerChange: false });
     }
     else if(('control' in field) && (field.control == 'button')){ /* Do nothing */ }
     else if (('control' in field) && (field.control == 'checkbox')) {
@@ -242,14 +249,14 @@ exports = module.exports = function(jsh){
         else checkval = jsh.XFormat.bool_decode(val);
       }
       else checkval = jsh.XFormat.bool_decode(val);
-      jctrl.prop('checked', checkval);
-      if (checkhidden) jctrl.css('visibility', 'hidden');
-      else if (checkhidden) jctrl.css('visibility', 'visible');
+      xdCtrl.element.checked = checkval;
+      if (checkhidden) xdCtrl.style.visibility = 'hidden';
+      else xdCtrl.style.visibility = 'visible';
     }
-    else if ((jctrl.size() > 0) && jctrl.hasClass('xform_label')) {
+    else if ((xdCtrl.length > 0) && xdCtrl.class.contains('xform_label')) {
       var showLabel = true;
       if(lovTxt) val = lovTxt;
-      if(jctrl.hasClass('xform_label_static')){
+      if(xdCtrl.class.contains('xform_label_static')){
         if(field.value && field.value.indexOf('<#')>=0){
           var baseval = val;
           val = field.value;
@@ -257,35 +264,43 @@ exports = module.exports = function(jsh){
           val = jsh.XExt.renderEJS(val, modelid, {
             data: _this,
             val: baseval,
-            obj: jctrl[0],
-            enabled: (jctrl.hasClass('editable') ? true : jctrl.hasClass('uneditable') ? false : null),
+            obj: xdCtrl.element,
+            enabled: (xdCtrl.class.contains('editable') ? true : xdCtrl.class.contains('uneditable') ? false : null),
           });
-          jctrl.html(val);
+          xdCtrl.html = val;
           showLabel = !!val;
         }
       }
-      else{ jctrl.html(jsh.XExt.escapeHTMLBR(val)); }
-      if(field.type && jctrl.parent().hasClass('xform_link')){
+      else{ xdCtrl.html = jsh.XExt.escapeHTMLBR(val); }
+      if(field.type && xdCtrl.parent().class.contains('xform_link')){
         showLabel = showLabel && !!dataval;
       }
-      jctrl.toggleClass('hidden',!showLabel);
+      if (showLabel) {
+        xdCtrl.class.remove('hidden');
+      } else {
+        xdCtrl.class.add('hidden');
+      }
     }
-    else if ((jctrl.size() > 0) && jctrl.hasClass('xform_html')) {
+    else if ((xdCtrl.length > 0) && xdCtrl.class.contains('xform_html')) {
       if(lovTxt) val = lovTxt;
       if(val.indexOf('<#') >= 0){
         val = val.replace(/<#/g, '<'+'%').replace(/#>/g, '%'+'>');
         val = jsh.XExt.renderEJS(val, modelid, {
           data: _this,
-          obj: jctrl[0],
-          enabled: (jctrl.hasClass('editable') ? true : jctrl.hasClass('uneditable') ? false : null),
+          obj: xdCtrl.element,
+          enabled: (xdCtrl.class.contains('editable') ? true : xdCtrl.class.contains('uneditable') ? false : null),
         });
       }
-      jctrl.html(val);
-      jctrl.toggleClass('hidden',!val);
+      xdCtrl.html = val;
+      if (val) {
+        xdCtrl.class.remove('hidden');
+      } else {
+        xdCtrl.class.add('hidden');
+      }
     }
-    else if ((jctrl.size() > 0) && (String(jctrl.prop('nodeName')).toUpperCase() == 'SELECT')) {
+    else if ((xdCtrl.length > 0) && (String(xdCtrl.element.nodeName).toUpperCase() == 'SELECT')) {
       //Check if SELECT has value.  If not, add it as an additional option at the end
-      var lov_matches = jctrl.children('option').filter(function () { return String($(this).val()).toUpperCase() == String(val).toUpperCase(); }).length;
+      var lov_matches = xdCtrl.children.filter(function (el) { return el.nodeName == 'OPTION' && String(el.value).toUpperCase() == String(val).toUpperCase(); }).length;
       var has_lov = (lov_matches > 0);
       var has_parent = (('lovparent' in field) || ('lovparents' in field));
       //If has parent and item missing, don't set the value, unless it is read-only
@@ -294,17 +309,20 @@ exports = module.exports = function(jsh){
         if (!has_lov) {
           var codtxt = _this['__' + jsh.uimap.code_txt + '__' + field.name];
           if (!codtxt) codtxt = val;
-          jctrl.append($('<option>', { value: val }).text(codtxt));
+          var newOption = document.createElement('option');
+          newOption.value = val;
+          newOption.text = codtxt;
+          xdCtrl.append(newOption.outerHTML);
         }
-        jctrl.val(val);
+        xdCtrl.value = val;
       }
     }
     else if (('control' in field) && (field.control == 'tagbox')) {
-      jctrl.val(val);
-      jsh.XExt.TagBox_Refresh(parentobj.$find('.'+field.name+'_editor.xtagbox'+'.xelem'+xmodel.class), jctrl);
+      xdCtrl.value = val;
+      jsh.XExt.TagBox_Refresh(jsh.XDom(parentobj, '.'+field.name+'_editor.xtagbox'+'.xelem'+xmodel.class).element, xdCtrl.elements);
     }
     else{
-      jctrl.val(val);
+      xdCtrl.value = val;
     }
 
     //Update CKEditor, if applicable
@@ -333,36 +351,36 @@ exports = module.exports = function(jsh){
       is_editable = false;
       show_lookup_when_readonly = true;
     }
-    if(is_editable && jctrl.hasClass('readonly')) is_editable = false;
-    if(is_editable && isGrid && jctrl.closest('tr.xrow').hasClass('readonly')) is_editable = false;
+    if(is_editable && xdCtrl.class.contains('readonly')) is_editable = false;
+    if(is_editable && isGrid && xdCtrl.parent('tr.xrow').class.contains('readonly')) is_editable = false;
 
-    if (is_editable && !jctrl.hasClass('editable')) { jsh.XPage.Enable(jctrl, field); }
-    else if (!is_editable && !jctrl.hasClass('uneditable')) { jsh.XPage.Disable(jctrl, field, show_lookup_when_readonly); }
+    if (is_editable && !xdCtrl.class.contains('editable')) { jsh.XPage.Enable(xdCtrl.elements, field); }
+    else if (!is_editable && !xdCtrl.class.contains('uneditable')) { jsh.XPage.Disable(xdCtrl.elements, field, show_lookup_when_readonly); }
 
-    return jctrl;
+    return xdCtrl.element;
   };
 
   XExtXModel.OnControlUpdate = function (modelid) {
     modelid = jsh.XExt.resolveModelID(modelid);
     return function (obj, e) {
-      var jobj = $(obj);
+      var xdObj = jsh.XDom(obj);
       var id = jsh.XExt.getFieldNameFromObject(obj);
       var _this = this;
       var field = this.Fields[id];
       if(field){
         if (!this._is_insert && !field.unbound && (field.control != 'tree') && jsh.XExt.hasAction(field.actions,'IU')) {
           if (this.HasUpdate(id)) {
-            if (!jobj.hasClass('updated')) {
-              jobj.addClass('updated');
-              if(jobj.parent().hasClass('xform_checkbox_container')) jobj.parent().addClass('updated');
-              if(field.control=='tagbox') jobj.prev().addClass('updated');
+            if (!xdObj.class.contains('updated')) {
+              xdObj.class.add('updated');
+              if(xdObj.parent().class.contains('xform_checkbox_container')) xdObj.parent().class.add('updated');
+              if(field.control=='tagbox') xdObj.previousSibling().class.add('updated');
             }
           }
           else {
-            if (jobj.hasClass('updated')) {
-              jobj.removeClass('updated');
-              if (jobj.parent().hasClass('xform_checkbox_container')) jobj.parent().removeClass('updated');
-              if(field.control=='tagbox') jobj.prev().removeClass('updated');
+            if (xdObj.class.contains('updated')) {
+              xdObj.class.remove('updated');
+              if (xdObj.parent().class.contains('xform_checkbox_container')) xdObj.parent().class.remove('updated');
+              if(field.control=='tagbox') xdObj.previousSibling(). class.remove('updated');
             }
           }
         }
@@ -409,40 +427,40 @@ exports = module.exports = function(jsh){
   XExtXModel.GetValue = function (modelid) {
     modelid = jsh.XExt.resolveModelID(modelid);
     return function (field) {
-      var parentobj = jsh.root;
-      if (this._jrow) parentobj = this._jrow;
+      var parentobj = jsh.xdroot.element;
+      if (this._row) parentobj = this._row;
       var xmodel = jsh.XModels[modelid];
       var isGrid = (xmodel.layout == 'grid');
       
       var fieldselector = '.' + field.name + '.xelem' + xmodel.class;
       if (isGrid) fieldselector = '.' + field.name + '.xelem' + xmodel.class;
-      var jctrl = parentobj.$find(fieldselector);
+      var ctrl = jsh.XDom(parentobj, fieldselector).element;
       var val = '';
 
       if (('control' in field) && (field.control == 'file_upload')) {
         var filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
         if (isGrid) filefieldselector = '.xelem' + xmodel.class + ' .' + field.name;
 
-        var jctrl_token = parentobj.$find(filefieldselector + '_token');
-        var jctrl_dbdelete = parentobj.$find(filefieldselector + '_dbdelete');
-        var jctrl_dbexists = parentobj.$find(filefieldselector + '_dbexists');
-        var file_token = jctrl_token.val();
+        var ctrl_token = jsh.XDom(parentobj, filefieldselector + '_token');
+        var ctrl_dbdelete = jsh.XDom(parentobj, filefieldselector + '_dbdelete').element;
+        var ctrl_dbexists = jsh.XDom(parentobj, filefieldselector + '_dbexists').element;
+        var file_token = ctrl_token.value;
         if (file_token) val = file_token;
-        else if (jctrl_dbdelete.val() == '1') val = '';
-        else if (jctrl_dbexists.val() == '1') val = true;
+        else if (ctrl_dbdelete.value == '1') val = '';
+        else if (ctrl_dbexists.value == '1') val = true;
         else val = false;
       }
       else if (('control' in field) && (field.control == 'tree')) {
-        if (jctrl.length) {
-          var selected_nodes = jsh.XExt.TreeGetSelectedNodes(jctrl[0]);
+        if (ctrl) {
+          var selected_nodes = jsh.XExt.TreeGetSelectedNodes(ctrl);
           if (selected_nodes.length > 0) val = selected_nodes[0];
           else val = null;
         }
         else val = null;
       }
       else if (('control' in field) && (field.control == 'checkbox')) {
-        var checked = jctrl.prop('checked');
-        var ishidden = jctrl.css('visibility').toLowerCase() == 'hidden';
+        var checked = ctrl && ctrl.checked;
+        var ishidden = ctrl && ctrl.style.visibility.toLowerCase() == 'hidden';
         var checkval = checked ? '1':'0';
         
         if ('controlparams' in field) {
@@ -453,10 +471,10 @@ exports = module.exports = function(jsh){
         val = checkval;
       }
       else {
-        val = jctrl.val();
+        val = ctrl && ctrl.value;
         if(_.includes(['html','label','linkbutton','button'],field.control)){
-          var jctrl_hidden = parentobj.$find('.'+field.name+'_field_value.xelem'+xmodel.class);
-          val = jctrl_hidden.val();
+          var ctrl_hidden = jsh.XDom(parentobj, '.'+field.name+'_field_value.xelem'+xmodel.class).element;
+          val = ctrl_hidden && ctrl_hidden.value;
         }
         if(typeof val === 'undefined') val = '';
         var ckeditorid = xmodel.class+'_'+field.name;
@@ -475,7 +493,7 @@ exports = module.exports = function(jsh){
         if(!val || ((typeof binding_val != 'undefined') && (binding_val !== null) && (binding_val !== ''))) val = binding_val;
       }
 
-      if (field.ongetvalue) val = field.ongetvalue(val, field, xmodel, jctrl, parentobj);
+      if (field.ongetvalue) val = field.ongetvalue(val, field, xmodel, ctrl, parentobj);
       if ('format' in field) {
         val = jsh.XFormat.Decode(field.format, val);
       }
@@ -588,7 +606,7 @@ exports = module.exports = function(jsh){
   XExtXModel.BindLOV = function (modelid) {
     modelid = jsh.XExt.resolveModelID(modelid);
     return function (xform, parentobj) {
-      if (!parentobj) parentobj = jsh.root;
+      if (!parentobj) parentobj = jsh.xdroot.element;
       var xmodel = jsh.XModels[modelid];
       if(!xmodel) return;
       var isGrid = (xmodel.layout == 'grid');
@@ -604,12 +622,12 @@ exports = module.exports = function(jsh){
           for (var i = 0; i < lovparents.length; i++) {
             var curselector = (isGrid?'.':'.') + lovparents[i] + '.xelem' + xmodel.class;
             lovparents_selector += ((i > 0)?',':'') + curselector;
-            lovparents_val += 'parentvals.push(parentobj.find("' + curselector + '").val()); ';
+            lovparents_val += 'parentvals.push(jsh.XDom(parentobj, "' + curselector + '").value); ';
           }
-          parentobj.$find(lovparents_selector).change(function (evt) {
+          jsh.XDom(parentobj, lovparents_selector).on('change', function (evt) {
             var parentvals = [];
             //Narrow value of child LOV to values where CODVAL1 = that value
-            var ctrl = parentobj.$find((isGrid?'.':'.') + field.name + '.xelem' + xmodel.class);
+            var ctrl = jsh.XDom(parentobj, (isGrid?'.':'.') + field.name + '.xelem' + xmodel.class).element;
             jsh.XExt.JSEval(lovparents_val,this,{ parentvals: parentvals, parentobj: parentobj, xform: xform, modelid: modelid });
             jsh.XExt.RenderParentLOV(xform.Data, ctrl, parentvals, xform.Data._LOVs[field.name], xform.Data.Fields[field.name], ('lovparents' in field));
           });

@@ -33,7 +33,7 @@ var jsHarmonyLocale = require('./jsHarmonyLocale.js');
 var jsHarmonyMailer = require('./lib/Mailer.js');
 var Logger = require('./lib/Logger.js');
 
-var XValidate = require('jsharmony-validate');
+var XValidate = require('./XValidate.js');
 require('./lib/ext-validation.js')(XValidate);
 
 function jsHarmony(config) {

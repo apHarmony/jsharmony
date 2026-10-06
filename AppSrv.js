@@ -52,7 +52,6 @@ AppSrv.prototype.getModel = function (req, res, fullmodelid, noexecute, Q, P) {
   else if ((model.layout == 'exec')||(model.layout == 'report')) dbtasks = this.getModelExec(req, res, fullmodelid, Q, P);
   else throw new Error('Model ' + fullmodelid + ' operation not supported');
   
-  //	if(_.isUndefined(dbtasks)) dbtasks = {};
   if (_.isUndefined(dbtasks)) return;
   if ((typeof noexecute != 'undefined') && noexecute) return dbtasks;
   this.ExecTasks(req, res, dbtasks, false);

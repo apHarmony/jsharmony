@@ -93,8 +93,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if('ondestroy' in model){ %> ondestroy:function(xmodel){<%-jslocals%><%-model.ondestroy%>}, <% }
     if('onloadstate' in model){ %> onloadstate:function(xmodel, state){<%-jslocals%><%-model.onloadstate%>}, <% }
     if('ongetstate' in model){ %> ongetstate:function(xmodel, state){<%-jslocals%><%-model.ongetstate%>}, <% }
-    if('onrowbind' in model){ %> onrowbind:function(xmodel, jobj, datarow){<%-jslocals%><%-model.onrowbind%>}, <% }
-    if('onrowunbind' in model){ %> onrowunbind:function(xmodel, jobj, rowid){<%-jslocals%><%-model.onrowunbind%>}, <% }
+    if('onrowbind' in model){ %> onrowbind:function(xmodel, obj, datarow){<%-jslocals%><%-model.onrowbind%>}, <% }
+    if('onrowunbind' in model){ %> onrowunbind:function(xmodel, obj, rowid){<%-jslocals%><%-model.onrowunbind%>}, <% }
     if('onchange' in model){ %> onchange:function(obj,newval,e){<%-jslocals%><%-model.onchange%>}, <% }
     if('getapi' in model){ %> getapi:function(apitype){<%-jslocals%><%-model.getapi%>}, <% }
 

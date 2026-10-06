@@ -21,7 +21,7 @@ var ejs = require('ejs');
 var crypto = require('crypto');
 var ejsext = require('../lib/ejsext.js');
 var Helper = require('../lib/Helper.js');
-var XValidate = require('jsharmony-validate');
+var XValidate = require('./XValidate.js');
 var _ = require('lodash');
 
 // RenderLoginForgotPassword

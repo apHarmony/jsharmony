@@ -1,0 +1,1 @@
+window.jsh_xdom_runs_scripts = true;

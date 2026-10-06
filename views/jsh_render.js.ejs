@@ -17,8 +17,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 (function(jsh){
-  var $ = jsh.$;
-  var jQuery = $;
+  var XDom = jsh.XDom;
   var _ = jsh._;
   var ejs = jsh.ejs;
   var async = jsh.async;
@@ -72,33 +71,21 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     window.onpopstate = function(event) { jsh.XPage.handlePopState(event); };
   }
 
-  $(window).focus(function(){ jsh.FocusHandler(); });
+  jsh.XDom.on(window, 'focus', function(){ jsh.FocusHandler(); });
 
-  $(document).focusin(function(e){
+  jsh.XDom.on(document, 'focusin', function(e){
     //If a dialog is open, make sure focus is on an element in the top dialog
-    if(jsh.xDialog.length){
-      var newobj = document.activeElement;
-      if(newobj && !($(newobj).closest(jsh.xDialog[0]).length)){
-        window.setTimeout(function(){ jsh.$root(jsh.xDialog[0] + ' input:visible').first().focus(); },1);
+    var newobj = document.activeElement;
+    var topDialog = jsh.xDialog.length && jsh.xDialog[0].obj;
+    if(newobj && topDialog){
+      if(!topDialog.contains(newobj)){
+        window.setTimeout(function(){ jsh.XDom(topDialog, 'input').filter(jsh.XDom.isVisible).first().focus(); },1);
       }
       return;
     }
-    else if(jsh.xPopupStack.length && document.activeElement){
-      //If a colorbox popup is active, do not leave the colorbox
-      var colorbox = document.getElementById('colorbox');
-      if(document.activeElement.id=='colorbox'){}
-      else if(document.activeElement.id=='cboxOverlay'){}
-      else if(colorbox){
-        if(colorbox.contains && colorbox.contains(document.activeElement)){ }
-        else{
-          e.stopPropagation();
-          $(colorbox).focus();
-        }
-      }
-    }
   });
 
-  $(document).focusout(function(){ jsh.FocusHandler(); });
+  jsh.XDom.on(document, 'focusout', function(){ jsh.FocusHandler(); });
 
   jsh.FocusHandler = function(immediate){
     var focusHandlers = jsh.getFocusHandlers(jsh.getTopDialogContainer());
@@ -134,9 +121,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       //Do not reload if performing a refresh, and the model is the same as the previous model
       if(options.onRefreshNoChange && jsh.cur_model && model && (JSON.stringify(model)==JSON.stringify(jsh.cur_model))){ options.onRefreshNoChange(); return; }
 
-      jsh.prev_title = jsh.$root('.xform_title').html();
+      var xform_title = jsh.xd('.xform_title').element;
+      jsh.prev_title = xform_title && xform_title.innerHTML;
       if(!jsh.prev_title) jsh.prev_title = '';
-      jsh.prev_bcrumbs = jsh.$root('div.bcrumbs').html();
+      var div_bcrumbs = jsh.xd('div.bcrumbs').element;
+      jsh.prev_bcrumbs = div_bcrumbs && div_bcrumbs.innerHTML;
       if(!jsh.prev_bcrumbs) jsh.prev_bcrumbs = '';
 
       //Update tab in state, if applicable
@@ -158,7 +147,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           if(tabsChanged){
             //Recalculate jsh.state
             jsh.state.GET.tabs = JSON.stringify(tabs);
-            jsh.state.QS = '?'+$.param(jsh.state.GET);
+            jsh.state.QS = '?'+jsh.XExt.escapeQuery(jsh.state.GET);
             jsh.state.fullurl = jsh.state.fullpath + jsh.state.QS + jsh.state.hash;
           }
         }
@@ -173,7 +162,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh.XBase = {};
       var ejsrslt = jsh.Render(model);
       //console.log(ejsrslt); //Show Full Source
-      jsh.$root('.xbody').html('');
+      var xdxbody = jsh.xd('.xbody');
+      xdxbody.clear();
       jsh.XPage.Destroy();
 
       //Initialize GET/forcequery
@@ -193,7 +183,6 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       jsh.init_complete = false;
       jsh.delete_target = null;
       jsh.bcrumbs = {};
-      jsh.xPopupStack = [];
       jsh.cur_model = model;
 
       var ejsprepend = '';
@@ -203,35 +192,37 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if(ejsrslt.indexOf(jsh.CODE_EJSPREPEND)>=0) ejsrslt = ejsrslt.replace(jsh.CODE_EJSPREPEND,ejsprepend)
       else ejsrslt = ejsprepend + ejsrslt;
       //console.log(ejsrslt); //Debug EJS output
-      jsh.$root('.xbody').html(ejsrslt);
-      var body_class = XExt.escapeCSSClass('xbody_'+jsh.state.modelid);
-      if(model._basemodel) body_class += ' ' + XExt.escapeCSSClass('xbody_'+ model._basemodel);
-      var prevClasses = XExt.getClasses(jsh.$root('.xbody'));
+      // Note: this operation counts on execution of scripts in the embeded code to define the model.
+      xdxbody.setHtml(ejsrslt, {evaluateScripts: true});
+      var prevClasses = XExt.getClasses(xdxbody.element);
       for(var i=0;i<prevClasses.length;i++){
         if(XExt.beginsWith(prevClasses[i], 'xbody_')){
-          jsh.$root('.xbody').removeClass(prevClasses[i]);
+          xdxbody.class.remove(prevClasses[i]);
         }
       }
-      jsh.$root('.xbody').addClass(body_class);
+      if(model._basemodel) xdxbody.class.add(XExt.escapeCSSClass('xbody_'+ model._basemodel));
+      xdxbody.class.add(XExt.escapeCSSClass('xbody_'+jsh.state.modelid));
       //Handle Title
       if(!model.toptitle) model.toptitle = '';
       var orig_title = XExt.unescapeEJS(model.toptitle);
       if (orig_title.indexOf('<#') < 0){
         jsh.XPage.UpdateTitle({ resolveEJS: false });
       }
-      else if(jsh.prev_title_src == model.toptitle) jsh.$root('.xform_title').html(jsh.prev_title);
-      else jsh.$root('.xform_title').html('&nbsp;');
+      else if(jsh.prev_title_src == model.toptitle) jsh.xd('.xform_title').html = jsh.prev_title;
+      else jsh.xd('.xform_title').html = '&nbsp;';
       jsh.prev_title_src = model.toptitle;
     
       //Handle breadcrumbs
-      jsh.orig_bcrumbs = XExt.unescapeEJS(jsh.$root('div.bcrumbs').html());
-      if (jsh.orig_bcrumbs.indexOf('<#') < 0) jsh.$root('div.bcrumbs').html(jsh.orig_bcrumbs);
-      else if(jsh.prev_bcrumbs_src == jsh.orig_bcrumbs) jsh.$root('div.bcrumbs').html(jsh.prev_bcrumbs);
-      else jsh.$root('div.bcrumbs').html('&nbsp;'); 
+      var div_bcrumbs = jsh.xd('div.bcrumbs').element
+      jsh.orig_bcrumbs = XExt.unescapeEJS(div_bcrumbs && div_bcrumbs.innerHTML);
+      if (jsh.orig_bcrumbs.indexOf('<#') < 0) jsh.xd('div.bcrumbs').html = jsh.orig_bcrumbs;
+      else if(jsh.prev_bcrumbs_src == jsh.orig_bcrumbs) jsh.xd('div.bcrumbs').html = jsh.prev_bcrumbs;
+      else jsh.xd('div.bcrumbs').html = '&nbsp;'; 
       jsh.prev_bcrumbs_src = jsh.orig_bcrumbs;
 
-      jsh.$root('.toplink_help').not('.static').attr('href',model.helpurl);
-      jsh.$root('.toplink_help').not('.static').attr('onclick','return (function(){'+XExt.getJSLocals(model.id)+model.helpurl_onclick+'}).call(this);');
+      var xdtoplink_help = jsh.xd('.toplink_help').omit('.static');
+      xdtoplink_help.attr.href = model.helpurl;
+      xdtoplink_help.attr.onclick = 'return (function(){'+XExt.getJSLocals(model.id)+model.helpurl_onclick+'}).call(this);';
       if(model.menu){ jsh.XMenu.Select(model.menu); }
       jsh.ResetLinks();
       jsh.trigger('jsh_ready');
@@ -259,13 +250,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   jsh.ResetLinks = function(rootobj){
-    var jroot = (rootobj ? $(rootobj) : jsh.root);
-    jroot.find('a').each(function(i,obj){
-      var jobj = $(obj);
-      if(jobj.attr('onclick')) return;
-      if(jobj.closest('.mce-content-body,[contenteditable],.htmlarea_container').length) return;
-      if(jobj.attr('target')) return;
-      jobj.attr('onclick','return <%-req.jshsite.instance%>.Navigate(this);');
+    _.forEach(jsh.XDom(rootobj || jsh.xdroot, 'a').elements, function(obj,i){
+      if(jsh.XDom.getAttribute(obj, 'onclick')) return;
+      if(jsh.XDom.parent(obj, '.mce-content-body,[contenteditable],.htmlarea_container').length) return;
+      if(jsh.XDom.getAttribute(obj, 'target')) return;
+      jsh.XDom.setAttribute(obj, 'onclick','return <%-req.jshsite.instance%>.Navigate(this);');
     });
   }
 
@@ -449,7 +438,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   jsh.Error = function(num,txt){
     console.log('Error #'+num+': '+txt);
-    jsh.$root('.xbody').html('<h3>Error #'+num+': '+txt+'</h3>');
+    jsh.xd('.xbody').html = '<h3>Error #'+num+': '+txt+'</h3>';
   }
 
   //Array of source HTML
@@ -459,7 +448,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   jsh.XPage.bindEvents();
   jsh.trigger('jsh_render_init');
 
-  $(document).ready(function(){
+  jsh.XDom.onPageLoad(function(){
     jsh.title_html = "\r\n"+'<h1 style="display:inline-block;" class="xform_title">&nbsp;</h1>' + "\r\n";
     jsh.state = jsh.GetState();
     if(!jsh.state) return;

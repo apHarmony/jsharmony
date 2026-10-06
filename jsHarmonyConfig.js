@@ -279,8 +279,6 @@ function jsHarmonyConfig(config){
   this.theme = 'light';
   //Additional CSS files for jsHarmony.css
   this.css_extensions = [
-    path.dirname(module.filename) + '/public/jquery-ui/css/jquery-ui-1.10.3.custom.min.css',
-    path.dirname(module.filename) + '/public/js/colorbox/colorbox.css',
   ];
   //Additional JS files for jsHarmony.js
   this.js_extensions = [];

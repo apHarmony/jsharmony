@@ -448,12 +448,6 @@ BODY
   padding-left:5px;
   padding-right:5px;
 }
-<%-rootcss%> .colorbox_inline {
-	background-color:white;
-	width:400px;
-	padding-top:15px;
-	padding-bottom:15px;
-}
 <%-rootcss%> .xform_ctrl.tree {
   display:inline-block;
   border:1px solid #aaa;
@@ -639,6 +633,76 @@ BODY
 }
 <%-rootcss%> .xtagbox.uneditable .xtag_remove {
   cursor: default;
+}
+
+<%-rootcss%> .xdatepicker {
+  box-sizing: border-box;
+  position: absolute;
+  border: 1px solid #a1a1a1;
+  border-radius: 4px;
+  width: 251px;
+  padding: 3px;
+  text-align: center;
+  color: #454545;
+  background-color: #FFFFFF;
+}
+<%-rootcss%> .xdatepicker table {
+  border-collapse: collapse;
+}
+<%-rootcss%> .xdatepicker td {
+  border: 0;
+  padding: 1px;
+  height: 25px;
+}
+<%-rootcss%> .xdatepicker td a {
+  display: block;
+  border: 1px solid #ccc;
+  text-align: right;
+  color: #363895;
+  padding: 2px;
+  text-decoration: none;
+  font-weight: bold;
+}
+<%-rootcss%> .xdatepicker a:hover {
+  cursor: pointer;
+  text-decoration: none;
+}
+<%-rootcss%> .xdatepicker_banner {
+  box-sizing: border-box;
+  display: flex;
+  background-color: #DFDFE6;
+  border: 1px solid #A1A1A1;
+  border-radius: 4px;
+  height: 33px;
+  padding: 3px 0px;
+}
+<%-rootcss%> .xdatepicker_nav {
+  text-align: center;
+  flex: 1;
+}
+<%-rootcss%> .xdatepicker_nav a{
+  display: block;
+  width: 100%;
+  height: 100%;
+  align-content: center;
+  color: #454545;
+  text-decoration: none;
+}
+<%-rootcss%> .xdatepicker_center {
+  flex: 5;
+  text-align: center;
+  align-content: center;
+  display: flex;
+}
+<%-rootcss%> .xdatepicker table {
+  width: 100%;
+}
+<%-rootcss%> .xdatepicker th {
+  padding: 9px 4px;
+}
+<%-rootcss%> .xdatepicker .selected {
+  border-color: #A1A1A1;
+  background-color: #DDDDDD;
 }
 <%-rootcss%> .xtag_input,
 <%-rootcss%> .xform .xtag_input,
@@ -1063,7 +1127,8 @@ DIALOG BOXES
 	border-radius: 5px;
   -moz-border-radius: 5px;
   overflow:auto;
-  max-height: calc(100vh - 66px);
+  max-height: calc(100vh - 26px);
+  box-sizing: border-box;
 }
 <%-jshElementSelector%>.xdialogblock .xloadingcontainer,
 <%-jshElementSelector%>.xdialogblock .xalertbox,
@@ -1094,29 +1159,64 @@ DIALOG BOXES
   text-align:left;
 }
 <%-jshElementSelector%>.xdialogblock .xalertbox {
-	width:370px;
+	width:412px;
 	min-height:60px;
 	text-align:left;
 }
 <%-jshElementSelector%>.xdialogblock .xconfirmbox {
-	width:370px;
+	width:412px;
 	min-height:60px;
 	text-align:center;
 }
 <%-jshElementSelector%>.xdialogblock .xpromptbox {
-	width:310px;
+	width:352px;
 	min-height:60px;
 	text-align:left;
 }
 <%-jshElementSelector%>.xdialogblock .xtextzoombox {
-	width:510px;
+	width:552px;
 	min-height:60px;
 	text-align:left;
 }
 <%-jshElementSelector%>.xdialogblock .xhintsbox {
-	width:510px;
+	width:552px;
 	min-height:60px;
 	text-align:left;
+}
+<%-jshElementSelector%>.xdialogblock .xpopupbox {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 7px 2px 5px 5px;
+}
+<%-jshElementSelector%> .xpopupbox_header {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  background-color: #fff;
+  width: 100%;
+  box-shadow: #00000022 0 2px 2px;
+  z-index: 2;
+  padding: 2px 0;
+}
+<%-jshElementSelector%> .xpopupbox_header_title {
+  text-align: center;
+  color: #555;
+  font-size: 1.1em;
+  width:100%;
+}
+<%-jshElementSelector%> .xpopupbox_header_close {
+  margin-left:auto;
+  color: #555;
+  position: relative;
+  top:-3px;
+}
+<%-jshElementSelector%> .xpopupbox_header_close:hover  {
+  cursor:pointer;
+}
+<%-jshElementSelector%> .xpopupbox_content {
+  max-width: 100%;
+  overflow: auto;
 }
 <%-rootcss%> .xalertmessage,
 <%-rootcss%> .xconfirmmessage,

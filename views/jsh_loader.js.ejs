@@ -28,7 +28,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   var jsh = null;
   var XExt = null;
-  var $ = null;
+  var XDom = null;
   var async = null;
   var jshInitialized = false;
 
@@ -60,7 +60,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     util.loadScript(_this._baseurl+'js/jsHarmony.js', function(){
 
       jsh = _this.jsh = window[<%-JSON.stringify(req.jshsite.instance)%>] = new jsHarmony(jshParams);
-      $ = jsh.$;
+      XDom = jsh.XDom;
       XExt = jsh.XExt;
       async = jsh.async;
 

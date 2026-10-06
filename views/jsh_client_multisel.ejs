@@ -65,7 +65,7 @@ if(lovfield == '') throw new Error('Multisel requires one LOV.');
         <% if('value' in field){ %>
           <%-field.value%>
         <% } else { %>
-          <span onclick="<%-js('$(this).closest("tr").find(".checkbox").click();')%>"><%%=<%-instance%>.XFormat.Apply(<%-format%>,data[<%-xejs.iif(field.name==lovfield,'jsh.uimap.code_txt',"'"+xejs.escapeJS(field.name)+"'")%>])%%></span>
+          <span onclick="<%-js('XDom(this).parent("tr").get(".checkbox").emit("click");')%>"><%%=<%-instance%>.XFormat.Apply(<%-format%>,data[<%-xejs.iif(field.name==lovfield,'jsh.uimap.code_txt',"'"+xejs.escapeJS(field.name)+"'")%>])%%></span>
         <% } %>
         <% if('link' in field){ %></a><% } %>
       </div></td>

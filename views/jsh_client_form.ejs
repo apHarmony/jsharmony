@@ -58,7 +58,7 @@
         <%-jsh.Render(popup_model,model,model.duplicate)%>
         <div style="text-align:center;padding-top:8px;">
           <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.class%>" style="padding:3px 8px;" value="Duplicate" onclick="<%-instance%>.XPage.Duplicate('<%=popup_model.id%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link_on_success))%>','<%-XExt.escapeHTMLQ(XExt.escapeJS(model.duplicate.link_options_on_success))%>'); return false;" />
-          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.class%>" style="padding:3px 8px;" value="Cancel" onclick="<%-instance%>.$.colorbox.close(); return false;" />
+          <input type="button" data-model="<%=popup_model.id%>" class="xform_ctrl xelem<%=popup_model.class%>" style="padding:3px 8px;" value="Cancel" onclick="<%-instance%>.XExt.CancelDialog(); return false;" />
         </div>
       </div>
     </div>

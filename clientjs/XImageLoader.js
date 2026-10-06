@@ -17,8 +17,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var $ = require('./jquery-1.11.2');
-$.fn.$find = function(){ return $.fn.find.apply(this, arguments); };
+var _ = require('lodash');
 
 exports = module.exports = function(jsh){
 
@@ -27,8 +26,9 @@ exports = module.exports = function(jsh){
     
     this.loaded = new Array();
     
-    jsh.root.append('<img class="XImageLoader jsHarmonyElement jsHarmonyElement_'+jsh._instanceClass+'" style="position:absolute;top:0px;left:0px;z-index:0;visibility:hidden;" />');
-    this.loaderimg = jsh.$root('.XImageLoader.jsHarmonyElement_'+jsh._instanceClass);
+    jsh.xdroot.append('<img class="XImageLoader jsHarmonyElement jsHarmonyElement_'+jsh._instanceClass+'" style="position:absolute;top:0px;left:0px;z-index:0;visibility:hidden;" />');
+    this.loaderimg = jsh.xd('.XImageLoader.jsHarmonyElement_'+jsh._instanceClass);
+    this.onLoad = null;
     
     this.PrependImages = function(imgarray){
       //Prepend array of images
@@ -45,8 +45,7 @@ exports = module.exports = function(jsh){
     
     this.IsLoaded = function(img){
       //Check if slide is in loaded array, return true if yes, false if no
-      if($.inArray(img,this.loaded) != -1) return true;
-      return false;
+      return _.includes(this.loaded, img);
     };
     
     this.StartLoad = function(){
@@ -70,15 +69,16 @@ exports = module.exports = function(jsh){
         this.LoadNext();
         return;
       }
-      
-      this.loaderimg.unbind('load');
-      //Load next slide
-      this.loaderimg.load(function(){
+
+      this.loaderimg.off('load', this.onLoad);
+      this.onLoad = function(){
         //Possibly for the future - add it to the scene, hidden
         me.loaded.push(img);
         me.LoadNext();
-      });
-      this.loaderimg.attr('src',img);
+      };
+      //Load next slide
+      this.loaderimg.on('load', this.onLoad);
+      this.loaderimg.attr.src = img;
     };
   }
 

@@ -30,7 +30,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         "caption":<%-JSON.stringify(field.caption_ext||field.caption||"")%>,
       <%-xejs.iif('format' in field,'"format":'+JSON.stringify(field.format)+',') %>
       <%-xejs.iif('actions' in field,'"actions":'+JSON.stringify(field.actions)+',') %>
-      <%-xejs.iif('ongetvalue' in field,'"ongetvalue":function(val,field,xmodel,jctrl,parentobj){'+jslocals+field.ongetvalue+'},') %>
+      <%-xejs.iif('ongetvalue' in field,'"ongetvalue":function(val,field,xmodel,ctrl,parentobj){'+jslocals+field.ongetvalue+'},') %>
       <%-xejs.iif('onenabled' in field,'"onenabled":function(obj){'+jslocals+field.onenabled+'},') %>
       <%-xejs.iif('ondisabled' in field,'"ondisabled":function(obj){'+jslocals+field.ondisabled+'},') %>
       <%-xejs.iif('key' in field,'"key":'+JSON.stringify(field.key)+',') %>

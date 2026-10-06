@@ -17,8 +17,6 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var $ = require('./jquery-1.11.2');
-$.fn.$find = function(){ return $.fn.find.apply(this, arguments); };
 var _ = require('lodash');
 
 exports = module.exports = function(jsh){
@@ -61,15 +59,11 @@ exports = module.exports = function(jsh){
     jsh.XExt.getToken(function (token) {
       params = _.extend(params, token);
       params._func = _this.Func;
-      var url = _this.Server + '/scan/?' + $.param(params);
-      $.ajax({
-        cache: false,
-        url: url,
+      var url = jsh.XExt.AppendUrlParamsCacheBust(_this.Server + '/scan/', params);
+      jsh.XExt.Request_JSONP(url, {
         jsonp: 'callback',
-        dataType: 'jsonp',
-        complete: function (data) {
+        complete: function (jdata) {
           XScanner_ClearLoadEvents();
-          var jdata = data.responseJSON;
           if ((jdata instanceof Object) && ('_error' in jdata)) {
             if (jsh.DefaultErrorHandler(jdata._error.Number, jdata._error.Message)) { /* Do nothing */ }
             else if ((jdata._error.Number == -9) || (jdata._error.Number == -5)) { jsh.XExt.Alert(jdata._error.Message); }
@@ -81,7 +75,7 @@ exports = module.exports = function(jsh){
             if (onComplete) onComplete(jdata);
           }
           else {
-            jsh.XExt.Alert('Error Scanning: ' + JSON.stringify(data.responseJSON ? data.responseJSON : ''), onFail);
+            jsh.XExt.Alert('Error Scanning: ' + JSON.stringify(jdata ? jdata : ''), onFail);
           }
         },
         error: function (err) { XScanner_Timeout(onFail); }

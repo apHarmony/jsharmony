@@ -21,6 +21,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   var XExt = jsh.XExt;
   var XPage = jsh.XPage;
+  var XDom = jsh.XDom;
 
   XPage.handlePopState = function(event){
     var state = event.state;
@@ -190,7 +191,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           if (!foundkey) urlkeys[key] = rootxmodel.getBindingOrRootKey(key);
         });
         jsh.is_insert = false;
-        if (!_.isEmpty(urlkeys)) url = url + '&' + $.param(urlkeys, false);
+        if (!_.isEmpty(urlkeys)) url = url + '&' + XExt.escapeQuery(urlkeys);
         window.onbeforeunload = null;
         jsh.cancelExit = true;
         //Execute oninsert Handler
@@ -219,12 +220,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       });
       if (!bubble) return;
 
-      console.log('Save complete');
+      if(jsh._debug) console.log('Save complete');
       //Refresh any parent form
       XPage.RefreshParent();
       //Refresh the database data
       XPage.Select({ force: true }, function () {
-        console.log('Reselect complete');
+        if(jsh._debug) console.log('Reselect complete');
       });
     }, options.onFail);
   }
@@ -285,9 +286,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       }
       else {
         var target = jsh._BASEURL;
-        var bcrumbobj = jsh.$root('div.bcrumbs');
-        if (bcrumbobj.size() > 0) {
-          target = bcrumbobj.children('a').last().prop('href');
+        var xdbcrumb = jsh.xd('div.bcrumbs');
+        if (xdbcrumb.length > 0) {
+          target = xdbcrumb.children.filter('a').last().attr.href;
         }
         XExt.navTo(target);
       }
@@ -295,48 +296,48 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   XPage.RenderButtons = function(oroot){
-    if(!oroot) oroot = jsh.root;
+    if(!oroot) oroot = jsh.xdroot;
     var button_groups = {};
     //Merge buttons in tab containers with tabpos="top" with tab
     XPage.traverseModels(null, function (xmodel) {
-      if(xmodel.curtab && (xmodel.tabpos=='top')){
+      if(xmodel.curtab && (xmodel.tabpos=='top') && !XExt.hasAction(xmodel.actions, 'IU')){
         var childModel = jsh.XModels[xmodel.curtab];
-        var parentactions = $('.xactions.xelem'+xmodel.class);
-        var childactions = $('.xactions.xelem'+childModel.class);
-        if(childactions.length && parentactions.length){
-          if(!XExt.hasAction(xmodel.actions, 'IU')){
-            parentactions.children().appendTo(childactions);
-            parentactions.remove();
-          }
+        var parentactions = document.querySelector('.xactions.xelem'+xmodel.class);
+        var childactions = document.querySelector('.xactions.xelem'+childModel.class);
+        if(childactions && parentactions){
+          while (parentactions.children.length) {
+            childactions.append(parentactions.children[0]);
+          };
+          parentactions.remove();
         }
       }
     });
-    $(oroot).find('.xform_button').each(function () {
-      var jbtn = $(this);
-      var btnactions = jbtn.data('actions');
-      if (jsh.is_insert && !XExt.hasAction(btnactions, 'I')) jbtn.hide();
+    _.forEach(XDom(oroot, '.xform_button').elements,function (btn) {
+      var xdbtn = XDom(btn);
+      var btnactions = xdbtn.data.actions;
+      if (jsh.is_insert && !XExt.hasAction(btnactions, 'I')) xdbtn.style.display = false;
       else {
-        if(jbtn.hasClass('grouped')){
-          var modelid = jbtn.data('model');
+        if(xdbtn.class.contains('grouped')){
+          var modelid = xdbtn.data.model;
           var buttonmodel = jsh.XModels[modelid];
-          var group = jbtn.data('group');
+          var group = xdbtn.data.group;
           var button_group_name = modelid+'_'+group;
           if(!(button_group_name in button_groups)) button_groups[button_group_name] = {
             modelid: modelid,
             modelclass: buttonmodel.class,
             group: group,
-            jbutton: []
+            buttons: []
           };
-          button_groups[button_group_name].jbutton.push(jbtn);
+          button_groups[button_group_name].buttons.push(btn);
         }
       }
     });
     for(var button_group_name in button_groups){
       var button_group = button_groups[button_group_name];
-      jsh.$root('.xbody').append('<div class="xactions_group xcontext_menu xelem'+button_group.modelclass+'" data-group="'+button_group.group+'" style="display:none;"></div>');
-      var jgroup = jsh.$root('.xactions_group.xelem'+button_group.modelclass+'[data-group="'+button_group.group+'"]');
-      _.each(button_group.jbutton,function(jbutton){
-        jgroup.append(jbutton);
+      jsh.xd('.xbody').append('<div class="xactions_group xcontext_menu xelem'+button_group.modelclass+'" data-group="'+button_group.group+'" style="display:none;"></div>');
+      var group = jsh.xd('.xactions_group.xelem'+button_group.modelclass+'[data-group="'+button_group.group+'"]').element;
+      _.each(button_group.buttons,function(button){
+        group.append(button);
       });
     }
   }
@@ -377,10 +378,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           XPage.LayoutOneColumn();
           XPage.Show();
           jsh.XWindowResize();
-          if (enable_save && !_.includes(rootmodel.hide_system_buttons,'save')) jsh.$root('.xactions .save.top').show();
-          if (enable_delete && !_.includes(jsh.XModels[jsh.delete_target].hide_system_buttons,'delete')) jsh.$root('.xactions .delete.top').show();
+          if (enable_save && !_.includes(rootmodel.hide_system_buttons,'save')) jsh.xd('.xactions .save.top').style.display = true;
+          if (enable_delete && !_.includes(jsh.XModels[jsh.delete_target].hide_system_buttons,'delete')) jsh.xd('.xactions .delete.top').style.display = true;
           XPage.traverseModels(null, function (xmodel) {
-            if (!jsh.is_insert && XExt.hasAction(xmodel.actions, 'I')) jsh.$root('.xactions .duplicate.xelem' + xmodel.class).show();
+            if (!jsh.is_insert && XExt.hasAction(xmodel.actions, 'I')) jsh.xd('.xactions .duplicate.xelem' + xmodel.class).style.display = true;
           });
           
           //Update Browser History with URL/state
@@ -394,15 +395,22 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           else XExt.ReplaceHistory(window.location.href.toString(), XPage.GetState());
 
           //Focus on the first element on the page
-          var forceFocus = jsh.$root('.xforcefocus').not('input[type=hidden]').filter(':visible');
-          if(forceFocus && forceFocus.length) forceFocus.first().focus();
+          var forceFocus = jsh.xd('.xforcefocus').filter(function(el) {
+            return !el.matches('input[type=hidden]') && XDom.isVisible(el);
+          }).element;
+          if(forceFocus) forceFocus.focus();
           else {
-            var firstControl = jsh.$root('input,select,textarea,.xlookup').not('input[type=hidden]').not('[readonly]').filter(':visible').first();
-            if(firstControl && firstControl.length && !firstControl.is('.datepicker')) firstControl.focus();
+            var firstControl = jsh.xd('input,select,textarea,.xlookup').filter(function(el) {
+              return !el.matches('input[type=hidden]') && !el.matches('[readonly]') && XDom.isVisible(el);
+            }).element;
+            if(firstControl && !XDom.class.contains(firstControl, 'datepicker')) firstControl.focus();
 
             //Select first search value by default, if form is open
-            var firstSearchValue = jsh.$root('.xsearch_value:visible').first();
-            if(firstSearchValue && firstSearchValue.length && !firstSearchValue.hasClass('datepicker')) firstSearchValue.select().focus();
+            var firstSearchValue = jsh.xd('.xsearch_value').filter(XDom.isVisible).element;
+            if(firstSearchValue && !XDom.class.contains(firstSearchValue, 'datepicker')) {
+              firstSearchValue.select();
+              firstSearchValue.focus();
+            }
           }
 
           jsh.init_complete = true;
@@ -415,16 +423,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   XPage.Refresh = function(modelid) {
     modelid = XExt.resolveModelID(modelid);
-    console.log('Refresh');
     //Handle modelid
     if (XPage.onGridExit(null, function () { XPage.Refresh(modelid); })){
-      if(!document.hasFocus()) $(document.activeElement).blur();
+      if(!document.hasFocus() && document.activeElement) document.activeElement.blur();
     }
     //Modify grid refresh to load multiple pages
     var foundchanges = XPage.GetChanges();
     if (foundchanges.length > 0) return;
 
-    XPage.Select({ modelid: modelid, force: true }, function () { XPage.RefreshParent(); console.log('Reselect complete'); });
+    XPage.Select({ modelid: modelid, force: true }, function () { XPage.RefreshParent(); });
   }
 
   XPage.RefreshParent = function() {
@@ -440,7 +447,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var qs = XExt.parseGET(a.search);
     _.extend(qs, options.params);
     qs.tstmp = Date.now();
-    a.search = '?' + $.param(qs);
+    a.search = '?' + XExt.escapeQuery(qs);
     if(options.force){
       window.onbeforeunload = null;
       jsh.cancelExit = true;
@@ -625,8 +632,9 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     if(root_title && (root_title.indexOf('<#') >= 0)){
       root_title = XPage.ParseEJS(root_title, jsh.XModels_root);
     }
-    jsh.$root('.xform_title').html(root_title);
-    jsh.$root('.xform_title').toggle(!!root_title);
+    var xdtitle = jsh.xd('.xform_title');
+    xdtitle.text = root_title;
+    xdtitle.style.display = !!root_title;
   }
 
   XPage.RenderEJS = function(onComplete) {
@@ -653,43 +661,42 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
     //Update Breadcrumbs
     if (jsh.XModels_root && (jsh.orig_bcrumbs.indexOf('<#') >= 0)) {
-      jsh.$root('div.bcrumbs').html(XPage.ParseEJS(jsh.orig_bcrumbs, jsh.XModels_root));
+      jsh.xd('div.bcrumbs').html = XPage.ParseEJS(jsh.orig_bcrumbs, jsh.XModels_root);
     }
 
     XPage.traverseModels(null, function (xmodel) {
-      jsh.$root(".xtitle.xelem" + xmodel.class).each(function () {
+      _.forEach(jsh.xd(".xtitle.xelem" + xmodel.class).elements, function (el) {
         //Update each form title
         var title_text = xmodel.title;
-        if (title_text.indexOf('<#') >= 0) $(this).html(XPage.ParseEJS(title_text, xmodel.id));
-        else $(this).html(title_text);
+        if (title_text.indexOf('<#') >= 0) XDom(el).html = XPage.ParseEJS(title_text, xmodel.id);
+        else XDom(el).text = title_text;
       });
-      jsh.$root(".xform_button.xelem" + xmodel.class+', .xnorecords.xelem'+xmodel.class+' a').each(function () {
-        var href = $(this).attr('href');
+      _.forEach(jsh.xd(".xform_button.xelem" + xmodel.class+', .xnorecords.xelem'+xmodel.class+' a').elements, function (el) {
+        var href = XDom.getAttribute(el, 'href');
         //Store / retrieve original URL
-        if ($(this).data('orighref')) href = $(this).data('orighref');
-        else $(this).data('orighref', href);
+        if (XDom.getData(el, 'orighref')) href = XDom.getData(el, 'orighref');
+        else XDom.setData(el, 'orighref', href);
         //Parse URL EJS
         if (href.indexOf('<#') >= 0) {
           /* Resolve EJS */
-          $(this).attr('href', XPage.ParseEJS(href, xmodel.id, xmodel.parent));
+          XDom.setAttribute(el, 'href', XPage.ParseEJS(href, xmodel.id, xmodel.parent));
         }
       });
     }, { disabledModels: true }, onComplete);
   }
 
-  XPage.RemoveEJSTags = function(jobj) {
-    if (jobj.size() == 0) return '';
-    var rslt = XPage.getObjEJS(jobj);
+  XPage.RemoveEJSTags = function(obj) {
+    if (!obj) return '';
+    var rslt = XPage.getObjEJS(obj);
     if (rslt.indexOf('<#') >= 0) {
-      //jobj.html(rslt.replace(/<#(.*?)#>/g,''));
-      jobj.html('');
+      obj.innerHTML = '';
     }
     return rslt;
   }
 
-  XPage.getObjEJS = function(jobj) {
-    if (jobj.size() == 0) return '';
-    var rslt = jobj.html();
+  XPage.getObjEJS = function(obj) {
+    if (!obj) return '';
+    var rslt = obj.innerHTML;
     rslt = XExt.ReplaceAll(rslt, '&lt;#', '<#');
     rslt = XExt.ReplaceAll(rslt, '#&gt;', '#>');
     return rslt;
@@ -805,33 +812,29 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   XPage.LayoutOneColumn = function(oroot, options){
-    if(!oroot) oroot = jsh.root;
+    if(!oroot) oroot = jsh.xdroot;
     options = _.extend({ reset: false }, options);
-    $(oroot).find('.xform.onecolumn').each(function(){
-      var jform = $(this);
+    _.forEach(XDom(oroot, '.xform.onecolumn').elements, function(form){
       var max_width = 0;
       if(options.reset){
-        jform.find('.leading').each(function(){ 
-          var jobj = $(this);
-          if(jobj.closest('.xform')[0]!=jform[0]) return;
-          if(jobj.hasClass('hidden')) return;
-          jobj.css('width','auto');
+        _.forEach(XDom(form, '.leading').elements, function(obj){
+          if(obj.closest('.xform')!=form) return;
+          if(XDom.class.contains(obj, 'hidden')) return;
+          XDom.style.width(obj,'auto');
         });
       }
-      jform.find('.leading').each(function(){ 
-        var jobj = $(this);
-        if(jobj.closest('.xform')[0]!=jform[0]) return;
-        if(jobj.hasClass('hidden')) return;
-        var width = jobj.width();
+      _.forEach(XDom(form, '.leading').elements, function(obj){
+        if(obj.closest('.xform')!=form) return;
+        if(XDom.class.contains(obj, 'hidden')) return;
+        var width = XDom.calc.width(obj);
         if(width) width++; //Add 1 to handle fractional widths
         if(width > max_width) max_width = width;
       });
-      jform.find('.leading').each(function(){ 
-        var jobj = $(this);
-        if(jobj.closest('.xform')[0]!=jform[0]) return;
-        if(jobj.hasClass('hidden')) return;
-        jobj.width(max_width);
-        if(jobj.is(':visible')) jobj.toggle((max_width>0));
+      _.forEach(XDom(form, '.leading').elements, function(obj){
+        if(obj.closest('.xform')!=form) return;
+        if(XDom.class.contains(obj, 'hidden')) return;
+        XDom.style.width(obj,max_width);
+        if(XDom.isVisible(obj)) XDom.style.display(obj, (max_width>0));
       });
     });
   }
@@ -841,10 +844,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     _.each(jsh.XModels, function (xmodel, xmodelid) {
       if(modelid && (modelid!=xmodelid)) return;
       if(cond && !cond(xmodel)) return;
-      if (xmodel.layout == 'grid') jsh.$root('.xtbl.xelem' + xmodel.class + ',.xbodyhead.xelem' + xmodel.class).hide();
+      if (xmodel.layout == 'grid') jsh.xd('.xtbl.xelem' + xmodel.class + ',.xbodyhead.xelem' + xmodel.class).style.display = false;
       else {
-        jsh.$root('.xform'+xmodel.class).hide(); 
-        jsh.$root('.xtabcontrol'+xmodel.class).hide(); 
+        jsh.xd('.xform'+xmodel.class).style.display = false; 
+        jsh.xd('.xtabcontrol'+xmodel.class).style.display = false 
       }
     });
   }
@@ -854,10 +857,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     _.each(jsh.XModels, function (xmodel, xmodelid) {
       if(modelid && (modelid!=xmodelid)) return;
       if(cond && !cond(xmodel)) return;
-      if (xmodel.layout == 'grid') jsh.$root('.xtbl.xelem' + xmodel.class + ',.xbodyhead.xelem' + xmodel.class).show();
+      if (xmodel.layout == 'grid') jsh.xd('.xtbl.xelem' + xmodel.class + ',.xbodyhead.xelem' + xmodel.class).style.display = true;
       else {
-        jsh.$root('.xform' + xmodel.class).show();
-        jsh.$root('.xtabcontrol' + xmodel.class).show();
+        jsh.xd('.xform' + xmodel.class).style.display = true;
+        jsh.xd('.xtabcontrol' + xmodel.class).style.display = true;
       }
     });
   }
@@ -881,7 +884,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var url = '';
     var state = undefined;
     if ((typeof new_jsh_state != 'undefined') && new_jsh_state) {
-      url = new_jsh_state.fullpath + new_jsh_state.QS + new_jsh_state.hash;//$.param(JSON.parse(JSON.stringify(new_jsh_state.GET)));
+      url = new_jsh_state.fullpath + new_jsh_state.QS + new_jsh_state.hash;
       jsh.cur_history_url = url;
       if (use_cur_state) state = XPage.GetState(jsh.cur_history_url);
     }
@@ -896,7 +899,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if ('_url' in nget_state) delete nget_state._url;
 
       nget.state = JSON.stringify(nget_state);
-      if (!_.isEmpty(nget)) url += '?' + $.param(nget);
+      if (!_.isEmpty(nget)) url += '?' + jsh.XExt.escapeQuery(nget);
       state._url = url;
     }
     if(options.replaceHistory) XExt.ReplaceHistory(url, state);
@@ -946,8 +949,8 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   XPage.DownloadFile = function(modelid, field, title) {
     modelid = XExt.resolveModelID(modelid);
     var xmodel = jsh.XModels[modelid];
-    var jctrl_token = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_token');
-    var file_token = jctrl_token.val();
+    var ctrl_token = jsh.xd('.xelem' + xmodel.class + ' .' + field + '_token').element;
+    var file_token = ctrl_token && ctrl_token.value;
     var url = '';
     if (file_token) url = jsh._BASEURL + '_dl/_temp/' + file_token;
     else {
@@ -956,14 +959,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       if (xmodel.keys.length != 1) { throw new Error('File models require one key.'); }
       url = jsh._BASEURL + '_dl/' + modelid + '/' + keys[xmodel.keys[0]] + '/' + field;
     }
-    jsh.getFileProxy().prop('src', url);
+    jsh.getFileProxy().src = url;
   }
 
   XPage.FilePreview = function(modelid, field, title) {
     modelid = XExt.resolveModelID(modelid);
     var xmodel = jsh.XModels[modelid];
-    var jctrl_token = jsh.$root('.xelem' + xmodel.class + ' .' + field + '_token');
-    var file_token = jctrl_token.val();
+    var ctrl_token = jsh.xd('.xelem' + xmodel.class + ' .' + field + '_token').element;
+    var file_token = ctrl_token && ctrl_token.value;
     var url = '';
     if (file_token) url = jsh._BASEURL + '_dl/_temp/' + file_token + '?view=1';
     else {
@@ -979,13 +982,13 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   XPage.FileDelete = function(modelid, fieldname, title) {
     modelid = XExt.resolveModelID(modelid);
     var xmodel = jsh.XModels[modelid];
-    var jctrl_token = jsh.$root('.xelem' + xmodel.class + ' .' + fieldname + '_token');
-    var jctrl_dbexists = jsh.$root('.xelem' + xmodel.class + ' .' + fieldname + '_dbexists');
-    var jctrl_dbdelete = jsh.$root('.xelem' + xmodel.class + ' .' + fieldname + '_dbdelete');
-    var jctrl = jsh.$root('.' + fieldname + '.xelem' + xmodel.class);
-    if (jctrl_dbexists.val() == '1') jctrl_dbdelete.val('1');
-    jctrl_token.val('');
-    jctrl.addClass('nodocument');
+    var ctrl_token = jsh.xd('.xelem' + xmodel.class + ' .' + field + '_token').element;
+    var ctrl_dbexists = jsh.xd('.xelem' + xmodel.class + ' .' + fieldname + '_dbexists').element;
+    var ctrl_dbdelete = jsh.xd('.xelem' + xmodel.class + ' .' + fieldname + '_dbdelete');
+    var ctrl = jsh.xd('.' + fieldname + '.xelem' + xmodel.class).element;
+    if (ctrl_dbexists.value == '1') ctrl_dbdelete.value = '1';
+    ctrl_token.value = '';
+    XDom.class.add(ctrl, 'nodocument');
     XExt.setFormControl(xmodel.controller.form, fieldname, '');
   }
 
@@ -994,38 +997,37 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     var xmodel = jsh.XModels[modelid];
     var field = xmodel.fields[fieldname];
     //Get PrevToken, if Applicable
-    jsh.xfileupload_ctrl = jsh.$root('.' + fieldname + '.xelem' + xmodel.class);
-    if (jsh.xfileupload_ctrl.size() != 1) return;
-    $.colorbox({
-      href: jsh.$root(".xfileuploader"), inline: true, closeButton: false, arrowKey: false, preloading: false, overlayClose: false, title: title, fixed: true,
-      onOpen: function () {
-        jsh.$root('.xfileuploader_prevtoken').val(jsh.xfileupload_ctrl.children('.xform_file_token').val());
-        jsh.$root('.xfileuploader_form').attr('action', jsh._BASEURL + '_ul/');
-        XExt.clearFileInput(jsh.$root('.xfileuploader_file')[0]);
-      },
-      onComplete: function () { /* Optionally set element focus */ }
-    });
+    jsh.xdfileupload_ctrl = jsh.xd('.' + fieldname + '.xelem' + xmodel.class);
+    if (jsh.xdfileupload_ctrl.length != 1) return;
+    var xdFileUploader = jsh.xd('.xfileuploader');
+    var onInit = function () {
+      jsh.xd('.xfileuploader_prevtoken').value = XDom.getValue(jsh.xdfileupload_ctrl.children.filter('.xform_file_token'));
+      jsh.xd('.xfileuploader_form').attr.action = jsh._BASEURL + '_ul/';
+      XExt.clearFileInput(jsh.xd('.xfileuploader_file').element);
+    };
+    xdFileUploader.get('.xfileuploader_title').text = title;
+    jsh.XExt.CustomPrompt(null, xdFileUploader.element, onInit);
   }
 
   XPage.FileUploadSubmit = function() {
     //Validate file selected
-    if (!jsh.$root(".xfileuploader_file").val()) { XExt.Alert('Please select a file and then click Upload.'); return; }
+    if (!jsh.xd(".xfileuploader_file").value) { XExt.Alert('Please select a file and then click Upload.'); return; }
     jsh.xLoader.StartLoading(jsh.xfileuploadLoader)
     //Submit form
-    jsh.$root('.xfileuploader_form').submit();
+    jsh.xd('.xfileuploader_form').element.submit();
     //Associate file_token, prevtoken with single field
     //Submit that field to the server on update/insert
   }
 
   XPage.FileUploadComplete = function(rslt) {
-    $.colorbox.close();
+    jsh.XExt.AcceptDialog();
     if (!('file_token' in rslt)) return;
-    jsh.xfileupload_ctrl.children('.xform_file_token').val(rslt.file_token);
-    jsh.xfileupload_ctrl.children('.xform_file_dbdelete').val('0');
-    jsh.xfileupload_ctrl.removeClass('nodocument');
+    jsh.xdfileupload_ctrl.get('.xform_file_token').value = rslt.file_token;
+    jsh.xdfileupload_ctrl.get('.xform_file_dbdelete').value = '0';
+    jsh.xdfileupload_ctrl.class.remove('nodocument');
     //Rerender Control
-    var val = XExt.getFormField(XExt.getFormFromObject(jsh.xfileupload_ctrl), jsh.xfileupload_ctrl.data('id'));
-    XExt.setFormControl(XExt.getFormFromObject(jsh.xfileupload_ctrl), jsh.xfileupload_ctrl.data('id'), val);
+    var val = XExt.getFormField(XExt.getFormFromObject(jsh.xdfileupload_ctrl), jsh.xdfileupload_ctrl.data.id);
+    XExt.setFormControl(XExt.getFormFromObject(jsh.xdfileupload_ctrl), jsh.xdfileupload_ctrl.data.id, val);
   }
 
   XPage.onJSProxyComplete = function(id, data) {
@@ -1108,50 +1110,52 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
     _.each(xmodel.fields, function(field){
       var fieldselector = '.' + field.name + '.xelem' + xmodel.class;
       if (isGrid) fieldselector = '.' + field.name + '.xelem' + xmodel.class;
-      var jctrl = jsh.root.find(fieldselector);
-      if(jctrl.length) XPage.Disable(jctrl, field);
+      var ctrl = XDom(jsh.xroot, fieldselector).element;
+      if(ctrl) XPage.Disable(ctrl, field);
     });
   }
 
-  XPage.Disable = function(jctrls,field,show_lookup) {
-    XExt.jForEach(jctrls, function(jctrl){
-      jctrl.removeClass('editable');
-      jctrl.addClass('uneditable');
+  XPage.Disable = function(ctrls,field,show_lookup) {
+    if (ctrls && !_.isArrayLike(ctrls)) ctrls = [ctrls];
+    _.forEach(ctrls, function(ctrl){
+      XDom.class.remove(ctrl, 'editable');
+      XDom.class.add(ctrl, 'uneditable');
 
-      if (jctrl.hasClass('dropdown')) jctrl.prop('disabled', true);
-      else if (jctrl.hasClass('checkbox')) jctrl.prop('disabled', true);
-      else if (jctrl.hasClass('xform_ctrl_htmlarea')) jctrl.prop('disabled', true);
-      else if(jctrl.hasClass('xtagbox_base')){
-        jctrl.prev().addClass('uneditable');
-        jctrl.prev().find('input').prop('disabled', true);
+      if (XDom.class.contains(ctrl, 'dropdown')) ctrl.disabled = true;
+      else if (XDom.class.contains(ctrl, 'checkbox')) ctrl.disabled = true;
+      else if (XDom.class.contains(ctrl, 'xform_ctrl_htmlarea')) ctrl.disabled = true;
+      else if(XDom.class.contains(ctrl, 'xtagbox_base')){
+        XDom.class.add(ctrl.previousElementSibling, 'uneditable');
+        XDom(ctrl.previousElementSibling, 'input').element.disabled = true;
       }
-      else jctrl.prop('readonly', true);
-      if (!show_lookup && jctrl.next().hasClass('xlookup')) jctrl.next().addClass('uneditable');
-      if(!field && (jctrl.hasClass('xform_ctrl') || jctrl.hasClass('xform_file_upload'))){
-        field = XExt.getFieldFromObject(jctrl);
+      else ctrl.readOnly = true;
+      if (!show_lookup && XDom.class.contains(ctrl.nextElementSibling, 'xlookup')) XDom.class.add(ctrl.nextElementSibling, 'uneditable');
+      if(!field && (XDom.class.contains(ctrl, 'xform_ctrl') || XDom.class.contains(ctrl, 'xform_file_upload'))){
+        field = XExt.getFieldFromObject(ctrl);
       }
-      if(field && field.ondisabled) field.ondisabled(jctrl[0]);
+      if(field && field.ondisabled) field.ondisabled(ctrl);
     });
   }
 
-  XPage.Enable = function(jctrls,field) {
-    XExt.jForEach(jctrls, function(jctrl){
-      jctrl.removeClass('uneditable');
-      jctrl.addClass('editable');
+  XPage.Enable = function(ctrls,field) {
+    if (ctrls && !_.isArrayLike(ctrls)) ctrls = [ctrls];
+    _.forEach(ctrls, function(ctrl){
+      XDom.class.remove(ctrl, 'uneditable');
+      XDom.class.add(ctrl, 'editable');
 
-      if (jctrl.hasClass('dropdown')) jctrl.prop('disabled', false);
-      else if (jctrl.hasClass('checkbox')) jctrl.prop('disabled', false);
-      else if (jctrl.hasClass('xform_ctrl_htmlarea')) jctrl.prop('disabled', false);
-      else if(jctrl.hasClass('xtagbox_base')){
-        jctrl.prev().removeClass('uneditable');
-        jctrl.prev().find('input').prop('disabled', false);
+      if (XDom.class.contains(ctrl, 'dropdown')) ctrl.disabled = false;
+      else if (XDom.class.contains(ctrl, 'checkbox')) ctrl.disabled = false;
+      else if (XDom.class.contains(ctrl, 'xform_ctrl_htmlarea')) ctrl.disabled = false;
+      else if(XDom.class.contains(ctrl, 'xtagbox_base')){
+        XDom.class.remove(ctrl.previousElementSibling, 'uneditable');
+        XDom(ctrl.previousElementSibling, 'input').element.disabled = false;
       }
-      else jctrl.prop('readonly', false);
-      if (jctrl.next().hasClass('xlookup')) jctrl.next().removeClass('uneditable');
-      if(!field && (jctrl.hasClass('xform_ctrl') || jctrl.hasClass('xform_file_upload'))){
-        field = XExt.getFieldFromObject(jctrl);
+      else ctrl.readOnly = false;
+      if (XDom.class.contains(ctrl.nextElementSibling, 'xlookup')) XDom.class.remove(ctrl.nextElementSibling, 'uneditable');
+      if(!field && (XDom.class.contains(ctrl, 'xform_ctrl') || XDom.class.contains(ctrl, 'xform_file_upload'))){
+        field = XExt.getFieldFromObject(ctrl);
       }
-      if(field && field.onenabled) field.onenabled(jctrl[0]);
+      if(field && field.onenabled) field.onenabled(ctrl);
     });
   }
 
@@ -1227,7 +1231,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         win.opener = window.opener;
       }
       XPage.RefreshParent();
-      $.colorbox.close();
+      XExt.CancelDialog();
       XPage.Refresh();
     }, {
       onBeforeUpdate: function () {
@@ -1251,15 +1255,15 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   XPage.handleShortcutKeys = function(e) {
     var handled = false;
     if ((e.which == 83) && (e.altKey)) {//ALT+S = SAVE
-      jsh.$root('.save:visible').first().trigger('click');
+      jsh.xd('.save').filter(XDom.isVisible).first().emit('click');
       handled = true;
     }
     else if ((e.which == 78) && (e.altKey)) {//ALT+N = NEW
-      XExt.findClosest(e.target, '.xbuttoninsert:visible').first().trigger('click');
+      XDom.emit(XExt.selectClosest(e.target, '.xbuttoninsert', XDom.isVisible), 'click');
       handled = true;
     }
     else if ((e.which == 70) && (e.altKey)) {//ALT+Q = Search
-      jsh.$root('.xsearchbutton:visible').first().trigger('click');
+      jsh.xd('.xsearchbutton').filter(XDom.isVisible).first().emit('click');
       handled = true;
     }
     else if ((e.which == 80) && (e.altKey)) {//ALT+P = PRINT
@@ -1274,24 +1278,23 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
   }
 
   XPage.ShowButtonGroup = function(e,obj){
-    var jobj = $(obj);
-    var modelid = $(jobj).data('model');
-    var group = $(jobj).data('group');
+    var modelid = XDom.getData(obj, 'model');
+    var group = XDom.getData(obj, 'group');
     var xmodel = jsh.XModels[modelid];
-    var jgroup = jsh.$root('.xactions_group.xelem'+xmodel.class+'[data-group="'+group+'"]');
+    var group = jsh.xd('.xactions_group.xelem'+xmodel.class+'[data-group="'+group+'"]').element;
+    var xbody = jsh.xd('.xbody').element;
     
-    var already_open = !!jsh.$root('.xcontext_menu:visible').filter(jgroup).length;
+    var already_open = !!jsh.xd('.xcontext_menu').filter(function(el) {return XDom.isVisible(el) && el == group;}).length;
     XExt.HideContextMenu();
     if(already_open) return;
-    
-    jgroup.css('visibility', 'hidden');
-    jgroup.show();
-    var xtop = jobj.offset().top + jobj.outerHeight(); var xleft = jobj.offset().left;
-    var offset = jgroup.offsetParent().offset();
-    xtop -= offset.top + 1;
-    xleft -= offset.left;
-    jgroup.css({ 'top': xtop, 'left': xleft });
-    jgroup.css('visibility', 'visible');
+
+    XDom.setStyle(group, 'visibility', 'hidden');
+    XDom.style.display(group, true);
+    var xtop = XDom.calc.topFrom(obj, xbody) + XDom.calc.heightToBorder(obj);
+    var xleft = XDom.calc.leftFrom(obj, xbody);
+    XDom.setStyle(group, 'top', xtop+'px');
+    XDom.setStyle(group, 'left', xleft+'px');
+    XDom.setStyle(group, 'visibility', 'visible');
     jsh.xContextMenuVisible = true;
     jsh.xContextMenuItem = modelid;
     XExt.CancelBubble(e);
@@ -1299,8 +1302,7 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
 
   XPage.LoadVirtualModel = function(ocontainer, model, cb){
     //Render model as HTML
-    var jcontainer = $(ocontainer);
-    if(!jcontainer.length) throw new Error('Could not load model: Target container not found');
+    if(!ocontainer) throw new Error('Could not load model: Target container not found');
 
     XPage.ParseModelDefinition(model, function(err){
       XExt.Alert('Error in model definition '+(model && model.id ? model.id : '')+': '+err.toString());
@@ -1310,11 +1312,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
       var ejsrslt = jsh.Render(model, parent);
       //CODE_EJSPREPEND is used in top-level forms, to change position of the title
       if(ejsrslt.indexOf(jsh.CODE_EJSPREPEND)>=0) ejsrslt = ejsrslt.replace(jsh.CODE_EJSPREPEND,'');
-      if(jcontainer.hasClass('xdialogbox')){
+      if(XDom.class.contains(ocontainer, 'xdialogbox')){
         ejsrslt += '<div style="clear:both;"></div>';
       }
       //Add model to DIV
-      jcontainer.html(ejsrslt);
+      // Note: this operation counts on execution of scripts in the embeded code to define the model.
+      XDom(ocontainer).setHtml(ejsrslt, {evaluateScripts: true});
 
       XPage.traverseModelsAsync(model.id,
         function (xmodel, done) {
@@ -1343,14 +1346,14 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
               XPage.LoadModelState(xmodel, fullstate[xmodel.id]);
             });
           }
-          XPage.RenderButtons(jcontainer);
+          XPage.RenderButtons(ocontainer);
           XPage.traverseModels(model.id, function (xmodel) {
             if (typeof xmodel.oninit != 'undefined') xmodel.oninit(xmodel);
           });
           XPage.Select({ modelid: model.id, force: true }, function () {
             jsh.ResetLinks();
             jsh.InitControls();
-            XPage.LayoutOneColumn(jcontainer);
+            XPage.LayoutOneColumn(ocontainer);
             jsh.XWindowResize();
             if(cb) return cb(jsh.XModels[model.id]);
           });

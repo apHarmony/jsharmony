@@ -52,7 +52,7 @@ for(var i=0;i<model.fields.length;i++){
         if(field.captioncolon===true) captioncolon = ': ';
         else captioncolon = field.captioncolon;
       }
-      if(field.control=='checkbox') caption_onclick = jsh._instance+".$(this).next('.xform_checkbox_container').children('input').click();";
+      if(field.control=='checkbox') caption_onclick = jsh._instance+".XDom(this).nextSibling('.xform_checkbox_container').get('input').emit('click');"
       if((field.nl) && !('captionstyle' in field) && (dflt_captionstyle != "")){ 
         %><div class="<%=captionclass%> <%=xejs.iif(leadingfield,'leading')%>" style="<%=dflt_captionstyle%>" onclick="<%-caption_onclick%>"><%-xejs.escapeHTMLN(field.caption+((field.caption != '')?captioncolon:''))%></div><%
       }
@@ -88,7 +88,7 @@ for(var i=0;i<model.fields.length;i++){
     if('link' in field){ %></a><% }
   }
   if(field.control=='textbox'){ %><input autocomplete="off" data-id="<%=field.name%>" type="<%=xejs.getInputType(field)%>" value="<%-xejs.GetValue(field, model)%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> <%=controlclass%>" <% if(field.controlparams.placeholder){ %>placeholder="<%=field.controlparams.placeholder%>"<% } %> <%-xejs.iif(maxlength >= 0,'maxlength="'+maxlength+'"')%> /><% }
-  if(field.control=='textzoom'){ %><textarea autocomplete="off" data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xform_ctrl_textzoom xelem<%=model.class%> <%=controlclass%>"><%-xejs.GetValue(field, model)%></textarea><a href="#" class="xform_ctrl xtextzoom icon" onclick="var jctrl = <%-instance%>.$(this).prev('.<%=field.name%>'); <%-instance%>.XExt.ZoomEdit(jctrl.val(),'<%=field.caption_ext||field.caption%>',{readonly:!jctrl.hasClass('editable')},function(rslt){ <%-instance%>.XExt.setFormControl(<%-instance%>.XExt.getForm('<%=model.id%>'),'<%=field.name%>',rslt); jctrl.focus(); }); return false;"><img src="<%-jsh._PUBLICURL%>images/icon_<%=(field.controlparams&&field.controlparams.icon)||'search'%>.png" height="14" /></a><% }
+  if(field.control=='textzoom'){ %><textarea autocomplete="off" data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xform_ctrl_textzoom xelem<%=model.class%> <%=controlclass%>"><%-xejs.GetValue(field, model)%></textarea><a href="#" class="xform_ctrl xtextzoom icon" onclick="var xdCtrl = <%-instance%>.XDom(this).previousSibling('.<%=field.name%>'); <%-instance%>.XExt.ZoomEdit(xdCtrl.value,'<%=field.caption_ext||field.caption%>',{readonly:!xdCtrl.class.contains('editable')},function(rslt){ <%-instance%>.XExt.setFormControl(<%-instance%>.XExt.getForm('<%=model.id%>'),'<%=field.name%>',rslt); xdCtrl.focus(); }); return false;"><img src="<%-jsh._PUBLICURL%>images/icon_<%=(field.controlparams&&field.controlparams.icon)||'search'%>.png" height="14" /></a><% }
   if(field.control=='tagbox'){ %><div style="<%=field.controlstyle%>" class="<%=field.name%>_editor xtagbox xform_ctrl xelem<%=model.class%> <%=controlclass%>"></div><input autocomplete="off" type="text" data-id="<%=field.name%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> xtagbox_base" value="<%-xejs.GetValue(field, model)%>" /><% }
   if(field.control=='password'){ %><input autocomplete="new-password" data-id="<%=field.name%>" type="password" value="<%-xejs.GetValue(field, model)%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> <%=controlclass%>" /><% }
   if(field.control=='dropdown'){ %><select autocomplete="off" data-id="<%=field.name%>" style="<%=field.controlstyle%>" class="<%=field.name%> xform_ctrl xelem<%=model.class%> dropdown <%=controlclass%>"><option><%-xejs.GetValue(field, model)%></option></select><% }
@@ -145,7 +145,7 @@ for(var i=0;i<model.fields.length;i++){
       for(var j=0;j<field.controlparams.item_context_menu.length;j++){ var menu_item = field.controlparams.item_context_menu[j];
         var baseactions = model.actions;
         if(field.unbound && field.always_editable) baseactions = 'BIUD';
-        if(xejs.hasAction(baseactions,field.actions,menu_item.actions)){ %><a href="#" class="<%=menu_item.class%>" onclick="<%-instance%>.$root('.xcontext_menu').hide(); var context_item = <%-instance%>.xContextMenuItem; return (function(){<%-jslocals%><%-menu_item.command%>}).call(this)||false;"<% if(menu_item.onrender){ %>data-onrender="return (function(){<%-jslocals%><%-menu_item.onrender%>}).call(this);"<% } %>><img src="<%-jsh._PUBLICURL%>images/icon_<%=menu_item.icon%>.png" /><%=menu_item.text%></a><% }
+        if(xejs.hasAction(baseactions,field.actions,menu_item.actions)){ %><a href="#" class="<%=menu_item.class%>" onclick="<%-instance%>.XExt.HideContextMenu(); var context_item = <%-instance%>.xContextMenuItem; return (function(){<%-jslocals%><%-menu_item.command%>}).call(this)||false;"<% if(menu_item.onrender){ %>data-onrender="return (function(){<%-jslocals%><%-menu_item.onrender%>}).call(this);"<% } %>><img src="<%-jsh._PUBLICURL%>images/icon_<%=menu_item.icon%>.png" /><%=menu_item.text%></a><% }
       }
       %></div><%
     }
@@ -174,7 +174,7 @@ for(var i=0;i<model.fields.length;i++){
     </div>
     <%
   }
-  if(field.hints){ %><a href="#" data-id="<%=field.name%>_xhints" class="<%=field.name%>_xhints xform_ctrl xhints icon" data-model="<%=model.id%>" onclick="(function(){<%-jslocals%> var jctrl = <%-instance%>.$(this).prev('.<%=field.name%>'); <%-instance%>.XExt.ShowHints(xmodel.controller.getLOV('<%=field.name%>'),'<%=(field.hints&&field.hints.caption)||('Add '+(field.caption_ext||field.caption))%>',{readonly:!jctrl.hasClass('editable')},function(rslt){ if(!rslt || !rslt.length) return; var prevval = jctrl.val().trim();  if(prevval) rslt.unshift(jctrl.val()); <%-instance%>.XExt.setFormControl(<%-instance%>.XExt.getForm('<%=model.id%>'),'<%=field.name%>',rslt.join('<%=field.hints.separator%>')); jctrl.focus(); }); }).call(this); return false;"><img src="<%-jsh._PUBLICURL%>images/icon_wand.png" /></a> <% }
+  if(field.hints){ %><a href="#" data-id="<%=field.name%>_xhints" class="<%=field.name%>_xhints xform_ctrl xhints icon" data-model="<%=model.id%>" onclick="(function(){<%-jslocals%> var xdCtrl = <%-instance%>.XDom(this).previousSibling('.<%=field.name%>'); <%-instance%>.XExt.ShowHints(xmodel.controller.getLOV('<%=field.name%>'),'<%=(field.hints&&field.hints.caption)||('Add '+(field.caption_ext||field.caption))%>',{readonly:!xdCtrl.class.contains('editable')},function(rslt){ if(!rslt || !rslt.length) return; var prevval = xdCtrl.value.trim();  if(prevval) rslt.unshift(xdCtrl.value); <%-instance%>.XExt.setFormControl(<%-instance%>.XExt.getForm('<%=model.id%>'),'<%=field.name%>',rslt.join('<%=field.hints.separator%>')); xdCtrl.focus(); }); }).call(this); return false;"><img src="<%-jsh._PUBLICURL%>images/icon_wand.png" /></a> <% }
   if(addNoWrap){ %></span><% }
   if(field.block){ %></div><% }
   prev_block = !!field.block;

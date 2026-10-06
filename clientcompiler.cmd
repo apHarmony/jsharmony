@@ -9,11 +9,17 @@ rem call browserify jsHarmony.js > ..\public\js\jsHarmony.js
 
 if "%1"=="/prod" goto prod
 
-supervisor  -n exit -w ".","..\node_modules\jsharmony-validate","..\views\jsh_system.ejs" -e js -x browserify.cmd -- jsHarmony.js -o ..\public\js\jsHarmony.dev.js -t ./browserifyEJS.js -d
+if "%1"=="/xdom" goto xdom
+
+supervisor  -n exit -w ".","..\views\jsh_system.ejs" -e js -x browserify.cmd -- jsHarmony.js -o ..\public\js\jsHarmony.dev.js -t ./browserifyEJS.js -d
+goto done
+
+:xdom
+supervisor  -n exit -w "." -e js -x cmd -- /c "browserify.cmd XDom.global.js | uglifyjs > ..\public\js\XDom.min.js"
 goto done
 
 :prod
-supervisor  -n exit -w ".","..\node_modules\jsharmony-validate","..\views\jsh_system.ejs" -e js -x cmd -- /c "browserify.cmd jsHarmony.js -t ./browserifyEJS.js | uglifyjs > ..\public\js\jsHarmony.js"
+supervisor  -n exit -w ".","..\views\jsh_system.ejs" -e js -x cmd -- /c "browserify.cmd jsHarmony.js -t ./browserifyEJS.js | uglifyjs > ..\public\js\jsHarmony.js"
 goto done
 
 :done

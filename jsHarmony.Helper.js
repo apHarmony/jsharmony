@@ -330,7 +330,7 @@ exports.getURL = function (req, srcmodel, target, tabs, fields, bindings) {
 
 //Generates the "onclick" event for a link, based on the field.link property
 exports.getURL_onclick = function (req, model, link) {
-  var seturl = 'var url = '+req.jshsite.instance+".$(this).attr('data-url'); if(!url) url = "+req.jshsite.instance+".$(this).attr('href'); if(url=='#') url = ''; if(!url || (url=='mailto:')) return false;";
+  var seturl = 'var url = '+req.jshsite.instance+".XDom.getAttribute(this, 'data-url'); if(!url) url = "+req.jshsite.instance+".XDom(this).attr.href; if(url=='#') url = ''; if(!url || (url=='mailto:')) return false;";
   var rslt = req.jshsite.instance+'.XExt.navTo(url); return false;';
   var windowtarget = '_self';
   if (typeof link != 'undefined') {
@@ -355,7 +355,7 @@ exports.getURL_onclick = function (req, model, link) {
       }
     }
     if(ptarget.action=='download'){
-      rslt = "url += '?format=js'; "+req.jshsite.instance+".getFileProxy().prop('src', url); return false;";
+      rslt = "url += '?format=js'; "+req.jshsite.instance+'.getFileProxy().src = url; return false;';
     }
     else if ((tmodel && ('popup' in tmodel))||!_.isEmpty(ptarget.actionParams)) {
       var params = {

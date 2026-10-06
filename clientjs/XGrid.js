@@ -17,21 +17,9 @@ You should have received a copy of the GNU Lesser General Public License
 along with this package.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var $ = require('./jquery-1.11.2');
-$.fn.$find = function(){ return $.fn.find.apply(this, arguments); };
 var _ = require('lodash');
 
 exports = module.exports = function(jsh){
-
-  function lteIE7(){
-    if (/MSIE (\d+\.\d+);/.test(navigator.userAgent)){
-      var ieversion=new Number(RegExp.$1);
-      if (ieversion<=7){
-        return true;
-      }
-    }
-    return false;
-  }
 
   function XGrid(options){
     var _this = this;
@@ -41,7 +29,7 @@ exports = module.exports = function(jsh){
       modelid: undefined,
       API: undefined,
       Paging: undefined,
-      CustomScroll: undefined,
+      CustomScroll: undefined, /* { init(XGrid, updateFunc), update(XGrid), destroy(XGrid) } */
       ScrollControl: undefined,
       PlaceholderID: undefined,
       TemplateID: undefined,
@@ -50,19 +38,10 @@ exports = module.exports = function(jsh){
     this._this = this;
     this.TemplateID = options.TemplateID;
     this.PlaceholderID = options.PlaceholderID;
-    this.ColSpan = jsh.$root(this.PlaceholderID).parent().$find('thead th').length;
+    this.ColSpan = jsh.xd(this.PlaceholderID).parent().get('thead th').length;
     this.modelid = options.modelid;
     
-    if(typeof options.CustomScroll == 'undefined') this.CustomScroll = '';
-    else {
-      if(lteIE7()){
-        this.CustomScroll = '';
-        options.ScrollControl = options.CustomScroll;
-        jsh.$(options.CustomScroll).css('overflow','auto');
-      }
-      else this.CustomScroll = options.CustomScroll;
-    }
-    
+    this.CustomScroll = options.CustomScroll || undefined;
     if(options.Paging === undefined) this.Paging = true;
     else this.Paging = options.Paging;
     if(options.ScrollControl === undefined) this.ScrollControl = window;
@@ -94,7 +73,7 @@ exports = module.exports = function(jsh){
     this.OnRowBind = null;
     this.OnMetaData = null; //(data)
     this.OnDBRowCount = null;
-    this.OnDestroyingRows = null; //(jobj)
+    this.OnDestroyingRows = null; //(xdObj)
     this.OnResetDataSet = null; //()
     this.OnRender = null; //(ejssource,data,cb)
     this.OnLoadMoreData = null; //()
@@ -131,8 +110,8 @@ exports = module.exports = function(jsh){
     
     if(rowstart > 0){
       if(_this.EOF) return;
-      jsh.$root(_this.PlaceholderID).$find('tr.xtbl_loadmore').remove();
-      jsh.$root(_this.PlaceholderID).append('<tr class="xtbl_loadmore"><td colspan="'+_this.ColSpan+'"><a href="#">Loading...</div></td></tr>');
+      jsh.xd(_this.PlaceholderID).get('tr.xtbl_loadmore').remove();
+      jsh.xd(_this.PlaceholderID).append('<tr class="xtbl_loadmore"><td colspan="'+_this.ColSpan+'"><a href="#">Loading...</div></td></tr>');
     }
     var starttime = (new Date()).getTime();
     
@@ -188,7 +167,7 @@ exports = module.exports = function(jsh){
     var _this = this;
     var loader = jsh.xLoader;
     if(rowstart > 0){
-      jsh.$root(_this.PlaceholderID).$find('tr.xtbl_loadmore').remove();
+      jsh.xd(_this.PlaceholderID).get('tr.xtbl_loadmore').remove();
     }
     var renderData = false;
     var ejssource = '';
@@ -230,7 +209,7 @@ exports = module.exports = function(jsh){
       }
       if ((data[this.modelid].length == 0) && ((_this.NoResultsMessage) || (_this.RequireSearch && _this.RequireSearchMessage))) {
         _this.EOF = true;
-        if (_this.OnDestroyingRows) _this.OnDestroyingRows(jsh.$root(_this.PlaceholderID).children());
+        if (_this.OnDestroyingRows) _this.OnDestroyingRows(jsh.xd(_this.PlaceholderID).children);
         _this.RenderNoResultsMessage({ search: (((reqdata.search||'').trim()) || ((reqdata.searchjson||'').trim())) });
         _this.RowCount = 0;
         if (_this.OnResetDataSet) _this.OnResetDataSet(data);
@@ -246,11 +225,11 @@ exports = module.exports = function(jsh){
             return;
           }
         }
-        else ejssource = jsh.$root(_this.TemplateID).html();
+        else ejssource = jsh.xd(_this.TemplateID).innerHTML;
         
         if (rowstart == 0) {
-          if (_this.OnDestroyingRows) _this.OnDestroyingRows(jsh.$root(_this.PlaceholderID).children());
-          jsh.$root(_this.PlaceholderID).empty();
+          if (_this.OnDestroyingRows) _this.OnDestroyingRows(jsh.xd(_this.PlaceholderID).children);
+          jsh.xd(_this.PlaceholderID).clear();
           _this.RowCount = 0;
           if (_this.OnResetDataSet) _this.OnResetDataSet(data);
         }
@@ -266,8 +245,8 @@ exports = module.exports = function(jsh){
               startrowid: undefined,
               datatable: data[_this.modelid],
             });
-            jsh.$root(_this.PlaceholderID).append(ejsrslt);
-            _this.RowCount = jsh.$root(_this.PlaceholderID).$find('tr').length;
+            jsh.xd(_this.PlaceholderID).append(ejsrslt);
+            _this.RowCount = jsh.xd(_this.PlaceholderID).get('tr').length;
             return f();
           }
         }
@@ -276,16 +255,14 @@ exports = module.exports = function(jsh){
         if(renderData){
           _this.EOF = data['_eof_' + _this.modelid];
           if ((_this.Paging) && (!_this.EOF)) {
-            jsh.$root(_this.PlaceholderID).append('<tr class="xtbl_loadmore"><td colspan="' + _this.ColSpan + '"><a href="#">Load More Data</div></td></tr>');
-            jsh.$root(_this.PlaceholderID).$find('.xtbl_loadmore').click(function () {
+            jsh.xd(_this.PlaceholderID).append('<tr class="xtbl_loadmore"><td colspan="' + _this.ColSpan + '"><a href="#">Load More Data</div></td></tr>');
+            jsh.xd(_this.PlaceholderID).get('.xtbl_loadmore').on('click', function () {
               if (_this.OnLoadMoreData) { _this.OnLoadMoreData(); return false; }
               _this.Load(_this.RowCount);
               return false;
             });
           }
-          if (_this.CustomScroll != '') {
-            jsh.$(_this.CustomScroll).mCustomScrollbar('update');
-          }
+          if (_this.CustomScroll) _this.CustomScroll.update(_this);
         }
         if(loader) loader.StopLoading(_this);
         _this.IsLoading = false;
@@ -316,16 +293,18 @@ exports = module.exports = function(jsh){
     var noresultsmessage = _this.NoResultsMessage.replace(/%%%FORSEARCHPHRASE%%%/g, (_this.hasSearch()?'for selected search phrase':''));
     if (_this.RequireSearch && !options.search) noresultsmessage = _this.RequireSearchMessage;
     else if (!options.search && _this.NoDataMessage) noresultsmessage = _this.NoDataMessage;
-    jsh.$root(_this.PlaceholderID).html('<tr class="xtbl_noresults"><td colspan="' + _this.ColSpan + '" align="center" class="xtbl_noresults">' + noresultsmessage + '</td></tr>');
+    jsh.xd(_this.PlaceholderID).html = '<tr class="xtbl_noresults"><td colspan="' + _this.ColSpan + '" align="center" class="xtbl_noresults">' + noresultsmessage + '</td></tr>';
   };
-  XGrid.prototype.ResetSortGlyphs = function (tblobj){
-    var xhtml_thead = tblobj.$find('thead tr');
-    xhtml_thead.$find('th').removeClass('sortAsc').removeClass('sortDesc');
+  XGrid.prototype.ResetSortGlyphs = function (xd_tbl){
+    var xd_thead = xd_tbl.get('thead tr');
+    var xd_th = xd_thead.get('th');
+    xd_th.class.remove('sortAsc');
+    xd_th.class.remove('sortDesc');
     if (!this.Sort || (this.Sort.length == 0)) return;
     
-    var xhtml_th = tblobj.$find('.thead' + this.Sort[0].substring(1));
-    if (this.Sort[0][0] == '^') { xhtml_th.addClass('sortAsc'); }
-    else { xhtml_th.addClass('sortDesc'); }
+    var xd_thSort = xd_tbl.get('.thead' + this.Sort[0].substring(1));
+    if (this.Sort[0][0] == '^') { xd_thSort.class.add('sortAsc'); }
+    else { xd_thSort.class.add('sortDesc'); }
   };
   XGrid.prototype.AddSort = function(obj,col){
     var newdir = '^';
@@ -339,10 +318,13 @@ exports = module.exports = function(jsh){
         i--;
       }
     }
-    var xhtml_th = $(obj).parent();
-    var xhtml_thead = xhtml_th.parent();
-    if(newdir == '^'){ xhtml_thead.$find('th').removeClass('sortAsc').removeClass('sortDesc'); xhtml_th.addClass('sortAsc'); }
-    else{ xhtml_thead.$find('th').removeClass('sortAsc').removeClass('sortDesc'); xhtml_th.addClass('sortDesc'); }
+    var xd_thSort = jsh.XDom(obj).parent();
+    var xd_thead = xd_thSort.parent();
+    var xd_th = xd_thead.get('th');
+    xd_th.class.remove('sortAsc');
+    xd_th.class.remove('sortDesc');
+    if(newdir == '^') { xd_thSort.class.add('sortAsc'); }
+    else{ xd_thSort.class.add('sortDesc'); }
     this.Sort.unshift(newdir+col);
     this.Load();
     return false;
@@ -365,16 +347,16 @@ exports = module.exports = function(jsh){
         _this.lastDocumentHeight = curDocumentHeight;
         _this.scrolledPastBottom = false;
       }
-      var pastBottom = (($(window).height() + $(window).scrollTop()) >= (curDocumentHeight));
+      var pastBottom = ((window.innerHeight + window.scrollY) >= (curDocumentHeight));
       if(!_this.scrolledPastBottom && pastBottom) {
-        callback($(window).height() + $(window).scrollTop());
+        callback(window.innerHeight + window.scrollY);
         _this.scrolledPastBottom = true;
       } else {
         if(!pastBottom) _this.scrolledPastBottom = false;
       }
-      _this.scrollPrevious = $(window).scrollTop();
+      _this.scrollPrevious = window.scrollY;
     };
-    jsh.$(_this.ScrollControl).scroll(_this.scrollFunc);
+    jsh.XDom(_this.ScrollControl).on('scroll', _this.scrollFunc);
   };
   XGrid.prototype._getDocumentHeight = function() {
     return Math.max(
@@ -386,16 +368,18 @@ exports = module.exports = function(jsh){
   XGrid.prototype._ControlOnScrollBottom = function(callback){
     var _this = this;
     _this.scrollFunc = function () {
-      var pastBottom = ((jsh.$(_this.ScrollControl).outerHeight() + jsh.$(_this.ScrollControl).scrollTop()) >= jsh.$(_this.ScrollControl).get(0).scrollHeight);
+      var xdScrollControl = jsh.XDom(_this.ScrollControl);
+      var scrollElement = xdScrollControl.element;
+      var pastBottom = ((xdScrollControl.height() + scrollElement.scrollTop()) >= scrollElement.scrollHeight);
       if (!_this.scrolledPastBottom && pastBottom) {
-        callback(jsh.$(_this.ScrollControl).height() + jsh.$(_this.ScrollControl).scrollTop());
+        callback(xdScrollControl.height() + scrollElement.scrollTop);
         _this.scrolledPastBottom = true;
       } else {
         if (!pastBottom) _this.scrolledPastBottom = false;
       }
-      _this.scrollPrevious = jsh.$(_this.ScrollControl).scrollTop();
+      _this.scrollPrevious = scrollElement.scrollTop;
     };
-    jsh.$(_this.ScrollControl).scroll(_this.scrollFunc);
+    jsh.XDom(_this.ScrollControl).on('scroll', _this.scrollFunc);
   };
   XGrid.prototype.EnableScrollUpdate = function() {
     var _this = this;
@@ -406,24 +390,14 @@ exports = module.exports = function(jsh){
         }
       }
     };
-    if(_this.CustomScroll != ''){
-      jsh.$(_this.CustomScroll).mCustomScrollbar({
-        theme:'dark',
-        autoScrollOnFocus: false,
-        scrollButtons:{ enable:true },
-        scrollInertia:0,
-        callbacks:{
-          onTotalScroll: updateFunc
-        }
-      });
-    }
+    if(_this.CustomScroll) _this.CustomScroll.init(_this, updateFunc);
     else if(this.ScrollControl == window) this._WindowOnScrollBottom(updateFunc);
     else this._ControlOnScrollBottom(updateFunc);
   };
   XGrid.prototype.Destroy = function (){
     var _this = this;
-    if (_this.CustomScroll != '') { jsh.$(_this.CustomScroll).mCustomScrollbar('destroy'); }
-    else { jsh.$(_this.ScrollControl).unbind('scroll', _this.scrollFunc); }
+    if(_this.CustomScroll) { _this.CustomScroll.destroy(_this); }
+    else { jsh.XDom(_this.ScrollControl).off('scroll', _this.scrollFunc); }
   };
 
   return XGrid;
