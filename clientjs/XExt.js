@@ -3329,9 +3329,7 @@ exports = module.exports = function(jsh){
     }
     if (params) {
       if (typeof(params) == 'object') {
-        // $.params/escapeQuery will generate blank values ("foo=&...")
-        // However $.ajax options (notably .data) are copied in a way that removes undefined values.
-        // Filtering here should provide similar behavior, and if you need blank values, append the escapeQuery value yourself.
+        // If you need blank values, append the escapeQuery value yourself.
         var definedParams = _.omitBy(params, function(x) {return typeof(x)=='undefined';});
         params = XExt.escapeQuery(definedParams);
       }
