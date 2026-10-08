@@ -532,6 +532,7 @@ XDom.on = function(target, _eventName, handler, eventOptions){
 
 XDom.off = function(target, _eventName, handler, eventOptions){
   var eventNames = _eventName.split(' ');
+  var noHandlerPassed = arguments.length < 3;
   _.each(XDom.resolve(target), function(el){
     if(el && el.removeEventListener){
       _.each(eventNames, function(eventName) {
@@ -542,11 +543,15 @@ XDom.off = function(target, _eventName, handler, eventOptions){
         }
         if(!eventName) return;
         if(handler) el.removeEventListener(eventName, handler, eventOptions);
-        if(!handler && tag && el.dataset){
-          var handlers = prop(prop(prop(XDom.handlers, el.dataset.xdom_handler), eventName), tag);
-          if(handlers){
-            handlers.forEach(function(handler){ el.removeEventListener(eventName, handler.handler, handler.eventOptions); });
-            handlers.splice(0);
+        if(!handler){
+          if (tag && el.dataset){
+            var handlers = prop(prop(prop(XDom.handlers, el.dataset.xdom_handler), eventName), tag);
+            if(handlers){
+              handlers.forEach(function(handler){ el.removeEventListener(eventName, handler.handler, handler.eventOptions); });
+              handlers.splice(0);
+            }
+          } else if (noHandlerPassed) {
+            throw new TypeError('XDom.off must be passed the handler to remove (unless tagged events are used)');
           }
         }
       });
