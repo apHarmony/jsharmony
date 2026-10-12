@@ -65,7 +65,7 @@ var jsHarmony = function(options){
     _this.XExt.trigger(_this.onMessage, data);
     _this.trigger('jsh_message', data);
   };
-  this.events = {}; /*{event1: [handlers, ...], event2: [handlers, ...], ...}*/
+  this.events = {}; /*{event1: [{ handler: handler, namespace: '' }, ...], event2: [...], ...}*/
   this.onInit = null; //function(){};
 
   //Options
@@ -613,28 +613,59 @@ jsHarmony.prototype.runGlobalsMonitor = function(){
   },1000);
 };
 
+//Events follow the jQuery convention the callers were written against:
+//  on('name.namespace', handler), off('.namespace'), and handlers called as handler(event, param1, param2, ...)
+function parseEventNames(eventName){
+  var rslt = [];
+  _.each((eventName||'').toString().split(' '), function(name){
+    if(!name) return;
+    var idxdot = name.indexOf('.');
+    if(idxdot < 0) rslt.push({ type: name, namespace: '' });
+    else rslt.push({ type: name.substr(0, idxdot), namespace: name.substr(idxdot+1) });
+  });
+  return rslt;
+}
 jsHarmony.prototype.on = function(eventName, handler){
   if(!eventName || !handler) return;
-  if(!this.events[eventName]) this.events[eventName] = [];
-  this.events[eventName].push(handler);
+  var _this = this;
+  _.each(parseEventNames(eventName), function(evt){
+    if(!evt.type) return;
+    if(!_this.events[evt.type]) _this.events[evt.type] = [];
+    _this.events[evt.type].push({ handler: handler, namespace: evt.namespace });
+  });
 };
 jsHarmony.prototype.off = function(eventName, handler){
-  if(!eventName || !this.events[eventName]) return;
-  if(handler) {
-    for(var i=0; i<this.events[eventName].length; i++){
-      if(this.events[eventName][i] === handler){
-        this.events[eventName].splice(i, 1);
+  if(!eventName) return;
+  var _this = this;
+  _.each(parseEventNames(eventName), function(evt){
+    var types = evt.type ? [evt.type] : _.keys(_this.events);
+    _.each(types, function(type){
+      var handlers = _this.events[type];
+      if(!handlers) return;
+      for(var i=0; i<handlers.length; i++){
+        if(evt.namespace && (handlers[i].namespace !== evt.namespace)) continue;
+        if(handler && (handlers[i].handler !== handler)) continue;
+        handlers.splice(i, 1);
         i--;
       }
-    }
-  }
-  else {
-    this.events[eventName] = [];
-  }
+    });
+  });
 };
 jsHarmony.prototype.trigger = function(eventName /*, param1, param2 */){
-  if(!eventName || !this.events[eventName]) return;
-  this.XExt.trigger.apply(null, [this.events[eventName]].concat(Array.prototype.slice.call(arguments, 1)));
+  var _this = this;
+  var params = Array.prototype.slice.call(arguments, 1);
+  //trigger('name', [param1, param2]) passes the array items as separate parameters
+  if((params.length == 1) && _.isArray(params[0])) params = params[0];
+  _.each(parseEventNames(eventName), function(evt){
+    if(!evt.type || !_this.events[evt.type]) return;
+    var handlers = [];
+    _.each(_this.events[evt.type], function(entry){
+      if(evt.namespace && (entry.namespace !== evt.namespace)) return;
+      handlers.push(entry.handler);
+    });
+    var event = { type: evt.type, namespace: evt.namespace, target: _this };
+    _this.XExt.trigger.apply(null, [handlers, event].concat(params));
+  });
 };
 
 var instances = [];
