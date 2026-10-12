@@ -1636,6 +1636,66 @@ var mocha = require('mocha');
     });
   });
 
+  describe('jsHarmony events', function() {
+    var eventsInstanceId = 0;
+    function newEventsInstance(){ return new jsHarmony({_instance: 'jshEventsInstance' + (++eventsInstanceId)}); }
+    it('on/trigger passes event object, then data', function(){
+      var jshEvents = newEventsInstance();
+      var rslt = null;
+      jshEvents.on('jsh_message', function(event, data){ rslt = [event.type, data]; });
+      jshEvents.Message('jsharmony:refresh');
+      assertEqual(rslt && rslt[0], 'jsh_message', 'event type');
+      assertEqual(rslt && rslt[1], 'jsharmony:refresh', 'event data');
+    });
+    it('trigger spreads array data into handler parameters', function(){
+      var jshEvents = newEventsInstance();
+      var rslt = null;
+      jshEvents.on('jsh_mouseDrag', function(event, mouseDragObj, targetObj, origEvent){ rslt = [mouseDragObj, targetObj, origEvent]; });
+      jshEvents.trigger('jsh_mouseDrag', ['drag', 'target', 'orig']);
+      assertEqual(rslt && rslt.join(','), 'drag,target,orig', 'spread parameters');
+    });
+    it('namespaced handlers fire on the base event', function(){
+      var jshEvents = newEventsInstance();
+      var calls = [];
+      jshEvents.on('jsh_mouseDrag.jsh_tree_1', function(event, mouseDragObj){ calls.push('tree:'+mouseDragObj); });
+      jshEvents.on('jsh_mouseDrag', function(event, mouseDragObj){ calls.push('plain:'+mouseDragObj); });
+      jshEvents.trigger('jsh_mouseDrag', ['drag']);
+      assertEqual(calls.join(','), 'tree:drag,plain:drag', 'namespaced and plain handlers');
+      calls = [];
+      jshEvents.trigger('jsh_mouseDrag.jsh_tree_1', ['drag']);
+      assertEqual(calls.join(','), 'tree:drag', 'trigger restricted to namespace');
+    });
+    it('off(".namespace") removes only that namespace', function(){
+      var jshEvents = newEventsInstance();
+      var calls = [];
+      jshEvents.on('jsh_mouseDrag.jsh_tree_1', function(){ calls.push('drag1'); });
+      jshEvents.on('jsh_mouseDragEnd.jsh_tree_1', function(){ calls.push('end1'); });
+      jshEvents.on('jsh_mouseDrag.jsh_tree_2', function(){ calls.push('drag2'); });
+      jshEvents.off('.jsh_tree_1');
+      jshEvents.trigger('jsh_mouseDrag', []);
+      jshEvents.trigger('jsh_mouseDragEnd', []);
+      assertEqual(calls.join(','), 'drag2', 'namespace removed');
+    });
+    it('off(name) and off(name, handler)', function(){
+      var jshEvents = newEventsInstance();
+      var calls = [];
+      var handlerA = function(){ calls.push('A'); };
+      var handlerB = function(){ calls.push('B'); };
+      jshEvents.on('jsh_ready', handlerA);
+      jshEvents.on('jsh_ready', handlerB);
+      jshEvents.off('jsh_ready', handlerA);
+      jshEvents.trigger('jsh_ready');
+      assertEqual(calls.join(','), 'B', 'single handler removed');
+      jshEvents.on('jsh_ready.ns', handlerA);
+      jshEvents.off('jsh_ready');
+      calls = [];
+      jshEvents.trigger('jsh_ready');
+      assertEqual(calls.join(','), '', 'all handlers removed, including namespaced');
+      jshEvents.off('jsh_unknown');
+      jshEvents.trigger('jsh_unknown');
+    });
+  });
+
   describe('XExt Request_JSONP', function() {
     it('XExt.Request_JSONP', function(done){
       XExt.Request_JSONP('http://localhost:3000/foo', {
