@@ -613,28 +613,41 @@ jsHarmony.prototype.runGlobalsMonitor = function(){
   },1000);
 };
 
-jsHarmony.prototype.on = function(eventName, handler){
-  if(!eventName || !handler) return;
+function parseEventId(eventId){
+  eventId = (eventId || '').toString();
+  var idx = eventId.indexOf('.');
+  if(idx<0) return { name: eventId, tag: '' };
+  return { name: eventId.substr(0,idx), tag: eventId.substr(idx+1) };
+}
+jsHarmony.prototype.on = function(eventId, hnd){
+  eventId = parseEventId(eventId);
+  var eventName = eventId.name;
+  if(!eventName || !hnd) return;
   if(!this.events[eventName]) this.events[eventName] = [];
-  this.events[eventName].push(handler);
+  this.events[eventName].push({ hnd: hnd, tag: eventId.tag });
 };
-jsHarmony.prototype.off = function(eventName, handler){
-  if(!eventName || !this.events[eventName]) return;
-  if(handler) {
-    for(var i=0; i<this.events[eventName].length; i++){
-      if(this.events[eventName][i] === handler){
-        this.events[eventName].splice(i, 1);
-        i--;
-      }
+jsHarmony.prototype.off = function(eventId, hnd){
+  eventId = parseEventId(eventId);
+  var eventName = eventId.name;
+  if(eventName && !hnd && !eventId.tag){ this.events[eventName] = []; return; }
+  for(var curEventName in this.events){
+    var bindings = this.events[curEventName];
+    if(eventName && (eventName !== curEventName)) continue;
+    for(var i=0;i<bindings.length;i++){
+      if(hnd && bindings[i].hnd !== hnd) continue;
+      if(eventId.tag && bindings[i].tag !== eventId.tag) continue;
+      bindings.splice(i, 1);
+      i--;
     }
   }
-  else {
-    this.events[eventName] = [];
-  }
 };
-jsHarmony.prototype.trigger = function(eventName /*, param1, param2 */){
-  if(!eventName || !this.events[eventName]) return;
-  this.XExt.trigger.apply(null, [this.events[eventName]].concat(Array.prototype.slice.call(arguments, 1)));
+jsHarmony.prototype.trigger = function(eventId /*, param1, param2 */){
+  eventId = parseEventId(eventId);
+  var eventName = eventId.name;
+  var bindings = eventName && this.events[eventName] || [];
+  if(eventId.tag) bindings = _.filter(bindings, function(item){ return item.tag == eventId.tag; });
+  bindings = _.map(bindings, function(binding){ return binding.hnd });
+  this.XExt.trigger.apply(null, [bindings].concat(Array.prototype.slice.call(arguments, 1)));
 };
 
 var instances = [];
