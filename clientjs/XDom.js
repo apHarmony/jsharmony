@@ -481,7 +481,8 @@ XDom.getAttribute = function(target, prop){
 XDom.setAttribute = function(target, prop, val){
   _.each(XDom.resolve(target), function(el){
     if(el && el.setAttribute && el.removeAttribute){
-      if(typeof val == 'undefined') el.removeAttribute(prop);
+      if((val === false) || (typeof val == 'undefined') || (val === null)) el.removeAttribute(prop);
+      else if (val === true) el.setAttribute(prop, '');
       else el.setAttribute(prop, val);
     }
   });
@@ -591,6 +592,17 @@ XDom.onPageLoad = function(event){
   else {
     document.addEventListener('DOMContentLoaded', exec);
     window.addEventListener('load', exec);
+  }
+};
+
+XDom.onFontLoad = function(event, options){
+  if(!document.fonts || !document.fonts.addEventListener) return;
+  if(!options) options = { onlyIfLoading: false };
+  if(document.fonts.status == 'loaded'){
+    if(!options.onlyIfLoading) event();
+  }
+  else {
+    document.fonts.addEventListener('loadingdone', function(){ event(); });
   }
 };
 

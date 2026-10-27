@@ -376,6 +376,11 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
           var rootmodel = jsh.XModels[jsh.XModels_root];
           jsh.InitControls();
           XPage.LayoutOneColumn();
+          XDom.onFontLoad(function(){
+            if(!jsh.init_complete) return;
+            XPage.LayoutOneColumn(null, { reset: true });
+            jsh.XWindowResize();
+          }, { onlyIfLoading: true });
           XPage.Show();
           jsh.XWindowResize();
           if (enable_save && !_.includes(rootmodel.hide_system_buttons,'save')) jsh.xd('.xactions .save.top').style.display = true;
@@ -820,7 +825,10 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         _.forEach(XDom(form, '.leading').elements, function(obj){
           if(obj.closest('.xform')!=form) return;
           if(XDom.class.contains(obj, 'hidden')) return;
-          XDom.style.width(obj,'auto');
+          if(XDom.getData(obj, 'jsh_onecolumn_fixed')){
+            XDom.style.width(obj, 'auto');
+            XDom.setData(obj, 'jsh_onecolumn_fixed');
+          }
         });
       }
       _.forEach(XDom(form, '.leading').elements, function(obj){
@@ -834,11 +842,12 @@ along with this package.  If not, see <http://www.gnu.org/licenses/>.
         if(obj.closest('.xform')!=form) return;
         if(XDom.class.contains(obj, 'hidden')) return;
         XDom.style.width(obj,max_width);
+        XDom.setData(obj, 'jsh_onecolumn_fixed', '1');
         if(XDom.isVisible(obj)) XDom.style.display(obj, (max_width>0));
       });
     });
   }
-  
+
   XPage.Hide = function(modelid,cond) {
     modelid = XExt.resolveModelID(modelid);
     _.each(jsh.XModels, function (xmodel, xmodelid) {
