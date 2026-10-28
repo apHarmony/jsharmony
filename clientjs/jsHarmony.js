@@ -641,13 +641,13 @@ jsHarmony.prototype.off = function(eventId, hnd){
     }
   }
 };
-jsHarmony.prototype.trigger = function(eventId /*, param1, param2 */){
+jsHarmony.prototype.trigger = function(eventId , params){
   eventId = parseEventId(eventId);
   var eventName = eventId.name;
   var bindings = eventName && this.events[eventName] || [];
   if(eventId.tag) bindings = _.filter(bindings, function(item){ return item.tag == eventId.tag; });
-  bindings = _.map(bindings, function(binding){ return binding.hnd });
-  this.XExt.trigger.apply(null, [bindings].concat(Array.prototype.slice.call(arguments, 1)));
+  bindings = _.map(bindings, function(binding){ return binding.hnd; });
+  this.XExt.trigger.apply(null, [bindings, {}].concat(params||[]));
 };
 
 var instances = [];
